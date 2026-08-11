@@ -53,7 +53,7 @@ async function search(payload: { service: string; neighborhood: string }) {
         <div class="hero__visual" aria-label="Exemplo de profissional da Berufe">
           <div class="hero__photo-wrap">
             <img
-              src="https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=1100&q=88"
+              :src="'/images/photo-1621905252507-b35492cc74b4.jpg'"
               alt="Profissional trabalhando em uma instalação residencial"
             >
           </div>
@@ -108,7 +108,7 @@ async function search(payload: { service: string; neighborhood: string }) {
       <div class="page-container trust__grid">
         <div class="trust__visual">
           <div class="trust__photo">
-            <img src="https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=950&q=86" alt="Profissionais em uma obra residencial">
+            <img :src="'/images/photo-1503387762-592deb58ef4e.jpg'" alt="Profissionais em uma obra residencial">
           </div>
           <div class="trust__label">
             <UIcon name="i-lucide-scan-search" />

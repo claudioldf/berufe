@@ -58,6 +58,7 @@ function submit() {
           autocomplete="off"
           placeholder="Ex.: eletricista, pintura..."
           @focus="isFocused = true"
+          @blur="isFocused = false"
           @keydown.esc="isFocused = false"
         >
       </label>

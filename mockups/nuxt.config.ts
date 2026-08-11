@@ -2,6 +2,10 @@ export default defineNuxtConfig({
   compatibilityDate: '2026-08-01',
   devtools: { enabled: true },
   modules: ['@nuxt/ui'],
+  colorMode: {
+    preference: 'light',
+    fallback: 'light',
+  },
   icon: {
     serverBundle: {
       collections: ['lucide'],
