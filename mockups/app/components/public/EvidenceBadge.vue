@@ -25,5 +25,5 @@ const icon = computed(() => {
 <style scoped>
 .evidence { display: inline-flex; align-items: center; gap: 7px; min-height: 34px; padding: 7px 11px; border: 1px solid #abd3c6; border-radius: 999px; background: #eff9f5; color: #266253; font-size: .75rem; font-weight: 800; white-space: nowrap; }
 .evidence svg { font-size: 1rem; }
-.evidence--compact { min-height: 28px; padding: 5px 9px; font-size: .67rem; }
+.evidence--compact { min-height: 28px; padding: 5px 9px; font-size: .78rem; }
 </style>

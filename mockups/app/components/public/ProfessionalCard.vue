@@ -73,16 +73,16 @@ const emit = defineEmits<{
 .professional-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
 .professional-card__media { position: relative; min-height: 270px; background: var(--mint); }
 .professional-card__media img { width: 100%; height: 100%; object-fit: cover; }
-.professional-card__verified { position: absolute; left: 12px; bottom: 12px; display: inline-flex; align-items: center; gap: 5px; padding: 7px 9px; border-radius: 10px; background: rgba(255,255,255,.92); color: #266253; font-size: .68rem; font-weight: 800; backdrop-filter: blur(8px); }
+.professional-card__verified { position: absolute; left: 12px; bottom: 12px; display: inline-flex; align-items: center; gap: 5px; padding: 7px 9px; border-radius: 10px; background: rgba(255,255,255,.92); color: #266253; font-size: .78rem; font-weight: 800; backdrop-filter: blur(8px); }
 .professional-card__body { padding: 22px 24px; }
-.professional-card__topline { display: flex; justify-content: space-between; gap: 14px; color: #397a69; font-size: .66rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+.professional-card__topline { display: flex; justify-content: space-between; gap: 14px; color: #397a69; font-size: .78rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
 .professional-card__topline span { display: inline-flex; align-items: center; gap: 5px; }
 .professional-card__topline span:last-child { color: #8a9995; font-weight: 700; letter-spacing: 0; text-transform: none; }
 .professional-card__name { display: block; margin-top: 8px; color: var(--ink); font-family: Georgia, serif; font-size: 1.65rem; font-weight: 600; letter-spacing: -.035em; text-decoration: none; }
 .professional-card__headline { margin: 7px 0; color: var(--ink-soft); font-size: .82rem; line-height: 1.5; }
 .professional-card__coverage { display: flex; align-items: center; gap: 6px; margin: 10px 0 0; color: var(--ink); font-size: .75rem; font-weight: 700; }
 .professional-card__evidence { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; }
-.professional-card__proof { display: flex; gap: 18px; margin-top: 17px; color: var(--ink-soft); font-size: .69rem; }
+.professional-card__proof { display: flex; gap: 18px; margin-top: 17px; color: var(--ink-soft); font-size: .78rem; }
 .professional-card__proof strong { color: var(--ink); font-size: .83rem; }
 .professional-card__actions { display: flex; gap: 9px; margin-top: 20px; }
 .professional-card__actions > * { justify-content: center; }

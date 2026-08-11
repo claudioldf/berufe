@@ -104,7 +104,7 @@ function submit() {
 .service-search__field { position: relative; display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 11px; min-width: 0; padding: 4px 16px; }
 .service-search__field > svg { color: #397a69; font-size: 1.15rem; }
 .service-search__field label { display: grid; min-width: 0; }
-.service-search__field label > span { color: var(--ink-soft); font-size: .64rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
+.service-search__field label > span { color: var(--ink-soft); font-size: .75rem; font-weight: 800; letter-spacing: .03em; text-transform: uppercase; }
 .service-search input, .service-search select { width: 100%; min-width: 0; padding: 4px 0 0; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: .9rem; font-weight: 750; }
 .service-search input::placeholder { color: #8a9995; font-weight: 600; }
 .service-search select { appearance: none; cursor: pointer; }
@@ -117,7 +117,7 @@ function submit() {
 .service-search__suggestion-icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 10px; background: var(--mint); color: #397a69; }
 .service-search__suggestions strong, .service-search__suggestions small { display: block; }
 .service-search__suggestions strong { font-size: .84rem; }
-.service-search__suggestions small { overflow: hidden; margin-top: 2px; color: var(--ink-soft); font-size: .69rem; text-overflow: ellipsis; white-space: nowrap; }
+.service-search__suggestions small { overflow: hidden; margin-top: 2px; color: var(--ink-soft); font-size: .78rem; text-overflow: ellipsis; white-space: nowrap; }
 .service-search__suggestions > button > svg { color: #789089; }
 .service-search--compact { box-shadow: var(--shadow-sm); }
 
