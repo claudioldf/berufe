@@ -1,0 +1,30 @@
+{
+  "default": {
+    "number": 1043,
+    "customerName": "Ana Paula",
+    "serviceDescription": "Adequação elétrica e nova iluminação da cozinha",
+    "validUntil": "2026-08-25",
+    "discount": 75,
+    "notes": "Materiais de acabamento serão definidos com a cliente. Prazo estimado: 2 dias úteis após confirmação.",
+    "items": [
+      { "id": 1, "description": "Revisão e adequação do circuito", "quantity": 1, "unit": "serviço", "unitPrice": 680 },
+      { "id": 2, "description": "Instalação de pontos de iluminação", "quantity": 4, "unit": "ponto", "unitPrice": 210 },
+      { "id": 3, "description": "Instalação de tomadas de bancada", "quantity": 2, "unit": "ponto", "unitPrice": 215 }
+    ]
+  },
+  "shared": {
+    "token": "BERUFE-DEMO-1042",
+    "number": 1042,
+    "customerName": "Ana Paula",
+    "serviceDescription": "Adequação elétrica e nova iluminação da cozinha",
+    "issuedAt": "2026-08-08",
+    "validUntil": "2026-08-22",
+    "discount": 75,
+    "notes": "Materiais de acabamento serão definidos com a cliente. Prazo estimado: 2 dias úteis após confirmação.",
+    "items": [
+      { "id": 1, "description": "Revisão e adequação do circuito", "quantity": 1, "unit": "serviço", "unitPrice": 680 },
+      { "id": 2, "description": "Instalação de pontos de iluminação", "quantity": 4, "unit": "ponto", "unitPrice": 210 },
+      { "id": 3, "description": "Instalação de tomadas de bancada", "quantity": 2, "unit": "ponto", "unitPrice": 215 }
+    ]
+  }
+}

@@ -1,0 +1,167 @@
+[
+  {
+    "id": "pro-marina",
+    "slug": "marina-alves",
+    "name": "Marina Alves",
+    "headline": "Elétrica residencial feita com cuidado, clareza e capricho.",
+    "bio": "Sou eletricista residencial e trabalho principalmente com reformas, revisão de instalações e projetos de iluminação. Antes de começar, explico o que precisa ser feito e combino cada etapa com você.",
+    "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=480&q=88",
+    "coverImage": "https://images.unsplash.com/photo-1621905251918-48416bd8575a?auto=format&fit=crop&w=1400&q=88",
+    "primaryService": "Eletricista",
+    "primaryServiceSlug": "eletricista",
+    "services": ["Eletricista", "Marido de aluguel"],
+    "serviceNotes": ["Quadros elétricos e adequação de instalações", "Iluminação e pequenos reparos"],
+    "neighborhoods": ["América", "Atiradores", "Bom Retiro", "Centro", "Glória", "Saguaçu"],
+    "allJoinville": false,
+    "yearsExperience": 11,
+    "evidence": [
+      { "id": "ev-m1", "label": "Telefone confirmado", "type": "automatic", "date": "2026-05-12" },
+      { "id": "ev-m2", "label": "Identidade verificada", "type": "reviewed", "date": "2026-05-18" },
+      { "id": "ev-m3", "label": "Certificado conferido", "type": "reviewed", "date": "2026-06-02" }
+    ],
+    "portfolio": [
+      { "id": "port-m1", "title": "Iluminação de cozinha", "service": "Eletricista", "description": "Novo circuito e iluminação funcional para bancada e área de preparo.", "image": "https://images.unsplash.com/photo-1556912167-f556f1f39fdf?auto=format&fit=crop&w=900&q=86" },
+      { "id": "port-m2", "title": "Revisão de quadro elétrico", "service": "Eletricista", "description": "Organização, identificação e troca das proteções do apartamento.", "image": "https://images.unsplash.com/photo-1620283085068-5aab84e2db8e?auto=format&fit=crop&w=900&q=86" },
+      { "id": "port-m3", "title": "Projeto de iluminação", "service": "Eletricista", "description": "Instalação de pendentes e pontos indiretos em sala integrada.", "image": "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=900&q=86" },
+      { "id": "port-m4", "title": "Tomadas para home office", "service": "Eletricista", "description": "Circuito dedicado para uma estação de trabalho residencial.", "image": "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=900&q=86" }
+    ],
+    "recommendations": [
+      { "id": "rec-m1", "clientName": "Carla M.", "service": "Eletricista", "period": "Abril de 2026", "text": "A Marina explicou cada ajuste no quadro e deixou tudo identificado. Foi pontual, organizada e muito cuidadosa com o apartamento.", "phoneConfirmed": true },
+      { "id": "rec-m2", "clientName": "Renato P.", "service": "Eletricista", "period": "Janeiro de 2026", "text": "Resolveu um problema antigo de queda de energia e ainda sugeriu melhorias sem empurrar serviço. Recomendo com tranquilidade.", "phoneConfirmed": true },
+      { "id": "rec-m3", "clientName": "Beatriz S.", "service": "Eletricista", "period": "Novembro de 2025", "text": "Fez toda a iluminação da cozinha durante a reforma. Comunicação clara e acabamento excelente.", "phoneConfirmed": true }
+    ],
+    "relationships": [
+      { "id": "rel-m1", "professionalName": "João Vitor Santos", "professionalSlug": "joao-vitor-santos", "avatar": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=160&q=82", "type": "worked_together", "note": "Trabalhamos juntos em três reformas residenciais. Marina é organizada e cumpre o combinado." },
+      { "id": "rel-m2", "professionalName": "Lívia Martins", "professionalSlug": "livia-martins", "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=160&q=82", "type": "recommendation", "note": "Minha indicação para instalações elétricas e projetos de iluminação." }
+    ],
+    "updatedAt": "2026-08-08",
+    "whatsapp": "5547999991111"
+  },
+  {
+    "id": "pro-joao",
+    "slug": "joao-vitor-santos",
+    "name": "João Vitor Santos",
+    "headline": "Reformas residenciais com execução organizada e acabamento bem feito.",
+    "bio": "Atuo com reformas de apartamentos e casas, da alvenaria aos revestimentos. Gosto de deixar o cliente a par do andamento e manter o ambiente de trabalho seguro e organizado.",
+    "avatar": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=480&q=88",
+    "coverImage": "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=1400&q=88",
+    "primaryService": "Pedreiro",
+    "primaryServiceSlug": "pedreiro",
+    "services": ["Pedreiro", "Azulejista"],
+    "serviceNotes": ["Reformas de cozinhas e banheiros", "Porcelanatos e revestimentos"],
+    "neighborhoods": ["Toda Joinville"],
+    "allJoinville": true,
+    "yearsExperience": 16,
+    "evidence": [
+      { "id": "ev-j1", "label": "Telefone confirmado", "type": "automatic", "date": "2026-04-10" },
+      { "id": "ev-j2", "label": "Identidade verificada", "type": "reviewed", "date": "2026-04-14" },
+      { "id": "ev-j3", "label": "Empresa verificada", "type": "reviewed", "date": "2026-04-22" }
+    ],
+    "portfolio": [
+      { "id": "port-j1", "title": "Reforma de banheiro", "service": "Pedreiro", "description": "Reforma completa com nova paginação de revestimentos.", "image": "https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?auto=format&fit=crop&w=900&q=86" },
+      { "id": "port-j2", "title": "Cozinha integrada", "service": "Pedreiro", "description": "Adequação de alvenaria e acabamento para integração de ambientes.", "image": "https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=900&q=86" },
+      { "id": "port-j3", "title": "Porcelanato em sala", "service": "Azulejista", "description": "Assentamento de grandes formatos com nivelamento.", "image": "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=900&q=86" }
+    ],
+    "recommendations": [
+      { "id": "rec-j1", "clientName": "Paulo R.", "service": "Pedreiro", "period": "Fevereiro de 2026", "text": "Obra limpa e cronograma muito bem conduzido. João sempre avisou quando havia uma decisão para tomar.", "phoneConfirmed": true },
+      { "id": "rec-j2", "clientName": "Alice T.", "service": "Azulejista", "period": "Setembro de 2025", "text": "O assentamento ficou impecável, inclusive nos recortes mais difíceis do banheiro.", "phoneConfirmed": true }
+    ],
+    "relationships": [
+      { "id": "rel-j1", "professionalName": "Marina Alves", "professionalSlug": "marina-alves", "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=160&q=82", "type": "worked_together", "note": "Parceira de confiança para a parte elétrica das minhas reformas." }
+    ],
+    "updatedAt": "2026-08-02",
+    "whatsapp": "5547999992222"
+  },
+  {
+    "id": "pro-livia",
+    "slug": "livia-martins",
+    "name": "Lívia Martins",
+    "headline": "Interiores funcionais, acolhedores e possíveis de executar.",
+    "bio": "Desenvolvo projetos residenciais que equilibram rotina, personalidade e orçamento.",
+    "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=480&q=88",
+    "coverImage": "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1400&q=88",
+    "primaryService": "Designer de interiores",
+    "primaryServiceSlug": "designer-de-interiores",
+    "services": ["Designer de interiores", "Arquiteto"],
+    "serviceNotes": ["Projetos de interiores residenciais"],
+    "neighborhoods": ["Toda Joinville"],
+    "allJoinville": true,
+    "yearsExperience": 8,
+    "evidence": [
+      { "id": "ev-l1", "label": "Telefone confirmado", "type": "automatic", "date": "2026-06-01" },
+      { "id": "ev-l2", "label": "Identidade verificada", "type": "reviewed", "date": "2026-06-08" },
+      { "id": "ev-l3", "label": "Certificado conferido", "type": "reviewed", "date": "2026-06-08" }
+    ],
+    "portfolio": [
+      { "id": "port-l1", "title": "Sala integrada", "service": "Designer de interiores", "description": "Projeto de marcenaria, iluminação e mobiliário.", "image": "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=900&q=86" },
+      { "id": "port-l2", "title": "Quarto acolhedor", "service": "Designer de interiores", "description": "Cores naturais e soluções para armazenamento.", "image": "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=900&q=86" }
+    ],
+    "recommendations": [
+      { "id": "rec-l1", "clientName": "Sofia A.", "service": "Designer de interiores", "period": "Março de 2026", "text": "A Lívia entendeu nossa rotina e propôs um projeto bonito que realmente cabia no orçamento.", "phoneConfirmed": true }
+    ],
+    "relationships": [
+      { "id": "rel-l1", "professionalName": "Marina Alves", "professionalSlug": "marina-alves", "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=160&q=82", "type": "recommendation", "note": "Recomendo para projetos elétricos residenciais cuidadosos." }
+    ],
+    "updatedAt": "2026-07-30",
+    "whatsapp": "5547999993333"
+  },
+  {
+    "id": "pro-carlos",
+    "slug": "carlos-henrique-lima",
+    "name": "Carlos Henrique Lima",
+    "headline": "Pintura residencial limpa, protegida e sem atalhos.",
+    "bio": "Pintor residencial especializado em preparação de superfícies e acabamento fino.",
+    "avatar": "https://images.unsplash.com/photo-1531384441138-2736e62e0919?auto=format&fit=crop&w=480&q=88",
+    "coverImage": "https://images.unsplash.com/photo-1562259949-e8e7689d7828?auto=format&fit=crop&w=1400&q=88",
+    "primaryService": "Pintor",
+    "primaryServiceSlug": "pintor",
+    "services": ["Pintor", "Drywall e gesso"],
+    "serviceNotes": ["Pintura interna e acabamento fino"],
+    "neighborhoods": ["América", "Bom Retiro", "Costa e Silva", "Santo Antônio"],
+    "allJoinville": false,
+    "yearsExperience": 13,
+    "evidence": [
+      { "id": "ev-c1", "label": "Telefone confirmado", "type": "automatic", "date": "2026-05-05" },
+      { "id": "ev-c2", "label": "Identidade verificada", "type": "reviewed", "date": "2026-05-09" }
+    ],
+    "portfolio": [
+      { "id": "port-c1", "title": "Fachada renovada", "service": "Pintor", "description": "Correção de fissuras e nova pintura externa.", "image": "https://images.unsplash.com/photo-1599619351208-3e6c839d6828?auto=format&fit=crop&w=900&q=86" },
+      { "id": "port-c2", "title": "Sala em tons naturais", "service": "Pintor", "description": "Preparação e pintura de sala e circulação.", "image": "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=900&q=86" }
+    ],
+    "recommendations": [
+      { "id": "rec-c1", "clientName": "Mônica G.", "service": "Pintor", "period": "Maio de 2026", "text": "Protegeu todos os móveis e entregou a casa muito organizada. Ótimo acabamento.", "phoneConfirmed": true }
+    ],
+    "relationships": [],
+    "updatedAt": "2026-07-22",
+    "whatsapp": "5547999994444"
+  },
+  {
+    "id": "pro-rafael",
+    "slug": "rafael-oliveira",
+    "name": "Rafael Oliveira",
+    "headline": "Soluções hidráulicas para a casa funcionar sem surpresa.",
+    "bio": "Atendimento residencial para instalações, manutenção e vazamentos.",
+    "avatar": "https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&w=480&q=88",
+    "coverImage": "https://images.unsplash.com/photo-1585704032915-c3400ca199e7?auto=format&fit=crop&w=1400&q=88",
+    "primaryService": "Encanador",
+    "primaryServiceSlug": "encanador",
+    "services": ["Encanador", "Marido de aluguel"],
+    "serviceNotes": ["Vazamentos e instalações hidráulicas"],
+    "neighborhoods": ["Toda Joinville"],
+    "allJoinville": true,
+    "yearsExperience": 9,
+    "evidence": [
+      { "id": "ev-r1", "label": "Telefone confirmado", "type": "automatic", "date": "2026-07-01" },
+      { "id": "ev-r2", "label": "Identidade verificada", "type": "reviewed", "date": "2026-07-09" }
+    ],
+    "portfolio": [
+      { "id": "port-r1", "title": "Nova bancada de cozinha", "service": "Encanador", "description": "Adequação dos pontos de água e esgoto.", "image": "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=900&q=86" }
+    ],
+    "recommendations": [
+      { "id": "rec-r1", "clientName": "Eduardo N.", "service": "Encanador", "period": "Junho de 2026", "text": "Encontrou o vazamento rápido e explicou a melhor forma de resolver.", "phoneConfirmed": true }
+    ],
+    "relationships": [],
+    "updatedAt": "2026-07-16",
+    "whatsapp": "5547999995555"
+  }
+]
