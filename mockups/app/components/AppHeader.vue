@@ -121,9 +121,9 @@ function isLinkActive(to: string) {
 .header__link:hover, .header__link--active { opacity: 1; }
 .header__link--active::after { content: ""; position: absolute; left: 0; right: 0; bottom: -12px; height: 2px; border-radius: 99px; background: var(--coral); }
 .header__actions { justify-self: end; display: flex; align-items: center; gap: 12px; }
-.role-switcher { position: relative; display: flex; align-items: center; gap: 6px; font-size: .7rem; font-weight: 700; opacity: .78; }
+.role-switcher { position: relative; display: flex; align-items: center; gap: 6px; font-size: .82rem; font-weight: 700; opacity: .78; }
 .role-switcher span { white-space: nowrap; }
-.role-switcher select { appearance: none; padding: 9px 28px 9px 10px; border: 1px solid currentColor; border-radius: 10px; background: transparent; color: inherit; font-size: .74rem; font-weight: 800; cursor: pointer; }
+.role-switcher select { appearance: none; padding: 9px 28px 9px 10px; border: 1px solid currentColor; border-radius: 10px; background: transparent; color: inherit; font-size: .82rem; font-weight: 800; cursor: pointer; }
 .role-switcher select option { color: #17352f; }
 .role-switcher svg { position: absolute; right: 8px; pointer-events: none; }
 .header__menu { display: none; place-items: center; width: 42px; height: 42px; border: 1px solid currentColor; border-radius: 12px; background: transparent; color: inherit; font-size: 1.2rem; }

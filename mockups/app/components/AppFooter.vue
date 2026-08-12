@@ -3,7 +3,7 @@
     <div class="footer__inner page-container">
       <div>
         <NuxtLink class="footer__brand" to="/">berufe<span>.</span></NuxtLink>
-        <p>Confiança local para cuidar da sua casa.</p>
+        <p>Confiança para cuidar da sua casa.</p>
       </div>
       <div class="footer__links">
         <NuxtLink to="/encontrar">Encontrar profissional</NuxtLink>
@@ -11,7 +11,7 @@
         <a href="#">Privacidade</a>
         <a href="#">Termos</a>
       </div>
-      <p class="footer__note">Protótipo interativo · Joinville, SC</p>
+      <p class="footer__note">Berufe · Joinville, SC</p>
     </div>
   </footer>
 </template>

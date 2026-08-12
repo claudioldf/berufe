@@ -64,7 +64,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
   gap: 8px;
   margin: 0 0 16px;
   color: #397a69;
-  font-size: 0.72rem;
+  font-size: .82rem;
   font-weight: 800;
   letter-spacing: 0.14em;
   text-transform: uppercase;

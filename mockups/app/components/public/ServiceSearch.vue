@@ -51,7 +51,7 @@ function submit() {
     <div class="service-search__field service-search__field--service">
       <UIcon name="i-lucide-search" />
       <label>
-        <span>Qual serviço você precisa?</span>
+        <span>O que você precisa?</span>
         <input
           v-model="query"
           type="search"
@@ -71,8 +71,8 @@ function submit() {
           @mousedown.prevent="chooseService(service)"
         >
           <span class="service-search__suggestion-icon"><UIcon :name="service.icon" /></span>
-          <span><strong>{{ service.name }}</strong><small>{{ service.description }}</small></span>
-          <UIcon name="i-lucide-arrow-up-right" />
+          <span class="service-search__suggestion-text"><strong>{{ service.name }}</strong><small>{{ service.description }}</small></span>
+          <UIcon name="i-lucide-arrow-up-right" class="service-search__suggestion-arrow" />
         </button>
       </div>
     </div>
@@ -101,10 +101,10 @@ function submit() {
 
 <style scoped>
 .service-search { position: relative; z-index: 10; display: grid; grid-template-columns: minmax(250px, 1.35fr) 1px minmax(190px, .8fr) auto; align-items: center; width: 100%; padding: 9px; border: 1px solid rgba(23,53,47,.14); border-radius: 18px; background: white; box-shadow: 0 20px 55px rgba(23,53,47,.13); }
-.service-search__field { position: relative; display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 11px; min-width: 0; padding: 4px 16px; }
+.service-search__field { position: relative; display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 6px; min-width: 0; padding: 4px 11px; }
 .service-search__field > svg { color: #397a69; font-size: 1.15rem; }
 .service-search__field label { display: grid; min-width: 0; }
-.service-search__field label > span { color: var(--ink-soft); font-size: .75rem; font-weight: 800; letter-spacing: .03em; text-transform: uppercase; }
+.service-search__field label > span { color: var(--ink-soft); font-size: .84rem; font-weight: 800; letter-spacing: 0; text-transform: uppercase; }
 .service-search input, .service-search select { width: 100%; min-width: 0; padding: 4px 0 0; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: .9rem; font-weight: 750; }
 .service-search input::placeholder { color: #8a9995; font-weight: 600; }
 .service-search select { appearance: none; cursor: pointer; }
@@ -115,10 +115,11 @@ function submit() {
 .service-search__suggestions button { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 11px; width: 100%; padding: 10px; border: 0; border-radius: 12px; background: transparent; color: var(--ink); text-align: left; cursor: pointer; }
 .service-search__suggestions button:hover { background: var(--paper); }
 .service-search__suggestion-icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 10px; background: var(--mint); color: #397a69; }
+.service-search__suggestion-text { min-width: 0; }
 .service-search__suggestions strong, .service-search__suggestions small { display: block; }
 .service-search__suggestions strong { font-size: .84rem; }
-.service-search__suggestions small { overflow: hidden; margin-top: 2px; color: var(--ink-soft); font-size: .78rem; text-overflow: ellipsis; white-space: nowrap; }
-.service-search__suggestions > button > svg { color: #789089; }
+.service-search__suggestions small { overflow: hidden; margin-top: 2px; color: var(--ink-soft); font-size: .86rem; text-overflow: ellipsis; white-space: nowrap; }
+.service-search__suggestion-arrow { flex-shrink: 0; color: #789089; }
 .service-search--compact { box-shadow: var(--shadow-sm); }
 
 @media (max-width: 760px) {

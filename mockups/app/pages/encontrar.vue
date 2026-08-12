@@ -87,7 +87,7 @@ function contact(professional: Professional) {
           <NuxtLink to="/">Início</NuxtLink><UIcon name="i-lucide-chevron-right" />
           <span>Encontrar profissional</span>
         </div>
-        <p class="eyebrow">Berufe Encontrar</p>
+        <p class="eyebrow">Profissionais</p>
         <h1>
           <template v-if="selectedService">
             {{ selectedService.name }} <em>em Joinville</em>
@@ -120,8 +120,8 @@ function contact(professional: Professional) {
           <div class="finder__explanation">
             <UIcon name="i-lucide-list-ordered" />
             <strong>Como ordenamos</strong>
-            <p>Primeiro, a correspondência exata e o atendimento ao bairro. Depois, evidências verificadas, portfólio e recomendações.</p>
-            <span>Nunca há posição paga.</span>
+            <p>Primeiro, consideramos a correspondência exata e o atendimento na região. Depois, avaliamos evidências verificadas, portfólio e recomendações.</p>
+            <span>Relevância e qualidade.</span>
           </div>
         </aside>
 
@@ -132,7 +132,7 @@ function contact(professional: Professional) {
               <span v-if="selectedNeighborhood?.code !== 'all'">Atendendo {{ selectedNeighborhood?.name }}</span>
               <span v-else>Em Joinville</span>
             </div>
-            <span class="results-heading__order"><UIcon name="i-lucide-info" /> Ordem transparente</span>
+            <span class="results-heading__order"><UIcon name="i-lucide-info" /> Ordem por relevância</span>
           </div>
 
           <div v-if="results.length" class="results-list">
@@ -162,7 +162,7 @@ function contact(professional: Professional) {
 
           <div class="finder__principle">
             <UIcon name="i-lucide-heart-handshake" />
-            <div><strong>Você escolhe com calma.</strong><p>A Berufe não vende seu contato nem envia seu pedido para vários profissionais.</p></div>
+            <div><strong>Você decide com quem falar.</strong><p>Na Berufe, seu contato só chega a quem você escolher.</p></div>
           </div>
         </div>
       </div>
@@ -172,16 +172,16 @@ function contact(professional: Professional) {
 
 <style scoped>
 .finder__masthead { padding: 40px 0 44px; background: #dff1eb; }
-.finder__breadcrumbs { display: flex; align-items: center; gap: 5px; margin-bottom: 30px; color: var(--ink-soft); font-size: .7rem; }.finder__breadcrumbs a { color: inherit; text-decoration: none; }.finder__breadcrumbs svg { font-size: .8rem; }
+.finder__breadcrumbs { display: flex; align-items: center; gap: 5px; margin-bottom: 30px; color: var(--ink-soft); font-size: .82rem; }.finder__breadcrumbs a { color: inherit; text-decoration: none; }.finder__breadcrumbs svg { font-size: .86rem; }
 .finder__masthead h1 { margin: 0; font-family: Georgia, serif; font-size: clamp(2.4rem, 5vw, 4.5rem); font-weight: 500; letter-spacing: -.045em; line-height: 1; }.finder__masthead h1 em { color: #397a69; font-weight: inherit; }.finder__masthead > .page-container > p:not(.eyebrow) { margin: 15px 0 26px; color: var(--ink-soft); }
 .finder__layout { display: grid; grid-template-columns: 230px 1fr; gap: 42px; }
-.finder__aside { position: sticky; top: 24px; align-self: start; }.finder__aside > p { margin: 0 0 14px; font-size: .72rem; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
-.filter-block { display: grid; gap: 5px; padding: 15px 0; border-top: 1px solid var(--line); }.filter-block strong { font-size: .72rem; }.filter-block span { color: var(--ink-soft); font-size: .76rem; }
-.finder__explanation { margin-top: 20px; padding: 18px; border-radius: 17px; background: #e7f3ef; }.finder__explanation > svg { margin-bottom: 11px; color: #397a69; font-size: 1.3rem; }.finder__explanation strong { display: block; font-size: .76rem; }.finder__explanation p { margin: 7px 0 10px; color: var(--ink-soft); font-size: .78rem; line-height: 1.5; }.finder__explanation span { color: #397a69; font-size: .78rem; font-weight: 800; }
-.results-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }.results-heading strong, .results-heading span { display: block; }.results-heading strong { font-family: Georgia, serif; font-size: 1.35rem; }.results-heading > div span { margin-top: 4px; color: var(--ink-soft); font-size: .72rem; }.results-heading__order { display: flex !important; align-items: center; gap: 5px; color: #397a69; font-size: .78rem; font-weight: 800; }
+.finder__aside { position: sticky; top: 24px; align-self: start; }.finder__aside > p { margin: 0 0 14px; font-size: .82rem; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+.filter-block { display: grid; gap: 5px; padding: 15px 0; border-top: 1px solid var(--line); }.filter-block strong { font-size: .82rem; }.filter-block span { color: var(--ink-soft); font-size: .84rem; }
+.finder__explanation { margin-top: 20px; padding: 18px; border-radius: 17px; background: #e7f3ef; }.finder__explanation > svg { margin-bottom: 11px; color: #397a69; font-size: 1.3rem; }.finder__explanation strong { display: block; font-size: .84rem; }.finder__explanation p { margin: 7px 0 10px; color: var(--ink-soft); font-size: .86rem; line-height: 1.5; }.finder__explanation span { color: #397a69; font-size: .86rem; font-weight: 800; }
+.results-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }.results-heading strong, .results-heading span { display: block; }.results-heading strong { font-family: Georgia, serif; font-size: 1.35rem; }.results-heading > div span { margin-top: 4px; color: var(--ink-soft); font-size: .82rem; }.results-heading__order { display: flex !important; align-items: center; gap: 5px; color: #397a69; font-size: .86rem; font-weight: 800; }
 .results-list { display: grid; gap: 14px; }.finder__results { min-width: 0; }
-.empty-results { padding: 56px 30px; text-align: center; }.empty-results__icon { display: grid; place-items: center; width: 58px; height: 58px; margin: 0 auto; border-radius: 18px; background: var(--mint); color: #397a69; font-size: 1.5rem; }.empty-results h2 { margin: 18px 0 7px; font-family: Georgia, serif; font-size: 2rem; }.empty-results p { max-width: 520px; margin: 0 auto; color: var(--ink-soft); font-size: .83rem; line-height: 1.6; }.empty-results__suggestions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 22px; }.empty-results__suggestions a { display: inline-flex; align-items: center; gap: 7px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 11px; color: var(--ink); font-size: .75rem; font-weight: 800; text-decoration: none; }
-.finder__principle { display: flex; align-items: center; gap: 13px; margin-top: 18px; padding: 17px; border: 1px dashed #aacbbf; border-radius: 16px; color: #397a69; }.finder__principle > svg { font-size: 1.5rem; }.finder__principle strong { display: block; font-size: .78rem; }.finder__principle p { margin: 3px 0 0; color: var(--ink-soft); font-size: .7rem; }
+.empty-results { padding: 56px 30px; text-align: center; }.empty-results__icon { display: grid; place-items: center; width: 58px; height: 58px; margin: 0 auto; border-radius: 18px; background: var(--mint); color: #397a69; font-size: 1.5rem; }.empty-results h2 { margin: 18px 0 7px; font-family: Georgia, serif; font-size: 2rem; }.empty-results p { max-width: 520px; margin: 0 auto; color: var(--ink-soft); font-size: .83rem; line-height: 1.6; }.empty-results__suggestions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 22px; }.empty-results__suggestions a { display: inline-flex; align-items: center; gap: 7px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 11px; color: var(--ink); font-size: .84rem; font-weight: 800; text-decoration: none; }
+.finder__principle { display: flex; align-items: center; gap: 13px; margin-top: 18px; padding: 17px; border: 1px dashed #aacbbf; border-radius: 16px; color: #397a69; }.finder__principle > svg { font-size: 1.5rem; }.finder__principle strong { display: block; font-size: .86rem; }.finder__principle p { margin: 3px 0 0; color: var(--ink-soft); font-size: .82rem; }
 @media (max-width: 800px) { .finder__layout { grid-template-columns: 1fr; }.finder__aside { display: none; }.finder__content { padding-top: 42px; } }
 @media (max-width: 520px) { .results-heading__order { display: none !important; } }
 </style>
