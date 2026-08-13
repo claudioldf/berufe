@@ -69,28 +69,28 @@ function percent(value: number, total: number) {
 .report-card__header { display: flex; align-items: start; justify-content: space-between; gap: 14px; }
 .report-card__header h2, .report-card__header p, .report-card__header span { margin: 0; }
 .report-card__header h2 { margin-top: 2px; font-family: Georgia, serif; font-size: 1.35rem; font-weight: 500; }
-.report-card__header span { display: block; margin-top: 4px; color: var(--ink-soft); font-size: .75rem; }
-.section-kicker { color: #397a69; font-size: .68rem; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
-.goal-chip { display: flex; align-items: center; gap: 5px; padding: 7px 9px; border-radius: 9px; background: #e8f4f0; color: #397a69; font-size: .72rem; font-weight: 850; white-space: nowrap; }
+.report-card__header span { display: block; margin-top: 4px; color: var(--ink-soft); font-size: var(--font-size-min); }
+.section-kicker { color: #397a69; font-size: var(--font-size-min); font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+.goal-chip { display: flex; align-items: center; gap: 5px; padding: 7px 9px; border-radius: 9px; background: #e8f4f0; color: #397a69; font-size: var(--font-size-min); font-weight: 850; white-space: nowrap; }
 .funnel { display: grid; gap: 12px; margin-top: 23px; }
 .funnel__row { display: grid; grid-template-columns: 128px minmax(80px, 1fr) 28px 38px; align-items: center; gap: 8px; }
 .funnel__label span, .funnel__label small { display: block; }
-.funnel__label span { font-size: .76rem; font-weight: 750; }
-.funnel__label small { overflow: hidden; margin-top: 2px; color: var(--ink-soft); font-size: .64rem; text-overflow: ellipsis; white-space: nowrap; }
+.funnel__label span { font-size: var(--font-size-min); font-weight: 750; }
+.funnel__label small { overflow: hidden; margin-top: 2px; color: var(--ink-soft); font-size: var(--font-size-min); text-overflow: ellipsis; white-space: nowrap; }
 .funnel__track { height: 9px; overflow: hidden; border-radius: 99px; background: #e9e8e3; }
 .funnel__track i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #397a69, #74aa9c); }
-.funnel__row strong { font-size: .76rem; text-align: right; }
-.funnel__row em { color: var(--ink-soft); font-size: .64rem; font-style: normal; text-align: right; }
+.funnel__row strong { font-size: var(--font-size-min); text-align: right; }
+.funnel__row em { color: var(--ink-soft); font-size: var(--font-size-min); font-style: normal; text-align: right; }
 .activation-list { display: grid; gap: 15px; margin-top: 22px; }
 .activation-item { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: start; }
 .activation-item__icon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: #f0eee8; color: #397a69; }
 .activation-item__title { display: flex; justify-content: space-between; gap: 10px; }
-.activation-item__title strong, .activation-item__title b { font-size: .76rem; }
+.activation-item__title strong, .activation-item__title b { font-size: var(--font-size-min); }
 .activation-item__track { height: 6px; margin-top: 7px; overflow: hidden; border-radius: 99px; background: #e9e8e3; }
 .activation-item__track i { display: block; height: 100%; border-radius: inherit; background: #397a69; }
-.activation-item small { display: block; margin-top: 4px; color: var(--ink-soft); font-size: .65rem; }
+.activation-item small { display: block; margin-top: 4px; color: var(--ink-soft); font-size: var(--font-size-min); }
 .activation-note { display: grid; grid-template-columns: auto 1fr; gap: 8px; margin-top: 18px; padding: 11px; border-radius: 11px; background: #fff7de; color: #85661a; }
-.activation-note p { margin: 0; color: var(--ink-soft); font-size: .68rem; line-height: 1.45; }.activation-note strong { color: #85661a; }
+.activation-note p { margin: 0; color: var(--ink-soft); font-size: var(--font-size-min); line-height: 1.45; }.activation-note strong { color: #85661a; }
 @media (max-width: 850px) { .supply-grid { grid-template-columns: 1fr; } }
 @media (max-width: 520px) { .funnel__row { grid-template-columns: 105px minmax(55px, 1fr) 24px; }.funnel__row em { display: none; }.goal-chip { display: none; } }
 </style>

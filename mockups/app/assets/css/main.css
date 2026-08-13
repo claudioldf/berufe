@@ -32,6 +32,7 @@
   --mint-strong: #b6dfcf;
   --coral: #f8755d;
   --line: rgba(23, 53, 47, 0.13);
+  --font-size-min: 0.75rem;
   --shadow-sm: 0 12px 32px rgba(30, 50, 44, 0.08);
   --shadow-lg: 0 28px 70px rgba(30, 50, 44, 0.15);
 }
@@ -47,6 +48,8 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
+
+small { font-size: max(var(--font-size-min), 0.833em); }
 
 button, input, textarea, select { font: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; }

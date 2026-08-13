@@ -79,7 +79,7 @@ defineSlots<{
 .legal-document__heading > p:last-child { max-width: 680px; margin: 25px 0 0; color: rgba(255,255,255,.67); font-size: 1rem; line-height: 1.75; }
 .legal-document__metadata { display: grid; min-width: 210px; margin: 0; border-top: 1px solid rgba(255,255,255,.18); }
 .legal-document__metadata > div { padding: 13px 0; border-bottom: 1px solid rgba(255,255,255,.18); }
-.legal-document__metadata dt { color: rgba(255,255,255,.5); font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.legal-document__metadata dt { color: rgba(255,255,255,.5); font-size: var(--font-size-min); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .legal-document__metadata dd { margin: 5px 0 0; font-size: .86rem; font-weight: 800; }
 .legal-document__draft { border-bottom: 1px solid #d5a99f; background: #fff0ec; color: #773d32; }
 .legal-document__draft-inner { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 11px; padding-block: 14px; }
@@ -88,11 +88,11 @@ defineSlots<{
 .legal-document__layout { display: grid; grid-template-columns: 250px minmax(0, 760px); justify-content: center; gap: 78px; padding-block: 68px 100px; }
 .legal-document__aside { min-width: 0; }
 .legal-document__aside nav { position: sticky; top: 24px; }
-.legal-document__aside nav > p { margin: 0 0 14px; color: #397a69; font-size: .76rem; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
+.legal-document__aside nav > p { margin: 0 0 14px; color: #397a69; font-size: var(--font-size-min); font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
 .legal-document__aside ol { display: grid; gap: 0; margin: 0; padding: 0; border-top: 1px solid var(--line); list-style: none; counter-reset: legal-section; }
 .legal-document__aside li { counter-increment: legal-section; border-bottom: 1px solid var(--line); }
-.legal-document__aside a { display: grid; grid-template-columns: 24px 1fr; gap: 7px; padding: 10px 0; color: var(--ink-soft); font-size: .78rem; font-weight: 720; line-height: 1.35; text-decoration: none; }
-.legal-document__aside a::before { content: counter(legal-section, decimal-leading-zero); color: #98a9a4; font-family: Georgia, serif; font-size: .7rem; }
+.legal-document__aside a { display: grid; grid-template-columns: 24px 1fr; gap: 7px; padding: 10px 0; color: var(--ink-soft); font-size: var(--font-size-min); font-weight: 720; line-height: 1.35; text-decoration: none; }
+.legal-document__aside a::before { content: counter(legal-section, decimal-leading-zero); color: #98a9a4; font-family: Georgia, serif; font-size: var(--font-size-min); }
 .legal-document__aside a:hover { color: #397a69; }
 .legal-document__content { min-width: 0; }
 .legal-document__content :deep(.legal-lead) { margin: 0 0 48px; padding: 24px 26px; border: 1px solid var(--line); border-radius: 18px; background: #f2f7f4; color: var(--ink); font-size: .94rem; line-height: 1.75; }
@@ -111,8 +111,8 @@ defineSlots<{
 .legal-document__content :deep(.legal-note p) { margin: 0; }
 .legal-document__content :deep(.legal-table-wrap) { overflow-x: auto; margin: 18px 0 22px; border: 1px solid var(--line); border-radius: 14px; }
 .legal-document__content :deep(.legal-table) { width: 100%; min-width: 620px; border-collapse: collapse; background: white; text-align: left; }
-.legal-document__content :deep(.legal-table th) { padding: 12px 14px; background: #e7f2ee; color: var(--ink); font-size: .76rem; letter-spacing: .03em; }
-.legal-document__content :deep(.legal-table td) { padding: 13px 14px; border-top: 1px solid var(--line); color: var(--ink-soft); font-size: .8rem; line-height: 1.55; vertical-align: top; }
+.legal-document__content :deep(.legal-table th) { padding: 12px 14px; background: #e7f2ee; color: var(--ink); font-size: var(--font-size-min); letter-spacing: .03em; }
+.legal-document__content :deep(.legal-table td) { padding: 13px 14px; border-top: 1px solid var(--line); color: var(--ink-soft); font-size: var(--font-size-min); line-height: 1.55; vertical-align: top; }
 
 @media (max-width: 920px) {
   .legal-document__hero-inner { grid-template-columns: 1fr; gap: 35px; }
