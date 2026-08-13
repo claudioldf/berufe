@@ -2,7 +2,7 @@
 
 ## 1. Purpose and source of truth
 
-This document specifies the administrative growth report represented by `mockups/app/components/admin/reports`. It explains what each card or widget means, which MVP records it reads, the required associations and filters, and the exact calculation to return from the Rails API.
+This document specifies the administrative growth report represented by `./apps/web/app/components/admin/reports`. It explains what each card or widget means, which MVP records it reads, the required associations and filters, and the exact calculation to return from the Rails API.
 
 It is derived from:
 
