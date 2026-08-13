@@ -1,0 +1,20 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+@theme static {
+  --font-sans: "Manrope", "Avenir Next", Avenir, sans-serif;
+  --color-forest-50: #f1f7f5;
+  --color-forest-100: #dcece7;
+  --color-forest-200: #b9d9cf;
+  --color-forest-300: #8bc0b1;
+  --color-forest-400: #5b9f8e;
+  --color-forest-500: #3f8372;
+  --color-forest-600: #30695c;
+  --color-forest-700: #28544b;
+  --color-forest-800: #22443d;
+  --color-forest-900: #1d3934;
+  --color-forest-950: #0e211e;
+  --color-coral-400: #ff8b75;
+  --color-coral-500: #f8755d;
+  --color-coral-600: #df5e48;
+}

@@ -31,7 +31,7 @@ const emit = defineEmits<{
   </Transition>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .toast {
   position: fixed;
   right: 24px;
@@ -43,37 +43,37 @@ const emit = defineEmits<{
   gap: 12px;
   width: min(380px, calc(100vw - 32px));
   padding: 14px 16px;
-  border: 1px solid rgba(255, 255, 255, .14);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 16px;
   background: #183c35;
   color: white;
   text-align: left;
   box-shadow: var(--shadow-lg);
-}
 
-.toast__icon {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-  background: #d8f0e7;
-  color: #183c35;
-}
+  &__icon {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #d8f0e7;
+    color: #183c35;
+  }
 
-.toast strong,
-.toast small {
-  display: block;
-}
+  & strong,
+  & small {
+    display: block;
+  }
 
-.toast small {
-  margin-top: 2px;
-  color: rgba(255, 255, 255, .68);
+  & small {
+    margin-top: 2px;
+    color: rgba(255, 255, 255, 0.68);
+  }
 }
 
 .toast-enter-active,
 .toast-leave-active {
-  transition: .2s ease;
+  transition: 0.2s ease;
 }
 
 .toast-enter-from,

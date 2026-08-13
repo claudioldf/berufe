@@ -27,7 +27,90 @@ function printQuote() {
   </div>
 </template>
 
-<style scoped>
-.shared-quote-page { min-height: 100vh; padding-bottom: 70px; background: #eeeae1; }.shared-quote-page__header { display: flex; justify-content: space-between; align-items: center; min-height: 70px; }.shared-quote-page__header > div { display: flex; align-items: center; gap: 5px; color: var(--ink-soft); font-size: .84rem; font-weight: 750; }.shared-quote-page__content { max-width: 760px; }.shared-quote-page__heading { display: flex; justify-content: space-between; align-items: end; gap: 20px; margin: 42px 0 24px; }.shared-quote-page__heading p { margin: 0 0 6px; color: #397a69; font-size: .86rem; font-weight: 850; }.shared-quote-page__heading h1 { margin: 0; font-family: Georgia, serif; font-size: 2.5rem; font-weight: 500; letter-spacing: -.04em; }.shared-quote-page__heading span { display: block; max-width: 500px; margin-top: 7px; color: var(--ink-soft); font-size: .86rem; line-height: 1.5; }.shared-quote-page__notice { display: flex; align-items: flex-start; justify-content: center; gap: 5px; margin: 16px 0 0; color: var(--ink-soft); font-size: .84rem; text-align: center; }
-@media (max-width: 600px) { .shared-quote-page__heading { display: grid; }.shared-quote-page__heading h1 { font-size: 2rem; } } @media print { .shared-quote-page__header, .shared-quote-page__heading, .shared-quote-page__notice { display: none; }.shared-quote-page { padding: 0; background: white; }.shared-quote-page__content { width: 100%; max-width: none; } }
+<style scoped lang="scss">
+.shared-quote-page {
+  min-height: 100vh;
+  padding-bottom: 70px;
+  background: #eeeae1;
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 70px;
+  }
+  &__header > div {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--ink-soft);
+    font-size: 0.84rem;
+    font-weight: 750;
+  }
+  &__content {
+    max-width: 760px;
+  }
+  &__heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    gap: 20px;
+    margin: 42px 0 24px;
+  }
+  &__heading p {
+    margin: 0 0 6px;
+    color: #397a69;
+    font-size: 0.86rem;
+    font-weight: 850;
+  }
+  &__heading h1 {
+    margin: 0;
+    font-family: Georgia, serif;
+    font-size: 2.5rem;
+    font-weight: 500;
+    letter-spacing: -0.04em;
+  }
+  &__heading span {
+    display: block;
+    max-width: 500px;
+    margin-top: 7px;
+    color: var(--ink-soft);
+    font-size: 0.86rem;
+    line-height: 1.5;
+  }
+  &__notice {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 5px;
+    margin: 16px 0 0;
+    color: var(--ink-soft);
+    font-size: 0.84rem;
+    text-align: center;
+  }
+}
+@media (max-width: 600px) {
+  .shared-quote-page {
+    &__heading {
+      display: grid;
+    }
+    &__heading h1 {
+      font-size: 2rem;
+    }
+  }
+}
+@media print {
+  .shared-quote-page {
+    &__header,
+    &__heading,
+    &__notice {
+      display: none;
+    }
+    padding: 0;
+    background: white;
+    &__content {
+      width: 100%;
+      max-width: none;
+    }
+  }
+}
 </style>

@@ -18,11 +18,11 @@ defineSlots<{
   </component>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .surface-card {
   border: 1px solid var(--line);
   border-radius: 22px;
-  background: rgba(255, 255, 255, .76);
+  background: rgba(255, 255, 255, 0.76);
   box-shadow: var(--shadow-sm);
 }
 </style>

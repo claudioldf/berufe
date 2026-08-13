@@ -108,33 +108,147 @@ function isLinkActive(to: string) {
   </header>
 </template>
 
-<style scoped>
-.header { position: relative; z-index: 40; border-bottom: 1px solid var(--line); background: rgba(247,245,239,.9); backdrop-filter: blur(18px); }
-.header--workspace { background: #17352f; color: white; border-color: rgba(255,255,255,.12); }
-.header__inner { min-height: 76px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 24px; }
-.header__nav { display: flex; align-items: center; gap: 28px; }
-.header__link { position: relative; color: inherit; font-size: .84rem; font-weight: 700; text-decoration: none; opacity: .72; transition: opacity .15s ease; }
-.header__link:hover, .header__link--active { opacity: 1; }
-.header__link--active::after { content: ""; position: absolute; left: 0; right: 0; bottom: -12px; height: 2px; border-radius: 99px; background: var(--coral); }
-.header__actions { justify-self: end; display: flex; align-items: center; gap: 12px; }
-.role-switcher { position: relative; display: flex; align-items: center; gap: 6px; font-size: .82rem; font-weight: 700; opacity: .78; }
-.role-switcher span { white-space: nowrap; }
-.role-switcher select { appearance: none; padding: 9px 28px 9px 10px; border: 1px solid currentColor; border-radius: 10px; background: transparent; color: inherit; font-size: .82rem; font-weight: 800; cursor: pointer; }
-.role-switcher select option { color: #17352f; }
-.role-switcher svg { position: absolute; right: 8px; pointer-events: none; }
-.header__menu { display: none; place-items: center; width: 42px; height: 42px; border: 1px solid currentColor; border-radius: 12px; background: transparent; color: inherit; font-size: 1.2rem; }
-.header__mobile-nav { display: none; }
+<style scoped lang="scss">
+.header {
+  position: relative;
+  z-index: 40;
+  border-bottom: 1px solid var(--line);
+  background: rgba(247, 245, 239, 0.9);
+  backdrop-filter: blur(18px);
+  &--workspace {
+    background: #17352f;
+    color: white;
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+  &__inner {
+    min-height: 76px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 24px;
+  }
+  &__nav {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+  }
+  &__link {
+    position: relative;
+    color: inherit;
+    font-size: 0.84rem;
+    font-weight: 700;
+    text-decoration: none;
+    opacity: 0.72;
+    transition: opacity 0.15s ease;
+  }
+  &__link:hover,
+  &__link--active {
+    opacity: 1;
+  }
+  &__link--active::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -12px;
+    height: 2px;
+    border-radius: 99px;
+    background: var(--coral);
+  }
+  &__actions {
+    justify-self: end;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+}
+.role-switcher {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  opacity: 0.78;
+}
+.role-switcher span {
+  white-space: nowrap;
+}
+.role-switcher select {
+  appearance: none;
+  padding: 9px 28px 9px 10px;
+  border: 1px solid currentColor;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.role-switcher select option {
+  color: #17352f;
+}
+.role-switcher svg {
+  position: absolute;
+  right: 8px;
+  pointer-events: none;
+}
+.header {
+  &__menu {
+    display: none;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border: 1px solid currentColor;
+    border-radius: 12px;
+    background: transparent;
+    color: inherit;
+    font-size: 1.2rem;
+  }
+  &__mobile-nav {
+    display: none;
+  }
+}
 
 @media (max-width: 900px) {
-  .header__inner { grid-template-columns: 1fr auto; }
-  .header__nav, .header__login, .role-switcher span { display: none; }
-  .header__menu { display: grid; }
-  .header__mobile-nav { display: grid; padding: 4px 20px 20px; border-top: 1px solid var(--line); background: inherit; }
-  .header__mobile-nav a { padding: 14px 4px; border-bottom: 1px solid var(--line); color: inherit; font-weight: 700; text-decoration: none; }
+  .header {
+    &__inner {
+      grid-template-columns: 1fr auto;
+    }
+    &__nav,
+    &__login {
+      display: none;
+    }
+    &__menu {
+      display: grid;
+    }
+    &__mobile-nav {
+      display: grid;
+      padding: 4px 20px 20px;
+      border-top: 1px solid var(--line);
+      background: inherit;
+    }
+    &__mobile-nav a {
+      padding: 14px 4px;
+      border-bottom: 1px solid var(--line);
+      color: inherit;
+      font-weight: 700;
+      text-decoration: none;
+    }
+  }
+  .role-switcher span {
+    display: none;
+  }
 }
 
 @media (max-width: 520px) {
-  .header__inner { min-height: 68px; }
-  .role-switcher { display: none; }
+  .header {
+    &__inner {
+      min-height: 68px;
+    }
+  }
+  .role-switcher {
+    display: none;
+  }
 }
 </style>

@@ -20,8 +20,10 @@ These components contain presentation rules that are shared by more than one pag
 
 ## Boundaries
 
-- Keep global CSS in `assets/css/main.css`, using the existing Tailwind layers: semantic tokens and Nuxt UI overrides in `theme`, document defaults and reduced-motion behavior in `base`, and true accessibility helpers in `utilities`.
-- Keep every component's visual rules in its scoped `<style>` block.
+- Keep the Tailwind v4 and Nuxt UI imports plus `@theme` configuration in `assets/css/tailwind.css`; this file is a framework entry point and intentionally remains plain CSS.
+- Keep authored global styles in `assets/scss/main.scss`, using the existing Tailwind layers: semantic tokens and Nuxt UI overrides in `theme`, document defaults and reduced-motion behavior in `base`, and true accessibility helpers in `utilities`.
+- Keep every component's visual rules in its scoped `<style lang="scss">` block.
+- Nest BEM elements and modifiers beneath their owning block with `&__element` and `&--modifier`; avoid deeper structural nesting that couples styles to markup.
 - Do not wrap SFC styles in cascade layers or replace Vue's scoped styles with `@scope`; reserve native scoping for a future content-boundary use case that cannot be expressed cleanly with component ownership.
 - Use props for small, orthogonal visual contracts and slots for caller-owned content.
 - Do not add feature data, route behavior, or unrelated modes to a design-system component.

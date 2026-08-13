@@ -33,7 +33,7 @@ export default defineNuxtConfig({
       ],
     },
   },
-  css: ['~/assets/css/main.css'],
+  css: ['~/assets/css/tailwind.css', '~/assets/scss/main.scss'],
   typescript: {
     strict: true,
     typeCheck: true,

@@ -33,18 +33,92 @@ defineProps<{
   </UPopover>
 </template>
 
-<style scoped>
-.metric-help__trigger { display: grid; flex: 0 0 auto; place-items: center; width: 28px; height: 28px; padding: 0; border: 1px solid rgba(23,53,47,.16); border-radius: 9px; background: rgba(255,255,255,.72); color: #48635d; cursor: help; transition: border-color .16s ease, background .16s ease, color .16s ease, transform .16s ease; }
-.metric-help__trigger:hover { border-color: rgba(23,53,47,.32); background: white; color: #17352f; transform: translateY(-1px); }
-.metric-help__trigger:focus-visible { outline: 3px solid rgba(248,117,93,.32); outline-offset: 2px; }
-.metric-help__content { width: min(340px, calc(100vw - 32px)); padding: 16px; color: #17352f; }
-.metric-help__content header { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 9px; padding-bottom: 12px; border-bottom: 1px solid rgba(23,53,47,.12); }
-.metric-help__content header > span { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 10px; background: #e8f4f0; color: #2f6b5f; }
-.metric-help__content header small, .metric-help__content header strong { display: block; }
-.metric-help__content header small { color: #59706a; font-size: var(--font-size-min); font-weight: 750; }
-.metric-help__content header strong { margin-top: 1px; font-size: .86rem; }
-.metric-help__content dl { display: grid; gap: 12px; margin: 13px 0 0; }
-.metric-help__content dl > div { display: grid; gap: 3px; }
-.metric-help__content dt { color: #2f6b5f; font-size: var(--font-size-min); font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
-.metric-help__content dd { margin: 0; color: #48635d; font-size: var(--font-size-min); line-height: 1.55; }
+<style scoped lang="scss">
+.metric-help {
+  &__trigger {
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid rgba(23, 53, 47, 0.16);
+    border-radius: 9px;
+    background: rgba(255, 255, 255, 0.72);
+    color: #48635d;
+    cursor: help;
+    transition:
+      border-color 0.16s ease,
+      background 0.16s ease,
+      color 0.16s ease,
+      transform 0.16s ease;
+  }
+  &__trigger:hover {
+    border-color: rgba(23, 53, 47, 0.32);
+    background: white;
+    color: #17352f;
+    transform: translateY(-1px);
+  }
+  &__trigger:focus-visible {
+    outline: 3px solid rgba(248, 117, 93, 0.32);
+    outline-offset: 2px;
+  }
+  &__content {
+    width: min(340px, calc(100vw - 32px));
+    padding: 16px;
+    color: #17352f;
+  }
+  &__content header {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 9px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(23, 53, 47, 0.12);
+  }
+  &__content header > span {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #e8f4f0;
+    color: #2f6b5f;
+  }
+  &__content header small,
+  &__content header strong {
+    display: block;
+  }
+  &__content header small {
+    color: #59706a;
+    font-size: var(--font-size-min);
+    font-weight: 750;
+  }
+  &__content header strong {
+    margin-top: 1px;
+    font-size: 0.86rem;
+  }
+  &__content dl {
+    display: grid;
+    gap: 12px;
+    margin: 13px 0 0;
+  }
+  &__content dl > div {
+    display: grid;
+    gap: 3px;
+  }
+  &__content dt {
+    color: #2f6b5f;
+    font-size: var(--font-size-min);
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  &__content dd {
+    margin: 0;
+    color: #48635d;
+    font-size: var(--font-size-min);
+    line-height: 1.55;
+  }
+}
 </style>

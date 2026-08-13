@@ -79,15 +79,242 @@ function retentionWidth(value: number | null, size: number) {
   </section>
 </template>
 
-<style scoped>
-.engagement { display: grid; gap: 13px; }
-.section-heading { display: flex; align-items: end; justify-content: space-between; gap: 20px; }.section-heading h2, .section-heading p { margin: 0; }.section-heading h2 { margin-top: 2px; font-family: Georgia, serif; font-size: 1.55rem; font-weight: 500; }.section-heading > p { max-width: 420px; color: var(--ink-soft); font-size: var(--font-size-min); line-height: 1.5; text-align: right; }
-.engagement__grid { display: grid; grid-template-columns: .88fr 1.12fr; gap: 12px; }.activity-card, .cohort-card { padding: 20px; }.activity-card header, .cohort-card header { display: flex; justify-content: space-between; gap: 12px; }.activity-card h3, .activity-card p, .cohort-card h3, .cohort-card p { margin: 0; }.activity-card h3, .cohort-card h3 { font-family: Georgia, serif; font-size: 1.15rem; font-weight: 500; }.activity-card p, .cohort-card p { margin-top: 3px; color: var(--ink-soft); font-size: var(--font-size-min); }.activity-card header > span { padding: 7px 9px; border-radius: 10px; background: #e8f4f0; color: #397a69; font-size: var(--font-size-min); text-align: center; }.activity-card header > span strong { display: block; font-family: Georgia, serif; font-size: 1.1rem; }
-.action-list { display: grid; gap: 13px; margin-top: 22px; }.action-list > div { display: grid; grid-template-columns: 115px 1fr 25px; align-items: center; gap: 8px; }.action-list span, .action-list strong { font-size: var(--font-size-min); }.action-list i { height: 7px; overflow: hidden; border-radius: 99px; background: #e9e8e3; }.action-list b { display: block; height: 100%; border-radius: inherit; background: #705e93; }.action-list strong { text-align: right; }
-.frequency-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 20px; }.frequency-strip > div { padding: 9px 5px; border-radius: 9px; background: #f7f5f0; text-align: center; }.frequency-strip strong, .frequency-strip small { display: block; }.frequency-strip strong { font-family: Georgia, serif; font-size: 1.05rem; }.frequency-strip small { margin-top: 2px; color: var(--ink-soft); font-size: var(--font-size-min); }
-.cohort-card header > span { align-self: start; color: var(--ink-soft); font-size: var(--font-size-min); }.cohort-table { margin-top: 18px; }.cohort-table__head, .cohort-table__row { display: grid; grid-template-columns: 1.25fr .45fr .9fr .9fr; align-items: center; gap: 8px; }.cohort-table__head { padding: 0 8px 8px; color: var(--ink-soft); font-size: var(--font-size-min); font-weight: 850; text-transform: uppercase; }.cohort-table__row { min-height: 45px; padding: 8px; border-top: 1px solid var(--line); font-size: var(--font-size-min); }.cohort-table__row > strong { font-size: var(--font-size-min); }.cohort-table__row > div { display: grid; grid-template-columns: 1fr 25px; align-items: center; gap: 5px; }.cohort-table__row i { height: 5px; overflow: hidden; border-radius: 99px; background: #e9e8e3; }.cohort-table__row b { display: block; height: 100%; border-radius: inherit; background: #397a69; }.cohort-table__row em { color: var(--ink-soft); font-size: var(--font-size-min); font-style: normal; text-align: right; }
-.activity-card header > span { color: #2f6b5f; }
-.widget-actions { display: flex; align-items: start; justify-content: flex-end; gap: 7px; }.returning-chip { padding: 7px 9px; border-radius: 10px; background: #e8f4f0; color: #2f6b5f; font-size: var(--font-size-min); text-align: center; }.returning-chip strong { display: block; font-family: Georgia, serif; font-size: 1.1rem; }.sample-note { align-self: center; color: var(--ink-soft); font-size: var(--font-size-min); }
-@media (max-width: 880px) { .engagement__grid { grid-template-columns: 1fr; } }
-@media (max-width: 620px) { .section-heading { align-items: start; flex-direction: column; }.section-heading > p { text-align: left; }.cohort-table__head, .cohort-table__row { grid-template-columns: 1.2fr .4fr .8fr .8fr; }.frequency-strip { grid-template-columns: 1fr 1fr; } }
+<style scoped lang="scss">
+.engagement {
+  display: grid;
+  gap: 13px;
+}
+.section-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 20px;
+}
+.section-heading h2,
+.section-heading p {
+  margin: 0;
+}
+.section-heading h2 {
+  margin-top: 2px;
+  font-family: Georgia, serif;
+  font-size: 1.55rem;
+  font-weight: 500;
+}
+.section-heading > p {
+  max-width: 420px;
+  color: var(--ink-soft);
+  font-size: var(--font-size-min);
+  line-height: 1.5;
+  text-align: right;
+}
+.engagement {
+  &__grid {
+    display: grid;
+    grid-template-columns: 0.88fr 1.12fr;
+    gap: 12px;
+  }
+}
+.activity-card,
+.cohort-card {
+  padding: 20px;
+}
+.activity-card header,
+.cohort-card header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.activity-card h3,
+.activity-card p,
+.cohort-card h3,
+.cohort-card p {
+  margin: 0;
+}
+.activity-card h3,
+.cohort-card h3 {
+  font-family: Georgia, serif;
+  font-size: 1.15rem;
+  font-weight: 500;
+}
+.activity-card p,
+.cohort-card p {
+  margin-top: 3px;
+  color: var(--ink-soft);
+  font-size: var(--font-size-min);
+}
+.activity-card header > span {
+  padding: 7px 9px;
+  border-radius: 10px;
+  background: #e8f4f0;
+  color: #397a69;
+  font-size: var(--font-size-min);
+  text-align: center;
+}
+.activity-card header > span strong {
+  display: block;
+  font-family: Georgia, serif;
+  font-size: 1.1rem;
+}
+.action-list {
+  display: grid;
+  gap: 13px;
+  margin-top: 22px;
+}
+.action-list > div {
+  display: grid;
+  grid-template-columns: 115px 1fr 25px;
+  align-items: center;
+  gap: 8px;
+}
+.action-list span,
+.action-list strong {
+  font-size: var(--font-size-min);
+}
+.action-list i {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: #e9e8e3;
+}
+.action-list b {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #705e93;
+}
+.action-list strong {
+  text-align: right;
+}
+.frequency-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-top: 20px;
+}
+.frequency-strip > div {
+  padding: 9px 5px;
+  border-radius: 9px;
+  background: #f7f5f0;
+  text-align: center;
+}
+.frequency-strip strong,
+.frequency-strip small {
+  display: block;
+}
+.frequency-strip strong {
+  font-family: Georgia, serif;
+  font-size: 1.05rem;
+}
+.frequency-strip small {
+  margin-top: 2px;
+  color: var(--ink-soft);
+  font-size: var(--font-size-min);
+}
+.cohort-card header > span {
+  align-self: start;
+  color: var(--ink-soft);
+  font-size: var(--font-size-min);
+}
+.cohort-table {
+  margin-top: 18px;
+  &__head,
+  &__row {
+    display: grid;
+    grid-template-columns: 1.25fr 0.45fr 0.9fr 0.9fr;
+    align-items: center;
+    gap: 8px;
+  }
+  &__head {
+    padding: 0 8px 8px;
+    color: var(--ink-soft);
+    font-size: var(--font-size-min);
+    font-weight: 850;
+    text-transform: uppercase;
+  }
+  &__row {
+    min-height: 45px;
+    padding: 8px;
+    border-top: 1px solid var(--line);
+    font-size: var(--font-size-min);
+  }
+  &__row > strong {
+    font-size: var(--font-size-min);
+  }
+  &__row > div {
+    display: grid;
+    grid-template-columns: 1fr 25px;
+    align-items: center;
+    gap: 5px;
+  }
+  &__row i {
+    height: 5px;
+    overflow: hidden;
+    border-radius: 99px;
+    background: #e9e8e3;
+  }
+  &__row b {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: #397a69;
+  }
+  &__row em {
+    color: var(--ink-soft);
+    font-size: var(--font-size-min);
+    font-style: normal;
+    text-align: right;
+  }
+}
+.activity-card header > span {
+  color: #2f6b5f;
+}
+.widget-actions {
+  display: flex;
+  align-items: start;
+  justify-content: flex-end;
+  gap: 7px;
+}
+.returning-chip {
+  padding: 7px 9px;
+  border-radius: 10px;
+  background: #e8f4f0;
+  color: #2f6b5f;
+  font-size: var(--font-size-min);
+  text-align: center;
+}
+.returning-chip strong {
+  display: block;
+  font-family: Georgia, serif;
+  font-size: 1.1rem;
+}
+.sample-note {
+  align-self: center;
+  color: var(--ink-soft);
+  font-size: var(--font-size-min);
+}
+@media (max-width: 880px) {
+  .engagement {
+    &__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+@media (max-width: 620px) {
+  .section-heading {
+    align-items: start;
+    flex-direction: column;
+  }
+  .section-heading > p {
+    text-align: left;
+  }
+  .cohort-table {
+    &__head,
+    &__row {
+      grid-template-columns: 1.2fr 0.4fr 0.8fr 0.8fr;
+    }
+  }
+  .frequency-strip {
+    grid-template-columns: 1fr 1fr;
+  }
+}
 </style>

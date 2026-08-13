@@ -17,7 +17,7 @@ const { toast, clearToast } = useMockupApp()
   </UApp>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .app-shell {
   display: flex;
   min-height: 100vh;

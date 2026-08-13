@@ -18,7 +18,7 @@ defineSlots<{
   </component>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .container {
   width: min(var(--ui-container), calc(100% - 40px));
   margin-inline: auto;

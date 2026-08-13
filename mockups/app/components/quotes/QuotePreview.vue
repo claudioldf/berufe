@@ -51,7 +51,209 @@ function formatDate(value?: string) {
   </article>
 </template>
 
-<style scoped>
-.quote-preview { overflow: hidden; border: 1px solid var(--line); border-radius: 18px; background: white; color: var(--ink); box-shadow: var(--shadow-sm); }.quote-preview > header { display: flex; justify-content: space-between; align-items: center; padding: 21px 23px; background: #17352f; color: white; }.quote-preview__brand { font-family: Georgia, serif; font-size: 1.25rem; font-weight: 700; letter-spacing: -.04em; }.quote-preview__brand span { color: var(--coral); }.quote-preview > header > div:last-child { text-align: right; }.quote-preview > header > div:last-child span, .quote-preview > header > div:last-child strong { display: block; }.quote-preview > header > div:last-child span { color: rgba(255,255,255,.55); font-size: .82rem; text-transform: uppercase; }.quote-preview > header > div:last-child strong { margin-top: 2px; font-size: .84rem; }.quote-preview__professional { display: flex; align-items: center; gap: 10px; padding: 16px 22px; border-bottom: 1px solid var(--line); }.quote-preview__professional img { width: 44px; height: 44px; border-radius: 12px; object-fit: cover; }.quote-preview__professional strong, .quote-preview__professional span, .quote-preview__professional small { display: block; }.quote-preview__professional strong { font-family: Georgia, serif; font-size: .9rem; }.quote-preview__professional span { margin-top: 2px; color: var(--ink-soft); font-size: .82rem; }.quote-preview__professional small { margin-top: 3px; color: #397a69; font-size: .82rem; font-weight: 850; }.quote-preview__intro { display: grid; grid-template-columns: 1fr auto; gap: 18px; padding: 19px 22px; }.quote-preview__intro span, .quote-preview__intro strong { display: block; }.quote-preview__intro span, .quote-preview__service > span, .quote-preview__notes > span { color: var(--ink-soft); font-size: .82rem; font-weight: 850; letter-spacing: .06em; text-transform: uppercase; }.quote-preview__intro strong { margin-top: 3px; font-size: .86rem; }.quote-preview__intro > div:last-child { text-align: right; }.quote-preview__service { padding: 2px 22px 18px; }.quote-preview__service h1 { margin: 5px 0 0; font-family: Georgia, serif; font-size: 1.3rem; font-weight: 500; line-height: 1.25; }.quote-preview__items { padding: 0 22px; }.quote-preview__item { display: grid; grid-template-columns: 1fr 40px 86px; gap: 8px; align-items: center; padding: 11px 0; border-top: 1px solid var(--line); font-size: .84rem; }.quote-preview__item--head { color: var(--ink-soft); font-size: .82rem; font-weight: 850; text-transform: uppercase; }.quote-preview__item > span:nth-child(n+2) { text-align: right; }.quote-preview__item strong, .quote-preview__item small { display: block; }.quote-preview__item strong { font-size: .84rem; }.quote-preview__item small { margin-top: 3px; color: var(--ink-soft); font-size: .82rem; }.quote-preview__totals { margin: 12px 22px 0 auto; width: 190px; padding-bottom: 15px; }.quote-preview__totals > div { display: flex; justify-content: space-between; padding: 4px 0; font-size: .82rem; }.quote-preview__totals > div:last-child { margin-top: 5px; padding-top: 10px; border-top: 2px solid var(--ink); font-size: .84rem; }.quote-preview__notes { margin: 0 22px 18px; padding: 13px; border-radius: 10px; background: #f5f3ed; }.quote-preview__notes p { margin: 5px 0 0; color: var(--ink-soft); font-size: .82rem; line-height: 1.5; white-space: pre-line; }.quote-preview > footer { display: flex; justify-content: space-between; gap: 12px; padding: 12px 22px; background: #e7f3ef; color: #397a69; font-size: .82rem; }.quote-preview > footer span { display: flex; align-items: center; gap: 4px; font-weight: 850; }.quote-preview > footer small { color: var(--ink-soft); }.quote-preview--customer { max-width: 720px; margin: 0 auto; }.quote-preview--customer .quote-preview__service h1 { font-size: 1.65rem; }
-@media print { .quote-preview { border: 0; box-shadow: none; } }
+<style scoped lang="scss">
+.quote-preview {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: white;
+  color: var(--ink);
+  box-shadow: var(--shadow-sm);
+  & > header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 21px 23px;
+    background: #17352f;
+    color: white;
+  }
+  &__brand {
+    font-family: Georgia, serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+  }
+  &__brand span {
+    color: var(--coral);
+  }
+  & > header > div:last-child {
+    text-align: right;
+  }
+  & > header > div:last-child span,
+  & > header > div:last-child strong {
+    display: block;
+  }
+  & > header > div:last-child span {
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 0.82rem;
+    text-transform: uppercase;
+  }
+  & > header > div:last-child strong {
+    margin-top: 2px;
+    font-size: 0.84rem;
+  }
+  &__professional {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 22px;
+    border-bottom: 1px solid var(--line);
+  }
+  &__professional img {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    object-fit: cover;
+  }
+  &__professional strong,
+  &__professional span,
+  &__professional small {
+    display: block;
+  }
+  &__professional strong {
+    font-family: Georgia, serif;
+    font-size: 0.9rem;
+  }
+  &__professional span {
+    margin-top: 2px;
+    color: var(--ink-soft);
+    font-size: 0.82rem;
+  }
+  &__professional small {
+    margin-top: 3px;
+    color: #397a69;
+    font-size: 0.82rem;
+    font-weight: 850;
+  }
+  &__intro {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 18px;
+    padding: 19px 22px;
+  }
+  &__intro span,
+  &__intro strong {
+    display: block;
+  }
+  &__intro span,
+  &__service > span,
+  &__notes > span {
+    color: var(--ink-soft);
+    font-size: 0.82rem;
+    font-weight: 850;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  &__intro strong {
+    margin-top: 3px;
+    font-size: 0.86rem;
+  }
+  &__intro > div:last-child {
+    text-align: right;
+  }
+  &__service {
+    padding: 2px 22px 18px;
+  }
+  &__service h1 {
+    margin: 5px 0 0;
+    font-family: Georgia, serif;
+    font-size: 1.3rem;
+    font-weight: 500;
+    line-height: 1.25;
+  }
+  &__items {
+    padding: 0 22px;
+  }
+  &__item {
+    display: grid;
+    grid-template-columns: 1fr 40px 86px;
+    gap: 8px;
+    align-items: center;
+    padding: 11px 0;
+    border-top: 1px solid var(--line);
+    font-size: 0.84rem;
+  }
+  &__item--head {
+    color: var(--ink-soft);
+    font-size: 0.82rem;
+    font-weight: 850;
+    text-transform: uppercase;
+  }
+  &__item > span:nth-child(n + 2) {
+    text-align: right;
+  }
+  &__item strong,
+  &__item small {
+    display: block;
+  }
+  &__item strong {
+    font-size: 0.84rem;
+  }
+  &__item small {
+    margin-top: 3px;
+    color: var(--ink-soft);
+    font-size: 0.82rem;
+  }
+  &__totals {
+    margin: 12px 22px 0 auto;
+    width: 190px;
+    padding-bottom: 15px;
+  }
+  &__totals > div {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    font-size: 0.82rem;
+  }
+  &__totals > div:last-child {
+    margin-top: 5px;
+    padding-top: 10px;
+    border-top: 2px solid var(--ink);
+    font-size: 0.84rem;
+  }
+  &__notes {
+    margin: 0 22px 18px;
+    padding: 13px;
+    border-radius: 10px;
+    background: #f5f3ed;
+  }
+  &__notes p {
+    margin: 5px 0 0;
+    color: var(--ink-soft);
+    font-size: 0.82rem;
+    line-height: 1.5;
+    white-space: pre-line;
+  }
+  & > footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 22px;
+    background: #e7f3ef;
+    color: #397a69;
+    font-size: 0.82rem;
+  }
+  & > footer span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 850;
+  }
+  & > footer small {
+    color: var(--ink-soft);
+  }
+  &--customer {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  &--customer &__service h1 {
+    font-size: 1.65rem;
+  }
+}
+@media print {
+  .quote-preview {
+    border: 0;
+    box-shadow: none;
+  }
+}
 </style>

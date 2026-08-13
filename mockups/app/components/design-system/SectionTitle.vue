@@ -18,13 +18,13 @@ defineSlots<{
   </component>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .section-title {
   margin: 0;
   font-family: Georgia, "Times New Roman", serif;
   font-size: clamp(2rem, 4vw, 3.6rem);
   font-weight: 500;
-  letter-spacing: -.04em;
+  letter-spacing: -0.04em;
   line-height: 1.02;
 }
 </style>

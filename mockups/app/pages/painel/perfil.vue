@@ -41,7 +41,116 @@ async function selectTab(id: string) {
   </div>
 </template>
 
-<style scoped>
-.profile-workspace { min-height: 100vh; padding-bottom: 80px; background: #f3f1eb; }.workspace-heading { padding: 34px 0 38px; background: #17352f; color: white; }.workspace-heading__inner { display: flex; justify-content: space-between; align-items: end; }.workspace-heading a { display: flex; align-items: center; gap: 5px; margin-bottom: 20px; color: rgba(255,255,255,.58); font-size: .86rem; font-weight: 700; text-decoration: none; }.workspace-heading h1 { margin: 0; font-family: Georgia, serif; font-size: 2.7rem; font-weight: 500; letter-spacing: -.04em; }.workspace-heading p { margin: 7px 0 0; color: rgba(255,255,255,.59); font-size: .84rem; }.workspace-heading__inner > span { display: flex; align-items: center; gap: 6px; padding: 7px 10px; border: 1px solid rgba(255,255,255,.16); border-radius: 9px; color: #b7dfd3; font-size: .84rem; font-weight: 850; }.profile-workspace__content { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 28px; padding-top: 26px; }.workspace-tabs { position: sticky; top: 20px; align-self: start; display: grid; gap: 4px; }.workspace-tabs button { display: flex; align-items: center; gap: 8px; width: 100%; padding: 11px 12px; border: 0; border-radius: 10px; background: transparent; color: var(--ink-soft); font-size: .86rem; font-weight: 800; text-align: left; cursor: pointer; }.workspace-tabs button.active { background: white; color: #397a69; box-shadow: 0 5px 15px rgba(23,53,47,.06); }.workspace-tabs__count { margin-left: auto; padding: 3px 6px; border-radius: 6px; background: var(--paper-strong); font-size: .82rem; }
-@media (max-width: 760px) { .profile-workspace__content { grid-template-columns: 1fr; }.workspace-tabs { position: static; display: flex; overflow-x: auto; }.workspace-tabs button { width: auto; white-space: nowrap; }.workspace-heading__inner > span { display: none; } }
+<style scoped lang="scss">
+.profile-workspace {
+  min-height: 100vh;
+  padding-bottom: 80px;
+  background: #f3f1eb;
+}
+.workspace-heading {
+  padding: 34px 0 38px;
+  background: #17352f;
+  color: white;
+  &__inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+  }
+  & a {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 20px;
+    color: rgba(255, 255, 255, 0.58);
+    font-size: 0.86rem;
+    font-weight: 700;
+    text-decoration: none;
+  }
+  & h1 {
+    margin: 0;
+    font-family: Georgia, serif;
+    font-size: 2.7rem;
+    font-weight: 500;
+    letter-spacing: -0.04em;
+  }
+  & p {
+    margin: 7px 0 0;
+    color: rgba(255, 255, 255, 0.59);
+    font-size: 0.84rem;
+  }
+  &__inner > span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 9px;
+    color: #b7dfd3;
+    font-size: 0.84rem;
+    font-weight: 850;
+  }
+}
+.profile-workspace {
+  &__content {
+    display: grid;
+    grid-template-columns: 190px minmax(0, 1fr);
+    gap: 28px;
+    padding-top: 26px;
+  }
+}
+.workspace-tabs {
+  position: sticky;
+  top: 20px;
+  align-self: start;
+  display: grid;
+  gap: 4px;
+  & button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 11px 12px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--ink-soft);
+    font-size: 0.86rem;
+    font-weight: 800;
+    text-align: left;
+    cursor: pointer;
+  }
+  & button.active {
+    background: white;
+    color: #397a69;
+    box-shadow: 0 5px 15px rgba(23, 53, 47, 0.06);
+  }
+  &__count {
+    margin-left: auto;
+    padding: 3px 6px;
+    border-radius: 6px;
+    background: var(--paper-strong);
+    font-size: 0.82rem;
+  }
+}
+@media (max-width: 760px) {
+  .profile-workspace {
+    &__content {
+      grid-template-columns: 1fr;
+    }
+  }
+  .workspace-tabs {
+    position: static;
+    display: flex;
+    overflow-x: auto;
+  }
+  .workspace-tabs button {
+    width: auto;
+    white-space: nowrap;
+  }
+  .workspace-heading {
+    &__inner > span {
+      display: none;
+    }
+  }
+}
 </style>

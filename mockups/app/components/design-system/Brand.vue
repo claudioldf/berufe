@@ -14,21 +14,27 @@ withDefaults(defineProps<Props>(), {
   </NuxtLink>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .brand {
   color: inherit;
   font-family: Georgia, "Times New Roman", serif;
   font-weight: 700;
-  letter-spacing: -.045em;
+  letter-spacing: -0.045em;
   line-height: 1;
   text-decoration: none;
-}
 
-.brand--sm { font-size: 1.35rem; }
-.brand--md { font-size: 1.72rem; }
-.brand--lg { font-size: 2rem; }
+  &--sm {
+    font-size: 1.35rem;
+  }
+  &--md {
+    font-size: 1.72rem;
+  }
+  &--lg {
+    font-size: 2rem;
+  }
 
-.brand span {
-  color: var(--coral);
+  & span {
+    color: var(--coral);
+  }
 }
 </style>

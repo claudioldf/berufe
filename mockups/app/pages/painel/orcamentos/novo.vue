@@ -29,6 +29,65 @@ function handleShared() {
   </div>
 </template>
 
-<style scoped>
-.quote-workspace { min-height: 100vh; padding-bottom: 80px; background: #f3f1eb; }.quote-workspace__heading { padding: 28px 0 34px; background: #17352f; color: white; }.quote-workspace__heading a { display: flex; align-items: center; gap: 5px; margin-bottom: 20px; color: rgba(255,255,255,.58); font-size: .84rem; font-weight: 700; text-decoration: none; }.quote-workspace__heading-inner > div { display: flex; justify-content: space-between; align-items: end; gap: 20px; }.quote-workspace__heading .eyebrow { margin-bottom: 7px; }.quote-workspace__heading h1 { margin: 0; font-family: Georgia, serif; font-size: 2.5rem; font-weight: 500; letter-spacing: -.04em; }.quote-workspace__heading h1 em { color: #a7d7c8; font-size: .55em; font-style: normal; }.quote-workspace__heading p:last-child { margin: 7px 0 0; color: rgba(255,255,255,.58); font-size: .82rem; }.quote-workspace__heading-inner > div > span { display: flex; align-items: center; gap: 6px; padding: 7px 10px; border: 1px solid rgba(255,255,255,.15); border-radius: 8px; color: #d5ddd9; font-size: .84rem; font-weight: 850; }.quote-workspace__content { padding-top: 24px; }
+<style scoped lang="scss">
+.quote-workspace {
+  min-height: 100vh;
+  padding-bottom: 80px;
+  background: #f3f1eb;
+  &__heading {
+    padding: 28px 0 34px;
+    background: #17352f;
+    color: white;
+  }
+  &__heading a {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 20px;
+    color: rgba(255, 255, 255, 0.58);
+    font-size: 0.84rem;
+    font-weight: 700;
+    text-decoration: none;
+  }
+  &__heading-inner > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    gap: 20px;
+  }
+  &__heading .eyebrow {
+    margin-bottom: 7px;
+  }
+  &__heading h1 {
+    margin: 0;
+    font-family: Georgia, serif;
+    font-size: 2.5rem;
+    font-weight: 500;
+    letter-spacing: -0.04em;
+  }
+  &__heading h1 em {
+    color: #a7d7c8;
+    font-size: 0.55em;
+    font-style: normal;
+  }
+  &__heading p:last-child {
+    margin: 7px 0 0;
+    color: rgba(255, 255, 255, 0.58);
+    font-size: 0.82rem;
+  }
+  &__heading-inner > div > span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    color: #d5ddd9;
+    font-size: 0.84rem;
+    font-weight: 850;
+  }
+  &__content {
+    padding-top: 24px;
+  }
+}
 </style>

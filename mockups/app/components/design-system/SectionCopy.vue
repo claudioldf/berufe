@@ -10,7 +10,7 @@ defineSlots<{
   </p>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .section-copy {
   color: var(--ink-soft);
   font-size: 1rem;

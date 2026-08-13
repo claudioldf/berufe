@@ -10,7 +10,7 @@ defineSlots<{
   </section>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .page-section {
   padding-block: 80px;
 }
