@@ -25,9 +25,9 @@ function percent(value: number, total: number) {
 
 <template>
   <section class="supply-grid" aria-label="Oferta e ativação profissional">
-    <article class="surface-card report-card">
+    <DesignSystemSurfaceCard as="article" class="report-card">
       <header class="report-card__header">
-        <div><p class="section-kicker">Oferta</p><h2>Funil de profissionais</h2><span>Onde a rede fundadora está perdendo força.</span></div>
+        <div><DesignSystemKicker>Oferta</DesignSystemKicker><h2>Funil de profissionais</h2><span>Onde a rede fundadora está perdendo força.</span></div>
         <div class="report-card__actions">
           <div class="goal-chip"><UIcon name="i-lucide-goal" /> Meta {{ supply.targetMinimum }}–{{ supply.targetMaximum }}</div>
           <AdminReportsMetricHelp
@@ -47,11 +47,11 @@ function percent(value: number, total: number) {
           <em v-else>base</em>
         </div>
       </div>
-    </article>
+    </DesignSystemSurfaceCard>
 
-    <article class="surface-card report-card">
+    <DesignSystemSurfaceCard as="article" class="report-card">
       <header class="report-card__header">
-        <div><p class="section-kicker">Credibilidade</p><h2>Qualidade da oferta</h2><span>Critérios transparentes, sem nota de confiança opaca.</span></div>
+        <div><DesignSystemKicker>Credibilidade</DesignSystemKicker><h2>Qualidade da oferta</h2><span>Critérios transparentes, sem nota de confiança opaca.</span></div>
         <AdminReportsMetricHelp
           title="Qualidade da oferta"
           meaning="Decompõe os critérios visíveis de um perfil confiável: identidade aprovada, três ou mais trabalhos e duas ou mais relações confirmadas."
@@ -73,7 +73,7 @@ function percent(value: number, total: number) {
         <UIcon name="i-lucide-lightbulb" />
         <p><strong>Ativação significa evidência real.</strong> Identidade aprovada, três trabalhos e duas relações confirmadas.</p>
       </aside>
-    </article>
+    </DesignSystemSurfaceCard>
   </section>
 </template>
 
@@ -85,7 +85,7 @@ function percent(value: number, total: number) {
 .report-card__header h2, .report-card__header p, .report-card__header span { margin: 0; }
 .report-card__header h2 { margin-top: 2px; font-family: Georgia, serif; font-size: 1.35rem; font-weight: 500; }
 .report-card__header span { display: block; margin-top: 4px; color: var(--ink-soft); font-size: var(--font-size-min); }
-.section-kicker { color: #397a69; font-size: var(--font-size-min); font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+
 .goal-chip { display: flex; align-items: center; gap: 5px; padding: 7px 9px; border-radius: 9px; background: #e8f4f0; color: #397a69; font-size: var(--font-size-min); font-weight: 850; white-space: nowrap; }
 .funnel { display: grid; gap: 12px; margin-top: 23px; }
 .funnel__row { display: grid; grid-template-columns: 128px minmax(80px, 1fr) 28px 38px; align-items: center; gap: 8px; }

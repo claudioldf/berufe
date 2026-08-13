@@ -37,10 +37,10 @@ async function search(payload: { service: string; neighborhood: string }) {
         <div class="hero__shape hero__shape--one" />
         <div class="hero__shape hero__shape--two" />
       </div>
-      <div class="hero__inner page-container">
+      <DesignSystemContainer class="hero__inner">
         <div class="hero__copy">
-          <p class="eyebrow">Rede local de confiança</p>
-          <h1 class="display-title">Sua casa em<br><em>boas mãos.</em></h1>
+          <DesignSystemEyebrow>Rede local de confiança</DesignSystemEyebrow>
+          <DesignSystemDisplayTitle>Sua casa em<br><em>boas mãos.</em></DesignSystemDisplayTitle>
           <p class="hero__lead">
             Encontre profissionais de reforma e manutenção com evidências claras,
             trabalhos reais e recomendações confirmadas.
@@ -56,7 +56,7 @@ async function search(payload: { service: string; neighborhood: string }) {
             >
           </div>
           <div class="hero__profile-chip">
-            <img :src="featured[0]?.avatar" alt="">
+            <DesignSystemAvatar name="Marina Alves" :src="featured[0]?.avatar" alt="" size="sm" shape="rounded" />
             <span><strong>Marina Alves</strong><small>Eletricista · Joinville</small></span>
             <UIcon name="i-lucide-badge-check" />
           </div>
@@ -65,17 +65,17 @@ async function search(payload: { service: string; neighborhood: string }) {
             <span>profissionais<br>da rede local</span>
           </div>
         </div>
-      </div>
+      </DesignSystemContainer>
     </section>
 
-    <section class="categories page-section">
-      <div class="page-container">
+    <DesignSystemPageSection class="categories">
+      <DesignSystemContainer>
         <div class="section-heading">
           <div>
-            <p class="eyebrow">O que você precisa resolver?</p>
-            <h2 class="section-title">Serviços para cada<br>canto da casa.</h2>
+            <DesignSystemEyebrow>O que você precisa resolver?</DesignSystemEyebrow>
+            <DesignSystemSectionTitle>Serviços para cada<br>canto da casa.</DesignSystemSectionTitle>
           </div>
-          <p class="section-copy">Escolha uma categoria e veja profissionais que atendem sua região.</p>
+          <DesignSystemSectionCopy>Escolha uma categoria e veja profissionais que atendem sua região.</DesignSystemSectionCopy>
         </div>
 
         <div class="category-grid">
@@ -96,11 +96,11 @@ async function search(payload: { service: string; neighborhood: string }) {
             Ver todos os serviços
           </UButton>
         </div>
-      </div>
-    </section>
+      </DesignSystemContainer>
+    </DesignSystemPageSection>
 
-    <section id="como-funciona" class="trust page-section">
-      <div class="page-container trust__grid">
+    <DesignSystemPageSection id="como-funciona" class="trust">
+      <DesignSystemContainer class="trust__grid">
         <div class="trust__visual">
           <div class="trust__photo">
             <img :src="'/images/photo-1503387762-592deb58ef4e.jpg'" alt="Profissionais em uma obra residencial">
@@ -111,27 +111,27 @@ async function search(payload: { service: string; neighborhood: string }) {
           </div>
         </div>
         <div class="trust__copy">
-          <p class="eyebrow">Confiança do jeito certo</p>
-          <h2 class="section-title">Escolha pelo que<br>você pode ver.</h2>
-          <p class="section-copy">
+          <DesignSystemEyebrow tone="inverse">Confiança do jeito certo</DesignSystemEyebrow>
+          <DesignSystemSectionTitle>Escolha pelo que<br>você pode ver.</DesignSystemSectionTitle>
+          <DesignSystemSectionCopy>
             Nada de nota misteriosa. A Berufe mostra cada sinal de confiança separadamente
             para você decidir com clareza.
-          </p>
+          </DesignSystemSectionCopy>
           <ol class="trust__steps">
             <li><span>01</span><div><strong>Busque pelo serviço</strong><p>Use nosso catálogo e escolha seu bairro em Joinville.</p></div></li>
             <li><span>02</span><div><strong>Compare evidências reais</strong><p>Veja verificações, portfólio, clientes e colaborações.</p></div></li>
             <li><span>03</span><div><strong>Converse diretamente</strong><p>Abra o WhatsApp do profissional escolhido. Sem intermediários.</p></div></li>
           </ol>
         </div>
-      </div>
-    </section>
+      </DesignSystemContainer>
+    </DesignSystemPageSection>
 
-    <section class="featured page-section">
-      <div class="page-container">
+    <DesignSystemPageSection class="featured">
+      <DesignSystemContainer>
         <div class="section-heading section-heading--compact">
           <div>
-            <p class="eyebrow">Profissionais em destaque</p>
-            <h2 class="section-title">Gente boa, trabalho bem feito.</h2>
+            <DesignSystemEyebrow>Profissionais em destaque</DesignSystemEyebrow>
+            <DesignSystemSectionTitle>Gente boa, trabalho bem feito.</DesignSystemSectionTitle>
           </div>
           <UButton to="/encontrar" variant="link" trailing-icon="i-lucide-arrow-right">Explorar a rede</UButton>
         </div>
@@ -156,20 +156,20 @@ async function search(payload: { service: string; neighborhood: string }) {
             </div>
           </NuxtLink>
         </div>
-      </div>
-    </section>
+      </DesignSystemContainer>
+    </DesignSystemPageSection>
 
     <section class="professional-cta">
-      <div class="page-container professional-cta__inner">
+      <DesignSystemContainer class="professional-cta__inner">
         <div>
-          <p class="eyebrow">Você é profissional?</p>
-          <h2 class="section-title">Seu trabalho merece<br>uma identidade forte.</h2>
+          <DesignSystemEyebrow>Você é profissional?</DesignSystemEyebrow>
+          <DesignSystemSectionTitle>Seu trabalho merece<br>uma identidade forte.</DesignSystemSectionTitle>
         </div>
         <div>
           <p>Crie seu perfil, organize suas evidências e compartilhe orçamentos sem pagar por contatos.</p>
           <UButton to="/entrar" color="secondary" trailing-icon="i-lucide-arrow-right">Criar meu perfil gratuito</UButton>
         </div>
-      </div>
+      </DesignSystemContainer>
     </section>
   </div>
 </template>
@@ -184,7 +184,6 @@ async function search(payload: { service: string; neighborhood: string }) {
 .hero__photo-wrap { position: absolute; inset: 0 0 24px 44px; overflow: hidden; border-radius: 180px 180px 28px 28px; background: #bdded3; box-shadow: var(--shadow-lg); }
 .hero__photo-wrap img { width: 100%; height: 100%; object-fit: cover; }
 .hero__profile-chip { position: absolute; left: -4px; bottom: 52px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; width: 260px; padding: 11px; border: 1px solid rgba(255,255,255,.5); border-radius: 16px; background: rgba(255,255,255,.92); box-shadow: var(--shadow-sm); backdrop-filter: blur(12px); }
-.hero__profile-chip img { width: 42px; height: 42px; border-radius: 12px; object-fit: cover; }
 .hero__profile-chip strong, .hero__profile-chip small { display: block; }
 .hero__profile-chip strong { font-size: .86rem; }
 .hero__profile-chip small { margin-top: 3px; color: var(--ink-soft); font-size: .86rem; }
@@ -217,7 +216,7 @@ async function search(payload: { service: string; neighborhood: string }) {
 .trust__label > svg { font-size: 1.7rem; color: var(--coral); }
 .trust__label strong, .trust__label small { display: block; }
 .trust__label strong { font-size: .86rem; }.trust__label small { margin-top: 3px; color: var(--ink-soft); font-size: .86rem; }
-.trust .eyebrow { color: #a8d8c9; }.trust .section-copy { max-width: 590px; margin: 24px 0 32px; color: rgba(255,255,255,.65); }
+.trust .section-copy { max-width: 590px; margin: 24px 0 32px; color: rgba(255,255,255,.65); }
 .trust__steps { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
 .trust__steps li { display: grid; grid-template-columns: 50px 1fr; gap: 16px; padding: 18px 0; border-top: 1px solid rgba(255,255,255,.12); }
 .trust__steps li > span { color: var(--color-coral-400); font-family: Georgia, serif; font-weight: 700; font-size: .92rem; }

@@ -25,12 +25,12 @@ function percent(value: number, total: number) {
 <template>
   <section class="discovery" aria-labelledby="discovery-title">
     <header class="section-heading">
-      <div><p class="section-kicker">Demanda e liquidez</p><h2 id="discovery-title">Da busca ao contato</h2></div>
+      <div><DesignSystemKicker>Demanda e liquidez</DesignSystemKicker><h2 id="discovery-title">Da busca ao contato</h2></div>
       <p>Um contato é um clique deduplicado no WhatsApp — não significa contratação.</p>
     </header>
 
     <div class="discovery__grid">
-      <article class="surface-card discovery-funnel">
+      <DesignSystemSurfaceCard as="article" class="discovery-funnel">
         <header class="widget-heading">
           <div><h3>Cobertura da jornada</h3><p>Progressão desde a busca</p></div>
           <AdminReportsMetricHelp
@@ -46,9 +46,9 @@ function percent(value: number, total: number) {
           <small v-if="index > 0">{{ percent(stage.value, stage.total) }} das buscas</small>
           <small v-else>base do período</small>
         </div>
-      </article>
+      </DesignSystemSurfaceCard>
 
-      <article class="surface-card demand-card">
+      <DesignSystemSurfaceCard as="article" class="demand-card">
         <header>
           <div><h3>Demanda por serviço</h3><p>Buscas agregadas</p></div>
           <div class="widget-actions">
@@ -68,9 +68,9 @@ function percent(value: number, total: number) {
             <strong>{{ item.value }}</strong>
           </div>
         </div>
-      </article>
+      </DesignSystemSurfaceCard>
 
-      <article class="surface-card gaps-card">
+      <DesignSystemSurfaceCard as="article" class="gaps-card">
         <header>
           <div><h3>Gaps que bloqueiam crescimento</h3><p>Buscas com pouca ou nenhuma oferta</p></div>
           <div class="widget-actions">
@@ -90,7 +90,7 @@ function percent(value: number, total: number) {
             <em>{{ gap.catalogStatus === 'outside_mvp' ? 'Avaliar catálogo' : 'Recrutar' }}</em>
           </div>
         </div>
-      </article>
+      </DesignSystemSurfaceCard>
     </div>
   </section>
 </template>
@@ -99,14 +99,14 @@ function percent(value: number, total: number) {
 .discovery { display: grid; gap: 13px; }
 .section-heading { display: flex; align-items: end; justify-content: space-between; gap: 20px; }
 .section-heading h2, .section-heading p { margin: 0; }.section-heading h2 { margin-top: 2px; font-family: Georgia, serif; font-size: 1.55rem; font-weight: 500; }.section-heading > p { max-width: 390px; color: var(--ink-soft); font-size: var(--font-size-min); line-height: 1.5; text-align: right; }
-.section-kicker { color: #397a69; font-size: var(--font-size-min); font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+
 .discovery__grid { display: grid; grid-template-columns: .9fr 1.1fr; gap: 12px; }
 .discovery-funnel { display: grid; gap: 14px; padding: 20px; }
 .discovery-stage__top { display: flex; justify-content: space-between; gap: 10px; }.discovery-stage__top span, .discovery-stage__top strong { font-size: var(--font-size-min); }.discovery-stage__bar { height: 8px; margin-top: 6px; overflow: hidden; border-radius: 99px; background: #e9e8e3; }.discovery-stage__bar i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #f8755d, #f4a18f); }.discovery-stage small { display: block; margin-top: 3px; color: var(--ink-soft); font-size: var(--font-size-min); }
 .demand-card, .gaps-card { padding: 20px; }.demand-card header, .gaps-card header { display: flex; justify-content: space-between; gap: 12px; }.demand-card h3, .demand-card p, .gaps-card h3, .gaps-card p { margin: 0; }.demand-card h3, .gaps-card h3 { font-family: Georgia, serif; font-size: 1.15rem; font-weight: 500; }.demand-card p, .gaps-card p { margin-top: 3px; color: var(--ink-soft); font-size: var(--font-size-min); }.demand-card header > svg { color: #397a69; font-size: 1.2rem; }
 .demand-bars { display: grid; gap: 13px; margin-top: 23px; }.demand-bars > div { display: grid; grid-template-columns: 110px 1fr 28px; align-items: center; gap: 8px; }.demand-bars span, .demand-bars strong { font-size: var(--font-size-min); }.demand-bars i { height: 7px; overflow: hidden; border-radius: 99px; background: #e9e8e3; }.demand-bars b { display: block; height: 100%; border-radius: inherit; background: #397a69; }.demand-bars strong { text-align: right; }
 .gaps-card { grid-column: 1 / -1; }.gaps-card header > span { align-self: start; padding: 6px 8px; border-radius: 8px; background: #fff0ec; color: #b9533e; font-size: var(--font-size-min); font-weight: 850; }.gaps-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin-top: 17px; }.gaps-list > div { display: grid; grid-template-columns: auto 1fr; gap: 9px; padding: 12px; border-radius: 12px; background: #f7f5f0; }.gaps-list > div > span { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 9px; background: #fff0ec; color: #b9533e; }.gaps-list > div > .gaps-list__icon--catalog { background: #fff7de; color: #8a6918; }.gaps-list strong, .gaps-list small { display: block; }.gaps-list strong { font-size: var(--font-size-min); line-height: 1.35; }.gaps-list small { margin-top: 3px; color: var(--ink-soft); font-size: var(--font-size-min); }.gaps-list em { grid-column: 2; color: #397a69; font-size: var(--font-size-min); font-style: normal; font-weight: 850; }
-.section-kicker { color: #2f6b5f; }.gaps-card header > span, .gaps-list > div > span { color: #a94734; }
+.gaps-card header > span, .gaps-list > div > span { color: #a94734; }
 .widget-heading, .widget-actions { display: flex; align-items: start; justify-content: space-between; gap: 8px; }.widget-heading h3, .widget-heading p { margin: 0; }.widget-heading h3 { font-family: Georgia, serif; font-size: 1.15rem; font-weight: 500; }.widget-heading p { margin-top: 3px; color: var(--ink-soft); font-size: var(--font-size-min); }.widget-actions { align-items: center; justify-content: flex-end; }.demand-card .widget-actions > svg { color: #397a69; font-size: 1.2rem; }.gaps-card .widget-actions > span { align-self: start; padding: 6px 8px; border-radius: 8px; background: #fff0ec; color: #a94734; font-size: var(--font-size-min); font-weight: 850; }
 @media (max-width: 800px) { .discovery__grid { grid-template-columns: 1fr; }.gaps-card { grid-column: auto; }.gaps-list { grid-template-columns: 1fr; } }
 @media (max-width: 620px) { .section-heading { align-items: start; flex-direction: column; }.section-heading > p { text-align: left; } }

@@ -12,7 +12,7 @@ defineProps<{
 </script>
 
 <template>
-  <section class="checklist-card surface-card">
+  <DesignSystemSurfaceCard as="section" class="checklist-card">
     <header>
       <div>
         <span>Seu perfil está</span>
@@ -30,7 +30,7 @@ defineProps<{
         <UIcon name="i-lucide-chevron-right" />
       </NuxtLink>
     </div>
-  </section>
+  </DesignSystemSurfaceCard>
 </template>
 
 <style scoped>

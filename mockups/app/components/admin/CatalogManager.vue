@@ -20,7 +20,7 @@ function toggleNeighborhood(code: string) {
 </script>
 
 <template>
-  <section class="catalog surface-card">
+  <DesignSystemSurfaceCard as="section" class="catalog">
     <header><div><h2>Catálogo controlado</h2><p>A mesma lista alimenta o Finder e os perfis profissionais.</p></div><UButton color="primary" icon="i-lucide-plus">Adicionar entrada</UButton></header>
     <nav><button type="button" :class="{ active: activeTab === 'services' }" @click="activeTab = 'services'">Serviços <span>{{ services.length }}</span></button><button type="button" :class="{ active: activeTab === 'neighborhoods' }" @click="activeTab = 'neighborhoods'">Bairros <span>{{ neighborhoods.length }}</span></button></nav>
     <div class="catalog__table">
@@ -33,7 +33,7 @@ function toggleNeighborhood(code: string) {
         <button type="button" class="catalog__edit"><UIcon name="i-lucide-pencil" /> Editar</button>
       </div>
     </div>
-  </section>
+  </DesignSystemSurfaceCard>
 </template>
 
 <style scoped>

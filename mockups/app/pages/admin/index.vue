@@ -17,9 +17,9 @@ useSeoMeta({ title: 'Operações e moderação' })
 <template>
   <div class="admin-page">
     <section class="admin-heading">
-      <div class="page-container admin-heading__inner">
+      <DesignSystemContainer class="admin-heading__inner">
         <div>
-          <p class="eyebrow">Berufe Operações</p>
+          <DesignSystemEyebrow tone="inverse">Berufe Operações</DesignSystemEyebrow>
           <h1>{{ heading.title }}</h1>
           <p>{{ heading.description }}</p>
         </div>
@@ -28,10 +28,10 @@ useSeoMeta({ title: 'Operações e moderação' })
           <div><strong>Cláudio Dias</strong><small>Administrador · MFA ativo</small></div>
           <UIcon name="i-lucide-shield-check" />
         </div>
-      </div>
+      </DesignSystemContainer>
     </section>
 
-    <div class="page-container admin-content">
+    <DesignSystemContainer class="admin-content">
       <div v-if="view === 'moderacao'" class="admin-summary">
         <article v-for="item in moderationData.summary" :key="item.label" :class="`admin-summary--${item.tone}`">
           <span><UIcon :name="item.icon" /></span>
@@ -42,7 +42,7 @@ useSeoMeta({ title: 'Operações e moderação' })
       <AdminModerationQueue v-if="view === 'moderacao'" />
       <AdminCatalogManager v-else-if="view === 'catalogos'" />
       <AdminReportsGrowthReports v-else />
-    </div>
+    </DesignSystemContainer>
   </div>
 </template>
 
@@ -50,7 +50,7 @@ useSeoMeta({ title: 'Operações e moderação' })
 .admin-page { min-height: 100vh; padding-bottom: 80px; background: #f2f0ea; }
 .admin-heading { padding: 32px 0 36px; background: #17352f; color: white; }
 .admin-heading__inner { display: flex; justify-content: space-between; align-items: end; gap: 20px; }
-.admin-heading .eyebrow { margin-bottom: 7px; color: #a7d7c8; }
+.admin-heading .eyebrow { margin-bottom: 7px; }
 .admin-heading h1 { margin: 0; font-family: Georgia, serif; font-size: 2.6rem; font-weight: 500; letter-spacing: -.04em; }
 .admin-heading__inner > div:first-child > p:last-child { margin: 7px 0 0; color: rgba(255,255,255,.58); font-size: .82rem; }
 .admin-heading__user { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 9px; padding: 9px 11px; border: 1px solid rgba(255,255,255,.14); border-radius: 12px; background: rgba(255,255,255,.06); }

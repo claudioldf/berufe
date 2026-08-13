@@ -82,12 +82,12 @@ function contact(professional: Professional) {
 <template>
   <div class="finder">
     <section class="finder__masthead">
-      <div class="page-container">
+      <DesignSystemContainer class="finder__masthead-inner">
         <div class="finder__breadcrumbs">
           <NuxtLink to="/">Início</NuxtLink><UIcon name="i-lucide-chevron-right" />
           <span>Encontrar profissional</span>
         </div>
-        <p class="eyebrow">Profissionais</p>
+        <DesignSystemEyebrow>Profissionais</DesignSystemEyebrow>
         <h1>
           <template v-if="selectedService">
             {{ selectedService.name }} <em>em Joinville</em>
@@ -102,11 +102,11 @@ function contact(professional: Professional) {
           compact
           @search="search"
         />
-      </div>
+      </DesignSystemContainer>
     </section>
 
-    <section class="finder__content page-section">
-      <div class="page-container finder__layout">
+    <DesignSystemPageSection class="finder__content">
+      <DesignSystemContainer class="finder__layout">
         <aside class="finder__aside">
           <p>Filtros</p>
           <div class="filter-block">
@@ -145,7 +145,7 @@ function contact(professional: Professional) {
             />
           </div>
 
-          <div v-else class="empty-results surface-card">
+          <DesignSystemSurfaceCard v-else class="empty-results">
             <span class="empty-results__icon"><UIcon name="i-lucide-search-x" /></span>
             <h2>Ainda não temos esse encaixe.</h2>
             <p>Tente mudar o bairro ou explore um serviço próximo. A Berufe não transforma sua busca em pedido de orçamento.</p>
@@ -158,22 +158,22 @@ function contact(professional: Professional) {
                 <UIcon :name="service.icon" /> {{ service.name }}
               </NuxtLink>
             </div>
-          </div>
+          </DesignSystemSurfaceCard>
 
           <div class="finder__principle">
             <UIcon name="i-lucide-heart-handshake" />
             <div><strong>Você decide com quem falar.</strong><p>Na Berufe, seu contato só chega a quem você escolher.</p></div>
           </div>
         </div>
-      </div>
-    </section>
+      </DesignSystemContainer>
+    </DesignSystemPageSection>
   </div>
 </template>
 
 <style scoped>
 .finder__masthead { padding: 40px 0 44px; background: #dff1eb; }
 .finder__breadcrumbs { display: flex; align-items: center; gap: 5px; margin-bottom: 30px; color: var(--ink-soft); font-size: .82rem; }.finder__breadcrumbs a { color: inherit; text-decoration: none; }.finder__breadcrumbs svg { font-size: .86rem; }
-.finder__masthead h1 { margin: 0; font-family: Georgia, serif; font-size: clamp(2.4rem, 5vw, 4.5rem); font-weight: 500; letter-spacing: -.045em; line-height: 1; }.finder__masthead h1 em { color: #397a69; font-weight: inherit; }.finder__masthead > .page-container > p:not(.eyebrow) { margin: 15px 0 26px; color: var(--ink-soft); }
+.finder__masthead h1 { margin: 0; font-family: Georgia, serif; font-size: clamp(2.4rem, 5vw, 4.5rem); font-weight: 500; letter-spacing: -.045em; line-height: 1; }.finder__masthead h1 em { color: #397a69; font-weight: inherit; }.finder__masthead-inner > p:last-of-type { margin: 15px 0 26px; color: var(--ink-soft); }
 .finder__layout { display: grid; grid-template-columns: 230px 1fr; gap: 42px; }
 .finder__aside { position: sticky; top: 24px; align-self: start; }.finder__aside > p { margin: 0 0 14px; font-size: .82rem; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
 .filter-block { display: grid; gap: 5px; padding: 15px 0; border-top: 1px solid var(--line); }.filter-block strong { font-size: .82rem; }.filter-block span { color: var(--ink-soft); font-size: .84rem; }

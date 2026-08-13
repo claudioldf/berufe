@@ -107,7 +107,7 @@ const cards = computed<SummaryCard[]>(() => [
   <section class="summary" aria-labelledby="weekly-health-title">
     <div class="summary__heading">
       <div>
-        <p class="section-kicker">Placar de partida</p>
+        <DesignSystemKicker>Placar de partida</DesignSystemKicker>
         <h2 id="weekly-health-title">Saúde do crescimento</h2>
       </div>
       <p>Contagens e denominadores visíveis para uma base ainda pequena.</p>
@@ -134,7 +134,7 @@ const cards = computed<SummaryCard[]>(() => [
 .summary__heading h2, .summary__heading p { margin: 0; }
 .summary__heading h2 { margin-top: 2px; font-family: Georgia, serif; font-size: 1.55rem; font-weight: 500; letter-spacing: -.025em; }
 .summary__heading > p { max-width: 390px; color: var(--ink-soft); font-size: var(--font-size-min); line-height: 1.5; text-align: right; }
-.section-kicker { color: #397a69; font-size: var(--font-size-min); font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+
 .summary__grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 9px; }
 .summary-card { --card-accent: #397a69; --card-soft: #e8f4f0; min-width: 0; padding: 15px; border: 1px solid var(--line); border-radius: 16px; background: rgba(255,255,255,.88); box-shadow: 0 8px 24px rgba(30,50,44,.045); }
 .summary-card--coral { --card-accent: #bd563f; --card-soft: #fff0ec; }
@@ -147,7 +147,7 @@ const cards = computed<SummaryCard[]>(() => [
 .summary-card > strong { display: block; margin-top: 13px; font-family: Georgia, serif; font-size: 1.75rem; font-weight: 500; letter-spacing: -.035em; }
 .summary-card > small { display: block; min-height: 31px; margin-top: 2px; color: var(--ink-soft); font-size: var(--font-size-min); line-height: 1.35; }
 .summary-card > p { display: flex; align-items: center; gap: 4px; margin: 10px 0 0; color: var(--card-accent); font-size: var(--font-size-min); font-weight: 850; }
-.section-kicker { color: #2f6b5f; }
+
 @media (max-width: 1020px) { .summary__grid { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 680px) { .summary__heading { align-items: start; flex-direction: column; }.summary__heading > p { text-align: left; }.summary__grid { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 430px) { .summary__grid { grid-template-columns: 1fr; } }

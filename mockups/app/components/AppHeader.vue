@@ -49,10 +49,8 @@ function isLinkActive(to: string) {
 
 <template>
   <header class="header" :class="{ 'header--workspace': isProfessional || isAdmin }">
-    <div class="header__inner page-container">
-      <NuxtLink class="brand" to="/" aria-label="Berufe — início">
-        berufe<span>.</span>
-      </NuxtLink>
+    <DesignSystemContainer class="header__inner">
+      <DesignSystemBrand />
 
       <nav class="header__nav" aria-label="Navegação principal">
         <NuxtLink
@@ -95,7 +93,7 @@ function isLinkActive(to: string) {
           <UIcon :name="isMenuOpen ? 'i-lucide-x' : 'i-lucide-menu'" />
         </button>
       </div>
-    </div>
+    </DesignSystemContainer>
 
     <nav v-if="isMenuOpen" class="header__mobile-nav" aria-label="Navegação móvel">
       <NuxtLink
@@ -114,8 +112,6 @@ function isLinkActive(to: string) {
 .header { position: relative; z-index: 40; border-bottom: 1px solid var(--line); background: rgba(247,245,239,.9); backdrop-filter: blur(18px); }
 .header--workspace { background: #17352f; color: white; border-color: rgba(255,255,255,.12); }
 .header__inner { min-height: 76px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 24px; }
-.brand { color: inherit; font-family: Georgia, serif; font-size: 1.72rem; font-weight: 700; letter-spacing: -.045em; text-decoration: none; }
-.brand span { color: var(--coral); }
 .header__nav { display: flex; align-items: center; gap: 28px; }
 .header__link { position: relative; color: inherit; font-size: .84rem; font-weight: 700; text-decoration: none; opacity: .72; transition: opacity .15s ease; }
 .header__link:hover, .header__link--active { opacity: 1; }

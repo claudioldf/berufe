@@ -19,9 +19,9 @@ function percent(value: number, total: number) {
 
 <template>
   <section class="trust-ops" aria-label="Rede, orçamentos e operação">
-    <article class="surface-card network-card">
+    <DesignSystemSurfaceCard as="article" class="network-card">
       <header>
-        <div><p class="section-kicker">Efeito de rede</p><h2>Confiança e convites</h2><span>Conclusão dos pedidos que fortalecem cada perfil.</span></div>
+        <div><DesignSystemKicker>Efeito de rede</DesignSystemKicker><h2>Confiança e convites</h2><span>Conclusão dos pedidos que fortalecem cada perfil.</span></div>
         <AdminReportsMetricHelp
           title="Confiança e convites"
           meaning="Acompanha pedidos de recomendação, relações profissionais e convites desde a criação até a conclusão e aprovação."
@@ -36,11 +36,11 @@ function percent(value: number, total: number) {
           <p>{{ percent(funnel.completed, funnel.started) }} de conclusão · {{ percent(funnel.approved, funnel.completed) }} aprovados</p>
         </div>
       </div>
-    </article>
+    </DesignSystemSurfaceCard>
 
-    <article class="surface-card quote-card">
+    <DesignSystemSurfaceCard as="article" class="quote-card">
       <header>
-        <div><p class="section-kicker">Utilidade recorrente</p><h2>Orçamentos</h2><span>Uso que pode trazer o profissional de volta.</span></div>
+        <div><DesignSystemKicker>Utilidade recorrente</DesignSystemKicker><h2>Orçamentos</h2><span>Uso que pode trazer o profissional de volta.</span></div>
         <div class="widget-actions">
           <span class="rate-chip">{{ quoteShareRate }}% compartilhados</span>
           <AdminReportsMetricHelp
@@ -57,13 +57,13 @@ function percent(value: number, total: number) {
         <div><strong>{{ quotes.shared }}</strong><small>compartilhados</small></div>
       </div>
       <div class="quote-people"><div><UIcon name="i-lucide-user-round-check" /><span><strong>{{ quotes.uniqueCreators }}</strong><small>criadores únicos</small></span></div><div><UIcon name="i-lucide-repeat-2" /><span><strong>{{ quotes.repeatCreators }}</strong><small>criadores recorrentes</small></span></div></div>
-    </article>
+    </DesignSystemSurfaceCard>
 
-    <article class="surface-card ops-card">
+    <DesignSystemSurfaceCard as="article" class="ops-card">
       <header>
-        <div><p class="section-kicker">Velocidade operacional</p><h2>Saúde da moderação</h2></div>
+        <div><DesignSystemKicker>Velocidade operacional</DesignSystemKicker><h2>Saúde da moderação</h2></div>
         <div class="widget-actions">
-          <span :class="['pending-chip', { 'pending-chip--alert': operations.oldestPendingHours > 24 }]"><span class="status-dot" />{{ operations.pending }} pendentes</span>
+          <span :class="['pending-chip', { 'pending-chip--alert': operations.oldestPendingHours > 24 }]"><DesignSystemStatusDot :tone="operations.oldestPendingHours > 24 ? 'warning' : 'success'" />{{ operations.pending }} pendentes</span>
           <AdminReportsMetricHelp
             title="Saúde da moderação"
             meaning="Monitora tamanho e idade da fila, tempo mediano, P90 de análise, aprovação e ocorrências de conteúdo oculto ou reportado."
@@ -79,12 +79,12 @@ function percent(value: number, total: number) {
         <div><span>Aprovação</span><strong>{{ approvalRate }}%</strong><small>{{ operations.rejected }}/{{ operations.reviewed }} recusados</small></div>
       </div>
       <footer><UIcon name="i-lucide-shield-alert" /><span>{{ operations.hiddenOrReported }} conteúdo(s) oculto(s) ou reportado(s) no período.</span></footer>
-    </article>
+    </DesignSystemSurfaceCard>
   </section>
 </template>
 
 <style scoped>
-.trust-ops { display: grid; grid-template-columns: 1.2fr .8fr; gap: 12px; }.network-card, .quote-card, .ops-card { padding: 20px; }.network-card header h2, .network-card header p, .network-card header span, .quote-card header h2, .quote-card header p, .quote-card header span, .ops-card header h2, .ops-card header p { margin: 0; }.network-card h2, .quote-card h2, .ops-card h2 { margin-top: 2px !important; font-family: Georgia, serif; font-size: 1.25rem; font-weight: 500; }.network-card header span, .quote-card header div > span { display: block; margin-top: 4px; color: var(--ink-soft); font-size: var(--font-size-min); }.section-kicker { color: #397a69; font-size: var(--font-size-min); font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+.trust-ops { display: grid; grid-template-columns: 1.2fr .8fr; gap: 12px; }.network-card, .quote-card, .ops-card { padding: 20px; }.network-card header h2, .network-card header p, .network-card header span, .quote-card header h2, .quote-card header p, .quote-card header span, .ops-card header h2, .ops-card header p { margin: 0; }.network-card h2, .quote-card h2, .ops-card h2 { margin-top: 2px !important; font-family: Georgia, serif; font-size: 1.25rem; font-weight: 500; }.network-card header span, .quote-card header div > span { display: block; margin-top: 4px; color: var(--ink-soft); font-size: var(--font-size-min); }
 .network-list { display: grid; gap: 8px; margin-top: 17px; }.network-list > div { padding: 12px; border-radius: 12px; background: #f7f5f0; }.network-list > div > strong { font-size: var(--font-size-min); }.network-values { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; align-items: center; gap: 8px; margin-top: 9px; }.network-values > span { display: flex; align-items: baseline; gap: 4px; }.network-values b { font-family: Georgia, serif; font-size: 1rem; }.network-values small { color: var(--ink-soft); font-size: var(--font-size-min); }.network-values > svg { color: #a1aaa6; font-size: var(--font-size-min); }.network-list p { margin: 7px 0 0; color: #397a69; font-size: var(--font-size-min); font-weight: 800; }
 .quote-card header, .ops-card header { display: flex; justify-content: space-between; gap: 10px; }.rate-chip { align-self: start; padding: 6px 8px; border-radius: 8px; background: #e8f4f0; color: #397a69; font-size: var(--font-size-min); font-weight: 850; white-space: nowrap; }.quote-numbers { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; margin-top: 26px; }.quote-numbers > div { padding: 13px; border-radius: 12px; background: #f7f5f0; text-align: center; }.quote-numbers strong, .quote-numbers small { display: block; }.quote-numbers strong { font-family: Georgia, serif; font-size: 1.6rem; }.quote-numbers small { color: var(--ink-soft); font-size: var(--font-size-min); }.quote-numbers > svg { color: #397a69; }.quote-people { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }.quote-people > div { display: flex; align-items: center; gap: 8px; padding: 10px; border: 1px solid var(--line); border-radius: 11px; }.quote-people svg { color: #705e93; }.quote-people strong, .quote-people small { display: block; }.quote-people strong { font-size: var(--font-size-min); }.quote-people small { color: var(--ink-soft); font-size: var(--font-size-min); }
 .ops-card { grid-column: 1 / -1; }.ops-card header > span { display: flex; align-items: center; gap: 6px; align-self: start; padding: 6px 9px; border-radius: 9px; background: #e8f4f0; color: #397a69; font-size: var(--font-size-min); font-weight: 850; }.ops-card header > .ops-card__alert { background: #fff2cf; color: #8d6813; }.ops-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; margin-top: 17px; }.ops-grid > div { padding: 13px; border-radius: 11px; background: #f7f5f0; }.ops-grid span, .ops-grid strong, .ops-grid small { display: block; }.ops-grid span { color: var(--ink-soft); font-size: var(--font-size-min); }.ops-grid strong { margin-top: 6px; font-family: Georgia, serif; font-size: 1.35rem; }.ops-grid small { margin-top: 2px; color: var(--ink-soft); font-size: var(--font-size-min); }.ops-card footer { display: flex; align-items: center; gap: 7px; margin-top: 12px; color: var(--ink-soft); font-size: var(--font-size-min); }.ops-card footer svg { color: #b9533e; }

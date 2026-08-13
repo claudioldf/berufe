@@ -24,7 +24,7 @@ function respondRelationship(accepted: boolean) {
 <template>
   <div class="dashboard-page">
     <section class="dashboard-welcome">
-      <div class="page-container dashboard-welcome__inner">
+      <DesignSystemContainer class="dashboard-welcome__inner">
         <div>
           <p>Terça-feira, 11 de agosto</p>
           <h1>Olá, Marina. <em>Vamos em frente?</em></h1>
@@ -33,10 +33,10 @@ function respondRelationship(accepted: boolean) {
           <UButton color="neutral" variant="outline" icon="i-lucide-share-2" @click="shareProfile">Compartilhar perfil</UButton>
           <UButton to="/painel/orcamentos/novo" color="secondary" icon="i-lucide-plus">Novo orçamento</UButton>
         </div>
-      </div>
+      </DesignSystemContainer>
     </section>
 
-    <div class="page-container dashboard-content">
+    <DesignSystemContainer class="dashboard-content">
       <section class="status-banner">
         <span class="status-banner__icon"><UIcon name="i-lucide-badge-check" /></span>
         <div><strong>Seu perfil está publicado</strong><p>Clientes já podem encontrar e entrar em contato com você.</p></div>
@@ -45,7 +45,7 @@ function respondRelationship(accepted: boolean) {
 
       <section class="dashboard-section metrics-section">
         <div class="dashboard-section__heading">
-          <div><p class="eyebrow">Últimos 30 dias</p><h2>Sua presença em movimento.</h2></div>
+          <div><DesignSystemEyebrow>Últimos 30 dias</DesignSystemEyebrow><h2>Sua presença em movimento.</h2></div>
           <span>Atualizado hoje, 07:00</span>
         </div>
         <div class="metrics-grid">
@@ -61,7 +61,7 @@ function respondRelationship(accepted: boolean) {
       <div class="dashboard-grid">
         <DashboardChecklist :readiness="dashboardData.readiness" :items="dashboardData.checklist" />
 
-        <section class="actions-card surface-card">
+        <DesignSystemSurfaceCard as="section" class="actions-card">
           <header><span>Ações rápidas</span><small>Fortaleça seu perfil</small></header>
           <div class="actions-card__grid">
             <NuxtLink to="/painel/perfil"><span><UIcon name="i-lucide-pencil" /></span><strong>Editar perfil</strong><small>Dados e serviços</small></NuxtLink>
@@ -69,11 +69,11 @@ function respondRelationship(accepted: boolean) {
             <button type="button" @click="showToast({ title: 'Link de recomendação criado', description: 'Pronto para compartilhar no WhatsApp.' })"><span><UIcon name="i-lucide-heart-handshake" /></span><strong>Pedir recomendação</strong><small>Cliente anterior</small></button>
             <button type="button" @click="showToast({ title: 'Convite criado', description: 'Compartilhe o link com seu colaborador.' })"><span><UIcon name="i-lucide-user-plus" /></span><strong>Convidar parceiro</strong><small>Fortaleça sua rede</small></button>
           </div>
-        </section>
+        </DesignSystemSurfaceCard>
       </div>
 
       <section class="dashboard-section pending-section">
-        <div class="dashboard-section__heading"><div><p class="eyebrow">Precisa de atenção</p><h2>Pendências e análises.</h2></div><span>{{ dashboardData.pending.length }} itens</span></div>
+        <div class="dashboard-section__heading"><div><DesignSystemEyebrow>Precisa de atenção</DesignSystemEyebrow><h2>Pendências e análises.</h2></div><span>{{ dashboardData.pending.length }} itens</span></div>
         <div class="pending-list">
           <article v-for="item in dashboardData.pending" :key="item.id">
             <span class="pending-list__icon"><UIcon :name="item.type === 'portfolio' ? 'i-lucide-image' : 'i-lucide-handshake'" /></span>
@@ -88,8 +88,8 @@ function respondRelationship(accepted: boolean) {
       </section>
 
       <section class="dashboard-section quotes-section">
-        <div class="dashboard-section__heading"><div><p class="eyebrow">Ferramentas</p><h2>Orçamentos recentes.</h2></div><UButton to="/painel/orcamentos/novo" variant="link" trailing-icon="i-lucide-arrow-right">Ver todos</UButton></div>
-        <div class="quotes-table surface-card">
+        <div class="dashboard-section__heading"><div><DesignSystemEyebrow>Ferramentas</DesignSystemEyebrow><h2>Orçamentos recentes.</h2></div><UButton to="/painel/orcamentos/novo" variant="link" trailing-icon="i-lucide-arrow-right">Ver todos</UButton></div>
+        <DesignSystemSurfaceCard class="quotes-table">
           <div class="quotes-table__head"><span>Orçamento</span><span>Cliente</span><span>Valor</span><span>Status</span><span>Data</span></div>
           <NuxtLink v-for="quote in dashboardData.recentQuotes" :key="quote.id" to="/painel/orcamentos/novo">
             <span><strong>#{{ quote.number }}</strong><small>{{ quote.service }}</small></span>
@@ -98,9 +98,9 @@ function respondRelationship(accepted: boolean) {
             <span><em :class="quote.status">{{ quote.status === 'shared' ? 'Compartilhado' : 'Rascunho' }}</em></span>
             <span>{{ quote.date }} <UIcon name="i-lucide-chevron-right" /></span>
           </NuxtLink>
-        </div>
+        </DesignSystemSurfaceCard>
       </section>
-    </div>
+    </DesignSystemContainer>
   </div>
 </template>
 

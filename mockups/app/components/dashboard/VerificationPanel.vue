@@ -10,16 +10,16 @@ const hasFile = shallowRef(false)
 
 <template>
   <div class="verification-panel">
-    <section class="verification-panel__intro surface-card"><div><p class="eyebrow">Evidências específicas</p><h2>Verificações</h2><p>Os selos explicam exatamente o que a Berufe conferiu. Eles não são uma garantia de serviço.</p></div><UIcon name="i-lucide-shield-check" /></section>
-    <section class="verification-panel__current surface-card"><h3>Selos do seu perfil</h3><div><PublicEvidenceBadge v-for="item in evidence" :key="item.id" :evidence="item" /></div></section>
-    <section class="verification-panel__request surface-card">
+    <DesignSystemSurfaceCard as="section" class="verification-panel__intro"><div><DesignSystemEyebrow>Evidências específicas</DesignSystemEyebrow><h2>Verificações</h2><p>Os selos explicam exatamente o que a Berufe conferiu. Eles não são uma garantia de serviço.</p></div><UIcon name="i-lucide-shield-check" /></DesignSystemSurfaceCard>
+    <DesignSystemSurfaceCard as="section" class="verification-panel__current"><h3>Selos do seu perfil</h3><div><PublicEvidenceBadge v-for="item in evidence" :key="item.id" :evidence="item" /></div></DesignSystemSurfaceCard>
+    <DesignSystemSurfaceCard as="section" class="verification-panel__request">
       <header><div><h3>Solicitar nova verificação</h3><p>O arquivo é privado, acessível somente à equipe responsável e removido conforme a política de retenção.</p></div><span><UIcon name="i-lucide-lock-keyhole" /> Arquivo protegido</span></header>
       <div class="verification-types">
         <label v-for="item in [{ id: 'identity', label: 'Identidade', icon: 'i-lucide-id-card', description: 'Documento oficial com foto' }, { id: 'company', label: 'Empresa', icon: 'i-lucide-building-2', description: 'Comprovante de CNPJ ativo' }, { id: 'certificate', label: 'Certificado', icon: 'i-lucide-award', description: 'Certificado profissional' }]" :key="item.id" :class="{ selected: selected === item.id }"><input v-model="selected" type="radio" :value="item.id"><UIcon :name="item.icon" /><span><strong>{{ item.label }}</strong><small>{{ item.description }}</small></span><UIcon name="i-lucide-circle-check" /></label>
       </div>
       <label class="verification-upload"><input type="file" @change="hasFile = true"><UIcon :name="hasFile ? 'i-lucide-file-check-2' : 'i-lucide-file-up'" /><span><strong>{{ hasFile ? 'documento-exemplo.pdf' : 'Selecione o documento' }}</strong><small>{{ hasFile ? 'Pronto para envio' : 'PDF, JPG ou PNG · até 10 MB' }}</small></span><em>{{ hasFile ? 'Trocar' : 'Escolher arquivo' }}</em></label>
       <UButton color="primary" :disabled="!hasFile" @click="emit('submitted'); hasFile = false">Enviar para análise</UButton>
-    </section>
+    </DesignSystemSurfaceCard>
   </div>
 </template>
 

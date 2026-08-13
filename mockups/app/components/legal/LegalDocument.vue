@@ -19,9 +19,9 @@ defineSlots<{
   <article class="legal-document">
     <header class="legal-document__hero">
       <div class="legal-document__hero-shape" />
-      <div class="page-container legal-document__hero-inner">
+      <DesignSystemContainer class="legal-document__hero-inner">
         <div class="legal-document__heading">
-          <p class="eyebrow">{{ eyebrow }}</p>
+          <DesignSystemEyebrow tone="inverse">{{ eyebrow }}</DesignSystemEyebrow>
           <h1>{{ title }}</h1>
           <p>{{ description }}</p>
         </div>
@@ -36,20 +36,20 @@ defineSlots<{
             <dd>{{ updatedAt }}</dd>
           </div>
         </dl>
-      </div>
+      </DesignSystemContainer>
     </header>
 
     <div class="legal-document__draft">
-      <div class="page-container legal-document__draft-inner">
+      <DesignSystemContainer class="legal-document__draft-inner">
         <UIcon name="i-lucide-file-check-2" />
         <p>
           <strong>Minuta para revisão.</strong>
           Este documento reflete o produto planejado e ainda depende de validação jurídica e dos dados oficiais da responsável pela Berufe antes do lançamento com usuários reais.
         </p>
-      </div>
+      </DesignSystemContainer>
     </div>
 
-    <div class="page-container legal-document__layout">
+    <DesignSystemContainer class="legal-document__layout">
       <aside class="legal-document__aside">
         <nav aria-label="Nesta página">
           <p>Nesta página</p>
@@ -64,7 +64,7 @@ defineSlots<{
       <div class="legal-document__content">
         <slot />
       </div>
-    </div>
+    </DesignSystemContainer>
   </article>
 </template>
 
@@ -74,7 +74,6 @@ defineSlots<{
 .legal-document__hero-shape { position: absolute; top: -170px; right: -70px; width: 430px; height: 430px; border: 92px solid rgba(216,240,231,.08); border-radius: 999px; }
 .legal-document__hero-inner { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 70px; }
 .legal-document__heading { max-width: 780px; }
-.legal-document__heading .eyebrow { color: #a8d8c9; }
 .legal-document__heading h1 { max-width: 760px; margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(2.8rem, 6vw, 5.4rem); font-weight: 500; letter-spacing: -.055em; line-height: .98; }
 .legal-document__heading > p:last-child { max-width: 680px; margin: 25px 0 0; color: rgba(255,255,255,.67); font-size: 1rem; line-height: 1.75; }
 .legal-document__metadata { display: grid; min-width: 210px; margin: 0; border-top: 1px solid rgba(255,255,255,.18); }
