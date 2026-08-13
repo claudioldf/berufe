@@ -8,8 +8,8 @@
       <div class="footer__links">
         <NuxtLink to="/encontrar">Encontrar profissional</NuxtLink>
         <NuxtLink to="/entrar">Criar meu perfil</NuxtLink>
-        <a href="#">Privacidade</a>
-        <a href="#">Termos</a>
+        <NuxtLink to="/privacidade">Privacidade</NuxtLink>
+        <NuxtLink to="/termos-de-uso">Termos</NuxtLink>
       </div>
       <p class="footer__note">Berufe · Joinville, SC</p>
     </div>

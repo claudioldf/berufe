@@ -79,7 +79,7 @@ async function register() {
             <span><strong>João Vitor Santos</strong><small>Pedreiro · membro fundador</small></span>
           </div>
         </div>
-        <p><UIcon name="i-lucide-shield-check" /> Perfil básico e contato direto sempre gratuitos.</p>
+        <p><UIcon name="i-lucide-shield-check" /> Perfil básico e contato direto.</p>
       </div>
     </div>
 
@@ -136,7 +136,13 @@ async function register() {
             </label>
             <label class="auth-check">
               <input v-model="accepted" type="checkbox">
-              <span>Li e aceito os <a href="#">Termos de Uso</a> e o <a href="#">Aviso de Privacidade</a> vigentes.</span>
+              <span>
+                Li e aceito os
+                <NuxtLink to="/termos-de-uso" target="_blank" rel="noopener">Termos de Uso</NuxtLink>
+                e a
+                <NuxtLink to="/privacidade" target="_blank" rel="noopener">Política de Privacidade</NuxtLink>
+                vigentes.
+              </span>
             </label>
             <p v-if="error" class="auth-error"><UIcon name="i-lucide-circle-alert" /> {{ error }}</p>
             <UButton type="submit" color="primary" block trailing-icon="i-lucide-arrow-right">Criar meu perfil</UButton>

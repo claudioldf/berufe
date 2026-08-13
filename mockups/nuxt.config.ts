@@ -57,6 +57,8 @@ export default defineNuxtConfig({
         '/',
         '/encontrar',
         '/entrar',
+        '/privacidade',
+        '/termos-de-uso',
         '/painel',
         '/painel/perfil',
         '/painel/orcamentos/novo',
