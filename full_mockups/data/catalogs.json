@@ -1,0 +1,126 @@
+{
+  "categories": [
+    { "id": "instalacoes", "name": "Instalações e reparos", "icon": "i-lucide-wrench" },
+    { "id": "acabamentos", "name": "Obra e acabamento", "icon": "i-lucide-paint-roller" },
+    { "id": "projetos", "name": "Projetos e interiores", "icon": "i-lucide-ruler" },
+    { "id": "montagem", "name": "Montagem e marcenaria", "icon": "i-lucide-hammer" }
+  ],
+  "services": [
+    {
+      "id": "svc-eletricista",
+      "name": "Eletricista",
+      "slug": "eletricista",
+      "category": "instalacoes",
+      "icon": "i-lucide-zap",
+      "description": "Instalações, reparos, quadros elétricos e iluminação residencial.",
+      "aliases": ["eletrica", "eletricidade", "luz", "tomada"]
+    },
+    {
+      "id": "svc-encanador",
+      "name": "Encanador",
+      "slug": "encanador",
+      "category": "instalacoes",
+      "icon": "i-lucide-pipette",
+      "description": "Reparos hidráulicos, instalações e solução de vazamentos.",
+      "aliases": ["hidraulica", "canos", "vazamento"]
+    },
+    {
+      "id": "svc-pintor",
+      "name": "Pintor",
+      "slug": "pintor",
+      "category": "acabamentos",
+      "icon": "i-lucide-paintbrush",
+      "description": "Pintura interna e externa, texturas e preparação de superfícies.",
+      "aliases": ["pintura", "pintar", "parede"]
+    },
+    {
+      "id": "svc-pedreiro",
+      "name": "Pedreiro",
+      "slug": "pedreiro",
+      "category": "acabamentos",
+      "icon": "i-lucide-brick-wall",
+      "description": "Reformas, alvenaria, pequenos reparos e acabamentos.",
+      "aliases": ["alvenaria", "reforma", "obra"]
+    },
+    {
+      "id": "svc-revestimentos",
+      "name": "Azulejista",
+      "slug": "azulejista",
+      "category": "acabamentos",
+      "icon": "i-lucide-grid-2x2",
+      "description": "Assentamento de pisos, azulejos e revestimentos.",
+      "aliases": ["piso", "azulejo", "porcelanato"]
+    },
+    {
+      "id": "svc-drywall",
+      "name": "Drywall e gesso",
+      "slug": "drywall-gesso",
+      "category": "acabamentos",
+      "icon": "i-lucide-panels-top-left",
+      "description": "Forros, divisórias, sancas e acabamentos em gesso.",
+      "aliases": ["gesso", "forro", "divisoria"]
+    },
+    {
+      "id": "svc-marceneiro",
+      "name": "Marceneiro",
+      "slug": "marceneiro",
+      "category": "montagem",
+      "icon": "i-lucide-hammer",
+      "description": "Móveis sob medida, ajustes e reparos de madeira.",
+      "aliases": ["marcenaria", "moveis", "madeira"]
+    },
+    {
+      "id": "svc-montador",
+      "name": "Montador de móveis",
+      "slug": "montador-de-moveis",
+      "category": "montagem",
+      "icon": "i-lucide-armchair",
+      "description": "Montagem, desmontagem e regulagem de móveis residenciais.",
+      "aliases": ["montagem", "armario", "guarda roupa"]
+    },
+    {
+      "id": "svc-arquiteto",
+      "name": "Arquiteto",
+      "slug": "arquiteto",
+      "category": "projetos",
+      "icon": "i-lucide-ruler",
+      "description": "Projetos de reforma, interiores e acompanhamento de obra.",
+      "aliases": ["arquitetura", "projeto", "planta"]
+    },
+    {
+      "id": "svc-interiores",
+      "name": "Designer de interiores",
+      "slug": "designer-de-interiores",
+      "category": "projetos",
+      "icon": "i-lucide-lamp-floor",
+      "description": "Planejamento funcional e estético de ambientes residenciais.",
+      "aliases": ["interiores", "decoracao", "ambiente"]
+    },
+    {
+      "id": "svc-marido-aluguel",
+      "name": "Marido de aluguel",
+      "slug": "marido-de-aluguel",
+      "category": "instalacoes",
+      "icon": "i-lucide-drill",
+      "description": "Pequenas instalações, ajustes e reparos do dia a dia.",
+      "aliases": ["faz tudo", "reparos", "manutencao"]
+    }
+  ],
+  "neighborhoods": [
+    { "code": "all", "name": "Toda Joinville" },
+    { "code": "america", "name": "América" },
+    { "code": "anita-garibaldi", "name": "Anita Garibaldi" },
+    { "code": "atiradores", "name": "Atiradores" },
+    { "code": "aventureiro", "name": "Aventureiro" },
+    { "code": "bom-retiro", "name": "Bom Retiro" },
+    { "code": "boehmerwald", "name": "Boehmerwald" },
+    { "code": "bucarein", "name": "Bucarein" },
+    { "code": "centro", "name": "Centro" },
+    { "code": "costa-e-silva", "name": "Costa e Silva" },
+    { "code": "floresta", "name": "Floresta" },
+    { "code": "gloria", "name": "Glória" },
+    { "code": "iririu", "name": "Iririú" },
+    { "code": "saguaçu", "name": "Saguaçu" },
+    { "code": "santo-antonio", "name": "Santo Antônio" }
+  ]
+}
