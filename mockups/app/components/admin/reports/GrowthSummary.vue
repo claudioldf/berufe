@@ -14,6 +14,11 @@ interface SummaryCard {
   change: string
   icon: string
   tone: 'forest' | 'coral' | 'gold' | 'blue' | 'purple'
+  help: {
+    meaning: string
+    goal: string
+    reading: string
+  }
 }
 
 const published = computed(() => props.report.supply.funnel.find(stage => stage.key === 'published')?.value ?? 0)
@@ -32,7 +37,12 @@ const cards = computed<SummaryCard[]>(() => [
     detail: `meta fundadora ${props.report.supply.targetMinimum}–${props.report.supply.targetMaximum}`,
     change: props.report.summaryChanges.published,
     icon: 'i-lucide-users-round',
-    tone: 'forest'
+    tone: 'forest',
+    help: {
+      meaning: 'Profissionais cujo perfil foi aprovado e ficou pesquisável no período selecionado.',
+      goal: `Formar a rede fundadora de ${props.report.supply.targetMinimum}–${props.report.supply.targetMaximum} profissionais publicados, com oferta distribuída entre serviços e bairros.`,
+      reading: 'Leia junto do funil: muitos cadastros e poucas publicações indicam bloqueio em verificação, preenchimento ou moderação.'
+    }
   },
   {
     key: 'activated',
@@ -41,7 +51,12 @@ const cards = computed<SummaryCard[]>(() => [
     detail: `${percent(activated.value, published.value)} dos publicados`,
     change: props.report.summaryChanges.activated,
     icon: 'i-lucide-badge-check',
-    tone: 'purple'
+    tone: 'purple',
+    help: {
+      meaning: 'Perfis publicados com identidade aprovada, pelo menos três trabalhos no portfólio e duas relações profissionais confirmadas.',
+      goal: 'Aumentar continuamente a parcela de publicados que cumpre todos os critérios de ativação, sem criar uma nota de confiança opaca.',
+      reading: 'O numerador mostra ativados e o denominador, publicados. Consulte “Qualidade da oferta” para descobrir qual critério está faltando.'
+    }
   },
   {
     key: 'coverage',
@@ -50,7 +65,12 @@ const cards = computed<SummaryCard[]>(() => [
     detail: `${percent(props.report.discovery.searchesWithResults, props.report.discovery.searches)} de cobertura`,
     change: props.report.summaryChanges.searchCoverage,
     icon: 'i-lucide-search-check',
-    tone: 'blue'
+    tone: 'blue',
+    help: {
+      meaning: 'Buscas válidas que retornaram ao menos um profissional relevante no serviço e região procurados.',
+      goal: 'Cobrir todas as buscas válidas; os casos recorrentes sem resultado devem orientar recrutamento ou revisão do catálogo.',
+      reading: 'Uma taxa alta com poucas opções ainda pode ser frágil. Compare também com buscas que oferecem três ou mais profissionais.'
+    }
   },
   {
     key: 'handoffs',
@@ -59,7 +79,12 @@ const cards = computed<SummaryCard[]>(() => [
     detail: `${percent(props.report.discovery.whatsappHandoffs, props.report.discovery.profileViews)} dos perfis abertos`,
     change: props.report.summaryChanges.handoffs,
     icon: 'i-lucide-message-circle-more',
-    tone: 'coral'
+    tone: 'coral',
+    help: {
+      meaning: 'Cliques deduplicados para iniciar uma conversa no WhatsApp a partir de um perfil ou resultado de busca.',
+      goal: 'Fazer o volume crescer junto com buscas bem atendidas e perfis abertos, mostrando que a descoberta gera intenção de contato.',
+      reading: 'É uma oportunidade observável, não uma contratação. A Berufe não lê mensagens nem conhece o resultado da conversa.'
+    }
   },
   {
     key: 'returning',
@@ -68,7 +93,12 @@ const cards = computed<SummaryCard[]>(() => [
     detail: `${percent(props.report.engagement.returningProfessionals, props.report.engagement.eligibleProfessionals)} da base publicada`,
     change: props.report.summaryChanges.returning,
     icon: 'i-lucide-refresh-cw',
-    tone: 'gold'
+    tone: 'gold',
+    help: {
+      meaning: 'Profissionais da base publicada que voltaram e realizaram uma ação útil, como atualizar o perfil, criar evidência, interagir com a rede ou gerar orçamento.',
+      goal: 'Elevar a recorrência semanal e a retenção W1/W4; login isolado não conta como valor gerado.',
+      reading: 'Use o total com as coortes de retenção. Em bases pequenas, n/N é mais confiável que comparar variações percentuais.'
+    }
   }
 ])
 </script>
@@ -88,6 +118,7 @@ const cards = computed<SummaryCard[]>(() => [
         <div class="summary-card__top">
           <span class="summary-card__icon"><UIcon :name="card.icon" /></span>
           <span class="summary-card__label">{{ card.label }}</span>
+          <AdminReportsMetricHelp :title="card.label" v-bind="card.help" />
         </div>
         <strong>{{ card.value }}</strong>
         <small>{{ card.detail }}</small>
@@ -112,7 +143,7 @@ const cards = computed<SummaryCard[]>(() => [
 .summary-card--purple { --card-accent: #705e93; --card-soft: #f0ecf7; }
 .summary-card__top { display: flex; align-items: center; gap: 8px; min-height: 34px; }
 .summary-card__icon { display: grid; flex: 0 0 auto; place-items: center; width: 30px; height: 30px; border-radius: 9px; background: var(--card-soft); color: var(--card-accent); }
-.summary-card__label { color: var(--ink-soft); font-size: var(--font-size-min); font-weight: 750; line-height: 1.25; }
+.summary-card__label { flex: 1; color: var(--ink-soft); font-size: var(--font-size-min); font-weight: 750; line-height: 1.25; }
 .summary-card > strong { display: block; margin-top: 13px; font-family: Georgia, serif; font-size: 1.75rem; font-weight: 500; letter-spacing: -.035em; }
 .summary-card > small { display: block; min-height: 31px; margin-top: 2px; color: var(--ink-soft); font-size: var(--font-size-min); line-height: 1.35; }
 .summary-card > p { display: flex; align-items: center; gap: 4px; margin: 10px 0 0; color: var(--card-accent); font-size: var(--font-size-min); font-weight: 850; }

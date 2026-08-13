@@ -28,7 +28,15 @@ function percent(value: number, total: number) {
     <article class="surface-card report-card">
       <header class="report-card__header">
         <div><p class="section-kicker">Oferta</p><h2>Funil de profissionais</h2><span>Onde a rede fundadora está perdendo força.</span></div>
-        <div class="goal-chip"><UIcon name="i-lucide-goal" /> Meta {{ supply.targetMinimum }}–{{ supply.targetMaximum }}</div>
+        <div class="report-card__actions">
+          <div class="goal-chip"><UIcon name="i-lucide-goal" /> Meta {{ supply.targetMinimum }}–{{ supply.targetMaximum }}</div>
+          <AdminReportsMetricHelp
+            title="Funil de profissionais"
+            meaning="Mostra quantos profissionais avançaram de convite e cadastro até publicação e ativação. A porcentagem à direita compara cada etapa com a anterior."
+            :goal="`Chegar a ${supply.targetMinimum}–${supply.targetMaximum} profissionais publicados na rede fundadora e reduzir o maior abandono entre etapas.`"
+            reading="A primeira etapa é a base. Quedas grandes apontam onde atuar: contato, verificação, preenchimento, moderação ou construção de evidências."
+          />
+        </div>
       </header>
       <div class="funnel">
         <div v-for="(stage, index) in funnel" :key="stage.key" class="funnel__row">
@@ -44,6 +52,12 @@ function percent(value: number, total: number) {
     <article class="surface-card report-card">
       <header class="report-card__header">
         <div><p class="section-kicker">Credibilidade</p><h2>Qualidade da oferta</h2><span>Critérios transparentes, sem nota de confiança opaca.</span></div>
+        <AdminReportsMetricHelp
+          title="Qualidade da oferta"
+          meaning="Decompõe os critérios visíveis de um perfil confiável: identidade aprovada, três ou mais trabalhos e duas ou mais relações confirmadas."
+          goal="Fazer todos os profissionais publicados avançarem nos três critérios, mantendo cada evidência verificável e compreensível."
+          reading="Cada linha usa a mesma base de perfis publicados. “Perfil ativado” conta somente quem cumpre os três critérios ao mesmo tempo."
+        />
       </header>
       <div class="activation-list">
         <div v-for="metric in supply.activation" :key="metric.key" class="activation-item">
@@ -67,6 +81,7 @@ function percent(value: number, total: number) {
 .supply-grid { display: grid; grid-template-columns: 1.08fr .92fr; gap: 12px; }
 .report-card { padding: 20px; }
 .report-card__header { display: flex; align-items: start; justify-content: space-between; gap: 14px; }
+.report-card__actions { display: flex; align-items: center; gap: 7px; }
 .report-card__header h2, .report-card__header p, .report-card__header span { margin: 0; }
 .report-card__header h2 { margin-top: 2px; font-family: Georgia, serif; font-size: 1.35rem; font-weight: 500; }
 .report-card__header span { display: block; margin-top: 4px; color: var(--ink-soft); font-size: var(--font-size-min); }

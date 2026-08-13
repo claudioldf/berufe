@@ -31,6 +31,15 @@ function percent(value: number, total: number) {
 
     <div class="discovery__grid">
       <article class="surface-card discovery-funnel">
+        <header class="widget-heading">
+          <div><h3>Cobertura da jornada</h3><p>Progressão desde a busca</p></div>
+          <AdminReportsMetricHelp
+            title="Cobertura da jornada"
+            meaning="Mostra quantas buscas tiveram resultado, variedade, abertura de perfil e tentativa de contato. Cada etapa é comparada ao total de buscas."
+            goal="Aumentar a progressão em todas as etapas: cobrir a demanda, oferecer escolha, despertar interesse e facilitar o contato."
+            reading="A maior queda indica o problema principal. Falha no início sugere falta de oferta; queda após resultados sugere relevância ou qualidade dos perfis."
+          />
+        </header>
         <div v-for="(stage, index) in discoveryStages" :key="stage.key" class="discovery-stage">
           <div class="discovery-stage__top"><span>{{ stage.label }}</span><strong>{{ stage.value }}</strong></div>
           <div class="discovery-stage__bar"><i :style="{ width: percent(stage.value, stage.total) }" /></div>
@@ -40,7 +49,18 @@ function percent(value: number, total: number) {
       </article>
 
       <article class="surface-card demand-card">
-        <header><div><h3>Demanda por serviço</h3><p>Buscas agregadas</p></div><UIcon name="i-lucide-chart-no-axes-column-increasing" /></header>
+        <header>
+          <div><h3>Demanda por serviço</h3><p>Buscas agregadas</p></div>
+          <div class="widget-actions">
+            <UIcon name="i-lucide-chart-no-axes-column-increasing" />
+            <AdminReportsMetricHelp
+              title="Demanda por serviço"
+              meaning="Ordena os serviços pelo número de buscas realizadas no período, sem identificar quem pesquisou."
+              goal="Usar a demanda real para priorizar recrutamento, cobertura territorial e conteúdo dos perfis."
+              reading="Volume de busca não é conversão. Compare cada serviço com cobertura, opções disponíveis e contatos iniciados antes de investir na oferta."
+            />
+          </div>
+        </header>
         <div class="demand-bars">
           <div v-for="item in discovery.demand" :key="item.label">
             <span>{{ item.label }}</span>
@@ -51,7 +71,18 @@ function percent(value: number, total: number) {
       </article>
 
       <article class="surface-card gaps-card">
-        <header><div><h3>Gaps que bloqueiam crescimento</h3><p>Buscas com pouca ou nenhuma oferta</p></div><span>Priorizar rede</span></header>
+        <header>
+          <div><h3>Gaps que bloqueiam crescimento</h3><p>Buscas com pouca ou nenhuma oferta</p></div>
+          <div class="widget-actions">
+            <span>Priorizar rede</span>
+            <AdminReportsMetricHelp
+              title="Gaps de oferta"
+              meaning="Destaca combinações de serviço e região que receberam buscas, mas têm zero ou poucos profissionais disponíveis."
+              goal="Eliminar primeiro os gaps repetidos de serviços ativos; demandas fora do MVP devem ser avaliadas antes de ampliar o catálogo."
+              reading="“Recrutar” indica falta de profissionais no catálogo atual. “Avaliar catálogo” indica uma demanda ainda não assumida pelo MVP."
+            />
+          </div>
+        </header>
         <div class="gaps-list">
           <div v-for="gap in discovery.gaps" :key="`${gap.service}-${gap.location}`">
             <span :class="{ 'gaps-list__icon--catalog': gap.catalogStatus === 'outside_mvp' }"><UIcon :name="gap.catalogStatus === 'outside_mvp' ? 'i-lucide-list-plus' : 'i-lucide-map-pin'" /></span>
@@ -76,6 +107,7 @@ function percent(value: number, total: number) {
 .demand-bars { display: grid; gap: 13px; margin-top: 23px; }.demand-bars > div { display: grid; grid-template-columns: 110px 1fr 28px; align-items: center; gap: 8px; }.demand-bars span, .demand-bars strong { font-size: var(--font-size-min); }.demand-bars i { height: 7px; overflow: hidden; border-radius: 99px; background: #e9e8e3; }.demand-bars b { display: block; height: 100%; border-radius: inherit; background: #397a69; }.demand-bars strong { text-align: right; }
 .gaps-card { grid-column: 1 / -1; }.gaps-card header > span { align-self: start; padding: 6px 8px; border-radius: 8px; background: #fff0ec; color: #b9533e; font-size: var(--font-size-min); font-weight: 850; }.gaps-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin-top: 17px; }.gaps-list > div { display: grid; grid-template-columns: auto 1fr; gap: 9px; padding: 12px; border-radius: 12px; background: #f7f5f0; }.gaps-list > div > span { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 9px; background: #fff0ec; color: #b9533e; }.gaps-list > div > .gaps-list__icon--catalog { background: #fff7de; color: #8a6918; }.gaps-list strong, .gaps-list small { display: block; }.gaps-list strong { font-size: var(--font-size-min); line-height: 1.35; }.gaps-list small { margin-top: 3px; color: var(--ink-soft); font-size: var(--font-size-min); }.gaps-list em { grid-column: 2; color: #397a69; font-size: var(--font-size-min); font-style: normal; font-weight: 850; }
 .section-kicker { color: #2f6b5f; }.gaps-card header > span, .gaps-list > div > span { color: #a94734; }
+.widget-heading, .widget-actions { display: flex; align-items: start; justify-content: space-between; gap: 8px; }.widget-heading h3, .widget-heading p { margin: 0; }.widget-heading h3 { font-family: Georgia, serif; font-size: 1.15rem; font-weight: 500; }.widget-heading p { margin-top: 3px; color: var(--ink-soft); font-size: var(--font-size-min); }.widget-actions { align-items: center; justify-content: flex-end; }.demand-card .widget-actions > svg { color: #397a69; font-size: 1.2rem; }.gaps-card .widget-actions > span { align-self: start; padding: 6px 8px; border-radius: 8px; background: #fff0ec; color: #a94734; font-size: var(--font-size-min); font-weight: 850; }
 @media (max-width: 800px) { .discovery__grid { grid-template-columns: 1fr; }.gaps-card { grid-column: auto; }.gaps-list { grid-template-columns: 1fr; } }
 @media (max-width: 620px) { .section-heading { align-items: start; flex-direction: column; }.section-heading > p { text-align: left; } }
 </style>

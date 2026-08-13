@@ -28,7 +28,18 @@ function retentionWidth(value: number | null, size: number) {
 
     <div class="engagement__grid">
       <article class="surface-card activity-card">
-        <header><div><h3>Ações significativas</h3><p>{{ engagement.meaningfulActives }}/{{ engagement.eligibleProfessionals }} profissionais ativos no período</p></div><span><strong>{{ engagement.returningProfessionals }}</strong> recorrentes</span></header>
+        <header>
+          <div><h3>Ações significativas</h3><p>{{ engagement.meaningfulActives }}/{{ engagement.eligibleProfessionals }} profissionais ativos no período</p></div>
+          <div class="widget-actions">
+            <span class="returning-chip"><strong>{{ engagement.returningProfessionals }}</strong> recorrentes</span>
+            <AdminReportsMetricHelp
+              title="Ações significativas"
+              meaning="Conta profissionais distintos que realizaram ações que aumentam o valor da rede: atualizar perfil, criar evidência, interagir com relações ou gerar orçamento."
+              goal="Aumentar profissionais ativos e recorrentes, além da quantidade de semanas em que cada um gera valor."
+              reading="Uma pessoa pode realizar mais de um tipo de ação, então as barras não devem ser somadas. Login sem ação útil não entra nesta métrica."
+            />
+          </div>
+        </header>
         <div class="action-list">
           <div v-for="action in engagement.actions" :key="action.key">
             <span>{{ action.label }}</span>
@@ -42,7 +53,18 @@ function retentionWidth(value: number | null, size: number) {
       </article>
 
       <article class="surface-card cohort-card">
-        <header><div><h3>Coortes de publicação</h3><p>Retorno após o perfil entrar no ar</p></div><span>n pequeno: exibimos n/N</span></header>
+        <header>
+          <div><h3>Coortes de publicação</h3><p>Retorno após o perfil entrar no ar</p></div>
+          <div class="widget-actions">
+            <span class="sample-note">n pequeno: exibimos n/N</span>
+            <AdminReportsMetricHelp
+              title="Coortes de retenção W1/W4"
+              meaning="Agrupa profissionais pela semana em que o perfil foi publicado e mostra quantos voltaram com uma ação útil após uma e quatro semanas."
+              goal="Melhorar a retenção W1 e, principalmente, W4 à medida que os fluxos de confiança e orçamento se tornam hábitos."
+              reading="“—” significa que a coorte ainda não teve tempo de chegar à semana medida. Com poucos profissionais, compare n/N, não apenas percentuais."
+            />
+          </div>
+        </header>
         <div class="cohort-table" role="table" aria-label="Retenção por coorte de publicação">
           <div class="cohort-table__head" role="row"><span role="columnheader">Coorte</span><span role="columnheader">Perfis</span><span role="columnheader">Semana 1</span><span role="columnheader">Semana 4</span></div>
           <div v-for="cohort in engagement.cohorts" :key="cohort.cohort" class="cohort-table__row" role="row">
@@ -65,6 +87,7 @@ function retentionWidth(value: number | null, size: number) {
 .frequency-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 20px; }.frequency-strip > div { padding: 9px 5px; border-radius: 9px; background: #f7f5f0; text-align: center; }.frequency-strip strong, .frequency-strip small { display: block; }.frequency-strip strong { font-family: Georgia, serif; font-size: 1.05rem; }.frequency-strip small { margin-top: 2px; color: var(--ink-soft); font-size: var(--font-size-min); }
 .cohort-card header > span { align-self: start; color: var(--ink-soft); font-size: var(--font-size-min); }.cohort-table { margin-top: 18px; }.cohort-table__head, .cohort-table__row { display: grid; grid-template-columns: 1.25fr .45fr .9fr .9fr; align-items: center; gap: 8px; }.cohort-table__head { padding: 0 8px 8px; color: var(--ink-soft); font-size: var(--font-size-min); font-weight: 850; text-transform: uppercase; }.cohort-table__row { min-height: 45px; padding: 8px; border-top: 1px solid var(--line); font-size: var(--font-size-min); }.cohort-table__row > strong { font-size: var(--font-size-min); }.cohort-table__row > div { display: grid; grid-template-columns: 1fr 25px; align-items: center; gap: 5px; }.cohort-table__row i { height: 5px; overflow: hidden; border-radius: 99px; background: #e9e8e3; }.cohort-table__row b { display: block; height: 100%; border-radius: inherit; background: #397a69; }.cohort-table__row em { color: var(--ink-soft); font-size: var(--font-size-min); font-style: normal; text-align: right; }
 .section-kicker, .activity-card header > span { color: #2f6b5f; }
+.widget-actions { display: flex; align-items: start; justify-content: flex-end; gap: 7px; }.returning-chip { padding: 7px 9px; border-radius: 10px; background: #e8f4f0; color: #2f6b5f; font-size: var(--font-size-min); text-align: center; }.returning-chip strong { display: block; font-family: Georgia, serif; font-size: 1.1rem; }.sample-note { align-self: center; color: var(--ink-soft); font-size: var(--font-size-min); }
 @media (max-width: 880px) { .engagement__grid { grid-template-columns: 1fr; } }
 @media (max-width: 620px) { .section-heading { align-items: start; flex-direction: column; }.section-heading > p { text-align: left; }.cohort-table__head, .cohort-table__row { grid-template-columns: 1.2fr .4fr .8fr .8fr; }.frequency-strip { grid-template-columns: 1fr 1fr; } }
 </style>
