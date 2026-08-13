@@ -1,14 +1,21 @@
 # Berufe — Reports Stories and Metric Specification
 
+**Status:** post-MVP detailed specification for `Berufe_V2_Stories.md` V2-017
+
+**Updated:** August 13, 2026
+
 ## 1. Purpose and source of truth
 
-This document specifies the administrative growth report represented by `./apps/web/app/components/admin/reports`. It explains what each card or widget means, which MVP records it reads, the required associations and filters, and the exact calculation to return from the Rails API.
+This document preserves the detailed administrative growth-report specification represented by `./apps/web/app/components/admin/reports`. The report was moved out of the launch MVP and is tracked by V2-017. It must not be implemented as part of the MVP merely because the mockup or this specification exists.
+
+It explains what each card or widget means, which MVP or later V2 records it reads, the required associations and filters, and the exact calculation to return from the Rails API. Sections concerning client recommendations, external invitations, professional-facing metrics, content reports, or quotes remain conditional on their corresponding V2 domain stories; unavailable domains are omitted or explicitly unavailable, never fabricated as zero activity.
 
 It is derived from:
 
 - `Berufe_MVP_Feature_Plan.md`, especially the MVP value loop and success signals;
-- `Berufe_MVP_Stories.md`, especially S015–S051;
+- `Berufe_MVP_Stories.md` for launch data and `Berufe_V2_Stories.md` for deferred domains;
 - `Berufe_MVP_Infrastructure_Architecture.md`, especially the PostgreSQL, privacy, moderation, and analytics decisions;
+- `apps/contracts/openapi.yaml`, which must describe the report endpoint and response consumed by Nuxt once implementation begins;
 - the current report mockup and its three periods: since launch, last 30 days, and last 7 days.
 
 The Feature Plan contains proposed data structures, not implemented migrations. This document therefore uses conventional Rails plural table names for clarity and explicitly marks every metric that needs a field or aggregate not yet present in the approved documents. A report must never fabricate a value when the required data does not exist.
@@ -135,9 +142,9 @@ The implementation stories already require these data points; migrations must ma
 | Data | Recommended implementation | Required by |
 |---|---|---|
 | A search produced at least one profile open | `search_events.profile_opened boolean NOT NULL DEFAULT false` | S034–S035 |
-| WhatsApp handoff source | `professional_daily_metrics.whatsapp_clicks_public_profile` and `whatsapp_clicks_search_result`, both non-negative | S037, S048 |
-| Invite claimant | `professional_invites.invitee_professional_id`, nullable until claimed | S044–S045 |
-| Invite-created relationship | `professional_invites.professional_relationship_id`, nullable and unique | S045 |
+| WhatsApp handoff source | `professional_daily_metrics.whatsapp_clicks_public_profile` and `whatsapp_clicks_search_result`, both non-negative | MVP S037 |
+| Invite claimant | `professional_invites.invitee_professional_id`, nullable until claimed | V2-011–V2-012 |
+| Invite-created relationship | `professional_invites.professional_relationship_id`, nullable and unique | V2-012 |
 | Immutable request correlation | `moderation_actions.request_id` | S023 |
 
 Keep `professional_daily_metrics.whatsapp_clicks` for the Feature Plan total and enforce:
@@ -208,12 +215,14 @@ Until option 2 is approved, the API must return the `invited` stage as unavailab
 ### API and implementation
 
 - Endpoint: `GET /api/v1/admin/reports/growth?period=since_launch|last_30_days|last_7_days`.
+- OpenAPI operation ID: `getAdminGrowthReport`. The contract defines the period enum, application-session security, aggregate response sections, shared error envelope, and `200`, `401`, `403`, and `422` responses. The shared CSRF header scheme applies to mutations, not this `GET` operation.
 - Rails owns all calculations and authorization. Nuxt only formats returned values.
 - Require an authenticated `user_accounts.role = 'admin'`, `status = 'active'`, and the stronger admin authentication policy from the Infrastructure document.
 - Return aggregates only. Never serialize individual `search_events`, phone numbers, client fingerprints, token hashes, moderation private notes, quote customer names, or WhatsApp content.
 - Compute one `generated_at` timestamp and one period boundary pair per response so all widgets use the same snapshot.
 - Keep query code in report/query objects such as `Admin::Reports::GrowthReport`, with a small object per section. Do not place cross-domain SQL in controllers.
 - PostgreSQL is the source of truth. No external analytics provider is required.
+- Nuxt consumes the generated operation types through the single `app/services/api/client.ts`; it does not maintain a parallel handwritten report response type.
 
 ### Response requirements
 
@@ -227,7 +236,7 @@ For every rate return `{ numerator, denominator, rate }`, where `rate` is `null`
 - One response contains summary, supply, discovery, engagement, trust, quotes, and moderation sections.
 - An empty database returns zeros and null rates without raising an exception.
 
-**Depends on:** S005–S009, S017, S034, S048.
+**Depends on:** MVP S005–S009, S017, S034, S036–S037; V2-017 approval.
 
 ## R002 — Show the five-card growth scorecard
 
@@ -496,7 +505,7 @@ The profile-open boolean is set once for a search even if several result profile
 - Daily professional counters continue to count deduplicated handoff actions for the professional dashboard.
 - The full funnel hides its final stage when the required field is unavailable.
 
-**Depends on:** S033–S037, S048.
+**Depends on:** MVP S033–S037; V2-017 approval.
 
 ## R006 — Show demand by service
 
@@ -659,7 +668,7 @@ The initial objective is to move professionals from zero or one active week towa
 - Replayed jobs cannot double-increment counters.
 - Bars represent distinct professionals, and the endpoint states that explicitly.
 
-**Depends on:** S019, S027, S039, S042–S045, S049.
+**Depends on:** MVP S019, S027, S042–S043, S046; V2-008, V2-011–V2-014 as implemented.
 
 ## R009 — Measure W1 and W4 publication-cohort retention
 
@@ -739,7 +748,7 @@ This makes decline visible as a completed flow outcome while keeping it out of p
 
 **Started:** `professional_invites.created_at` inside the period.
 
-**Completed:** started invitations with `status = 'accepted'` and a non-null `invitee_professional_id`, after the invitee's approved profile and relationship acceptance as defined by S045.
+**Completed:** started invitations with `status = 'accepted'` and a non-null `invitee_professional_id`, after the invitee's approved profile and relationship acceptance as defined by V2-012.
 
 **Approved:** completed invitations whose linked `professional_relationship_id` satisfies the public relationship scope.
 
@@ -761,7 +770,7 @@ Expired/revoked invitations remain in the started cohort but not completed. Invi
 - An invitation is not completed merely because registration began.
 - Counts exclude duplicate token consumption through database uniqueness and transactions.
 
-**Depends on:** S023, S039–S046.
+**Depends on:** MVP S023, S042–S043, S046; V2-008–V2-012 as implemented.
 
 ## R011 — Measure recurring quote utility
 
@@ -815,7 +824,7 @@ Increase unique creators, repeat creators, and the share conversion. A low share
 - Zero created quotes returns a null share rate.
 - Private customer fields never appear in the report response.
 
-**Depends on:** S049–S051.
+**Depends on:** V2-014–V2-016.
 
 ## R012 — Monitor moderation health
 
@@ -897,7 +906,7 @@ Keep the oldest item under 24 hours and reduce median/P90 without weakening revi
 - Targets without a reliable submission timestamp are reported as data-quality errors, not assigned a zero duration.
 - Queue and report use the same pending projection.
 
-**Depends on:** S023–S024, S026, S028, S030, S038, S041, S046.
+**Depends on:** MVP S023–S024, S026, S028, S030, S046; V2-007 and V2-010 when implemented.
 
 ## R013 — Protect privacy and metric integrity
 
@@ -929,7 +938,7 @@ Keep the oldest item under 24 hours and reduce median/P90 without weakening revi
 - Replayed requests/jobs do not increase idempotent metrics twice.
 - Data retention can delete raw anonymous events without breaking retained daily professional totals.
 
-**Depends on:** S034, S037, S048, S052–S053.
+**Depends on:** MVP S034, S036–S037, S052–S053; V2-013 and other reported domains when implemented.
 
 ## R014 — Validate formulas, performance, and zero-state behavior
 
@@ -953,6 +962,7 @@ Keep the oldest item under 24 hours and reduce median/P90 without weakening revi
 14. Hidden actions and content reports remain separate.
 15. Suspended profiles are excluded from current public scopes but retained in historical cohorts.
 16. Aggregate-only serializer and admin authorization.
+17. `openapi_first` validates the report request plus `200`, `401`, `403`, and `422` responses against `apps/contracts/openapi.yaml`, and contract coverage includes `getAdminGrowthReport`.
 
 ### Required frontend tests
 
@@ -962,6 +972,7 @@ Keep the oldest item under 24 hours and reduce median/P90 without weakening revi
 - The “Convidados” stage and search-contact conversion are hidden or marked unavailable when backend support is absent.
 - Small-sample `n/N` remains visible on mobile.
 - Current-stock moderation labels do not imply they are period flows.
+- The component/API layer compiles against the generated `getAdminGrowthReport` types and normalizes the shared error envelope through `app/services/api/errors.ts`.
 
 ### Performance
 
@@ -987,7 +998,7 @@ Do not add Redis, a warehouse, event streaming, or an external analytics/search 
 | Publicados no período | `professional_profiles` | `user_accounts` | Flow | `published_at` |
 | Perfis ativados | `professional_profiles` | `verification_requests`, `portfolio_items`, `professional_relationships`, `moderation_actions`, `user_accounts` | Cohort outcome | `published_at`; effective relationship moderation query |
 | Buscas com resultado | `search_events` | `services` | Flow | none beyond S034 fields |
-| Contatos iniciados | `professional_daily_metrics` | — | Flow | source counters from S048 |
+| Contatos iniciados | `professional_daily_metrics` | — | Flow | source counters from MVP S037 |
 | Profissionais recorrentes | `professional_daily_activities` | `professional_profiles`, `user_accounts` | Flow/current eligible base | new daily activity aggregate |
 | Funil de profissionais | `professional_profiles` | `user_accounts`, `verification_requests`, evidence/relationship tables | Cohort outcome | first submission and publication timestamps; no founding invite source |
 | Qualidade da oferta | `professional_profiles` | verification, portfolio, relationship, moderation, accounts | Current stock | reusable public scopes |
@@ -1002,14 +1013,15 @@ Do not add Redis, a warehouse, event streaming, or an external analytics/search 
 
 ## 6. Recommended delivery order
 
-1. Add the milestone/source fields already required by S023, S034, S035, S037, S045, and S048.
+1. Confirm which MVP and V2 domains actually exist; do not add fields for unapproved V2-008–V2-016 merely to satisfy a report mockup.
 2. Add `published_at` and the daily meaningful-activity aggregate.
 3. Implement reusable public-eligibility, public-relationship, and moderation-queue queries.
 4. Implement report period boundaries and the aggregate-only admin endpoint.
-5. Deliver supply, activation, discovery, and moderation widgets first; these answer the most urgent zero-to-liquidity questions.
-6. Deliver meaningful activity, W1/W4 cohorts, trust funnels, and quote utility after their domain transactions write reliable timestamps/aggregates.
-7. Remove or mark unavailable the founding “Convidados” stage and search-contact funnel stage until their explicit data support is approved.
-8. Run reconciliation fixtures and the empty/small-sample frontend states before replacing mock JSON with the API.
+5. Add `getAdminGrowthReport` to OpenAPI, regenerate the committed Nuxt schema, and make its Rails request specs contract-conformant.
+6. Deliver supply, activation, discovery, and moderation widgets first; these answer the most urgent zero-to-liquidity questions.
+7. Deliver meaningful activity, W1/W4 cohorts, client-recommendation/invitation funnels, and quote utility only after their corresponding V2 domain transactions write reliable timestamps/aggregates.
+8. Remove or mark unavailable the founding “Convidados” stage and search-contact funnel stage until their explicit data support is approved.
+9. Run reconciliation fixtures and the empty/small-sample frontend states before replacing mock JSON with the API.
 
 ## 7. Definition of done
 
@@ -1017,6 +1029,7 @@ The reports feature is complete when:
 
 - every visible number has the source, filter, period semantics, and denominator defined here;
 - every report query is covered by boundary, lifecycle, and privacy tests;
+- the OpenAPI operation, generated frontend types, Rails contract tests, and Nuxt consumer change together and CI reports no generated-file drift;
 - no prototype-only value is shown as production data;
 - public eligibility and moderation logic are shared with the product flows rather than reimplemented inconsistently;
 - the report remains useful from zero records through the 30–50-professional founding target;

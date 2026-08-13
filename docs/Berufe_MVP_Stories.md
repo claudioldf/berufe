@@ -1,16 +1,16 @@
 # Berufe — MVP Implementation Stories
 
 **Status:** implementation backlog  
-**Updated:** August 11, 2026  
+**Updated:** August 13, 2026
 **Sources:** *Berufe — MVP Feature Plan* and *Berufe — Lean MVP Infrastructure and Architecture*
 
 ## 1. Purpose
 
 This document turns the approved Berufe MVP scope and architecture into an incrementally ordered implementation backlog.
 
-The order is dependency-driven: establish a reproducible monorepo, enable secure access, build credible professional supply, expose it through public discovery, add trust relationships, deliver recurring professional utility, and then complete the launch gate.
+The order is dependency-driven: establish a reproducible monorepo, enable secure access, build credible professional supply, expose it through public discovery, add existing-member trust relationships and a focused professional dashboard, and then complete the launch gate.
 
-The backlog intentionally excludes MVP 2.0 ideas and every item explicitly deferred by the source documents.
+The backlog intentionally excludes V2 work. Story IDs removed during the August 2026 scope review are not reused; their original behavior and acceptance criteria are preserved in `Berufe_V2_Stories.md`.
 
 ## 2. How to use this backlog
 
@@ -39,7 +39,8 @@ Apply these rules whenever they are relevant to the story:
 - New Rails behavior has the appropriate RSpec coverage; important Vue behavior has Vitest coverage.
 - External providers are accessed through small adapters and are faked in automated tests.
 - Sensitive values are not logged, returned through public APIs, or stored in browser storage.
-- `standardrb`, Biome lint, Prettier check, Nuxt typecheck, Brakeman, and the affected test suites pass.
+- `standardrb`, Nuxt ESLint, Prettier check, Nuxt typecheck, Brakeman, and the affected test suites pass.
+- Every API change updates `apps/contracts/openapi.yaml`, regenerated Nuxt types, Rails contract tests, and the typed frontend consumer in the same story.
 - The story does not add a deferred technology or feature without updating the approved scope first.
 
 ## 4. Increment 0 — Reproducible development foundation
@@ -52,8 +53,9 @@ Apply these rules whenever they are relevant to the story:
 
 **Acceptance criteria:**
 
-- The root contains `backend/`, `frontend/`, `compose.yaml`, `.env.example`, and `README.md`.
-- `backend/` is a Rails 8.1 API-only application and `frontend/` is a Nuxt/Vue TypeScript application.
+- The root contains `apps/api/`, `apps/web/`, `apps/contracts/openapi.yaml`, `compose.yaml`, `.env.example`, `README.md`, and `docs/`.
+- `apps/api/` is a Rails 8.1 API-only application and `apps/web/` is the Nuxt/Vue TypeScript application; there is no pnpm workspace or separate API-client package.
+- `apps/web/` uses pnpm and commits `pnpm-lock.yaml`; obsolete Node lockfiles are removed when the foundation is created.
 - Ruby, Node, Rails, Nuxt, and package versions are pinned; dependency lockfiles are committed.
 - The README contains only the commands needed to install, start, test, lint, format, and stop the project.
 
@@ -66,11 +68,11 @@ Apply these rules whenever they are relevant to the story:
 
 **Acceptance criteria:**
 
-- `docker compose up --build` starts `frontend`, `backend`, `worker`, and `db`.
-- The backend and worker use the same backend image and environment definition.
+- `docker compose up --build` starts `web`, `api`, `worker`, and `db`.
+- The API and worker use the same backend image and environment definition.
 - PostgreSQL has a health check and named development volume; dependent services wait for database readiness.
-- Frontend and backend source changes reload without rebuilding the entire stack.
-- The local stack does not require Redis, MinIO, a live authentication provider, R2, or production credentials.
+- Nuxt and Rails source changes reload without rebuilding the entire stack, and the team records that hot reload is comfortable on its supported development machines before retaining the four-service setup.
+- The local stack does not require Redis, MinIO, live Infobip delivery, R2, or production credentials.
 
 **Depends on:** S001.  
 **Covers:** Infrastructure §7.1.
@@ -83,10 +85,12 @@ Apply these rules whenever they are relevant to the story:
 
 - `.env.example` lists required variable names and safe development defaults without secrets.
 - Rails validates required environment variables at boot for the selected environment.
-- Development uses a local-disk storage adapter and a fake hosted-auth adapter by default.
-- The selected production auth provider is documented and proven to support Brazilian SMS OTP, stable external account IDs, server-verifiable sessions, admin MFA, and verification-only phone challenges that do not create customer accounts.
+- Development uses a local-disk storage adapter and a fake SMS-OTP adapter by default.
+- Production SMS OTP uses Infobip's 2FA API through a purpose-specific adapter. The integration documents application/message-template identifiers, Brazilian sender-registration prerequisites, API-key ownership, delivery limits, challenge verification, and provider-failure behavior.
+- Production credentials are dedicated to Berufe. Stable staging, local development, and pull-request previews use the fake adapter by default; any explicit integration check uses a separate restricted Infobip application/profile and allowlisted test numbers, never production credentials or real-user data.
+- Infobip is not Berufe's account, session, authorization, or admin-MFA provider.
 - Production-only credentials remain server-side and cannot enter the Nuxt client bundle.
-- Local, preview/staging, and production configuration are clearly separated.
+- Local, pull-request preview, stable staging, and production configuration are clearly separated.
 
 **Depends on:** S002.  
 **Covers:** Infrastructure §§4, 7.1, 12, and 14.
@@ -99,7 +103,6 @@ Apply these rules whenever they are relevant to the story:
 
 - Rails connects to the Compose PostgreSQL service and can create, migrate, seed, and reset development/test databases.
 - Application tables default to UUID primary keys and UTC `timestamptz` timestamps.
-- Money conventions use PostgreSQL `numeric` and Ruby `BigDecimal`.
 - Migrations are the only supported mechanism for schema changes.
 - A database readiness check is exposed through the Rails health endpoint without leaking configuration.
 
@@ -108,14 +111,16 @@ Apply these rules whenever they are relevant to the story:
 
 ### S005 — Configure GoodJob and the worker
 
-**Story:** As an operator, I want retryable background work to run from PostgreSQL so that image processing, OTP delivery, and cleanup tasks do not block web requests.
+**Story:** As an operator, I want retryable noninteractive background work to run from PostgreSQL so that image processing and maintenance do not block web requests.
 
 **Acceptance criteria:**
 
-- GoodJob is the Active Job adapter in development, preview/staging, and production; ordinary tests use the Rails test adapter unless they specifically exercise GoodJob.
-- GoodJob runs in `external` execution mode outside tests, and the Compose `worker` starts it with `bundle exec good_job start` to process one `default` queue for image processing, OTP-delivery requests, and expired-token/file cleanup.
+- GoodJob is the Active Job adapter in development, stable staging, and production; ordinary tests use the Rails test adapter unless they specifically exercise GoodJob.
+- GoodJob runs in `external` execution mode outside tests, and the Compose `worker` starts it with `bundle exec good_job start` to process one `default` queue for image sanitization/processing, expired counter/token/file/session cleanup, aggregate maintenance, and nonurgent provider reconciliation. Interactive OTP initiation is explicitly excluded.
+- The API uses `RAILS_MAX_THREADS=5` and `DB_POOL=5`; the worker uses `GOOD_JOB_MAX_THREADS=2` and `DB_POOL=5`. Deployment documentation uses `(API replicas × API pool) + (worker replicas × worker pool) + migration/admin allowance`, reserves 15 connections for one API/worker replica plus administration, selects a plan with at least 20 available connections, and recalculates before scaling.
 - GoodJob tables are created through committed Rails migrations in the existing PostgreSQL database.
 - A harmless probe job can be enqueued, processed, failed, retried, and inspected.
+- The worker exposes GoodJob's HTTP running/started/connected probes; the dashboard is mounted only behind an active admin session with current MFA.
 - Jobs receive a request or correlation ID when originating from a web request.
 - Job code is documented as retry-safe; no Redis or alternative queue is added.
 
@@ -128,11 +133,14 @@ Apply these rules whenever they are relevant to the story:
 
 **Acceptance criteria:**
 
-- Rails routes are prefixed with `/api/v1` and return JSON.
-- Successful and failed responses follow documented shapes; validation failures include stable error codes and field errors.
+- `apps/contracts/openapi.yaml` is a valid OpenAPI 3.1.0 document and the source of truth for all `/api/v1` product operations.
+- Successful and failed JSON responses follow the contract; the shared error envelope contains `code`, safe `message`, optional `field_errors` as field-name-to-message-array entries, and string `request_id`.
 - Lists support deterministic ordering and pagination when needed.
-- Nuxt has one typed API client that handles the API base URL, credentials, CSRF header, and normalized errors.
-- A sample endpoint proves browser-to-Nuxt-to-Rails communication in Compose.
+- The contract declares the Rails application-session cookie and CSRF header security requirements.
+- `apps/web` provides `api:generate` using `openapi-typescript ../contracts/openapi.yaml -o app/services/api/schema.d.ts`; the generated file is committed.
+- `app/services/api/client.ts` uses `openapi-fetch` to handle the API base URL, credentials, CSRF header, and typed operations; `errors.ts` normalizes the shared error envelope.
+- Rails request specs use `openapi_first` against the same file to validate important requests/responses and report operation/status coverage.
+- A sample endpoint proves browser-to-Nuxt-to-Rails communication and contract validation in Compose.
 
 **Depends on:** S003, S004.  
 **Covers:** Infrastructure §5 and §§6–7.
@@ -159,8 +167,8 @@ Apply these rules whenever they are relevant to the story:
 **Acceptance criteria:**
 
 - Backend scripts run Standard Ruby, Brakeman, and RSpec.
-- Frontend scripts run Biome lint with its formatter disabled, Prettier formatting checks, Nuxt typecheck, and Vitest.
-- ESLint and a direct RuboCop configuration are not installed.
+- Frontend scripts run Nuxt's supported ESLint integration, Prettier formatting checks, Nuxt typecheck, and Vitest. ESLint formatting rules are disabled and Prettier is the only formatter.
+- Biome and a direct RuboCop configuration are not installed.
 - RSpec request-test and Vitest component-test examples pass in containers.
 - Test data is synthetic and no test reaches a real provider.
 
@@ -175,9 +183,10 @@ Apply these rules whenever they are relevant to the story:
 
 - GitHub Actions builds both Dockerfiles and runs backend and frontend non-writing checks.
 - Backend CI runs Standard, Brakeman, RSpec, and Rails boot/migration checks.
-- Frontend CI runs Biome lint, Prettier check, Nuxt typecheck, Vitest, and the production build.
+- Frontend CI runs `pnpm api:generate`, `git diff --exit-code app/services/api/schema.d.ts`, Nuxt ESLint, Prettier check, Nuxt typecheck, Vitest, and the production build from `apps/web`.
+- Backend RSpec executes the OpenAPI contract checks and fails on undocumented important request/response variants or contract coverage regressions.
 - An integration job can start the root Compose stack for changes crossing the API boundary.
-- CI excludes secrets, generated files, lockfiles, and incompatible Rails YAML/ERB from repository formatting.
+- CI excludes secrets, generated files such as `schema.d.ts`, lockfiles, and incompatible Rails YAML/ERB from repository formatting.
 
 **Depends on:** S008.  
 **Covers:** Infrastructure §§3 and 14.
@@ -208,25 +217,32 @@ Apply these rules whenever they are relevant to the story:
 
 - The login page accepts and normalizes Brazilian numbers to E.164.
 - Rails applies a resend cooldown and conservative daily allowances by phone and IP using short-lived PostgreSQL digests/counters.
-- Rails enqueues a retry-safe OTP-delivery request through a small hosted-auth adapter; local and test environments use a fake implementation.
-- The hosted provider owns the OTP value and delivery result; Berufe stores only short-lived abuse-control digests/counters and a provider challenge reference when required.
+- Rails synchronously starts the challenge through a small Infobip 2FA adapter; local, test, stable staging, and pull-request preview environments use a fake implementation by default. No OTP-delivery job is enqueued.
+- Infobip owns the OTP value and delivery result. Rails stores a short-lived `otp_challenge` that binds an encrypted normalized phone and encrypted Infobip challenge ID to a separate high-entropy browser token stored only as a digest; it also stores short-lived abuse-control digests/counters.
+- The API contract defines accepted, invalid-phone, rate-limited, provider-unavailable, and delivery-rejected outcomes. Rate-limit responses include `Retry-After` and every failure uses the shared safe error envelope.
 - Responses do not reveal whether an account exists and do not log phone numbers, OTPs, or request bodies.
-- The UI explains cooldown and provider-unavailable states without bypassing verification.
+- The UI immediately explains cooldown, delivery rejection, and provider-unavailable states without polling or bypassing verification.
+- Request/contract tests cover accepted, malformed phone, cooldown/daily rate limit with `Retry-After`, delivery rejection, provider timeout/unavailability, and the invariant that no OTP-delivery job is enqueued.
 
 **Depends on:** S005, S006, S008.  
 **Covers:** Feature A1; Infrastructure §§8 and 12.
 
-### S012 — Verify the OTP and create a secure session
+### S012 — Verify the Infobip OTP and create a Rails application session
 
 **Story:** As a professional, I want to submit the received code so that Berufe can create an authenticated browser session.
 
 **Acceptance criteria:**
 
-- Rails verifies the code through the hosted-auth adapter and never stores the OTP.
-- A successful check validates the provider response, creates or finds the account by its unique `auth_provider_id`, and synchronizes the verified E.164 phone.
-- The browser receives the provider-backed session in a secure, HTTP-only cookie with an explicit expiry; auth tokens are never stored in `localStorage` or persisted in Berufe's business tables.
+- Rails verifies the code through the Infobip adapter and never stores the OTP.
+- Verification requires the unexpired, unconsumed Rails challenge token, decrypts the bound Infobip reference/phone only server-side, and consumes the challenge atomically on success.
+- A successful check validates the challenge result and creates or finds the Rails-owned account by its unique verified E.164 phone. The Rails UUID is the stable Berufe identity; an Infobip challenge ID is not an account identifier.
+- Rails creates an `application_session` containing a unique token digest, account ID, `sms_otp` authentication method, authentication time, last activity, idle/absolute expiries, CSRF digest, and nullable revocation time. Admin sessions also record MFA time.
+- The browser receives only the random application-session token in the host-only `__Host-berufe_session` cookie with `Secure`, `HttpOnly`, `SameSite=Lax`, and `Path=/`; no `Domain` is set.
+- Infobip credentials and raw Rails challenge/session tokens never enter browser storage or application logs; neither authentication nor CSRF tokens are stored in `localStorage`.
+- Professional sessions use 7-day idle and 30-day absolute expiry; admin sessions use 30-minute idle and 12-hour absolute expiry. Last-activity persistence is throttled.
 - Invalid, expired, and provider-unavailable results use generic safe messages.
-- The selected hosted passwordless provider is implemented for non-local environments behind the same small adapter.
+- The Infobip 2FA implementation is enabled only where explicitly configured behind the same small adapter.
+- Model/request tests cover token hashing, professional/admin idle and absolute boundaries, throttled activity writes, MFA time, invalid/expired verification, and safe provider-unavailable behavior.
 
 **Depends on:** S011.  
 **Covers:** Feature A1; Infrastructure §8.
@@ -237,12 +253,13 @@ Apply these rules whenever they are relevant to the story:
 
 **Acceptance criteria:**
 
-- Nuxt can request the current account/session summary without receiving the raw provider token.
-- Rails validates the provider session and then applies the Berufe account status, role, and authorization policies.
-- Logout clears the browser cookie and revokes the provider session when supported.
-- Expired provider sessions and sessions for suspended Berufe accounts are rejected.
-- Expired OTP counters and provider challenge references are purged by a retry-safe GoodJob job.
+- Nuxt can request the current account/session summary plus a rotating CSRF token without receiving the raw stored session token or any provider token; Nuxt keeps the CSRF token in memory only.
+- Rails authenticates each request locally from the application-session token digest, enforces idle/absolute expiry, and then applies account status, role, and authorization policies without contacting the provider.
+- Logout revokes the current application session and clears the browser cookie. Suspension and the admin revoke-all action invalidate every application session for the account immediately.
+- Existing Rails sessions continue through a provider outage until their own expiry or revocation; new challenge initiation/verification returns a safe `503`.
+- Expired OTP counters, provider challenge references, and application sessions are purged by retry-safe GoodJob jobs according to the retention matrix.
 - Authenticated routes redirect cleanly to login while Rails remains the authorization authority.
+- Request tests cover current-session CSRF rotation, idle/absolute expiry, logout of one session, revoke-all/suspension, and continued local authentication during provider outage.
 
 **Depends on:** S012, S005.  
 **Covers:** Feature A1; Infrastructure §§6 and 8.
@@ -253,11 +270,11 @@ Apply these rules whenever they are relevant to the story:
 
 **Acceptance criteria:**
 
-- CORS uses exact local, preview/staging, and production Nuxt origins and allows credentials only for them.
-- State-changing cookie-authenticated requests require a CSRF token and valid origin.
-- Nuxt obtains and sends the CSRF token through the shared API client.
+- Credentialed CORS uses only exact local, stable-staging, and production Nuxt origins; pull-request previews are absent and no Vercel wildcard is allowed.
+- State-changing cookie-authenticated requests require the rotating CSRF token bound by digest to the current application session plus an exact valid origin.
+- Nuxt obtains the CSRF token from the current-session response, keeps it in memory, and sends it through the shared API client.
 - Security headers cover content type, framing, and referrer behavior.
-- Request tests prove allowed-origin success and cross-origin rejection.
+- Request tests prove exact allowed-origin success; missing/invalid CSRF, malformed origins, Vercel preview origins, and all other cross-origin mutations are rejected.
 
 **Depends on:** S012.  
 **Covers:** Infrastructure §§8 and 12.
@@ -269,7 +286,7 @@ Apply these rules whenever they are relevant to the story:
 **Acceptance criteria:**
 
 - Accounts support `professional` and `admin` roles plus `active` and `suspended` states.
-- Each account has the unique stable `auth_provider_id` and verified E.164 phone supplied by the hosted authentication provider; authentication credentials remain provider-owned.
+- Each account has a Rails UUID and unique verified E.164 phone. Infobip challenge IDs remain short-lived authentication metadata and are never treated as Berufe account identities.
 - Pundit policies and scopes protect authenticated endpoints, owned records, admin actions, and approved public data.
 - Public serializers exclude private and restricted fields by default.
 - Policy/request tests prove anonymous, owner, non-owner, admin, and suspended-user behavior.
@@ -288,7 +305,6 @@ Apply these rules whenever they are relevant to the story:
 - Rails records the accepted terms version, privacy-notice version, and acceptance time, then creates exactly one draft professional profile for the account.
 - Returning professionals skip completed registration and enter the dashboard/setup flow.
 - Customers do not receive general-purpose accounts.
-- Registration works when initiated from a valid professional invitation without automatically publishing a relationship.
 
 **Depends on:** S013, S015.  
 **Covers:** Feature A1 and the invited-professional entry path in Feature C1.
@@ -300,27 +316,14 @@ Apply these rules whenever they are relevant to the story:
 **Acceptance criteria:**
 
 - Admin accounts are provisioned deliberately and cannot be created through professional registration.
-- Admin login requires TOTP or an equivalent approved second factor through the hosted authentication provider.
-- Admin routes require both a valid session and the admin role.
+- Every new admin application session requires a separately enrolled TOTP after successful SMS OTP and records `mfa_authenticated_at`.
+- TOTP secrets use Rails application-level encryption, recovery codes are stored only as hashes, enrollment/reset is an audited manual admin operation, and neither value is sent to Infobip.
+- Admin routes require the admin role, an unexpired 30-minute-idle/12-hour-absolute session, and current MFA context.
 - Admin actions receive the acting admin ID and request ID for later audit records.
 - There is no multi-level moderator permission system in the MVP.
 
 **Depends on:** S012, S015.  
 **Covers:** Feature E1; Infrastructure §8.
-
-### S018 — Manage service and location catalogs
-
-**Story:** As an admin, I want to rename, reorder, activate, and deactivate catalog entries so that Berufe can correct its controlled vocabulary without deleting history.
-
-**Acceptance criteria:**
-
-- Admin API and Nuxt forms support rename, reorder, activation, and deactivation for service categories, services, and neighborhoods; each reorderable table persists `sort_order`.
-- Referenced entries cannot be hard-deleted.
-- Only admins can mutate the catalog; policy tests prove professional and anonymous denial.
-- Professionals and public search cannot select inactive entries for new records.
-
-**Depends on:** S010, S015, S017.  
-**Covers:** Feature E2.
 
 ## 6. Increment 2 — Credible professional supply
 
@@ -356,16 +359,15 @@ Apply these rules whenever they are relevant to the story:
 **Depends on:** S010, S019.  
 **Covers:** Feature A2.
 
-### S021 — Create a stable public slug and profile preview
+### S021 — Create a stable public slug and inline profile representation
 
-**Story:** As a professional, I want to preview a stable public profile URL so that I know what customers will eventually see and can share the same address later.
+**Story:** As a professional, I want a stable public profile URL and an inline representation of public fields so that I understand what customers will eventually see.
 
 **Acceptance criteria:**
 
 - Rails assigns a unique, human-readable, stable `public_slug`.
-- The professional can preview their own draft, including pending content, through an authenticated endpoint.
-- The preview clearly marks declarations, pending evidence, and content that is not yet public.
-- Anonymous requests cannot use the preview endpoint or infer private records.
+- The authenticated editor presents the draft's public fields and clearly marks declarations, pending evidence, and content that is not yet public without adding a separate preview route or API operation.
+- Anonymous requests cannot infer draft or pending records.
 - Later display-name changes do not silently break an already shared slug.
 
 **Depends on:** S019, S020.  
@@ -381,7 +383,7 @@ Apply these rules whenever they are relevant to the story:
 - Submission changes the profile from `draft` to `pending_review` in one transaction.
 - Incomplete profiles cannot be submitted and receive field/actionable errors.
 - A professional can see the current status but cannot publish their own profile.
-- Editing material approved content creates a separate pending revision. The last approved snapshot remains public and unchanged until the revision is approved.
+- Editing material published content returns the profile to `pending_review`; it is not publicly served until reapproved. Operations has a documented manual correction path for urgent founding-cohort changes.
 
 **Depends on:** S021.  
 **Covers:** Features A2 and A6.
@@ -392,7 +394,7 @@ Apply these rules whenever they are relevant to the story:
 
 **Acceptance criteria:**
 
-- The admin area lists pending profile content (including revisions and photos), portfolio items, client recommendations, accepted professional relationships, and verification requests oldest first, with simple type/status filters.
+- The admin area lists pending profiles/photos, portfolio items, accepted professional relationships, and identity-verification requests oldest first, with simple type/status filters.
 - The reviewer sees only fields and files required for the selected decision.
 - Approve, reject, hide, and restore actions create immutable `moderation_actions` with actor, target, action, private reason, time, and request ID.
 - Rejection and hide require a private reason.
@@ -407,7 +409,7 @@ Apply these rules whenever they are relevant to the story:
 
 **Acceptance criteria:**
 
-- First approval publishes the profile atomically. Approval of a later revision atomically replaces the approved snapshot; rejection keeps the previous snapshot public and returns the rejected revision to an editable private state with a reason visible to its owner.
+- Approval publishes or republishes the profile atomically. Rejection returns it to an editable private state with a reason visible to its owner.
 - Public serializers expose only approved profile, service, and coverage fields.
 - Hide, suspend, and restore operations update public availability immediately.
 - Professionals can see moderation status and rejection guidance in the authenticated UI.
@@ -423,8 +425,9 @@ Apply these rules whenever they are relevant to the story:
 **Acceptance criteria:**
 
 - A small Rails-owned storage adapter uses local disk in development and separate public/private Cloudflare R2 buckets in deployed environments.
-- Rails authorizes upload purpose, ownership, content type, and size before issuing a short-lived presigned upload.
-- Pending media and verification evidence remain private.
+- Rails authorizes upload purpose, ownership, declared content type, and declared size before issuing a short-lived presigned upload to a private quarantine key.
+- After upload confirmation, a retry-safe job checks actual bytes and file signature, safely decodes with libvips, normalizes orientation, strips metadata, and re-encodes into a new private object. It deletes the quarantine original after processing; mismatched, oversized, or undecodable uploads are rejected and deleted without becoming reviewable.
+- Pending media and verification evidence remain private, and a processing failure is rejected without exposing the object to an admin or the public.
 - Approved feature records persist public URLs/keys as defined by Features A2–A4. A narrowly scoped pending-upload record holds temporary private keys for profile/portfolio media until approval; verification evidence uses `verification_file`.
 - R2 credentials and permanent verification-file URLs never reach Nuxt.
 - Provider adapter tests use fakes and do not contact R2.
@@ -439,8 +442,8 @@ Apply these rules whenever they are relevant to the story:
 **Acceptance criteria:**
 
 - The profile accepts one supported image within the configured size limit.
-- The image remains private until approved and replaces the public photo only after moderation.
-- libvips creates the required display variant, re-encodes the image, and removes unnecessary metadata through a retry-safe job.
+- The sanitized image remains private until approved and replaces the public photo only after moderation.
+- libvips safely decodes, normalizes orientation, re-encodes, removes metadata, and creates the required display variant through a retry-safe job.
 - Upload, processing, rejection, and replacement states are visible to the owner.
 - A failed processing job is visible and retryable without duplicating records.
 
@@ -455,7 +458,7 @@ Apply these rules whenever they are relevant to the story:
 
 - A professional can upload an image, select one catalog service, add a short title/description, and submit the item.
 - Rails enforces ownership and a maximum of 12 non-deleted items per professional.
-- Approved items can be manually reordered with deterministic `sort_order` values.
+- Approved items appear newest first, with ID as the deterministic tie-breaker.
 - Images use the same private-upload, libvips-processing, and public-variant rules as profile photos.
 - Pending or rejected items are visible to the owner but not anonymous users.
 
@@ -479,12 +482,14 @@ Apply these rules whenever they are relevant to the story:
 
 ### S029 — Submit private verification evidence
 
-**Story:** As a professional, I want to request identity, company, or certificate verification so that Berufe can publish a precise evidence label.
+**Story:** As a professional, I want to request identity verification so that Berufe can publish a precise evidence label.
 
 **Acceptance criteria:**
 
-- The professional selects one controlled verification type and uploads only its permitted private file type(s).
+- The professional requests the launch `identity` verification type and uploads only JPEG or PNG evidence no larger than 10 MiB or 25 megapixels.
 - Rails creates a pending `verification_request` and associated private file records.
+- The evidence becomes reviewable only after signature inspection, byte/dimension limits, safe decoding, orientation normalization, metadata stripping, and re-encoding into a new private object succeed. Extensions and browser MIME types are never trusted.
+- PDFs and other retained documents are rejected; malware scanning is deferred while those formats remain out of scope.
 - Document numbers are not collected unless a later approved operational requirement makes them essential.
 - Only the owner can see request status; only admins can access the evidence through short-lived authorized access.
 - The UI explains that verification is evidence checking, not a work guarantee.
@@ -499,10 +504,10 @@ Apply these rules whenever they are relevant to the story:
 **Acceptance criteria:**
 
 - Verification requests appear in the shared moderation queue.
-- Approval records reviewer/time and selects a controlled public label; professionals cannot write their own labels.
+- Approval records reviewer/time and publishes the controlled “Identity verified” label; professionals cannot write their own labels.
 - Rejection requires a private reason visible to the professional.
 - Public APIs return only the label and verification date, never files, identifiers, or review notes.
-- Phone confirmation is represented separately from manually reviewed identity/company/certificate evidence.
+- Phone confirmation is represented separately from manually reviewed identity evidence. Company/certificate verification types are not accepted by the MVP API.
 
 **Depends on:** S029, S023.  
 **Covers:** Features A4 and E1.
@@ -514,10 +519,11 @@ Apply these rules whenever they are relevant to the story:
 **Acceptance criteria:**
 
 - Every admin access to verification evidence records actor, request, target, time, and action without logging the file contents or signed URL.
+- Admins can access only regenerated evidence through short-lived authorization with the exact image content type, `X-Content-Type-Options: nosniff`, `Cache-Control: no-store`, and `Content-Disposition: inline` using a server-generated filename; the uploaded filename is never reflected.
 - A documented retention rule maps request states to deletion dates.
 - A retry-safe cleanup job deletes eligible private objects and records `deleted_at`.
 - Deleted evidence cannot be regenerated through an old URL.
-- Tests prove anonymous, professional, non-reviewing path, and expired-link denial.
+- Tests prove anonymous, professional, non-reviewing path, quarantined/failed object, content-signature mismatch, oversized/dimension-limit, and expired-link denial.
 
 **Depends on:** S030, S005.  
 **Covers:** Feature A4; Infrastructure §§9–10 and 12.
@@ -526,7 +532,7 @@ Apply these rules whenever they are relevant to the story:
 
 **Increment outcome:** customers can search Joinville services, compare transparent evidence, open an approved public profile, and contact one chosen professional through WhatsApp.
 
-### S032 — Publish the public home and category routes
+### S032 — Publish the public home and search entry
 
 **Story:** As a customer, I want to choose a residential service from the home page so that I can begin a relevant search without understanding Berufe’s internal taxonomy.
 
@@ -534,9 +540,8 @@ Apply these rules whenever they are relevant to the story:
 
 - The server-rendered home page asks what service is needed and defaults location to Joinville.
 - Suggestions use only active controlled services. The visitor may still submit an unmatched typed term so Berufe can record unmet demand without creating a lead.
-- Stable category routes show the service name, a short explanation, and a path to results.
 - Public pages include correct title, description, canonical URL, and share metadata.
-- No free-form lead request, multi-city selector, map, or paid placement is present.
+- Results URLs preserve selected service/neighborhood state. No dedicated category landing page, free-form lead request, multi-city selector, map, or paid placement is present.
 
 **Depends on:** S010, S007, S024.  
 **Covers:** Feature B1.
@@ -568,7 +573,7 @@ Apply these rules whenever they are relevant to the story:
 - Clearly malformed/sensitive input is not retained.
 - Recording failure never blocks customer results.
 - Admin/product access is aggregate-only for the MVP.
-- Daily aggregate reporting exposes the total searches needed as the denominator for the search-to-profile-open success signal without exposing individual search rows.
+- Daily aggregate data retains the total searches needed as the denominator for the search-to-profile-open success signal. MVP operations can inspect it through a documented aggregate-only query; no growth-report UI is added.
 
 **Depends on:** S033.  
 **Covers:** Feature B1 and MVP success signals.
@@ -579,8 +584,8 @@ Apply these rules whenever they are relevant to the story:
 
 **Acceptance criteria:**
 
-- Each card shows photo, name, exact matching service, coverage, precise verification labels, and approved portfolio/recommendation/relationship counts.
-- Ordering follows the approved sequence: exact service, neighborhood coverage, identity verification, portfolio evidence, recommendation/relationship evidence, then recent profile update.
+- Each card shows photo, name, exact matching service, coverage, precise verification labels, and approved portfolio/relationship counts.
+- Ordering follows the approved sequence: exact service, neighborhood coverage, identity verification, portfolio evidence, professional-relationship evidence, then recent profile update.
 - The API and UI display no numeric trust score, sponsored rank, availability, or price sort.
 - Ordering is deterministic for equivalent records and covered by request/query tests.
 - Pending, rejected, hidden, or suspended evidence contributes neither labels nor counts.
@@ -595,11 +600,12 @@ Apply these rules whenever they are relevant to the story:
 
 **Acceptance criteria:**
 
-- The stable slug route is server-rendered and contains identity/coverage, labels, services/declared experience, portfolio, client recommendations, and professional relationships in the approved order.
+- The stable slug route is server-rendered and contains identity/coverage, labels, services/declared experience, portfolio, and professional relationships in the approved order.
 - The page distinguishes verified facts, declarations, recommendations, and collaborations.
 - Only approved public serializers feed the route; unknown, draft, hidden, and suspended profiles return the correct non-public response.
 - The page includes the verification-not-a-guarantee disclaimer and useful share metadata.
 - Raw phone numbers are not presented as ordinary public text.
+- A successful public-profile render increments the privacy-friendly daily profile-view aggregate with short-lived duplicate filtering; metric failure never blocks the page.
 
 **Depends on:** S035.  
 **Covers:** Feature B3.
@@ -615,74 +621,16 @@ Apply these rules whenever they are relevant to the story:
 - A copy-number or equivalent practical fallback is available when the deep link cannot open.
 - Berufe does not proxy, store, or claim visibility into message content, delivery, negotiation, or hiring.
 - Basic short-lived deduplication prevents obvious repeated browser taps from inflating counts without creating a permanent visitor table.
+- Internal aggregates can calculate search-to-profile-open and public-profile-to-WhatsApp conversion without a visitor identity; no professional-facing analytics UI is added.
 
 **Depends on:** S035, S036.  
 **Covers:** Feature B4 and Feature A6 metrics; Infrastructure §11.
 
-### S038 — Accept and triage content reports
+Public profiles also show a visible Berufe support/report contact that routes to the documented manual operations process. The launch MVP does not persist a `content_report` record or expose an anonymous report API.
 
-**Story:** As a visitor, I want to report questionable public content so that Berufe operations can review it without creating a public dispute system.
+## 8. Increment 4 — Existing-member professional trust graph
 
-**Acceptance criteria:**
-
-- Public profiles expose a report form with controlled category, required length-limited explanation, and optional private contact.
-- Reports can target profiles, portfolio items, client recommendations, or professional relationships.
-- Valid reports enter the admin operations area with `open`, `resolved`, or `dismissed` status.
-- Reporter contact and details are private and excluded from public APIs/logs.
-- There are no public replies, appeals, or case-management workflows.
-
-**Depends on:** S023, S036.  
-**Covers:** Feature E1.
-
-## 8. Increment 4 — Client and professional trust graph
-
-**Increment outcome:** professionals can bring existing client trust and collaborator relationships into Berufe through controlled, confirmed, moderated flows.
-
-### S039 — Create and share a client recommendation request
-
-**Story:** As a professional, I want a one-time recommendation link so that a past client can confirm completed work without creating an account.
-
-**Acceptance criteria:**
-
-- The owner creates a request tied to their profile with an expiry and `open` status.
-- Rails stores only a hash of a high-entropy token; the raw token is shown only in the generated share URL.
-- The professional can open an explicit WhatsApp deep link containing the request URL, with copy-link fallback, and can revoke an open request.
-- Expired, completed, revoked, malformed, and unknown tokens reveal no private data and cannot be submitted.
-- Request creation does not send an automated WhatsApp message.
-
-**Depends on:** S024, S014.  
-**Covers:** Feature A5; Infrastructure §§8 and 11.
-
-### S040 — Submit a phone-confirmed client recommendation
-
-**Story:** As a past client, I want to confirm the service and submit a short recommendation so that my experience can support the professional’s profile.
-
-**Acceptance criteria:**
-
-- A valid request shows the professional and permits a display name, request-relevant service, approximate service period, short recommendation, and required service confirmation.
-- The client requests and verifies a single-purpose phone challenge through the hosted-auth adapter without creating a `user_account`, reusable provider identity, or Berufe session.
-- The challenge uses the same cooldown, daily allowance, generic-response, and no-OTP-storage rules as professional authentication.
-- Rails stores a keyed one-way phone fingerprint for duplicate/abuse detection, not a public phone number.
-- Submission atomically consumes the request and creates one pending recommendation.
-- There are no stars, anonymous submissions, replies, exact service address, or imported reviews.
-
-**Depends on:** S011, S039.  
-**Covers:** Feature A5.
-
-### S041 — Moderate and publish client recommendations
-
-**Story:** As an admin, I want to review client recommendations so that only controlled social proof appears publicly.
-
-**Acceptance criteria:**
-
-- Pending recommendations appear in the shared moderation queue.
-- Approval publishes display name, service, approximate period, text, and the phone-confirmed indication.
-- Rejection/hiding records a private reason and removes public visibility/counts.
-- Approved recommendations appear on the correct professional profile and increase its approved recommendation/confirmed-service count.
-- Duplicate indicators assist manual review but do not automatically accuse or publicly label a client.
-
-**Depends on:** S040, S023, S036.  
-**Covers:** Features A5, B2, B3, and E1.
+**Increment outcome:** published professionals can represent recommendations and prior collaboration with other Berufe members through controlled, confirmed, moderated relationships.
 
 ### S042 — Initiate a relationship with an existing member
 
@@ -714,36 +662,6 @@ Apply these rules whenever they are relevant to the story:
 **Depends on:** S042.  
 **Covers:** Feature C1 and Feature A6 pending actions.
 
-### S044 — Invite a professional who is not registered
-
-**Story:** As a verified professional, I want to invite a trusted collaborator through a one-time link so that they can join Berufe and later confirm our relationship.
-
-**Acceptance criteria:**
-
-- The inviter provides only invitee first name and intended relationship type.
-- Rails creates an expiring, revocable invitation and stores only the token hash.
-- Sharing opens an explicit WhatsApp deep link containing the invitation URL, with copy-link fallback; Berufe sends no automated message.
-- The invited person can begin registration from a valid token.
-- Invalid, expired, accepted, or revoked tokens do not reveal inviter-private data or permit reuse.
-
-**Depends on:** S039, S042, S016.  
-**Covers:** Feature C1; Infrastructure §§8 and 11.
-
-### S045 — Complete an invitation after profile approval
-
-**Story:** As an invited professional, I want the intended relationship offered after my profile is approved so that joining does not automatically create public trust evidence.
-
-**Acceptance criteria:**
-
-- Registration retains the valid invitation association without storing the raw token.
-- Profile approval creates or reveals the pending relationship to the invitee.
-- The invitee must explicitly accept or decline it using the same rules as an existing member.
-- Acceptance marks the invitation accepted and submits the confirmed relationship to the shared moderation queue; publication still requires admin approval.
-- Expiry/revocation before completion prevents relationship creation.
-
-**Depends on:** S024, S043, S044.  
-**Covers:** Feature C1.
-
 ### S046 — Moderate and display professional trust relationships publicly
 
 **Story:** As an admin and customer, I want accepted professional relationships reviewed before publication so that network evidence is controlled and transparent rather than anonymous.
@@ -757,12 +675,13 @@ Apply these rules whenever they are relevant to the story:
 - No follower counts, feed, messaging, forum, job board, or generic social graph is added.
 - Public relationship projections are covered by policy and serializer tests.
 
-**Depends on:** S023, S043, S045, S036.  
+**Depends on:** S023, S043, S036.
+
 **Covers:** Features C1, B2, and B3.
 
-## 9. Increment 5 — Professional dashboard and quote utility
+## 9. Increment 5 — Professional dashboard and profile sharing
 
-**Increment outcome:** professionals have a focused home screen and a practical reason to return: creating and sharing a simple quote.
+**Increment outcome:** professionals have a focused home screen for completing, maintaining, and sharing their Berufe presence.
 
 ### S047 — Show profile readiness and pending work
 
@@ -772,90 +691,35 @@ Apply these rules whenever they are relevant to the story:
 
 - The dashboard calculates profile readiness from existing data without a checklist table.
 - It shows profile/publication status, missing setup steps, pending moderation/verification, and pending relationship confirmations.
-- Primary actions link to edit profile, add portfolio, request recommendation, invite collaborator, and create quote.
+- Primary actions link to edit profile, add portfolio, request identity verification, and find an existing member for a relationship.
+- Profile sharing uses the Web Share API and falls back to copying the stable public URL.
 - Empty and rejected states explain the next permitted action.
 - A professional sees only their own records.
 
-**Depends on:** S022, S030, S039, S043.  
+**Depends on:** S022, S030, S043.
+
 **Covers:** Feature A6.
-
-### S048 — Show aggregate activity and share the profile
-
-**Story:** As a professional, I want simple recent activity counts and an easy share action so that I can understand and promote my profile without visitor tracking.
-
-**Acceptance criteria:**
-
-- `professional_daily_metric` retains the Feature Plan totals (`profile_views`, `whatsapp_clicks`, and `quotes_shared`) and adds non-negative source counters for WhatsApp clicks from public profiles versus search results. Search events separately provide total searches and searches with at least one profile open.
-- The dashboard shows 30-day totals for profile views, WhatsApp clicks, approved recommendations, confirmed relationships, and quotes shared.
-- Public-profile views increment privacy-friendly aggregates with short-lived duplicate filtering.
-- Product aggregates calculate search-to-profile-open as searches with at least one profile open divided by searches, and profile-to-WhatsApp-click as profile-originated WhatsApp handoffs divided by profile views; neither calculation uses a visitor identity.
-- Profile sharing uses the Web Share API and falls back to copying the stable URL.
-- No visitor identities, traffic-source reports, detailed charts, CRM, or notifications center are added.
-
-**Depends on:** S037, S041, S046, S047.  
-**Covers:** Feature A6 and MVP success signals.
-
-### S049 — Create and edit a draft quote
-
-**Story:** As a professional, I want to create a simple itemized quote so that I can use Berufe in my real customer workflow.
-
-**Acceptance criteria:**
-
-- The owner can create/edit a draft with customer name, short service description, ordered line items, optional discount, validity date, and notes.
-- Quantities are greater than zero; unit prices are non-negative; discount cannot exceed subtotal.
-- Rails recalculates every line total, subtotal, and total with `BigDecimal`; client calculations are preview-only.
-- Quote numbers are sequential per professional and concurrency-safe.
-- Draft customer/quote data is private to the owner and admins only when operationally required; after sharing, the customer-facing projection is additionally available only to a bearer of the valid quote token.
-
-**Depends on:** S015, S047.  
-**Covers:** Feature D1; Infrastructure §9.
-
-### S050 — Preview and share a secure quote link
-
-**Story:** As a professional, I want to preview and share an unguessable quote link so that a customer can view it without an account.
-
-**Acceptance criteria:**
-
-- The owner previews the quote in a mobile customer-facing layout before sharing.
-- First share generates a high-entropy token, stores only its hash, and atomically changes status from `draft` to `shared`.
-- A valid link shows the quote and approved professional public identity/labels; it does not expose private profile fields.
-- Invalid or unknown tokens reveal no quote/customer details.
-- The token remains valid while the quote is `shared`; quote validity (`valid_until`) describes the commercial offer and is not a share-token expiry.
-- Token-authorized quote responses use `no-store`/`noindex` behavior and are never included in shared caches or search indexes.
-- The customer can use browser print; Berufe does not generate a PDF, acceptance, signature, invoice, or payment flow.
-
-**Depends on:** S049, S030.  
-**Covers:** Feature D1.
-
-### S051 — Share the quote through WhatsApp and record the event
-
-**Story:** As a professional, I want to share a quote through my device so that the customer receives the secure link using my normal WhatsApp workflow.
-
-**Acceptance criteria:**
-
-- Share opens an explicit WhatsApp deep link with a short message and quote URL, with copy-link fallback.
-- Tapping the WhatsApp share action increments `quotes_shared` in the professional’s daily aggregate; Berufe does not claim delivery.
-- Berufe does not send, read, or track a WhatsApp message or claim the quote was accepted/paid.
-- Quote status remains only `draft` or `shared`.
-
-**Depends on:** S048, S050.  
-**Covers:** Features D1 and A6; Infrastructure §11.
 
 ## 10. Increment 6 — Production readiness and launch
 
 **Increment outcome:** the release candidate meets the architecture launch gate and can safely onboard the founding 30–50 professionals.
 
-### S052 — Add structured, privacy-safe operational logs
+### S052 — Add privacy-safe logs, health checks, and error alerts
 
-**Story:** As an operator, I want actionable platform logs so that MVP failures can be diagnosed without a centralized error tracker.
+**Story:** As an operator, I want correlated platform logs and exception alerts so that MVP failures across Vercel, Render, and GoodJob are visible without logging sensitive payloads.
 
 **Acceptance criteria:**
 
-- Rails and Nuxt logs include request IDs; Rails propagates them into GoodJob jobs.
-- Logs exclude phone numbers, OTPs, provider-session/raw share tokens, request bodies, verification files, signed URLs, and quote customer details.
-- Health endpoints distinguish web and worker/database readiness without leaking secrets.
-- Operators can identify failed logins, jobs, uploads, and old moderation work through platform tools.
-- Sentry or another centralized error tracker is not introduced.
+- Rails and Nuxt accept inbound request IDs only when they match ASCII `[A-Za-z0-9._-]{1,100}` and otherwise generate a UUID; Nuxt forwards the accepted/generated value to Rails and Rails propagates it into GoodJob jobs and Bugsnag events.
+- Logs and Bugsnag exclude cookies, authorization/CSRF headers, request parameters/bodies, phone numbers, OTPs, raw Infobip/application-session tokens or challenge secrets, signed URLs, verification files, and job arguments.
+- Separate Bugsnag projects capture Rails/Active Job/GoodJob exceptions and Nuxt browser/SSR exceptions. Production source maps are uploaded privately.
+- Bugsnag is error-only: performance monitoring, distributed tracing, automatic session tracking, user/anonymous identification, and IP collection are disabled. Events include only release, environment, normalized route or job class, request ID, exception, and stack trace.
+- Production unhandled exceptions, terminal job failures, and GoodJob executor/thread failures immediately notify the named operations owner.
+- Health endpoints distinguish Rails readiness and GoodJob running/started/database-connected states without leaking secrets.
+- Successful GoodJob records are retained for 14 days and reviewed discarded failures for 30 days; unresolved failures are not automatically deleted and cleanup runs daily.
+- The GoodJob dashboard requires an active admin application session with current MFA. The documented procedure covers inspection, retry, discard review, and escalation.
+- Queue monitoring warns when the oldest runnable job exceeds five minutes and alerts critically at fifteen minutes; operators can also identify failed logins/uploads and old moderation work.
+- Automated tests prove the redaction callbacks remove every prohibited field, and a production-like smoke event verifies delivery, project routing, release metadata, source-map resolution, and owner notification before launch.
 
 **Depends on:** S005, S013, S025.  
 **Covers:** Infrastructure §§12 and 15.
@@ -867,15 +731,16 @@ Apply these rules whenever they are relevant to the story:
 **Acceptance criteria:**
 
 - The production terms and privacy notice are versioned and linked at registration and public-page locations where appropriate.
-- A retention matrix covers provider-session/challenge references, OTP counters, anonymous search events and aggregates, pending uploads, invitation/recommendation tokens, reports, quotes, moderation data, and verification files.
+- A retention matrix covers application sessions, Infobip challenge references, OTP counters, GoodJob records, anonymous search events and aggregates, pending/quarantined uploads, moderation data, support/report correspondence, and verification files.
 - Operations can correct, suspend, and delete an account/profile through a documented manual procedure.
 - Deletion handles public data, private data, storage objects, and required audit retention explicitly.
 - Qualified Brazilian privacy/legal review is recorded as a launch dependency, not implemented as application automation.
 
-**Depends on:** S016, S031, S038, S051.  
+**Depends on:** S016, S031, S037.
+
 **Covers:** Infrastructure §§9, 12, 15, and 18.
 
-### S054 — Configure preview/staging and production deployments
+### S054 — Configure isolated staging, previews, and production deployments
 
 **Story:** As a team, we want repeatable separate deployments so that release candidates can be verified without production data.
 
@@ -883,26 +748,33 @@ Apply these rules whenever they are relevant to the story:
 
 - Nuxt deploys to Vercel and Rails plus the GoodJob worker deploy from the same backend image to Render.
 - Render PostgreSQL is the only production application database; Nuxt cannot connect to it directly.
-- Preview/staging uses synthetic data and separate database, R2, and hosted-auth-provider configuration from production.
+- One stable staging Nuxt deployment connects to one stable staging Rails API/worker, PostgreSQL database, R2 configuration, and fake SMS-OTP adapter containing synthetic data only.
+- Vercel pull-request previews are mock-only and receive neither a staging API URL nor staging credentials. Credentialed CORS excludes preview origins and contains no wildcard.
+- Production Infobip credentials are absent from stable staging and previews. Any separately approved integration environment uses a restricted Infobip application/message profile and allowlisted test numbers.
+- The Nuxt SSR execution location and Rails/PostgreSQL region are recorded. Rails and PostgreSQL run together in the closest practical Render region.
+- Release-like tests from the target Brazilian region show public Rails API p95 ≤ 500 ms and public HTML TTFB p95 ≤ 1.5 seconds.
+- A Rails timeout or outage renders a branded Nuxt `503`/retry state with a request ID. If either latency target fails, launch is blocked until the cause is fixed or a separate change adds 60-second public SWR plus invalidation on approval, hiding, restoration, and suspension.
+- Authenticated, admin, and restricted-file responses are never placed in shared caches.
 - Migrations run as an explicit release step before dependent code.
 - Deployment failure preserves the last working version or has a documented forward-fix path.
 
 **Depends on:** S009, S052.  
 **Covers:** Infrastructure §§3–4, 7.1, 14–15.
 
-### S055 — Implement the five release-critical end-to-end flows
+### S055 — Implement the four release-critical end-to-end flows
 
 **Story:** As a team, we want browser tests for the essential value loop so that a release cannot silently break Berufe’s MVP promise.
 
 **Acceptance criteria:**
 
-- Playwright covers: professional OTP login/profile submission; admin profile/evidence approval; public search/profile/WhatsApp handoff; recommendation or relationship confirmation plus its moderation; and quote creation/share link.
+- Playwright covers: professional Infobip-adapter OTP login/profile submission; admin profile/evidence approval; public search/profile/WhatsApp handoff; and existing-member professional relationship confirmation plus moderation.
 - Tests use fake OTP/provider behavior and synthetic files/data.
 - Chromium mobile paths run for release-critical changes; focused WebKit and keyboard smoke checks run before production release.
 - Tests assert user-visible behavior rather than implementation details or snapshot-only output.
 - A failed critical flow blocks release.
 
-**Depends on:** S017, S030, S037, S041, S046, S051, S054.  
+**Depends on:** S017, S030, S037, S046, S054.
+
 **Covers:** Infrastructure §§14 and 18; complete MVP value loop.
 
 ### S056 — Verify database backups and restoration
@@ -927,12 +799,15 @@ Apply these rules whenever they are relevant to the story:
 **Acceptance criteria:**
 
 - Every item in Infrastructure §18 is checked with evidence or blocks launch.
-- Named owners exist for deployments, database access, authentication-provider spend, R2 private access, moderation, and privacy requests.
+- Named owners exist for deployments, database access, Infobip spend/sender registration, R2 private access, Bugsnag alerts, moderation, and privacy requests.
 - Failed-job inspection/retry, profile suspension, credential rotation, and disabling a broken flow are documented and rehearsed at least once where safe.
+- OpenAPI generation has a clean diff, Rails contract coverage passes, GoodJob probes/queue-age alerts work, Bugsnag delivery/redaction is tested, and SSR latency/outage criteria have evidence.
 - The service/location seed is reviewed for the Joinville launch and the founding cohort onboarding process is ready.
-- All five Playwright flows pass against the release candidate and no critical security/privacy defect remains open.
+- Infobip's Brazilian sender registration is approved, the production 2FA application/message template is configured, spend limits/alerts have an owner, and one controlled production-like start/verify smoke check succeeds without exposing credentials or a real user's phone.
+- All four Playwright flows pass against the release candidate and no critical security/privacy defect remains open.
 
-**Depends on:** S018, S031, S052, S053, S055, S056.  
+**Depends on:** S010, S031, S052, S053, S055, S056.
+
 **Covers:** Infrastructure §§15 and 18; all MVP features.
 
 ## 11. Increment summary
@@ -940,11 +815,11 @@ Apply these rules whenever they are relevant to the story:
 | Increment | Stories | Demonstrable result |
 | --- | --- | --- |
 | 0. Foundation | S001–S009 | The four-service monorepo runs locally and passes CI. |
-| 1. Access and catalogs | S010–S018 | Professionals/admins can access the product; controlled catalogs are ready. |
+| 1. Access and catalogs | S010–S017 | Professionals/admins can access the product; controlled seeded catalogs are ready. |
 | 2. Credible supply | S019–S031 | Professionals can be profiled, reviewed, verified, and published safely. |
-| 3. Discovery | S032–S038 | Customers can find, inspect, contact, and report public professionals. |
-| 4. Trust graph | S039–S046 | Approved client and professional trust evidence appears publicly. |
-| 5. Recurring utility | S047–S051 | Professionals have a dashboard and can create/share quotes. |
+| 3. Discovery | S032–S037 | Customers can find, inspect, and contact public professionals. |
+| 4. Trust graph | S042–S043, S046 | Approved existing-member trust evidence appears publicly. |
+| 5. Dashboard | S047 | Professionals can finish, maintain, and share their profile. |
 | 6. Launch | S052–S057 | Operations, privacy, recovery, deployment, and critical flows meet the launch gate. |
 
 ## 12. Feature coverage matrix
@@ -955,19 +830,17 @@ Apply these rules whenever they are relevant to the story:
 | A2 — Profile, services, and service area | S019–S024 |
 | A3 — Portfolio | S025–S028 |
 | A4 — Verification and public evidence labels | S029–S031 |
-| A5 — Client recommendation request | S039–S041 |
-| A6 — Dashboard and profile sharing | S037, S043, S047–S048, S051 |
-| B1 — Public home, categories, and search | S032–S034 |
+| A6 — Dashboard and profile sharing | S043, S047 |
+| B1 — Public home and search | S032–S034 |
 | B2 — Transparent result list | S035 |
-| B3 — Public professional profile | S036, S041, S046 |
+| B3 — Public professional profile | S036, S046 |
 | B4 — Direct WhatsApp contact | S037 |
-| C1 — Professional invitation and relationships | S042–S046 |
-| D1 — Quote generator and share link | S049–S051 |
-| E1 — Verification and moderation queue | S017, S023–S024, S026, S028, S030, S038, S041, S046 |
-| E2 — Service and location catalog | S010, S018 |
+| C1 — Existing-member professional relationships | S042–S043, S046 |
+| E1 — Verification and moderation queue | S017, S023–S024, S026, S028, S030, S046 |
+| E2 — Seeded service and location catalog | S010 |
 
 ## 13. Not stories in this MVP
 
-Do not add backlog items for microservices, Redis, external search, graph/vector databases, automated WhatsApp messaging, CAPTCHA, Rack::Attack, Sentry, payments, booking, internal chat, maps, native apps, multi-city support, feeds, CRM, PDF generation, analytics providers, or any other MVP 2.0 enhancement unless the approved scope changes.
+Do not add backlog items for microservices, Redis, external search, graph/vector databases, automated WhatsApp messaging, CAPTCHA, Rack::Attack, Bugsnag performance monitoring/distributed tracing, payment systems, booking, internal chat, maps, native apps, multi-city support, feeds, CRM, PDF generation or verification uploads, analytics providers, or any item tracked in `Berufe_V2_Stories.md` unless the approved MVP scope changes.
 
 This backlog is complete when S057 passes. Product usage after launch should determine which evidence-triggered MVP 2.0 stories are created next.
