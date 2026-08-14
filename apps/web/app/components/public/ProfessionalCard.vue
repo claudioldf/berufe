@@ -1,21 +1,31 @@
 <script setup lang="ts">
-import type { Professional } from '~/types'
+import type { Professional } from "~/types";
 
 defineProps<{
-  professional: Professional
-  matchingService: string
-}>()
+  professional: Professional;
+  matchingService: string;
+}>();
 
 const emit = defineEmits<{
-  contact: [professional: Professional]
-}>()
+  contact: [professional: Professional];
+}>();
 </script>
 
 <template>
   <article class="professional-card">
-    <NuxtLink class="professional-card__media" :to="`/profissionais/${professional.slug}`">
-      <img :src="professional.avatar" :alt="`Foto de ${professional.name}`">
-      <span v-if="professional.evidence.some((item) => item.label.includes('Identidade'))" class="professional-card__verified">
+    <NuxtLink
+      class="professional-card__media"
+      :to="`/profissionais/${professional.slug}`"
+    >
+      <img :src="professional.avatar" :alt="`Foto de ${professional.name}`" />
+      <span
+        v-if="
+          professional.evidence.some((item) =>
+            item.label.includes('Identidade'),
+          )
+        "
+        class="professional-card__verified"
+      >
         <UIcon name="i-lucide-badge-check" /> Verificada
       </span>
     </NuxtLink>
@@ -25,13 +35,20 @@ const emit = defineEmits<{
         <span><UIcon name="i-lucide-sparkles" /> {{ matchingService }}</span>
         <span>Atualizado recentemente</span>
       </div>
-      <NuxtLink class="professional-card__name" :to="`/profissionais/${professional.slug}`">
+      <NuxtLink
+        class="professional-card__name"
+        :to="`/profissionais/${professional.slug}`"
+      >
         {{ professional.name }}
       </NuxtLink>
       <p class="professional-card__headline">{{ professional.headline }}</p>
       <p class="professional-card__coverage">
         <UIcon name="i-lucide-map-pin" />
-        {{ professional.allJoinville ? 'Atende toda Joinville' : `Atende ${professional.neighborhoods.slice(0, 3).join(', ')}` }}
+        {{
+          professional.allJoinville
+            ? "Atende toda Joinville"
+            : `Atende ${professional.neighborhoods.slice(0, 3).join(", ")}`
+        }}
       </p>
 
       <div class="professional-card__evidence">
@@ -44,9 +61,13 @@ const emit = defineEmits<{
       </div>
 
       <div class="professional-card__proof">
-        <span><strong>{{ professional.portfolio.length }}</strong> trabalhos</span>
-        <span><strong>{{ professional.recommendations.length }}</strong> recomendações</span>
-        <span><strong>{{ professional.relationships.length }}</strong> conexões</span>
+        <span
+          ><strong>{{ professional.portfolio.length }}</strong> trabalhos</span
+        >
+        <span
+          ><strong>{{ professional.relationships.length }}</strong> relações
+          profissionais</span
+        >
       </div>
 
       <div class="professional-card__actions">

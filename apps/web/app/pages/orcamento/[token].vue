@@ -1,28 +1,63 @@
 <script setup lang="ts">
-import quotesData from '../../../data/quotes.json'
-import professionalsData from '../../../data/professionals.json'
-import type { Professional, Quote } from '~/types'
+import quotesData from "../../../data/quotes.json";
+import professionalsData from "../../../data/professionals.json";
+import type { Professional, Quote } from "~/types";
 
-const route = useRoute()
-const professional = (professionalsData as Professional[])[0]!
-const valid = route.params.token === quotesData.shared.token
-const quote = quotesData.shared as Quote
+const route = useRoute();
+const professional = (professionalsData as Professional[])[0]!;
+const valid = route.params.token === quotesData.shared.token;
+const quote = quotesData.shared as Quote;
 
-if (!valid) throw createError({ statusCode: 404, statusMessage: 'Orçamento não encontrado' })
-useSeoMeta({ title: `Orçamento #${quote.number}`, robots: 'noindex, nofollow' })
+if (!valid)
+  throw createError({
+    statusCode: 404,
+    statusMessage: "Orçamento não encontrado",
+  });
+useSeoMeta({
+  title: `Orçamento #${quote.number}`,
+  robots: "noindex, nofollow",
+});
 
 function printQuote() {
-  if (import.meta.client) window.print()
+  if (import.meta.client) window.print();
 }
 </script>
 
 <template>
   <div class="shared-quote-page">
-    <DesignSystemContainer as="header" class="shared-quote-page__header"><DesignSystemBrand size="sm" /><div><UIcon name="i-lucide-lock-keyhole" /> Link privado do orçamento</div></DesignSystemContainer>
+    <DesignSystemContainer as="header" class="shared-quote-page__header"
+      ><DesignSystemBrand size="sm" />
+      <div>
+        <UIcon name="i-lucide-lock-keyhole" /> Link privado do orçamento
+      </div></DesignSystemContainer
+    >
     <DesignSystemContainer as="main" class="shared-quote-page__content">
-      <div class="shared-quote-page__heading"><div><p>Olá, {{ quote.customerName }}.</p><h1>Aqui está seu orçamento.</h1><span>Revise os itens e converse diretamente com {{ professional.name.split(' ')[0] }} se tiver alguma dúvida.</span></div><UButton color="neutral" variant="outline" icon="i-lucide-printer" @click="printQuote">Imprimir</UButton></div>
-      <QuotesQuotePreview :quote="quote" :professional="professional" customer-facing />
-      <p class="shared-quote-page__notice"><UIcon name="i-lucide-info" /> Este link permite visualizar o orçamento, mas não representa aceite, assinatura ou pagamento.</p>
+      <div class="shared-quote-page__heading">
+        <div>
+          <p>Olá, {{ quote.customerName }}.</p>
+          <h1>Aqui está seu orçamento.</h1>
+          <span
+            >Revise os itens e converse diretamente com
+            {{ professional.name.split(" ")[0] }} se tiver alguma dúvida.</span
+          >
+        </div>
+        <UButton
+          color="neutral"
+          variant="outline"
+          icon="i-lucide-printer"
+          @click="printQuote"
+          >Imprimir</UButton
+        >
+      </div>
+      <QuotesQuotePreview
+        :quote="quote"
+        :professional="professional"
+        customer-facing
+      />
+      <p class="shared-quote-page__notice">
+        <UIcon name="i-lucide-info" /> Este link permite visualizar o orçamento,
+        mas não representa aceite, assinatura ou pagamento.
+      </p>
     </DesignSystemContainer>
   </div>
 </template>

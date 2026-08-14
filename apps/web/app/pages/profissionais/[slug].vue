@@ -1,49 +1,121 @@
 <script setup lang="ts">
-import { computed, shallowRef } from 'vue'
-import professionalsData from '../../../data/professionals.json'
-import type { Professional } from '~/types'
-import { useMockupApp } from '~/composables/useMockupApp'
+import { computed, shallowRef } from "vue";
+import professionalsData from "../../../data/professionals.json";
+import type { Professional } from "~/types";
+import { useMockupApp } from "~/composables/useMockupApp";
 
-const route = useRoute()
-const { share, showToast } = useMockupApp()
-const professionals = professionalsData as Professional[]
-const professional = computed(() => professionals.find((item) => item.slug === route.params.slug))
-const reportOpen = shallowRef(false)
-const reportReason = shallowRef('informacao-incorreta')
-const reportDetails = shallowRef('')
-const activePortfolio = shallowRef(0)
-const portfolioOpen = shallowRef(false)
-const selectedPortfolio = computed(() => professional.value?.portfolio[activePortfolio.value])
+interface SocialLink {
+  platform: "instagram" | "youtube";
+  label: string;
+  icon: string;
+  url: string;
+}
+
+const route = useRoute();
+const { activeRole, share, showToast } = useMockupApp();
+const professionals = professionalsData as Professional[];
+const requestedSlug = computed(() =>
+  Array.isArray(route.params.slug) ? route.params.slug[0] : route.params.slug,
+);
+const resolvedSlug = computed(() =>
+  requestedSlug.value === "marina-alves" ? "marcos-alves" : requestedSlug.value,
+);
+
+if (requestedSlug.value === "marina-alves") {
+  await navigateTo("/profissionais/marcos-alves", {
+    redirectCode: 301,
+    replace: true,
+  });
+}
+
+const professional = computed(() =>
+  professionals.find((item) => item.slug === resolvedSlug.value),
+);
+const activePortfolio = shallowRef(0);
+const portfolioOpen = shallowRef(false);
+const selectedPortfolio = computed(
+  () => professional.value?.portfolio[activePortfolio.value],
+);
+const canRequestRelationship = computed(
+  () =>
+    activeRole.value === "professional" &&
+    professional.value?.id !== "pro-marcos",
+);
+const supportEmailUrl = computed(() => {
+  const subject = encodeURIComponent(
+    `Informação sobre o perfil ${professional.value?.name ?? ""}`,
+  );
+  return `mailto:suporte@berufe.com.br?subject=${subject}`;
+});
+const socialLinks = computed<SocialLink[]>(() => {
+  const profile = professional.value;
+  if (!profile) return [];
+
+  const links: SocialLink[] = [];
+  if (profile.instagram) {
+    links.push({
+      platform: "instagram",
+      label: "Instagram",
+      icon: "i-lucide-instagram",
+      url: profile.instagram,
+    });
+  }
+  if (profile.youtube) {
+    links.push({
+      platform: "youtube",
+      label: "YouTube",
+      icon: "i-lucide-youtube",
+      url: profile.youtube,
+    });
+  }
+  return links;
+});
 
 if (!professional.value) {
-  throw createError({ statusCode: 404, statusMessage: 'Profissional não encontrado' })
+  throw createError({
+    statusCode: 404,
+    statusMessage: "Profissional não encontrado",
+  });
 }
 
 useSeoMeta({
-  title: () => `${professional.value?.name} — ${professional.value?.primaryService}`,
+  title: () =>
+    `${professional.value?.name} — ${professional.value?.primaryService}`,
   description: () => professional.value?.headline,
-})
+});
 
 function contact() {
-  if (!professional.value) return
-  const text = encodeURIComponent(`Olá, ${professional.value.name}! Encontrei seu perfil na Berufe e gostaria de conversar sobre ${professional.value.primaryService}.`)
-  showToast({ title: 'Abrindo o WhatsApp', description: 'A conversa acontece diretamente com o profissional.' })
-  if (import.meta.client) window.open(`https://wa.me/${professional.value.whatsapp}?text=${text}`, '_blank', 'noopener,noreferrer')
+  if (!professional.value) return;
+  const text = encodeURIComponent(
+    `Olá, ${professional.value.name}! Encontrei seu perfil na Berufe e gostaria de conversar sobre ${professional.value.primaryService}.`,
+  );
+  showToast({
+    title: "Abrindo o WhatsApp",
+    description: "A conversa acontece diretamente com o profissional.",
+  });
+  if (import.meta.client)
+    window.open(
+      `https://wa.me/${professional.value.whatsapp}?text=${text}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
 }
 
 async function shareProfile() {
-  if (!professional.value) return
+  if (!professional.value) return;
   await share({
     title: `${professional.value.name} na Berufe`,
-    text: `Veja o perfil de ${professional.value.name}, ${professional.value.primaryService.toLocaleLowerCase('pt-BR')} em Joinville.`,
+    text: `Veja o perfil de ${professional.value.name}, ${professional.value.primaryService.toLocaleLowerCase("pt-BR")} em Joinville.`,
     url: `https://berufe.com.br/profissionais/${professional.value.slug}`,
-  })
+  });
 }
 
-function submitReport() {
-  reportOpen.value = false
-  reportDetails.value = ''
-  showToast({ title: 'Relato recebido', description: 'A equipe Berufe fará uma análise privada.' })
+function requestRelationship() {
+  showToast({
+    title: "Solicitação enviada",
+    description:
+      "A relação só poderá seguir para moderação depois da confirmação do outro profissional.",
+  });
 }
 </script>
 
@@ -52,28 +124,79 @@ function submitReport() {
     <section class="profile-hero">
       <DesignSystemContainer>
         <div class="profile-hero__crumbs">
-          <NuxtLink :to="`/encontrar?servico=${professional.primaryServiceSlug}&bairro=all`"><UIcon name="i-lucide-arrow-left" /> Voltar aos resultados</NuxtLink>
-          <button type="button" @click="shareProfile"><UIcon name="i-lucide-share-2" /> Compartilhar perfil</button>
+          <NuxtLink
+            :to="`/encontrar?servico=${professional.primaryServiceSlug}&bairro=all`"
+            ><UIcon name="i-lucide-arrow-left" /> Voltar aos
+            resultados</NuxtLink
+          >
+          <button type="button" @click="shareProfile">
+            <UIcon name="i-lucide-share-2" /> Compartilhar perfil
+          </button>
         </div>
         <div class="profile-hero__grid">
           <div class="profile-hero__identity">
-            <DesignSystemAvatar :name="professional.name" :src="professional.avatar" size="profile" shape="rounded" verified />
+            <DesignSystemAvatar
+              :name="professional.name"
+              :src="professional.avatar"
+              size="profile"
+              shape="rounded"
+              verified
+            />
             <div>
-              <p class="profile-hero__service">{{ professional.primaryService }}</p>
+              <p class="profile-hero__service">
+                {{ professional.primaryService }}
+              </p>
               <h1>{{ professional.name }}</h1>
               <p class="profile-hero__headline">{{ professional.headline }}</p>
               <div class="profile-hero__meta">
-                <span><UIcon name="i-lucide-map-pin" /> {{ professional.allJoinville ? 'Atende toda Joinville' : professional.neighborhoods.slice(0, 4).join(', ') }}</span>
-                <span><UIcon name="i-lucide-briefcase-business" /> {{ professional.yearsExperience }} anos de experiência declarada</span>
+                <span
+                  ><UIcon name="i-lucide-map-pin" />
+                  {{
+                    professional.allJoinville
+                      ? "Atende toda Joinville"
+                      : professional.neighborhoods.slice(0, 4).join(", ")
+                  }}</span
+                >
+                <span
+                  ><UIcon name="i-lucide-briefcase-business" />
+                  {{ professional.yearsExperience }} anos de experiência
+                  declarada</span
+                >
               </div>
+              <nav
+                v-if="socialLinks.length"
+                class="profile-hero__socials"
+                aria-label="Redes sociais do profissional"
+              >
+                <a
+                  v-for="link in socialLinks"
+                  :key="link.platform"
+                  :href="link.url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  :aria-label="`Abrir ${link.label} de ${professional.name} em uma nova aba`"
+                >
+                  <UIcon :name="link.icon" />
+                  {{ link.label }}
+                  <UIcon name="i-lucide-arrow-up-right" />
+                </a>
+              </nav>
             </div>
           </div>
           <aside class="profile-hero__contact">
-            <p>Fale diretamente com {{ professional.name.split(' ')[0] }}</p>
-            <UButton color="primary" icon="i-lucide-message-circle" block @click="contact">
+            <p>Fale diretamente com {{ professional.name.split(" ")[0] }}</p>
+            <UButton
+              color="primary"
+              icon="i-lucide-message-circle"
+              block
+              @click="contact"
+            >
               Conversar no WhatsApp
             </UButton>
-            <small><UIcon name="i-lucide-lock-keyhole" /> Sem cadastro e sem intermediários</small>
+            <small
+              ><UIcon name="i-lucide-lock-keyhole" /> Sem cadastro e sem
+              intermediários</small
+            >
           </aside>
         </div>
       </DesignSystemContainer>
@@ -82,11 +205,20 @@ function submitReport() {
     <section class="evidence-strip">
       <DesignSystemContainer class="evidence-strip__inner">
         <div>
-          <span class="evidence-strip__icon"><UIcon name="i-lucide-shield-check" /></span>
-          <div><strong>Evidências conferidas pela Berufe</strong><small>Cada selo representa uma verificação específica.</small></div>
+          <span class="evidence-strip__icon"
+            ><UIcon name="i-lucide-shield-check"
+          /></span>
+          <div>
+            <strong>Evidências conferidas pela Berufe</strong
+            ><small>Cada selo representa uma verificação específica.</small>
+          </div>
         </div>
         <div class="evidence-strip__badges">
-          <PublicEvidenceBadge v-for="item in professional.evidence" :key="item.id" :evidence="item" />
+          <PublicEvidenceBadge
+            v-for="item in professional.evidence"
+            :key="item.id"
+            :evidence="item"
+          />
         </div>
       </DesignSystemContainer>
     </section>
@@ -95,21 +227,38 @@ function submitReport() {
       <main>
         <section class="profile-section profile-about">
           <DesignSystemEyebrow>Sobre o trabalho</DesignSystemEyebrow>
-          <h2>Experiência que dá<br>tranquilidade.</h2>
+          <h2>Experiência que dá<br />tranquilidade.</h2>
           <p>{{ professional.bio }}</p>
           <div class="profile-about__services">
-            <div v-for="(service, index) in professional.services" :key="service">
-              <span><UIcon :name="index === 0 ? 'i-lucide-zap' : 'i-lucide-wrench'" /></span>
-              <div><strong>{{ service }}</strong><small>{{ professional.serviceNotes[index] ?? 'Serviço residencial' }}</small></div>
+            <div
+              v-for="(service, index) in professional.services"
+              :key="service"
+            >
+              <span
+                ><UIcon
+                  :name="index === 0 ? 'i-lucide-zap' : 'i-lucide-wrench'"
+              /></span>
+              <div>
+                <strong>{{ service }}</strong
+                ><small>{{
+                  professional.serviceNotes[index] ?? "Serviço residencial"
+                }}</small>
+              </div>
               <em v-if="index === 0">Principal</em>
             </div>
           </div>
-          <div class="declaration-note"><UIcon name="i-lucide-info" /> Os anos de experiência são declarados pelo profissional e não representam uma verificação da Berufe.</div>
+          <div class="declaration-note">
+            <UIcon name="i-lucide-info" /> Os anos de experiência são declarados
+            pelo profissional e não representam uma verificação da Berufe.
+          </div>
         </section>
 
         <section class="profile-section portfolio-section">
           <div class="profile-section__heading">
-            <div><DesignSystemEyebrow>Portfólio aprovado</DesignSystemEyebrow><h2>Trabalhos que falam.</h2></div>
+            <div>
+              <DesignSystemEyebrow>Portfólio aprovado</DesignSystemEyebrow>
+              <h2>Trabalhos que falam.</h2>
+            </div>
             <span>{{ professional.portfolio.length }} trabalhos</span>
           </div>
           <div class="portfolio-grid">
@@ -118,92 +267,145 @@ function submitReport() {
               :key="item.id"
               type="button"
               class="portfolio-item"
-              @click="activePortfolio = index; portfolioOpen = true"
+              @click="
+                activePortfolio = index;
+                portfolioOpen = true;
+              "
             >
-              <img :src="item.image" :alt="item.title">
-              <span class="portfolio-item__meta"><strong>{{ item.title }}</strong><small>{{ item.service }}</small></span>
+              <img :src="item.image" :alt="item.title" />
+              <span class="portfolio-item__meta"
+                ><strong>{{ item.title }}</strong
+                ><small>{{ item.service }}</small></span
+              >
               <UIcon name="i-lucide-expand" class="portfolio-item__expand" />
             </button>
           </div>
         </section>
 
-        <section class="profile-section recommendations-section">
-          <div class="profile-section__heading">
-            <div><DesignSystemEyebrow>Clientes anteriores</DesignSystemEyebrow><h2>Recomendações confirmadas.</h2></div>
-            <span>{{ professional.recommendations.length }} serviços confirmados</span>
-          </div>
-          <div class="recommendations-list">
-            <article v-for="recommendation in professional.recommendations" :key="recommendation.id">
-              <UIcon name="i-lucide-quote" class="recommendation__quote" />
-              <p>{{ recommendation.text }}</p>
-              <footer>
-                <DesignSystemAvatar :name="recommendation.clientName" size="xs" />
-                <div><strong>{{ recommendation.clientName }}</strong><small>{{ recommendation.service }} · {{ recommendation.period }}</small></div>
-                <span v-if="recommendation.phoneConfirmed" class="recommendation__confirmed"><UIcon name="i-lucide-smartphone" /> Telefone confirmado</span>
-              </footer>
-            </article>
-          </div>
-        </section>
-
         <section class="profile-section relationships-section">
           <div class="profile-section__heading">
-            <div><DesignSystemEyebrow>Rede profissional</DesignSystemEyebrow><h2>Confiança entre quem faz.</h2></div>
-            <span>{{ professional.relationships.length }} conexões confirmadas</span>
+            <div>
+              <DesignSystemEyebrow>Rede profissional</DesignSystemEyebrow>
+              <h2>Confiança entre quem faz.</h2>
+            </div>
+            <span
+              >{{ professional.relationships.length }} conexões
+              confirmadas</span
+            >
           </div>
-          <div v-if="professional.relationships.length" class="relationships-list">
-            <article v-for="relationship in professional.relationships" :key="relationship.id">
-              <DesignSystemAvatar :name="relationship.professionalName" :src="relationship.avatar" size="lg" shape="rounded" />
+          <div
+            v-if="professional.relationships.length"
+            class="relationships-list"
+          >
+            <article
+              v-for="relationship in professional.relationships"
+              :key="relationship.id"
+            >
+              <DesignSystemAvatar
+                :name="relationship.professionalName"
+                :src="relationship.avatar"
+                size="lg"
+                shape="rounded"
+              />
               <div>
-                <span class="relationship-type"><UIcon :name="relationship.type === 'worked_together' ? 'i-lucide-handshake' : 'i-lucide-heart'" /> {{ relationship.type === 'worked_together' ? 'Trabalharam juntos' : 'Recomendação profissional' }}</span>
+                <span class="relationship-type"
+                  ><UIcon
+                    :name="
+                      relationship.type === 'worked_together'
+                        ? 'i-lucide-handshake'
+                        : 'i-lucide-heart'
+                    "
+                  />
+                  {{
+                    relationship.type === "worked_together"
+                      ? "Trabalharam juntos"
+                      : "Recomendação profissional"
+                  }}</span
+                >
                 <p>“{{ relationship.note }}”</p>
-                <NuxtLink :to="`/profissionais/${relationship.professionalSlug}`">{{ relationship.professionalName }} <UIcon name="i-lucide-arrow-up-right" /></NuxtLink>
+                <NuxtLink
+                  :to="`/profissionais/${relationship.professionalSlug}`"
+                  >{{ relationship.professionalName }}
+                  <UIcon name="i-lucide-arrow-up-right"
+                /></NuxtLink>
               </div>
             </article>
           </div>
-          <p v-else class="relationships-empty">Este profissional ainda não possui relações públicas aprovadas.</p>
+          <p v-else class="relationships-empty">
+            Este profissional ainda não possui relações públicas aprovadas.
+          </p>
+          <UButton
+            v-if="canRequestRelationship"
+            class="relationship-request"
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-handshake"
+            @click="requestRelationship"
+            >Solicitar relação profissional</UButton
+          >
         </section>
 
         <section class="profile-disclaimer">
-          <UIcon name="i-lucide-shield-alert" />
-          <div><strong>O que a verificação significa</strong><p>A Berufe confere evidências específicas e modera o conteúdo público, mas não garante a execução, o preço ou o resultado de um serviço. Combine escopo e condições diretamente com o profissional.</p></div>
+          <UIcon
+            class="profile-disclaimer__icon"
+            name="i-lucide-shield-alert"
+          />
+          <div>
+            <strong>O que a verificação significa</strong>
+            <p>
+              A Berufe confere evidências específicas e modera o conteúdo
+              público, mas não garante a execução, o preço ou o resultado de um
+              serviço. Combine escopo e condições diretamente com o
+              profissional.
+            </p>
+          </div>
         </section>
 
-        <button class="report-link" type="button" @click="reportOpen = true"><UIcon name="i-lucide-flag" /> Relatar informação neste perfil</button>
+        <a class="support-link" :href="supportEmailUrl"
+          ><UIcon name="i-lucide-mail" /> Informar um problema à equipe de
+          suporte</a
+        >
       </main>
 
       <aside class="profile-sidebar">
         <DesignSystemSurfaceCard class="profile-sidebar__card">
           <p>Pronto para conversar?</p>
-          <strong>Explique o que você precisa diretamente para {{ professional.name.split(' ')[0] }}.</strong>
-          <UButton color="primary" icon="i-lucide-message-circle" block @click="contact">Chamar no WhatsApp</UButton>
+          <strong
+            >Explique o que você precisa diretamente para
+            {{ professional.name.split(" ")[0] }}.</strong
+          >
+          <UButton
+            color="primary"
+            icon="i-lucide-message-circle"
+            block
+            @click="contact"
+            >Chamar no WhatsApp</UButton
+          >
           <small>A Berufe não lê nem armazena sua conversa.</small>
         </DesignSystemSurfaceCard>
         <div class="profile-sidebar__coverage">
           <strong><UIcon name="i-lucide-map" /> Área de atendimento</strong>
           <p v-if="professional.allJoinville">Toda Joinville</p>
-          <div v-else><span v-for="neighborhood in professional.neighborhoods" :key="neighborhood">{{ neighborhood }}</span></div>
+          <div v-else>
+            <span
+              v-for="neighborhood in professional.neighborhoods"
+              :key="neighborhood"
+              >{{ neighborhood }}</span
+            >
+          </div>
         </div>
       </aside>
     </DesignSystemContainer>
 
     <div class="mobile-contact">
-      <div><small>{{ professional.primaryService }}</small><strong>{{ professional.name }}</strong></div>
-      <UButton color="primary" icon="i-lucide-message-circle" @click="contact">WhatsApp</UButton>
+      <div>
+        <small>{{ professional.primaryService }}</small
+        ><strong>{{ professional.name }}</strong>
+      </div>
+      <UButton color="primary" icon="i-lucide-message-circle" @click="contact"
+        >WhatsApp</UButton
+      >
     </div>
-
-    <UModal v-model:open="reportOpen" title="Relatar conteúdo" description="Seu relato será privado e analisado pela equipe Berufe.">
-      <template #body>
-        <form id="report-form" class="report-form" @submit.prevent="submitReport">
-          <DesignSystemFormField label="Motivo"><select v-model="reportReason"><option value="informacao-incorreta">Informação incorreta</option><option value="conteudo-inadequado">Conteúdo inadequado</option><option value="perfil-falso">Suspeita de perfil falso</option><option value="outro">Outro motivo</option></select></DesignSystemFormField>
-          <DesignSystemFormField label="Conte o que aconteceu"><textarea v-model="reportDetails" required minlength="10" maxlength="500" placeholder="Descreva de forma objetiva..." /></DesignSystemFormField>
-          <small>Não inclua documentos, senhas ou outros dados sensíveis.</small>
-        </form>
-      </template>
-      <template #footer>
-        <UButton color="neutral" variant="ghost" @click="reportOpen = false">Cancelar</UButton>
-        <UButton type="submit" form="report-form" color="primary" :disabled="reportDetails.length < 10">Enviar relato</UButton>
-      </template>
-    </UModal>
 
     <UModal
       v-model:open="portfolioOpen"
@@ -213,7 +415,7 @@ function submitReport() {
     >
       <template #body>
         <div v-if="selectedPortfolio" class="portfolio-modal">
-          <img :src="selectedPortfolio.image" :alt="selectedPortfolio.title">
+          <img :src="selectedPortfolio.image" :alt="selectedPortfolio.title" />
           <p>{{ selectedPortfolio.description }}</p>
         </div>
       </template>
@@ -290,6 +492,32 @@ function submitReport() {
     display: inline-flex;
     align-items: center;
     gap: 5px;
+  }
+  &__socials {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+  }
+  &__socials a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 9px;
+    background: rgba(255, 255, 255, 0.07);
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 0.82rem;
+    font-weight: 800;
+    text-decoration: none;
+    transition:
+      background 0.15s ease,
+      border-color 0.15s ease;
+  }
+  &__socials a:hover {
+    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.12);
   }
   &__contact {
     padding: 18px;
@@ -515,58 +743,6 @@ function submitReport() {
     bottom: 18px;
   }
 }
-.recommendations-list {
-  display: grid;
-  gap: 10px;
-}
-.recommendations-list article {
-  position: relative;
-  padding: 24px;
-  border: 1px solid var(--line);
-  border-radius: 17px;
-  background: white;
-}
-.recommendation {
-  &__quote {
-    color: var(--coral);
-    font-size: 1.35rem;
-  }
-}
-.recommendations-list article > p {
-  margin: 12px 0 20px;
-  color: var(--ink);
-  font-family: Georgia, serif;
-  font-size: 1.12rem;
-  line-height: 1.55;
-}
-.recommendations-list footer {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 10px;
-}
-.recommendations-list footer strong,
-.recommendations-list footer small {
-  display: block;
-}
-.recommendations-list footer strong {
-  font-size: 0.82rem;
-}
-.recommendations-list footer small {
-  margin-top: 2px;
-  color: var(--ink-soft);
-  font-size: 0.84rem;
-}
-.recommendation {
-  &__confirmed {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    color: #397a69;
-    font-size: 0.84rem;
-    font-weight: 800;
-  }
-}
 .relationships-list {
   display: grid;
   gap: 10px;
@@ -606,18 +782,24 @@ function submitReport() {
 .relationships-empty {
   color: var(--ink-soft);
 }
+.relationship-request {
+  margin-top: 16px;
+}
 .profile-disclaimer {
   display: flex;
+  align-items: flex-start;
   gap: 14px;
   padding: 20px;
   border: 1px dashed #aacbbf;
   border-radius: 16px;
   background: #f2f8f6;
 }
-.profile-disclaimer > svg {
-  flex: 0 0 auto;
+.profile-disclaimer__icon {
+  flex: 0 0 1.35rem;
+  width: 1.35rem;
+  height: 1.35rem;
+  margin-top: 1px;
   color: #397a69;
-  font-size: 1.35rem;
 }
 .profile-disclaimer strong {
   font-size: 0.84rem;
@@ -628,17 +810,15 @@ function submitReport() {
   font-size: 0.86rem;
   line-height: 1.55;
 }
-.report-link {
+.support-link {
   display: flex;
   align-items: center;
   gap: 5px;
   margin: 20px auto 0;
-  border: 0;
-  background: transparent;
+  width: fit-content;
   color: var(--ink-soft);
   font-size: 0.86rem;
   text-decoration: underline;
-  cursor: pointer;
 }
 .profile-sidebar {
   position: sticky;
@@ -699,14 +879,6 @@ function submitReport() {
 }
 .mobile-contact {
   display: none;
-}
-.report-form {
-  display: grid;
-  gap: 16px;
-}
-.report-form small {
-  color: var(--ink-soft);
-  font-size: 0.84rem;
 }
 .portfolio-modal img {
   width: 100%;
@@ -805,14 +977,6 @@ function submitReport() {
   .profile-section {
     &__heading {
       display: grid;
-    }
-  }
-  .recommendations-list footer {
-    grid-template-columns: auto 1fr;
-  }
-  .recommendation {
-    &__confirmed {
-      grid-column: 2;
     }
   }
   .relationships-list article {

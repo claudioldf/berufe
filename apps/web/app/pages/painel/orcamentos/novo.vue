@@ -1,17 +1,21 @@
 <script setup lang="ts">
-import quotesData from '../../../../data/quotes.json'
-import professionalsData from '../../../../data/professionals.json'
-import type { Professional, Quote } from '~/types'
-import { useMockupApp } from '~/composables/useMockupApp'
+import quotesData from "../../../../data/quotes.json";
+import professionalsData from "../../../../data/professionals.json";
+import type { Professional, Quote } from "~/types";
+import { useMockupApp } from "~/composables/useMockupApp";
 
-const { showToast } = useMockupApp()
-const professional = (professionalsData as Professional[])[0]!
-const quote = quotesData.default as Quote
+const { showToast } = useMockupApp();
+const professional = (professionalsData as Professional[])[0]!;
+const quote = quotesData.default as Quote;
 
-useSeoMeta({ title: 'Novo orçamento' })
+useSeoMeta({ title: "Novo orçamento" });
 
-function handleShared() {
-  showToast({ title: 'Abrindo o WhatsApp', description: 'O link seguro foi criado; a Berufe não confirma a entrega.' })
+function handleShared(method: "whatsapp" | "copy") {
+  if (method === "copy") return;
+  showToast({
+    title: "Abrindo o WhatsApp",
+    description: "O link seguro foi criado; a Berufe não confirma a entrega.",
+  });
 }
 </script>
 
@@ -19,12 +23,29 @@ function handleShared() {
   <div class="quote-workspace">
     <section class="quote-workspace__heading">
       <DesignSystemContainer class="quote-workspace__heading-inner">
-        <NuxtLink to="/painel"><UIcon name="i-lucide-arrow-left" /> Voltar ao painel</NuxtLink>
-        <div><div><DesignSystemEyebrow tone="inverse">Berufe Ferramentas</DesignSystemEyebrow><h1>Novo orçamento <em>#{{ quote.number }}</em></h1><p>Crie, revise e compartilhe um link seguro com seu cliente.</p></div><span><DesignSystemStatusDot /> Rascunho</span></div>
+        <NuxtLink to="/painel"
+          ><UIcon name="i-lucide-arrow-left" /> Voltar ao painel</NuxtLink
+        >
+        <div>
+          <div>
+            <DesignSystemEyebrow tone="inverse"
+              >Berufe Ferramentas</DesignSystemEyebrow
+            >
+            <h1>
+              Novo orçamento <em>#{{ quote.number }}</em>
+            </h1>
+            <p>Crie, revise e compartilhe um link seguro com seu cliente.</p>
+          </div>
+          <span><DesignSystemStatusDot /> Rascunho</span>
+        </div>
       </DesignSystemContainer>
     </section>
     <DesignSystemContainer class="quote-workspace__content">
-      <DashboardQuoteBuilder :initial-quote="quote" :professional="professional" @shared="handleShared" />
+      <DashboardQuoteBuilder
+        :initial-quote="quote"
+        :professional="professional"
+        @shared="handleShared"
+      />
     </DesignSystemContainer>
   </div>
 </template>

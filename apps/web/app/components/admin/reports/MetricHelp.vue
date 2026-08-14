@@ -1,14 +1,22 @@
 <script setup lang="ts">
 defineProps<{
-  title: string
-  meaning: string
-  goal: string
-  reading?: string
-}>()
+  title: string;
+  meaning: string;
+  goal: string;
+  reading?: string;
+}>();
 </script>
 
 <template>
-  <UPopover :content="{ side: 'bottom', align: 'end', sideOffset: 7, collisionPadding: 12 }" arrow>
+  <UPopover
+    :content="{
+      side: 'bottom',
+      align: 'end',
+      sideOffset: 7,
+      collisionPadding: 12,
+    }"
+    arrow
+  >
     <button
       type="button"
       class="metric-help__trigger"
@@ -18,15 +26,30 @@ defineProps<{
     </button>
 
     <template #content>
-      <aside class="metric-help__content" role="note" :aria-label="`Explicação: ${title}`">
+      <aside
+        class="metric-help__content"
+        role="note"
+        :aria-label="`Explicação: ${title}`"
+      >
         <header>
           <span><UIcon name="i-lucide-info" aria-hidden="true" /></span>
-          <div><small>Sobre esta métrica</small><strong>{{ title }}</strong></div>
+          <div>
+            <small>Sobre esta métrica</small><strong>{{ title }}</strong>
+          </div>
         </header>
         <dl>
-          <div><dt>O que significa</dt><dd>{{ meaning }}</dd></div>
-          <div><dt>Objetivo</dt><dd>{{ goal }}</dd></div>
-          <div v-if="reading"><dt>Como interpretar</dt><dd>{{ reading }}</dd></div>
+          <div>
+            <dt>O que significa</dt>
+            <dd>{{ meaning }}</dd>
+          </div>
+          <div>
+            <dt>Objetivo</dt>
+            <dd>{{ goal }}</dd>
+          </div>
+          <div v-if="reading">
+            <dt>Como interpretar</dt>
+            <dd>{{ reading }}</dd>
+          </div>
         </dl>
       </aside>
     </template>

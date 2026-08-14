@@ -1,14 +1,14 @@
 # Berufe — Reports Stories and Metric Specification
 
-**Status:** post-MVP detailed specification for `Berufe_V2_Stories.md` V2-017
+**Status:** launch-MVP implementation stories for Feature E3
 
 **Updated:** August 13, 2026
 
 ## 1. Purpose and source of truth
 
-This document preserves the detailed administrative growth-report specification represented by `./apps/web/app/components/admin/reports`. The report was moved out of the launch MVP and is tracked by V2-017. It must not be implemented as part of the MVP merely because the mockup or this specification exists.
+This document is the implementation specification for the launch-MVP administrative growth report represented by `./apps/web/app/components/admin/reports`. R001–R014 are required MVP stories and ship as one aggregate-only, admin-authorized feature.
 
-It explains what each card or widget means, which MVP or later V2 records it reads, the required associations and filters, and the exact calculation to return from the Rails API. Sections concerning client recommendations, external invitations, professional-facing metrics, content reports, or quotes remain conditional on their corresponding V2 domain stories; unavailable domains are omitted or explicitly unavailable, never fabricated as zero activity.
+It explains what each card or widget means, which records it reads, the required associations and filters, and the exact calculation to return from the Rails API. Launch widgets use only MVP domains. Sections concerning client recommendations, external invitations, professional-facing metrics, or persisted content reports remain conditional on their corresponding V2 stories; unavailable domains are omitted or explicitly unavailable, never fabricated as zero activity.
 
 It is derived from:
 
@@ -27,7 +27,7 @@ The report is designed for the zero-to-initial-liquidity stage. Its primary ques
 3. Are customer searches finding useful choices?
 4. Does discovery produce profile interest and WhatsApp handoffs?
 5. Do professionals return to create more value?
-6. Are trust evidence, invitations, and quotes being completed?
+6. Are existing-member trust relationships and quotes being completed?
 7. Can the manual moderation operation keep up?
 
 These are operating indicators, not a numeric trust score, lead marketplace, hiring tracker, or revenue dashboard.
@@ -123,9 +123,7 @@ The intended associations are:
 - `ProfessionalProfile has_many ProfessionalServiceAreas`;
 - `ProfessionalProfile has_many PortfolioItems`;
 - `ProfessionalProfile has_many VerificationRequests`;
-- `ProfessionalProfile has_many ClientRecommendationRequests` and recommendations through those requests;
 - `ProfessionalProfile has_many initiated_relationships` and `received_relationships`;
-- `ProfessionalProfile has_many ProfessionalInvites, foreign_key: :inviter_professional_id`;
 - `ProfessionalProfile has_many Quotes` and `ProfessionalDailyMetrics`;
 - `ModerationAction` identifies a target through `target_type` and `target_id`;
 - `ClientRecommendation belongs_to ClientRecommendationRequest, foreign_key: :request_id`;
@@ -197,7 +195,7 @@ Every moderation queue projection needs an immutable `submitted_at`. Existing re
 
 ### 3.3 Prototype-only data that must not be represented as real
 
-The “Convidados” stage in the supply funnel currently represents the manually mapped 30–50 founding professionals. The approved MVP has no recruiting/CRM table. `professional_invites` cannot be used: those rows are peer invitations to create a trust relationship, not administrator recruitment of the founding supply.
+The “Convidados” stage in the earlier prototype represented the manually mapped 30–50 founding professionals. The approved MVP has no recruiting/CRM table. `professional_invites` cannot be used: those rows are peer invitations to create a trust relationship, not administrator recruitment of the founding supply. The current MVP mock correctly starts at “Cadastrados”.
 
 For MVP production, choose one of these options:
 
@@ -236,7 +234,7 @@ For every rate return `{ numerator, denominator, rate }`, where `rate` is `null`
 - One response contains summary, supply, discovery, engagement, trust, quotes, and moderation sections.
 - An empty database returns zeros and null rates without raising an exception.
 
-**Depends on:** MVP S005–S009, S017, S034, S036–S037; V2-017 approval.
+**Depends on:** MVP S005–S009, S017, S034, S036–S037, S046, and S049–S051.
 
 ## R002 — Show the five-card growth scorecard
 
@@ -505,7 +503,7 @@ The profile-open boolean is set once for a search even if several result profile
 - Daily professional counters continue to count deduplicated handoff actions for the professional dashboard.
 - The full funnel hides its final stage when the required field is unavailable.
 
-**Depends on:** MVP S033–S037; V2-017 approval.
+**Depends on:** MVP S033–S037.
 
 ## R006 — Show demand by service
 
@@ -668,7 +666,7 @@ The initial objective is to move professionals from zero or one active week towa
 - Replayed jobs cannot double-increment counters.
 - Bars represent distinct professionals, and the endpoint states that explicitly.
 
-**Depends on:** MVP S019, S027, S042–S043, S046; V2-008, V2-011–V2-014 as implemented.
+**Depends on:** MVP S019, S027, S042–S043, S046, and S049; V2-008 and V2-011–V2-012 as implemented.
 
 ## R009 — Measure W1 and W4 publication-cohort retention
 
@@ -714,13 +712,13 @@ W1 indicates whether onboarding leads to a second useful visit. W4 indicates whe
 
 **Depends on:** `published_at`, `professional_daily_activities`, R008.
 
-## R010 — Measure trust evidence and invitation funnels
+## R010 — Measure the existing-member relationship funnel
 
-**Story:** As an administrator, I want to see completion and moderation outcomes for trust-building requests so that I can improve weak flows without relaxing authenticity controls.
+**Story:** As an administrator, I want to see completion and moderation outcomes for existing-member relationships so that I can improve the flow without relaxing authenticity controls.
 
-All three rows are cohort funnels: “iniciados” means created inside the selected period, while later columns show the current outcome of those same records. This avoids dividing unrelated period events.
+The launch row is a cohort funnel: “iniciadas” means created inside the selected period, while later columns show the current outcome of those same records. This avoids dividing unrelated period events.
 
-### Client recommendations
+### Client recommendations — conditional post-MVP row
 
 **Started:** `client_recommendation_requests.created_at` inside the period.
 
@@ -744,7 +742,7 @@ Expired, revoked, and still-open requests remain only in started. Rejected/hidde
 
 This makes decline visible as a completed flow outcome while keeping it out of public trust evidence.
 
-### Invitations to unregistered professionals
+### Invitations to unregistered professionals — conditional post-MVP row
 
 **Started:** `professional_invites.created_at` inside the period.
 
@@ -764,13 +762,12 @@ Expired/revoked invitations remain in the started cohort but not completed. Invi
 
 ### Acceptance criteria
 
-- Funnel stages always refer to the same created cohort.
+- The visible MVP relationship stages always refer to the same created cohort.
 - A declined relationship is completed but not approved.
 - An accepted but unreviewed relationship is completed but not approved.
-- An invitation is not completed merely because registration began.
-- Counts exclude duplicate token consumption through database uniqueness and transactions.
+- Client-recommendation or invitation rows are omitted entirely until their V2 transactions, associations, privacy rules, and tests are implemented.
 
-**Depends on:** MVP S023, S042–S043, S046; V2-008–V2-012 as implemented.
+**Depends on:** MVP S023, S042–S043, and S046. V2-008–V2-012 apply only if their optional rows are later approved.
 
 ## R011 — Measure recurring quote utility
 
@@ -824,7 +821,7 @@ Increase unique creators, repeat creators, and the share conversion. A low share
 - Zero created quotes returns a null share rate.
 - Private customer fields never appear in the report response.
 
-**Depends on:** V2-014–V2-016.
+**Depends on:** MVP S049–S051.
 
 ## R012 — Monitor moderation health
 
@@ -884,15 +881,13 @@ Use PostgreSQL `percentile_cont(0.5)` for median and `percentile_cont(0.9)` for 
 
 Return counts by `target_type` as a drill-down aggregate. Do not interpret rejection as an error to minimize at all costs; spikes may indicate confusing upload requirements, abuse, or a supply-quality problem.
 
-### Hidden content and reports
+### Hidden content and conditional reports
 
-The current mockup combines “ocultos ou reportados”, but these are different facts and should be returned separately:
+The launch MVP returns hidden-content actions only:
 
-- `hidden_actions`: `moderation_actions.action = 'hidden'` and `created_at` in period;
-- `reports_created`: `content_reports.created_at` in period;
-- `open_reports`: current stock where `content_reports.status = 'open'`.
+- `hidden_actions`: `moderation_actions.action = 'hidden'` and `created_at` in period.
 
-If the UI retains one footer count, label it “ocorrências de segurança no período” and calculate `hidden_actions + reports_created`, explicitly noting that it is a sum of occurrences and may refer to the same content twice. Preferred UI: show the two counts separately.
+If V2-007 is later implemented, return `reports_created` and current-stock `open_reports` as separate fields and widgets. Never combine hidden actions and reports into one ambiguous count or display missing report records as zero.
 
 ### Goal and interpretation
 
@@ -938,7 +933,7 @@ Keep the oldest item under 24 hours and reduce median/P90 without weakening revi
 - Replayed requests/jobs do not increase idempotent metrics twice.
 - Data retention can delete raw anonymous events without breaking retained daily professional totals.
 
-**Depends on:** MVP S034, S036–S037, S052–S053; V2-013 and other reported domains when implemented.
+**Depends on:** MVP S034, S036–S037, S049–S053, and the reported MVP domains. V2 domains apply only to later optional rows.
 
 ## R014 — Validate formulas, performance, and zero-state behavior
 
@@ -956,10 +951,10 @@ Keep the oldest item under 24 hours and reduce median/P90 without weakening revi
 8. Source-aware WhatsApp totals and the total/source invariant.
 9. Meaningful actions exclude logins and admin/system updates.
 10. W1/W4 exact day windows and immature cohort cells.
-11. Trust funnels use one creation cohort rather than unrelated event counts.
+11. The existing-member relationship funnel uses one creation cohort rather than unrelated event counts; later V2 funnels do the same if approved.
 12. Quote creation cohort, unique sharing, creators, and repeat creators.
 13. Moderation median/P90 with odd/even samples, resubmissions, and missing timestamps.
-14. Hidden actions and content reports remain separate.
+14. Hidden actions remain distinct; persisted content reports are tested separately only if V2-007 is implemented.
 15. Suspended profiles are excluded from current public scopes but retained in historical cohorts.
 16. Aggregate-only serializer and admin authorization.
 17. `openapi_first` validates the report request plus `200`, `401`, `403`, and `422` responses against `apps/contracts/openapi.yaml`, and contract coverage includes `getAdminGrowthReport`.
@@ -987,7 +982,7 @@ For the initial 30–50-profile market, direct indexed PostgreSQL aggregate quer
 - `professional_daily_activities(activity_date, professional_id)`;
 - `quotes(created_at, professional_id)`;
 - `moderation_actions(created_at, action, target_type)`;
-- `content_reports(created_at, status)`.
+- `content_reports(created_at, status)` only if V2-007 is implemented.
 
 Do not add Redis, a warehouse, event streaming, or an external analytics/search platform for this report. Consider a short Rails cache only after measuring query latency, and never cache one admin's authorization context as shared public data.
 
@@ -1007,20 +1002,20 @@ Do not add Redis, a warehouse, event streaming, or an external analytics/search 
 | Gaps de crescimento | `search_events` | services, professional services/areas/profiles/accounts | Flow + current supply | privacy threshold for unmatched terms |
 | Ações significativas | `professional_daily_activities` | domain tables for reconciliation | Flow | new daily activity aggregate |
 | Coortes W1/W4 | `professional_profiles` | `professional_daily_activities` | Cohort | `published_at` |
-| Confiança e convites | recommendation requests/recommendations, relationships, invites | moderation, profiles/accounts | Cohort outcome | invitee/relationship links |
+| Relações profissionais | `professional_relationships` | moderation, profiles/accounts | Cohort outcome | response timestamp and public-relationship scope |
 | Orçamentos | `quotes` | `professional_daily_metrics` | Cohort outcome | existing timestamps/status |
 | Saúde da moderação | queue target tables, `moderation_actions` | `content_reports` | Current stock + flow | immutable/versioned submission time |
 
 ## 6. Recommended delivery order
 
-1. Confirm which MVP and V2 domains actually exist; do not add fields for unapproved V2-008–V2-016 merely to satisfy a report mockup.
+1. Confirm the implemented MVP domains; do not add fields for unapproved V2 domains merely to satisfy a report mockup.
 2. Add `published_at` and the daily meaningful-activity aggregate.
 3. Implement reusable public-eligibility, public-relationship, and moderation-queue queries.
 4. Implement report period boundaries and the aggregate-only admin endpoint.
 5. Add `getAdminGrowthReport` to OpenAPI, regenerate the committed Nuxt schema, and make its Rails request specs contract-conformant.
-6. Deliver supply, activation, discovery, and moderation widgets first; these answer the most urgent zero-to-liquidity questions.
-7. Deliver meaningful activity, W1/W4 cohorts, client-recommendation/invitation funnels, and quote utility only after their corresponding V2 domain transactions write reliable timestamps/aggregates.
-8. Remove or mark unavailable the founding “Convidados” stage and search-contact funnel stage until their explicit data support is approved.
+6. Deliver supply, activation, discovery, existing-member relationship, quote, meaningful-activity/retention, and moderation widgets from their implemented MVP records and aggregates.
+7. Omit client-recommendation, external-invitation, persisted content-report, and professional-facing metric rows until their corresponding V2 transactions exist.
+8. Remove the founding “Convidados” stage and search-contact funnel stage until their explicit data support is approved.
 9. Run reconciliation fixtures and the empty/small-sample frontend states before replacing mock JSON with the API.
 
 ## 7. Definition of done

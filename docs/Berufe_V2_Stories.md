@@ -4,7 +4,7 @@
 
 **Created:** August 13, 2026
 
-**Sources:** *Berufe — MVP Feature Plan*, *Berufe — MVP Implementation Stories*, and *Berufe — Reports Stories and Metric Specification*
+**Sources:** _Berufe — MVP Feature Plan_, _Berufe — MVP Implementation Stories_, and _Berufe — Reports Stories and Metric Specification_
 
 ## 1. Purpose
 
@@ -13,23 +13,6 @@ This document preserves every capability moved out of the launch MVP during the 
 Former MVP story and feature IDs are recorded for traceability and are not reused. A V2 story is not ready merely because it appears here: before implementation it needs current product evidence, privacy/security review where relevant, and updated OpenAPI, backend, frontend, test, and operational acceptance criteria.
 
 ## 2. Scope moved from the launch MVP
-
-### V2-001 — Manage service and location catalogs in the admin UI
-
-**Former scope:** S018; Feature E2 partial.
-
-**Story:** As an admin, I want to rename, reorder, activate, and deactivate catalog entries so that Berufe can correct its controlled vocabulary without a code deployment.
-
-**Preserved acceptance criteria:**
-
-- Admin API and Nuxt forms support rename, reorder, activation, and deactivation for service categories, services, and neighborhoods; each reorderable table persists deterministic order.
-- Referenced entries cannot be hard-deleted.
-- Only admins can mutate the catalog; policy tests prove professional and anonymous denial.
-- Professionals and public search cannot select inactive entries for new records.
-
-**Depends on:** MVP S010, S015, and S017.
-
-**Revisit when:** catalog changes become frequent enough that reviewed seed/code changes slow operations or create mistakes.
 
 ### V2-002 — Add company and certificate verification
 
@@ -243,115 +226,50 @@ Former MVP story and feature IDs are recorded for traceability and are not reuse
 
 **Preserved acceptance criteria:**
 
-- The dashboard shows 30-day totals for profile views, WhatsApp clicks, approved client recommendations when implemented, confirmed professional relationships, and quotes shared when implemented.
+- The dashboard shows 30-day totals for profile views, WhatsApp clicks, approved client recommendations when implemented, confirmed professional relationships, and MVP quote shares.
 - Internal aggregates calculate search-to-profile-open and profile-to-WhatsApp conversion without a visitor identity.
 - Public-profile views and WhatsApp actions use short-lived duplicate filtering.
 - No visitor identities, individual traffic-source records, complex charts, CRM, or notification center are added.
 - Metric definitions match the product-reporting specification and expose honest empty/small-sample states.
 
-**Preserved data shape:** reuse the MVP `professional_daily_metric`; add non-negative `quotes_shared` only if V2-016 is implemented. Profile/WhatsApp totals and source counters remain the MVP aggregate fields rather than a visitor table.
+**Preserved data shape:** reuse the MVP `professional_daily_metric`, including its non-negative `quotes_shared` counter. Profile/WhatsApp totals and source counters remain aggregate fields rather than a visitor table.
 
-**Depends on:** MVP S034, S036–S037, S046–S047; optional V2-010 and V2-016.
+**Depends on:** MVP S034, S036–S037, S046–S047, and S051; optional V2-010.
 
 **Revisit when:** professionals ask for performance feedback and the data is sufficiently reliable to drive a useful action.
 
-### V2-014 — Create and edit a draft quote
+### Scope returned to MVP — Simple quotes
 
-**Former scope:** Feature D1; S049.
+V2-014, V2-015, and V2-016 were retired on August 13, 2026 when product scope explicitly returned simple quote creation, secure customer preview, and WhatsApp sharing to the launch MVP. Their requirements now live in MVP Feature D1 and stories S049–S051; the former V2 identifiers remain reserved for traceability and are not reused.
 
-**Story:** As a professional, I want to create a simple itemized quote so that I can use Berufe in my customer workflow.
+### Scope returned to MVP — Administrator growth report
 
-**Preserved acceptance criteria:**
+V2-017 was retired on August 13, 2026 when product scope explicitly returned privacy-safe aggregate administrator reporting to the launch MVP. Its requirements now live in MVP Feature E3 and `Berufe_Reports_Stories.md` R001–R014; the former V2 identifier remains reserved for traceability and is not reused. Reporting for client recommendations, external invitations, persisted content reports, or professional-facing analytics remains conditional on the corresponding V2 domain story and is not fabricated by the MVP report.
 
-- The owner can create and edit a draft with customer name, short service description, ordered line items, optional discount, validity date, and notes.
-- Quantities are greater than zero; unit prices are non-negative; discount cannot exceed subtotal.
-- Rails recalculates every line total, subtotal, and total with `BigDecimal`; client calculations are preview-only.
-- Quote numbers are sequential per professional and concurrency-safe.
-- Draft customer and quote data is private to the owner, and to admins only when operationally required.
+### Scope returned to MVP — Administrator catalog
 
-**Preserved data shape:**
-
-- `quote`: UUID `id`, `professional_id`, per-professional sequential `quote_number`, required `customer_name` and short `service_description`, decimal `discount_amount` and server-calculated `total_amount`, optional `valid_until` and length-limited `notes`, `draft|shared` status, unique nullable `share_token_hash`, `created_at`, and nullable `shared_at`.
-- `quote_item`: UUID `id`, `quote_id`, required description, positive decimal quantity, unit label, non-negative decimal unit price, server-calculated line total, and deterministic `sort_order`.
-
-**Depends on:** MVP S015 and S047.
-
-**Revisit when:** professional interviews show quoting is a high-frequency retention problem worth adding customer/financial data to Berufe.
-
-### V2-015 — Preview and share a secure quote link
-
-**Former scope:** Feature D1; S050.
-
-**Story:** As a professional, I want to preview and share an unguessable quote link so that a customer can view it without an account.
-
-**Preserved acceptance criteria:**
-
-- The owner previews the quote in a mobile customer-facing layout before sharing.
-- First share generates a high-entropy token, stores only its hash, and atomically changes status from `draft` to `shared`.
-- A valid link shows the quote and approved professional public identity/labels without private profile fields.
-- Invalid or unknown tokens reveal no quote or customer details.
-- The token remains valid while the quote is `shared`; `valid_until` describes the commercial offer and is not token expiry.
-- Token-authorized responses use `no-store` and `noindex` behavior and never enter shared caches or search indexes.
-- The customer can use browser print; Berufe does not generate a PDF, acceptance, signature, invoice, or payment flow in this story.
-
-**Depends on:** MVP S030; V2-014.
-
-**Revisit when:** V2-014 is approved with privacy, retention, revocation, and customer-data procedures.
-
-### V2-016 — Share a quote through WhatsApp and record the action
-
-**Former scope:** Feature D1; S051.
-
-**Story:** As a professional, I want to share a quote through my device so that the customer receives the secure link using my normal WhatsApp workflow.
-
-**Preserved acceptance criteria:**
-
-- Sharing opens an explicit WhatsApp deep link with a short message and quote URL, with copy-link fallback.
-- Tapping the action increments a privacy-friendly quote-share aggregate; Berufe does not claim delivery.
-- Berufe does not send, read, or track a WhatsApp message or claim the quote was accepted or paid.
-- The initial quote lifecycle remains only `draft` or `shared`.
-
-**Depends on:** MVP S037's aggregate pattern and V2-015. V2-013 is an optional consumer, not a prerequisite.
-
-**Revisit when:** V2-014–V2-015 are approved and share attempts are a meaningful success signal.
-
-### V2-017 — Deliver the administrative growth report
-
-**Former scope:** R001–R014 in `Berufe_Reports_Stories.md`.
-
-**Story:** As an administrator, I want a privacy-safe aggregate growth report so that I can understand supply, discovery, trust, retention, moderation health, and later utility loops without visitor-level tracking.
-
-**Preserved acceptance criteria:**
-
-- Use `Berufe_Reports_Stories.md` as the detailed metric and test specification, updating it against the domains actually implemented when this story is approved.
-- Ship the aggregate-only endpoint, OpenAPI operation, generated Nuxt types, authorization, period semantics, empty/small-sample behavior, and formula tests together.
-- Do not fabricate invitation, client-recommendation, quote, report, or professional-facing metric values before their corresponding V2 domains exist.
-- Keep PostgreSQL as the source of truth and avoid an analytics provider, warehouse, Redis, or event stream unless measured need separately justifies one.
-
-**Depends on:** the MVP aggregate events plus only those V2 domains selected for reporting.
-
-**Revisit when:** manual queries cannot support recurring product decisions or multiple operators need the same trusted view.
+V2-001 was retired on August 13, 2026 when product scope explicitly returned routine service and Joinville-neighborhood administration to the launch MVP. Its launch requirements now live in MVP Feature E2 and story S018; the former V2 identifier remains reserved for traceability and is not reused. Service-category hierarchy administration, search-alias management, bulk import/export, change scheduling, and multi-city catalogs remain post-MVP.
 
 ## 3. Evidence-triggered V2 candidates already identified
 
 These ideas were already outside the MVP before the scope review. They remain preserved here, but should become implementation stories only after their trigger occurs.
 
-| Candidate | Evidence required |
-| --- | --- |
-| Multiple managers for one company/team profile | Several founding businesses cannot maintain profiles with one owner. |
-| Automatically expiring availability status | Customers repeatedly contact unavailable professionals and professionals agree to maintain it. |
-| Additional cities | Joinville has healthy supply, search usage, and repeatable onboarding operations. |
-| Before/after pairs and project albums | Professionals reach the portfolio limit or customers cannot understand project context. |
-| Automated company/certificate checks | The manual V2 verification workflow becomes slow or inconsistent. |
-| Stronger recommendation abuse rules and evidence attachments | Client recommendations are implemented and suspicious/disputed submissions become repeatable. |
-| “Ask the network for an indication” on no results | Aggregate searches show repeated unmet demand and the professional network is dense enough to respond without selling leads. |
-| Availability and additional coverage filters | Service plus neighborhood no longer narrows the result set adequately. |
-| Side-by-side evidence comparison | Research shows customers repeatedly switch profiles and miss important differences. |
-| Optional post-contact outcome check | Berufe needs to distinguish useful contacts from accidental clicks and users will answer one question. |
-| Partner search, work opportunities, and team formation | Verified professionals return regularly and demonstrate a cross-trade collaboration need. |
-| Quote PDF, acceptance, templates, and version history | The basic V2 quote flow is used repeatedly and needs formality. Payment remains a separate decision. |
-| Rule-based moderation risk flags and specialized queues | Submission volume or repeatable abuse makes oldest-first manual review too slow. |
-| Managed search synonyms and suggestions | Aggregate unmatched searches repeatedly map to existing services. |
+| Candidate                                                    | Evidence required                                                                                                            |
+| ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| Multiple managers for one company/team profile               | Several founding businesses cannot maintain profiles with one owner.                                                         |
+| Automatically expiring availability status                   | Customers repeatedly contact unavailable professionals and professionals agree to maintain it.                               |
+| Additional cities                                            | Joinville has healthy supply, search usage, and repeatable onboarding operations.                                            |
+| Before/after pairs and project albums                        | Professionals reach the portfolio limit or customers cannot understand project context.                                      |
+| Automated company/certificate checks                         | The manual V2 verification workflow becomes slow or inconsistent.                                                            |
+| Stronger recommendation abuse rules and evidence attachments | Client recommendations are implemented and suspicious/disputed submissions become repeatable.                                |
+| “Ask the network for an indication” on no results            | Aggregate searches show repeated unmet demand and the professional network is dense enough to respond without selling leads. |
+| Availability and additional coverage filters                 | Service plus neighborhood no longer narrows the result set adequately.                                                       |
+| Side-by-side evidence comparison                             | Research shows customers repeatedly switch profiles and miss important differences.                                          |
+| Optional post-contact outcome check                          | Berufe needs to distinguish useful contacts from accidental clicks and users will answer one question.                       |
+| Partner search, work opportunities, and team formation       | Verified professionals return regularly and demonstrate a cross-trade collaboration need.                                    |
+| Quote PDF, acceptance, templates, and version history        | The basic MVP quote flow is used repeatedly and needs formality. Payment remains a separate decision.                        |
+| Rule-based moderation risk flags and specialized queues      | Submission volume or repeatable abuse makes oldest-first manual review too slow.                                             |
+| Managed search synonyms and suggestions                      | Aggregate unmatched searches repeatedly map to existing services.                                                            |
 
 ## 4. Explicitly still excluded
 

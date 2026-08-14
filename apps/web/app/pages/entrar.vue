@@ -7,7 +7,7 @@ const { activeRole, showToast } = useMockupApp()
 const step = shallowRef<1 | 2 | 3>(1)
 const phone = shallowRef('(47) 99999-1111')
 const code = shallowRef('')
-const name = shallowRef('Marina Alves')
+const name = shallowRef('Marcos Alves')
 const accepted = shallowRef(false)
 const isLoading = shallowRef(false)
 const error = shallowRef('')
@@ -75,7 +75,7 @@ async function register() {
           <span class="auth-page__quote-icon"><UIcon name="i-lucide-quote" /></span>
           <blockquote>“Meu trabalho já falava por mim. A Berufe ajudou mais gente a escutar.”</blockquote>
           <div class="auth-page__person">
-            <DesignSystemAvatar name="João Vitor Santos" src="/images/photo-1500648767791-00dcc994a43e.jpg" alt="" size="sm" />
+            <DesignSystemAvatar name="João Vitor Santos" src="/images/professional-joao-vitor-santos-bricklayer.jpg" alt="" size="sm" />
             <span><strong>João Vitor Santos</strong><small>Pedreiro · membro fundador</small></span>
           </div>
         </div>

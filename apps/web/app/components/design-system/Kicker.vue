@@ -1,13 +1,11 @@
 <script setup lang="ts">
 defineSlots<{
-  default(): unknown
-}>()
+  default(): unknown;
+}>();
 </script>
 
 <template>
-  <p class="kicker">
-    <slot />
-  </p>
+  <p class="kicker"><slot /></p>
 </template>
 
 <style scoped lang="scss">

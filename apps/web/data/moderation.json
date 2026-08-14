@@ -1,15 +1,13 @@
 {
   "summary": [
-    { "label": "Aguardando análise", "value": 12, "icon": "i-lucide-inbox", "tone": "warning" },
+    { "label": "Aguardando análise", "value": 4, "icon": "i-lucide-inbox", "tone": "warning" },
     { "label": "Analisados hoje", "value": 8, "icon": "i-lucide-check-circle-2", "tone": "success" },
-    { "label": "Denúncias abertas", "value": 2, "icon": "i-lucide-flag", "tone": "error" }
+    { "label": "Item mais antigo", "value": "23h", "icon": "i-lucide-clock-3", "tone": "warning" }
   ],
   "queue": [
-    { "id": "mod-001", "type": "Perfil", "title": "Revisão de perfil · Ricardo Moreira", "subtitle": "Pedreiro · Toda Joinville", "submittedAt": "Hoje, 08:42", "age": "há 3h", "priority": "normal", "details": "Alteração de biografia e inclusão do serviço Azulejista.", "preview": "Trabalho com reformas há 14 anos, com foco em cozinhas e banheiros..." },
-    { "id": "mod-002", "type": "Verificação", "title": "Identidade · Priscila Nunes", "subtitle": "Arquiteta · América", "submittedAt": "Ontem, 16:10", "age": "há 19h", "priority": "normal", "details": "Documento de identidade enviado para conferência manual.", "preview": "Arquivo privado · acesso registrado na trilha de auditoria" },
-    { "id": "mod-003", "type": "Portfólio", "title": "Reforma de lavabo · Carlos Lima", "subtitle": "Pintor · Costa e Silva", "submittedAt": "Ontem, 12:23", "age": "há 23h", "priority": "normal", "details": "Nova imagem de portfólio associada ao serviço Pintor.", "preview": "Preparação de paredes e acabamento fosco em tom areia." },
-    { "id": "mod-004", "type": "Recomendação", "title": "Recomendação para Rafael Oliveira", "subtitle": "Cliente com telefone confirmado", "submittedAt": "10 ago, 09:02", "age": "há 2d", "priority": "normal", "details": "Recomendação de cliente para serviço hidráulico concluído.", "preview": "Atendimento rápido, explicou o problema e deixou tudo organizado." },
-    { "id": "mod-005", "type": "Relacionamento", "title": "Marina trabalhou com Paulo", "subtitle": "Confirmado pelas duas partes", "submittedAt": "09 ago, 14:31", "age": "há 3d", "priority": "normal", "details": "Colaboração profissional aceita pelo destinatário.", "preview": "Trabalhamos juntos na reforma elétrica de dois apartamentos." },
-    { "id": "mod-006", "type": "Denúncia", "title": "Denúncia em perfil publicado", "subtitle": "Categoria: informação incorreta", "submittedAt": "08 ago, 18:45", "age": "há 4d", "priority": "high", "details": "Visitante informa que uma evidência profissional pode estar desatualizada.", "preview": "Contato do denunciante mantido privado." }
+    { "id": "mod-001", "type": "Perfil", "title": "Perfil · Ricardo Moreira", "subtitle": "Pedreiro · Toda Joinville", "submittedAt": "Hoje, 08:42", "age": "há 3h", "details": "O perfil voltou para análise após uma alteração material na biografia e nos serviços.", "preview": "Trabalho com reformas há 14 anos, com foco em cozinhas e banheiros..." },
+    { "id": "mod-002", "type": "Verificação", "title": "Identidade · Priscila Nunes", "subtitle": "Arquiteta · América", "submittedAt": "Ontem, 16:10", "age": "há 19h", "details": "Documento de identidade enviado para conferência manual.", "preview": "Arquivo privado · acesso registrado na trilha de auditoria" },
+    { "id": "mod-003", "type": "Portfólio", "title": "Reforma de lavabo · Carlos Lima", "subtitle": "Pintor · Costa e Silva", "submittedAt": "Ontem, 12:23", "age": "há 23h", "details": "Nova imagem de portfólio associada ao serviço Pintor.", "preview": "Preparação de paredes e acabamento fosco em tom areia." },
+    { "id": "mod-004", "type": "Relacionamento", "title": "Marcos trabalhou com Paulo", "subtitle": "Confirmado pelas duas partes", "submittedAt": "Ontem, 10:18", "age": "há 21h", "details": "Colaboração profissional aceita pelo destinatário.", "preview": "Trabalhamos juntos na reforma elétrica de dois apartamentos." }
   ]
 }

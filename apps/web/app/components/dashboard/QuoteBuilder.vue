@@ -1,42 +1,99 @@
 <script setup lang="ts">
-import { computed, reactive, shallowRef } from 'vue'
-import type { Professional, Quote, QuoteItem } from '~/types'
-import { useMockupApp } from '~/composables/useMockupApp'
+import { computed, reactive, shallowRef } from "vue";
+import type { Professional, Quote } from "~/types";
+import { useMockupApp } from "~/composables/useMockupApp";
 
-const props = defineProps<{ initialQuote: Quote; professional: Professional }>()
-const emit = defineEmits<{ shared: [] }>()
-const { money, showToast } = useMockupApp()
-const quote = reactive<Quote>({ ...props.initialQuote, items: props.initialQuote.items.map((item) => ({ ...item })) })
-const previewOpen = shallowRef(false)
-const shareOpen = shallowRef(false)
-const isSaved = shallowRef(true)
-const isShared = shallowRef(false)
+const props = defineProps<{
+  initialQuote: Quote;
+  professional: Professional;
+}>();
+const emit = defineEmits<{ shared: [method: "whatsapp" | "copy"] }>();
+const { copyText, money, showToast } = useMockupApp();
+const quote = reactive<Quote>({
+  ...props.initialQuote,
+  items: props.initialQuote.items.map((item) => ({ ...item })),
+});
+const previewOpen = shallowRef(false);
+const shareOpen = shallowRef(false);
+const isSaved = shallowRef(true);
+const isShared = shallowRef(false);
 
-const subtotal = computed(() => quote.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0))
-const total = computed(() => Math.max(0, subtotal.value - quote.discount))
+const subtotal = computed(() =>
+  quote.items.reduce(
+    (sum, item) => sum + Number(item.quantity) * Number(item.unitPrice),
+    0,
+  ),
+);
+const total = computed(() => Math.max(0, subtotal.value - quote.discount));
+const isValid = computed(
+  () =>
+    quote.customerName.trim().length > 0 &&
+    quote.serviceDescription.trim().length > 0 &&
+    quote.items.length > 0 &&
+    quote.items.every(
+      (item) =>
+        item.description.trim().length > 0 &&
+        Number.isFinite(Number(item.quantity)) &&
+        Number(item.quantity) > 0 &&
+        Number.isFinite(Number(item.unitPrice)) &&
+        Number(item.unitPrice) >= 0,
+    ) &&
+    Number.isFinite(Number(quote.discount)) &&
+    Number(quote.discount) >= 0 &&
+    Number(quote.discount) <= subtotal.value,
+);
+const customerQuoteUrl = "https://berufe.com.br/orcamento/BERUFE-DEMO-1042";
 
 function addItem() {
-  const nextId = Math.max(0, ...quote.items.map((item) => item.id)) + 1
-  quote.items.push({ id: nextId, description: '', quantity: 1, unit: 'serviço', unitPrice: 0 })
-  isSaved.value = false
+  const nextId = Math.max(0, ...quote.items.map((item) => item.id)) + 1;
+  quote.items.push({
+    id: nextId,
+    description: "",
+    quantity: 1,
+    unit: "serviço",
+    unitPrice: 0,
+  });
+  isSaved.value = false;
 }
 
 function removeItem(id: number) {
-  if (quote.items.length === 1) return
-  quote.items = quote.items.filter((item) => item.id !== id)
-  isSaved.value = false
+  if (quote.items.length === 1) return;
+  quote.items = quote.items.filter((item) => item.id !== id);
+  isSaved.value = false;
 }
 
 function save() {
-  isSaved.value = true
-  showToast({ title: 'Rascunho salvo', description: `Orçamento #${quote.number} atualizado.` })
+  isSaved.value = true;
+  showToast({
+    title: "Rascunho salvo",
+    description: `Orçamento #${quote.number} atualizado.`,
+  });
+}
+
+function markShared(method: "whatsapp" | "copy") {
+  shareOpen.value = false;
+  isShared.value = true;
+  isSaved.value = true;
+  emit("shared", method);
 }
 
 function shareQuote() {
-  shareOpen.value = false
-  isShared.value = true
-  isSaved.value = true
-  emit('shared')
+  markShared("whatsapp");
+  const message = encodeURIComponent(
+    `Olá, ${quote.customerName}! Segue o orçamento #${quote.number}: ${customerQuoteUrl}`,
+  );
+  if (import.meta.client) {
+    window.open(
+      `https://wa.me/?text=${message}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
+  }
+}
+
+async function copyQuoteLink() {
+  await copyText(customerQuoteUrl, "Link do orçamento copiado");
+  markShared("copy");
 }
 </script>
 
@@ -44,58 +101,247 @@ function shareQuote() {
   <div class="quote-builder">
     <div class="quote-builder__form">
       <DesignSystemSurfaceCard as="section" class="builder-card">
-        <header><div><span>01</span><div><h2>Cliente e serviço</h2><p>Informações visíveis no link compartilhado.</p></div></div></header>
+        <header>
+          <div>
+            <span>01</span>
+            <div>
+              <h2>Cliente e serviço</h2>
+              <p>Informações visíveis no link compartilhado.</p>
+            </div>
+          </div>
+        </header>
         <div class="builder-fields" @input="isSaved = false">
-          <DesignSystemFormField label="Nome do cliente"><input v-model="quote.customerName" required maxlength="80"></DesignSystemFormField>
-          <DesignSystemFormField label="Válido até"><input v-model="quote.validUntil" type="date"></DesignSystemFormField>
-          <DesignSystemFormField class="builder-fields__full" label="Descrição do serviço"><input v-model="quote.serviceDescription" required maxlength="160"></DesignSystemFormField>
+          <DesignSystemFormField label="Nome do cliente"
+            ><input v-model="quote.customerName" required maxlength="80"
+          /></DesignSystemFormField>
+          <DesignSystemFormField label="Válido até"
+            ><input v-model="quote.validUntil" type="date"
+          /></DesignSystemFormField>
+          <DesignSystemFormField
+            class="builder-fields__full"
+            label="Descrição do serviço"
+            ><input v-model="quote.serviceDescription" required maxlength="160"
+          /></DesignSystemFormField>
         </div>
       </DesignSystemSurfaceCard>
 
       <DesignSystemSurfaceCard as="section" class="builder-card">
-        <header><div><span>02</span><div><h2>Itens do orçamento</h2><p>Os totais abaixo são uma prévia da interface.</p></div></div><UButton size="sm" color="neutral" variant="outline" icon="i-lucide-plus" @click="addItem">Adicionar item</UButton></header>
+        <header>
+          <div>
+            <span>02</span>
+            <div>
+              <h2>Itens do orçamento</h2>
+              <p>Os totais abaixo são uma prévia da interface.</p>
+            </div>
+          </div>
+          <UButton
+            size="sm"
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-plus"
+            @click="addItem"
+            >Adicionar item</UButton
+          >
+        </header>
         <div class="quote-items">
-          <div class="quote-item quote-item--head"><span>Descrição</span><span>Qtd.</span><span>Unidade</span><span>Valor unit.</span><span>Total</span><span /></div>
-          <div v-for="(item, index) in quote.items" :key="item.id" class="quote-item" @input="isSaved = false">
-            <label><span class="sr-only">Descrição</span><input v-model="item.description" :placeholder="`Item ${index + 1}`"></label>
-            <label><span class="sr-only">Quantidade</span><input v-model.number="item.quantity" type="number" min="0.01" step="0.01"></label>
-            <label><span class="sr-only">Unidade</span><select v-model="item.unit"><option>serviço</option><option>hora</option><option>ponto</option><option>m²</option><option>unidade</option></select></label>
-            <label><span class="sr-only">Valor unitário</span><input v-model.number="item.unitPrice" type="number" min="0" step="0.01"></label>
+          <div class="quote-item quote-item--head">
+            <span>Descrição</span><span>Qtd.</span><span>Unidade</span
+            ><span>Valor unit.</span><span>Total</span><span />
+          </div>
+          <div
+            v-for="(item, index) in quote.items"
+            :key="item.id"
+            class="quote-item"
+            @input="isSaved = false"
+          >
+            <label
+              ><span class="sr-only">Descrição</span
+              ><input
+                v-model="item.description"
+                :placeholder="`Item ${index + 1}`"
+            /></label>
+            <label
+              ><span class="sr-only">Quantidade</span
+              ><input
+                v-model.number="item.quantity"
+                type="number"
+                min="0.01"
+                step="0.01"
+            /></label>
+            <label
+              ><span class="sr-only">Unidade</span
+              ><select v-model="item.unit">
+                <option>serviço</option>
+                <option>hora</option>
+                <option>ponto</option>
+                <option>m²</option>
+                <option>unidade</option>
+              </select></label
+            >
+            <label
+              ><span class="sr-only">Valor unitário</span
+              ><input
+                v-model.number="item.unitPrice"
+                type="number"
+                min="0"
+                step="0.01"
+            /></label>
             <strong>{{ money(item.quantity * item.unitPrice) }}</strong>
-            <button type="button" aria-label="Remover item" :disabled="quote.items.length === 1" @click="removeItem(item.id)"><UIcon name="i-lucide-trash-2" /></button>
+            <button
+              type="button"
+              aria-label="Remover item"
+              :disabled="quote.items.length === 1"
+              @click="removeItem(item.id)"
+            >
+              <UIcon name="i-lucide-trash-2" />
+            </button>
           </div>
         </div>
-        <UButton class="quote-items__mobile-add" color="neutral" variant="outline" block icon="i-lucide-plus" @click="addItem">Adicionar item</UButton>
+        <UButton
+          class="quote-items__mobile-add"
+          color="neutral"
+          variant="outline"
+          block
+          icon="i-lucide-plus"
+          @click="addItem"
+          >Adicionar item</UButton
+        >
         <div class="builder-total">
-          <div><span>Subtotal</span><strong>{{ money(subtotal) }}</strong></div>
-          <label><span>Desconto</span><div><em>R$</em><input v-model.number="quote.discount" type="number" min="0" :max="subtotal" step="0.01" @input="isSaved = false"></div></label>
-          <div><span>Total</span><strong>{{ money(total) }}</strong></div>
+          <div>
+            <span>Subtotal</span><strong>{{ money(subtotal) }}</strong>
+          </div>
+          <label
+            ><span>Desconto</span>
+            <div>
+              <em>R$</em
+              ><input
+                v-model.number="quote.discount"
+                type="number"
+                min="0"
+                :max="subtotal"
+                step="0.01"
+                @input="isSaved = false"
+              /></div
+          ></label>
+          <div>
+            <span>Total</span><strong>{{ money(total) }}</strong>
+          </div>
         </div>
       </DesignSystemSurfaceCard>
 
       <DesignSystemSurfaceCard as="section" class="builder-card">
-        <header><div><span>03</span><div><h2>Observações</h2><p>Detalhes de prazo, materiais ou condições.</p></div></div></header>
-        <DesignSystemFormField class="builder-notes" label="Observações opcionais"><textarea v-model="quote.notes" maxlength="700" @input="isSaved = false" /></DesignSystemFormField>
+        <header>
+          <div>
+            <span>03</span>
+            <div>
+              <h2>Observações</h2>
+              <p>Detalhes de prazo, materiais ou condições.</p>
+            </div>
+          </div>
+        </header>
+        <DesignSystemFormField
+          class="builder-notes"
+          label="Observações opcionais"
+        >
+          <textarea
+            v-model="quote.notes"
+            maxlength="700"
+            @input="isSaved = false"
+          />
+        </DesignSystemFormField>
       </DesignSystemSurfaceCard>
 
       <div class="quote-builder__savebar">
-        <span><UIcon :name="isSaved ? 'i-lucide-cloud-check' : 'i-lucide-circle-dot'" /> {{ isSaved ? (isShared ? 'Compartilhado' : 'Rascunho salvo') : 'Alterações não salvas' }}</span>
-        <div><UButton color="neutral" variant="outline" icon="i-lucide-eye" @click="previewOpen = true">Pré-visualizar</UButton><UButton color="primary" @click="save">Salvar rascunho</UButton><UButton color="secondary" icon="i-lucide-send" @click="shareOpen = true">Compartilhar</UButton></div>
+        <span
+          ><UIcon
+            :name="isSaved ? 'i-lucide-cloud-check' : 'i-lucide-circle-dot'"
+          />
+          {{
+            isSaved
+              ? isShared
+                ? "Compartilhado"
+                : "Rascunho salvo"
+              : "Alterações não salvas"
+          }}</span
+        >
+        <div>
+          <UButton
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-eye"
+            @click="previewOpen = true"
+            >Pré-visualizar</UButton
+          ><UButton color="primary" :disabled="!isValid" @click="save"
+            >Salvar rascunho</UButton
+          ><UButton
+            color="secondary"
+            icon="i-lucide-send"
+            :disabled="!isValid"
+            @click="shareOpen = true"
+            >Compartilhar</UButton
+          >
+        </div>
       </div>
     </div>
 
-    <aside class="quote-builder__preview"><div class="quote-builder__preview-label"><span>Prévia do cliente</span><em>Atualização instantânea</em></div><QuotesQuotePreview :quote="quote" :professional="professional" /></aside>
+    <aside class="quote-builder__preview">
+      <div class="quote-builder__preview-label">
+        <span>Prévia do cliente</span><em>Atualização instantânea</em>
+      </div>
+      <QuotesQuotePreview :quote="quote" :professional="professional" />
+    </aside>
 
-    <UModal v-model:open="previewOpen" title="Prévia do orçamento" description="Esta é a página que o cliente verá.">
-      <template #body><QuotesQuotePreview :quote="quote" :professional="professional" customer-facing /></template>
+    <UModal
+      v-model:open="previewOpen"
+      title="Prévia do orçamento"
+      description="Esta é a página que o cliente verá."
+    >
+      <template #body
+        ><QuotesQuotePreview
+          :quote="quote"
+          :professional="professional"
+          customer-facing
+      /></template>
     </UModal>
 
-    <UModal v-model:open="shareOpen" title="Compartilhar orçamento" description="Ao compartilhar, o rascunho ganha um link seguro e muda para compartilhado.">
+    <UModal
+      v-model:open="shareOpen"
+      title="Compartilhar orçamento"
+      description="Ao compartilhar, o rascunho ganha um link seguro e muda para compartilhado."
+    >
       <template #body>
-        <div class="share-quote"><span><UIcon name="i-lucide-message-circle" /></span><div><strong>Enviar pelo WhatsApp</strong><p>A Berufe abre o aplicativo com uma mensagem e o link. Não enviamos nem lemos a conversa.</p></div></div>
-        <div class="share-quote__link"><UIcon name="i-lucide-link" /><span>berufe.com.br/orcamento/••••••••1043</span></div>
+        <div class="share-quote">
+          <span><UIcon name="i-lucide-message-circle" /></span>
+          <div>
+            <strong>Enviar pelo WhatsApp</strong>
+            <p>
+              A Berufe abre o aplicativo com uma mensagem e o link. Não enviamos
+              nem lemos a conversa.
+            </p>
+          </div>
+        </div>
+        <div class="share-quote__link">
+          <UIcon name="i-lucide-link" /><span
+            >berufe.com.br/orcamento/••••••••1042</span
+          >
+        </div>
       </template>
-      <template #footer><UButton color="neutral" variant="ghost" @click="shareOpen = false">Cancelar</UButton><UButton color="primary" icon="i-lucide-message-circle" @click="shareQuote">Abrir WhatsApp</UButton></template>
+      <template #footer
+        ><UButton color="neutral" variant="ghost" @click="shareOpen = false"
+          >Cancelar</UButton
+        ><UButton
+          color="neutral"
+          variant="outline"
+          icon="i-lucide-link"
+          @click="copyQuoteLink"
+          >Copiar link</UButton
+        ><UButton
+          color="primary"
+          icon="i-lucide-message-circle"
+          @click="shareQuote"
+          >Abrir WhatsApp</UButton
+        ></template
+      >
     </UModal>
   </div>
 </template>

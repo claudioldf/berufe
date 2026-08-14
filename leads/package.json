@@ -1,0 +1,15 @@
+{
+  "name": "achei-o-profissional-scraper",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HTTP service that extracts professionals and WhatsApp numbers from Achei o Profissional listings.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "scrape": "node src/cli.js",
+    "test": "node --test"
+  }
+}

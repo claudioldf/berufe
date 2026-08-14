@@ -1,15 +1,26 @@
 {
   "generatedAt": "2026-08-12T09:00:00-03:00",
-  "privacyNotice": "Dados agregados, sem identidade de visitante ou conteúdo de conversas no WhatsApp.",
+  "privacyNotice": "Dados agregados, sem identidade de visitante, nomes de clientes de orçamentos ou conteúdo de conversas no WhatsApp.",
   "periods": [
-    { "key": "since_launch", "label": "Desde o lançamento", "shortLabel": "Desde o início" },
-    { "key": "last_30_days", "label": "Últimos 30 dias", "shortLabel": "30 dias" },
-    { "key": "last_7_days", "label": "Últimos 7 dias", "shortLabel": "7 dias" }
+    {
+      "key": "since_launch",
+      "label": "Desde o lançamento",
+      "shortLabel": "Desde o início"
+    },
+    {
+      "key": "last_30_days",
+      "label": "Últimos 30 dias",
+      "shortLabel": "30 dias"
+    },
+    {
+      "key": "last_7_days",
+      "label": "Últimos 7 dias",
+      "shortLabel": "7 dias"
+    }
   ],
   "data": {
     "since_launch": {
       "windowLabel": "08 jul – 12 ago",
-      "comparisonLabel": "desde o lançamento",
       "summaryChanges": {
         "published": "Marco de 10 alcançado",
         "activated": "Próximo marco: 8",
@@ -21,18 +32,63 @@
         "targetMinimum": 30,
         "targetMaximum": 50,
         "funnel": [
-          { "key": "invited", "label": "Convidados", "value": 50, "description": "rede fundadora mapeada" },
-          { "key": "registered", "label": "Cadastrados", "value": 26, "description": "telefone confirmado" },
-          { "key": "verified", "label": "Identidade verificada", "value": 21 },
-          { "key": "submitted", "label": "Perfil enviado", "value": 16 },
+          {
+            "key": "registered",
+            "label": "Cadastrados",
+            "value": 26,
+            "description": "telefone confirmado"
+          },
+          {
+            "key": "verified",
+            "label": "Identidade verificada",
+            "value": 21
+          },
+          {
+            "key": "submitted",
+            "label": "Perfil enviado",
+            "value": 16
+          },
           { "key": "published", "label": "Publicados", "value": 12 },
-          { "key": "activated", "label": "Ativados", "value": 5, "description": "perfil completo e confiável" }
+          {
+            "key": "activated",
+            "label": "Ativados",
+            "value": 5,
+            "description": "cumpre os 3 critérios"
+          }
         ],
         "activation": [
-          { "key": "identity", "label": "Identidade verificada", "value": 12, "total": 12, "description": "documento aprovado", "icon": "i-lucide-badge-check" },
-          { "key": "portfolio", "label": "3+ trabalhos", "value": 8, "total": 12, "description": "portfólio suficiente", "icon": "i-lucide-images" },
-          { "key": "relationships", "label": "2+ relações", "value": 6, "total": 12, "description": "confiança confirmada", "icon": "i-lucide-share-2" },
-          { "key": "all", "label": "Perfil ativado", "value": 5, "total": 12, "description": "cumpre os 3 critérios", "icon": "i-lucide-sparkles" }
+          {
+            "key": "identity",
+            "label": "Identidade verificada",
+            "value": 12,
+            "total": 12,
+            "description": "documento aprovado",
+            "icon": "i-lucide-badge-check"
+          },
+          {
+            "key": "portfolio",
+            "label": "3+ trabalhos",
+            "value": 8,
+            "total": 12,
+            "description": "portfólio suficiente",
+            "icon": "i-lucide-images"
+          },
+          {
+            "key": "relationships",
+            "label": "2+ relações",
+            "value": 6,
+            "total": 12,
+            "description": "confiança confirmada",
+            "icon": "i-lucide-share-2"
+          },
+          {
+            "key": "all",
+            "label": "Perfil ativado",
+            "value": 5,
+            "total": 12,
+            "description": "cumpre os 3 critérios",
+            "icon": "i-lucide-sparkles"
+          }
         ]
       },
       "discovery": {
@@ -47,12 +103,30 @@
           { "label": "Encanador", "value": 19 },
           { "label": "Pintor", "value": 16 },
           { "label": "Pedreiro", "value": 12 },
-          { "label": "Marido de aluguel", "value": 8 }
+          { "label": "Montador de móveis", "value": 8 }
         ],
         "gaps": [
-          { "service": "Instalação de ar-condicionado", "location": "Joinville", "searches": 9, "professionals": 0, "catalogStatus": "outside_mvp" },
-          { "service": "Drywall", "location": "Aventureiro", "searches": 7, "professionals": 0, "catalogStatus": "active" },
-          { "service": "Marceneiro", "location": "Iririú", "searches": 5, "professionals": 1, "catalogStatus": "active" }
+          {
+            "service": "Instalação de ar-condicionado",
+            "location": "Joinville",
+            "searches": 9,
+            "professionals": 0,
+            "catalogStatus": "outside_mvp"
+          },
+          {
+            "service": "Drywall",
+            "location": "Aventureiro",
+            "searches": 7,
+            "professionals": 0,
+            "catalogStatus": "active"
+          },
+          {
+            "service": "Marceneiro",
+            "location": "Iririú",
+            "searches": 5,
+            "professionals": 1,
+            "catalogStatus": "active"
+          }
         ]
       },
       "engagement": {
@@ -63,29 +137,52 @@
           { "key": "none", "label": "0 semanas", "value": 3 },
           { "key": "one", "label": "1 semana", "value": 4 },
           { "key": "two_three", "label": "2–3 semanas", "value": 3 },
-          { "key": "four", "label": "4+ semanas", "value": 2 }
+          { "key": "four", "label": "4 semanas", "value": 2 }
         ],
         "actions": [
           { "key": "profile", "label": "Atualizou perfil", "value": 9 },
           { "key": "trust", "label": "Criou evidência", "value": 7 },
-          { "key": "relationship", "label": "Interagiu com a rede", "value": 6 },
+          {
+            "key": "relationship",
+            "label": "Interagiu com a rede",
+            "value": 6
+          },
           { "key": "quote", "label": "Criou orçamento", "value": 5 }
         ],
         "cohorts": [
           { "cohort": "08–14 jul", "size": 4, "week1": 3, "week4": 2 },
           { "cohort": "15–21 jul", "size": 3, "week1": 2, "week4": 1 },
-          { "cohort": "22–28 jul", "size": 3, "week1": 2, "week4": null },
-          { "cohort": "29 jul–04 ago", "size": 2, "week1": 1, "week4": null }
+          {
+            "cohort": "22–28 jul",
+            "size": 3,
+            "week1": 2,
+            "week4": null
+          },
+          {
+            "cohort": "29 jul–04 ago",
+            "size": 2,
+            "week1": 1,
+            "week4": null
+          }
         ]
       },
       "trust": {
         "funnels": [
-          { "key": "recommendations", "label": "Recomendações de clientes", "started": 18, "completed": 11, "approved": 10 },
-          { "key": "relationships", "label": "Relações profissionais", "started": 14, "completed": 9, "approved": 8 },
-          { "key": "invites", "label": "Convites para profissionais", "started": 22, "completed": 8, "approved": 5 }
+          {
+            "key": "relationships",
+            "label": "Relações profissionais",
+            "started": 14,
+            "completed": 9,
+            "approved": 8
+          }
         ]
       },
-      "quotes": { "created": 9, "shared": 6, "uniqueCreators": 5, "repeatCreators": 2 },
+      "quotes": {
+        "created": 9,
+        "shared": 6,
+        "uniqueCreators": 5,
+        "repeatCreators": 2
+      },
       "operations": {
         "pending": 7,
         "oldestPendingHours": 31,
@@ -93,12 +190,11 @@
         "p90ReviewHours": 26,
         "rejected": 4,
         "reviewed": 38,
-        "hiddenOrReported": 1
+        "hidden": 1
       }
     },
     "last_30_days": {
       "windowLabel": "14 jul – 12 ago",
-      "comparisonLabel": "versus 30 dias anteriores",
       "summaryChanges": {
         "published": "+8 no período",
         "activated": "+4 no período",
@@ -110,18 +206,53 @@
         "targetMinimum": 30,
         "targetMaximum": 50,
         "funnel": [
-          { "key": "invited", "label": "Convidados", "value": 38 },
           { "key": "registered", "label": "Cadastrados", "value": 20 },
-          { "key": "verified", "label": "Identidade verificada", "value": 17 },
-          { "key": "submitted", "label": "Perfil enviado", "value": 13 },
+          {
+            "key": "verified",
+            "label": "Identidade verificada",
+            "value": 17
+          },
+          {
+            "key": "submitted",
+            "label": "Perfil enviado",
+            "value": 13
+          },
           { "key": "published", "label": "Publicados", "value": 8 },
           { "key": "activated", "label": "Ativados", "value": 4 }
         ],
         "activation": [
-          { "key": "identity", "label": "Identidade verificada", "value": 8, "total": 8, "description": "documento aprovado", "icon": "i-lucide-badge-check" },
-          { "key": "portfolio", "label": "3+ trabalhos", "value": 6, "total": 8, "description": "portfólio suficiente", "icon": "i-lucide-images" },
-          { "key": "relationships", "label": "2+ relações", "value": 4, "total": 8, "description": "confiança confirmada", "icon": "i-lucide-share-2" },
-          { "key": "all", "label": "Perfil ativado", "value": 4, "total": 8, "description": "cumpre os 3 critérios", "icon": "i-lucide-sparkles" }
+          {
+            "key": "identity",
+            "label": "Identidade verificada",
+            "value": 8,
+            "total": 8,
+            "description": "documento aprovado",
+            "icon": "i-lucide-badge-check"
+          },
+          {
+            "key": "portfolio",
+            "label": "3+ trabalhos",
+            "value": 6,
+            "total": 8,
+            "description": "portfólio suficiente",
+            "icon": "i-lucide-images"
+          },
+          {
+            "key": "relationships",
+            "label": "2+ relações",
+            "value": 4,
+            "total": 8,
+            "description": "confiança confirmada",
+            "icon": "i-lucide-share-2"
+          },
+          {
+            "key": "all",
+            "label": "Perfil ativado",
+            "value": 4,
+            "total": 8,
+            "description": "cumpre os 3 critérios",
+            "icon": "i-lucide-sparkles"
+          }
         ]
       },
       "discovery": {
@@ -136,12 +267,30 @@
           { "label": "Encanador", "value": 17 },
           { "label": "Pintor", "value": 14 },
           { "label": "Pedreiro", "value": 10 },
-          { "label": "Marido de aluguel", "value": 7 }
+          { "label": "Montador de móveis", "value": 7 }
         ],
         "gaps": [
-          { "service": "Instalação de ar-condicionado", "location": "Joinville", "searches": 8, "professionals": 0, "catalogStatus": "outside_mvp" },
-          { "service": "Drywall", "location": "Aventureiro", "searches": 6, "professionals": 0, "catalogStatus": "active" },
-          { "service": "Marceneiro", "location": "Iririú", "searches": 4, "professionals": 1, "catalogStatus": "active" }
+          {
+            "service": "Instalação de ar-condicionado",
+            "location": "Joinville",
+            "searches": 8,
+            "professionals": 0,
+            "catalogStatus": "outside_mvp"
+          },
+          {
+            "service": "Drywall",
+            "location": "Aventureiro",
+            "searches": 6,
+            "professionals": 0,
+            "catalogStatus": "active"
+          },
+          {
+            "service": "Marceneiro",
+            "location": "Iririú",
+            "searches": 4,
+            "professionals": 1,
+            "catalogStatus": "active"
+          }
         ]
       },
       "engagement": {
@@ -157,24 +306,52 @@
         "actions": [
           { "key": "profile", "label": "Atualizou perfil", "value": 8 },
           { "key": "trust", "label": "Criou evidência", "value": 6 },
-          { "key": "relationship", "label": "Interagiu com a rede", "value": 5 },
+          {
+            "key": "relationship",
+            "label": "Interagiu com a rede",
+            "value": 5
+          },
           { "key": "quote", "label": "Criou orçamento", "value": 5 }
         ],
         "cohorts": [
           { "cohort": "15–21 jul", "size": 3, "week1": 2, "week4": 1 },
-          { "cohort": "22–28 jul", "size": 3, "week1": 2, "week4": null },
-          { "cohort": "29 jul–04 ago", "size": 2, "week1": 1, "week4": null },
-          { "cohort": "05–11 ago", "size": 2, "week1": null, "week4": null }
+          {
+            "cohort": "22–28 jul",
+            "size": 3,
+            "week1": 2,
+            "week4": null
+          },
+          {
+            "cohort": "29 jul–04 ago",
+            "size": 2,
+            "week1": 1,
+            "week4": null
+          },
+          {
+            "cohort": "05–11 ago",
+            "size": 2,
+            "week1": null,
+            "week4": null
+          }
         ]
       },
       "trust": {
         "funnels": [
-          { "key": "recommendations", "label": "Recomendações de clientes", "started": 16, "completed": 10, "approved": 9 },
-          { "key": "relationships", "label": "Relações profissionais", "started": 12, "completed": 8, "approved": 7 },
-          { "key": "invites", "label": "Convites para profissionais", "started": 19, "completed": 7, "approved": 4 }
+          {
+            "key": "relationships",
+            "label": "Relações profissionais",
+            "started": 12,
+            "completed": 8,
+            "approved": 7
+          }
         ]
       },
-      "quotes": { "created": 8, "shared": 6, "uniqueCreators": 5, "repeatCreators": 2 },
+      "quotes": {
+        "created": 8,
+        "shared": 6,
+        "uniqueCreators": 5,
+        "repeatCreators": 2
+      },
       "operations": {
         "pending": 7,
         "oldestPendingHours": 31,
@@ -182,12 +359,11 @@
         "p90ReviewHours": 24,
         "rejected": 3,
         "reviewed": 31,
-        "hiddenOrReported": 1
+        "hidden": 1
       }
     },
     "last_7_days": {
       "windowLabel": "06–12 ago",
-      "comparisonLabel": "versus 7 dias anteriores",
       "summaryChanges": {
         "published": "+2 no período",
         "activated": "+1 no período",
@@ -199,18 +375,49 @@
         "targetMinimum": 30,
         "targetMaximum": 50,
         "funnel": [
-          { "key": "invited", "label": "Convidados", "value": 12 },
           { "key": "registered", "label": "Cadastrados", "value": 7 },
-          { "key": "verified", "label": "Identidade verificada", "value": 5 },
+          {
+            "key": "verified",
+            "label": "Identidade verificada",
+            "value": 5
+          },
           { "key": "submitted", "label": "Perfil enviado", "value": 4 },
           { "key": "published", "label": "Publicados", "value": 2 },
           { "key": "activated", "label": "Ativados", "value": 1 }
         ],
         "activation": [
-          { "key": "identity", "label": "Identidade verificada", "value": 2, "total": 2, "description": "documento aprovado", "icon": "i-lucide-badge-check" },
-          { "key": "portfolio", "label": "3+ trabalhos", "value": 2, "total": 2, "description": "portfólio suficiente", "icon": "i-lucide-images" },
-          { "key": "relationships", "label": "2+ relações", "value": 1, "total": 2, "description": "confiança confirmada", "icon": "i-lucide-share-2" },
-          { "key": "all", "label": "Perfil ativado", "value": 1, "total": 2, "description": "cumpre os 3 critérios", "icon": "i-lucide-sparkles" }
+          {
+            "key": "identity",
+            "label": "Identidade verificada",
+            "value": 2,
+            "total": 2,
+            "description": "documento aprovado",
+            "icon": "i-lucide-badge-check"
+          },
+          {
+            "key": "portfolio",
+            "label": "3+ trabalhos",
+            "value": 2,
+            "total": 2,
+            "description": "portfólio suficiente",
+            "icon": "i-lucide-images"
+          },
+          {
+            "key": "relationships",
+            "label": "2+ relações",
+            "value": 1,
+            "total": 2,
+            "description": "confiança confirmada",
+            "icon": "i-lucide-share-2"
+          },
+          {
+            "key": "all",
+            "label": "Perfil ativado",
+            "value": 1,
+            "total": 2,
+            "description": "cumpre os 3 critérios",
+            "icon": "i-lucide-sparkles"
+          }
         ]
       },
       "discovery": {
@@ -225,12 +432,30 @@
           { "label": "Encanador", "value": 6 },
           { "label": "Pintor", "value": 4 },
           { "label": "Pedreiro", "value": 3 },
-          { "label": "Marido de aluguel", "value": 2 }
+          { "label": "Montador de móveis", "value": 2 }
         ],
         "gaps": [
-          { "service": "Drywall", "location": "Aventureiro", "searches": 3, "professionals": 0, "catalogStatus": "active" },
-          { "service": "Instalação de ar-condicionado", "location": "Joinville", "searches": 2, "professionals": 0, "catalogStatus": "outside_mvp" },
-          { "service": "Marceneiro", "location": "Iririú", "searches": 2, "professionals": 1, "catalogStatus": "active" }
+          {
+            "service": "Drywall",
+            "location": "Aventureiro",
+            "searches": 3,
+            "professionals": 0,
+            "catalogStatus": "active"
+          },
+          {
+            "service": "Instalação de ar-condicionado",
+            "location": "Joinville",
+            "searches": 2,
+            "professionals": 0,
+            "catalogStatus": "outside_mvp"
+          },
+          {
+            "service": "Marceneiro",
+            "location": "Iririú",
+            "searches": 2,
+            "professionals": 1,
+            "catalogStatus": "active"
+          }
         ]
       },
       "engagement": {
@@ -244,22 +469,45 @@
         "actions": [
           { "key": "profile", "label": "Atualizou perfil", "value": 4 },
           { "key": "trust", "label": "Criou evidência", "value": 3 },
-          { "key": "relationship", "label": "Interagiu com a rede", "value": 3 },
+          {
+            "key": "relationship",
+            "label": "Interagiu com a rede",
+            "value": 3
+          },
           { "key": "quote", "label": "Criou orçamento", "value": 2 }
         ],
         "cohorts": [
-          { "cohort": "29 jul–04 ago", "size": 2, "week1": 1, "week4": null },
-          { "cohort": "05–11 ago", "size": 2, "week1": null, "week4": null }
+          {
+            "cohort": "29 jul–04 ago",
+            "size": 2,
+            "week1": 1,
+            "week4": null
+          },
+          {
+            "cohort": "05–11 ago",
+            "size": 2,
+            "week1": null,
+            "week4": null
+          }
         ]
       },
       "trust": {
         "funnels": [
-          { "key": "recommendations", "label": "Recomendações de clientes", "started": 6, "completed": 4, "approved": 3 },
-          { "key": "relationships", "label": "Relações profissionais", "started": 5, "completed": 3, "approved": 3 },
-          { "key": "invites", "label": "Convites para profissionais", "started": 8, "completed": 3, "approved": 2 }
+          {
+            "key": "relationships",
+            "label": "Relações profissionais",
+            "started": 5,
+            "completed": 3,
+            "approved": 3
+          }
         ]
       },
-      "quotes": { "created": 3, "shared": 2, "uniqueCreators": 2, "repeatCreators": 1 },
+      "quotes": {
+        "created": 3,
+        "shared": 2,
+        "uniqueCreators": 2,
+        "repeatCreators": 1
+      },
       "operations": {
         "pending": 7,
         "oldestPendingHours": 31,
@@ -267,7 +515,7 @@
         "p90ReviewHours": 19,
         "rejected": 1,
         "reviewed": 12,
-        "hiddenOrReported": 0
+        "hidden": 0
       }
     }
   }

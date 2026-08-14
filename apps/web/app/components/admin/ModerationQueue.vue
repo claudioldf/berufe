@@ -1,41 +1,51 @@
 <script setup lang="ts">
-import { computed, ref, shallowRef } from 'vue'
-import moderationData from '../../../data/moderation.json'
-import { useMockupApp } from '~/composables/useMockupApp'
+import { computed, ref, shallowRef } from "vue";
+import moderationData from "../../../data/moderation.json";
+import { useMockupApp } from "~/composables/useMockupApp";
 
 interface QueueItem {
-  id: string
-  type: string
-  title: string
-  subtitle: string
-  submittedAt: string
-  age: string
-  priority: string
-  details: string
-  preview: string
+  id: string;
+  type: string;
+  title: string;
+  subtitle: string;
+  submittedAt: string;
+  age: string;
+  details: string;
+  preview: string;
 }
 
-const { showToast } = useMockupApp()
-const queue = ref<QueueItem[]>(moderationData.queue)
-const selectedId = shallowRef(queue.value[0]?.id ?? '')
-const typeFilter = shallowRef('Todos')
-const rejectionOpen = shallowRef(false)
-const rejectionReason = shallowRef('')
-const types = computed(() => ['Todos', ...new Set(queue.value.map((item) => item.type))])
-const filteredQueue = computed(() => typeFilter.value === 'Todos' ? queue.value : queue.value.filter((item) => item.type === typeFilter.value))
-const selected = computed(() => queue.value.find((item) => item.id === selectedId.value) ?? filteredQueue.value[0])
+const { showToast } = useMockupApp();
+const queue = ref<QueueItem[]>(moderationData.queue);
+const selectedId = shallowRef(queue.value[0]?.id ?? "");
+const typeFilter = shallowRef("Todos");
+const rejectionOpen = shallowRef(false);
+const rejectionReason = shallowRef("");
+const types = computed(() => [
+  "Todos",
+  ...new Set(queue.value.map((item) => item.type)),
+]);
+const filteredQueue = computed(() =>
+  typeFilter.value === "Todos"
+    ? queue.value
+    : queue.value.filter((item) => item.type === typeFilter.value),
+);
+const selected = computed(
+  () =>
+    queue.value.find((item) => item.id === selectedId.value) ??
+    filteredQueue.value[0],
+);
 
-function decide(action: 'approved' | 'rejected') {
-  const item = selected.value
-  if (!item) return
-  queue.value = queue.value.filter((queueItem) => queueItem.id !== item.id)
-  selectedId.value = queue.value[0]?.id ?? ''
-  rejectionOpen.value = false
-  rejectionReason.value = ''
+function decide(action: "approved" | "rejected") {
+  const item = selected.value;
+  if (!item) return;
+  queue.value = queue.value.filter((queueItem) => queueItem.id !== item.id);
+  selectedId.value = queue.value[0]?.id ?? "";
+  rejectionOpen.value = false;
+  rejectionReason.value = "";
   showToast({
-    title: action === 'approved' ? 'Item aprovado' : 'Item rejeitado',
+    title: action === "approved" ? "Item aprovado" : "Item rejeitado",
     description: `A decisão sobre “${item.title}” foi registrada na auditoria.`,
-  })
+  });
 }
 </script>
 
@@ -43,37 +53,169 @@ function decide(action: 'approved' | 'rejected') {
   <div class="moderation">
     <div class="moderation__toolbar">
       <div class="moderation__filters">
-        <button v-for="type in types" :key="type" type="button" :class="{ active: typeFilter === type }" @click="typeFilter = type">{{ type }}</button>
+        <button
+          v-for="type in types"
+          :key="type"
+          type="button"
+          :class="{ active: typeFilter === type }"
+          @click="typeFilter = type"
+        >
+          {{ type }}
+        </button>
       </div>
-      <label><UIcon name="i-lucide-search" /><input type="search" placeholder="Buscar na fila..."></label>
+      <label
+        ><UIcon name="i-lucide-search" /><input
+          type="search"
+          placeholder="Buscar na fila..."
+      /></label>
     </div>
 
     <div v-if="queue.length" class="moderation__workspace">
       <section class="moderation__list" aria-label="Fila de moderação">
-        <button v-for="item in filteredQueue" :key="item.id" type="button" :class="{ active: selected?.id === item.id, priority: item.priority === 'high' }" @click="selectedId = item.id">
-          <span class="moderation__type-icon"><UIcon :name="item.type === 'Perfil' ? 'i-lucide-user-round' : item.type === 'Verificação' ? 'i-lucide-shield-check' : item.type === 'Portfólio' ? 'i-lucide-image' : item.type === 'Recomendação' ? 'i-lucide-heart' : item.type === 'Relacionamento' ? 'i-lucide-handshake' : 'i-lucide-flag'" /></span>
-          <span><em>{{ item.type }}</em><strong>{{ item.title }}</strong><small>{{ item.subtitle }}</small></span>
+        <button
+          v-for="item in filteredQueue"
+          :key="item.id"
+          type="button"
+          :class="{ active: selected?.id === item.id }"
+          @click="selectedId = item.id"
+        >
+          <span class="moderation__type-icon"
+            ><UIcon
+              :name="
+                item.type === 'Perfil'
+                  ? 'i-lucide-user-round'
+                  : item.type === 'Verificação'
+                    ? 'i-lucide-shield-check'
+                    : item.type === 'Portfólio'
+                      ? 'i-lucide-image'
+                      : 'i-lucide-handshake'
+              "
+          /></span>
+          <span
+            ><em>{{ item.type }}</em
+            ><strong>{{ item.title }}</strong
+            ><small>{{ item.subtitle }}</small></span
+          >
           <span class="moderation__age">{{ item.age }}</span>
         </button>
-        <div v-if="!filteredQueue.length" class="moderation__filtered-empty">Nenhum item neste filtro.</div>
+        <div v-if="!filteredQueue.length" class="moderation__filtered-empty">
+          Nenhum item neste filtro.
+        </div>
       </section>
 
       <section v-if="selected" class="moderation__review">
-        <header><div><span>{{ selected.type }}</span><h2>{{ selected.title }}</h2><p>{{ selected.subtitle }}</p></div><button type="button" aria-label="Mais opções"><UIcon name="i-lucide-ellipsis" /></button></header>
-        <div class="moderation__meta"><span><UIcon name="i-lucide-clock-3" /> Enviado {{ selected.submittedAt }}</span><span><UIcon name="i-lucide-fingerprint" /> {{ selected.id }}</span></div>
-        <div class="moderation__review-block"><span>Contexto da análise</span><p>{{ selected.details }}</p></div>
-        <div class="moderation__preview"><div><UIcon :name="selected.type === 'Verificação' ? 'i-lucide-file-lock-2' : 'i-lucide-scan-search'" /></div><span><small>Conteúdo enviado</small><p>{{ selected.preview }}</p></span></div>
-        <div v-if="selected.type === 'Verificação'" class="moderation__private-warning"><UIcon name="i-lucide-lock-keyhole" /><span><strong>Acesso a arquivo restrito</strong><small>A abertura do documento será registrada com seu usuário, horário e solicitação.</small></span><UButton size="sm" color="neutral" variant="outline">Abrir documento</UButton></div>
-        <DesignSystemFormField class="moderation__note" label="Nota interna opcional"><textarea maxlength="500" placeholder="Adicione contexto para a trilha de auditoria..." /></DesignSystemFormField>
-        <footer><UButton color="error" variant="outline" icon="i-lucide-x" @click="rejectionOpen = true">Rejeitar</UButton><UButton color="primary" icon="i-lucide-check" @click="decide('approved')">Aprovar e publicar</UButton></footer>
+        <header>
+          <div>
+            <span>{{ selected.type }}</span>
+            <h2>{{ selected.title }}</h2>
+            <p>{{ selected.subtitle }}</p>
+          </div>
+          <button type="button" aria-label="Mais opções">
+            <UIcon name="i-lucide-ellipsis" />
+          </button>
+        </header>
+        <div class="moderation__meta">
+          <span
+            ><UIcon name="i-lucide-clock-3" /> Enviado
+            {{ selected.submittedAt }}</span
+          ><span><UIcon name="i-lucide-fingerprint" /> {{ selected.id }}</span>
+        </div>
+        <div class="moderation__review-block">
+          <span>Contexto da análise</span>
+          <p>{{ selected.details }}</p>
+        </div>
+        <div class="moderation__preview">
+          <div>
+            <UIcon
+              :name="
+                selected.type === 'Verificação'
+                  ? 'i-lucide-file-lock-2'
+                  : 'i-lucide-scan-search'
+              "
+            />
+          </div>
+          <span
+            ><small>Conteúdo enviado</small>
+            <p>{{ selected.preview }}</p></span
+          >
+        </div>
+        <div
+          v-if="selected.type === 'Verificação'"
+          class="moderation__private-warning"
+        >
+          <UIcon name="i-lucide-lock-keyhole" /><span
+            ><strong>Acesso a arquivo restrito</strong
+            ><small
+              >A abertura do documento será registrada com seu usuário, horário
+              e solicitação.</small
+            ></span
+          ><UButton size="sm" color="neutral" variant="outline"
+            >Abrir documento</UButton
+          >
+        </div>
+        <DesignSystemFormField
+          class="moderation__note"
+          label="Nota interna opcional"
+        >
+          <textarea
+            maxlength="500"
+            placeholder="Adicione contexto para a trilha de auditoria..."
+          />
+        </DesignSystemFormField>
+        <footer>
+          <UButton
+            color="error"
+            variant="outline"
+            icon="i-lucide-x"
+            @click="rejectionOpen = true"
+            >Rejeitar</UButton
+          ><UButton
+            color="primary"
+            icon="i-lucide-check"
+            @click="decide('approved')"
+            >Aprovar e publicar</UButton
+          >
+        </footer>
       </section>
     </div>
 
-    <DesignSystemSurfaceCard v-else class="moderation__empty"><span><UIcon name="i-lucide-party-popper" /></span><h2>Fila em dia.</h2><p>Todos os itens pendentes foram analisados nesta sessão do protótipo.</p></DesignSystemSurfaceCard>
+    <DesignSystemSurfaceCard v-else class="moderation__empty"
+      ><span><UIcon name="i-lucide-party-popper" /></span>
+      <h2>Fila em dia.</h2>
+      <p>
+        Todos os itens pendentes foram analisados nesta sessão do protótipo.
+      </p></DesignSystemSurfaceCard
+    >
 
-    <UModal v-model:open="rejectionOpen" title="Rejeitar conteúdo" description="A justificativa será privada e ficará visível ao profissional quando aplicável.">
-      <template #body><DesignSystemFormField class="rejection-form" label="Motivo da rejeição" :hint="`${rejectionReason.length}/500`"><textarea v-model="rejectionReason" required minlength="10" maxlength="500" placeholder="Explique o que precisa ser corrigido..." /></DesignSystemFormField></template>
-      <template #footer><UButton color="neutral" variant="ghost" @click="rejectionOpen = false">Cancelar</UButton><UButton color="error" :disabled="rejectionReason.length < 10" @click="decide('rejected')">Confirmar rejeição</UButton></template>
+    <UModal
+      v-model:open="rejectionOpen"
+      title="Rejeitar conteúdo"
+      description="A justificativa será privada e ficará visível ao profissional quando aplicável."
+    >
+      <template #body
+        ><DesignSystemFormField
+          class="rejection-form"
+          label="Motivo da rejeição"
+          :hint="`${rejectionReason.length}/500`"
+        >
+          <textarea
+            v-model="rejectionReason"
+            required
+            minlength="10"
+            maxlength="500"
+            placeholder="Explique o que precisa ser corrigido..."
+          /></DesignSystemFormField
+      ></template>
+      <template #footer
+        ><UButton color="neutral" variant="ghost" @click="rejectionOpen = false"
+          >Cancelar</UButton
+        ><UButton
+          color="error"
+          :disabled="rejectionReason.length < 10"
+          @click="decide('rejected')"
+          >Confirmar rejeição</UButton
+        ></template
+      >
     </UModal>
   </div>
 </template>
@@ -161,9 +303,6 @@ function decide(action: 'approved' | 'rejected') {
   &__list > button.active {
     border-left-color: #397a69;
     background: white;
-  }
-  &__list > button.priority {
-    border-left-color: var(--coral);
   }
   &__type-icon {
     display: grid;

@@ -1,0 +1,962 @@
+[
+  {
+    "name": "Corretor de Imóveis",
+    "slug": "corretor-de-imoveis",
+    "parent_category": "Imóveis",
+    "group": "Casa"
+  },
+  {
+    "name": "Vestuário",
+    "slug": "vestuario",
+    "parent_category": "Moda e Vestuário",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Vendas de Salgados e Pães de Queijo Congelados",
+    "slug": "vendas-de-salgados-e-paes-de-queijo-congelados",
+    "parent_category": "Alimentação",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Massoterapia",
+    "slug": "massoterapia",
+    "parent_category": "Massagem e Terapias",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Serviso",
+    "slug": "serviso",
+    "parent_category": "Serviços Gerais",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Desenvolvimento de Sites",
+    "slug": "desenvolvimento-de-sites",
+    "parent_category": "Desenvolvimento de Software",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Eletricista",
+    "slug": "eletricista",
+    "parent_category": "Eletricista",
+    "group": "Casa"
+  },
+  {
+    "name": "Barbeiro",
+    "slug": "barbeiro",
+    "parent_category": "Cabelo e Barbearia",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Mecânico",
+    "slug": "mecanico",
+    "parent_category": "Mecânico",
+    "group": "Auto"
+  },
+  {
+    "name": "Auto Elétrica",
+    "slug": "auto-eletrica",
+    "parent_category": "Eletricista Automotivo",
+    "group": "Auto"
+  },
+  {
+    "name": "Encanador",
+    "slug": "encanador",
+    "parent_category": "Encanador",
+    "group": "Casa"
+  },
+  {
+    "name": "Desenvolvimento de Software",
+    "slug": "desenvolvimento-de-software",
+    "parent_category": "Desenvolvimento de Software",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Cabeleireiro",
+    "slug": "cabeleireiro",
+    "parent_category": "Cabelo e Barbearia",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Manicure e Pedicure",
+    "slug": "manicure-e-pedicure",
+    "parent_category": "Unhas",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Pintor",
+    "slug": "pintor",
+    "parent_category": "Pintor",
+    "group": "Casa"
+  },
+  {
+    "name": "Desenvolvimento de Aplicativos",
+    "slug": "desenvolvimento-de-apps",
+    "parent_category": "Desenvolvimento de Software",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Funilaria e Pintura",
+    "slug": "funilaria-e-pintura",
+    "parent_category": "Funilaria e Pintura Automotiva",
+    "group": "Auto"
+  },
+  {
+    "name": "Desenvolvimento de E-commerce",
+    "slug": "desenvolvimento-de-ecommerce",
+    "parent_category": "Desenvolvimento de Software",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Alinhamento e Balanceamento",
+    "slug": "alinhamento-e-balanceamento",
+    "parent_category": "Pneus, Rodas e Suspensão",
+    "group": "Auto"
+  },
+  {
+    "name": "Maquiador",
+    "slug": "maquiador",
+    "parent_category": "Beleza e Estética",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Pedreiro",
+    "slug": "pedreiro",
+    "parent_category": "Construção e Reforma",
+    "group": "Casa"
+  },
+  {
+    "name": "Esteticista",
+    "slug": "esteticista",
+    "parent_category": "Beleza e Estética",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Pneus e Rodas",
+    "slug": "pneus-e-rodas",
+    "parent_category": "Pneus, Rodas e Suspensão",
+    "group": "Auto"
+  },
+  {
+    "name": "Consultoria em IA",
+    "slug": "consultoria-em-ia",
+    "parent_category": "Inteligência Artificial e Automação",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Marceneiro",
+    "slug": "marceneiro",
+    "parent_category": "Marcenaria e Móveis",
+    "group": "Casa"
+  },
+  {
+    "name": "Design UX/UI",
+    "slug": "design-ux-ui",
+    "parent_category": "Design",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Auto Peças",
+    "slug": "auto-pecas",
+    "parent_category": "Peças e Acessórios Automotivos",
+    "group": "Auto"
+  },
+  {
+    "name": "Automação de Processos",
+    "slug": "automacao-de-processos",
+    "parent_category": "Inteligência Artificial e Automação",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Gesseiro",
+    "slug": "gesseiro",
+    "parent_category": "Construção e Reforma",
+    "group": "Casa"
+  },
+  {
+    "name": "Personal Trainer",
+    "slug": "personal-trainer",
+    "parent_category": "Saúde e Bem-estar",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Guincho",
+    "slug": "guincho",
+    "parent_category": "Guincho e Reboque",
+    "group": "Auto"
+  },
+  {
+    "name": "Serralheiro",
+    "slug": "serralheiro",
+    "parent_category": "Serralheria e Solda",
+    "group": "Casa"
+  },
+  {
+    "name": "Nutricionista",
+    "slug": "nutricionista",
+    "parent_category": "Saúde e Bem-estar",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Desenvolvimento de Chatbots",
+    "slug": "desenvolvimento-de-chatbots",
+    "parent_category": "Inteligência Artificial e Automação",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Psicólogo",
+    "slug": "psicologo",
+    "parent_category": "Saúde e Bem-estar",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Vidraceiro",
+    "slug": "vidraceiro",
+    "parent_category": "Vidraçaria",
+    "group": "Casa"
+  },
+  {
+    "name": "Chaveiro Automotivo",
+    "slug": "chaveiro-automotivo",
+    "parent_category": "Chaveiro Automotivo",
+    "group": "Auto"
+  },
+  {
+    "name": "Automação com WhatsApp",
+    "slug": "automacao-com-whatsapp",
+    "parent_category": "Inteligência Artificial e Automação",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Ar-Condicionado",
+    "slug": "ar-condicionado",
+    "parent_category": "Climatização",
+    "group": "Casa"
+  },
+  {
+    "name": "Agentes de IA",
+    "slug": "agentes-de-ia",
+    "parent_category": "Inteligência Artificial e Automação",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Martelinho de Ouro",
+    "slug": "martelinho-de-ouro",
+    "parent_category": "Funilaria e Pintura Automotiva",
+    "group": "Auto"
+  },
+  {
+    "name": "Dentista",
+    "slug": "dentista",
+    "parent_category": "Saúde e Bem-estar",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Limpeza de Caixa d'Água",
+    "slug": "limpeza-de-caixa-dagua",
+    "parent_category": "Limpeza",
+    "group": "Casa"
+  },
+  {
+    "name": "Fisioterapeuta",
+    "slug": "fisioterapeuta",
+    "parent_category": "Saúde e Bem-estar",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Insulfilm",
+    "slug": "insulfilm",
+    "parent_category": "Vidros e Películas Automotivas",
+    "group": "Auto"
+  },
+  {
+    "name": "Gestor de Tráfego Pago",
+    "slug": "gestor-de-trafego",
+    "parent_category": "Marketing Digital",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Chatbot para WhatsApp",
+    "slug": "chatbot-para-whatsapp",
+    "parent_category": "Inteligência Artificial e Automação",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Social Media",
+    "slug": "social-media",
+    "parent_category": "Marketing Digital",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Dedetização",
+    "slug": "dedetizacao",
+    "parent_category": "Controle de Pragas",
+    "group": "Casa"
+  },
+  {
+    "name": "Software sob medida",
+    "slug": "software-sob-medida",
+    "parent_category": "Desenvolvimento de Software",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Envelopamento",
+    "slug": "envelopamento",
+    "parent_category": "Estética Automotiva",
+    "group": "Auto"
+  },
+  {
+    "name": "Veterinário",
+    "slug": "veterinario",
+    "parent_category": "Cuidados com Pets",
+    "group": "Pessoal"
+  },
+  {
+    "name": "SEO — Otimização para Google",
+    "slug": "seo",
+    "parent_category": "Marketing Digital",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Criação de Sites",
+    "slug": "criacao-de-sites",
+    "parent_category": "Desenvolvimento de Software",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Advogado",
+    "slug": "advogado",
+    "parent_category": "Serviços Jurídicos e Financeiros",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Som Automotivo",
+    "slug": "som-automotivo",
+    "parent_category": "Peças e Acessórios Automotivos",
+    "group": "Auto"
+  },
+  {
+    "name": "Jardineiro",
+    "slug": "jardineiro",
+    "parent_category": "Jardinagem e Paisagismo",
+    "group": "Casa"
+  },
+  {
+    "name": "Contador",
+    "slug": "contador",
+    "parent_category": "Serviços Jurídicos e Financeiros",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Estética Automotiva",
+    "slug": "estetica-automotiva",
+    "parent_category": "Estética Automotiva",
+    "group": "Auto"
+  },
+  {
+    "name": "Marketing Digital",
+    "slug": "marketing-digital",
+    "parent_category": "Marketing Digital",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Piscineiro",
+    "slug": "piscineiro",
+    "parent_category": "Piscinas",
+    "group": "Casa"
+  },
+  {
+    "name": "Fotógrafo",
+    "slug": "fotografo",
+    "parent_category": "Foto e Vídeo",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Copywriter / Produção de Conteúdo",
+    "slug": "copywriter",
+    "parent_category": "Conteúdo e Redação",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Lavagem de Veículos",
+    "slug": "lavagem-de-veiculos",
+    "parent_category": "Estética Automotiva",
+    "group": "Auto"
+  },
+  {
+    "name": "Chaveiro",
+    "slug": "chaveiro",
+    "parent_category": "Chaveiro",
+    "group": "Casa"
+  },
+  {
+    "name": "Desentupidora",
+    "slug": "desentupidora",
+    "parent_category": "Encanador",
+    "group": "Casa"
+  },
+  {
+    "name": "Designer Gráfico",
+    "slug": "designer-grafico",
+    "parent_category": "Design",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Retífica de Motor",
+    "slug": "retifica-de-motor",
+    "parent_category": "Mecânico",
+    "group": "Auto"
+  },
+  {
+    "name": "Edição de Vídeo",
+    "slug": "edicao-de-video",
+    "parent_category": "Foto e Vídeo",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Impermeabilização",
+    "slug": "impermeabilizacao",
+    "parent_category": "Construção e Reforma",
+    "group": "Casa"
+  },
+  {
+    "name": "Câmbio Automático",
+    "slug": "cambio-automatico",
+    "parent_category": "Mecânico",
+    "group": "Auto"
+  },
+  {
+    "name": "Criação de Logos",
+    "slug": "criacao-de-logos",
+    "parent_category": "Design",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Professor Particular",
+    "slug": "professor-particular",
+    "parent_category": "Educação",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Massagista",
+    "slug": "massagista",
+    "parent_category": "Massagem e Terapias",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Injeção Eletrônica",
+    "slug": "injecao-eletronica",
+    "parent_category": "Eletricista Automotivo",
+    "group": "Auto"
+  },
+  {
+    "name": "Limpeza Residencial",
+    "slug": "limpeza-residencial",
+    "parent_category": "Limpeza",
+    "group": "Casa"
+  },
+  {
+    "name": "Tatuador",
+    "slug": "tatuador",
+    "parent_category": "Beleza e Estética",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Suspensão",
+    "slug": "suspensao",
+    "parent_category": "Pneus, Rodas e Suspensão",
+    "group": "Auto"
+  },
+  {
+    "name": "Montador de Móveis",
+    "slug": "montador-de-moveis",
+    "parent_category": "Marcenaria e Móveis",
+    "group": "Casa"
+  },
+  {
+    "name": "Freios",
+    "slug": "freios",
+    "parent_category": "Mecânico",
+    "group": "Auto"
+  },
+  {
+    "name": "Mudança e Frete",
+    "slug": "mudanca-e-frete",
+    "parent_category": "Mudanças e Fretes",
+    "group": "Casa"
+  },
+  {
+    "name": "Depilação",
+    "slug": "depilacao",
+    "parent_category": "Beleza e Estética",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Ar-Condicionado Automotivo",
+    "slug": "ar-condicionado-automotivo",
+    "parent_category": "Climatização Automotiva",
+    "group": "Auto"
+  },
+  {
+    "name": "Diarista",
+    "slug": "diarista",
+    "parent_category": "Limpeza",
+    "group": "Casa"
+  },
+  {
+    "name": "Instalação de Redes / Cabeamento",
+    "slug": "instalacao-de-redes",
+    "parent_category": "Redes e Conectividade",
+    "group": "Casa"
+  },
+  {
+    "name": "Podólogo",
+    "slug": "podologo",
+    "parent_category": "Saúde e Bem-estar",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Configuração de Wi-Fi",
+    "slug": "configuracao-de-wifi",
+    "parent_category": "Redes e Conectividade",
+    "group": "Casa"
+  },
+  {
+    "name": "Portão Eletrônico",
+    "slug": "portao-eletronico",
+    "parent_category": "Automação e Segurança Residencial",
+    "group": "Casa"
+  },
+  {
+    "name": "Vidros Automotivos",
+    "slug": "vidros-automotivos",
+    "parent_category": "Vidros e Películas Automotivas",
+    "group": "Auto"
+  },
+  {
+    "name": "Acupunturista",
+    "slug": "acupunturista",
+    "parent_category": "Massagem e Terapias",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Cortinas e Persianas",
+    "slug": "cortinas-e-persianas",
+    "parent_category": "Decoração",
+    "group": "Casa"
+  },
+  {
+    "name": "Suporte Técnico Remoto",
+    "slug": "suporte-tecnico-remoto",
+    "parent_category": "Suporte e Infraestrutura de TI",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Terapeuta Holístico",
+    "slug": "terapeuta-holistico",
+    "parent_category": "Massagem e Terapias",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Baterias",
+    "slug": "baterias",
+    "parent_category": "Eletricista Automotivo",
+    "group": "Auto"
+  },
+  {
+    "name": "Despachante",
+    "slug": "despachante",
+    "parent_category": "Documentação Veicular",
+    "group": "Auto"
+  },
+  {
+    "name": "Médico",
+    "slug": "medico",
+    "parent_category": "Saúde e Bem-estar",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Segurança da Informação",
+    "slug": "seguranca-da-informacao",
+    "parent_category": "Segurança da Informação",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Piso e Revestimento",
+    "slug": "piso-e-revestimento",
+    "parent_category": "Construção e Reforma",
+    "group": "Casa"
+  },
+  {
+    "name": "Suporte de TI para Empresas",
+    "slug": "suporte-de-ti",
+    "parent_category": "Suporte e Infraestrutura de TI",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Telhado e Calhas",
+    "slug": "telhado-e-calhas",
+    "parent_category": "Telhados e Calhas",
+    "group": "Casa"
+  },
+  {
+    "name": "Rastreamento Veicular",
+    "slug": "rastreamento-veicular",
+    "parent_category": "Segurança e Rastreamento Veicular",
+    "group": "Auto"
+  },
+  {
+    "name": "Enfermeiro",
+    "slug": "enfermeiro",
+    "parent_category": "Saúde e Bem-estar",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Blindagem",
+    "slug": "blindagem",
+    "parent_category": "Segurança e Rastreamento Veicular",
+    "group": "Auto"
+  },
+  {
+    "name": "Terceirização de TI",
+    "slug": "terceirizacao-de-ti",
+    "parent_category": "Suporte e Infraestrutura de TI",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Segurança Eletrônica",
+    "slug": "seguranca-eletronica",
+    "parent_category": "Automação e Segurança Residencial",
+    "group": "Casa"
+  },
+  {
+    "name": "Cuidador de Idosos",
+    "slug": "cuidador-de-idosos",
+    "parent_category": "Cuidados Pessoais",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Mecânico de Motos",
+    "slug": "mecanico-de-motos",
+    "parent_category": "Mecânico",
+    "group": "Auto"
+  },
+  {
+    "name": "Energia Solar",
+    "slug": "energia-solar",
+    "parent_category": "Energia Solar",
+    "group": "Casa"
+  },
+  {
+    "name": "Consultoria de TI",
+    "slug": "consultoria-de-ti",
+    "parent_category": "Suporte e Infraestrutura de TI",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Dog Walker",
+    "slug": "dog-walker",
+    "parent_category": "Cuidados com Pets",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Mecânico Diesel",
+    "slug": "mecanico-diesel",
+    "parent_category": "Mecânico",
+    "group": "Auto"
+  },
+  {
+    "name": "Gerenciamento de TI",
+    "slug": "gerenciamento-de-ti",
+    "parent_category": "Suporte e Infraestrutura de TI",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Pet Sitter",
+    "slug": "pet-sitter",
+    "parent_category": "Cuidados com Pets",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Poço Artesiano",
+    "slug": "poco-artesiano",
+    "parent_category": "Encanador",
+    "group": "Casa"
+  },
+  {
+    "name": "Auditoria de TI",
+    "slug": "auditoria-de-ti",
+    "parent_category": "Suporte e Infraestrutura de TI",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Marido de Aluguel",
+    "slug": "marido-de-aluguel",
+    "parent_category": "Manutenção Residencial",
+    "group": "Casa"
+  },
+  {
+    "name": "Borracheiro",
+    "slug": "borracheiro",
+    "parent_category": "Pneus, Rodas e Suspensão",
+    "group": "Auto"
+  },
+  {
+    "name": "Costureira",
+    "slug": "costureira",
+    "parent_category": "Moda e Vestuário",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Lanternagem",
+    "slug": "lanternagem",
+    "parent_category": "Funilaria e Pintura Automotiva",
+    "group": "Auto"
+  },
+  {
+    "name": "Manutenção Predial",
+    "slug": "manutencao-predial",
+    "parent_category": "Manutenção Predial",
+    "group": "Casa"
+  },
+  {
+    "name": "Técnico de Informática",
+    "slug": "tecnico-de-informatica",
+    "parent_category": "Suporte e Infraestrutura de TI",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Conserto de Notebook",
+    "slug": "conserto-de-notebook",
+    "parent_category": "Suporte e Infraestrutura de TI",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Polimento",
+    "slug": "polimento",
+    "parent_category": "Estética Automotiva",
+    "group": "Auto"
+  },
+  {
+    "name": "Conserto de Impressora",
+    "slug": "conserto-de-impressora",
+    "parent_category": "Suporte e Infraestrutura de TI",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Capotaria",
+    "slug": "capotaria",
+    "parent_category": "Tapeçaria Automotiva",
+    "group": "Auto"
+  },
+  {
+    "name": "Técnico de Celular",
+    "slug": "tecnico-de-celular",
+    "parent_category": "Assistência Técnica de Celulares",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Recuperação de Dados",
+    "slug": "recuperacao-de-dados",
+    "parent_category": "Suporte e Infraestrutura de TI",
+    "group": "Pessoal"
+  },
+  {
+    "name": "Técnico de Máquina de Lavar",
+    "slug": "tecnico-de-maquina-de-lavar",
+    "parent_category": "Técnico de Eletrodomésticos",
+    "group": "Casa"
+  },
+  {
+    "name": "Acessórios Automotivos",
+    "slug": "acessorios-automotivos",
+    "parent_category": "Peças e Acessórios Automotivos",
+    "group": "Auto"
+  },
+  {
+    "name": "Técnico de Geladeira",
+    "slug": "tecnico-de-geladeira",
+    "parent_category": "Técnico de Eletrodomésticos",
+    "group": "Casa"
+  },
+  {
+    "name": "Reboque",
+    "slug": "reboque",
+    "parent_category": "Guincho e Reboque",
+    "group": "Auto"
+  },
+  {
+    "name": "Técnico de TV",
+    "slug": "tecnico-de-tv",
+    "parent_category": "Técnico de Eletrônicos",
+    "group": "Casa"
+  },
+  {
+    "name": "Elétrica de Caminhão",
+    "slug": "eletrica-de-caminhao",
+    "parent_category": "Eletricista Automotivo",
+    "group": "Auto"
+  },
+  {
+    "name": "Instalador de Gás",
+    "slug": "instalador-de-gas",
+    "parent_category": "Gás e Aquecimento",
+    "group": "Casa"
+  },
+  {
+    "name": "Mecânico de Caminhão",
+    "slug": "mecanico-de-caminhao",
+    "parent_category": "Mecânico",
+    "group": "Auto"
+  },
+  {
+    "name": "Decorador",
+    "slug": "decorador",
+    "parent_category": "Decoração",
+    "group": "Casa"
+  },
+  {
+    "name": "Conversão GNV",
+    "slug": "conversao-gnv",
+    "parent_category": "Mecânico",
+    "group": "Auto"
+  },
+  {
+    "name": "Arquiteto",
+    "slug": "arquiteto",
+    "parent_category": "Arquitetura e Engenharia",
+    "group": "Casa"
+  },
+  {
+    "name": "Escapamento",
+    "slug": "escapamento",
+    "parent_category": "Mecânico",
+    "group": "Auto"
+  },
+  {
+    "name": "Engenheiro Civil",
+    "slug": "engenheiro-civil",
+    "parent_category": "Arquitetura e Engenharia",
+    "group": "Casa"
+  },
+  {
+    "name": "Tapeçaria Automotiva",
+    "slug": "tapecaria-automotiva",
+    "parent_category": "Tapeçaria Automotiva",
+    "group": "Auto"
+  },
+  {
+    "name": "Leilão de Veículos",
+    "slug": "leilao-de-veiculos",
+    "parent_category": "Compra e Venda de Veículos",
+    "group": "Auto"
+  },
+  {
+    "name": "Paisagista",
+    "slug": "paisagista",
+    "parent_category": "Jardinagem e Paisagismo",
+    "group": "Casa"
+  },
+  {
+    "name": "Vistoria Veicular",
+    "slug": "vistoria-veicular",
+    "parent_category": "Documentação Veicular",
+    "group": "Auto"
+  },
+  {
+    "name": "Limpeza de Estofados",
+    "slug": "limpeza-de-estofados",
+    "parent_category": "Limpeza",
+    "group": "Casa"
+  },
+  {
+    "name": "Eletricista Predial",
+    "slug": "eletricista-predial",
+    "parent_category": "Eletricista",
+    "group": "Casa"
+  },
+  {
+    "name": "Bombeiro Hidráulico",
+    "slug": "bombeiro-hidraulico",
+    "parent_category": "Encanador",
+    "group": "Casa"
+  },
+  {
+    "name": "Soldador",
+    "slug": "soldador",
+    "parent_category": "Serralheria e Solda",
+    "group": "Casa"
+  },
+  {
+    "name": "Laqueador",
+    "slug": "laqueador",
+    "parent_category": "Marcenaria e Móveis",
+    "group": "Casa"
+  },
+  {
+    "name": "Marmorista",
+    "slug": "marmorista",
+    "parent_category": "Construção e Reforma",
+    "group": "Casa"
+  },
+  {
+    "name": "Azulejista",
+    "slug": "azulejista",
+    "parent_category": "Construção e Reforma",
+    "group": "Casa"
+  },
+  {
+    "name": "Instalador de Papel de Parede",
+    "slug": "instalador-de-papel-de-parede",
+    "parent_category": "Pintor",
+    "group": "Casa"
+  },
+  {
+    "name": "Gás Encanado",
+    "slug": "gas-encanado",
+    "parent_category": "Gás e Aquecimento",
+    "group": "Casa"
+  },
+  {
+    "name": "Instalador de Antena",
+    "slug": "instalador-de-antena",
+    "parent_category": "Antenas e TV",
+    "group": "Casa"
+  },
+  {
+    "name": "Técnico de Aquecedor",
+    "slug": "tecnico-de-aquecedor",
+    "parent_category": "Gás e Aquecimento",
+    "group": "Casa"
+  },
+  {
+    "name": "Conserto de Microondas",
+    "slug": "conserto-de-microondas",
+    "parent_category": "Técnico de Eletrodomésticos",
+    "group": "Casa"
+  },
+  {
+    "name": "Aquecimento de Piscina",
+    "slug": "aquecimento-de-piscina",
+    "parent_category": "Piscinas",
+    "group": "Casa"
+  },
+  {
+    "name": "Lavanderia",
+    "slug": "lavanderia",
+    "parent_category": "Lavanderia",
+    "group": "Casa"
+  },
+  {
+    "name": "Material de Construção",
+    "slug": "material-de-construcao",
+    "parent_category": "Construção e Reforma",
+    "group": "Casa"
+  },
+  {
+    "name": "Síndico Profissional",
+    "slug": "sindico-profissional",
+    "parent_category": "Gestão Condominial",
+    "group": "Casa"
+  }
+]

@@ -1,53 +1,105 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { Professional, Quote } from '~/types'
-import { useMockupApp } from '~/composables/useMockupApp'
+import { computed } from "vue";
+import type { Professional, Quote } from "~/types";
+import { useMockupApp } from "~/composables/useMockupApp";
 
 const props = defineProps<{
-  quote: Quote
-  professional: Professional
-  customerFacing?: boolean
-}>()
-const { money } = useMockupApp()
-const subtotal = computed(() => props.quote.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0))
-const total = computed(() => Math.max(0, subtotal.value - props.quote.discount))
+  quote: Quote;
+  professional: Professional;
+  customerFacing?: boolean;
+}>();
+const { money } = useMockupApp();
+const subtotal = computed(() =>
+  props.quote.items.reduce(
+    (sum, item) => sum + item.quantity * item.unitPrice,
+    0,
+  ),
+);
+const total = computed(() =>
+  Math.max(0, subtotal.value - props.quote.discount),
+);
 
 function formatDate(value?: string) {
-  if (!value) return '—'
-  return new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(new Date(`${value}T12:00:00Z`))
+  if (!value) return "—";
+  return new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC" }).format(
+    new Date(`${value}T12:00:00Z`),
+  );
 }
 </script>
 
 <template>
-  <article class="quote-preview" :class="{ 'quote-preview--customer': customerFacing }">
+  <article
+    class="quote-preview"
+    :class="{ 'quote-preview--customer': customerFacing }"
+  >
     <header>
       <div class="quote-preview__brand">berufe<span>.</span></div>
-      <div><span>Orçamento</span><strong>#{{ quote.number }}</strong></div>
+      <div>
+        <span>Orçamento</span><strong>#{{ quote.number }}</strong>
+      </div>
     </header>
     <section class="quote-preview__professional">
-      <img :src="professional.avatar" :alt="`Foto de ${professional.name}`">
-      <div><strong>{{ professional.name }}</strong><span>{{ professional.primaryService }} · Joinville</span><small><UIcon name="i-lucide-badge-check" /> Identidade verificada</small></div>
+      <img :src="professional.avatar" :alt="`Foto de ${professional.name}`" />
+      <div>
+        <strong>{{ professional.name }}</strong
+        ><span>{{ professional.primaryService }} · Joinville</span
+        ><small
+          ><UIcon name="i-lucide-badge-check" /> Identidade verificada</small
+        >
+      </div>
     </section>
     <section class="quote-preview__intro">
-      <div><span>Preparado para</span><strong>{{ quote.customerName || 'Nome do cliente' }}</strong></div>
-      <div><span>Válido até</span><strong>{{ formatDate(quote.validUntil) }}</strong></div>
+      <div>
+        <span>Preparado para</span
+        ><strong>{{ quote.customerName || "Nome do cliente" }}</strong>
+      </div>
+      <div>
+        <span>Válido até</span
+        ><strong>{{ formatDate(quote.validUntil) }}</strong>
+      </div>
     </section>
-    <section class="quote-preview__service"><span>Serviço</span><h1>{{ quote.serviceDescription || 'Descrição do serviço' }}</h1></section>
+    <section class="quote-preview__service">
+      <span>Serviço</span>
+      <h1>{{ quote.serviceDescription || "Descrição do serviço" }}</h1>
+    </section>
     <section class="quote-preview__items">
-      <div class="quote-preview__item quote-preview__item--head"><span>Descrição</span><span>Qtd.</span><span>Valor</span></div>
-      <div v-for="item in quote.items" :key="item.id" class="quote-preview__item">
-        <span><strong>{{ item.description || 'Novo item' }}</strong><small>{{ money(item.unitPrice) }} / {{ item.unit }}</small></span>
+      <div class="quote-preview__item quote-preview__item--head">
+        <span>Descrição</span><span>Qtd.</span><span>Valor</span>
+      </div>
+      <div
+        v-for="item in quote.items"
+        :key="item.id"
+        class="quote-preview__item"
+      >
+        <span
+          ><strong>{{ item.description || "Novo item" }}</strong
+          ><small>{{ money(item.unitPrice) }} / {{ item.unit }}</small></span
+        >
         <span>{{ item.quantity }}</span>
         <span>{{ money(item.quantity * item.unitPrice) }}</span>
       </div>
     </section>
     <section class="quote-preview__totals">
-      <div><span>Subtotal</span><strong>{{ money(subtotal) }}</strong></div>
-      <div v-if="quote.discount"><span>Desconto</span><strong>− {{ money(quote.discount) }}</strong></div>
-      <div><span>Total</span><strong>{{ money(total) }}</strong></div>
+      <div>
+        <span>Subtotal</span><strong>{{ money(subtotal) }}</strong>
+      </div>
+      <div v-if="quote.discount">
+        <span>Desconto</span><strong>− {{ money(quote.discount) }}</strong>
+      </div>
+      <div>
+        <span>Total</span><strong>{{ money(total) }}</strong>
+      </div>
     </section>
-    <section v-if="quote.notes" class="quote-preview__notes"><span>Observações</span><p>{{ quote.notes }}</p></section>
-    <footer><span><UIcon name="i-lucide-shield-check" /> Identidade profissional conferida</span><small>Este orçamento não representa aceite ou pagamento.</small></footer>
+    <section v-if="quote.notes" class="quote-preview__notes">
+      <span>Observações</span>
+      <p>{{ quote.notes }}</p>
+    </section>
+    <footer>
+      <span
+        ><UIcon name="i-lucide-shield-check" /> Identidade profissional
+        conferida</span
+      ><small>Este orçamento não representa aceite ou pagamento.</small>
+    </footer>
   </article>
 </template>
 

@@ -1,18 +1,16 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { Evidence } from '~/types'
+import { computed } from "vue";
+import type { Evidence } from "~/types";
 
 const props = defineProps<{
-  evidence: Evidence
-  compact?: boolean
-}>()
+  evidence: Evidence;
+  compact?: boolean;
+}>();
 
 const icon = computed(() => {
-  if (props.evidence.label.includes('Telefone')) return 'i-lucide-smartphone'
-  if (props.evidence.label.includes('Certificado')) return 'i-lucide-award'
-  if (props.evidence.label.includes('Empresa')) return 'i-lucide-building-2'
-  return 'i-lucide-badge-check'
-})
+  if (props.evidence.label.includes("Telefone")) return "i-lucide-smartphone";
+  return "i-lucide-badge-check";
+});
 </script>
 
 <template>

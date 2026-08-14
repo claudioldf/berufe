@@ -1,12 +1,11 @@
 [
   {
-    "id": "pro-marina",
-    "slug": "marina-alves",
-    "name": "Marina Alves",
+    "id": "pro-marcos",
+    "slug": "marcos-alves",
+    "name": "Marcos Alves",
     "headline": "Elétrica residencial feita com cuidado, clareza e capricho.",
     "bio": "Sou eletricista residencial e trabalho principalmente com reformas, revisão de instalações e projetos de iluminação. Antes de começar, explico o que precisa ser feito e combino cada etapa com você.",
-    "avatar": "/images/photo-1494790108377-be9c29b29330.jpg",
-    "coverImage": "/images/photo-1621905251918-48416bd8575a.jpg",
+    "avatar": "/images/professional-marcos-alves-electrician.jpg",
     "primaryService": "Eletricista",
     "primaryServiceSlug": "eletricista",
     "services": ["Eletricista", "Marido de aluguel"],
@@ -15,9 +14,8 @@
     "allJoinville": false,
     "yearsExperience": 11,
     "evidence": [
-      { "id": "ev-m1", "label": "Telefone confirmado", "type": "automatic", "date": "2026-05-12" },
-      { "id": "ev-m2", "label": "Identidade verificada", "type": "reviewed", "date": "2026-05-18" },
-      { "id": "ev-m3", "label": "Certificado conferido", "type": "reviewed", "date": "2026-06-02" }
+      { "id": "ev-m1", "label": "Telefone confirmado" },
+      { "id": "ev-m2", "label": "Identidade verificada" }
     ],
     "portfolio": [
       { "id": "port-m1", "title": "Iluminação de cozinha", "service": "Eletricista", "description": "Novo circuito e iluminação funcional para bancada e área de preparo.", "image": "/images/photo-1556912167-f556f1f39fdf.jpg" },
@@ -25,17 +23,14 @@
       { "id": "port-m3", "title": "Projeto de iluminação", "service": "Eletricista", "description": "Instalação de pendentes e pontos indiretos em sala integrada.", "image": "/images/photo-1618221195710-dd6b41faaea6.jpg" },
       { "id": "port-m4", "title": "Tomadas para home office", "service": "Eletricista", "description": "Circuito dedicado para uma estação de trabalho residencial.", "image": "/images/photo-1497366754035-f200968a6e72.jpg" }
     ],
-    "recommendations": [
-      { "id": "rec-m1", "clientName": "Carla M.", "service": "Eletricista", "period": "Abril de 2026", "text": "A Marina explicou cada ajuste no quadro e deixou tudo identificado. Foi pontual, organizada e muito cuidadosa com o apartamento.", "phoneConfirmed": true },
-      { "id": "rec-m2", "clientName": "Renato P.", "service": "Eletricista", "period": "Janeiro de 2026", "text": "Resolveu um problema antigo de queda de energia e ainda sugeriu melhorias sem empurrar serviço. Recomendo com tranquilidade.", "phoneConfirmed": true },
-      { "id": "rec-m3", "clientName": "Beatriz S.", "service": "Eletricista", "period": "Novembro de 2025", "text": "Fez toda a iluminação da cozinha durante a reforma. Comunicação clara e acabamento excelente.", "phoneConfirmed": true }
-    ],
     "relationships": [
-      { "id": "rel-m1", "professionalName": "João Vitor Santos", "professionalSlug": "joao-vitor-santos", "avatar": "/images/photo-1500648767791-00dcc994a43e.jpg", "type": "worked_together", "note": "Trabalhamos juntos em três reformas residenciais. Marina é organizada e cumpre o combinado." },
-      { "id": "rel-m2", "professionalName": "Lívia Martins", "professionalSlug": "livia-martins", "avatar": "/images/photo-1534528741775-53994a69daeb.jpg", "type": "recommendation", "note": "Minha indicação para instalações elétricas e projetos de iluminação." }
+      { "id": "rel-m1", "professionalName": "João Vitor Santos", "professionalSlug": "joao-vitor-santos", "avatar": "/images/professional-joao-vitor-santos-bricklayer.jpg", "type": "worked_together", "note": "Trabalhamos juntos em três reformas residenciais. Marcos é organizado e cumpre o combinado." },
+      { "id": "rel-m2", "professionalName": "Lívia Martins", "professionalSlug": "livia-martins", "avatar": "/images/professional-livia-martins-interior-designer.jpg", "type": "recommendation", "note": "Minha indicação para instalações elétricas e projetos de iluminação." }
     ],
     "updatedAt": "2026-08-08",
-    "whatsapp": "5547999991111"
+    "whatsapp": "5547999991111",
+    "instagram": "https://www.instagram.com/berufe.demo.marcos/",
+    "youtube": "https://www.youtube.com/@berufe-demo-marcos"
   },
   {
     "id": "pro-joao",
@@ -43,8 +38,7 @@
     "name": "João Vitor Santos",
     "headline": "Reformas residenciais com execução organizada e acabamento bem feito.",
     "bio": "Atuo com reformas de apartamentos e casas, da alvenaria aos revestimentos. Gosto de deixar o cliente a par do andamento e manter o ambiente de trabalho seguro e organizado.",
-    "avatar": "/images/photo-1500648767791-00dcc994a43e.jpg",
-    "coverImage": "/images/photo-1503387762-592deb58ef4e.jpg",
+    "avatar": "/images/professional-joao-vitor-santos-bricklayer.jpg",
     "primaryService": "Pedreiro",
     "primaryServiceSlug": "pedreiro",
     "services": ["Pedreiro", "Azulejista"],
@@ -53,24 +47,20 @@
     "allJoinville": true,
     "yearsExperience": 16,
     "evidence": [
-      { "id": "ev-j1", "label": "Telefone confirmado", "type": "automatic", "date": "2026-04-10" },
-      { "id": "ev-j2", "label": "Identidade verificada", "type": "reviewed", "date": "2026-04-14" },
-      { "id": "ev-j3", "label": "Empresa verificada", "type": "reviewed", "date": "2026-04-22" }
+      { "id": "ev-j1", "label": "Telefone confirmado" },
+      { "id": "ev-j2", "label": "Identidade verificada" }
     ],
     "portfolio": [
       { "id": "port-j1", "title": "Reforma de banheiro", "service": "Pedreiro", "description": "Reforma completa com nova paginação de revestimentos.", "image": "/images/photo-1552321554-5fefe8c9ef14.jpg" },
       { "id": "port-j2", "title": "Cozinha integrada", "service": "Pedreiro", "description": "Adequação de alvenaria e acabamento para integração de ambientes.", "image": "/images/photo-1556911220-bff31c812dba.jpg" },
       { "id": "port-j3", "title": "Porcelanato em sala", "service": "Azulejista", "description": "Assentamento de grandes formatos com nivelamento.", "image": "/images/photo-1600566753086-00f18fb6b3ea.jpg" }
     ],
-    "recommendations": [
-      { "id": "rec-j1", "clientName": "Paulo R.", "service": "Pedreiro", "period": "Fevereiro de 2026", "text": "Obra limpa e cronograma muito bem conduzido. João sempre avisou quando havia uma decisão para tomar.", "phoneConfirmed": true },
-      { "id": "rec-j2", "clientName": "Alice T.", "service": "Azulejista", "period": "Setembro de 2025", "text": "O assentamento ficou impecável, inclusive nos recortes mais difíceis do banheiro.", "phoneConfirmed": true }
-    ],
     "relationships": [
-      { "id": "rel-j1", "professionalName": "Marina Alves", "professionalSlug": "marina-alves", "avatar": "/images/photo-1494790108377-be9c29b29330.jpg", "type": "worked_together", "note": "Parceira de confiança para a parte elétrica das minhas reformas." }
+      { "id": "rel-j1", "professionalName": "Marcos Alves", "professionalSlug": "marcos-alves", "avatar": "/images/professional-marcos-alves-electrician.jpg", "type": "worked_together", "note": "Parceiro de confiança para a parte elétrica das minhas reformas." }
     ],
     "updatedAt": "2026-08-02",
-    "whatsapp": "5547999992222"
+    "whatsapp": "5547999992222",
+    "instagram": "https://www.instagram.com/berufe.demo.joao/"
   },
   {
     "id": "pro-livia",
@@ -78,8 +68,7 @@
     "name": "Lívia Martins",
     "headline": "Interiores funcionais, acolhedores e possíveis de executar.",
     "bio": "Desenvolvo projetos residenciais que equilibram rotina, personalidade e orçamento.",
-    "avatar": "/images/photo-1534528741775-53994a69daeb.jpg",
-    "coverImage": "/images/photo-1600607687939-ce8a6c25118c.jpg",
+    "avatar": "/images/professional-livia-martins-interior-designer.jpg",
     "primaryService": "Designer de interiores",
     "primaryServiceSlug": "designer-de-interiores",
     "services": ["Designer de interiores", "Arquiteto"],
@@ -88,22 +77,19 @@
     "allJoinville": true,
     "yearsExperience": 8,
     "evidence": [
-      { "id": "ev-l1", "label": "Telefone confirmado", "type": "automatic", "date": "2026-06-01" },
-      { "id": "ev-l2", "label": "Identidade verificada", "type": "reviewed", "date": "2026-06-08" },
-      { "id": "ev-l3", "label": "Certificado conferido", "type": "reviewed", "date": "2026-06-08" }
+      { "id": "ev-l1", "label": "Telefone confirmado" },
+      { "id": "ev-l2", "label": "Identidade verificada" }
     ],
     "portfolio": [
       { "id": "port-l1", "title": "Sala integrada", "service": "Designer de interiores", "description": "Projeto de marcenaria, iluminação e mobiliário.", "image": "/images/photo-1600210492486-724fe5c67fb0.jpg" },
       { "id": "port-l2", "title": "Quarto acolhedor", "service": "Designer de interiores", "description": "Cores naturais e soluções para armazenamento.", "image": "/images/photo-1616486338812-3dadae4b4ace.jpg" }
     ],
-    "recommendations": [
-      { "id": "rec-l1", "clientName": "Sofia A.", "service": "Designer de interiores", "period": "Março de 2026", "text": "A Lívia entendeu nossa rotina e propôs um projeto bonito que realmente cabia no orçamento.", "phoneConfirmed": true }
-    ],
     "relationships": [
-      { "id": "rel-l1", "professionalName": "Marina Alves", "professionalSlug": "marina-alves", "avatar": "/images/photo-1494790108377-be9c29b29330.jpg", "type": "recommendation", "note": "Recomendo para projetos elétricos residenciais cuidadosos." }
+      { "id": "rel-l1", "professionalName": "Marcos Alves", "professionalSlug": "marcos-alves", "avatar": "/images/professional-marcos-alves-electrician.jpg", "type": "recommendation", "note": "Recomendo para projetos elétricos residenciais cuidadosos." }
     ],
     "updatedAt": "2026-07-30",
-    "whatsapp": "5547999993333"
+    "whatsapp": "5547999993333",
+    "youtube": "https://www.youtube.com/@berufe-demo-livia"
   },
   {
     "id": "pro-carlos",
@@ -111,8 +97,7 @@
     "name": "Carlos Henrique Lima",
     "headline": "Pintura residencial limpa, protegida e sem atalhos.",
     "bio": "Pintor residencial especializado em preparação de superfícies e acabamento fino.",
-    "avatar": "/images/photo-1531384441138-2736e62e0919.jpg",
-    "coverImage": "/images/photo-1562259949-e8e7689d7828.jpg",
+    "avatar": "/images/professional-carlos-henrique-lima-painter.jpg",
     "primaryService": "Pintor",
     "primaryServiceSlug": "pintor",
     "services": ["Pintor", "Drywall e gesso"],
@@ -121,15 +106,12 @@
     "allJoinville": false,
     "yearsExperience": 13,
     "evidence": [
-      { "id": "ev-c1", "label": "Telefone confirmado", "type": "automatic", "date": "2026-05-05" },
-      { "id": "ev-c2", "label": "Identidade verificada", "type": "reviewed", "date": "2026-05-09" }
+      { "id": "ev-c1", "label": "Telefone confirmado" },
+      { "id": "ev-c2", "label": "Identidade verificada" }
     ],
     "portfolio": [
       { "id": "port-c1", "title": "Fachada renovada", "service": "Pintor", "description": "Correção de fissuras e nova pintura externa.", "image": "/images/photo-1599619351208-3e6c839d6828.jpg" },
       { "id": "port-c2", "title": "Sala em tons naturais", "service": "Pintor", "description": "Preparação e pintura de sala e circulação.", "image": "/images/photo-1600566753190-17f0baa2a6c3.jpg" }
-    ],
-    "recommendations": [
-      { "id": "rec-c1", "clientName": "Mônica G.", "service": "Pintor", "period": "Maio de 2026", "text": "Protegeu todos os móveis e entregou a casa muito organizada. Ótimo acabamento.", "phoneConfirmed": true }
     ],
     "relationships": [],
     "updatedAt": "2026-07-22",
@@ -141,8 +123,7 @@
     "name": "Rafael Oliveira",
     "headline": "Soluções hidráulicas para a casa funcionar sem surpresa.",
     "bio": "Atendimento residencial para instalações, manutenção e vazamentos.",
-    "avatar": "/images/photo-1527980965255-d3b416303d12.jpg",
-    "coverImage": "/images/photo-1585704032915-c3400ca199e7.jpg",
+    "avatar": "/images/professional-rafael-oliveira-plumber.jpg",
     "primaryService": "Encanador",
     "primaryServiceSlug": "encanador",
     "services": ["Encanador", "Marido de aluguel"],
@@ -151,17 +132,154 @@
     "allJoinville": true,
     "yearsExperience": 9,
     "evidence": [
-      { "id": "ev-r1", "label": "Telefone confirmado", "type": "automatic", "date": "2026-07-01" },
-      { "id": "ev-r2", "label": "Identidade verificada", "type": "reviewed", "date": "2026-07-09" }
+      { "id": "ev-r1", "label": "Telefone confirmado" },
+      { "id": "ev-r2", "label": "Identidade verificada" }
     ],
     "portfolio": [
       { "id": "port-r1", "title": "Nova bancada de cozinha", "service": "Encanador", "description": "Adequação dos pontos de água e esgoto.", "image": "/images/photo-1556911220-e15b29be8c8f.jpg" }
     ],
-    "recommendations": [
-      { "id": "rec-r1", "clientName": "Eduardo N.", "service": "Encanador", "period": "Junho de 2026", "text": "Encontrou o vazamento rápido e explicou a melhor forma de resolver.", "phoneConfirmed": true }
-    ],
     "relationships": [],
     "updatedAt": "2026-07-16",
     "whatsapp": "5547999995555"
+  },
+  {
+    "id": "pro-diego",
+    "slug": "diego-fernandes",
+    "name": "Diego Fernandes",
+    "headline": "Telhados e calhas com diagnóstico claro e execução cuidadosa.",
+    "bio": "Atuo na manutenção e renovação de coberturas residenciais, incluindo telhas, calhas e rufos. Avalio a origem do problema, explico as etapas e mantenho o local organizado durante o serviço.",
+    "avatar": "/images/professional-diego-fernandes-roofer.jpg",
+    "primaryService": "Telhados e calhas",
+    "primaryServiceSlug": "telhados-e-calhas",
+    "services": ["Telhados e calhas"],
+    "serviceNotes": ["Coberturas, calhas e rufos residenciais"],
+    "neighborhoods": ["Toda Joinville"],
+    "allJoinville": true,
+    "yearsExperience": 14,
+    "evidence": [
+      { "id": "ev-d1", "label": "Telefone confirmado" },
+      { "id": "ev-d2", "label": "Identidade verificada" }
+    ],
+    "portfolio": [
+      { "id": "port-d1", "title": "Renovação de cobertura", "service": "Telhados e calhas", "description": "Substituição de telhas danificadas e revisão dos pontos de vedação.", "image": "/images/portfolio-telhados-calhas-cobertura.jpg" },
+      { "id": "port-d2", "title": "Calhas e rufos novos", "service": "Telhados e calhas", "description": "Instalação de calhas e rufos para melhorar o escoamento da chuva.", "image": "/images/portfolio-telhados-calhas-calhas-rufos.jpg" }
+    ],
+    "relationships": [
+      { "id": "rel-d1", "professionalName": "João Vitor Santos", "professionalSlug": "joao-vitor-santos", "avatar": "/images/professional-joao-vitor-santos-bricklayer.jpg", "type": "worked_together", "note": "Trabalhamos juntos em reformas que exigiram revisão da cobertura. Diego explica bem cada etapa e mantém o serviço organizado." }
+    ],
+    "updatedAt": "2026-08-12",
+    "whatsapp": "5547999996666"
+  },
+  {
+    "id": "pro-camila",
+    "slug": "camila-nunes",
+    "name": "Camila Nunes",
+    "headline": "Climatização residencial com instalação limpa e manutenção responsável.",
+    "bio": "Trabalho com instalação, higienização e manutenção de aparelhos de ar-condicionado residenciais. Antes do atendimento, verifico o ambiente e explico as condições necessárias para um serviço seguro e bem acabado.",
+    "avatar": "/images/professional-camila-nunes-hvac-technician.jpg",
+    "primaryService": "Ar-condicionado",
+    "primaryServiceSlug": "ar-condicionado",
+    "services": ["Ar-condicionado"],
+    "serviceNotes": ["Instalação, higienização e manutenção de split"],
+    "neighborhoods": ["Toda Joinville"],
+    "allJoinville": true,
+    "yearsExperience": 8,
+    "evidence": [
+      { "id": "ev-cn1", "label": "Telefone confirmado" },
+      { "id": "ev-cn2", "label": "Identidade verificada" }
+    ],
+    "portfolio": [
+      { "id": "port-cn1", "title": "Instalação de split na sala", "service": "Ar-condicionado", "description": "Instalação residencial com passagem organizada e acabamento discreto.", "image": "/images/portfolio-ar-condicionado-instalacao-split.jpg" },
+      { "id": "port-cn2", "title": "Limpeza preventiva", "service": "Ar-condicionado", "description": "Higienização do equipamento e revisão dos componentes acessíveis.", "image": "/images/portfolio-ar-condicionado-limpeza.jpg" }
+    ],
+    "relationships": [
+      { "id": "rel-cn1", "professionalName": "Marcos Alves", "professionalSlug": "marcos-alves", "avatar": "/images/professional-marcos-alves-electrician.jpg", "type": "recommendation", "note": "Recomendo Camila para instalações residenciais cuidadosas e uma comunicação muito clara com o cliente." }
+    ],
+    "updatedAt": "2026-08-11",
+    "whatsapp": "5547999997777"
+  },
+  {
+    "id": "pro-eduardo",
+    "slug": "eduardo-rocha",
+    "name": "Eduardo Rocha",
+    "headline": "Soluções em metal feitas sob medida para proteger e valorizar a casa.",
+    "bio": "Produzo e instalo portões, grades, corrimãos e outras peças metálicas residenciais. Faço a medição no local, apresento o escopo e cuido do acabamento e da instalação.",
+    "avatar": "/images/professional-eduardo-rocha-metalworker.jpg",
+    "primaryService": "Serralheiro",
+    "primaryServiceSlug": "serralheiro",
+    "services": ["Serralheiro"],
+    "serviceNotes": ["Portões, grades e corrimãos sob medida"],
+    "neighborhoods": ["Toda Joinville"],
+    "allJoinville": true,
+    "yearsExperience": 17,
+    "evidence": [
+      { "id": "ev-e1", "label": "Telefone confirmado" },
+      { "id": "ev-e2", "label": "Identidade verificada" }
+    ],
+    "portfolio": [
+      { "id": "port-e1", "title": "Portão sob medida", "service": "Serralheiro", "description": "Fabricação e instalação de portão metálico para uma residência.", "image": "/images/portfolio-serralheiro-portao.jpg" },
+      { "id": "port-e2", "title": "Corrimão externo", "service": "Serralheiro", "description": "Corrimão metálico com desenho simples e acabamento resistente.", "image": "/images/portfolio-serralheiro-corrimao.jpg" }
+    ],
+    "relationships": [
+      { "id": "rel-e1", "professionalName": "João Vitor Santos", "professionalSlug": "joao-vitor-santos", "avatar": "/images/professional-joao-vitor-santos-bricklayer.jpg", "type": "worked_together", "note": "Eduardo já cuidou das peças metálicas em duas reformas comigo. As medidas e a instalação foram muito bem organizadas." }
+    ],
+    "updatedAt": "2026-08-10",
+    "whatsapp": "5547999998888"
+  },
+  {
+    "id": "pro-patricia",
+    "slug": "patricia-almeida",
+    "name": "Patrícia Almeida",
+    "headline": "Vidros e espelhos instalados com precisão, segurança e acabamento limpo.",
+    "bio": "Atendo projetos residenciais de boxes, espelhos e vidros sob medida. Confiro as medidas, explico as opções de instalação e protejo o ambiente durante o trabalho.",
+    "avatar": "/images/professional-patricia-almeida-glazier.jpg",
+    "primaryService": "Vidraceiro",
+    "primaryServiceSlug": "vidraceiro",
+    "services": ["Vidraceiro"],
+    "serviceNotes": ["Boxes, espelhos e vidros residenciais"],
+    "neighborhoods": ["Toda Joinville"],
+    "allJoinville": true,
+    "yearsExperience": 10,
+    "evidence": [
+      { "id": "ev-p1", "label": "Telefone confirmado" },
+      { "id": "ev-p2", "label": "Identidade verificada" }
+    ],
+    "portfolio": [
+      { "id": "port-p1", "title": "Box de banheiro", "service": "Vidraceiro", "description": "Box de vidro sob medida com ferragens discretas e vedação revisada.", "image": "/images/portfolio-vidraceiro-box.jpg" },
+      { "id": "port-p2", "title": "Espelho sob medida", "service": "Vidraceiro", "description": "Instalação de espelho amplo para uma bancada residencial.", "image": "/images/portfolio-vidraceiro-espelho.jpg" }
+    ],
+    "relationships": [
+      { "id": "rel-p1", "professionalName": "Lívia Martins", "professionalSlug": "livia-martins", "avatar": "/images/professional-livia-martins-interior-designer.jpg", "type": "recommendation", "note": "Patrícia é minha indicação para espelhos e vidros sob medida, com atenção às medidas e ao acabamento." }
+    ],
+    "updatedAt": "2026-08-09",
+    "whatsapp": "5547999999999"
+  },
+  {
+    "id": "pro-fabio",
+    "slug": "fabio-mendes",
+    "name": "Fábio Mendes",
+    "headline": "Tratamento de infiltrações com diagnóstico cuidadoso e etapas bem explicadas.",
+    "bio": "Atuo na impermeabilização de lajes, sacadas e áreas molhadas residenciais. Primeiro identifico os sinais e pontos de entrada de água; depois explico a preparação, a aplicação e o tempo de cura.",
+    "avatar": "/images/professional-fabio-mendes-waterproofing.jpg",
+    "primaryService": "Impermeabilização",
+    "primaryServiceSlug": "impermeabilizacao",
+    "services": ["Impermeabilização"],
+    "serviceNotes": ["Lajes, sacadas e áreas molhadas"],
+    "neighborhoods": ["Toda Joinville"],
+    "allJoinville": true,
+    "yearsExperience": 12,
+    "evidence": [
+      { "id": "ev-f1", "label": "Telefone confirmado" },
+      { "id": "ev-f2", "label": "Identidade verificada" }
+    ],
+    "portfolio": [
+      { "id": "port-f1", "title": "Impermeabilização de laje", "service": "Impermeabilização", "description": "Preparação e aplicação do sistema impermeabilizante em laje residencial.", "image": "/images/portfolio-impermeabilizacao-laje.jpg" },
+      { "id": "port-f2", "title": "Proteção de área molhada", "service": "Impermeabilização", "description": "Tratamento impermeável antes do novo revestimento do banheiro.", "image": "/images/portfolio-impermeabilizacao-area-molhada.jpg" }
+    ],
+    "relationships": [
+      { "id": "rel-f1", "professionalName": "Carlos Henrique Lima", "professionalSlug": "carlos-henrique-lima", "avatar": "/images/professional-carlos-henrique-lima-painter.jpg", "type": "worked_together", "note": "Fábio identificou e tratou infiltrações antes da pintura externa. O diagnóstico e os prazos foram explicados com cuidado." }
+    ],
+    "updatedAt": "2026-08-07",
+    "whatsapp": "5547999990000"
   }
 ]

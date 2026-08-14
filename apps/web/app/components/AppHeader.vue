@@ -1,54 +1,73 @@
 <script setup lang="ts">
-import { computed, shallowRef } from 'vue'
-import { useMockupApp } from '~/composables/useMockupApp'
+import { computed, shallowRef } from "vue";
+import { useMockupApp } from "~/composables/useMockupApp";
 
-const route = useRoute()
-const router = useRouter()
-const { activeRole } = useMockupApp()
-const isMenuOpen = shallowRef(false)
+const route = useRoute();
+const router = useRouter();
+const { activeRole } = useMockupApp();
+const isMenuOpen = shallowRef(false);
 
-const isProfessional = computed(() => route.path.startsWith('/painel'))
-const isAdmin = computed(() => route.path.startsWith('/admin'))
-const currentRole = computed(() => isProfessional.value ? 'professional' : isAdmin.value ? 'admin' : activeRole.value)
+const isProfessional = computed(() => route.path.startsWith("/painel"));
+const isAdmin = computed(() => route.path.startsWith("/admin"));
+const currentRole = computed(() =>
+  isProfessional.value
+    ? "professional"
+    : isAdmin.value
+      ? "admin"
+      : activeRole.value,
+);
 
 const links = computed(() => {
   if (isProfessional.value) {
     return [
-      { label: 'Visão geral', to: '/painel' },
-      { label: 'Meu perfil', to: '/painel/perfil' },
-      { label: 'Orçamentos', to: '/painel/orcamentos/novo' },
-    ]
+      { label: "Visão geral", to: "/painel" },
+      { label: "Meu perfil", to: "/painel/perfil" },
+      { label: "Orçamentos", to: "/painel/orcamentos/novo" },
+    ];
   }
   if (isAdmin.value) {
     return [
-      { label: 'Moderação', to: '/admin' },
-      { label: 'Catálogos', to: '/admin?view=catalogos' },
-      { label: 'Relatórios', to: '/admin?view=relatorios' },
-    ]
+      { label: "Moderação", to: "/admin" },
+      { label: "Catálogo", to: "/admin/catalogo" },
+      { label: "Relatórios", to: "/admin/relatorios" },
+    ];
   }
   return [
-    { label: 'Encontrar profissional', to: '/encontrar' },
-    { label: 'Como funciona', to: '/#como-funciona' },
-    { label: 'Para profissionais', to: '/entrar' },
-  ]
-})
+    { label: "Encontrar profissional", to: "/encontrar" },
+    { label: "Como funciona", to: "/#como-funciona" },
+    { label: "Para profissionais", to: "/entrar" },
+  ];
+});
 
 async function changeRole(event: Event) {
-  const role = (event.target as HTMLSelectElement).value as typeof activeRole.value
-  activeRole.value = role
-  isMenuOpen.value = false
-  await router.push(role === 'professional' ? '/painel' : role === 'admin' ? '/admin' : '/')
+  const role = (event.target as HTMLSelectElement)
+    .value as typeof activeRole.value;
+  activeRole.value = role;
+  isMenuOpen.value = false;
+  await router.push(
+    role === "professional" ? "/painel" : role === "admin" ? "/admin" : "/",
+  );
 }
 
 function isLinkActive(to: string) {
-  if (to.includes('?')) return route.fullPath === to
-  if (to === '/admin') return route.path === to && !route.query.view
-  return route.path === to
+  if (to === "/admin") {
+    return route.path === "/admin";
+  }
+  if (to === "/admin/relatorios") {
+    return route.path === "/admin/relatorios";
+  }
+  if (to === "/admin/catalogo") {
+    return route.path === "/admin/catalogo";
+  }
+  return route.path === to;
 }
 </script>
 
 <template>
-  <header class="header" :class="{ 'header--workspace': isProfessional || isAdmin }">
+  <header
+    class="header"
+    :class="{ 'header--workspace': isProfessional || isAdmin }"
+  >
     <DesignSystemContainer class="header__inner">
       <DesignSystemBrand />
 
@@ -95,7 +114,11 @@ function isLinkActive(to: string) {
       </div>
     </DesignSystemContainer>
 
-    <nav v-if="isMenuOpen" class="header__mobile-nav" aria-label="Navegação móvel">
+    <nav
+      v-if="isMenuOpen"
+      class="header__mobile-nav"
+      aria-label="Navegação móvel"
+    >
       <NuxtLink
         v-for="link in links"
         :key="link.to"

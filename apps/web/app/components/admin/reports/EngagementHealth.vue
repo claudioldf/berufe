@@ -1,77 +1,130 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { ReportPeriodData } from '~/types'
+import { computed } from "vue";
+import type { ReportPeriodData } from "~/types";
 
 const props = defineProps<{
-  engagement: ReportPeriodData['engagement']
-}>()
+  engagement: ReportPeriodData["engagement"];
+}>();
 
-const maxAction = computed(() => Math.max(...props.engagement.actions.map(action => action.value), 1))
+const maxAction = computed(() =>
+  Math.max(...props.engagement.actions.map((action) => action.value), 1),
+);
 
 function retention(value: number | null, size: number) {
-  if (value === null || !size) return '—'
-  return `${value}/${size}`
+  if (value === null || !size) return "—";
+  return `${value}/${size}`;
 }
 
 function retentionWidth(value: number | null, size: number) {
-  if (value === null || !size) return '0%'
-  return `${Math.round((value / size) * 100)}%`
+  if (value === null || !size) return "0%";
+  return `${Math.round((value / size) * 100)}%`;
 }
 </script>
 
 <template>
   <section class="engagement" aria-labelledby="engagement-title">
     <header class="section-heading">
-      <div><DesignSystemKicker>Frequência útil</DesignSystemKicker><h2 id="engagement-title">Retenção profissional</h2></div>
-      <p>Conta quem voltou e fez algo que aumenta o valor da rede — não apenas quem entrou.</p>
+      <div>
+        <DesignSystemKicker>Frequência útil</DesignSystemKicker>
+        <h2 id="engagement-title">Retenção profissional</h2>
+      </div>
+      <p>
+        Conta quem voltou e fez algo que aumenta o valor da rede — não apenas
+        quem entrou.
+      </p>
     </header>
 
     <div class="engagement__grid">
       <DesignSystemSurfaceCard as="article" class="activity-card">
         <header>
-          <div><h3>Ações significativas</h3><p>{{ engagement.meaningfulActives }}/{{ engagement.eligibleProfessionals }} profissionais ativos no período</p></div>
+          <div>
+            <h3>Ações significativas</h3>
+            <p>
+              {{ engagement.meaningfulActives }}/{{
+                engagement.eligibleProfessionals
+              }}
+              profissionais ativos no período
+            </p>
+          </div>
           <div class="widget-actions">
-            <span class="returning-chip"><strong>{{ engagement.returningProfessionals }}</strong> recorrentes</span>
+            <span class="returning-chip"
+              ><strong>{{ engagement.returningProfessionals }}</strong>
+              recorrentes</span
+            >
             <AdminReportsMetricHelp
               title="Ações significativas"
-              meaning="Conta profissionais distintos que realizaram ações que aumentam o valor da rede: atualizar perfil, criar evidência, interagir com relações ou gerar orçamento."
-              goal="Aumentar profissionais ativos e recorrentes, além da quantidade de semanas em que cada um gera valor."
-              reading="Uma pessoa pode realizar mais de um tipo de ação, então as barras não devem ser somadas. Login sem ação útil não entra nesta métrica."
+              meaning="Conta profissionais distintos que atualizaram perfil, criaram evidência, interagiram com relações ou geraram orçamento."
+              goal="Aumentar profissionais ativos, recorrentes e a quantidade de semanas em que geram valor."
+              reading="Uma pessoa pode realizar mais de um tipo de ação, então as barras não devem ser somadas. Login isolado não conta."
             />
           </div>
         </header>
         <div class="action-list">
           <div v-for="action in engagement.actions" :key="action.key">
             <span>{{ action.label }}</span>
-            <i><b :style="{ width: `${(action.value / maxAction) * 100}%` }" /></i>
+            <i
+              ><b :style="{ width: `${(action.value / maxAction) * 100}%` }"
+            /></i>
             <strong>{{ action.value }}</strong>
           </div>
         </div>
         <div class="frequency-strip">
-          <div v-for="frequency in engagement.activeWeeks" :key="frequency.key"><strong>{{ frequency.value }}</strong><small>{{ frequency.label }}</small></div>
+          <div v-for="frequency in engagement.activeWeeks" :key="frequency.key">
+            <strong>{{ frequency.value }}</strong
+            ><small>{{ frequency.label }}</small>
+          </div>
         </div>
       </DesignSystemSurfaceCard>
 
       <DesignSystemSurfaceCard as="article" class="cohort-card">
         <header>
-          <div><h3>Coortes de publicação</h3><p>Retorno após o perfil entrar no ar</p></div>
+          <div>
+            <h3>Coortes de publicação</h3>
+            <p>Retorno após o perfil entrar no ar</p>
+          </div>
           <div class="widget-actions">
             <span class="sample-note">n pequeno: exibimos n/N</span>
             <AdminReportsMetricHelp
               title="Coortes de retenção W1/W4"
-              meaning="Agrupa profissionais pela semana em que o perfil foi publicado e mostra quantos voltaram com uma ação útil após uma e quatro semanas."
-              goal="Melhorar a retenção W1 e, principalmente, W4 à medida que os fluxos de confiança e orçamento se tornam hábitos."
-              reading="“—” significa que a coorte ainda não teve tempo de chegar à semana medida. Com poucos profissionais, compare n/N, não apenas percentuais."
+              meaning="Agrupa profissionais pela semana de primeira publicação e mostra quantos voltaram com ação útil após uma e quatro semanas."
+              goal="Melhorar retenção W1 e W4 à medida que relações e orçamentos se tornam hábitos."
+              reading="— significa que a coorte ainda não amadureceu. Com poucos profissionais, compare n/N, não apenas percentuais."
             />
           </div>
         </header>
-        <div class="cohort-table" role="table" aria-label="Retenção por coorte de publicação">
-          <div class="cohort-table__head" role="row"><span role="columnheader">Coorte</span><span role="columnheader">Perfis</span><span role="columnheader">Semana 1</span><span role="columnheader">Semana 4</span></div>
-          <div v-for="cohort in engagement.cohorts" :key="cohort.cohort" class="cohort-table__row" role="row">
+        <div
+          class="cohort-table"
+          role="table"
+          aria-label="Retenção por coorte de publicação"
+        >
+          <div class="cohort-table__head" role="row">
+            <span role="columnheader">Coorte</span
+            ><span role="columnheader">Perfis</span
+            ><span role="columnheader">Semana 1</span
+            ><span role="columnheader">Semana 4</span>
+          </div>
+          <div
+            v-for="cohort in engagement.cohorts"
+            :key="cohort.cohort"
+            class="cohort-table__row"
+            role="row"
+          >
             <strong role="cell">{{ cohort.cohort }}</strong>
             <span role="cell">{{ cohort.size }}</span>
-            <div role="cell"><i><b :style="{ width: retentionWidth(cohort.week1, cohort.size) }" /></i><em>{{ retention(cohort.week1, cohort.size) }}</em></div>
-            <div role="cell"><i><b :style="{ width: retentionWidth(cohort.week4, cohort.size) }" /></i><em>{{ retention(cohort.week4, cohort.size) }}</em></div>
+            <div role="cell">
+              <i
+                ><b
+                  :style="{ width: retentionWidth(cohort.week1, cohort.size) }"
+              /></i>
+              <em>{{ retention(cohort.week1, cohort.size) }}</em>
+            </div>
+            <div role="cell">
+              <i
+                ><b
+                  :style="{ width: retentionWidth(cohort.week4, cohort.size) }"
+              /></i>
+              <em>{{ retention(cohort.week4, cohort.size) }}</em>
+            </div>
           </div>
         </div>
       </DesignSystemSurfaceCard>
@@ -83,6 +136,11 @@ function retentionWidth(value: number | null, size: number) {
 .engagement {
   display: grid;
   gap: 13px;
+  &__grid {
+    display: grid;
+    grid-template-columns: 0.88fr 1.12fr;
+    gap: 12px;
+  }
 }
 .section-heading {
   display: flex;
@@ -107,19 +165,13 @@ function retentionWidth(value: number | null, size: number) {
   line-height: 1.5;
   text-align: right;
 }
-.engagement {
-  &__grid {
-    display: grid;
-    grid-template-columns: 0.88fr 1.12fr;
-    gap: 12px;
-  }
-}
 .activity-card,
 .cohort-card {
   padding: 20px;
 }
 .activity-card header,
-.cohort-card header {
+.cohort-card header,
+.widget-actions {
   display: flex;
   justify-content: space-between;
   gap: 12px;
@@ -142,15 +194,20 @@ function retentionWidth(value: number | null, size: number) {
   color: var(--ink-soft);
   font-size: var(--font-size-min);
 }
-.activity-card header > span {
+.widget-actions {
+  align-items: start;
+  justify-content: flex-end;
+  gap: 7px;
+}
+.returning-chip {
   padding: 7px 9px;
   border-radius: 10px;
   background: #e8f4f0;
-  color: #397a69;
+  color: #2f6b5f;
   font-size: var(--font-size-min);
   text-align: center;
 }
-.activity-card header > span strong {
+.returning-chip strong {
   display: block;
   font-family: Georgia, serif;
   font-size: 1.1rem;
@@ -205,15 +262,16 @@ function retentionWidth(value: number | null, size: number) {
   font-family: Georgia, serif;
   font-size: 1.05rem;
 }
-.frequency-strip small {
-  margin-top: 2px;
+.frequency-strip small,
+.sample-note {
   color: var(--ink-soft);
   font-size: var(--font-size-min);
 }
-.cohort-card header > span {
-  align-self: start;
-  color: var(--ink-soft);
-  font-size: var(--font-size-min);
+.frequency-strip small {
+  margin-top: 2px;
+}
+.sample-note {
+  align-self: center;
 }
 .cohort-table {
   margin-top: 18px;
@@ -235,9 +293,6 @@ function retentionWidth(value: number | null, size: number) {
     min-height: 45px;
     padding: 8px;
     border-top: 1px solid var(--line);
-    font-size: var(--font-size-min);
-  }
-  &__row > strong {
     font-size: var(--font-size-min);
   }
   &__row > div {
@@ -265,38 +320,9 @@ function retentionWidth(value: number | null, size: number) {
     text-align: right;
   }
 }
-.activity-card header > span {
-  color: #2f6b5f;
-}
-.widget-actions {
-  display: flex;
-  align-items: start;
-  justify-content: flex-end;
-  gap: 7px;
-}
-.returning-chip {
-  padding: 7px 9px;
-  border-radius: 10px;
-  background: #e8f4f0;
-  color: #2f6b5f;
-  font-size: var(--font-size-min);
-  text-align: center;
-}
-.returning-chip strong {
-  display: block;
-  font-family: Georgia, serif;
-  font-size: 1.1rem;
-}
-.sample-note {
-  align-self: center;
-  color: var(--ink-soft);
-  font-size: var(--font-size-min);
-}
 @media (max-width: 880px) {
-  .engagement {
-    &__grid {
-      grid-template-columns: 1fr;
-    }
+  .engagement__grid {
+    grid-template-columns: 1fr;
   }
 }
 @media (max-width: 620px) {
@@ -307,11 +333,9 @@ function retentionWidth(value: number | null, size: number) {
   .section-heading > p {
     text-align: left;
   }
-  .cohort-table {
-    &__head,
-    &__row {
-      grid-template-columns: 1.2fr 0.4fr 0.8fr 0.8fr;
-    }
+  .cohort-table__head,
+  .cohort-table__row {
+    grid-template-columns: 1.2fr 0.4fr 0.8fr 0.8fr;
   }
   .frequency-strip {
     grid-template-columns: 1fr 1fr;

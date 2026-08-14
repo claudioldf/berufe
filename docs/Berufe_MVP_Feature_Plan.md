@@ -18,7 +18,7 @@ The core asset is not a list of service requests. It is a local trust graph show
 
 - **Location:** Joinville.
 - **Supply:** 30–50 connected founding professionals.
-- **Categories:** electricians, painters, plumbers, masons, flooring/tile installers, drywall/plaster professionals, carpenters, furniture installers, handymen, architects, and interior designers.
+- **Categories:** electricians, painters, plumbers, masons, flooring/tile installers, drywall/plaster professionals, carpenters, furniture installers, handymen, architects, interior designers, roof/gutter professionals, residential air-conditioning technicians, metalworkers, glaziers, and waterproofing specialists.
 - **Users:** service professionals and customers. Admin users operate verification and moderation.
 - **Not part of the first market:** domestic workers, sweets, events, photography, beauty, or unrelated service categories.
 
@@ -33,7 +33,8 @@ Can a small, connected group of professionals create enough visible trust for cu
 3. Published professionals ask existing Berufe members to confirm recommendations or prior collaboration.
 4. Customers search and inspect that evidence.
 5. Customers contact a chosen professional directly through WhatsApp.
-6. More confirmed professional relationships strengthen the network.
+6. The professional can prepare and share a simple quote through their normal WhatsApp workflow.
+7. More confirmed professional relationships strengthen the network.
 
 ### MVP principles
 
@@ -55,6 +56,7 @@ The first launch should measure learning signals, not vanity totals:
 - Search-to-profile-open rate.
 - Profile-to-WhatsApp-click rate.
 - Number of confirmed professional relationships.
+- Number of professionals who create and share at least one quote.
 
 ## 2. MVP scope by product
 
@@ -84,53 +86,53 @@ Use Infobip's 2FA API only to start and verify SMS OTP challenges. Keep one-time
 
 **`user_account`**
 
-| Field | Type | Rules |
-| --- | --- | --- |
-| `id` | UUID | Primary key |
-| `phone_e164` | text | Unique; confirmed before activation |
-| `role` | enum | `professional` or `admin` |
-| `status` | enum | `active`, `suspended` |
-| `terms_accepted_at` | timestamp | Required before profile setup |
-| `created_at` | timestamp | Required |
-| `last_login_at` | timestamp | Nullable |
+| Field               | Type      | Rules                               |
+| ------------------- | --------- | ----------------------------------- |
+| `id`                | UUID      | Primary key                         |
+| `phone_e164`        | text      | Unique; confirmed before activation |
+| `role`              | enum      | `professional` or `admin`           |
+| `status`            | enum      | `active`, `suspended`               |
+| `terms_accepted_at` | timestamp | Required before profile setup       |
+| `created_at`        | timestamp | Required                            |
+| `last_login_at`     | timestamp | Nullable                            |
 
 **`application_session`**
 
-| Field | Type | Rules |
-| --- | --- | --- |
-| `id` | UUID | Primary key |
-| `user_account_id` | UUID | Required foreign reference |
-| `authentication_method` | enum | `sms_otp` at launch |
-| `token_digest` | text | Unique; raw token is never stored |
-| `csrf_token_digest` | text | Binds the rotating CSRF token to the session |
-| `authenticated_at` | timestamp | Required |
-| `mfa_authenticated_at` | timestamp | Required for admin sessions; otherwise nullable |
-| `last_active_at` | timestamp | Required; writes may be throttled |
-| `idle_expires_at` | timestamp | Required |
-| `absolute_expires_at` | timestamp | Required |
-| `revoked_at` | timestamp | Nullable; set by logout, suspension, or administrative revocation |
+| Field                   | Type      | Rules                                                             |
+| ----------------------- | --------- | ----------------------------------------------------------------- |
+| `id`                    | UUID      | Primary key                                                       |
+| `user_account_id`       | UUID      | Required foreign reference                                        |
+| `authentication_method` | enum      | `sms_otp` at launch                                               |
+| `token_digest`          | text      | Unique; raw token is never stored                                 |
+| `csrf_token_digest`     | text      | Binds the rotating CSRF token to the session                      |
+| `authenticated_at`      | timestamp | Required                                                          |
+| `mfa_authenticated_at`  | timestamp | Required for admin sessions; otherwise nullable                   |
+| `last_active_at`        | timestamp | Required; writes may be throttled                                 |
+| `idle_expires_at`       | timestamp | Required                                                          |
+| `absolute_expires_at`   | timestamp | Required                                                          |
+| `revoked_at`            | timestamp | Nullable; set by logout, suspension, or administrative revocation |
 
 **`otp_challenge`**
 
-| Field | Type | Rules |
-| --- | --- | --- |
-| `id` | UUID | Primary key; not the browser credential |
-| `public_token_digest` | text | Unique; only the high-entropy raw token is returned to the browser |
-| `infobip_challenge_id_ciphertext` | text | Encrypted reference required for verification |
-| `phone_e164_ciphertext` | text | Encrypted phone bound to this challenge |
-| `expires_at` | timestamp | Short required lifetime |
-| `consumed_at` | timestamp | Nullable; prevents reuse after success |
-| `created_at` | timestamp | Required |
+| Field                             | Type      | Rules                                                              |
+| --------------------------------- | --------- | ------------------------------------------------------------------ |
+| `id`                              | UUID      | Primary key; not the browser credential                            |
+| `public_token_digest`             | text      | Unique; only the high-entropy raw token is returned to the browser |
+| `infobip_challenge_id_ciphertext` | text      | Encrypted reference required for verification                      |
+| `phone_e164_ciphertext`           | text      | Encrypted phone bound to this challenge                            |
+| `expires_at`                      | timestamp | Short required lifetime                                            |
+| `consumed_at`                     | timestamp | Nullable; prevents reuse after success                             |
+| `created_at`                      | timestamp | Required                                                           |
 
 **`admin_totp_credential`**
 
-| Field | Type | Rules |
-| --- | --- | --- |
-| `user_account_id` | UUID | Primary/foreign key; admin accounts only |
-| `secret_ciphertext` | text | Encrypted with Rails application-level encryption |
-| `recovery_code_digests` | jsonb | Array of one-way digests; raw codes shown only at enrollment |
-| `enrolled_at` | timestamp | Required before admin access |
-| `reset_at` | timestamp | Nullable; audited manual reset |
+| Field                   | Type      | Rules                                                        |
+| ----------------------- | --------- | ------------------------------------------------------------ |
+| `user_account_id`       | UUID      | Primary/foreign key; admin accounts only                     |
+| `secret_ciphertext`     | text      | Encrypted with Rails application-level encryption            |
+| `recovery_code_digests` | jsonb     | Array of one-way digests; raw codes shown only at enrollment |
+| `enrolled_at`           | timestamp | Required before admin access                                 |
+| `reset_at`              | timestamp | Nullable; audited manual reset                               |
 
 #### 5. Explicitly not in MVP
 
@@ -146,7 +148,7 @@ Use Infobip's 2FA API only to start and verify SMS OTP challenges. Keep one-time
 
 #### 1. Summary
 
-Creates the public professional identity: name, photo, description, experience declaration, WhatsApp contact, services, and areas served.
+Creates the public professional identity: name, photo, description, experience declaration, WhatsApp contact, optional Instagram and YouTube profile links, services, and areas served.
 
 #### 2. Why we need it
 
@@ -158,47 +160,50 @@ This is the base of both trust and discovery. Without structured services and co
 2. They select services from Berufe’s approved residential renovation catalog.
 3. They select Joinville and the neighborhoods they serve. “All Joinville” is allowed.
 4. They add a short introduction and declared years of experience.
-5. The editor shows an inline representation of the public fields, and the professional submits the profile for approval.
-6. An approved profile becomes searchable. A material edit returns the profile to moderation; the founding-cohort operations team may assist when an urgent correction is required.
+5. They may add Instagram and YouTube profile identifiers or profile URLs. Berufe validates the platform and profile shape, then stores canonical HTTPS URLs.
+6. The editor shows an inline representation of the public fields, and the professional submits the profile for approval.
+7. An approved profile becomes searchable. A material edit returns the profile to moderation; the founding-cohort operations team may assist when an urgent correction is required.
 
-Use structured service selections rather than free-form specialties. Allow a short free-text description for context, but do not use it as the only search source. Generate a stable, shareable public slug.
+Use structured service selections rather than free-form specialties. Allow a short free-text description for context, but do not use it as the only search source. Generate a stable, shareable public slug. Instagram accepts a bare or `@` handle and a direct `instagram.com/<handle>` profile URL. YouTube accepts a bare or `@` handle and a direct `youtube.com/@<handle>` channel URL; video, playlist, post/reel, off-platform, and legacy YouTube channel-path URLs are rejected. Both fields are independently optional, and copied query strings or fragments are removed during normalization.
 
 #### 4. Suggested feature-scoped data schema
 
 **`professional_profile`**
 
-| Field | Type | Rules |
-| --- | --- | --- |
-| `id` | UUID | Primary key |
-| `owner_user_id` | UUID | Foreign reference to account; unique |
-| `public_slug` | text | Unique, stable, human-readable |
-| `display_name` | text | Required |
-| `photo_url` | text | Nullable until uploaded |
-| `headline` | text | Short public description |
-| `bio` | text | Short, length-limited |
-| `years_experience_declared` | smallint | Nullable; explicitly labeled “declared” |
-| `whatsapp_phone_e164` | text | Defaults to confirmed account phone |
-| `profile_status` | enum | `draft`, `pending_review`, `published`, `suspended` |
-| `created_at` | timestamp | Required |
-| `updated_at` | timestamp | Required |
+| Field                       | Type      | Rules                                               |
+| --------------------------- | --------- | --------------------------------------------------- |
+| `id`                        | UUID      | Primary key                                         |
+| `owner_user_id`             | UUID      | Foreign reference to account; unique                |
+| `public_slug`               | text      | Unique, stable, human-readable                      |
+| `display_name`              | text      | Required                                            |
+| `photo_url`                 | text      | Nullable until uploaded                             |
+| `headline`                  | text      | Short public description                            |
+| `bio`                       | text      | Short, length-limited                               |
+| `years_experience_declared` | smallint  | Nullable; explicitly labeled “declared”             |
+| `whatsapp_phone_e164`       | text      | Defaults to confirmed account phone                 |
+| `instagram_url`             | text      | Nullable; canonical Instagram HTTPS profile URL     |
+| `youtube_url`               | text      | Nullable; canonical YouTube `@handle` HTTPS URL     |
+| `profile_status`            | enum      | `draft`, `pending_review`, `published`, `suspended` |
+| `created_at`                | timestamp | Required                                            |
+| `updated_at`                | timestamp | Required                                            |
 
 **`professional_service`**
 
-| Field | Type | Rules |
-| --- | --- | --- |
-| `professional_id` | UUID | Foreign reference to profile |
-| `service_id` | UUID | Foreign reference to managed service catalog |
-| `is_primary` | boolean | At least one primary service |
-| `note` | text | Optional short specialization note |
+| Field             | Type    | Rules                                        |
+| ----------------- | ------- | -------------------------------------------- |
+| `professional_id` | UUID    | Foreign reference to profile                 |
+| `service_id`      | UUID    | Foreign reference to managed service catalog |
+| `is_primary`      | boolean | At least one primary service                 |
+| `note`            | text    | Optional short specialization note           |
 
 Unique key: `professional_id + service_id`.
 
 **`professional_service_area`**
 
-| Field | Type | Rules |
-| --- | --- | --- |
-| `professional_id` | UUID | Foreign reference to profile |
-| `city_code` | text | Fixed to Joinville in initial launch |
+| Field               | Type | Rules                                 |
+| ------------------- | ---- | ------------------------------------- |
+| `professional_id`   | UUID | Foreign reference to profile          |
+| `city_code`         | text | Fixed to Joinville in initial launch  |
 | `neighborhood_code` | text | Nullable when serving the entire city |
 
 Unique key: `professional_id + city_code + neighborhood_code`.
@@ -240,16 +245,16 @@ Use direct-to-object-storage uploads with private temporary access before approv
 
 **`portfolio_item`**
 
-| Field | Type | Rules |
-| --- | --- | --- |
-| `id` | UUID | Primary key |
-| `professional_id` | UUID | Foreign reference to profile |
-| `service_id` | UUID | Required; selected from catalog |
-| `image_url` | text | Optimized public asset after approval |
-| `title` | text | Required, short |
-| `description` | text | Nullable, length-limited |
-| `moderation_status` | enum | `pending`, `approved`, `rejected`, `hidden` |
-| `created_at` | timestamp | Required |
+| Field               | Type      | Rules                                       |
+| ------------------- | --------- | ------------------------------------------- |
+| `id`                | UUID      | Primary key                                 |
+| `professional_id`   | UUID      | Foreign reference to profile                |
+| `service_id`        | UUID      | Required; selected from catalog             |
+| `image_url`         | text      | Optimized public asset after approval       |
+| `title`             | text      | Required, short                             |
+| `description`       | text      | Nullable, length-limited                    |
+| `moderation_status` | enum      | `pending`, `approved`, `rejected`, `hidden` |
+| `created_at`        | timestamp | Required                                    |
 
 #### 5. Explicitly not in MVP
 
@@ -287,28 +292,28 @@ For the first 30–50 professionals, accept only JPEG/PNG evidence up to 10 MiB 
 
 **`verification_request`**
 
-| Field | Type | Rules |
-| --- | --- | --- |
-| `id` | UUID | Primary key |
-| `professional_id` | UUID | Foreign reference to profile |
-| `verification_type` | enum | `identity` at launch |
-| `status` | enum | `pending`, `approved`, `rejected`, `expired` |
-| `submitted_at` | timestamp | Required |
-| `reviewed_at` | timestamp | Nullable |
-| `reviewed_by_user_id` | UUID | Nullable; admin account |
-| `review_note` | text | Private; required on rejection |
-| `public_label` | text | Controlled label, never user-written |
+| Field                 | Type      | Rules                                        |
+| --------------------- | --------- | -------------------------------------------- |
+| `id`                  | UUID      | Primary key                                  |
+| `professional_id`     | UUID      | Foreign reference to profile                 |
+| `verification_type`   | enum      | `identity` at launch                         |
+| `status`              | enum      | `pending`, `approved`, `rejected`, `expired` |
+| `submitted_at`        | timestamp | Required                                     |
+| `reviewed_at`         | timestamp | Nullable                                     |
+| `reviewed_by_user_id` | UUID      | Nullable; admin account                      |
+| `review_note`         | text      | Private; required on rejection               |
+| `public_label`        | text      | Controlled label, never user-written         |
 
 **`verification_file`**
 
-| Field | Type | Rules |
-| --- | --- | --- |
-| `id` | UUID | Primary key |
-| `verification_request_id` | UUID | Foreign reference to request |
-| `private_storage_key` | text | Never public |
-| `file_kind` | text | Controlled internal category |
-| `uploaded_at` | timestamp | Required |
-| `deleted_at` | timestamp | Nullable; supports retention policy |
+| Field                     | Type      | Rules                               |
+| ------------------------- | --------- | ----------------------------------- |
+| `id`                      | UUID      | Primary key                         |
+| `verification_request_id` | UUID      | Foreign reference to request        |
+| `private_storage_key`     | text      | Never public                        |
+| `file_kind`               | text      | Controlled internal category        |
+| `uploaded_at`             | timestamp | Required                            |
+| `deleted_at`              | timestamp | Nullable; supports retention policy |
 
 #### 5. Explicitly not in MVP
 
@@ -339,7 +344,7 @@ The dashboard contains:
 - Copy/share profile link button.
 - Pending verification and moderation statuses.
 - Pending professional relationship confirmations.
-- Primary actions: edit profile, add a portfolio item, request identity verification, and manage existing-member relationships.
+- Primary actions: edit profile, add a portfolio item, request identity verification, manage existing-member relationships, and create a quote.
 
 The share action opens the device share sheet when available and falls back to copying the stable URL. Berufe still records the minimal privacy-friendly search/profile/contact aggregates required to evaluate the MVP, but professional-facing activity reporting is deferred.
 
@@ -347,14 +352,15 @@ The share action opens the device share sheet when available and falls back to c
 
 **`professional_daily_metric`**
 
-| Field | Type | Rules |
-| --- | --- | --- |
-| `professional_id` | UUID | Foreign reference to profile |
-| `metric_date` | date | Local product date |
-| `profile_views` | integer | Non-negative aggregate |
-| `whatsapp_clicks` | integer | Non-negative aggregate |
-| `whatsapp_clicks_public_profile` | integer | Non-negative subset used for profile conversion |
-| `whatsapp_clicks_search_result` | integer | Non-negative subset used to distinguish result-card handoffs |
+| Field                            | Type    | Rules                                                        |
+| -------------------------------- | ------- | ------------------------------------------------------------ |
+| `professional_id`                | UUID    | Foreign reference to profile                                 |
+| `metric_date`                    | date    | Local product date                                           |
+| `profile_views`                  | integer | Non-negative aggregate                                       |
+| `whatsapp_clicks`                | integer | Non-negative aggregate                                       |
+| `whatsapp_clicks_public_profile` | integer | Non-negative subset used for profile conversion              |
+| `whatsapp_clicks_search_result`  | integer | Non-negative subset used to distinguish result-card handoffs |
+| `quotes_shared`                  | integer | Non-negative count of explicit quote-share actions           |
 
 Unique key: `professional_id + metric_date`.
 
@@ -363,7 +369,7 @@ The setup checklist is calculated from existing feature data; it does not need i
 #### 5. Explicitly not in MVP
 
 - Detailed visitor identities.
-- Complex reports or charts.
+- Complex professional-facing reports or charts.
 - Lead pipeline or CRM.
 - Notifications center.
 - Social engagement metrics.
@@ -394,15 +400,15 @@ For 30–50 professionals, use ordinary relational database queries and indexed 
 
 **`search_event`**
 
-| Field | Type | Rules |
-| --- | --- | --- |
-| `id` | UUID | Primary key |
-| `service_id` | UUID | Nullable only when no suggestion selected |
-| `query_text_normalized` | text | No names, phone numbers, or free-form notes retained |
-| `city_code` | text | Joinville at launch |
-| `neighborhood_code` | text | Nullable |
-| `result_count` | integer | Non-negative |
-| `created_at` | timestamp | Required |
+| Field                   | Type      | Rules                                                |
+| ----------------------- | --------- | ---------------------------------------------------- |
+| `id`                    | UUID      | Primary key                                          |
+| `service_id`            | UUID      | Nullable only when no suggestion selected            |
+| `query_text_normalized` | text      | No names, phone numbers, or free-form notes retained |
+| `city_code`             | text      | Joinville at launch                                  |
+| `neighborhood_code`     | text      | Nullable                                             |
+| `result_count`          | integer   | Non-negative                                         |
+| `created_at`            | timestamp | Required                                             |
 
 No customer account or persistent identity is required.
 
@@ -479,7 +485,7 @@ This is the customer’s decision page and the professional’s shareable digita
 
 The page contains, in this order:
 
-1. Name, photo, main service, coverage, and WhatsApp action.
+1. Name, photo, main service, coverage, optional Instagram/YouTube profile links, and WhatsApp action.
 2. Public verification labels with a short explanation.
 3. Services and declared experience.
 4. Portfolio.
@@ -495,6 +501,7 @@ No new persistent table is required. The page is a public read model assembled f
 #### 5. Explicitly not in MVP
 
 - Public posts or feed.
+- Embedded Instagram or YouTube content, videos, or social engagement metrics.
 - Customer comments.
 - Booking calendar.
 - Public phone number displayed as raw text; the primary action is the WhatsApp link.
@@ -559,16 +566,16 @@ Only verified professionals can initiate a public relationship. Both parties mus
 
 **`professional_relationship`**
 
-| Field | Type | Rules |
-| --- | --- | --- |
-| `id` | UUID | Primary key |
-| `initiator_professional_id` | UUID | Foreign reference to profile |
-| `recipient_professional_id` | UUID | Foreign reference to profile; cannot equal initiator |
-| `relationship_type` | enum | `recommendation`, `worked_together` |
-| `context_note` | text | Optional and short |
-| `status` | enum | `pending`, `accepted`, `declined`, `hidden` |
-| `created_at` | timestamp | Required |
-| `responded_at` | timestamp | Nullable |
+| Field                       | Type      | Rules                                                |
+| --------------------------- | --------- | ---------------------------------------------------- |
+| `id`                        | UUID      | Primary key                                          |
+| `initiator_professional_id` | UUID      | Foreign reference to profile                         |
+| `recipient_professional_id` | UUID      | Foreign reference to profile; cannot equal initiator |
+| `relationship_type`         | enum      | `recommendation`, `worked_together`                  |
+| `context_note`              | text      | Optional and short                                   |
+| `status`                    | enum      | `pending`, `accepted`, `declined`, `hidden`          |
+| `created_at`                | timestamp | Required                                             |
+| `responded_at`              | timestamp | Nullable                                             |
 
 Unique key: `initiator_professional_id + recipient_professional_id + relationship_type`.
 
@@ -582,6 +589,71 @@ Unique key: `initiator_professional_id + recipient_professional_id + relationshi
 - Supplier content.
 - Public follower/following counts.
 - Invitations and relationship links for professionals who have not registered.
+
+## D. Berufe Ferramentas
+
+### Feature D1 — Simple quote generator and share link
+
+#### 1. Summary
+
+Lets a professional create a clear itemized service quote and share a customer-facing link through WhatsApp.
+
+#### 2. Why we need it
+
+The profile helps professionals get discovered; the quote helps them perform a frequent customer task and gives them a practical reason to return. It connects discovery to useful work without Berufe processing payment or taking commission.
+
+#### 3. How it works and implementation overview
+
+1. The professional starts a quote from the dashboard.
+2. They enter the customer name, a short service description, ordered line items, optional discount, validity date, and notes.
+3. Rails calculates and persists every line total, subtotal, discount, and final total; browser calculations are previews only.
+4. The professional previews the mobile customer page.
+5. First share atomically marks the quote shared, creates a long unguessable bearer token whose hash alone is stored, records the aggregate share action, and opens WhatsApp with the link.
+6. The customer can view or print the quote without an account.
+
+The shared page shows only the quote and the professional's approved public identity and labels. Token-authorized responses are `no-store` and `noindex`, are excluded from shared caches, and reveal nothing for invalid tokens. MVP statuses are only `draft` and `shared`; the commercial validity date is not token expiry, and Berufe does not represent acceptance or payment.
+
+#### 4. Suggested feature-scoped data schema
+
+**`quote`**
+
+| Field                 | Type          | Rules                                                            |
+| --------------------- | ------------- | ---------------------------------------------------------------- |
+| `id`                  | UUID          | Primary key                                                      |
+| `professional_id`     | UUID          | Required owner reference                                         |
+| `quote_number`        | integer       | Sequential per professional and concurrency-safe                 |
+| `customer_name`       | text          | Required; no customer account                                    |
+| `service_description` | text          | Required and length-limited                                      |
+| `discount_amount`     | decimal(12,2) | Defaults to zero; cannot exceed subtotal                         |
+| `total_amount`        | decimal(12,2) | Server-calculated                                                |
+| `valid_until`         | date          | Nullable                                                         |
+| `notes`               | text          | Nullable and length-limited                                      |
+| `status`              | enum          | `draft`, `shared`                                                |
+| `share_token_hash`    | text          | Unique and nullable until first share; raw token is never stored |
+| `created_at`          | timestamp     | Required                                                         |
+| `shared_at`           | timestamp     | Nullable                                                         |
+
+**`quote_item`**
+
+| Field         | Type          | Rules                                          |
+| ------------- | ------------- | ---------------------------------------------- |
+| `id`          | UUID          | Primary key                                    |
+| `quote_id`    | UUID          | Required quote reference                       |
+| `description` | text          | Required and length-limited                    |
+| `quantity`    | decimal(10,2) | Greater than zero                              |
+| `unit_label`  | text          | Controlled length; examples: service, hour, m² |
+| `unit_price`  | decimal(12,2) | Zero or greater                                |
+| `line_total`  | decimal(12,2) | Server-calculated                              |
+| `sort_order`  | smallint      | Required and deterministic                     |
+
+#### 5. Explicitly not in MVP
+
+- Customer acceptance workflow or electronic signature.
+- Payment, installments, escrow, invoice, or tax document.
+- Expense, margin, or profit calculation.
+- Customer CRM, templates, version history, or reusable customer records.
+- Contract generation, work orders, scheduling, or financial control.
+- Server-generated PDF; browser print is sufficient initially.
 
 ## E. Berufe Admin
 
@@ -610,15 +682,15 @@ Public pages expose a visible Berufe support/report contact. The founding-cohort
 
 **`moderation_action`**
 
-| Field | Type | Rules |
-| --- | --- | --- |
-| `id` | UUID | Primary key |
-| `target_type` | enum | `profile`, `portfolio_item`, `professional_relationship`, `verification_request` |
-| `target_id` | UUID | ID in target feature |
-| `action` | enum | `approved`, `rejected`, `hidden`, `restored` |
-| `reason` | text | Private; required for rejection/hide |
-| `admin_user_id` | UUID | Foreign reference to admin account |
-| `created_at` | timestamp | Required |
+| Field           | Type      | Rules                                                                            |
+| --------------- | --------- | -------------------------------------------------------------------------------- |
+| `id`            | UUID      | Primary key                                                                      |
+| `target_type`   | enum      | `profile`, `portfolio_item`, `professional_relationship`, `verification_request` |
+| `target_id`     | UUID      | ID in target feature                                                             |
+| `action`        | enum      | `approved`, `rejected`, `hidden`, `restored`                                     |
+| `reason`        | text      | Private; required for rejection/hide                                             |
+| `admin_user_id` | UUID      | Foreign reference to admin account                                               |
+| `created_at`    | timestamp | Required                                                                         |
 
 #### 5. Explicitly not in MVP
 
@@ -645,43 +717,44 @@ The same vocabulary must power onboarding and Finder. A controlled catalog preve
 #### 3. How it works and implementation overview
 
 1. Seed the approved renovation categories, services, and Joinville neighborhoods before launch.
-2. Operations changes the launch catalog through reviewed seed/code changes.
-3. Stable codes/slugs prevent those changes from breaking historical references.
-4. New entries are added only through an operational decision, not by professionals.
-
-Do not build a catalog administration form for the founding cohort.
+2. An active administrator with current MFA can add, rename, reorder, activate, and deactivate services and Joinville neighborhoods through the admin catalog screen.
+3. Stable codes/slugs become immutable after creation, referenced entries cannot be hard-deleted, and historical records keep their original references.
+4. Inactive entries disappear from new professional and public-search selections without changing existing historical records.
+5. New entries remain an explicit Berufe operations decision; professionals cannot create categories, services, or neighborhoods.
 
 #### 4. Suggested feature-scoped data schema
 
 **`service_category`**
 
-| Field | Type | Rules |
-| --- | --- | --- |
-| `id` | UUID | Primary key |
-| `name` | text | Unique within active catalog |
-| `slug` | text | Unique |
-| `is_active` | boolean | Defaults to true |
-| `sort_order` | smallint | Required |
+| Field        | Type     | Rules                        |
+| ------------ | -------- | ---------------------------- |
+| `id`         | UUID     | Primary key                  |
+| `name`       | text     | Unique within active catalog |
+| `slug`       | text     | Unique                       |
+| `is_active`  | boolean  | Defaults to true             |
+| `sort_order` | smallint | Required                     |
 
 **`service`**
 
-| Field | Type | Rules |
-| --- | --- | --- |
-| `id` | UUID | Primary key |
-| `category_id` | UUID | Foreign reference to category |
-| `name` | text | Required |
-| `slug` | text | Unique |
-| `is_active` | boolean | Defaults to true |
-| `sort_order` | smallint | Required |
+| Field         | Type     | Rules                         |
+| ------------- | -------- | ----------------------------- |
+| `id`          | UUID     | Primary key                   |
+| `category_id` | UUID     | Foreign reference to category |
+| `name`        | text     | Required                      |
+| `slug`        | text     | Unique                        |
+| `is_active`   | boolean  | Defaults to true              |
+| `sort_order`  | smallint | Required                      |
 
 **`neighborhood`**
 
-| Field | Type | Rules |
-| --- | --- | --- |
-| `code` | text | Primary key |
-| `city_code` | text | Joinville at launch |
-| `name` | text | Required |
-| `is_active` | boolean | Defaults to true |
+| Field        | Type     | Rules               |
+| ------------ | -------- | ------------------- |
+| `code`       | text     | Primary key         |
+| `state_code` | char(2)  | `SC` at launch      |
+| `city_code`  | text     | Joinville at launch |
+| `name`       | text     | Required            |
+| `is_active`  | boolean  | Defaults to true    |
+| `sort_order` | smallint | Required            |
 
 #### 5. Explicitly not in MVP
 
@@ -690,7 +763,53 @@ Do not build a catalog administration form for the founding cohort.
 - Multi-city hierarchy.
 - Search synonym management interface.
 - Pricing or market-rate data per service.
-- Catalog administration UI.
+- Service-category hierarchy administration, bulk import/export, or catalog change scheduling.
+
+---
+
+### Feature E3 — Privacy-safe administrator growth report
+
+#### 1. Summary
+
+Gives the administrator one aggregate product view for founding-supply progress, profile credibility, search coverage, useful professional recurrence, existing-member relationships, quote utility, and moderation health.
+
+#### 2. Why we need it
+
+The MVP must learn whether it is building enough credible supply and whether discovery produces useful action. A small first-party report makes those launch decisions repeatable without adding a third-party analytics platform or visitor identities.
+
+#### 3. How it works and implementation overview
+
+1. An active administrator with current MFA selects since launch, 30 days, or 7 days.
+2. Rails calculates every metric from PostgreSQL using one time-zone-aware report snapshot and returns aggregates only through one OpenAPI operation.
+3. Nuxt shows counts and `n/N` before percentages, renders zero denominators as unavailable, and explains every definition.
+4. The report covers only implemented MVP domains. Client recommendations, external professional invites, content-report records, and professional-facing analytics remain absent until their V2 stories are approved.
+5. Low-frequency unmatched search terms are suppressed, private quote/customer data never leaves report queries, and no report response includes visitor-level records.
+
+The complete metric, query, privacy, and test specification is `Berufe_Reports_Stories.md` R001–R014.
+
+#### 4. Suggested feature-scoped data schema
+
+Add `published_at` to the professional profile for immutable first-publication cohorts and keep one privacy-safe daily activity aggregate:
+
+**`professional_daily_activity`**
+
+| Field                       | Type    | Rules                                             |
+| --------------------------- | ------- | ------------------------------------------------- |
+| `professional_id`           | UUID    | Required profile reference                        |
+| `activity_date`             | date    | Local product date; unique with professional      |
+| `profile_updates`           | integer | Non-negative meaningful owner updates             |
+| `evidence_creations`        | integer | Non-negative portfolio/evidence actions           |
+| `relationship_interactions` | integer | Non-negative existing-member relationship actions |
+| `quotes_created`            | integer | Non-negative successful draft creations           |
+
+Domain transactions update the aggregate transactionally where practical or through retry-safe idempotent work with reconciliation. Login and admin/system actions never count as professional activity.
+
+#### 5. Explicitly not in MVP
+
+- Visitor identity, session replay, attribution profiles, or message content.
+- Third-party analytics, warehouse, Redis, event streaming, or a charting package.
+- Client-recommendation, external-invite, content-report, revenue, payment, hiring, or professional-facing performance widgets.
+- Arbitrary report builder, exports, scheduled reports, or custom date ranges.
 
 ## 3. MVP release slices
 
@@ -716,10 +835,12 @@ Do not build a catalog administration form for the founding cohort.
 ### Slice 3 — Launch and learn safely
 
 - Professional dashboard and profile sharing.
+- Simple quote generator, customer preview, and secure WhatsApp share link.
 - Privacy-friendly internal product aggregates.
+- Privacy-safe administrator growth report for the implemented MVP domains.
 - Production operations, recovery, and release-critical tests.
 
-**Outcome:** Berufe can operate the focused value loop safely and collect enough evidence to choose V2 priorities.
+**Outcome:** Berufe can operate the focused value loop safely, give professionals one recurring workflow, and collect enough evidence to choose V2 priorities.
 
 ## 4. MVP 2.0 — evidence-based enhancements
 
@@ -756,6 +877,7 @@ Keep the first implementation conventional:
 - Background jobs only for image sanitization/processing, cleanup, aggregate maintenance, and nonurgent provider reconciliation. Interactive one-time-code initiation remains synchronous.
 - Simple admin interface in the same application.
 - Product events stored as privacy-friendly aggregates where possible.
+- Token-authorized quote pages kept out of shared caches and search indexes.
 - Redacted error-only reporting for Rails, background jobs, Nuxt browser code, and Nuxt SSR.
 
 Avoid microservices, a separate search engine, event streaming, a graph database, or machine-learning ranking. The MVP’s network relationships fit comfortably in relational tables; those technologies solve scale problems the first launch will not have.
@@ -764,6 +886,6 @@ Avoid microservices, a separate search engine, event streaming, a graph database
 
 The complete MVP can be summarized as:
 
-> A verified professional profile with structured services, work evidence, confirmed relationships with existing Berufe professionals, public search, direct WhatsApp contact, and profile sharing—supported by manual moderation.
+> A verified professional profile with structured services, work evidence, confirmed relationships with existing Berufe professionals, public search, direct WhatsApp contact, profile sharing, and a simple securely shared quote—supported by manual moderation.
 
 This scope directly tests Berufe’s core “why”: whether a local network of visible, evidence-based professional trust is more valuable than a marketplace that sells leads.

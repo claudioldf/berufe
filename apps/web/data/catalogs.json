@@ -1,9 +1,25 @@
 {
   "categories": [
-    { "id": "instalacoes", "name": "Instalações e reparos", "icon": "i-lucide-wrench" },
-    { "id": "acabamentos", "name": "Obra e acabamento", "icon": "i-lucide-paint-roller" },
-    { "id": "projetos", "name": "Projetos e interiores", "icon": "i-lucide-ruler" },
-    { "id": "montagem", "name": "Montagem e marcenaria", "icon": "i-lucide-hammer" }
+    {
+      "id": "instalacoes",
+      "name": "Instalações e reparos",
+      "icon": "i-lucide-wrench"
+    },
+    {
+      "id": "acabamentos",
+      "name": "Obra e acabamento",
+      "icon": "i-lucide-paint-roller"
+    },
+    {
+      "id": "projetos",
+      "name": "Projetos e interiores",
+      "icon": "i-lucide-ruler"
+    },
+    {
+      "id": "montagem",
+      "name": "Montagem e marcenaria",
+      "icon": "i-lucide-hammer"
+    }
   ],
   "services": [
     {
@@ -104,23 +120,335 @@
       "icon": "i-lucide-drill",
       "description": "Pequenas instalações, ajustes e reparos do dia a dia.",
       "aliases": ["faz tudo", "reparos", "manutencao"]
+    },
+    {
+      "id": "svc-telhados-calhas",
+      "name": "Telhados e calhas",
+      "slug": "telhados-e-calhas",
+      "category": "acabamentos",
+      "icon": "i-lucide-house",
+      "description": "Instalação, manutenção e reparo de telhados, calhas e rufos residenciais.",
+      "aliases": ["telhado", "calha", "rufo", "goteira", "cobertura"]
+    },
+    {
+      "id": "svc-ar-condicionado",
+      "name": "Ar-condicionado",
+      "slug": "ar-condicionado",
+      "category": "instalacoes",
+      "icon": "i-lucide-air-vent",
+      "description": "Instalação, limpeza e manutenção de ar-condicionado residencial.",
+      "aliases": ["ar condicionado", "climatizacao", "split", "limpeza de ar"]
+    },
+    {
+      "id": "svc-serralheiro",
+      "name": "Serralheiro",
+      "slug": "serralheiro",
+      "category": "acabamentos",
+      "icon": "i-lucide-anvil",
+      "description": "Portões, grades, corrimãos e estruturas metálicas residenciais.",
+      "aliases": [
+        "serralheria",
+        "portao",
+        "grade",
+        "corrimao",
+        "estrutura metalica"
+      ]
+    },
+    {
+      "id": "svc-vidraceiro",
+      "name": "Vidraceiro",
+      "slug": "vidraceiro",
+      "category": "acabamentos",
+      "icon": "i-lucide-square-stack",
+      "description": "Instalação e substituição de vidros, espelhos e boxes residenciais.",
+      "aliases": ["vidracaria", "vidro", "espelho", "box"]
+    },
+    {
+      "id": "svc-impermeabilizacao",
+      "name": "Impermeabilização",
+      "slug": "impermeabilizacao",
+      "category": "acabamentos",
+      "icon": "i-lucide-droplets",
+      "description": "Tratamento de infiltrações e impermeabilização de áreas residenciais.",
+      "aliases": ["impermeabilizacao", "infiltracao", "umidade", "vedacao"]
     }
   ],
   "neighborhoods": [
-    { "code": "all", "name": "Toda Joinville" },
-    { "code": "america", "name": "América" },
-    { "code": "anita-garibaldi", "name": "Anita Garibaldi" },
-    { "code": "atiradores", "name": "Atiradores" },
-    { "code": "aventureiro", "name": "Aventureiro" },
-    { "code": "bom-retiro", "name": "Bom Retiro" },
-    { "code": "boehmerwald", "name": "Boehmerwald" },
-    { "code": "bucarein", "name": "Bucarein" },
-    { "code": "centro", "name": "Centro" },
-    { "code": "costa-e-silva", "name": "Costa e Silva" },
-    { "code": "floresta", "name": "Floresta" },
-    { "code": "gloria", "name": "Glória" },
-    { "code": "iririu", "name": "Iririú" },
-    { "code": "saguaçu", "name": "Saguaçu" },
-    { "code": "santo-antonio", "name": "Santo Antônio" }
+    {
+      "code": "all",
+      "name": "Toda Joinville",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "adhemar-garcia",
+      "name": "Adhemar Garcia",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "america",
+      "name": "América",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "anita-garibaldi",
+      "name": "Anita Garibaldi",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "atiradores",
+      "name": "Atiradores",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "aventureiro",
+      "name": "Aventureiro",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "boa-vista",
+      "name": "Boa Vista",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "boehmerwald",
+      "name": "Boehmerwald",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "bom-retiro",
+      "name": "Bom Retiro",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "bucarein",
+      "name": "Bucarein",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "centro",
+      "name": "Centro",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "comasa",
+      "name": "Comasa",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "costa-e-silva",
+      "name": "Costa e Silva",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "dona-francisca",
+      "name": "Dona Francisca",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "espinheiros",
+      "name": "Espinheiros",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "fatima",
+      "name": "Fátima",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "floresta",
+      "name": "Floresta",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "gloria",
+      "name": "Glória",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "guanabara",
+      "name": "Guanabara",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "iririu",
+      "name": "Iririú",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "itaum",
+      "name": "Itaum",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "itinga",
+      "name": "Itinga",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "jardim-iririu",
+      "name": "Jardim Iririú",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "jardim-paraiso",
+      "name": "Jardim Paraíso",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "jardim-sofia",
+      "name": "Jardim Sofia",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "jarivatuba",
+      "name": "Jarivatuba",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "joao-costa",
+      "name": "João Costa",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "marinas",
+      "name": "Marinas",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "morro-do-meio",
+      "name": "Morro do Meio",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "nova-brasilia",
+      "name": "Nova Brasília",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "paranaguamirim",
+      "name": "Paranaguamirim",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "parque-guarani",
+      "name": "Parque Guarani",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "petropolis",
+      "name": "Petrópolis",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "pirabeiraba",
+      "name": "Pirabeiraba",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "profipo",
+      "name": "Profipo",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "rio-bonito",
+      "name": "Rio Bonito",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "saguacu",
+      "name": "Saguaçu",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "santa-catarina",
+      "name": "Santa Catarina",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "santo-antonio",
+      "name": "Santo Antônio",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "sao-marcos",
+      "name": "São Marcos",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "ulysses-guimaraes",
+      "name": "Ulysses Guimarães",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "vale-verde",
+      "name": "Vale Verde",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "vila-cubatao",
+      "name": "Vila Cubatão",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "vila-nova",
+      "name": "Vila Nova",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "zona-industrial-norte",
+      "name": "Zona Industrial Norte",
+      "stateCode": "SC",
+      "city": "Joinville"
+    },
+    {
+      "code": "zona-industrial-tupy",
+      "name": "Zona Industrial Tupy",
+      "stateCode": "SC",
+      "city": "Joinville"
+    }
   ]
 }

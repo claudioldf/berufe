@@ -1,0 +1,3 @@
+#!/bin/bash
+
+CATEGORY_CONCURRENCY=3 npm run scrape -- joinville csv

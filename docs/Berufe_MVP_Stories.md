@@ -2,7 +2,7 @@
 
 **Status:** implementation backlog  
 **Updated:** August 13, 2026
-**Sources:** *Berufe — MVP Feature Plan* and *Berufe — Lean MVP Infrastructure and Architecture*
+**Sources:** _Berufe — MVP Feature Plan_ and _Berufe — Lean MVP Infrastructure and Architecture_
 
 ## 1. Purpose
 
@@ -202,7 +202,7 @@ Apply these rules whenever they are relevant to the story:
 **Acceptance criteria:**
 
 - Migrations create `service_categories`, `services`, and `neighborhoods` with the constraints defined in Feature E2.
-- Seed data contains only the approved residential renovation/maintenance categories, services, and Joinville neighborhoods.
+- Seed data contains the 16 approved residential renovation/maintenance services—electrician, plumber, painter, mason, tile installer, drywall/plaster professional, carpenter, furniture installer, architect, interior designer, handyman, roof/gutter professional, residential air-conditioning technician, metalworker, glazier, and waterproofing specialist—and the approved Joinville neighborhoods.
 - Seeds are idempotent and use stable slugs/codes plus deterministic `sort_order` values for every reorderable catalog, including neighborhoods.
 - Public read endpoints return active entries in configured order.
 
@@ -325,18 +325,38 @@ Apply these rules whenever they are relevant to the story:
 **Depends on:** S012, S015.  
 **Covers:** Feature E1; Infrastructure §8.
 
+### S018 — Manage services and Joinville neighborhoods
+
+**Story:** As a Berufe administrator, I want to maintain the controlled catalog so that onboarding and Finder use an accurate vocabulary without requiring a deployment for routine changes.
+
+**Acceptance criteria:**
+
+- An active administrator with current MFA can list, add, rename, reorder, activate, and deactivate services and Joinville neighborhoods through typed OpenAPI operations and Nuxt forms.
+- The neighborhood list exposes UF, city, and neighborhood columns and supports independent accent-insensitive free-text filters for all three fields; launch data remains limited to Joinville, SC.
+- When creating a neighborhood, Nuxt suggests its stable code from the typed name using lowercase ASCII kebab case (`Santo Antônio` → `santo-antonio`); the administrator may adjust it before saving, after which it is immutable.
+- A service retains its controlled category assignment; service-category hierarchy changes and search-alias administration remain post-MVP.
+- Stable service slugs and neighborhood codes cannot change after creation, and entries referenced by profiles, searches, evidence, or historical aggregates cannot be hard-deleted.
+- Every mutation persists deterministic `sort_order`, records the acting administrator and request ID, and returns the shared error envelope for validation or conflict failures.
+- Inactive entries remain available to historical serializers but cannot be selected for new professional records or public searches.
+- Policy/request tests prove that professional and anonymous callers cannot read the private management endpoint or mutate the catalog; frontend tests cover opening and closing the populated edit modal, add, rename, reorder, status changes, neighborhood filters, validation, and error states.
+
+**Depends on:** S010, S015, S017.
+**Covers:** Feature E2; Infrastructure §§6, 9, and 14.
+
 ## 6. Increment 2 — Credible professional supply
 
 **Increment outcome:** founding professionals can create, submit, and receive approval for complete profiles, portfolio evidence, and verification labels. Approved profiles are safe to expose publicly.
 
 ### S019 — Edit professional identity and contact information
 
-**Story:** As a professional, I want to edit my public identity and WhatsApp contact so that customers understand who I am and how to reach me.
+**Story:** As a professional, I want to edit my public identity, WhatsApp contact, and optional social profile links so that customers understand who I am and where they can see more of my work.
 
 **Acceptance criteria:**
 
-- The profile form supports display name, headline, short biography, declared years of experience, and WhatsApp phone.
+- The profile form supports display name, headline, short biography, declared years of experience, WhatsApp phone, and independently optional Instagram and YouTube profile links.
 - The WhatsApp phone defaults to the confirmed account phone and is normalized to E.164.
+- Instagram accepts a bare or `@` handle and a direct Instagram profile URL; YouTube accepts a bare or `@` handle and a direct `youtube.com/@handle` channel URL. Rails stores canonical HTTPS profile URLs and removes copied query strings/fragments.
+- Off-platform URLs, Instagram post/reel paths, and YouTube video, playlist, or legacy channel paths are rejected with field-level errors; an empty value remains valid.
 - Field lengths and valid experience ranges are enforced in Rails and reflected as immediate form feedback.
 - The professional can edit only their own draft or permitted published profile fields.
 - Declared experience is labeled as declared, never verified.
@@ -573,7 +593,7 @@ Apply these rules whenever they are relevant to the story:
 - Clearly malformed/sensitive input is not retained.
 - Recording failure never blocks customer results.
 - Admin/product access is aggregate-only for the MVP.
-- Daily aggregate data retains the total searches needed as the denominator for the search-to-profile-open success signal. MVP operations can inspect it through a documented aggregate-only query; no growth-report UI is added.
+- Daily aggregate data retains the total searches needed as the denominator for the search-to-profile-open success signal and supplies the administrator growth report defined by R001–R014.
 
 **Depends on:** S033.  
 **Covers:** Feature B1 and MVP success signals.
@@ -600,11 +620,12 @@ Apply these rules whenever they are relevant to the story:
 
 **Acceptance criteria:**
 
-- The stable slug route is server-rendered and contains identity/coverage, labels, services/declared experience, portfolio, and professional relationships in the approved order.
+- The stable slug route is server-rendered and contains identity/coverage, optional Instagram/YouTube profile links, labels, services/declared experience, portfolio, and professional relationships in the approved order.
 - The page distinguishes verified facts, declarations, recommendations, and collaborations.
 - Only approved public serializers feed the route; unknown, draft, hidden, and suspended profiles return the correct non-public response.
 - The page includes the verification-not-a-guarantee disclaimer and useful share metadata.
 - Raw phone numbers are not presented as ordinary public text.
+- Only present, approved social links are rendered; each is labeled for its platform, opens as a safe external link in a new tab, and no empty social-links container appears.
 - A successful public-profile render increments the privacy-friendly daily profile-view aggregate with short-lived duplicate filtering; metric failure never blocks the page.
 
 **Depends on:** S035.  
@@ -679,9 +700,9 @@ Public profiles also show a visible Berufe support/report contact that routes to
 
 **Covers:** Features C1, B2, and B3.
 
-## 9. Increment 5 — Professional dashboard and profile sharing
+## 9. Increment 5 — Professional dashboard, profile sharing, and quote utility
 
-**Increment outcome:** professionals have a focused home screen for completing, maintaining, and sharing their Berufe presence.
+**Increment outcome:** professionals have a focused home screen for completing and sharing their Berufe presence plus one practical customer workflow.
 
 ### S047 — Show profile readiness and pending work
 
@@ -691,7 +712,7 @@ Public profiles also show a visible Berufe support/report contact that routes to
 
 - The dashboard calculates profile readiness from existing data without a checklist table.
 - It shows profile/publication status, missing setup steps, pending moderation/verification, and pending relationship confirmations.
-- Primary actions link to edit profile, add portfolio, request identity verification, and find an existing member for a relationship.
+- Primary actions link to edit profile, add portfolio, request identity verification, find an existing member for a relationship, and create a quote.
 - Profile sharing uses the Web Share API and falls back to copying the stable public URL.
 - Empty and rejected states explain the next permitted action.
 - A professional sees only their own records.
@@ -700,7 +721,69 @@ Public profiles also show a visible Berufe support/report contact that routes to
 
 **Covers:** Feature A6.
 
-## 10. Increment 6 — Production readiness and launch
+### S049 — Create and edit a draft quote
+
+**Story:** As a professional, I want to create a simple itemized quote so that I can use Berufe in a frequent customer workflow.
+
+**Acceptance criteria:**
+
+- The owner can create and edit a draft with customer name, short service description, ordered line items, optional discount, validity date, and length-limited notes.
+- Quantities are greater than zero, unit prices are non-negative, and discount cannot exceed subtotal.
+- Rails recalculates each line total, subtotal, discount, and total with `BigDecimal`; Nuxt calculations are preview-only and persisted client totals are never trusted.
+- Quote numbers are sequential per professional and assigned concurrency-safely.
+- Draft quote and customer data is private to the owner and available to admins only when operationally required.
+- OpenAPI operations, generated Nuxt types, owner/admin policy tests, validation tests, and request contract tests ship with the feature.
+
+**Data shape:** `quote` contains UUID `id`, owner `professional_id`, per-professional sequential `quote_number`, required `customer_name` and `service_description`, decimal `discount_amount` and server-calculated `total_amount`, optional `valid_until` and notes, `draft|shared` status, unique nullable `share_token_hash`, timestamps, and nullable `shared_at`. `quote_item` contains UUID `id`, `quote_id`, required description, positive decimal quantity, length-limited unit label, non-negative decimal unit price, server-calculated line total, and deterministic `sort_order`.
+
+**Depends on:** S015, S047.
+**Covers:** Feature D1; Infrastructure §9.
+
+### S050 — Preview and share a secure quote link
+
+**Story:** As a professional, I want to preview and share an unguessable quote link so that a customer can view it without an account.
+
+**Acceptance criteria:**
+
+- The owner can preview the current quote in the same mobile-first presentation used by the customer page.
+- First share generates a high-entropy token, stores only its hash, and atomically changes status from `draft` to `shared`.
+- A valid bearer link returns only the quote and approved professional public identity/labels; it never exposes private profile fields.
+- Malformed, invalid, revoked, or unknown tokens reveal no quote or customer details.
+- The token remains valid only while the quote is `shared`; `valid_until` describes the commercial offer and is not token expiry.
+- Token-authorized API and Nuxt responses use `Cache-Control: private, no-store` and `noindex`, and never enter shared caches, static generation, logs, analytics payloads, or search indexes.
+- The customer can use browser print. There is no server PDF, acceptance, signature, invoice, or payment flow.
+
+**Depends on:** S030, S049.
+**Covers:** Feature D1; Infrastructure §§9 and 14.
+
+### S051 — Share a quote through WhatsApp and record the action
+
+**Story:** As a professional, I want to share a quote through my device so that the customer receives the secure link through my normal WhatsApp workflow.
+
+**Acceptance criteria:**
+
+- The action opens an explicit WhatsApp deep link with a short message and quote URL, with copy-link fallback.
+- The explicit share action increments `quotes_shared` in the professional's daily aggregate with the same privacy and non-negative counter rules as other MVP aggregates.
+- Berufe does not send, read, or track a WhatsApp message and never claims delivery, acceptance, signature, payment, or completion.
+- Sharing a previously shared quote reuses the active token rather than exposing or persisting another raw token.
+- The initial lifecycle remains only `draft` or `shared`.
+
+**Depends on:** S037, S050.
+**Covers:** Features D1 and A6; Infrastructure §11.
+
+## 10. Increment 6 — Privacy-safe administrator growth reporting
+
+**Increment outcome:** an administrator can make founding-cohort supply, discovery, utility, and moderation decisions from trustworthy aggregate metrics without visitor tracking.
+
+Implementation is specified by `Berufe_Reports_Stories.md` R001–R014. Those stories are part of the launch MVP and must ship as one coherent feature: admin authorization, time-zone-aware period semantics, aggregate-only Rails queries, OpenAPI operation and generated Nuxt types, the responsive report UI, formula/privacy tests, and honest empty or unavailable states.
+
+The MVP report includes only implemented launch domains: professional supply and activation, anonymous aggregate search/discovery, meaningful professional activity and retention, existing-member relationships, simple quotes, and the shared moderation queue. It omits client recommendations, external invitations, persisted content reports, and professional-facing analytics until their V2 stories are separately approved.
+
+**Depends on:** S017, S023–S024, S030, S034, S036–S037, S046, and S049–S051.
+
+**Covers:** Feature E3; Infrastructure §§9, 12, and 14; Reports R001–R014.
+
+## 11. Increment 7 — Production readiness and launch
 
 **Increment outcome:** the release candidate meets the architecture launch gate and can safely onboard the founding 30–50 professionals.
 
@@ -711,7 +794,7 @@ Public profiles also show a visible Berufe support/report contact that routes to
 **Acceptance criteria:**
 
 - Rails and Nuxt accept inbound request IDs only when they match ASCII `[A-Za-z0-9._-]{1,100}` and otherwise generate a UUID; Nuxt forwards the accepted/generated value to Rails and Rails propagates it into GoodJob jobs and Bugsnag events.
-- Logs and Bugsnag exclude cookies, authorization/CSRF headers, request parameters/bodies, phone numbers, OTPs, raw Infobip/application-session tokens or challenge secrets, signed URLs, verification files, and job arguments.
+- Logs and Bugsnag exclude cookies, authorization/CSRF headers, request parameters/bodies, phone numbers, OTPs, raw Infobip/application-session/share tokens or challenge secrets, signed URLs, verification files, quote customer details, and job arguments.
 - Separate Bugsnag projects capture Rails/Active Job/GoodJob exceptions and Nuxt browser/SSR exceptions. Production source maps are uploaded privately.
 - Bugsnag is error-only: performance monitoring, distributed tracing, automatic session tracking, user/anonymous identification, and IP collection are disabled. Events include only release, environment, normalized route or job class, request ID, exception, and stack trace.
 - Production unhandled exceptions, terminal job failures, and GoodJob executor/thread failures immediately notify the named operations owner.
@@ -731,7 +814,7 @@ Public profiles also show a visible Berufe support/report contact that routes to
 **Acceptance criteria:**
 
 - The production terms and privacy notice are versioned and linked at registration and public-page locations where appropriate.
-- A retention matrix covers application sessions, Infobip challenge references, OTP counters, GoodJob records, anonymous search events and aggregates, pending/quarantined uploads, moderation data, support/report correspondence, and verification files.
+- A retention matrix covers application sessions, Infobip challenge references, OTP counters, GoodJob records, anonymous search events, daily professional/report aggregates, pending/quarantined uploads, moderation data, support/report correspondence, quotes and their customer data/share tokens, and verification files.
 - Operations can correct, suspend, and delete an account/profile through a documented manual procedure.
 - Deletion handles public data, private data, storage objects, and required audit retention explicitly.
 - Qualified Brazilian privacy/legal review is recorded as a launch dependency, not implemented as application automation.
@@ -754,26 +837,26 @@ Public profiles also show a visible Berufe support/report contact that routes to
 - The Nuxt SSR execution location and Rails/PostgreSQL region are recorded. Rails and PostgreSQL run together in the closest practical Render region.
 - Release-like tests from the target Brazilian region show public Rails API p95 ≤ 500 ms and public HTML TTFB p95 ≤ 1.5 seconds.
 - A Rails timeout or outage renders a branded Nuxt `503`/retry state with a request ID. If either latency target fails, launch is blocked until the cause is fixed or a separate change adds 60-second public SWR plus invalidation on approval, hiding, restoration, and suspension.
-- Authenticated, admin, and restricted-file responses are never placed in shared caches.
+- Authenticated, admin, restricted-file, and bearer-token quote responses are never placed in shared caches; quote pages are not statically generated.
 - Migrations run as an explicit release step before dependent code.
 - Deployment failure preserves the last working version or has a documented forward-fix path.
 
 **Depends on:** S009, S052.  
 **Covers:** Infrastructure §§3–4, 7.1, 14–15.
 
-### S055 — Implement the four release-critical end-to-end flows
+### S055 — Implement the five release-critical end-to-end flows
 
 **Story:** As a team, we want browser tests for the essential value loop so that a release cannot silently break Berufe’s MVP promise.
 
 **Acceptance criteria:**
 
-- Playwright covers: professional Infobip-adapter OTP login/profile submission; admin profile/evidence approval; public search/profile/WhatsApp handoff; and existing-member professional relationship confirmation plus moderation.
+- Playwright covers: professional Infobip-adapter OTP login/profile submission; admin profile/evidence approval; public search/profile/WhatsApp handoff; existing-member professional relationship confirmation plus moderation; and draft quote creation, secure preview/share, valid customer view, invalid-token denial, and print behavior.
 - Tests use fake OTP/provider behavior and synthetic files/data.
 - Chromium mobile paths run for release-critical changes; focused WebKit and keyboard smoke checks run before production release.
 - Tests assert user-visible behavior rather than implementation details or snapshot-only output.
 - A failed critical flow blocks release.
 
-**Depends on:** S017, S030, S037, S046, S054.
+**Depends on:** S017, S030, S037, S046, S051, S054.
 
 **Covers:** Infrastructure §§14 and 18; complete MVP value loop.
 
@@ -801,46 +884,49 @@ Public profiles also show a visible Berufe support/report contact that routes to
 - Every item in Infrastructure §18 is checked with evidence or blocks launch.
 - Named owners exist for deployments, database access, Infobip spend/sender registration, R2 private access, Bugsnag alerts, moderation, and privacy requests.
 - Failed-job inspection/retry, profile suspension, credential rotation, and disabling a broken flow are documented and rehearsed at least once where safe.
-- OpenAPI generation has a clean diff, Rails contract coverage passes, GoodJob probes/queue-age alerts work, Bugsnag delivery/redaction is tested, and SSR latency/outage criteria have evidence.
+- OpenAPI generation has a clean diff, Rails contract coverage including `getAdminGrowthReport` passes, report formula/privacy tests pass, GoodJob probes/queue-age alerts work, Bugsnag delivery/redaction is tested, and SSR latency/outage criteria have evidence.
 - The service/location seed is reviewed for the Joinville launch and the founding cohort onboarding process is ready.
 - Infobip's Brazilian sender registration is approved, the production 2FA application/message template is configured, spend limits/alerts have an owner, and one controlled production-like start/verify smoke check succeeds without exposing credentials or a real user's phone.
-- All four Playwright flows pass against the release candidate and no critical security/privacy defect remains open.
+- All five Playwright flows pass against the release candidate and no critical security/privacy defect remains open.
 
-**Depends on:** S010, S031, S052, S053, S055, S056.
+**Depends on:** S010, S031, S052, S053, S055, S056, and R014.
 
 **Covers:** Infrastructure §§15 and 18; all MVP features.
 
-## 11. Increment summary
+## 12. Increment summary
 
-| Increment | Stories | Demonstrable result |
-| --- | --- | --- |
-| 0. Foundation | S001–S009 | The four-service monorepo runs locally and passes CI. |
-| 1. Access and catalogs | S010–S017 | Professionals/admins can access the product; controlled seeded catalogs are ready. |
-| 2. Credible supply | S019–S031 | Professionals can be profiled, reviewed, verified, and published safely. |
-| 3. Discovery | S032–S037 | Customers can find, inspect, and contact public professionals. |
-| 4. Trust graph | S042–S043, S046 | Approved existing-member trust evidence appears publicly. |
-| 5. Dashboard | S047 | Professionals can finish, maintain, and share their profile. |
-| 6. Launch | S052–S057 | Operations, privacy, recovery, deployment, and critical flows meet the launch gate. |
+| Increment               | Stories         | Demonstrable result                                                                                            |
+| ----------------------- | --------------- | -------------------------------------------------------------------------------------------------------------- |
+| 0. Foundation           | S001–S009       | The four-service monorepo runs locally and passes CI.                                                          |
+| 1. Access and catalogs  | S010–S018       | Professionals/admins can access the product; controlled catalogs are seeded and administratively maintainable. |
+| 2. Credible supply      | S019–S031       | Professionals can be profiled, reviewed, verified, and published safely.                                       |
+| 3. Discovery            | S032–S037       | Customers can find, inspect, and contact public professionals.                                                 |
+| 4. Trust graph          | S042–S043, S046 | Approved existing-member trust evidence appears publicly.                                                      |
+| 5. Dashboard and quotes | S047, S049–S051 | Professionals can maintain/share their profile and create/share simple quotes.                                 |
+| 6. Admin reporting      | R001–R014       | Administrators can inspect aggregate MVP growth, utility, and moderation signals.                              |
+| 7. Launch               | S052–S057       | Operations, privacy, recovery, deployment, and critical flows meet the launch gate.                            |
 
-## 12. Feature coverage matrix
+## 13. Feature coverage matrix
 
-| Feature | Primary stories |
-| --- | --- |
-| A1 — Professional account and onboarding | S011–S016 |
-| A2 — Profile, services, and service area | S019–S024 |
-| A3 — Portfolio | S025–S028 |
-| A4 — Verification and public evidence labels | S029–S031 |
-| A6 — Dashboard and profile sharing | S043, S047 |
-| B1 — Public home and search | S032–S034 |
-| B2 — Transparent result list | S035 |
-| B3 — Public professional profile | S036, S046 |
-| B4 — Direct WhatsApp contact | S037 |
-| C1 — Existing-member professional relationships | S042–S043, S046 |
-| E1 — Verification and moderation queue | S017, S023–S024, S026, S028, S030, S046 |
-| E2 — Seeded service and location catalog | S010 |
+| Feature                                         | Primary stories                         |
+| ----------------------------------------------- | --------------------------------------- |
+| A1 — Professional account and onboarding        | S011–S016                               |
+| A2 — Profile, services, and service area        | S019–S024                               |
+| A3 — Portfolio                                  | S025–S028                               |
+| A4 — Verification and public evidence labels    | S029–S031                               |
+| A6 — Dashboard and profile sharing              | S043, S047                              |
+| B1 — Public home and search                     | S032–S034                               |
+| B2 — Transparent result list                    | S035                                    |
+| B3 — Public professional profile                | S036, S046                              |
+| B4 — Direct WhatsApp contact                    | S037                                    |
+| C1 — Existing-member professional relationships | S042–S043, S046                         |
+| D1 — Quote generator and secure share link      | S049–S051                               |
+| E1 — Verification and moderation queue          | S017, S023–S024, S026, S028, S030, S046 |
+| E2 — Service and location catalog               | S010, S018                              |
+| E3 — Administrator growth report                | R001–R014                               |
 
-## 13. Not stories in this MVP
+## 14. Not stories in this MVP
 
-Do not add backlog items for microservices, Redis, external search, graph/vector databases, automated WhatsApp messaging, CAPTCHA, Rack::Attack, Bugsnag performance monitoring/distributed tracing, payment systems, booking, internal chat, maps, native apps, multi-city support, feeds, CRM, PDF generation or verification uploads, analytics providers, or any item tracked in `Berufe_V2_Stories.md` unless the approved MVP scope changes.
+Do not add backlog items for microservices, Redis, external search, graph/vector databases, automated WhatsApp messaging, CAPTCHA, Rack::Attack, Bugsnag performance monitoring/distributed tracing, payment systems, booking, internal chat, maps, native apps, multi-city support, feeds, CRM, server PDF generation or PDF verification uploads, analytics providers, or any item tracked in `Berufe_V2_Stories.md` unless the approved MVP scope changes.
 
 This backlog is complete when S057 passes. Product usage after launch should determine which evidence-triggered MVP 2.0 stories are created next.

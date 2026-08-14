@@ -1,32 +1,41 @@
 <script setup lang="ts">
-import catalogsData from '../../data/catalogs.json'
-import professionalsData from '../../data/professionals.json'
-import type { Professional, Service } from '~/types'
+import catalogsData from "../../data/catalogs.json";
+import professionalsData from "../../data/professionals.json";
+import type { Professional, Service } from "~/types";
 
-const router = useRouter()
-const services = catalogsData.services as Service[]
-const featured = (professionalsData as Professional[]).slice(0, 3)
+const router = useRouter();
+const services = catalogsData.services as Service[];
+const featured = (professionalsData as Professional[]).slice(0, 3);
 
 useSeoMeta({
-  title: 'Profissionais de confiança em Joinville',
-  description: 'Encontre profissionais verificados para reformas e manutenção residencial em Joinville.',
-})
+  title: "Profissionais de confiança em Joinville",
+  description:
+    "Encontre profissionais verificados para reformas e manutenção residencial em Joinville.",
+});
 
 function findService(query: string) {
-  const normalized = query.toLocaleLowerCase('pt-BR')
-  return services.find((service) => service.name.toLocaleLowerCase('pt-BR') === normalized)
-    ?? services.find((service) => service.aliases.some((alias) => alias.includes(normalized) || normalized.includes(alias)))
+  const normalized = query.toLocaleLowerCase("pt-BR");
+  return (
+    services.find(
+      (service) => service.name.toLocaleLowerCase("pt-BR") === normalized,
+    ) ??
+    services.find((service) =>
+      service.aliases.some(
+        (alias) => alias.includes(normalized) || normalized.includes(alias),
+      ),
+    )
+  );
 }
 
 async function search(payload: { service: string; neighborhood: string }) {
-  const service = findService(payload.service)
+  const service = findService(payload.service);
   await router.push({
-    path: '/encontrar',
+    path: "/encontrar",
     query: {
       servico: service?.slug ?? payload.service,
       bairro: payload.neighborhood,
     },
-  })
+  });
 }
 </script>
 
@@ -40,29 +49,43 @@ async function search(payload: { service: string; neighborhood: string }) {
       <DesignSystemContainer class="hero__inner">
         <div class="hero__copy">
           <DesignSystemEyebrow>Rede local de confiança</DesignSystemEyebrow>
-          <DesignSystemDisplayTitle>Sua casa em<br><em>boas mãos.</em></DesignSystemDisplayTitle>
+          <DesignSystemDisplayTitle
+            >Sua casa em<br /><em>boas mãos.</em></DesignSystemDisplayTitle
+          >
           <p class="hero__lead">
-            Encontre profissionais de reforma e manutenção com evidências claras,
-            trabalhos reais e recomendações confirmadas.
+            Encontre profissionais de reforma e manutenção com evidências
+            claras, trabalhos reais e relações profissionais confirmadas.
           </p>
           <PublicServiceSearch @search="search" />
         </div>
 
-        <div class="hero__visual" aria-label="Exemplo de profissional da Berufe">
+        <div
+          class="hero__visual"
+          aria-label="Exemplo de profissional da Berufe"
+        >
           <div class="hero__photo-wrap">
             <img
               :src="'/images/photo-1621905252507-b35492cc74b4.jpg'"
               alt="Profissional trabalhando em uma instalação residencial"
-            >
+            />
           </div>
           <div class="hero__profile-chip">
-            <DesignSystemAvatar name="Marina Alves" :src="featured[0]?.avatar" alt="" size="sm" shape="rounded" />
-            <span><strong>Marina Alves</strong><small>Eletricista · Joinville</small></span>
+            <DesignSystemAvatar
+              name="Marcos Alves"
+              :src="featured[0]?.avatar"
+              alt=""
+              size="sm"
+              shape="rounded"
+            />
+            <span
+              ><strong>Marcos Alves</strong
+              ><small>Eletricista · Joinville</small></span
+            >
             <UIcon name="i-lucide-badge-check" />
           </div>
           <div class="hero__trust-chip">
-            <strong>+50</strong>
-            <span>profissionais<br>da rede local</span>
+            <strong>+50.000</strong>
+            <span>profissionais<br />ativos</span>
           </div>
         </div>
       </DesignSystemContainer>
@@ -72,29 +95,35 @@ async function search(payload: { service: string; neighborhood: string }) {
       <DesignSystemContainer>
         <div class="section-heading">
           <div>
-            <DesignSystemEyebrow>O que você precisa resolver?</DesignSystemEyebrow>
-            <DesignSystemSectionTitle>Serviços para cada<br>canto da casa.</DesignSystemSectionTitle>
+            <DesignSystemEyebrow
+              >O que você precisa resolver?</DesignSystemEyebrow
+            >
+            <DesignSystemSectionTitle
+              >Serviços para cada<br />canto da casa.</DesignSystemSectionTitle
+            >
           </div>
-          <DesignSystemSectionCopy>Escolha uma categoria e veja profissionais que atendem sua região.</DesignSystemSectionCopy>
+          <DesignSystemSectionCopy
+            >Escolha um serviço e veja profissionais que atendem sua
+            região.</DesignSystemSectionCopy
+          >
         </div>
 
         <div class="category-grid">
           <NuxtLink
-            v-for="service in services.slice(0, 8)"
+            v-for="service in services"
             :key="service.id"
             class="category-card"
             :to="`/encontrar?servico=${service.slug}&bairro=all`"
           >
-            <span class="category-card__icon"><UIcon :name="service.icon" /></span>
-            <span><strong>{{ service.name }}</strong><small>{{ service.description }}</small></span>
+            <span class="category-card__icon"
+              ><UIcon :name="service.icon"
+            /></span>
+            <span
+              ><strong>{{ service.name }}</strong
+              ><small>{{ service.description }}</small></span
+            >
             <UIcon name="i-lucide-arrow-up-right" />
           </NuxtLink>
-        </div>
-
-        <div class="categories__all">
-          <UButton to="/encontrar" color="neutral" variant="outline" trailing-icon="i-lucide-arrow-right">
-            Ver todos os serviços
-          </UButton>
         </div>
       </DesignSystemContainer>
     </DesignSystemPageSection>
@@ -103,24 +132,57 @@ async function search(payload: { service: string; neighborhood: string }) {
       <DesignSystemContainer class="trust__grid">
         <div class="trust__visual">
           <div class="trust__photo">
-            <img :src="'/images/photo-1503387762-592deb58ef4e.jpg'" alt="Profissionais em uma obra residencial">
+            <img
+              :src="'/images/photo-1503387762-592deb58ef4e.jpg'"
+              alt="Profissionais em uma obra residencial"
+            />
           </div>
           <div class="trust__label">
             <UIcon name="i-lucide-scan-search" />
-            <span><strong>Evidência, não promessa.</strong><small>Você vê o que foi conferido.</small></span>
+            <span
+              ><strong>Evidência, não promessa.</strong
+              ><small>Você vê o que foi conferido.</small></span
+            >
           </div>
         </div>
         <div class="trust__copy">
-          <DesignSystemEyebrow tone="inverse">Confiança do jeito certo</DesignSystemEyebrow>
-          <DesignSystemSectionTitle>Escolha pelo que<br>você pode ver.</DesignSystemSectionTitle>
+          <DesignSystemEyebrow tone="inverse"
+            >Confiança do jeito certo</DesignSystemEyebrow
+          >
+          <DesignSystemSectionTitle
+            >Escolha pelo que<br />você pode ver.</DesignSystemSectionTitle
+          >
           <DesignSystemSectionCopy>
-            Nada de nota misteriosa. A Berufe mostra cada sinal de confiança separadamente
-            para você decidir com clareza.
+            Nada de nota misteriosa. A Berufe mostra cada sinal de confiança
+            separadamente para você decidir com clareza.
           </DesignSystemSectionCopy>
           <ol class="trust__steps">
-            <li><span>01</span><div><strong>Busque pelo serviço</strong><p>Use nosso catálogo e escolha seu bairro em Joinville.</p></div></li>
-            <li><span>02</span><div><strong>Compare evidências reais</strong><p>Veja verificações, portfólio, clientes e colaborações.</p></div></li>
-            <li><span>03</span><div><strong>Converse diretamente</strong><p>Abra o WhatsApp do profissional escolhido. Sem intermediários.</p></div></li>
+            <li>
+              <span>01</span>
+              <div>
+                <strong>Busque pelo serviço</strong>
+                <p>Use nosso catálogo e escolha seu bairro em Joinville.</p>
+              </div>
+            </li>
+            <li>
+              <span>02</span>
+              <div>
+                <strong>Compare evidências reais</strong>
+                <p>
+                  Veja a identidade verificada, o portfólio e as relações
+                  profissionais.
+                </p>
+              </div>
+            </li>
+            <li>
+              <span>03</span>
+              <div>
+                <strong>Converse diretamente</strong>
+                <p>
+                  Abra o WhatsApp do profissional escolhido. Sem intermediários.
+                </p>
+              </div>
+            </li>
           </ol>
         </div>
       </DesignSystemContainer>
@@ -131,9 +193,16 @@ async function search(payload: { service: string; neighborhood: string }) {
         <div class="section-heading section-heading--compact">
           <div>
             <DesignSystemEyebrow>Profissionais em destaque</DesignSystemEyebrow>
-            <DesignSystemSectionTitle>Gente boa, trabalho bem feito.</DesignSystemSectionTitle>
+            <DesignSystemSectionTitle
+              >Gente boa, trabalho bem feito.</DesignSystemSectionTitle
+            >
           </div>
-          <UButton to="/encontrar" variant="link" trailing-icon="i-lucide-arrow-right">Explorar a rede</UButton>
+          <UButton
+            to="/encontrar"
+            variant="link"
+            trailing-icon="i-lucide-arrow-right"
+            >Explorar a rede</UButton
+          >
         </div>
         <div class="featured__grid">
           <NuxtLink
@@ -143,16 +212,35 @@ async function search(payload: { service: string; neighborhood: string }) {
             :to="`/profissionais/${professional.slug}`"
           >
             <div class="featured-card__image">
-              <img :src="professional.avatar" :alt="`Foto de ${professional.name}`">
+              <img
+                :src="professional.avatar"
+                :alt="`Foto de ${professional.name}`"
+              />
               <span>{{ professional.primaryService }}</span>
             </div>
             <div class="featured-card__body">
-              <div><strong>{{ professional.name }}</strong><small><UIcon name="i-lucide-map-pin" /> {{ professional.allJoinville ? 'Toda Joinville' : professional.neighborhoods.slice(0, 2).join(' e ') }}</small></div>
+              <div>
+                <strong>{{ professional.name }}</strong
+                ><small
+                  ><UIcon name="i-lucide-map-pin" />
+                  {{
+                    professional.allJoinville
+                      ? "Toda Joinville"
+                      : professional.neighborhoods.slice(0, 2).join(" e ")
+                  }}</small
+                >
+              </div>
               <UIcon name="i-lucide-arrow-up-right" />
             </div>
             <div class="featured-card__proof">
-              <span><UIcon name="i-lucide-badge-check" /> Identidade verificada</span>
-              <span>{{ professional.recommendations.length }} recomendações</span>
+              <span
+                ><UIcon name="i-lucide-badge-check" /> Identidade
+                verificada</span
+              >
+              <span
+                >{{ professional.relationships.length }} relações
+                profissionais</span
+              >
             </div>
           </NuxtLink>
         </div>
@@ -163,11 +251,22 @@ async function search(payload: { service: string; neighborhood: string }) {
       <DesignSystemContainer class="professional-cta__inner">
         <div>
           <DesignSystemEyebrow>Você é profissional?</DesignSystemEyebrow>
-          <DesignSystemSectionTitle>Seu trabalho merece<br>uma identidade forte.</DesignSystemSectionTitle>
+          <DesignSystemSectionTitle
+            >Seu trabalho merece<br />uma identidade
+            forte.</DesignSystemSectionTitle
+          >
         </div>
         <div>
-          <p>Crie seu perfil, organize suas evidências e compartilhe orçamentos sem pagar por contatos.</p>
-          <UButton to="/entrar" color="secondary" trailing-icon="i-lucide-arrow-right">Criar meu perfil gratuito</UButton>
+          <p>
+            Crie seu perfil, organize suas evidências e compartilhe sua página e
+            orçamentos sem pagar por contatos.
+          </p>
+          <UButton
+            to="/entrar"
+            color="secondary"
+            trailing-icon="i-lucide-arrow-right"
+            >Criar meu perfil gratuito</UButton
+          >
         </div>
       </DesignSystemContainer>
     </section>
@@ -367,13 +466,6 @@ async function search(payload: { service: string; neighborhood: string }) {
     color: #789089;
   }
 }
-.categories {
-  &__all {
-    display: flex;
-    justify-content: center;
-    margin-top: 28px;
-  }
-}
 .trust {
   background: #17352f;
   color: white;
@@ -496,6 +588,7 @@ async function search(payload: { service: string; neighborhood: string }) {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: center top;
     transition: transform 0.4s ease;
   }
   &:hover img {

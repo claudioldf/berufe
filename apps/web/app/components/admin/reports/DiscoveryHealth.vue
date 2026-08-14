@@ -1,70 +1,116 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { ReportPeriodData } from '~/types'
+import { computed } from "vue";
+import type { ReportPeriodData } from "~/types";
 
 const props = defineProps<{
-  discovery: ReportPeriodData['discovery']
-}>()
+  discovery: ReportPeriodData["discovery"];
+}>();
 
 const discoveryStages = computed(() => [
-  { key: 'searches', label: 'Buscas realizadas', value: props.discovery.searches, total: props.discovery.searches },
-  { key: 'results', label: 'Com algum resultado', value: props.discovery.searchesWithResults, total: props.discovery.searches },
-  { key: 'choice', label: 'Com 3+ opções', value: props.discovery.searchesWithThreeResults, total: props.discovery.searches },
-  { key: 'open', label: 'Com perfil aberto', value: props.discovery.searchesWithProfileOpen, total: props.discovery.searches },
-  { key: 'handoff', label: 'Contato iniciado', value: props.discovery.whatsappHandoffs, total: props.discovery.searches }
-])
-
-const maxDemand = computed(() => Math.max(...props.discovery.demand.map(item => item.value), 1))
+  {
+    key: "searches",
+    label: "Buscas realizadas",
+    value: props.discovery.searches,
+    total: props.discovery.searches,
+  },
+  {
+    key: "results",
+    label: "Com algum resultado",
+    value: props.discovery.searchesWithResults,
+    total: props.discovery.searches,
+  },
+  {
+    key: "choice",
+    label: "Com 3+ opções",
+    value: props.discovery.searchesWithThreeResults,
+    total: props.discovery.searches,
+  },
+  {
+    key: "open",
+    label: "Com perfil aberto",
+    value: props.discovery.searchesWithProfileOpen,
+    total: props.discovery.searches,
+  },
+]);
+const maxDemand = computed(() =>
+  Math.max(...props.discovery.demand.map((item) => item.value), 1),
+);
 
 function percent(value: number, total: number) {
-  if (!total) return '—'
-  return `${new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 }).format((value / total) * 100)}%`
+  if (!total) return "—";
+  return `${new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 }).format((value / total) * 100)}%`;
 }
 </script>
 
 <template>
   <section class="discovery" aria-labelledby="discovery-title">
     <header class="section-heading">
-      <div><DesignSystemKicker>Demanda e liquidez</DesignSystemKicker><h2 id="discovery-title">Da busca ao contato</h2></div>
-      <p>Um contato é um clique deduplicado no WhatsApp — não significa contratação.</p>
+      <div>
+        <DesignSystemKicker>Demanda e liquidez</DesignSystemKicker>
+        <h2 id="discovery-title">Da busca ao interesse</h2>
+      </div>
+      <p>
+        Contatos aparecem no placar como cliques agregados — nunca como
+        contratação.
+      </p>
     </header>
 
     <div class="discovery__grid">
       <DesignSystemSurfaceCard as="article" class="discovery-funnel">
         <header class="widget-heading">
-          <div><h3>Cobertura da jornada</h3><p>Progressão desde a busca</p></div>
+          <div>
+            <h3>Cobertura da jornada</h3>
+            <p>Progressão desde a busca</p>
+          </div>
           <AdminReportsMetricHelp
             title="Cobertura da jornada"
-            meaning="Mostra quantas buscas tiveram resultado, variedade, abertura de perfil e tentativa de contato. Cada etapa é comparada ao total de buscas."
-            goal="Aumentar a progressão em todas as etapas: cobrir a demanda, oferecer escolha, despertar interesse e facilitar o contato."
-            reading="A maior queda indica o problema principal. Falha no início sugere falta de oferta; queda após resultados sugere relevância ou qualidade dos perfis."
+            meaning="Mostra quantas buscas tiveram resultado, variedade e abertura de perfil. Cada etapa é comparada ao total de buscas."
+            goal="Cobrir a demanda, oferecer escolha e despertar interesse em perfis confiáveis."
+            reading="A maior queda indica o problema principal. Atribuição de contato por busca permanece indisponível até existir suporte confiável."
           />
         </header>
-        <div v-for="(stage, index) in discoveryStages" :key="stage.key" class="discovery-stage">
-          <div class="discovery-stage__top"><span>{{ stage.label }}</span><strong>{{ stage.value }}</strong></div>
-          <div class="discovery-stage__bar"><i :style="{ width: percent(stage.value, stage.total) }" /></div>
-          <small v-if="index > 0">{{ percent(stage.value, stage.total) }} das buscas</small>
-          <small v-else>base do período</small>
+        <div
+          v-for="(stage, index) in discoveryStages"
+          :key="stage.key"
+          class="discovery-stage"
+        >
+          <div class="discovery-stage__top">
+            <span>{{ stage.label }}</span
+            ><strong>{{ stage.value }}</strong>
+          </div>
+          <div class="discovery-stage__bar">
+            <i :style="{ width: percent(stage.value, stage.total) }" />
+          </div>
+          <small>{{
+            index > 0
+              ? `${percent(stage.value, stage.total)} das buscas`
+              : "base do período"
+          }}</small>
         </div>
       </DesignSystemSurfaceCard>
 
       <DesignSystemSurfaceCard as="article" class="demand-card">
         <header>
-          <div><h3>Demanda por serviço</h3><p>Buscas agregadas</p></div>
+          <div>
+            <h3>Demanda por serviço</h3>
+            <p>Buscas agregadas</p>
+          </div>
           <div class="widget-actions">
             <UIcon name="i-lucide-chart-no-axes-column-increasing" />
             <AdminReportsMetricHelp
               title="Demanda por serviço"
-              meaning="Ordena os serviços pelo número de buscas realizadas no período, sem identificar quem pesquisou."
-              goal="Usar a demanda real para priorizar recrutamento, cobertura territorial e conteúdo dos perfis."
-              reading="Volume de busca não é conversão. Compare cada serviço com cobertura, opções disponíveis e contatos iniciados antes de investir na oferta."
+              meaning="Ordena os serviços pelo número de buscas, sem identificar quem pesquisou."
+              goal="Usar demanda real para priorizar recrutamento e cobertura territorial."
+              reading="Volume não é conversão. Compare com cobertura, opções disponíveis e contatos iniciados."
             />
           </div>
         </header>
         <div class="demand-bars">
           <div v-for="item in discovery.demand" :key="item.label">
             <span>{{ item.label }}</span>
-            <i><b :style="{ width: `${(item.value / maxDemand) * 100}%` }" /></i>
+            <i
+              ><b :style="{ width: `${(item.value / maxDemand) * 100}%` }"
+            /></i>
             <strong>{{ item.value }}</strong>
           </div>
         </div>
@@ -72,22 +118,50 @@ function percent(value: number, total: number) {
 
       <DesignSystemSurfaceCard as="article" class="gaps-card">
         <header>
-          <div><h3>Gaps que bloqueiam crescimento</h3><p>Buscas com pouca ou nenhuma oferta</p></div>
+          <div>
+            <h3>Gaps que bloqueiam crescimento</h3>
+            <p>Buscas agrupadas com pouca ou nenhuma oferta</p>
+          </div>
           <div class="widget-actions">
             <span>Priorizar rede</span>
             <AdminReportsMetricHelp
               title="Gaps de oferta"
-              meaning="Destaca combinações de serviço e região que receberam buscas, mas têm zero ou poucos profissionais disponíveis."
-              goal="Eliminar primeiro os gaps repetidos de serviços ativos; demandas fora do MVP devem ser avaliadas antes de ampliar o catálogo."
-              reading="“Recrutar” indica falta de profissionais no catálogo atual. “Avaliar catálogo” indica uma demanda ainda não assumida pelo MVP."
+              meaning="Destaca grupos de serviço e região que atingiram o limiar de privacidade, mas têm zero ou poucos profissionais."
+              goal="Eliminar primeiro gaps repetidos de serviços ativos e avaliar demandas fora do catálogo antes de ampliar o MVP."
+              reading="Recrutar indica falta de profissionais no catálogo atual. Avaliar catálogo indica demanda ainda não assumida."
             />
           </div>
         </header>
         <div class="gaps-list">
-          <div v-for="gap in discovery.gaps" :key="`${gap.service}-${gap.location}`">
-            <span :class="{ 'gaps-list__icon--catalog': gap.catalogStatus === 'outside_mvp' }"><UIcon :name="gap.catalogStatus === 'outside_mvp' ? 'i-lucide-list-plus' : 'i-lucide-map-pin'" /></span>
-            <div><strong>{{ gap.service }} · {{ gap.location }}</strong><small>{{ gap.searches }} buscas · {{ gap.professionals }} {{ gap.professionals === 1 ? 'profissional' : 'profissionais' }}</small></div>
-            <em>{{ gap.catalogStatus === 'outside_mvp' ? 'Avaliar catálogo' : 'Recrutar' }}</em>
+          <div
+            v-for="gap in discovery.gaps"
+            :key="`${gap.service}-${gap.location}`"
+          >
+            <span
+              :class="{
+                'gaps-list__icon--catalog': gap.catalogStatus === 'outside_mvp',
+              }"
+              ><UIcon
+                :name="
+                  gap.catalogStatus === 'outside_mvp'
+                    ? 'i-lucide-list-plus'
+                    : 'i-lucide-map-pin'
+                "
+            /></span>
+            <div>
+              <strong>{{ gap.service }} · {{ gap.location }}</strong>
+              <small
+                >{{ gap.searches }} buscas · {{ gap.professionals }}
+                {{
+                  gap.professionals === 1 ? "profissional" : "profissionais"
+                }}</small
+              >
+            </div>
+            <em>{{
+              gap.catalogStatus === "outside_mvp"
+                ? "Avaliar catálogo"
+                : "Recrutar"
+            }}</em>
           </div>
         </div>
       </DesignSystemSurfaceCard>
@@ -99,6 +173,11 @@ function percent(value: number, total: number) {
 .discovery {
   display: grid;
   gap: 13px;
+  &__grid {
+    display: grid;
+    grid-template-columns: 0.9fr 1.1fr;
+    gap: 12px;
+  }
 }
 .section-heading {
   display: flex;
@@ -117,19 +196,11 @@ function percent(value: number, total: number) {
   font-weight: 500;
 }
 .section-heading > p {
-  max-width: 390px;
+  max-width: 420px;
   color: var(--ink-soft);
   font-size: var(--font-size-min);
   line-height: 1.5;
   text-align: right;
-}
-
-.discovery {
-  &__grid {
-    display: grid;
-    grid-template-columns: 0.9fr 1.1fr;
-    gap: 12px;
-  }
 }
 .discovery-funnel {
   display: grid;
@@ -143,7 +214,8 @@ function percent(value: number, total: number) {
     gap: 10px;
   }
   &__top span,
-  &__top strong {
+  &__top strong,
+  & small {
     font-size: var(--font-size-min);
   }
   &__bar {
@@ -163,7 +235,6 @@ function percent(value: number, total: number) {
     display: block;
     margin-top: 3px;
     color: var(--ink-soft);
-    font-size: var(--font-size-min);
   }
 }
 .demand-card,
@@ -171,7 +242,9 @@ function percent(value: number, total: number) {
   padding: 20px;
 }
 .demand-card header,
-.gaps-card header {
+.gaps-card header,
+.widget-heading,
+.widget-actions {
   display: flex;
   justify-content: space-between;
   gap: 12px;
@@ -179,24 +252,41 @@ function percent(value: number, total: number) {
 .demand-card h3,
 .demand-card p,
 .gaps-card h3,
-.gaps-card p {
+.gaps-card p,
+.widget-heading h3,
+.widget-heading p {
   margin: 0;
 }
 .demand-card h3,
-.gaps-card h3 {
+.gaps-card h3,
+.widget-heading h3 {
   font-family: Georgia, serif;
   font-size: 1.15rem;
   font-weight: 500;
 }
 .demand-card p,
-.gaps-card p {
+.gaps-card p,
+.widget-heading p {
   margin-top: 3px;
   color: var(--ink-soft);
   font-size: var(--font-size-min);
 }
-.demand-card header > svg {
+.widget-actions {
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.widget-actions > svg {
   color: #397a69;
   font-size: 1.2rem;
+}
+.widget-actions > span {
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: #fff0ec;
+  color: #a94734;
+  font-size: var(--font-size-min);
+  font-weight: 850;
 }
 .demand-bars {
   display: grid;
@@ -231,15 +321,6 @@ function percent(value: number, total: number) {
 .gaps-card {
   grid-column: 1 / -1;
 }
-.gaps-card header > span {
-  align-self: start;
-  padding: 6px 8px;
-  border-radius: 8px;
-  background: #fff0ec;
-  color: #b9533e;
-  font-size: var(--font-size-min);
-  font-weight: 850;
-}
 .gaps-list {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -260,7 +341,7 @@ function percent(value: number, total: number) {
     height: 32px;
     border-radius: 9px;
     background: #fff0ec;
-    color: #b9533e;
+    color: #a94734;
   }
   & > div > &__icon--catalog {
     background: #fff7de;
@@ -270,70 +351,28 @@ function percent(value: number, total: number) {
   & small {
     display: block;
   }
-  & strong {
+  & strong,
+  & small,
+  & em {
     font-size: var(--font-size-min);
+  }
+  & strong {
     line-height: 1.35;
   }
   & small {
     margin-top: 3px;
     color: var(--ink-soft);
-    font-size: var(--font-size-min);
   }
   & em {
     grid-column: 2;
     color: #397a69;
-    font-size: var(--font-size-min);
     font-style: normal;
     font-weight: 850;
   }
 }
-.gaps-card header > span,
-.gaps-list > div > span {
-  color: #a94734;
-}
-.widget-heading,
-.widget-actions {
-  display: flex;
-  align-items: start;
-  justify-content: space-between;
-  gap: 8px;
-}
-.widget-heading h3,
-.widget-heading p {
-  margin: 0;
-}
-.widget-heading h3 {
-  font-family: Georgia, serif;
-  font-size: 1.15rem;
-  font-weight: 500;
-}
-.widget-heading p {
-  margin-top: 3px;
-  color: var(--ink-soft);
-  font-size: var(--font-size-min);
-}
-.widget-actions {
-  align-items: center;
-  justify-content: flex-end;
-}
-.demand-card .widget-actions > svg {
-  color: #397a69;
-  font-size: 1.2rem;
-}
-.gaps-card .widget-actions > span {
-  align-self: start;
-  padding: 6px 8px;
-  border-radius: 8px;
-  background: #fff0ec;
-  color: #a94734;
-  font-size: var(--font-size-min);
-  font-weight: 850;
-}
 @media (max-width: 800px) {
-  .discovery {
-    &__grid {
-      grid-template-columns: 1fr;
-    }
+  .discovery__grid {
+    grid-template-columns: 1fr;
   }
   .gaps-card {
     grid-column: auto;

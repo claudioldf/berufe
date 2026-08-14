@@ -1,18 +1,35 @@
 <script setup lang="ts">
-import { computed, shallowRef } from 'vue'
-import reportsData from '../../../../data/reports.json'
-import type { GrowthReportsData, ReportPeriodKey } from '~/types'
+import { computed, shallowRef } from "vue";
+import reportsData from "../../../../data/reports.json";
+import type { GrowthReportsData, ReportPeriodKey } from "~/types";
 
-const reports = reportsData as GrowthReportsData
-const selectedPeriod = shallowRef<ReportPeriodKey>('since_launch')
+const reports = reportsData as GrowthReportsData;
+const selectedPeriod = shallowRef<ReportPeriodKey>("since_launch");
 
-const report = computed(() => reports.data[selectedPeriod.value])
-const selectedPeriodLabel = computed(() => reports.periods.find(period => period.key === selectedPeriod.value)?.label ?? '')
-const published = computed(() => report.value.supply.funnel.find(stage => stage.key === 'published')?.value ?? 0)
-const hasData = computed(() => published.value > 0 || report.value.discovery.searches > 0)
+const report = computed(() => reports.data[selectedPeriod.value]);
+const selectedPeriodLabel = computed(
+  () =>
+    reports.periods.find((period) => period.key === selectedPeriod.value)
+      ?.label ?? "",
+);
+const published = computed(
+  () =>
+    report.value.supply.funnel.find((stage) => stage.key === "published")
+      ?.value ?? 0,
+);
+const hasData = computed(
+  () => published.value > 0 || report.value.discovery.searches > 0,
+);
+const generatedLabel = new Intl.DateTimeFormat("pt-BR", {
+  day: "2-digit",
+  month: "short",
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: "America/Sao_Paulo",
+}).format(new Date(reports.generatedAt));
 
 function selectPeriod(period: ReportPeriodKey) {
-  selectedPeriod.value = period
+  selectedPeriod.value = period;
 }
 </script>
 
@@ -21,22 +38,48 @@ function selectPeriod(period: ReportPeriodKey) {
     <div class="report-toolbar">
       <div>
         <strong>{{ selectedPeriodLabel }}</strong>
-        <small>{{ report.windowLabel }} · atualizado em 12 ago, 09:00</small>
+        <small
+          >{{ report.windowLabel }} · atualizado em {{ generatedLabel }}</small
+        >
       </div>
-      <div class="period-switcher" role="group" aria-label="Período do relatório">
-        <button v-for="period in reports.periods" :key="period.key" type="button" :class="{ active: selectedPeriod === period.key }" :aria-pressed="selectedPeriod === period.key" @click="selectPeriod(period.key)">{{ period.shortLabel }}</button>
+      <div
+        class="period-switcher"
+        role="group"
+        aria-label="Período do relatório"
+      >
+        <button
+          v-for="period in reports.periods"
+          :key="period.key"
+          type="button"
+          :class="{ active: selectedPeriod === period.key }"
+          :aria-pressed="selectedPeriod === period.key"
+          @click="selectPeriod(period.key)"
+        >
+          {{ period.shortLabel }}
+        </button>
       </div>
     </div>
 
     <div class="privacy-notice">
       <UIcon name="i-lucide-user-round-x" />
-      <div><strong>Privacidade desde o primeiro dado</strong><p>{{ reports.privacyNotice }}</p></div>
+      <div>
+        <strong>Privacidade desde o primeiro dado</strong>
+        <p>{{ reports.privacyNotice }}</p>
+      </div>
       <span><UIcon name="i-lucide-info" /> Contato não é contratação</span>
     </div>
 
     <div v-if="!hasData" class="launch-empty">
       <span><UIcon name="i-lucide-rocket" /></span>
-      <div><DesignSystemKicker>Primeiro marco</DesignSystemKicker><h2>Publique os primeiros 5 profissionais</h2><p>O relatório ganhará funis e taxas assim que houver denominadores. Até lá, acompanhe cadastro, verificação e publicação em contagens absolutas.</p></div>
+      <div>
+        <DesignSystemKicker>Primeiro marco</DesignSystemKicker>
+        <h2>Publique os primeiros 5 profissionais</h2>
+        <p>
+          O relatório ganhará funis e taxas assim que houver denominadores. Até
+          lá, acompanhe cadastro, verificação e publicação em contagens
+          absolutas.
+        </p>
+      </div>
       <strong>0/{{ report.supply.targetMinimum }}</strong>
     </div>
 
@@ -45,12 +88,20 @@ function selectPeriod(period: ReportPeriodKey) {
       <AdminReportsSupplyHealth :supply="report.supply" />
       <AdminReportsDiscoveryHealth :discovery="report.discovery" />
       <AdminReportsEngagementHealth :engagement="report.engagement" />
-      <AdminReportsTrustOperations :trust="report.trust" :quotes="report.quotes" :operations="report.operations" />
+      <AdminReportsTrustOperations
+        :trust="report.trust"
+        :quotes="report.quotes"
+        :operations="report.operations"
+      />
     </template>
 
     <footer class="report-footnote">
       <UIcon name="i-lucide-database" />
-      <p><strong>Como lemos estes dados:</strong> ações profissionais vêm dos registros do produto; buscas e contatos são agregados sem identidade de visitante. Percentuais nunca escondem a base.</p>
+      <p>
+        <strong>Como lemos estes dados:</strong> ações profissionais vêm dos
+        registros do produto; buscas e contatos são agregados sem identidade de
+        visitante. Percentuais nunca escondem a base.
+      </p>
     </footer>
   </section>
 </template>
@@ -124,20 +175,19 @@ function selectPeriod(period: ReportPeriodKey) {
 .privacy-notice p {
   margin: 0;
 }
-.privacy-notice strong {
+.privacy-notice strong,
+.privacy-notice p,
+.privacy-notice > span {
   font-size: var(--font-size-min);
 }
 .privacy-notice p {
   margin-top: 2px;
   color: var(--ink-soft);
-  font-size: var(--font-size-min);
 }
 .privacy-notice > span {
   display: flex;
   align-items: center;
   gap: 4px;
-  color: #397a69;
-  font-size: var(--font-size-min);
   font-weight: 850;
 }
 .launch-empty {

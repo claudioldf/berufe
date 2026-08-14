@@ -1,23 +1,31 @@
 <script setup lang="ts">
-import dashboardData from '../../../data/dashboard.json'
-import professionalsData from '../../../data/professionals.json'
-import type { Professional } from '~/types'
-import { useMockupApp } from '~/composables/useMockupApp'
+import dashboardData from "../../../data/dashboard.json";
+import professionalsData from "../../../data/professionals.json";
+import type { Professional } from "~/types";
+import { useMockupApp } from "~/composables/useMockupApp";
 
-const { share, showToast, money } = useMockupApp()
-const professional = (professionalsData as Professional[]).find((item) => item.id === dashboardData.professionalId)!
+const { money, share, showToast } = useMockupApp();
+const professional = (professionalsData as Professional[]).find(
+  (item) => item.id === dashboardData.professionalId,
+)!;
 
-useSeoMeta({ title: 'Painel profissional' })
+useSeoMeta({ title: "Painel profissional" });
 
 async function shareProfile() {
-  await share({ title: `${professional.name} na Berufe`, text: 'Conheça meu trabalho na Berufe.', url: dashboardData.publicUrl })
+  await share({
+    title: `${professional.name} na Berufe`,
+    text: "Conheça meu trabalho na Berufe.",
+    url: dashboardData.publicUrl,
+  });
 }
 
 function respondRelationship(accepted: boolean) {
   showToast({
-    title: accepted ? 'Colaboração confirmada' : 'Solicitação recusada',
-    description: accepted ? 'Agora ela seguirá para moderação.' : 'Essa relação continuará privada.',
-  })
+    title: accepted ? "Colaboração confirmada" : "Solicitação recusada",
+    description: accepted
+      ? "Agora ela seguirá para moderação."
+      : "Essa relação continuará privada.",
+  });
 }
 </script>
 
@@ -27,76 +35,159 @@ function respondRelationship(accepted: boolean) {
       <DesignSystemContainer class="dashboard-welcome__inner">
         <div>
           <p>Terça-feira, 11 de agosto</p>
-          <h1>Olá, Marina. <em>Vamos em frente?</em></h1>
+          <h1>Olá, Marcos. <em>Vamos em frente?</em></h1>
         </div>
         <div class="dashboard-welcome__actions">
-          <UButton color="neutral" variant="outline" icon="i-lucide-share-2" @click="shareProfile">Compartilhar perfil</UButton>
-          <UButton to="/painel/orcamentos/novo" color="secondary" icon="i-lucide-plus">Novo orçamento</UButton>
+          <UButton
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-share-2"
+            @click="shareProfile"
+            >Compartilhar perfil</UButton
+          >
+          <UButton
+            to="/painel/orcamentos/novo"
+            color="secondary"
+            icon="i-lucide-plus"
+            >Novo orçamento</UButton
+          >
         </div>
       </DesignSystemContainer>
     </section>
 
     <DesignSystemContainer class="dashboard-content">
       <section class="status-banner">
-        <span class="status-banner__icon"><UIcon name="i-lucide-badge-check" /></span>
-        <div><strong>Seu perfil está publicado</strong><p>Clientes já podem encontrar e entrar em contato com você.</p></div>
-        <NuxtLink :to="`/profissionais/${professional.slug}`" target="_blank">Ver perfil público <UIcon name="i-lucide-arrow-up-right" /></NuxtLink>
-      </section>
-
-      <section class="dashboard-section metrics-section">
-        <div class="dashboard-section__heading">
-          <div><DesignSystemEyebrow>Últimos 30 dias</DesignSystemEyebrow><h2>Sua presença em movimento.</h2></div>
-          <span>Atualizado hoje, 07:00</span>
+        <span class="status-banner__icon"
+          ><UIcon name="i-lucide-badge-check"
+        /></span>
+        <div>
+          <strong>Seu perfil está publicado</strong>
+          <p>Clientes já podem encontrar e entrar em contato com você.</p>
         </div>
-        <div class="metrics-grid">
-          <article v-for="metric in dashboardData.metrics" :key="metric.label">
-            <span class="metric-icon"><UIcon :name="metric.icon" /></span>
-            <div><strong>{{ metric.value }}</strong><small>{{ metric.label }}</small></div>
-            <em>{{ metric.change }}</em>
-          </article>
-        </div>
-        <p class="privacy-note"><UIcon name="i-lucide-lock-keyhole" /> Contagens agregadas e anônimas. A Berufe não identifica quem visitou seu perfil.</p>
+        <NuxtLink :to="`/profissionais/${professional.slug}`" target="_blank"
+          >Ver perfil público <UIcon name="i-lucide-arrow-up-right"
+        /></NuxtLink>
       </section>
 
       <div class="dashboard-grid">
-        <DashboardChecklist :readiness="dashboardData.readiness" :items="dashboardData.checklist" />
+        <DashboardChecklist
+          :readiness="dashboardData.readiness"
+          :items="dashboardData.checklist"
+        />
 
         <DesignSystemSurfaceCard as="section" class="actions-card">
-          <header><span>Ações rápidas</span><small>Fortaleça seu perfil</small></header>
+          <header>
+            <span>Ações rápidas</span><small>Fortaleça seu perfil</small>
+          </header>
           <div class="actions-card__grid">
-            <NuxtLink to="/painel/perfil"><span><UIcon name="i-lucide-pencil" /></span><strong>Editar perfil</strong><small>Dados e serviços</small></NuxtLink>
-            <NuxtLink to="/painel/perfil?tab=portfolio"><span><UIcon name="i-lucide-image-plus" /></span><strong>Novo trabalho</strong><small>Adicionar ao portfólio</small></NuxtLink>
-            <button type="button" @click="showToast({ title: 'Link de recomendação criado', description: 'Pronto para compartilhar no WhatsApp.' })"><span><UIcon name="i-lucide-heart-handshake" /></span><strong>Pedir recomendação</strong><small>Cliente anterior</small></button>
-            <button type="button" @click="showToast({ title: 'Convite criado', description: 'Compartilhe o link com seu colaborador.' })"><span><UIcon name="i-lucide-user-plus" /></span><strong>Convidar parceiro</strong><small>Fortaleça sua rede</small></button>
+            <NuxtLink to="/painel/perfil"
+              ><span><UIcon name="i-lucide-pencil" /></span
+              ><strong>Editar perfil</strong
+              ><small>Dados e serviços</small></NuxtLink
+            >
+            <NuxtLink to="/painel/perfil?tab=portfolio"
+              ><span><UIcon name="i-lucide-image-plus" /></span
+              ><strong>Novo trabalho</strong
+              ><small>Adicionar ao portfólio</small></NuxtLink
+            >
+            <NuxtLink to="/painel/perfil?tab=verificacoes"
+              ><span><UIcon name="i-lucide-id-card" /></span
+              ><strong>Ver verificações</strong
+              ><small>Identidade aprovada</small></NuxtLink
+            >
+            <NuxtLink to="/encontrar"
+              ><span><UIcon name="i-lucide-handshake" /></span
+              ><strong>Adicionar relação</strong
+              ><small>Profissional já cadastrado</small></NuxtLink
+            >
           </div>
         </DesignSystemSurfaceCard>
       </div>
 
       <section class="dashboard-section pending-section">
-        <div class="dashboard-section__heading"><div><DesignSystemEyebrow>Precisa de atenção</DesignSystemEyebrow><h2>Pendências e análises.</h2></div><span>{{ dashboardData.pending.length }} itens</span></div>
+        <div class="dashboard-section__heading">
+          <div>
+            <DesignSystemEyebrow>Precisa de atenção</DesignSystemEyebrow>
+            <h2>Pendências e análises.</h2>
+          </div>
+          <span>{{ dashboardData.pending.length }} itens</span>
+        </div>
         <div class="pending-list">
           <article v-for="item in dashboardData.pending" :key="item.id">
-            <span class="pending-list__icon"><UIcon :name="item.type === 'portfolio' ? 'i-lucide-image' : 'i-lucide-handshake'" /></span>
-            <div><strong>{{ item.title }}</strong><small>{{ item.date }}</small></div>
+            <span class="pending-list__icon"
+              ><UIcon
+                :name="
+                  item.type === 'portfolio'
+                    ? 'i-lucide-image'
+                    : 'i-lucide-handshake'
+                "
+            /></span>
+            <div>
+              <strong>{{ item.title }}</strong
+              ><small>{{ item.date }}</small>
+            </div>
             <span class="pending-list__status">{{ item.status }}</span>
-            <div v-if="item.type === 'relationship'" class="pending-list__actions">
-              <UButton size="sm" color="neutral" variant="ghost" @click="respondRelationship(false)">Recusar</UButton>
-              <UButton size="sm" color="primary" @click="respondRelationship(true)">Confirmar</UButton>
+            <div
+              v-if="item.type === 'relationship'"
+              class="pending-list__actions"
+            >
+              <UButton
+                size="sm"
+                color="neutral"
+                variant="ghost"
+                @click="respondRelationship(false)"
+                >Recusar</UButton
+              >
+              <UButton
+                size="sm"
+                color="primary"
+                @click="respondRelationship(true)"
+                >Confirmar</UButton
+              >
             </div>
           </article>
         </div>
       </section>
 
       <section class="dashboard-section quotes-section">
-        <div class="dashboard-section__heading"><div><DesignSystemEyebrow>Ferramentas</DesignSystemEyebrow><h2>Orçamentos recentes.</h2></div><UButton to="/painel/orcamentos/novo" variant="link" trailing-icon="i-lucide-arrow-right">Ver todos</UButton></div>
+        <div class="dashboard-section__heading">
+          <div>
+            <DesignSystemEyebrow>Ferramentas</DesignSystemEyebrow>
+            <h2>Orçamentos recentes.</h2>
+          </div>
+          <UButton
+            to="/painel/orcamentos/novo"
+            variant="link"
+            trailing-icon="i-lucide-arrow-right"
+            >Criar orçamento</UButton
+          >
+        </div>
         <DesignSystemSurfaceCard class="quotes-table">
-          <div class="quotes-table__head"><span>Orçamento</span><span>Cliente</span><span>Valor</span><span>Status</span><span>Data</span></div>
-          <NuxtLink v-for="quote in dashboardData.recentQuotes" :key="quote.id" to="/painel/orcamentos/novo">
-            <span><strong>#{{ quote.number }}</strong><small>{{ quote.service }}</small></span>
+          <div class="quotes-table__head">
+            <span>Orçamento</span><span>Cliente</span><span>Valor</span
+            ><span>Status</span><span>Data</span>
+          </div>
+          <NuxtLink
+            v-for="quote in dashboardData.recentQuotes"
+            :key="quote.id"
+            to="/painel/orcamentos/novo"
+          >
+            <span
+              ><strong>#{{ quote.number }}</strong
+              ><small>{{ quote.service }}</small></span
+            >
             <span>{{ quote.customer }}</span>
-            <span><strong>{{ money(quote.total) }}</strong></span>
-            <span><em :class="quote.status">{{ quote.status === 'shared' ? 'Compartilhado' : 'Rascunho' }}</em></span>
-            <span>{{ quote.date }} <UIcon name="i-lucide-chevron-right" /></span>
+            <span
+              ><strong>{{ money(quote.total) }}</strong></span
+            >
+            <span
+              ><em :class="quote.status">{{
+                quote.status === "shared" ? "Compartilhado" : "Rascunho"
+              }}</em></span
+            >
+            <span
+              >{{ quote.date }} <UIcon name="i-lucide-chevron-right"
+            /></span>
           </NuxtLink>
         </DesignSystemSurfaceCard>
       </section>
@@ -210,60 +301,6 @@ function respondRelationship(accepted: boolean) {
     color: var(--ink-soft);
     font-size: 0.86rem;
   }
-}
-.metrics-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-}
-.metrics-grid article {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 11px;
-  padding: 18px;
-  border: 1px solid var(--line);
-  border-radius: 17px;
-  background: white;
-}
-.metric-icon {
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  background: var(--mint);
-  color: #397a69;
-}
-.metrics-grid strong,
-.metrics-grid small {
-  display: block;
-}
-.metrics-grid strong {
-  font-family: Georgia, serif;
-  font-size: 1.45rem;
-}
-.metrics-grid small {
-  color: var(--ink-soft);
-  font-size: 0.84rem;
-}
-.metrics-grid em {
-  align-self: start;
-  padding: 4px 6px;
-  border-radius: 6px;
-  background: #e4f4ed;
-  color: #32705f;
-  font-size: 0.82rem;
-  font-style: normal;
-  font-weight: 900;
-}
-.privacy-note {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  margin: 10px 0 0;
-  color: var(--ink-soft);
-  font-size: 0.82rem;
 }
 .dashboard-grid {
   display: grid;
@@ -386,62 +423,56 @@ function respondRelationship(accepted: boolean) {
   &__head,
   & > a {
     display: grid;
-    grid-template-columns: 1.4fr 1fr 0.7fr 0.8fr 0.55fr;
+    grid-template-columns: 1.2fr 1fr 0.7fr 0.8fr 0.55fr;
     gap: 12px;
     align-items: center;
-    padding: 13px 17px;
+    padding: 13px 16px;
   }
   &__head {
-    background: #e9e7e0;
+    background: #f6f4ef;
     color: var(--ink-soft);
     font-size: 0.82rem;
-    font-weight: 900;
+    font-weight: 850;
     text-transform: uppercase;
   }
   & > a {
     border-top: 1px solid var(--line);
     color: var(--ink);
-    font-size: 0.86rem;
+    font-size: 0.84rem;
     text-decoration: none;
   }
   & > a:hover {
     background: #faf9f6;
   }
-  & > a strong,
-  & > a small {
+  & strong,
+  & small {
     display: block;
   }
-  & > a small {
+  & small {
     margin-top: 3px;
     color: var(--ink-soft);
-    font-size: 0.82rem;
   }
   & em {
     display: inline-flex;
     padding: 5px 7px;
     border-radius: 7px;
+    background: #eceae4;
+    color: var(--ink-soft);
     font-size: 0.82rem;
     font-style: normal;
-    font-weight: 850;
+    font-weight: 800;
   }
   & em.shared {
-    background: #e3f2ec;
-    color: #2d6e5c;
-  }
-  & em.draft {
-    background: #edece7;
-    color: #68736f;
+    background: var(--mint);
+    color: #397a69;
   }
   & > a > span:last-child {
     display: flex;
-    align-items: center;
     justify-content: space-between;
+    align-items: center;
   }
 }
 @media (max-width: 900px) {
-  .metrics-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
   .dashboard-grid {
     grid-template-columns: 1fr;
   }
@@ -466,9 +497,6 @@ function respondRelationship(accepted: boolean) {
   .status-banner a {
     grid-column: 2;
   }
-  .metrics-grid {
-    grid-template-columns: 1fr;
-  }
   .pending-list {
     & article {
       grid-template-columns: auto 1fr auto;
@@ -482,7 +510,7 @@ function respondRelationship(accepted: boolean) {
       display: none;
     }
     & > a {
-      grid-template-columns: 1fr auto;
+      grid-template-columns: 1fr auto auto;
     }
     & > a > span:nth-child(2),
     & > a > span:nth-child(5) {

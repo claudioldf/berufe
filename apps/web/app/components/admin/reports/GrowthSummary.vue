@@ -1,120 +1,136 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { ReportPeriodData } from '~/types'
+import { computed } from "vue";
+import type { ReportPeriodData } from "~/types";
 
-const props = defineProps<{
-  report: ReportPeriodData
-}>()
+const props = defineProps<{ report: ReportPeriodData }>();
 
 interface SummaryCard {
-  key: string
-  label: string
-  value: string
-  detail: string
-  change: string
-  icon: string
-  tone: 'forest' | 'coral' | 'gold' | 'blue' | 'purple'
-  help: {
-    meaning: string
-    goal: string
-    reading: string
-  }
+  key: string;
+  label: string;
+  value: string;
+  detail: string;
+  change: string;
+  icon: string;
+  tone: "forest" | "coral" | "gold" | "blue" | "purple";
+  help: { meaning: string; goal: string; reading: string };
 }
 
-const published = computed(() => props.report.supply.funnel.find(stage => stage.key === 'published')?.value ?? 0)
-const activated = computed(() => props.report.supply.funnel.find(stage => stage.key === 'activated')?.value ?? 0)
+const published = computed(
+  () =>
+    props.report.supply.funnel.find((stage) => stage.key === "published")
+      ?.value ?? 0,
+);
+const activated = computed(
+  () =>
+    props.report.supply.funnel.find((stage) => stage.key === "activated")
+      ?.value ?? 0,
+);
 
 function percent(value: number, total: number) {
-  if (!total) return '—'
-  return `${new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 }).format((value / total) * 100)}%`
+  if (!total) return "—";
+  return `${new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 }).format((value / total) * 100)}%`;
 }
 
 const cards = computed<SummaryCard[]>(() => [
   {
-    key: 'published',
-    label: 'Publicados no período',
+    key: "published",
+    label: "Publicados no período",
     value: `${published.value}`,
     detail: `meta fundadora ${props.report.supply.targetMinimum}–${props.report.supply.targetMaximum}`,
     change: props.report.summaryChanges.published,
-    icon: 'i-lucide-users-round',
-    tone: 'forest',
+    icon: "i-lucide-users-round",
+    tone: "forest",
     help: {
-      meaning: 'Profissionais cujo perfil foi aprovado e ficou pesquisável no período selecionado.',
+      meaning:
+        "Profissionais cujo perfil foi aprovado e ficou pesquisável no período selecionado.",
       goal: `Formar a rede fundadora de ${props.report.supply.targetMinimum}–${props.report.supply.targetMaximum} profissionais publicados, com oferta distribuída entre serviços e bairros.`,
-      reading: 'Leia junto do funil: muitos cadastros e poucas publicações indicam bloqueio em verificação, preenchimento ou moderação.'
-    }
+      reading:
+        "Leia junto do funil: muitos cadastros e poucas publicações indicam bloqueio em verificação, preenchimento ou moderação.",
+    },
   },
   {
-    key: 'activated',
-    label: 'Perfis ativados',
+    key: "activated",
+    label: "Perfis ativados",
     value: `${activated.value}/${published.value}`,
     detail: `${percent(activated.value, published.value)} dos publicados`,
     change: props.report.summaryChanges.activated,
-    icon: 'i-lucide-badge-check',
-    tone: 'purple',
+    icon: "i-lucide-badge-check",
+    tone: "purple",
     help: {
-      meaning: 'Perfis publicados com identidade aprovada, pelo menos três trabalhos no portfólio e duas relações profissionais confirmadas.',
-      goal: 'Aumentar continuamente a parcela de publicados que cumpre todos os critérios de ativação, sem criar uma nota de confiança opaca.',
-      reading: 'O numerador mostra ativados e o denominador, publicados. Consulte “Qualidade da oferta” para descobrir qual critério está faltando.'
-    }
+      meaning:
+        "Perfis publicados com identidade aprovada, pelo menos três trabalhos no portfólio e duas relações profissionais confirmadas.",
+      goal: "Aumentar a parcela de publicados que cumpre todos os critérios de ativação, sem criar uma nota de confiança opaca.",
+      reading:
+        "O numerador mostra ativados e o denominador, publicados. Consulte Qualidade da oferta para saber qual critério falta.",
+    },
   },
   {
-    key: 'coverage',
-    label: 'Buscas com resultado',
+    key: "coverage",
+    label: "Buscas com resultado",
     value: `${props.report.discovery.searchesWithResults}/${props.report.discovery.searches}`,
     detail: `${percent(props.report.discovery.searchesWithResults, props.report.discovery.searches)} de cobertura`,
     change: props.report.summaryChanges.searchCoverage,
-    icon: 'i-lucide-search-check',
-    tone: 'blue',
+    icon: "i-lucide-search-check",
+    tone: "blue",
     help: {
-      meaning: 'Buscas válidas que retornaram ao menos um profissional relevante no serviço e região procurados.',
-      goal: 'Cobrir todas as buscas válidas; os casos recorrentes sem resultado devem orientar recrutamento ou revisão do catálogo.',
-      reading: 'Uma taxa alta com poucas opções ainda pode ser frágil. Compare também com buscas que oferecem três ou mais profissionais.'
-    }
+      meaning:
+        "Buscas válidas que retornaram ao menos um profissional no serviço e região procurados.",
+      goal: "Cobrir as buscas válidas e usar casos recorrentes sem resultado para orientar recrutamento ou revisão do catálogo.",
+      reading:
+        "Uma taxa alta com poucas opções ainda pode ser frágil. Compare também com buscas que oferecem três ou mais profissionais.",
+    },
   },
   {
-    key: 'handoffs',
-    label: 'Contatos iniciados',
+    key: "handoffs",
+    label: "Contatos iniciados",
     value: `${props.report.discovery.whatsappHandoffs}`,
     detail: `${percent(props.report.discovery.whatsappHandoffs, props.report.discovery.profileViews)} dos perfis abertos`,
     change: props.report.summaryChanges.handoffs,
-    icon: 'i-lucide-message-circle-more',
-    tone: 'coral',
+    icon: "i-lucide-message-circle-more",
+    tone: "coral",
     help: {
-      meaning: 'Cliques deduplicados para iniciar uma conversa no WhatsApp a partir de um perfil ou resultado de busca.',
-      goal: 'Fazer o volume crescer junto com buscas bem atendidas e perfis abertos, mostrando que a descoberta gera intenção de contato.',
-      reading: 'É uma oportunidade observável, não uma contratação. A Berufe não lê mensagens nem conhece o resultado da conversa.'
-    }
+      meaning:
+        "Cliques deduplicados para iniciar uma conversa no WhatsApp a partir de um perfil ou resultado de busca.",
+      goal: "Fazer o volume crescer junto com buscas bem atendidas e perfis abertos, mostrando intenção de contato.",
+      reading:
+        "É uma oportunidade observável, não uma contratação. A Berufe não lê mensagens nem conhece o resultado da conversa.",
+    },
   },
   {
-    key: 'returning',
-    label: 'Profissionais recorrentes',
+    key: "returning",
+    label: "Profissionais recorrentes",
     value: `${props.report.engagement.returningProfessionals}/${props.report.engagement.eligibleProfessionals}`,
     detail: `${percent(props.report.engagement.returningProfessionals, props.report.engagement.eligibleProfessionals)} da base publicada`,
     change: props.report.summaryChanges.returning,
-    icon: 'i-lucide-refresh-cw',
-    tone: 'gold',
+    icon: "i-lucide-refresh-cw",
+    tone: "gold",
     help: {
-      meaning: 'Profissionais da base publicada que voltaram e realizaram uma ação útil, como atualizar o perfil, criar evidência, interagir com a rede ou gerar orçamento.',
-      goal: 'Elevar a recorrência semanal e a retenção W1/W4; login isolado não conta como valor gerado.',
-      reading: 'Use o total com as coortes de retenção. Em bases pequenas, n/N é mais confiável que comparar variações percentuais.'
-    }
-  }
-])
+      meaning:
+        "Profissionais publicados que voltaram e realizaram uma ação útil, como atualizar o perfil, fortalecer a rede ou criar orçamento.",
+      goal: "Elevar a recorrência semanal e a retenção W1/W4; login isolado não conta como valor gerado.",
+      reading:
+        "Use o total com as coortes de retenção. Em bases pequenas, n/N é mais confiável que variações percentuais.",
+    },
+  },
+]);
 </script>
 
 <template>
-  <section class="summary" aria-labelledby="weekly-health-title">
+  <section class="summary" aria-labelledby="growth-health-title">
     <div class="summary__heading">
       <div>
         <DesignSystemKicker>Placar de partida</DesignSystemKicker>
-        <h2 id="weekly-health-title">Saúde do crescimento</h2>
+        <h2 id="growth-health-title">Saúde do crescimento</h2>
       </div>
       <p>Contagens e denominadores visíveis para uma base ainda pequena.</p>
     </div>
 
     <div class="summary__grid">
-      <article v-for="card in cards" :key="card.key" :class="['summary-card', `summary-card--${card.tone}`]">
+      <article
+        v-for="card in cards"
+        :key="card.key"
+        :class="['summary-card', `summary-card--${card.tone}`]"
+      >
         <div class="summary-card__top">
           <span class="summary-card__icon"><UIcon :name="card.icon" /></span>
           <span class="summary-card__label">{{ card.label }}</span>
@@ -156,7 +172,6 @@ const cards = computed<SummaryCard[]>(() => [
     line-height: 1.5;
     text-align: right;
   }
-
   &__grid {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -237,33 +252,26 @@ const cards = computed<SummaryCard[]>(() => [
     font-weight: 850;
   }
 }
-
 @media (max-width: 1020px) {
-  .summary {
-    &__grid {
-      grid-template-columns: repeat(3, 1fr);
-    }
+  .summary__grid {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 @media (max-width: 680px) {
-  .summary {
-    &__heading {
-      align-items: start;
-      flex-direction: column;
-    }
-    &__heading > p {
-      text-align: left;
-    }
-    &__grid {
-      grid-template-columns: 1fr 1fr;
-    }
+  .summary__heading {
+    align-items: start;
+    flex-direction: column;
+  }
+  .summary__heading > p {
+    text-align: left;
+  }
+  .summary__grid {
+    grid-template-columns: 1fr 1fr;
   }
 }
 @media (max-width: 430px) {
-  .summary {
-    &__grid {
-      grid-template-columns: 1fr;
-    }
+  .summary__grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

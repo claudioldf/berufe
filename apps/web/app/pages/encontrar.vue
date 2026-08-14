@@ -1,81 +1,130 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import catalogsData from '../../data/catalogs.json'
-import professionalsData from '../../data/professionals.json'
-import type { Neighborhood, Professional, Service } from '~/types'
-import { useMockupApp } from '~/composables/useMockupApp'
+import { computed } from "vue";
+import catalogsData from "../../data/catalogs.json";
+import professionalsData from "../../data/professionals.json";
+import type { Neighborhood, Professional, Service } from "~/types";
+import { useMockupApp } from "~/composables/useMockupApp";
 
-const route = useRoute()
-const router = useRouter()
-const { showToast } = useMockupApp()
-const services = catalogsData.services as Service[]
-const neighborhoods = catalogsData.neighborhoods as Neighborhood[]
-const professionals = professionalsData as Professional[]
+const route = useRoute();
+const router = useRouter();
+const { showToast } = useMockupApp();
+const services = catalogsData.services as Service[];
+const neighborhoods = catalogsData.neighborhoods as Neighborhood[];
+const professionals = professionalsData as Professional[];
 
-const serviceQuery = computed(() => String(route.query.servico ?? 'eletricista'))
-const neighborhoodCode = computed(() => String(route.query.bairro ?? 'all'))
+const serviceQuery = computed(() =>
+  String(route.query.servico ?? "eletricista"),
+);
+const neighborhoodCode = computed(() => String(route.query.bairro ?? "all"));
 
 const selectedService = computed(() => {
-  const normalized = serviceQuery.value.toLocaleLowerCase('pt-BR')
-  return services.find((service) => service.slug === normalized)
-    ?? services.find((service) => service.name.toLocaleLowerCase('pt-BR') === normalized)
-    ?? services.find((service) => service.aliases.includes(normalized))
-})
+  const normalized = serviceQuery.value.toLocaleLowerCase("pt-BR");
+  return (
+    services.find((service) => service.slug === normalized) ??
+    services.find(
+      (service) => service.name.toLocaleLowerCase("pt-BR") === normalized,
+    ) ??
+    services.find((service) => service.aliases.includes(normalized))
+  );
+});
 
-const selectedNeighborhood = computed(() => neighborhoods.find((item) => item.code === neighborhoodCode.value) ?? neighborhoods[0])
+const selectedNeighborhood = computed(
+  () =>
+    neighborhoods.find((item) => item.code === neighborhoodCode.value) ??
+    neighborhoods[0],
+);
 
 const results = computed(() => {
-  if (!selectedService.value) return []
-  const service = selectedService.value
-  const neighborhood = selectedNeighborhood.value
+  if (!selectedService.value) return [];
+  const service = selectedService.value;
+  const neighborhood = selectedNeighborhood.value;
 
   return professionals
     .filter((professional) => professional.services.includes(service.name))
     .filter((professional) => {
-      return neighborhood?.code === 'all'
-        || professional.allJoinville
-        || professional.neighborhoods.includes(neighborhood?.name ?? '')
+      return (
+        neighborhood?.code === "all" ||
+        professional.allJoinville ||
+        professional.neighborhoods.includes(neighborhood?.name ?? "")
+      );
     })
     .toSorted((a, b) => {
       const score = (professional: Professional) => {
-        let value = 0
-        if (professional.primaryService === service.name) value += 100
-        if (neighborhood?.code !== 'all' && professional.neighborhoods.includes(neighborhood?.name ?? '')) value += 50
-        if (professional.evidence.some((item) => item.label === 'Identidade verificada')) value += 25
-        if (professional.portfolio.length) value += 10
-        value += professional.recommendations.length + professional.relationships.length
-        return value
-      }
-      return score(b) - score(a) || b.updatedAt.localeCompare(a.updatedAt)
-    })
-})
+        let value = 0;
+        if (professional.primaryService === service.name) value += 100;
+        if (
+          neighborhood?.code !== "all" &&
+          professional.neighborhoods.includes(neighborhood?.name ?? "")
+        )
+          value += 50;
+        if (
+          professional.evidence.some(
+            (item) => item.label === "Identidade verificada",
+          )
+        )
+          value += 25;
+        if (professional.portfolio.length) value += 10;
+        value += professional.relationships.length;
+        return value;
+      };
+      return score(b) - score(a) || b.updatedAt.localeCompare(a.updatedAt);
+    });
+});
 
 const relatedServices = computed(() => {
   if (selectedService.value) {
-    return services.filter((service) => service.category === selectedService.value?.category && service.id !== selectedService.value?.id).slice(0, 3)
+    return services
+      .filter(
+        (service) =>
+          service.category === selectedService.value?.category &&
+          service.id !== selectedService.value?.id,
+      )
+      .slice(0, 3);
   }
-  return services.slice(0, 3)
-})
+  return services.slice(0, 3);
+});
 
 useSeoMeta({
-  title: () => `${selectedService.value?.name ?? 'Encontrar profissionais'} em Joinville`,
-  description: () => `Compare evidências e encontre ${selectedService.value?.name.toLocaleLowerCase('pt-BR') ?? 'profissionais'} em Joinville.`,
-})
+  title: () =>
+    `${selectedService.value?.name ?? "Encontrar profissionais"} em Joinville`,
+  description: () =>
+    `Compare evidências e encontre ${selectedService.value?.name.toLocaleLowerCase("pt-BR") ?? "profissionais"} em Joinville.`,
+});
 
 async function search(payload: { service: string; neighborhood: string }) {
-  const normalized = payload.service.toLocaleLowerCase('pt-BR')
-  const service = services.find((item) => item.name.toLocaleLowerCase('pt-BR') === normalized)
-    ?? services.find((item) => item.aliases.some((alias) => alias.includes(normalized) || normalized.includes(alias)))
+  const normalized = payload.service.toLocaleLowerCase("pt-BR");
+  const service =
+    services.find(
+      (item) => item.name.toLocaleLowerCase("pt-BR") === normalized,
+    ) ??
+    services.find((item) =>
+      item.aliases.some(
+        (alias) => alias.includes(normalized) || normalized.includes(alias),
+      ),
+    );
   await router.push({
-    path: '/encontrar',
-    query: { servico: service?.slug ?? payload.service, bairro: payload.neighborhood },
-  })
+    path: "/encontrar",
+    query: {
+      servico: service?.slug ?? payload.service,
+      bairro: payload.neighborhood,
+    },
+  });
 }
 
 function contact(professional: Professional) {
-  const text = encodeURIComponent(`Olá, ${professional.name}! Encontrei seu perfil na Berufe e gostaria de conversar sobre ${selectedService.value?.name ?? professional.primaryService}.`)
-  showToast({ title: 'Abrindo o WhatsApp', description: 'O contato é direto com o profissional.' })
-  if (import.meta.client) window.open(`https://wa.me/${professional.whatsapp}?text=${text}`, '_blank', 'noopener,noreferrer')
+  const text = encodeURIComponent(
+    `Olá, ${professional.name}! Encontrei seu perfil na Berufe e gostaria de conversar sobre ${selectedService.value?.name ?? professional.primaryService}.`,
+  );
+  showToast({
+    title: "Abrindo o WhatsApp",
+    description: "O contato é direto com o profissional.",
+  });
+  if (import.meta.client)
+    window.open(
+      `https://wa.me/${professional.whatsapp}?text=${text}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
 }
 </script>
 
@@ -84,7 +133,8 @@ function contact(professional: Professional) {
     <section class="finder__masthead">
       <DesignSystemContainer class="finder__masthead-inner">
         <div class="finder__breadcrumbs">
-          <NuxtLink to="/">Início</NuxtLink><UIcon name="i-lucide-chevron-right" />
+          <NuxtLink to="/">Início</NuxtLink
+          ><UIcon name="i-lucide-chevron-right" />
           <span>Encontrar profissional</span>
         </div>
         <DesignSystemEyebrow>Profissionais</DesignSystemEyebrow>
@@ -94,7 +144,12 @@ function contact(professional: Professional) {
           </template>
           <template v-else>Vamos tentar <em>de outro jeito</em></template>
         </h1>
-        <p>{{ selectedService?.description ?? 'Não encontramos esse termo no catálogo de serviços residenciais.' }}</p>
+        <p>
+          {{
+            selectedService?.description ??
+            "Não encontramos esse termo no catálogo de serviços residenciais."
+          }}
+        </p>
         <PublicServiceSearch
           :key="`${serviceQuery}-${neighborhoodCode}`"
           :initial-service="selectedService?.name ?? serviceQuery"
@@ -120,7 +175,11 @@ function contact(professional: Professional) {
           <div class="finder__explanation">
             <UIcon name="i-lucide-list-ordered" />
             <strong>Como ordenamos</strong>
-            <p>Primeiro, consideramos a correspondência exata e o atendimento na região. Depois, avaliamos evidências verificadas, portfólio e recomendações.</p>
+            <p>
+              Primeiro, consideramos a correspondência exata e o atendimento na
+              região. Depois, avaliamos identidade verificada, portfólio e
+              relações profissionais.
+            </p>
             <span>Relevância e qualidade.</span>
           </div>
         </aside>
@@ -128,11 +187,22 @@ function contact(professional: Professional) {
         <div class="finder__results">
           <div class="results-heading">
             <div>
-              <strong>{{ results.length }} {{ results.length === 1 ? 'profissional encontrado' : 'profissionais encontrados' }}</strong>
-              <span v-if="selectedNeighborhood?.code !== 'all'">Atendendo {{ selectedNeighborhood?.name }}</span>
+              <strong
+                >{{ results.length }}
+                {{
+                  results.length === 1
+                    ? "profissional encontrado"
+                    : "profissionais encontrados"
+                }}</strong
+              >
+              <span v-if="selectedNeighborhood?.code !== 'all'"
+                >Atendendo {{ selectedNeighborhood?.name }}</span
+              >
               <span v-else>Em Joinville</span>
             </div>
-            <span class="results-heading__order"><UIcon name="i-lucide-info" /> Ordem por relevância</span>
+            <span class="results-heading__order"
+              ><UIcon name="i-lucide-info" /> Ordem por relevância</span
+            >
           </div>
 
           <div v-if="results.length" class="results-list">
@@ -140,15 +210,22 @@ function contact(professional: Professional) {
               v-for="professional in results"
               :key="professional.id"
               :professional="professional"
-              :matching-service="selectedService?.name ?? professional.primaryService"
+              :matching-service="
+                selectedService?.name ?? professional.primaryService
+              "
               @contact="contact"
             />
           </div>
 
           <DesignSystemSurfaceCard v-else class="empty-results">
-            <span class="empty-results__icon"><UIcon name="i-lucide-search-x" /></span>
+            <span class="empty-results__icon"
+              ><UIcon name="i-lucide-search-x"
+            /></span>
             <h2>Ainda não temos esse encaixe.</h2>
-            <p>Tente mudar o bairro ou explore um serviço próximo. A Berufe não transforma sua busca em pedido de orçamento.</p>
+            <p>
+              Tente mudar o bairro ou explore um serviço próximo. A Berufe não
+              transforma sua busca em pedido de orçamento.
+            </p>
             <div class="empty-results__suggestions">
               <NuxtLink
                 v-for="service in relatedServices"
@@ -162,7 +239,10 @@ function contact(professional: Professional) {
 
           <div class="finder__principle">
             <UIcon name="i-lucide-heart-handshake" />
-            <div><strong>Você decide com quem falar.</strong><p>Na Berufe, seu contato só chega a quem você escolher.</p></div>
+            <div>
+              <strong>Você decide com quem falar.</strong>
+              <p>Na Berufe, seu contato só chega a quem você escolher.</p>
+            </div>
           </div>
         </div>
       </DesignSystemContainer>

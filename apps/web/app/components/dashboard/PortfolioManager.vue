@@ -1,38 +1,106 @@
 <script setup lang="ts">
-import { shallowRef } from 'vue'
-import type { PortfolioItem } from '~/types'
+import { shallowRef } from "vue";
+import type { PortfolioItem } from "~/types";
 
-defineProps<{ items: PortfolioItem[] }>()
-const emit = defineEmits<{ added: [] }>()
-const uploadOpen = shallowRef(false)
-const title = shallowRef('')
+defineProps<{ items: PortfolioItem[] }>();
+const emit = defineEmits<{ added: [] }>();
+const uploadOpen = shallowRef(false);
+const title = shallowRef("");
 </script>
 
 <template>
   <div class="portfolio-manager">
     <DesignSystemSurfaceCard as="section" class="portfolio-manager__intro">
-      <div><DesignSystemEyebrow>Seu trabalho na prática</DesignSystemEyebrow><h2>Portfólio</h2><p>Adicione até 12 trabalhos. Novos itens entram em análise antes de aparecer no perfil público.</p></div>
-      <UButton color="primary" icon="i-lucide-image-plus" @click="uploadOpen = true">Adicionar trabalho</UButton>
+      <div>
+        <DesignSystemEyebrow>Seu trabalho na prática</DesignSystemEyebrow>
+        <h2>Portfólio</h2>
+        <p>
+          Adicione até 12 trabalhos. Novos itens entram em análise antes de
+          aparecer no perfil público.
+        </p>
+      </div>
+      <UButton
+        color="primary"
+        icon="i-lucide-image-plus"
+        @click="uploadOpen = true"
+        >Adicionar trabalho</UButton
+      >
     </DesignSystemSurfaceCard>
     <div class="portfolio-manager__grid">
-      <article v-for="(item, index) in items" :key="item.id">
-        <img :src="item.image" :alt="item.title">
-        <div><span><strong>{{ item.title }}</strong><small>{{ item.service }}</small></span><em>Aprovado</em></div>
-        <button type="button" aria-label="Opções"><UIcon name="i-lucide-ellipsis" /></button>
-        <span class="portfolio-manager__order"><UIcon name="i-lucide-grip-vertical" /> {{ index + 1 }}</span>
+      <article v-for="item in items" :key="item.id">
+        <img :src="item.image" :alt="item.title" />
+        <div>
+          <span
+            ><strong>{{ item.title }}</strong
+            ><small>{{ item.service }}</small></span
+          ><em>Aprovado</em>
+        </div>
+        <button type="button" :aria-label="`Gerenciar ${item.title}`">
+          <UIcon name="i-lucide-ellipsis" />
+        </button>
       </article>
-      <button v-if="items.length < 12" class="portfolio-manager__add" type="button" @click="uploadOpen = true"><UIcon name="i-lucide-plus" /><strong>Adicionar trabalho</strong><small>{{ items.length }} de 12 publicados</small></button>
+      <button
+        v-if="items.length < 12"
+        class="portfolio-manager__add"
+        type="button"
+        @click="uploadOpen = true"
+      >
+        <UIcon name="i-lucide-plus" /><strong>Adicionar trabalho</strong
+        ><small>{{ items.length }} de 12 publicados</small>
+      </button>
     </div>
-    <UModal v-model:open="uploadOpen" title="Adicionar trabalho" description="A imagem ficará privada até a aprovação.">
+    <UModal
+      v-model:open="uploadOpen"
+      title="Adicionar trabalho"
+      description="A imagem ficará privada até a aprovação."
+    >
       <template #body>
-        <form id="portfolio-upload" class="portfolio-upload" @submit.prevent="uploadOpen = false; emit('added')">
-          <label class="portfolio-upload__drop"><UIcon name="i-lucide-cloud-upload" /><strong>Arraste uma foto ou selecione do dispositivo</strong><small>JPG, PNG ou WebP · até 8 MB</small><input type="file" accept="image/jpeg,image/png,image/webp"></label>
-          <DesignSystemFormField label="Título do trabalho"><input v-model="title" required maxlength="80" placeholder="Ex.: Iluminação da cozinha"></DesignSystemFormField>
-          <DesignSystemFormField label="Serviço"><select required><option>Eletricista</option><option>Marido de aluguel</option></select></DesignSystemFormField>
-          <DesignSystemFormField label="Descrição opcional"><textarea maxlength="300" placeholder="Explique brevemente o que foi feito..." /></DesignSystemFormField>
+        <form
+          id="portfolio-upload"
+          class="portfolio-upload"
+          @submit.prevent="
+            uploadOpen = false;
+            emit('added');
+          "
+        >
+          <label class="portfolio-upload__drop"
+            ><UIcon name="i-lucide-cloud-upload" /><strong
+              >Arraste uma foto ou selecione do dispositivo</strong
+            ><small>JPG ou PNG · até 10 MB</small
+            ><input type="file" accept="image/jpeg,image/png"
+          /></label>
+          <DesignSystemFormField label="Título do trabalho"
+            ><input
+              v-model="title"
+              required
+              maxlength="80"
+              placeholder="Ex.: Iluminação da cozinha"
+          /></DesignSystemFormField>
+          <DesignSystemFormField label="Serviço"
+            ><select required>
+              <option>Eletricista</option>
+              <option>Marido de aluguel</option>
+            </select></DesignSystemFormField
+          >
+          <DesignSystemFormField label="Descrição opcional">
+            <textarea
+              maxlength="300"
+              placeholder="Explique brevemente o que foi feito..."
+            />
+          </DesignSystemFormField>
         </form>
       </template>
-      <template #footer><UButton color="neutral" variant="ghost" @click="uploadOpen = false">Cancelar</UButton><UButton type="submit" form="portfolio-upload" color="primary" :disabled="!title">Enviar para análise</UButton></template>
+      <template #footer
+        ><UButton color="neutral" variant="ghost" @click="uploadOpen = false"
+          >Cancelar</UButton
+        ><UButton
+          type="submit"
+          form="portfolio-upload"
+          color="primary"
+          :disabled="!title"
+          >Enviar para análise</UButton
+        ></template
+      >
     </UModal>
   </div>
 </template>
@@ -117,19 +185,6 @@ const title = shallowRef('')
     border-radius: 9px;
     background: rgba(255, 255, 255, 0.92);
     cursor: pointer;
-  }
-  &__order {
-    position: absolute;
-    top: 9px;
-    left: 9px;
-    display: flex;
-    align-items: center;
-    gap: 3px;
-    padding: 6px 7px;
-    border-radius: 8px;
-    background: rgba(23, 53, 47, 0.82);
-    color: white;
-    font-size: 0.82rem;
   }
   &__add {
     min-height: 260px;
