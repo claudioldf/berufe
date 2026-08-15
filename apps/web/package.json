@@ -29,6 +29,7 @@
     "stylelint": "stylelint \"app/**/*.{vue,scss}\"",
     "stylelint:fix": "stylelint \"app/**/*.{vue,scss}\" --fix",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "check": "pnpm format:check && pnpm lint && pnpm stylelint && pnpm typecheck && pnpm test"
@@ -44,6 +45,7 @@
     "@nuxt/eslint": "1.17.0",
     "@nuxt/test-utils": "4.1.0",
     "@playwright/test": "1.62.1",
+    "@vitest/coverage-v8": "4.1.10",
     "@vue/test-utils": "2.4.11",
     "eslint": "10.8.1",
     "happy-dom": "20.11.2",

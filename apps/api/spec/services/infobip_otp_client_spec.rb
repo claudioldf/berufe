@@ -3,7 +3,7 @@
 require_relative "../../app/services/sms_otp"
 require_relative "../../app/services/infobip_otp_client"
 
-RSpec.describe InfobipOtpClient do
+module InfobipOtpClientSpecSupport
   Response = Struct.new(:code, :body, :headers) do
     def [](name)
       headers[name]
@@ -35,9 +35,11 @@ RSpec.describe InfobipOtpClient do
       yield connection
     end
   end
+end
 
+RSpec.describe InfobipOtpClient do
   def build_client(response)
-    http = FakeHttp.new(response)
+    http = InfobipOtpClientSpecSupport::FakeHttp.new(response)
     client = described_class.new(
       base_url: "https://example.api.infobip.com",
       api_key: "private-api-key",
@@ -50,7 +52,7 @@ RSpec.describe InfobipOtpClient do
   end
 
   it "starts a challenge with the purpose-specific 2FA endpoint" do
-    client, http = build_client(Response.new("200", '{"pinId":"pin-reference"}', {}))
+    client, http = build_client(InfobipOtpClientSpecSupport::Response.new("200", '{"pinId":"pin-reference"}', {}))
 
     challenge = client.start_challenge(phone: "+5547999999999")
     request_body = JSON.parse(http.connection.last_request.body)
@@ -62,7 +64,7 @@ RSpec.describe InfobipOtpClient do
   end
 
   it "verifies the provider challenge without exposing a provider session" do
-    client, http = build_client(Response.new("200", '{"verified":true}', {}))
+    client, http = build_client(InfobipOtpClientSpecSupport::Response.new("200", '{"verified":true}', {}))
 
     verification = client.verify_challenge(reference: "pin-reference", code: "123456")
 
@@ -71,7 +73,9 @@ RSpec.describe InfobipOtpClient do
   end
 
   it "preserves retry timing without returning the provider response body" do
-    client, = build_client(Response.new("429", '{"requestError":"private"}', {"Retry-After" => "30"}))
+    client, = build_client(
+      InfobipOtpClientSpecSupport::Response.new("429", '{"requestError":"private"}', {"Retry-After" => "30"})
+    )
 
     expect { client.start_challenge(phone: "+5547999999999") }
       .to raise_error(SmsOtp::RateLimited) { |error|
@@ -81,7 +85,7 @@ RSpec.describe InfobipOtpClient do
   end
 
   it "maps malformed provider responses to a safe unavailable error" do
-    client, = build_client(Response.new("200", "not-json", {}))
+    client, = build_client(InfobipOtpClientSpecSupport::Response.new("200", "not-json", {}))
 
     expect { client.start_challenge(phone: "+5547999999999") }
       .to raise_error(SmsOtp::ProviderUnavailable, "SMS OTP provider returned an invalid response")

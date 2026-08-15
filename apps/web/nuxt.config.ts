@@ -21,6 +21,11 @@ export default defineNuxtConfig({
     "@data": fileURLToPath(new URL("./data", import.meta.url)),
   },
   modules: ["@nuxt/ui", "@nuxt/eslint"],
+  eslint: {
+    config: {
+      stylistic: false,
+    },
+  },
   colorMode: {
     preference: "light",
     fallback: "light",

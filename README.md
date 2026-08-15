@@ -21,19 +21,21 @@ docker compose up --build
 
 ```bash
 docker compose exec web pnpm test
+docker compose exec api bundle exec rspec
 ```
 
 ## Lint
 
 ```bash
-docker compose exec web pnpm lint
-docker compose exec api bin/brakeman --no-pager
+docker compose exec web pnpm check
+docker compose exec api bin/check
 ```
 
 ## Format
 
 ```bash
 docker compose exec web pnpm format
+docker compose exec api bundle exec standardrb --fix
 ```
 
 ## Stop
