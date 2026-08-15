@@ -1,5 +1,6 @@
 # Dependencies
 node_modules/
+.pnpm-store/
 
 # Nuxt build and generated files
 .nuxt/
@@ -21,9 +22,24 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# Rails runtime and local secrets
+apps/api/.bundle/
+apps/api/config/master.key
+apps/api/config/credentials/*.key
+apps/api/log/*
+!apps/api/log/.keep
+apps/api/storage/*
+!apps/api/storage/.keep
+apps/api/tmp/*
+!apps/api/tmp/.keep
+!apps/api/tmp/pids/
+apps/api/tmp/pids/*
+!apps/api/tmp/pids/.keep
+
 # Test and coverage output
 coverage/
 .vitest/
+test-results/
 
 # Editors and operating systems
 .idea/
