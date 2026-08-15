@@ -223,6 +223,8 @@ The Compose stack contains only four services:
 
 One command starts the project: `docker compose up --build`. The API and worker share the same image and environment definition. Use health checks so Rails and the worker wait for PostgreSQL readiness; do not rely only on container start order. Keep all four services if source-mounted Nuxt and Rails hot reload remain comfortable on the team's development machines.
 
+The four-service source-mounted setup was validated on 2026-08-15 on macOS 26 arm64: Nuxt's watcher and Rails development reloader both observe host edits without rebuilding either image, with no material delay during ordinary development.
+
 Keep Dockerfiles inside `apps/web/` and `apps/api/`, but keep orchestration at the repository root. There is one Node application, so use pnpm without a workspace and keep generated API types inside the frontend. Commit `.env.example` with names and safe defaults only; never commit real credentials.
 
 Local development uses a local-disk storage adapter and a fake SMS-OTP adapter by default. R2 and live Infobip calls are opt-in integration checks, not requirements for starting the stack. Do not add Redis, MinIO, a mail catcher, or other support containers until an implemented feature needs them.

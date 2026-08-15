@@ -7,41 +7,37 @@ corepack enable
 pnpm --dir apps/web install --frozen-lockfile
 cd apps/api
 bundle install
+cd ../..
+cp .env.example .env
 ```
 
 ## Start
 
 ```bash
-pnpm --dir apps/web dev
-```
-
-```bash
-cd apps/api
-bin/rails server --port 3001
+docker compose up --build
 ```
 
 ## Test
 
 ```bash
-pnpm --dir apps/web test
+docker compose exec web pnpm test
 ```
 
 ## Lint
 
 ```bash
-pnpm --dir apps/web lint
-cd apps/api
-bin/brakeman --no-pager
+docker compose exec web pnpm lint
+docker compose exec api bin/brakeman --no-pager
 ```
 
 ## Format
 
 ```bash
-pnpm --dir apps/web format
+docker compose exec web pnpm format
 ```
 
 ## Stop
 
-```text
-Ctrl+C
+```bash
+docker compose down
 ```

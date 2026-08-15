@@ -26,3 +26,5 @@ group :development, :test do
   # Static analysis for security vulnerabilities [https://brakemanscanner.org/]
   gem "brakeman", require: false
 end
+
+gem "good_job", "~> 4.0"

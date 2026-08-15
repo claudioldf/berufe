@@ -1,0 +1,8 @@
+.bundle
+.git
+.gitignore
+config/master.key
+coverage
+log/*
+storage/*
+tmp/*

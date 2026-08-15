@@ -1,0 +1,7 @@
+.git
+.gitignore
+.nuxt
+.output
+coverage
+node_modules
+test-results
