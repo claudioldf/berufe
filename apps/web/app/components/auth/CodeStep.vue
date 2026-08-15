@@ -21,8 +21,7 @@ defineEmits<{ submit: []; resend: []; changePhone: [] }>();
     <DesignSystemEyebrow>Confirme seu telefone</DesignSystemEyebrow>
     <h1 id="code-step-title">Digite o código<br />que enviamos.</h1>
     <p class="auth-card__lead">
-      SMS enviado para <strong>+55 {{ phone }}</strong
-      >. Para testar, use <strong>123456</strong>.
+      SMS enviado para <strong>+55 {{ phone }}</strong>.
     </p>
     <form @submit.prevent="$emit('submit')">
       <label class="auth-field" for="auth-code">
@@ -45,7 +44,12 @@ defineEmits<{ submit: []; resend: []; changePhone: [] }>();
       <p v-if="error" id="code-step-error" class="auth-error" role="alert">
         <UIcon name="i-lucide-circle-alert" /> {{ error }}
       </p>
-      <UButton type="submit" color="primary" block :loading="loading">
+      <UButton
+        class="code-step__submit"
+        type="submit"
+        color="primary"
+        :loading="loading"
+      >
         Confirmar e continuar
       </UButton>
       <button
@@ -61,3 +65,10 @@ defineEmits<{ submit: []; resend: []; changePhone: [] }>();
     </form>
   </section>
 </template>
+
+<style scoped>
+.code-step__submit {
+  justify-self: end;
+  min-height: 44px;
+}
+</style>

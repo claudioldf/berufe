@@ -44,7 +44,7 @@ function requestCode() {
 function verifyCode() {
   error.value = ''
   if (code.value !== '123456') {
-    error.value = 'Código inválido ou expirado. Neste protótipo, use 123456.'
+    error.value = 'Código inválido ou expirado.'
     return
   }
   simulateLoading(() => { step.value = 3 })

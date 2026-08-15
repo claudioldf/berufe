@@ -32,9 +32,9 @@ defineEmits<{ submit: [] }>();
         <UIcon name="i-lucide-circle-alert" /> {{ error }}
       </p>
       <UButton
+        class="phone-step__submit"
         type="submit"
         color="primary"
-        block
         :loading="loading"
         trailing-icon="i-lucide-arrow-right"
       >
@@ -47,3 +47,10 @@ defineEmits<{ submit: [] }>();
     </p>
   </section>
 </template>
+
+<style scoped>
+.phone-step__submit {
+  justify-self: end;
+  min-height: 2.5rem;
+}
+</style>
