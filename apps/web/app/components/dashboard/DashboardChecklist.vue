@@ -1,13 +1,9 @@
 <script setup lang="ts">
+import type { OnboardingChecklistItem } from "~/types";
+
 defineProps<{
   readiness: number;
-  items: Array<{
-    id: string;
-    label: string;
-    description: string;
-    done: boolean;
-    to: string;
-  }>;
+  items: OnboardingChecklistItem[];
 }>();
 </script>
 

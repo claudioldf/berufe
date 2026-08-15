@@ -128,6 +128,7 @@ export default defineNuxtConfig({
         "/privacidade",
         "/termos-de-uso",
         "/painel",
+        "/painel/onboarding",
         "/painel/perfil",
         "/painel/orcamentos/novo",
         "/profissionais/marina-alves",

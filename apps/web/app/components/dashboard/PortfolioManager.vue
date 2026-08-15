@@ -2,35 +2,18 @@
 import { shallowRef } from "vue";
 import type { PortfolioItem, PortfolioItemDraft } from "~/types";
 
-defineProps<{ items: PortfolioItem[] }>();
+withDefaults(
+  defineProps<{ items: PortfolioItem[]; serviceOptions?: string[] }>(),
+  {
+    serviceOptions: () => ["Eletricista", "Marido de aluguel"],
+  },
+);
 const emit = defineEmits<{ added: [draft: PortfolioItemDraft] }>();
 const uploadOpen = shallowRef(false);
-const file = shallowRef<File | null>(null);
-const title = shallowRef("");
-const service = shallowRef("Eletricista");
-const description = shallowRef("");
 
-function selectFile(event: Event) {
-  file.value = (event.target as HTMLInputElement).files?.[0] ?? null;
-}
-
-function resetUpload() {
-  file.value = null;
-  title.value = "";
-  service.value = "Eletricista";
-  description.value = "";
-}
-
-function submitUpload() {
-  if (!file.value || !title.value.trim()) return;
-  emit("added", {
-    file: file.value,
-    title: title.value.trim(),
-    service: service.value,
-    description: description.value.trim(),
-  });
+function submitUpload(draft: PortfolioItemDraft) {
+  emit("added", draft);
   uploadOpen.value = false;
-  resetUpload();
 }
 </script>
 
@@ -87,58 +70,13 @@ function submitUpload() {
       description="A imagem ficará privada até a aprovação."
     >
       <template #body>
-        <form
-          id="portfolio-upload"
-          class="portfolio-upload"
-          @submit.prevent="submitUpload"
-        >
-          <label class="portfolio-upload__drop"
-            ><UIcon name="i-lucide-cloud-upload" /><strong
-              >Arraste uma foto ou selecione do dispositivo</strong
-            ><small>JPG ou PNG · até 10 MB</small
-            ><input
-              name="portfolio-image"
-              type="file"
-              accept="image/jpeg,image/png"
-              required
-              @change="selectFile"
-          /></label>
-          <DesignSystemFormField label="Título do trabalho"
-            ><input
-              v-model="title"
-              name="portfolio-title"
-              required
-              maxlength="80"
-              autocomplete="off"
-              placeholder="Ex.: Iluminação da cozinha…"
-          /></DesignSystemFormField>
-          <DesignSystemFormField label="Serviço"
-            ><select v-model="service" name="portfolio-service" required>
-              <option>Eletricista</option>
-              <option>Marido de aluguel</option>
-            </select></DesignSystemFormField
-          >
-          <DesignSystemFormField label="Descrição opcional">
-            <textarea
-              v-model="description"
-              name="portfolio-description"
-              maxlength="300"
-              placeholder="Explique brevemente o que foi feito…"
-            />
-          </DesignSystemFormField>
-        </form>
+        <DashboardPortfolioUploadForm
+          :service-options="serviceOptions"
+          show-cancel
+          @cancel="uploadOpen = false"
+          @submitted="submitUpload"
+        />
       </template>
-      <template #footer
-        ><UButton color="neutral" variant="ghost" @click="uploadOpen = false"
-          >Cancelar</UButton
-        ><UButton
-          type="submit"
-          form="portfolio-upload"
-          color="primary"
-          :disabled="!file || !title.trim()"
-          >Enviar para análise</UButton
-        ></template
-      >
     </UModal>
   </div>
 </template>
@@ -242,38 +180,6 @@ function submitUpload() {
   }
   &__add small {
     color: var(--ink-soft);
-  }
-}
-.portfolio-upload {
-  display: grid;
-  gap: 14px;
-  &__drop {
-    position: relative;
-    display: grid;
-    gap: 6px;
-    color: var(--ink);
-    font-size: 0.86rem;
-    font-weight: 800;
-    place-items: center;
-    padding: 30px;
-    border: 1px dashed #8eb6aa;
-    border-radius: 13px;
-    background: var(--color-brand-tint-subtle);
-    text-align: center;
-    cursor: pointer;
-  }
-  &__drop svg {
-    color: var(--color-brand);
-    font-size: 1.8rem;
-  }
-  &__drop small {
-    color: var(--ink-soft);
-  }
-  &__drop input {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    cursor: pointer;
   }
 }
 @media (width <= 780px) {

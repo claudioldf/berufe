@@ -1,6 +1,6 @@
 <script setup lang="ts">
 interface Props {
-  as?: "article" | "div" | "section";
+  as?: "article" | "aside" | "div" | "section";
 }
 
 withDefaults(defineProps<Props>(), {

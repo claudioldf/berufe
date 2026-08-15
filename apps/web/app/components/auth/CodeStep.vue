@@ -21,7 +21,9 @@ defineEmits<{ submit: []; resend: []; changePhone: [] }>();
     <DesignSystemEyebrow>Confirme seu telefone</DesignSystemEyebrow>
     <h1 id="code-step-title">Digite o código<br />que enviamos.</h1>
     <p class="auth-card__lead">
-      SMS enviado para <strong>+55 {{ phone }}</strong>.
+      SMS enviado para
+      <strong>+55 {{ phone }}</strong
+      >.
     </p>
     <form @submit.prevent="$emit('submit')">
       <label class="auth-field" for="auth-code">

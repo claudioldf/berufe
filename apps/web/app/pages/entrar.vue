@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { useAppRole } from "~/composables/useAppRole";
 import { usePhoneAuthFlow } from "~/composables/usePhoneAuthFlow";
+import { useProfessionalOnboarding } from "~/composables/useProfessionalOnboarding";
 import { useToast } from "~/composables/useToast";
 
 const router = useRouter();
 const { setRole } = useAppRole();
 const { showToast } = useToast();
+const { isComplete, initializeFromAuth } = useProfessionalOnboarding();
 const {
   step,
   phone,
@@ -25,12 +27,15 @@ useSeoMeta({ title: "Entrar ou criar perfil" });
 
 async function register() {
   if (!validateRegistration()) return;
+  initializeFromAuth({ name: name.value, phone: phone.value });
   setRole("professional");
   showToast({
-    title: "Perfil rascunho criado",
-    description: "Vamos completar sua presença na Berufe.",
+    title: isComplete.value ? "Acesso confirmado" : "Perfil rascunho criado",
+    description: isComplete.value
+      ? "Que bom ter você de volta."
+      : "Vamos completar sua presença na Berufe.",
   });
-  await router.push("/painel");
+  await router.push(isComplete.value ? "/painel" : "/painel/onboarding");
 }
 </script>
 

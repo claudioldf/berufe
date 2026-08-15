@@ -2,15 +2,22 @@
 import dashboardData from "../../../data/dashboard.json";
 import professionalsData from "../../../data/professionals.json";
 import type { Professional } from "~/types";
+import { useProfessionalOnboarding } from "~/composables/useProfessionalOnboarding";
 import { useShare } from "~/composables/useShare";
 import { useToast } from "~/composables/useToast";
 import { formatCurrency } from "~/utils/formatters";
 
 const { share } = useShare();
 const { showToast } = useToast();
+const { state: onboarding, checklist, progress } = useProfessionalOnboarding();
 const professional = (professionalsData as Professional[]).find(
   (item) => item.id === dashboardData.professionalId,
 )!;
+const professionalFirstName = computed(
+  () =>
+    onboarding.value.profile.name.trim().split(" ")[0] ||
+    professional.name.split(" ")[0],
+);
 
 useSeoMeta({ title: "Painel profissional" });
 
@@ -38,7 +45,7 @@ function respondRelationship(accepted: boolean) {
       <DesignSystemContainer class="dashboard-welcome__inner">
         <div>
           <p>Terça-feira, 11 de agosto</p>
-          <h1>Olá, Marcos. <em>Vamos em frente?</em></h1>
+          <h1>Olá, {{ professionalFirstName }}. <em>Vamos em frente?</em></h1>
         </div>
         <div class="dashboard-welcome__actions">
           <UButton
@@ -73,10 +80,7 @@ function respondRelationship(accepted: boolean) {
       </section>
 
       <div class="dashboard-grid">
-        <DashboardChecklist
-          :readiness="dashboardData.readiness"
-          :items="dashboardData.checklist"
-        />
+        <DashboardChecklist :readiness="progress" :items="checklist" />
 
         <DesignSystemSurfaceCard as="section" class="actions-card">
           <header>
