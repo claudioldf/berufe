@@ -2,9 +2,12 @@
 import dashboardData from "../../../data/dashboard.json";
 import professionalsData from "../../../data/professionals.json";
 import type { Professional } from "~/types";
-import { useMockupApp } from "~/composables/useMockupApp";
+import { useShare } from "~/composables/useShare";
+import { useToast } from "~/composables/useToast";
+import { formatCurrency } from "~/utils/formatters";
 
-const { money, share, showToast } = useMockupApp();
+const { share } = useShare();
+const { showToast } = useToast();
 const professional = (professionalsData as Professional[]).find(
   (item) => item.id === dashboardData.professionalId,
 )!;
@@ -178,7 +181,7 @@ function respondRelationship(accepted: boolean) {
             >
             <span>{{ quote.customer }}</span>
             <span
-              ><strong>{{ money(quote.total) }}</strong></span
+              ><strong>{{ formatCurrency(quote.total) }}</strong></span
             >
             <span
               ><em :class="quote.status">{{
@@ -198,11 +201,11 @@ function respondRelationship(accepted: boolean) {
 <style scoped lang="scss">
 .dashboard-page {
   min-height: 100vh;
-  background: #f3f1eb;
+  background: var(--color-surface-canvas);
 }
 .dashboard-welcome {
   padding: 40px 0 44px;
-  background: #17352f;
+  background: var(--color-brand-strong);
   color: white;
   &__inner {
     display: flex;
@@ -219,13 +222,13 @@ function respondRelationship(accepted: boolean) {
   }
   & h1 {
     margin: 0;
-    font-family: Georgia, serif;
+    font-family: var(--font-display);
     font-size: clamp(2.2rem, 4vw, 3.8rem);
     font-weight: 500;
     letter-spacing: -0.04em;
   }
   & h1 em {
-    color: #a7d7c8;
+    color: var(--color-brand-muted);
     font-weight: inherit;
   }
   &__actions {
@@ -253,7 +256,7 @@ function respondRelationship(accepted: boolean) {
     height: 38px;
     border-radius: 11px;
     background: white;
-    color: #397a69;
+    color: var(--color-brand);
   }
   & strong,
   & p {
@@ -272,7 +275,7 @@ function respondRelationship(accepted: boolean) {
     display: flex;
     align-items: center;
     gap: 4px;
-    color: #397a69;
+    color: var(--color-brand);
     font-size: 0.86rem;
     font-weight: 850;
     text-decoration: none;
@@ -292,7 +295,7 @@ function respondRelationship(accepted: boolean) {
   }
   &__heading h2 {
     margin: 0;
-    font-family: Georgia, serif;
+    font-family: var(--font-display);
     font-size: 2rem;
     font-weight: 500;
     letter-spacing: -0.035em;
@@ -317,7 +320,7 @@ function respondRelationship(accepted: boolean) {
     margin-bottom: 16px;
   }
   & header span {
-    font-family: Georgia, serif;
+    font-family: var(--font-display);
     font-size: 1.4rem;
     font-weight: 600;
   }
@@ -349,7 +352,7 @@ function respondRelationship(accepted: boolean) {
   &__grid a:hover,
   &__grid button:hover {
     border-color: #9fc8bb;
-    background: #eff7f4;
+    background: var(--color-brand-tint-subtle);
   }
   &__grid a > span,
   &__grid button > span {
@@ -360,7 +363,7 @@ function respondRelationship(accepted: boolean) {
     height: 34px;
     border-radius: 10px;
     background: var(--mint);
-    color: #397a69;
+    color: var(--color-brand);
   }
   &__grid strong {
     align-self: end;
@@ -390,7 +393,7 @@ function respondRelationship(accepted: boolean) {
     width: 38px;
     height: 38px;
     border-radius: 11px;
-    background: #fff0ec;
+    background: var(--color-accent-tint);
     color: #be553f;
   }
   & strong,
@@ -464,7 +467,7 @@ function respondRelationship(accepted: boolean) {
   }
   & em.shared {
     background: var(--mint);
-    color: #397a69;
+    color: var(--color-brand);
   }
   & > a > span:last-child {
     display: flex;
@@ -472,12 +475,12 @@ function respondRelationship(accepted: boolean) {
     align-items: center;
   }
 }
-@media (max-width: 900px) {
+@media (width <= 900px) {
   .dashboard-grid {
     grid-template-columns: 1fr;
   }
 }
-@media (max-width: 700px) {
+@media (width <= 700px) {
   .dashboard-welcome {
     &__inner {
       display: grid;

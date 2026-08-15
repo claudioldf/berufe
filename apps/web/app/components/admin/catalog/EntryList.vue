@@ -107,7 +107,7 @@ const emit = defineEmits<{
       80px 70px;
   }
   &__head {
-    background: #f0eee8;
+    background: var(--color-surface-muted);
     color: var(--ink-soft);
     font-size: var(--font-size-min);
     font-weight: 900;
@@ -216,7 +216,7 @@ const emit = defineEmits<{
     font-size: var(--font-size-min);
   }
 }
-@media (max-width: 700px) {
+@media (width <= 700px) {
   .catalog-table {
     &__head {
       display: none;

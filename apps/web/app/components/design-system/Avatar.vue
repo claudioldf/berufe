@@ -1,44 +1,73 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed } from "vue";
 
 interface Props {
-  name: string
-  src?: string
-  alt?: string
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'profile'
-  shape?: 'circle' | 'rounded'
-  verified?: boolean
+  name: string;
+  src?: string;
+  alt?: string;
+  size?: "xs" | "sm" | "md" | "lg" | "profile";
+  shape?: "circle" | "rounded";
+  verified?: boolean;
+  loading?: "eager" | "lazy";
 }
 
 const props = withDefaults(defineProps<Props>(), {
   src: undefined,
   alt: undefined,
-  size: 'md',
-  shape: 'circle',
+  size: "md",
+  shape: "circle",
   verified: false,
-})
+  loading: "lazy",
+});
 
-const initials = computed(() => props.name
-  .trim()
-  .split(/\s+/)
-  .slice(0, 2)
-  .map(part => part.charAt(0))
-  .join('')
-  .toLocaleUpperCase('pt-BR'))
+const dimensions = {
+  xs: { width: 35, height: 35 },
+  sm: { width: 42, height: 42 },
+  md: { width: 54, height: 54 },
+  lg: { width: 74, height: 74 },
+  profile: { width: 165, height: 185 },
+} as const;
+
+const imageDimensions = computed(() => dimensions[props.size]);
+
+const initials = computed(() => {
+  const value = props.name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part.charAt(0))
+    .join("")
+    .toLocaleUpperCase("pt-BR");
+  return value || "?";
+});
 
 const classes = computed(() => [
-  'avatar',
+  "avatar",
   `avatar--${props.size}`,
   `avatar--${props.shape}`,
-])
+]);
 </script>
 
 <template>
   <span :class="classes">
-    <img v-if="src" class="avatar__image" :src="src" :alt="alt ?? `Foto de ${name}`">
-    <span v-else class="avatar__fallback" :aria-label="name">{{ initials }}</span>
-    <span v-if="verified" class="avatar__verified" aria-label="Identidade verificada">
-      <UIcon name="i-lucide-badge-check" />
+    <img
+      v-if="src"
+      class="avatar__image"
+      :src="src"
+      :alt="alt ?? `Foto de ${name}`"
+      :width="imageDimensions.width"
+      :height="imageDimensions.height"
+      :loading="loading"
+    />
+    <span v-else class="avatar__fallback" :aria-label="name || 'Avatar'">{{
+      initials
+    }}</span>
+    <span
+      v-if="verified"
+      class="avatar__verified"
+      aria-label="Identidade verificada"
+    >
+      <UIcon name="i-lucide-badge-check" aria-hidden="true" />
     </span>
   </span>
 </template>
@@ -98,7 +127,7 @@ const classes = computed(() => [
   &__fallback {
     display: grid;
     place-items: center;
-    color: #397a69;
+    color: var(--color-brand);
     font-weight: 900;
   }
 
@@ -111,7 +140,7 @@ const classes = computed(() => [
     width: 20px;
     height: 20px;
     border: 3px solid var(--paper);
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     background: var(--coral);
     color: white;
     font-size: 0.75rem;
@@ -123,12 +152,12 @@ const classes = computed(() => [
     width: 38px;
     height: 38px;
     border-width: 4px;
-    border-color: #17352f;
+    border-color: var(--color-brand-strong);
     font-size: 1.1rem;
   }
 }
 
-@media (max-width: 680px) {
+@media (width <= 680px) {
   .avatar {
     &--lg {
       width: 54px;

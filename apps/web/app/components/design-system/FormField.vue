@@ -1,26 +1,65 @@
 <script setup lang="ts">
+import { computed, useId } from "vue";
+
 interface Props {
-  label: string
-  hint?: string
-  error?: string
+  id?: string;
+  label: string;
+  hint?: string;
+  error?: string;
+  required?: boolean;
 }
 
-defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  id: undefined,
+  hint: undefined,
+  error: undefined,
+  required: false,
+});
+
+const generatedId = useId();
+const controlId = computed(() => props.id ?? generatedId);
+const hintId = computed(() => `${controlId.value}-hint`);
+const errorId = computed(() => `${controlId.value}-error`);
+const describedBy = computed(() => {
+  if (props.error) return errorId.value;
+  if (props.hint) return hintId.value;
+  return undefined;
+});
 
 defineSlots<{
-  default(): unknown
-  label?(): unknown
-}>()
+  default(props: {
+    controlId: string;
+    describedBy?: string;
+    invalid: boolean;
+    required: boolean;
+  }): unknown;
+  label?(): unknown;
+}>();
 </script>
 
 <template>
-  <label class="form-field">
+  <label class="form-field" :for="controlId">
     <span class="form-field__label">
       <slot name="label">{{ label }}</slot>
+      <span v-if="required" class="form-field__required">Obrigatório</span>
     </span>
-    <slot />
-    <small v-if="error" class="form-field__error">{{ error }}</small>
-    <small v-else-if="hint" class="form-field__hint">{{ hint }}</small>
+    <slot
+      :control-id="controlId"
+      :described-by="describedBy"
+      :invalid="Boolean(error)"
+      :required="required"
+    />
+    <small
+      v-if="error"
+      :id="errorId"
+      class="form-field__error"
+      aria-live="polite"
+    >
+      {{ error }}
+    </small>
+    <small v-else-if="hint" :id="hintId" class="form-field__hint">
+      {{ hint }}
+    </small>
   </label>
 </template>
 
@@ -39,7 +78,7 @@ defineSlots<{
   }
 
   &__label :slotted(em) {
-    color: #8a9995;
+    color: var(--color-text-muted);
     font-size: 0.82rem;
     font-style: normal;
     font-weight: 700;
@@ -51,20 +90,19 @@ defineSlots<{
     width: 100%;
     padding: 11px 12px;
     border: 1px solid var(--line);
-    border-radius: 10px;
-    background: white;
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
     color: var(--ink);
-    outline: none;
     transition:
-      border-color 0.15s ease,
-      box-shadow 0.15s ease;
+      border-color var(--motion-fast) ease,
+      box-shadow var(--motion-fast) ease;
   }
 
-  & :slotted(input:focus),
-  & :slotted(select:focus),
-  & :slotted(textarea:focus) {
-    border-color: #397a69;
-    box-shadow: 0 0 0 3px rgba(63, 131, 114, 0.12);
+  & :slotted(input:focus-visible),
+  & :slotted(select:focus-visible),
+  & :slotted(textarea:focus-visible) {
+    border-color: var(--color-brand);
+    box-shadow: var(--focus-ring);
   }
 
   & :slotted(textarea) {
@@ -73,7 +111,8 @@ defineSlots<{
   }
 
   &__hint,
-  &__error {
+  &__error,
+  &__required {
     font-size: 0.84rem;
     font-weight: 500;
     line-height: 1.45;
@@ -84,7 +123,12 @@ defineSlots<{
   }
 
   &__error {
-    color: #b42318;
+    color: var(--color-danger);
+  }
+
+  &__required {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-min);
   }
 }
 </style>

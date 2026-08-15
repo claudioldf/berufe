@@ -1,14 +1,14 @@
 <script setup lang="ts">
 defineProps<{
-  readiness: number
+  readiness: number;
   items: Array<{
-    id: string
-    label: string
-    description: string
-    done: boolean
-    to: string
-  }>
-}>()
+    id: string;
+    label: string;
+    description: string;
+    done: boolean;
+    to: string;
+  }>;
+}>();
 </script>
 
 <template>
@@ -18,15 +18,28 @@ defineProps<{
         <span>Seu perfil está</span>
         <strong>{{ readiness }}% completo</strong>
       </div>
-      <div class="checklist-card__ring" :style="{ '--progress': `${readiness * 3.6}deg` }">
+      <div
+        class="checklist-card__ring"
+        :style="{ '--progress': `${readiness * 3.6}deg` }"
+      >
         <span>{{ readiness }}%</span>
       </div>
     </header>
     <p>Complete estas etapas para mostrar mais evidências aos clientes.</p>
     <div class="checklist-card__items">
-      <NuxtLink v-for="item in items" :key="item.id" :to="item.to" :class="{ done: item.done }">
-        <span class="checklist-card__check"><UIcon :name="item.done ? 'i-lucide-check' : 'i-lucide-circle'" /></span>
-        <span><strong>{{ item.label }}</strong><small>{{ item.description }}</small></span>
+      <NuxtLink
+        v-for="item in items"
+        :key="item.id"
+        :to="item.to"
+        :class="{ done: item.done }"
+      >
+        <span class="checklist-card__check"
+          ><UIcon :name="item.done ? 'i-lucide-check' : 'i-lucide-circle'"
+        /></span>
+        <span
+          ><strong>{{ item.label }}</strong
+          ><small>{{ item.description }}</small></span
+        >
         <UIcon name="i-lucide-chevron-right" />
       </NuxtLink>
     </div>
@@ -52,7 +65,7 @@ defineProps<{
   }
   & header > div:first-child strong {
     margin-top: 4px;
-    font-family: Georgia, serif;
+    font-family: var(--font-display);
     font-size: 1.5rem;
   }
   &__ring {
@@ -61,7 +74,7 @@ defineProps<{
     width: 58px;
     height: 58px;
     border-radius: 99px;
-    background: conic-gradient(#397a69 var(--progress), #e0e5e2 0);
+    background: conic-gradient(var(--color-brand) var(--progress), #e0e5e2 0);
   }
   &__ring::before {
     content: "";
@@ -108,7 +121,7 @@ defineProps<{
   &__items a.done &__check {
     border-color: transparent;
     background: var(--mint);
-    color: #397a69;
+    color: var(--color-brand);
   }
   &__items strong,
   &__items small {

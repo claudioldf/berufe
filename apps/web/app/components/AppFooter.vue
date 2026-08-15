@@ -29,7 +29,7 @@
   }
   & p {
     margin: 10px 0 0;
-    color: rgba(255, 255, 255, 0.57);
+    color: rgb(255 255 255 / 57%);
     font-size: 0.86rem;
   }
   &__links {
@@ -38,7 +38,7 @@
     gap: 14px 28px;
   }
   &__links a {
-    color: rgba(255, 255, 255, 0.74);
+    color: rgb(255 255 255 / 74%);
     font-size: 0.82rem;
     font-weight: 700;
     text-decoration: none;
@@ -49,10 +49,10 @@
   &__note {
     grid-column: 1 / -1;
     padding-top: 24px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgb(255 255 255 / 10%);
   }
 }
-@media (max-width: 660px) {
+@media (width <= 660px) {
   .footer {
     &__inner {
       grid-template-columns: 1fr;

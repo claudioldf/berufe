@@ -1,15 +1,20 @@
 <script setup lang="ts">
 interface Props {
-  size?: 'sm' | 'md' | 'lg'
+  size?: "sm" | "md" | "lg";
 }
 
 withDefaults(defineProps<Props>(), {
-  size: 'md',
-})
+  size: "md",
+});
 </script>
 
 <template>
-  <NuxtLink class="brand" :class="`brand--${size}`" to="/" aria-label="Berufe — início">
+  <NuxtLink
+    class="brand"
+    :class="`brand--${size}`"
+    to="/"
+    aria-label="Berufe — início"
+  >
     berufe<span>.</span>
   </NuxtLink>
 </template>

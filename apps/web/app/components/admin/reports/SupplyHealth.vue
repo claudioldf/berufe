@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { ReportPeriodData } from "~/types";
+import { formatPercent } from "~/utils/formatters";
 
 const props = defineProps<{ supply: ReportPeriodData["supply"] }>();
 
@@ -20,11 +21,6 @@ const funnel = computed(() =>
     };
   }),
 );
-
-function percent(value: number, total: number) {
-  if (!total) return "—";
-  return `${Math.round((value / total) * 100)}%`;
-}
 </script>
 
 <template>
@@ -98,11 +94,13 @@ function percent(value: number, total: number) {
               ><b>{{ metric.value }}/{{ metric.total }}</b>
             </div>
             <div class="activation-item__track">
-              <i :style="{ width: percent(metric.value, metric.total) }" />
+              <i
+                :style="{ width: formatPercent(metric.value, metric.total, 0) }"
+              />
             </div>
             <small
               >{{ metric.description }} ·
-              {{ percent(metric.value, metric.total) }}</small
+              {{ formatPercent(metric.value, metric.total, 0) }}</small
             >
           </div>
         </div>
@@ -143,7 +141,7 @@ function percent(value: number, total: number) {
   }
   &__header h2 {
     margin-top: 2px;
-    font-family: Georgia, serif;
+    font-family: var(--font-display);
     font-size: 1.35rem;
     font-weight: 500;
   }
@@ -160,8 +158,8 @@ function percent(value: number, total: number) {
   gap: 5px;
   padding: 7px 9px;
   border-radius: 9px;
-  background: #e8f4f0;
-  color: #397a69;
+  background: var(--color-brand-tint);
+  color: var(--color-brand);
   font-size: var(--font-size-min);
   font-weight: 850;
   white-space: nowrap;
@@ -200,13 +198,13 @@ function percent(value: number, total: number) {
     height: 9px;
     overflow: hidden;
     border-radius: 99px;
-    background: #e9e8e3;
+    background: var(--color-surface-disabled);
   }
   &__track i {
     display: block;
     height: 100%;
     border-radius: inherit;
-    background: linear-gradient(90deg, #397a69, #74aa9c);
+    background: linear-gradient(90deg, var(--color-brand), #74aa9c);
   }
   &__row strong,
   &__row em {
@@ -233,8 +231,8 @@ function percent(value: number, total: number) {
     width: 34px;
     height: 34px;
     border-radius: 10px;
-    background: #f0eee8;
-    color: #397a69;
+    background: var(--color-surface-muted);
+    color: var(--color-brand);
   }
   &__title {
     display: flex;
@@ -251,13 +249,13 @@ function percent(value: number, total: number) {
     margin-top: 7px;
     overflow: hidden;
     border-radius: 99px;
-    background: #e9e8e3;
+    background: var(--color-surface-disabled);
   }
   &__track i {
     display: block;
     height: 100%;
     border-radius: inherit;
-    background: #397a69;
+    background: var(--color-brand);
   }
   & small {
     display: block;
@@ -272,7 +270,7 @@ function percent(value: number, total: number) {
   margin-top: 18px;
   padding: 11px;
   border-radius: 11px;
-  background: #fff7de;
+  background: var(--color-warning-tint);
   color: #85661a;
 }
 .activation-note p {
@@ -284,12 +282,12 @@ function percent(value: number, total: number) {
 .activation-note strong {
   color: #85661a;
 }
-@media (max-width: 850px) {
+@media (width <= 850px) {
   .supply-grid {
     grid-template-columns: 1fr;
   }
 }
-@media (max-width: 520px) {
+@media (width <= 520px) {
   .funnel__row {
     grid-template-columns: 105px minmax(55px, 1fr) 24px;
   }

@@ -1,15 +1,15 @@
 <script setup lang="ts">
 interface Props {
-  as?: 'article' | 'div' | 'section'
+  as?: "article" | "div" | "section";
 }
 
 withDefaults(defineProps<Props>(), {
-  as: 'div',
-})
+  as: "div",
+});
 
 defineSlots<{
-  default(): unknown
-}>()
+  default(): unknown;
+}>();
 </script>
 
 <template>
@@ -22,7 +22,7 @@ defineSlots<{
 .surface-card {
   border: 1px solid var(--line);
   border-radius: 22px;
-  background: rgba(255, 255, 255, 0.76);
+  background: rgb(255 255 255 / 76%);
   box-shadow: var(--shadow-sm);
 }
 </style>

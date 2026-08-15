@@ -6,6 +6,7 @@ import type {
   CatalogEntryDraft,
   CatalogTab,
 } from "~/types/catalog";
+import { toIdentifier } from "~/utils/text";
 
 const props = defineProps<{
   tab: CatalogTab;
@@ -27,16 +28,6 @@ const form = reactive<CatalogEntryDraft>({
   city: props.entry?.city ?? "Joinville",
 });
 const identifierManuallyEdited = shallowRef(false);
-
-function toIdentifier(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLocaleLowerCase("pt-BR")
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
 
 function trackIdentifierEdit(event: Event) {
   if (props.tab !== "neighborhoods" || props.entry) return;
@@ -78,12 +69,19 @@ function submit() {
   <form class="catalog-form" @submit.prevent="submit">
     <label class="catalog-form__field">
       <span>{{ props.tab === "services" ? "Nome" : "Bairro" }}</span>
-      <input v-model="form.name" type="text" maxlength="80" required />
+      <input
+        v-model="form.name"
+        name="catalog-name"
+        type="text"
+        autocomplete="off"
+        maxlength="80"
+        required
+      />
     </label>
 
     <label v-if="props.tab === 'services'" class="catalog-form__field">
       <span>Categoria</span>
-      <select v-model="form.category" required>
+      <select v-model="form.category" name="catalog-category" required>
         <option
           v-for="category in props.categories"
           :key="category.id"
@@ -98,7 +96,9 @@ function submit() {
       <span>UF</span>
       <input
         v-model="form.stateCode"
+        name="state-code"
         type="text"
+        autocomplete="address-level1"
         maxlength="2"
         pattern="[A-Za-z]{2}"
         required
@@ -107,14 +107,23 @@ function submit() {
 
     <label v-if="props.tab === 'neighborhoods'" class="catalog-form__field">
       <span>Cidade</span>
-      <input v-model="form.city" type="text" maxlength="80" required />
+      <input
+        v-model="form.city"
+        name="city"
+        type="text"
+        autocomplete="address-level2"
+        maxlength="80"
+        required
+      />
     </label>
 
     <label class="catalog-form__field">
       <span>{{ props.tab === "services" ? "Slug" : "Código" }}</span>
       <input
         v-model="form.identifier"
+        name="catalog-identifier"
         type="text"
+        autocomplete="off"
         maxlength="80"
         pattern="[a-z0-9-]+"
         required
@@ -132,7 +141,12 @@ function submit() {
 
     <label v-if="props.tab === 'services'" class="catalog-form__field">
       <span>Descrição</span>
-      <textarea v-model="form.description" rows="3" maxlength="240" />
+      <textarea
+        v-model="form.description"
+        name="catalog-description"
+        rows="3"
+        maxlength="240"
+      />
     </label>
 
     <div class="catalog-form__actions">
@@ -210,12 +224,12 @@ function submit() {
     color: var(--ink-soft);
   }
   &__save {
-    border: 1px solid #17352f;
-    background: #17352f;
+    border: 1px solid var(--color-brand-strong);
+    background: var(--color-brand-strong);
     color: white;
   }
 }
-@media (max-width: 700px) {
+@media (width <= 700px) {
   .catalog-form {
     grid-template-columns: 1fr;
   }

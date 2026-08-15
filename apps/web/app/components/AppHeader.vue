@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, shallowRef } from "vue";
-import { useMockupApp } from "~/composables/useMockupApp";
+import { useAppRole } from "~/composables/useAppRole";
+import type { AppRole } from "~/types";
 
 const route = useRoute();
 const router = useRouter();
-const { activeRole } = useMockupApp();
+const { role: activeRole, setRole } = useAppRole();
 const isMenuOpen = shallowRef(false);
 
 const isProfessional = computed(() => route.path.startsWith("/painel"));
@@ -40,9 +41,8 @@ const links = computed(() => {
 });
 
 async function changeRole(event: Event) {
-  const role = (event.target as HTMLSelectElement)
-    .value as typeof activeRole.value;
-  activeRole.value = role;
+  const role = (event.target as HTMLSelectElement).value as AppRole;
+  setRole(role);
   isMenuOpen.value = false;
   await router.push(
     role === "professional" ? "/painel" : role === "admin" ? "/admin" : "/",
@@ -88,7 +88,7 @@ function isLinkActive(to: string) {
       <div class="header__actions">
         <label class="role-switcher">
           <span>Explorar como</span>
-          <select :value="currentRole" @change="changeRole">
+          <select name="preview-role" :value="currentRole" @change="changeRole">
             <option value="visitor">Visitante</option>
             <option value="professional">Profissional</option>
             <option value="admin">Administrador</option>
@@ -106,7 +106,7 @@ function isLinkActive(to: string) {
           class="header__menu"
           type="button"
           :aria-expanded="isMenuOpen"
-          aria-label="Abrir menu"
+          :aria-label="isMenuOpen ? 'Fechar menu' : 'Abrir menu'"
           @click="isMenuOpen = !isMenuOpen"
         >
           <UIcon :name="isMenuOpen ? 'i-lucide-x' : 'i-lucide-menu'" />
@@ -136,12 +136,12 @@ function isLinkActive(to: string) {
   position: relative;
   z-index: 40;
   border-bottom: 1px solid var(--line);
-  background: rgba(247, 245, 239, 0.9);
+  background: rgb(247 245 239 / 90%);
   backdrop-filter: blur(18px);
   &--workspace {
-    background: #17352f;
+    background: var(--color-brand-strong);
     color: white;
-    border-color: rgba(255, 255, 255, 0.12);
+    border-color: rgb(255 255 255 / 12%);
   }
   &__inner {
     min-height: 76px;
@@ -200,7 +200,7 @@ function isLinkActive(to: string) {
 .role-switcher select {
   appearance: none;
   padding: 9px 28px 9px 10px;
-  border: 1px solid currentColor;
+  border: 1px solid currentcolor;
   border-radius: 10px;
   background: transparent;
   color: inherit;
@@ -209,7 +209,7 @@ function isLinkActive(to: string) {
   cursor: pointer;
 }
 .role-switcher select option {
-  color: #17352f;
+  color: var(--color-brand-strong);
 }
 .role-switcher svg {
   position: absolute;
@@ -222,7 +222,7 @@ function isLinkActive(to: string) {
     place-items: center;
     width: 42px;
     height: 42px;
-    border: 1px solid currentColor;
+    border: 1px solid currentcolor;
     border-radius: 12px;
     background: transparent;
     color: inherit;
@@ -233,7 +233,7 @@ function isLinkActive(to: string) {
   }
 }
 
-@media (max-width: 900px) {
+@media (width <= 900px) {
   .header {
     &__inner {
       grid-template-columns: 1fr auto;
@@ -264,7 +264,7 @@ function isLinkActive(to: string) {
   }
 }
 
-@media (max-width: 520px) {
+@media (width <= 520px) {
   .header {
     &__inner {
       min-height: 68px;

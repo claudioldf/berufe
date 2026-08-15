@@ -2,9 +2,9 @@
 import quotesData from "../../../../data/quotes.json";
 import professionalsData from "../../../../data/professionals.json";
 import type { Professional, Quote } from "~/types";
-import { useMockupApp } from "~/composables/useMockupApp";
+import { useToast } from "~/composables/useToast";
 
-const { showToast } = useMockupApp();
+const { showToast } = useToast();
 const professional = (professionalsData as Professional[])[0]!;
 const quote = quotesData.default as Quote;
 
@@ -54,10 +54,10 @@ function handleShared(method: "whatsapp" | "copy") {
 .quote-workspace {
   min-height: 100vh;
   padding-bottom: 80px;
-  background: #f3f1eb;
+  background: var(--color-surface-canvas);
   &__heading {
     padding: 28px 0 34px;
-    background: #17352f;
+    background: var(--color-brand-strong);
     color: white;
   }
   &__heading a {
@@ -65,7 +65,7 @@ function handleShared(method: "whatsapp" | "copy") {
     align-items: center;
     gap: 5px;
     margin-bottom: 20px;
-    color: rgba(255, 255, 255, 0.58);
+    color: rgb(255 255 255 / 58%);
     font-size: 0.84rem;
     font-weight: 700;
     text-decoration: none;
@@ -81,19 +81,19 @@ function handleShared(method: "whatsapp" | "copy") {
   }
   &__heading h1 {
     margin: 0;
-    font-family: Georgia, serif;
+    font-family: var(--font-display);
     font-size: 2.5rem;
     font-weight: 500;
     letter-spacing: -0.04em;
   }
   &__heading h1 em {
-    color: #a7d7c8;
+    color: var(--color-brand-muted);
     font-size: 0.55em;
     font-style: normal;
   }
   &__heading p:last-child {
     margin: 7px 0 0;
-    color: rgba(255, 255, 255, 0.58);
+    color: rgb(255 255 255 / 58%);
     font-size: 0.82rem;
   }
   &__heading-inner > div > span {
@@ -101,7 +101,7 @@ function handleShared(method: "whatsapp" | "copy") {
     align-items: center;
     gap: 6px;
     padding: 7px 10px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid rgb(255 255 255 / 15%);
     border-radius: 8px;
     color: #d5ddd9;
     font-size: 0.84rem;

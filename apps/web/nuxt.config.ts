@@ -7,7 +7,7 @@ const professionalRoutes = professionalsData.map(
 export default defineNuxtConfig({
   compatibilityDate: "2026-08-01",
   devtools: { enabled: true },
-  modules: ["@nuxt/ui"],
+  modules: ["@nuxt/ui", "@nuxt/eslint"],
   colorMode: {
     preference: "light",
     fallback: "light",

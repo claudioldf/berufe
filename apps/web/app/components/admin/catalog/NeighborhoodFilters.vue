@@ -28,27 +28,33 @@ function clearFilters() {
         <span>UF</span>
         <input
           v-model="stateCode"
+          name="filter-state-code"
           type="search"
+          autocomplete="off"
           maxlength="2"
-          placeholder="Ex.: SC"
+          placeholder="Ex.: SC…"
         />
       </label>
       <label>
         <span>Cidade</span>
         <input
           v-model="city"
+          name="filter-city"
           type="search"
+          autocomplete="off"
           maxlength="80"
-          placeholder="Ex.: Joinville"
+          placeholder="Ex.: Joinville…"
         />
       </label>
       <label>
         <span>Bairro</span>
         <input
           v-model="neighborhood"
+          name="filter-neighborhood"
           type="search"
+          autocomplete="off"
           maxlength="80"
-          placeholder="Ex.: América"
+          placeholder="Ex.: América…"
         />
       </label>
     </div>
@@ -63,7 +69,7 @@ function clearFilters() {
   padding: 15px;
   border: 1px solid var(--line);
   border-radius: 12px;
-  background: #f8f7f3;
+  background: var(--color-surface-hover);
   &__heading {
     display: flex;
     align-items: start;
@@ -118,7 +124,7 @@ function clearFilters() {
     font-size: 0.84rem;
   }
 }
-@media (max-width: 700px) {
+@media (width <= 700px) {
   .neighborhood-filters {
     margin-inline: 14px;
     &__fields {

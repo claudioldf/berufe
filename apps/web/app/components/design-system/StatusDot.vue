@@ -1,11 +1,11 @@
 <script setup lang="ts">
 interface Props {
-  tone?: 'neutral' | 'success' | 'warning' | 'danger'
+  tone?: "neutral" | "success" | "warning" | "danger";
 }
 
 withDefaults(defineProps<Props>(), {
-  tone: 'neutral',
-})
+  tone: "neutral",
+});
 </script>
 
 <template>
@@ -17,19 +17,19 @@ withDefaults(defineProps<Props>(), {
   width: 8px;
   height: 8px;
   border-radius: 999px;
-  background: currentColor;
+  background: currentcolor;
 
   &--neutral {
-    color: #8a9995;
+    color: var(--color-text-subtle);
   }
   &--success {
-    color: #397a69;
+    color: var(--color-brand);
   }
   &--warning {
-    color: #d97706;
+    color: var(--color-warning);
   }
   &--danger {
-    color: #c2412d;
+    color: var(--color-danger);
   }
 }
 </style>

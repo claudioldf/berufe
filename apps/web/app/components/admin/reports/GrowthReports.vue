@@ -1,10 +1,20 @@
 <script setup lang="ts">
-import { computed, shallowRef } from "vue";
+import { computed, shallowRef, watch } from "vue";
 import reportsData from "../../../../data/reports.json";
 import type { GrowthReportsData, ReportPeriodKey } from "~/types";
+import { formatDateTime } from "~/utils/formatters";
 
 const reports = reportsData as GrowthReportsData;
-const selectedPeriod = shallowRef<ReportPeriodKey>("since_launch");
+const route = useRoute();
+const router = useRouter();
+
+function isReportPeriod(value: unknown): value is ReportPeriodKey {
+  return reports.periods.some((period) => period.key === value);
+}
+
+const selectedPeriod = shallowRef<ReportPeriodKey>(
+  isReportPeriod(route.query.period) ? route.query.period : "since_launch",
+);
 
 const report = computed(() => reports.data[selectedPeriod.value]);
 const selectedPeriodLabel = computed(
@@ -20,17 +30,22 @@ const published = computed(
 const hasData = computed(
   () => published.value > 0 || report.value.discovery.searches > 0,
 );
-const generatedLabel = new Intl.DateTimeFormat("pt-BR", {
-  day: "2-digit",
-  month: "short",
-  hour: "2-digit",
-  minute: "2-digit",
-  timeZone: "America/Sao_Paulo",
-}).format(new Date(reports.generatedAt));
+const generatedLabel = formatDateTime(reports.generatedAt);
 
-function selectPeriod(period: ReportPeriodKey) {
+async function selectPeriod(period: ReportPeriodKey) {
   selectedPeriod.value = period;
+  const query = { ...route.query };
+  if (period === "since_launch") delete query.period;
+  else query.period = period;
+  await router.replace({ query });
 }
+
+watch(
+  () => route.query.period,
+  (period) => {
+    selectedPeriod.value = isReportPeriod(period) ? period : "since_launch";
+  },
+);
 </script>
 
 <template>
@@ -135,7 +150,7 @@ function selectPeriod(period: ReportPeriodKey) {
   padding: 3px;
   border: 1px solid var(--line);
   border-radius: 11px;
-  background: rgba(255, 255, 255, 0.62);
+  background: rgb(255 255 255 / 62%);
 }
 .period-switcher button {
   padding: 7px 10px;
@@ -148,13 +163,13 @@ function selectPeriod(period: ReportPeriodKey) {
   font-weight: 800;
 }
 .period-switcher button:hover {
-  background: #f0eee8;
+  background: var(--color-surface-muted);
   color: var(--ink);
 }
 .period-switcher button.active {
-  background: #17352f;
+  background: var(--color-brand-strong);
   color: white;
-  box-shadow: 0 4px 12px rgba(23, 53, 47, 0.16);
+  box-shadow: 0 4px 12px rgb(23 53 47 / 16%);
 }
 .privacy-notice {
   display: grid;
@@ -165,8 +180,8 @@ function selectPeriod(period: ReportPeriodKey) {
   padding: 13px 14px;
   border: 1px solid #a7ccc0;
   border-radius: 13px;
-  background: #e8f4f0;
-  color: #397a69;
+  background: var(--color-brand-tint);
+  color: var(--color-brand);
 }
 .privacy-notice > svg {
   font-size: 1.25rem;
@@ -206,7 +221,7 @@ function selectPeriod(period: ReportPeriodKey) {
   width: 48px;
   height: 48px;
   border-radius: 14px;
-  background: #fff0ec;
+  background: var(--color-accent-tint);
   color: #b9533e;
   font-size: 1.3rem;
 }
@@ -216,7 +231,7 @@ function selectPeriod(period: ReportPeriodKey) {
 }
 .launch-empty h2 {
   margin-top: 3px;
-  font-family: Georgia, serif;
+  font-family: var(--font-display);
   font-size: 1.3rem;
   font-weight: 500;
 }
@@ -227,7 +242,7 @@ function selectPeriod(period: ReportPeriodKey) {
   line-height: 1.5;
 }
 .launch-empty > strong {
-  font-family: Georgia, serif;
+  font-family: var(--font-display);
   font-size: 1.7rem;
 }
 .report-footnote {
@@ -250,7 +265,7 @@ function selectPeriod(period: ReportPeriodKey) {
 .report-footnote strong {
   color: var(--ink);
 }
-@media (max-width: 640px) {
+@media (width <= 640px) {
   .report-toolbar {
     align-items: stretch;
     flex-direction: column;

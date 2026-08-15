@@ -1,0 +1,63 @@
+<script setup lang="ts">
+const code = defineModel<string>({ required: true });
+defineProps<{
+  phone: string;
+  loading: boolean;
+  error: string;
+  cooldown: number;
+}>();
+defineEmits<{ submit: []; resend: []; changePhone: [] }>();
+</script>
+
+<template>
+  <section aria-labelledby="code-step-title">
+    <button
+      class="auth-card__step-back"
+      type="button"
+      @click="$emit('changePhone')"
+    >
+      <UIcon name="i-lucide-arrow-left" /> Alterar número
+    </button>
+    <DesignSystemEyebrow>Confirme seu telefone</DesignSystemEyebrow>
+    <h1 id="code-step-title">Digite o código<br />que enviamos.</h1>
+    <p class="auth-card__lead">
+      SMS enviado para <strong>+55 {{ phone }}</strong
+      >. Para testar, use <strong>123456</strong>.
+    </p>
+    <form @submit.prevent="$emit('submit')">
+      <label class="auth-field" for="auth-code">
+        <span>Código de 6 dígitos</span>
+        <input
+          id="auth-code"
+          v-model="code"
+          class="auth-code"
+          name="one-time-code"
+          type="text"
+          inputmode="numeric"
+          pattern="[0-9]{6}"
+          maxlength="6"
+          autocomplete="one-time-code"
+          placeholder="000000"
+          :aria-describedby="error ? 'code-step-error' : undefined"
+          :aria-invalid="error ? 'true' : undefined"
+        />
+      </label>
+      <p v-if="error" id="code-step-error" class="auth-error" role="alert">
+        <UIcon name="i-lucide-circle-alert" /> {{ error }}
+      </p>
+      <UButton type="submit" color="primary" block :loading="loading">
+        Confirmar e continuar
+      </UButton>
+      <button
+        class="resend"
+        type="button"
+        :disabled="cooldown > 0"
+        @click="$emit('resend')"
+      >
+        {{
+          cooldown > 0 ? `Reenviar código em ${cooldown}s` : "Reenviar código"
+        }}
+      </button>
+    </form>
+  </section>
+</template>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 defineSlots<{
-  default(): unknown
-}>()
+  default(): unknown;
+}>();
 </script>
 
 <template>

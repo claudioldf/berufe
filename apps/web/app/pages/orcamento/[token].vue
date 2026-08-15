@@ -31,7 +31,7 @@ function printQuote() {
         <UIcon name="i-lucide-lock-keyhole" /> Link privado do orçamento
       </div></DesignSystemContainer
     >
-    <DesignSystemContainer as="main" class="shared-quote-page__content">
+    <DesignSystemContainer class="shared-quote-page__content">
       <div class="shared-quote-page__heading">
         <div>
           <p>Olá, {{ quote.customerName }}.</p>
@@ -93,13 +93,13 @@ function printQuote() {
   }
   &__heading p {
     margin: 0 0 6px;
-    color: #397a69;
+    color: var(--color-brand);
     font-size: 0.86rem;
     font-weight: 850;
   }
   &__heading h1 {
     margin: 0;
-    font-family: Georgia, serif;
+    font-family: var(--font-display);
     font-size: 2.5rem;
     font-weight: 500;
     letter-spacing: -0.04em;
@@ -123,7 +123,7 @@ function printQuote() {
     text-align: center;
   }
 }
-@media (max-width: 600px) {
+@media (width <= 600px) {
   .shared-quote-page {
     &__heading {
       display: grid;

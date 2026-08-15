@@ -58,14 +58,14 @@ definePageMeta({
     width: 36px;
     height: 36px;
     border-radius: 10px;
-    background: #f0eee8;
+    background: var(--color-surface-muted);
   }
   & strong,
   & small {
     display: block;
   }
   & strong {
-    font-family: Georgia, serif;
+    font-family: var(--font-display);
     font-size: 1.3rem;
   }
   & small {
@@ -78,15 +78,15 @@ definePageMeta({
   }
   &--success > span {
     background: var(--mint) !important;
-    color: #397a69;
+    color: var(--color-brand);
   }
 }
-@media (max-width: 800px) {
+@media (width <= 800px) {
   .admin-summary {
     grid-template-columns: repeat(2, 1fr);
   }
 }
-@media (max-width: 500px) {
+@media (width <= 500px) {
   .admin-summary {
     grid-template-columns: 1fr;
   }

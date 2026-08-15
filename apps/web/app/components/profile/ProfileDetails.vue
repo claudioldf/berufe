@@ -1,0 +1,148 @@
+<script setup lang="ts">
+import type { Professional } from "~/types";
+
+defineProps<{
+  professional: Professional;
+  canRequestRelationship: boolean;
+  supportEmailUrl: string;
+}>();
+defineEmits<{
+  requestRelationship: [];
+  viewPortfolio: [index: number];
+}>();
+</script>
+
+<template>
+  <div class="profile-content__main">
+    <section class="profile-section profile-about">
+      <DesignSystemEyebrow>Sobre o trabalho</DesignSystemEyebrow>
+      <h2>Experiência que dá<br />tranquilidade.</h2>
+      <p>{{ professional.bio }}</p>
+      <div class="profile-about__services">
+        <div v-for="(service, index) in professional.services" :key="service">
+          <span>
+            <UIcon :name="index === 0 ? 'i-lucide-zap' : 'i-lucide-wrench'" />
+          </span>
+          <div>
+            <strong>{{ service }}</strong>
+            <small>{{
+              professional.serviceNotes[index] ?? "Serviço residencial"
+            }}</small>
+          </div>
+          <em v-if="index === 0">Principal</em>
+        </div>
+      </div>
+      <div class="declaration-note">
+        <UIcon name="i-lucide-info" /> Os anos de experiência são declarados
+        pelo profissional e não representam uma verificação da Berufe.
+      </div>
+    </section>
+
+    <section class="profile-section portfolio-section">
+      <div class="profile-section__heading">
+        <div>
+          <DesignSystemEyebrow>Portfólio aprovado</DesignSystemEyebrow>
+          <h2>Trabalhos que falam.</h2>
+        </div>
+        <span>{{ professional.portfolio.length }} trabalhos</span>
+      </div>
+      <div class="portfolio-grid">
+        <button
+          v-for="(item, index) in professional.portfolio"
+          :key="item.id"
+          type="button"
+          class="portfolio-item"
+          @click="$emit('viewPortfolio', index)"
+        >
+          <img
+            :src="item.image"
+            :alt="item.title"
+            width="1280"
+            height="853"
+            loading="lazy"
+          />
+          <span class="portfolio-item__meta">
+            <strong>{{ item.title }}</strong>
+            <small>{{ item.service }}</small>
+          </span>
+          <UIcon name="i-lucide-expand" class="portfolio-item__expand" />
+        </button>
+      </div>
+    </section>
+
+    <section class="profile-section relationships-section">
+      <div class="profile-section__heading">
+        <div>
+          <DesignSystemEyebrow>Rede profissional</DesignSystemEyebrow>
+          <h2>Confiança entre quem faz.</h2>
+        </div>
+        <span
+          >{{ professional.relationships.length }} conexões confirmadas</span
+        >
+      </div>
+      <div v-if="professional.relationships.length" class="relationships-list">
+        <article
+          v-for="relationship in professional.relationships"
+          :key="relationship.id"
+        >
+          <DesignSystemAvatar
+            :name="relationship.professionalName"
+            :src="relationship.avatar"
+            size="lg"
+            shape="rounded"
+          />
+          <div>
+            <span class="relationship-type">
+              <UIcon
+                :name="
+                  relationship.type === 'worked_together'
+                    ? 'i-lucide-handshake'
+                    : 'i-lucide-heart'
+                "
+              />
+              {{
+                relationship.type === "worked_together"
+                  ? "Trabalharam juntos"
+                  : "Recomendação profissional"
+              }}
+            </span>
+            <p>“{{ relationship.note }}”</p>
+            <NuxtLink :to="`/profissionais/${relationship.professionalSlug}`">
+              {{ relationship.professionalName }}
+              <UIcon name="i-lucide-arrow-up-right" />
+            </NuxtLink>
+          </div>
+        </article>
+      </div>
+      <p v-else class="relationships-empty">
+        Este profissional ainda não possui relações públicas aprovadas.
+      </p>
+      <UButton
+        v-if="canRequestRelationship"
+        class="relationship-request"
+        color="neutral"
+        variant="outline"
+        icon="i-lucide-handshake"
+        @click="$emit('requestRelationship')"
+      >
+        Solicitar relação profissional
+      </UButton>
+    </section>
+
+    <section class="profile-disclaimer">
+      <UIcon class="profile-disclaimer__icon" name="i-lucide-shield-alert" />
+      <div>
+        <strong>O que a verificação significa</strong>
+        <p>
+          A Berufe confere evidências específicas e modera o conteúdo público,
+          mas não garante a execução, o preço ou o resultado de um serviço.
+          Combine escopo e condições diretamente com o profissional.
+        </p>
+      </div>
+    </section>
+
+    <a class="support-link" :href="supportEmailUrl">
+      <UIcon name="i-lucide-mail" /> Informar um problema à equipe de suporte
+    </a>
+  </div>
+</template>

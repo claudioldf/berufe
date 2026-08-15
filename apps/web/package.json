@@ -8,7 +8,17 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "typecheck": "nuxt typecheck",
-    "format:styles": "prettier --write \"app/**/*.vue\" \"app/**/*.{css,scss}\""
+    "format": "prettier --write \"app/**/*.{vue,ts,scss,css}\" \"tests/**/*.ts\" \"*.{ts,mjs,json,md}\"",
+    "format:check": "prettier --check \"app/**/*.{vue,ts,scss,css}\" \"tests/**/*.ts\" \"*.{ts,mjs,json,md}\"",
+    "format:styles": "prettier --write \"app/**/*.vue\" \"app/**/*.{css,scss}\"",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "stylelint": "stylelint \"app/**/*.{vue,scss}\"",
+    "stylelint:fix": "stylelint \"app/**/*.{vue,scss}\" --fix",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "check": "npm run format:check && npm run lint && npm run stylelint && npm run typecheck && npm run test"
   },
   "dependencies": {
     "@iconify-json/lucide": "1.2.123",
@@ -17,9 +27,24 @@
     "vue": "3.5.41"
   },
   "devDependencies": {
+    "@nuxt/eslint": "^1.17.0",
+    "@nuxt/test-utils": "^4.1.0",
+    "@playwright/test": "^1.62.1",
+    "@vue/test-utils": "^2.4.11",
+    "eslint": "^10.8.1",
+    "happy-dom": "^20.11.2",
+    "postcss-html": "^2.0.0",
+    "postcss-scss": "^4.0.9",
     "prettier": "^3.9.6",
     "sass": "^1.102.0",
+    "stylelint": "^17.14.1",
+    "stylelint-config-html": "^2.0.0",
+    "stylelint-config-recommended": "^18.0.0",
+    "stylelint-config-recommended-scss": "^17.0.1",
+    "stylelint-config-recommended-vue": "^2.0.0",
+    "stylelint-config-standard-scss": "^17.0.0",
     "typescript": "6.0.3",
+    "vitest": "^4.1.10",
     "vue-tsc": "3.3.9"
   }
 }

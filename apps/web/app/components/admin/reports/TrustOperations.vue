@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { ReportPeriodData } from "~/types";
+import { formatPercent } from "~/utils/formatters";
 
 const props = defineProps<{
   trust: ReportPeriodData["trust"];
@@ -22,11 +23,6 @@ const approvalRate = computed(() =>
       )
     : 0,
 );
-
-function percent(value: number, total: number) {
-  if (!total) return "—";
-  return `${Math.round((value / total) * 100)}%`;
-}
 </script>
 
 <template>
@@ -65,8 +61,9 @@ function percent(value: number, total: number) {
             >
           </div>
           <p>
-            {{ percent(funnel.completed, funnel.started) }} de confirmação ·
-            {{ percent(funnel.approved, funnel.completed) }} aprovadas
+            {{ formatPercent(funnel.completed, funnel.started, 0) }} de
+            confirmação ·
+            {{ formatPercent(funnel.approved, funnel.completed, 0) }} aprovadas
           </p>
         </div>
       </div>
@@ -201,7 +198,7 @@ function percent(value: number, total: number) {
 .quote-card h2,
 .ops-card h2 {
   margin: 2px 0 0;
-  font-family: Georgia, serif;
+  font-family: var(--font-display);
   font-size: 1.25rem;
   font-weight: 500;
 }
@@ -220,7 +217,7 @@ function percent(value: number, total: number) {
 .network-list > div {
   padding: 12px;
   border-radius: 12px;
-  background: #f7f5f0;
+  background: var(--color-surface-neutral);
 }
 .network-list > div > strong,
 .network-list p,
@@ -240,7 +237,7 @@ function percent(value: number, total: number) {
   gap: 4px;
 }
 .network-values b {
-  font-family: Georgia, serif;
+  font-family: var(--font-display);
   font-size: 1rem;
 }
 .network-values small {
@@ -252,7 +249,7 @@ function percent(value: number, total: number) {
 }
 .network-list p {
   margin: 7px 0 0;
-  color: #397a69;
+  color: var(--color-brand);
   font-weight: 800;
 }
 .widget-actions {
@@ -263,8 +260,8 @@ function percent(value: number, total: number) {
 .pending-chip {
   padding: 6px 8px;
   border-radius: 8px;
-  background: #e8f4f0;
-  color: #2f6b5f;
+  background: var(--color-brand-tint);
+  color: var(--color-success);
   font-size: var(--font-size-min);
   font-weight: 850;
   white-space: nowrap;
@@ -279,7 +276,7 @@ function percent(value: number, total: number) {
 .quote-numbers > div {
   padding: 13px;
   border-radius: 12px;
-  background: #f7f5f0;
+  background: var(--color-surface-neutral);
   text-align: center;
 }
 .quote-numbers strong,
@@ -289,7 +286,7 @@ function percent(value: number, total: number) {
   display: block;
 }
 .quote-numbers strong {
-  font-family: Georgia, serif;
+  font-family: var(--font-display);
   font-size: 1.6rem;
 }
 .quote-numbers small,
@@ -298,7 +295,7 @@ function percent(value: number, total: number) {
   font-size: var(--font-size-min);
 }
 .quote-numbers > svg {
-  color: #397a69;
+  color: var(--color-brand);
 }
 .quote-people {
   display: grid;
@@ -342,7 +339,7 @@ function percent(value: number, total: number) {
 .ops-grid > div {
   padding: 13px;
   border-radius: 11px;
-  background: #f7f5f0;
+  background: var(--color-surface-neutral);
 }
 .ops-grid span,
 .ops-grid strong,
@@ -357,7 +354,7 @@ function percent(value: number, total: number) {
 }
 .ops-grid strong {
   margin-top: 6px;
-  font-family: Georgia, serif;
+  font-family: var(--font-display);
   font-size: 1.35rem;
 }
 .ops-grid small {
@@ -372,7 +369,7 @@ function percent(value: number, total: number) {
 .ops-card footer svg {
   color: #b9533e;
 }
-@media (max-width: 850px) {
+@media (width <= 850px) {
   .trust-ops {
     grid-template-columns: 1fr;
   }
@@ -380,7 +377,7 @@ function percent(value: number, total: number) {
     grid-column: auto;
   }
 }
-@media (max-width: 540px) {
+@media (width <= 540px) {
   .ops-grid {
     grid-template-columns: 1fr 1fr;
   }

@@ -1,30 +1,16 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { Professional, Quote } from "~/types";
-import { useMockupApp } from "~/composables/useMockupApp";
+import { formatCurrency, formatDate } from "~/utils/formatters";
+import { quoteSubtotal, quoteTotal } from "~/utils/quotes";
 
 const props = defineProps<{
   quote: Quote;
   professional: Professional;
   customerFacing?: boolean;
 }>();
-const { money } = useMockupApp();
-const subtotal = computed(() =>
-  props.quote.items.reduce(
-    (sum, item) => sum + item.quantity * item.unitPrice,
-    0,
-  ),
-);
-const total = computed(() =>
-  Math.max(0, subtotal.value - props.quote.discount),
-);
-
-function formatDate(value?: string) {
-  if (!value) return "—";
-  return new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC" }).format(
-    new Date(`${value}T12:00:00Z`),
-  );
-}
+const subtotal = computed(() => quoteSubtotal(props.quote));
+const total = computed(() => quoteTotal(props.quote));
 </script>
 
 <template>
@@ -39,7 +25,13 @@ function formatDate(value?: string) {
       </div>
     </header>
     <section class="quote-preview__professional">
-      <img :src="professional.avatar" :alt="`Foto de ${professional.name}`" />
+      <img
+        :src="professional.avatar"
+        :alt="`Foto de ${professional.name}`"
+        width="1024"
+        height="1536"
+        loading="lazy"
+      />
       <div>
         <strong>{{ professional.name }}</strong
         ><span>{{ professional.primaryService }} · Joinville</span
@@ -73,21 +65,24 @@ function formatDate(value?: string) {
       >
         <span
           ><strong>{{ item.description || "Novo item" }}</strong
-          ><small>{{ money(item.unitPrice) }} / {{ item.unit }}</small></span
+          ><small
+            >{{ formatCurrency(item.unitPrice) }} / {{ item.unit }}</small
+          ></span
         >
         <span>{{ item.quantity }}</span>
-        <span>{{ money(item.quantity * item.unitPrice) }}</span>
+        <span>{{ formatCurrency(item.quantity * item.unitPrice) }}</span>
       </div>
     </section>
     <section class="quote-preview__totals">
       <div>
-        <span>Subtotal</span><strong>{{ money(subtotal) }}</strong>
+        <span>Subtotal</span><strong>{{ formatCurrency(subtotal) }}</strong>
       </div>
       <div v-if="quote.discount">
-        <span>Desconto</span><strong>− {{ money(quote.discount) }}</strong>
+        <span>Desconto</span
+        ><strong>− {{ formatCurrency(quote.discount) }}</strong>
       </div>
       <div>
-        <span>Total</span><strong>{{ money(total) }}</strong>
+        <span>Total</span><strong>{{ formatCurrency(total) }}</strong>
       </div>
     </section>
     <section v-if="quote.notes" class="quote-preview__notes">
@@ -116,11 +111,11 @@ function formatDate(value?: string) {
     justify-content: space-between;
     align-items: center;
     padding: 21px 23px;
-    background: #17352f;
+    background: var(--color-brand-strong);
     color: white;
   }
   &__brand {
-    font-family: Georgia, serif;
+    font-family: var(--font-display);
     font-size: 1.25rem;
     font-weight: 700;
     letter-spacing: -0.04em;
@@ -136,7 +131,7 @@ function formatDate(value?: string) {
     display: block;
   }
   & > header > div:last-child span {
-    color: rgba(255, 255, 255, 0.55);
+    color: rgb(255 255 255 / 55%);
     font-size: 0.82rem;
     text-transform: uppercase;
   }
@@ -163,7 +158,7 @@ function formatDate(value?: string) {
     display: block;
   }
   &__professional strong {
-    font-family: Georgia, serif;
+    font-family: var(--font-display);
     font-size: 0.9rem;
   }
   &__professional span {
@@ -173,7 +168,7 @@ function formatDate(value?: string) {
   }
   &__professional small {
     margin-top: 3px;
-    color: #397a69;
+    color: var(--color-brand);
     font-size: 0.82rem;
     font-weight: 850;
   }
@@ -208,7 +203,7 @@ function formatDate(value?: string) {
   }
   &__service h1 {
     margin: 5px 0 0;
-    font-family: Georgia, serif;
+    font-family: var(--font-display);
     font-size: 1.3rem;
     font-weight: 500;
     line-height: 1.25;
@@ -281,8 +276,8 @@ function formatDate(value?: string) {
     justify-content: space-between;
     gap: 12px;
     padding: 12px 22px;
-    background: #e7f3ef;
-    color: #397a69;
+    background: var(--color-brand-tint-muted);
+    color: var(--color-brand);
     font-size: 0.82rem;
   }
   & > footer span {

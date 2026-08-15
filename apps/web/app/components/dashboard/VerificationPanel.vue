@@ -1,10 +1,22 @@
 <script setup lang="ts">
 import { shallowRef } from "vue";
-import type { Evidence } from "~/types";
+import type { Evidence, VerificationSubmission } from "~/types";
 
 defineProps<{ evidence: Evidence[] }>();
-const emit = defineEmits<{ submitted: [] }>();
-const hasFile = shallowRef(false);
+const emit = defineEmits<{
+  submitted: [submission: VerificationSubmission];
+}>();
+const file = shallowRef<File | null>(null);
+
+function selectFile(event: Event) {
+  file.value = (event.target as HTMLInputElement).files?.[0] ?? null;
+}
+
+function submit() {
+  if (!file.value) return;
+  emit("submitted", { file: file.value, kind: "identity" });
+  file.value = null;
+}
 </script>
 
 <template>
@@ -43,27 +55,22 @@ const hasFile = shallowRef(false);
       </header>
       <label class="verification-upload"
         ><input
+          name="identity-document"
           type="file"
           accept="image/jpeg,image/png"
-          @change="hasFile = true"
+          @change="selectFile"
         /><UIcon
-          :name="hasFile ? 'i-lucide-file-check-2' : 'i-lucide-file-up'"
+          :name="file ? 'i-lucide-file-check-2' : 'i-lucide-file-up'"
         /><span
           ><strong>{{
-            hasFile ? "Imagem selecionada" : "Selecione a imagem do documento"
+            file ? "Imagem selecionada" : "Selecione a imagem do documento"
           }}</strong
           ><small>{{
-            hasFile ? "Pronta para envio seguro" : "JPG ou PNG · até 10 MB"
+            file ? "Pronta para envio seguro" : "JPG ou PNG · até 10 MB"
           }}</small></span
-        ><em>{{ hasFile ? "Trocar" : "Escolher arquivo" }}</em></label
+        ><em>{{ file ? "Trocar" : "Escolher arquivo" }}</em></label
       >
-      <UButton
-        color="primary"
-        :disabled="!hasFile"
-        @click="
-          emit('submitted');
-          hasFile = false;
-        "
+      <UButton color="primary" :disabled="!file" @click="submit"
         >Enviar imagem para análise</UButton
       >
     </DesignSystemSurfaceCard>
@@ -82,7 +89,7 @@ const hasFile = shallowRef(false);
   }
   &__intro h2 {
     margin: 0;
-    font-family: Georgia, serif;
+    font-family: var(--font-display);
     font-size: 2rem;
   }
   &__intro p:last-child {
@@ -93,7 +100,7 @@ const hasFile = shallowRef(false);
     line-height: 1.5;
   }
   &__intro > svg {
-    color: #397a69;
+    color: var(--color-brand);
     font-size: 3.5rem;
     opacity: 0.25;
   }
@@ -102,7 +109,7 @@ const hasFile = shallowRef(false);
   }
   & h3 {
     margin: 0;
-    font-family: Georgia, serif;
+    font-family: var(--font-display);
     font-size: 1.25rem;
   }
   &__current > div {
@@ -132,7 +139,7 @@ const hasFile = shallowRef(false);
     display: flex;
     align-items: center;
     gap: 5px;
-    color: #397a69;
+    color: var(--color-brand);
     font-size: 0.84rem;
     font-weight: 850;
   }
@@ -157,7 +164,7 @@ const hasFile = shallowRef(false);
   cursor: pointer;
 }
 .verification-upload > svg {
-  color: #397a69;
+  color: var(--color-brand);
   font-size: 1.4rem;
 }
 .verification-upload strong,
@@ -173,12 +180,12 @@ const hasFile = shallowRef(false);
   font-size: 0.82rem;
 }
 .verification-upload em {
-  color: #397a69;
+  color: var(--color-brand);
   font-size: 0.84rem;
   font-style: normal;
   font-weight: 850;
 }
-@media (max-width: 700px) {
+@media (width <= 700px) {
   .verification-panel {
     &__request header {
       display: grid;

@@ -65,9 +65,9 @@ defineProps<{
     width: 28px;
     height: 28px;
     padding: 0;
-    border: 1px solid rgba(23, 53, 47, 0.16);
+    border: 1px solid rgb(23 53 47 / 16%);
     border-radius: 9px;
-    background: rgba(255, 255, 255, 0.72);
+    background: rgb(255 255 255 / 72%);
     color: #48635d;
     cursor: help;
     transition:
@@ -77,19 +77,19 @@ defineProps<{
       transform 0.16s ease;
   }
   &__trigger:hover {
-    border-color: rgba(23, 53, 47, 0.32);
+    border-color: rgb(23 53 47 / 32%);
     background: white;
-    color: #17352f;
+    color: var(--color-brand-strong);
     transform: translateY(-1px);
   }
   &__trigger:focus-visible {
-    outline: 3px solid rgba(248, 117, 93, 0.32);
+    outline: 3px solid rgb(248 117 93 / 32%);
     outline-offset: 2px;
   }
   &__content {
     width: min(340px, calc(100vw - 32px));
     padding: 16px;
-    color: #17352f;
+    color: var(--color-brand-strong);
   }
   &__content header {
     display: grid;
@@ -97,7 +97,7 @@ defineProps<{
     align-items: center;
     gap: 9px;
     padding-bottom: 12px;
-    border-bottom: 1px solid rgba(23, 53, 47, 0.12);
+    border-bottom: 1px solid rgb(23 53 47 / 12%);
   }
   &__content header > span {
     display: grid;
@@ -105,15 +105,15 @@ defineProps<{
     width: 32px;
     height: 32px;
     border-radius: 10px;
-    background: #e8f4f0;
-    color: #2f6b5f;
+    background: var(--color-brand-tint);
+    color: var(--color-success);
   }
   &__content header small,
   &__content header strong {
     display: block;
   }
   &__content header small {
-    color: #59706a;
+    color: var(--color-text-muted);
     font-size: var(--font-size-min);
     font-weight: 750;
   }
@@ -131,7 +131,7 @@ defineProps<{
     gap: 3px;
   }
   &__content dt {
-    color: #2f6b5f;
+    color: var(--color-success);
     font-size: var(--font-size-min);
     font-weight: 900;
     letter-spacing: 0.06em;

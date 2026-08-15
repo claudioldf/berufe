@@ -1,68 +1,36 @@
 <script setup lang="ts">
-import { computed, shallowRef } from 'vue'
-import { useMockupApp } from '~/composables/useMockupApp'
+import { useAppRole } from "~/composables/useAppRole";
+import { usePhoneAuthFlow } from "~/composables/usePhoneAuthFlow";
+import { useToast } from "~/composables/useToast";
 
-const router = useRouter()
-const { activeRole, showToast } = useMockupApp()
-const step = shallowRef<1 | 2 | 3>(1)
-const phone = shallowRef('(47) 99999-1111')
-const code = shallowRef('')
-const name = shallowRef('Marcos Alves')
-const accepted = shallowRef(false)
-const isLoading = shallowRef(false)
-const error = shallowRef('')
-const cooldown = shallowRef(0)
+const router = useRouter();
+const { setRole } = useAppRole();
+const { showToast } = useToast();
+const {
+  step,
+  phone,
+  code,
+  name,
+  accepted,
+  isLoading,
+  error,
+  cooldown,
+  requestCode,
+  verifyCode,
+  changePhone,
+  validateRegistration,
+} = usePhoneAuthFlow();
 
-const cleanPhone = computed(() => phone.value.replace(/\D/g, ''))
-
-useSeoMeta({ title: 'Entrar ou criar perfil' })
-
-function simulateLoading(action: () => void) {
-  isLoading.value = true
-  window.setTimeout(() => {
-    isLoading.value = false
-    action()
-  }, 650)
-}
-
-function requestCode() {
-  error.value = ''
-  if (cleanPhone.value.length < 10) {
-    error.value = 'Digite um número brasileiro válido.'
-    return
-  }
-  simulateLoading(() => {
-    step.value = 2
-    cooldown.value = 30
-    const timer = window.setInterval(() => {
-      cooldown.value -= 1
-      if (cooldown.value <= 0) window.clearInterval(timer)
-    }, 1000)
-  })
-}
-
-function verifyCode() {
-  error.value = ''
-  if (code.value !== '123456') {
-    error.value = 'Código inválido ou expirado. Neste protótipo, use 123456.'
-    return
-  }
-  simulateLoading(() => { step.value = 3 })
-}
+useSeoMeta({ title: "Entrar ou criar perfil" });
 
 async function register() {
-  error.value = ''
-  if (name.value.trim().length < 3) {
-    error.value = 'Informe seu nome profissional.'
-    return
-  }
-  if (!accepted.value) {
-    error.value = 'Você precisa aceitar os termos e o aviso de privacidade.'
-    return
-  }
-  activeRole.value = 'professional'
-  showToast({ title: 'Perfil rascunho criado', description: 'Vamos completar sua presença na Berufe.' })
-  await router.push('/painel')
+  if (!validateRegistration()) return;
+  setRole("professional");
+  showToast({
+    title: "Perfil rascunho criado",
+    description: "Vamos completar sua presença na Berufe.",
+  });
+  await router.push("/painel");
 }
 </script>
 
@@ -72,84 +40,73 @@ async function register() {
       <div class="auth-page__art-content">
         <DesignSystemBrand />
         <div>
-          <span class="auth-page__quote-icon"><UIcon name="i-lucide-quote" /></span>
-          <blockquote>“Meu trabalho já falava por mim. A Berufe ajudou mais gente a escutar.”</blockquote>
+          <span class="auth-page__quote-icon"
+            ><UIcon name="i-lucide-quote"
+          /></span>
+          <blockquote>
+            “Meu trabalho já falava por mim. A Berufe ajudou mais gente a
+            escutar.”
+          </blockquote>
           <div class="auth-page__person">
-            <DesignSystemAvatar name="João Vitor Santos" src="/images/professional-joao-vitor-santos-bricklayer.jpg" alt="" size="sm" />
-            <span><strong>João Vitor Santos</strong><small>Pedreiro · membro fundador</small></span>
+            <DesignSystemAvatar
+              name="João Vitor Santos"
+              src="/images/professional-joao-vitor-santos-bricklayer.jpg"
+              alt=""
+              size="sm"
+            />
+            <span
+              ><strong>João Vitor Santos</strong
+              ><small>Pedreiro · membro fundador</small></span
+            >
           </div>
         </div>
-        <p><UIcon name="i-lucide-shield-check" /> Perfil básico e contato direto.</p>
+        <p>
+          <UIcon name="i-lucide-shield-check" /> Perfil básico e contato direto.
+        </p>
       </div>
     </div>
 
-    <main class="auth-page__main">
-      <NuxtLink class="auth-page__back" to="/"><UIcon name="i-lucide-arrow-left" /> Voltar para o site</NuxtLink>
+    <div class="auth-page__main">
+      <NuxtLink class="auth-page__back" to="/"
+        ><UIcon name="i-lucide-arrow-left" /> Voltar para o site</NuxtLink
+      >
 
       <div class="auth-card">
         <div class="auth-progress">
-          <span v-for="item in 3" :key="item" :class="{ active: item <= step }" />
+          <span
+            v-for="item in 3"
+            :key="item"
+            :class="{ active: item <= step }"
+          />
         </div>
 
-        <section v-if="step === 1">
-          <DesignSystemEyebrow>Acesso profissional</DesignSystemEyebrow>
-          <h1>Entre com seu<br>telefone.</h1>
-          <p class="auth-card__lead">Você receberá um código por SMS. Sem senha para lembrar.</p>
-          <form @submit.prevent="requestCode">
-            <label class="auth-field">
-              <span>Celular com DDD</span>
-              <div><span>🇧🇷 +55</span><input v-model="phone" type="tel" inputmode="tel" autocomplete="tel" autofocus></div>
-            </label>
-            <p v-if="error" class="auth-error"><UIcon name="i-lucide-circle-alert" /> {{ error }}</p>
-            <UButton type="submit" color="primary" block :loading="isLoading" trailing-icon="i-lucide-arrow-right">Receber código</UButton>
-          </form>
-          <p class="auth-card__fineprint">Ao continuar, você confirma que este número é seu. Aplicamos limites de segurança e nunca informamos se uma conta já existe.</p>
-        </section>
-
-        <section v-else-if="step === 2">
-          <button class="auth-card__step-back" type="button" @click="step = 1"><UIcon name="i-lucide-arrow-left" /> Alterar número</button>
-          <DesignSystemEyebrow>Confirme seu telefone</DesignSystemEyebrow>
-          <h1>Digite o código<br>que enviamos.</h1>
-          <p class="auth-card__lead">SMS enviado para <strong>+55 {{ phone }}</strong>. Para testar, use <strong>123456</strong>.</p>
-          <form @submit.prevent="verifyCode">
-            <label class="auth-field">
-              <span>Código de 6 dígitos</span>
-              <input v-model="code" class="auth-code" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" autofocus placeholder="000000">
-            </label>
-            <p v-if="error" class="auth-error"><UIcon name="i-lucide-circle-alert" /> {{ error }}</p>
-            <UButton type="submit" color="primary" block :loading="isLoading">Confirmar e continuar</UButton>
-            <button class="resend" type="button" :disabled="cooldown > 0" @click="requestCode">
-              {{ cooldown > 0 ? `Reenviar código em ${cooldown}s` : 'Reenviar código' }}
-            </button>
-          </form>
-        </section>
-
-        <section v-else>
-          <div class="auth-card__success"><UIcon name="i-lucide-check" /></div>
-          <DesignSystemEyebrow>Telefone confirmado</DesignSystemEyebrow>
-          <h1>Como você quer<br>ser encontrado?</h1>
-          <p class="auth-card__lead">Este será o nome principal do seu perfil. Você poderá completar as outras informações depois.</p>
-          <form @submit.prevent="register">
-            <label class="auth-field">
-              <span>Seu nome profissional</span>
-              <input v-model="name" type="text" autocomplete="name" maxlength="70">
-            </label>
-            <label class="auth-check">
-              <input v-model="accepted" type="checkbox">
-              <span>
-                Li e aceito os
-                <NuxtLink to="/termos-de-uso" target="_blank" rel="noopener">Termos de Uso</NuxtLink>
-                e a
-                <NuxtLink to="/privacidade" target="_blank" rel="noopener">Política de Privacidade</NuxtLink>
-                vigentes.
-              </span>
-            </label>
-            <p v-if="error" class="auth-error"><UIcon name="i-lucide-circle-alert" /> {{ error }}</p>
-            <UButton type="submit" color="primary" block trailing-icon="i-lucide-arrow-right">Criar meu perfil</UButton>
-          </form>
-        </section>
+        <AuthPhoneStep
+          v-if="step === 1"
+          v-model="phone"
+          :loading="isLoading"
+          :error="error"
+          @submit="requestCode"
+        />
+        <AuthCodeStep
+          v-else-if="step === 2"
+          v-model="code"
+          :phone="phone"
+          :loading="isLoading"
+          :error="error"
+          :cooldown="cooldown"
+          @change-phone="changePhone"
+          @resend="requestCode"
+          @submit="verifyCode"
+        />
+        <AuthRegistrationStep
+          v-else
+          v-model:name="name"
+          v-model:accepted="accepted"
+          :error="error"
+          @submit="register"
+        />
       </div>
-    </main>
+    </div>
   </div>
 </template>
 
@@ -158,249 +115,263 @@ async function register() {
   min-height: calc(100vh - 76px);
   display: grid;
   grid-template-columns: 0.9fr 1.1fr;
-  background: #fffdfa;
-  &__art {
-    position: relative;
-    min-height: 720px;
-    padding: 44px;
-    background:
-      linear-gradient(180deg, rgba(14, 45, 39, 0.2), rgba(14, 45, 39, 0.9)),
-      url("/images/photo-1503387762-592deb58ef4e.jpg") center/cover;
-    color: white;
+  background: var(--color-surface-warm);
+}
+
+@media (width <= 850px) {
+  .auth-page {
+    grid-template-columns: 1fr;
   }
-  &__art-content {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    height: 100%;
-    max-width: 490px;
-  }
-  &__quote-icon {
-    color: var(--coral);
-    font-size: 2rem;
-  }
-  & blockquote {
-    margin: 14px 0 22px;
-    font-family: Georgia, serif;
-    font-size: clamp(2rem, 4vw, 3.6rem);
-    letter-spacing: -0.04em;
-    line-height: 1.05;
-  }
-  &__person {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  &__person strong,
-  &__person small {
-    display: block;
-  }
-  &__person strong {
-    font-size: 0.84rem;
-  }
-  &__person small {
-    margin-top: 3px;
-    color: rgba(255, 255, 255, 0.6);
-    font-size: 0.84rem;
-  }
-  &__art-content > p {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 0.86rem;
-    font-weight: 700;
-  }
-  &__main {
-    position: relative;
+}
+
+:deep() {
+  .auth-page {
+    min-height: calc(100vh - 76px);
     display: grid;
-    place-items: center;
-    padding: 75px 50px;
+    grid-template-columns: 0.9fr 1.1fr;
+    background: var(--color-surface-warm);
+    &__art {
+      position: relative;
+      min-height: 720px;
+      padding: 44px;
+      background:
+        linear-gradient(180deg, rgb(14 45 39 / 20%), rgb(14 45 39 / 90%)),
+        url("/images/photo-1503387762-592deb58ef4e.jpg") center/cover;
+      color: white;
+    }
+    &__art-content {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 100%;
+      max-width: 490px;
+    }
+    &__quote-icon {
+      color: var(--coral);
+      font-size: 2rem;
+    }
+    & blockquote {
+      margin: 14px 0 22px;
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 4vw, 3.6rem);
+      letter-spacing: -0.04em;
+      line-height: 1.05;
+    }
+    &__person {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    &__person strong,
+    &__person small {
+      display: block;
+    }
+    &__person strong {
+      font-size: 0.84rem;
+    }
+    &__person small {
+      margin-top: 3px;
+      color: rgb(255 255 255 / 60%);
+      font-size: 0.84rem;
+    }
+    &__art-content > p {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: rgb(255 255 255 / 70%);
+      font-size: 0.86rem;
+      font-weight: 700;
+    }
+    &__main {
+      position: relative;
+      display: grid;
+      place-items: center;
+      padding: 75px 50px;
+    }
+    &__back {
+      position: absolute;
+      top: 28px;
+      right: 36px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--ink-soft);
+      font-size: 0.86rem;
+      font-weight: 700;
+      text-decoration: none;
+    }
   }
-  &__back {
-    position: absolute;
-    top: 28px;
-    right: 36px;
+  .auth-card {
+    width: min(100%, 480px);
+  }
+  .auth-progress {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+    margin-bottom: 54px;
+  }
+  .auth-progress span {
+    height: 3px;
+    border-radius: 99px;
+    background: #d9d9d3;
+  }
+  .auth-progress span.active {
+    background: var(--color-brand);
+  }
+  .auth-card {
+    & h1 {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(2.6rem, 5vw, 4.2rem);
+      font-weight: 500;
+      letter-spacing: -0.05em;
+      line-height: 0.98;
+    }
+    &__lead {
+      margin: 18px 0 28px;
+      color: var(--ink-soft);
+      font-size: 0.85rem;
+      line-height: 1.65;
+    }
+    & form {
+      display: grid;
+      gap: 15px;
+    }
+  }
+  .auth-field {
+    display: grid;
+    gap: 7px;
+  }
+  .auth-field > span {
+    color: var(--ink);
+    font-size: 0.86rem;
+    font-weight: 850;
+  }
+  .auth-field > div {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: white;
+  }
+  .auth-field > div > span {
+    padding: 14px;
+    border-right: 1px solid var(--line);
+    color: var(--ink-soft);
+    font-size: 0.86rem;
+  }
+  .auth-field input {
+    width: 100%;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: white;
+    color: var(--ink);
+    font-weight: 750;
+  }
+  .auth-field > div input {
+    border: 0;
+  }
+  .auth-field input:focus,
+  .auth-field > div:focus-within {
+    border-color: var(--color-brand);
+    box-shadow: 0 0 0 3px rgb(57 122 105 / 12%);
+  }
+  .auth-card {
+    &__fineprint {
+      margin: 14px 0 0;
+      color: #88958f;
+      font-size: 0.84rem;
+      line-height: 1.55;
+    }
+  }
+  .auth-error {
     display: flex;
     align-items: center;
     gap: 6px;
-    color: var(--ink-soft);
+    margin: 0;
+    color: #b33b31;
     font-size: 0.86rem;
     font-weight: 700;
-    text-decoration: none;
   }
-}
-.auth-card {
-  width: min(100%, 480px);
-}
-.auth-progress {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 5px;
-  margin-bottom: 54px;
-}
-.auth-progress span {
-  height: 3px;
-  border-radius: 99px;
-  background: #d9d9d3;
-}
-.auth-progress span.active {
-  background: #397a69;
-}
-.auth-card {
-  & h1 {
-    margin: 0;
-    font-family: Georgia, serif;
-    font-size: clamp(2.6rem, 5vw, 4.2rem);
-    font-weight: 500;
-    letter-spacing: -0.05em;
-    line-height: 0.98;
+  .auth-code {
+    font-size: 1.8rem !important;
+    letter-spacing: 0.35em;
+    text-align: center;
   }
-  &__lead {
-    margin: 18px 0 28px;
-    color: var(--ink-soft);
-    font-size: 0.85rem;
-    line-height: 1.65;
-  }
-  & form {
-    display: grid;
-    gap: 15px;
-  }
-}
-.auth-field {
-  display: grid;
-  gap: 7px;
-}
-.auth-field > span {
-  color: var(--ink);
-  font-size: 0.86rem;
-  font-weight: 850;
-}
-.auth-field > div {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: white;
-}
-.auth-field > div > span {
-  padding: 14px;
-  border-right: 1px solid var(--line);
-  color: var(--ink-soft);
-  font-size: 0.86rem;
-}
-.auth-field input {
-  width: 100%;
-  padding: 14px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  outline: 0;
-  background: white;
-  color: var(--ink);
-  font-weight: 750;
-}
-.auth-field > div input {
-  border: 0;
-}
-.auth-field input:focus,
-.auth-field > div:focus-within {
-  border-color: #397a69;
-  box-shadow: 0 0 0 3px rgba(57, 122, 105, 0.12);
-}
-.auth-card {
-  &__fineprint {
-    margin: 14px 0 0;
-    color: #88958f;
-    font-size: 0.84rem;
-    line-height: 1.55;
-  }
-}
-.auth-error {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 0;
-  color: #b33b31;
-  font-size: 0.86rem;
-  font-weight: 700;
-}
-.auth-code {
-  font-size: 1.8rem !important;
-  letter-spacing: 0.35em;
-  text-align: center;
-}
-.resend {
-  justify-self: center;
-  border: 0;
-  background: transparent;
-  color: #397a69;
-  font-size: 0.86rem;
-  font-weight: 800;
-  cursor: pointer;
-}
-.resend:disabled {
-  color: #88958f;
-  cursor: default;
-}
-.auth-card {
-  &__step-back {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    margin-bottom: 25px;
-    padding: 0;
+  .resend {
+    justify-self: center;
     border: 0;
     background: transparent;
-    color: var(--ink-soft);
+    color: var(--color-brand);
     font-size: 0.86rem;
+    font-weight: 800;
     cursor: pointer;
   }
-  &__success {
-    display: grid;
-    place-items: center;
-    width: 50px;
-    height: 50px;
-    margin-bottom: 20px;
-    border-radius: 16px;
-    background: var(--mint);
-    color: #397a69;
-    font-size: 1.35rem;
+  .resend:disabled {
+    color: #88958f;
+    cursor: default;
   }
-}
-.auth-check {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 9px;
-  color: var(--ink-soft);
-  font-size: 0.86rem;
-  line-height: 1.5;
-}
-.auth-check input {
-  margin-top: 2px;
-  accent-color: #397a69;
-}
-.auth-check a {
-  color: #397a69;
-  font-weight: 800;
-}
-@media (max-width: 850px) {
-  .auth-page {
-    grid-template-columns: 1fr;
-    &__art {
-      display: none;
+  .auth-card {
+    &__step-back {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-bottom: 25px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: var(--ink-soft);
+      font-size: 0.86rem;
+      cursor: pointer;
     }
-    &__main {
-      min-height: 720px;
-      padding: 90px 24px 60px;
+    &__success {
+      display: grid;
+      place-items: center;
+      width: 50px;
+      height: 50px;
+      margin-bottom: 20px;
+      border-radius: 16px;
+      background: var(--mint);
+      color: var(--color-brand);
+      font-size: 1.35rem;
     }
-    &__back {
-      top: 25px;
-      left: 24px;
-      right: auto;
+  }
+  .auth-check {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 9px;
+    color: var(--ink-soft);
+    font-size: 0.86rem;
+    line-height: 1.5;
+  }
+  .auth-check input {
+    margin-top: 2px;
+    accent-color: var(--color-brand);
+  }
+  .auth-check a {
+    color: var(--color-brand);
+    font-weight: 800;
+  }
+  @media (width <= 850px) {
+    .auth-page {
+      grid-template-columns: 1fr;
+      &__art {
+        display: none;
+      }
+      &__main {
+        min-height: 720px;
+        padding: 90px 24px 60px;
+      }
+      &__back {
+        top: 25px;
+        left: 24px;
+        right: auto;
+      }
     }
   }
 }

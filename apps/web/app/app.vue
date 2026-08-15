@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import { useMockupApp } from '~/composables/useMockupApp'
+import { useToast } from "~/composables/useToast";
 
-const { toast, clearToast } = useMockupApp()
+const { toast, clearToast } = useToast();
 </script>
 
 <template>
   <UApp>
     <div class="app-shell">
+      <a class="skip-link" href="#main-content">Pular para o conteúdo</a>
       <AppHeader />
-      <main class="app-main">
+      <main id="main-content" class="app-main" tabindex="-1">
         <NuxtPage />
       </main>
       <AppFooter />

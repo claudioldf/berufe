@@ -1,7 +1,7 @@
 <script setup lang="ts">
 defineSlots<{
-  default(): unknown
-}>()
+  default(): unknown;
+}>();
 </script>
 
 <template>
@@ -15,7 +15,7 @@ defineSlots<{
   padding-block: 80px;
 }
 
-@media (max-width: 760px) {
+@media (width <= 760px) {
   .page-section {
     padding-block: 56px;
   }

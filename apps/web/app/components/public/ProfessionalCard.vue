@@ -4,6 +4,7 @@ import type { Professional } from "~/types";
 defineProps<{
   professional: Professional;
   matchingService: string;
+  contactUrl: string;
 }>();
 
 const emit = defineEmits<{
@@ -17,7 +18,13 @@ const emit = defineEmits<{
       class="professional-card__media"
       :to="`/profissionais/${professional.slug}`"
     >
-      <img :src="professional.avatar" :alt="`Foto de ${professional.name}`" />
+      <img
+        :src="professional.avatar"
+        :alt="`Foto de ${professional.name}`"
+        width="1024"
+        height="1536"
+        loading="lazy"
+      />
       <span
         v-if="
           professional.evidence.some((item) =>
@@ -82,6 +89,9 @@ const emit = defineEmits<{
           color="primary"
           icon="i-lucide-message-circle"
           label="WhatsApp"
+          :to="contactUrl"
+          target="_blank"
+          rel="noopener noreferrer"
           @click="emit('contact', professional)"
         />
       </div>
@@ -123,7 +133,7 @@ const emit = defineEmits<{
     gap: 5px;
     padding: 7px 9px;
     border-radius: 10px;
-    background: rgba(255, 255, 255, 0.92);
+    background: rgb(255 255 255 / 92%);
     color: #266253;
     font-size: 0.86rem;
     font-weight: 800;
@@ -136,7 +146,7 @@ const emit = defineEmits<{
     display: flex;
     justify-content: space-between;
     gap: 14px;
-    color: #397a69;
+    color: var(--color-brand);
     font-size: 0.86rem;
     font-weight: 800;
     letter-spacing: 0.05em;
@@ -157,7 +167,7 @@ const emit = defineEmits<{
     display: block;
     margin-top: 8px;
     color: var(--ink);
-    font-family: Georgia, serif;
+    font-family: var(--font-display);
     font-size: 1.65rem;
     font-weight: 600;
     letter-spacing: -0.035em;
@@ -208,7 +218,7 @@ const emit = defineEmits<{
   }
 }
 
-@media (max-width: 620px) {
+@media (width <= 620px) {
   .professional-card {
     grid-template-columns: 112px 1fr;
     &__media {

@@ -1,15 +1,15 @@
 <script setup lang="ts">
 interface Props {
-  as?: 'div' | 'header' | 'main'
+  as?: "div" | "header" | "main";
 }
 
 withDefaults(defineProps<Props>(), {
-  as: 'div',
-})
+  as: "div",
+});
 
 defineSlots<{
-  default(): unknown
-}>()
+  default(): unknown;
+}>();
 </script>
 
 <template>
@@ -24,7 +24,7 @@ defineSlots<{
   margin-inline: auto;
 }
 
-@media (max-width: 760px) {
+@media (width <= 760px) {
   .container {
     width: min(100% - 28px, var(--ui-container));
   }

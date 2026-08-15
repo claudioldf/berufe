@@ -43,7 +43,7 @@ const props = defineProps<{
 }
 .admin-heading {
   padding: 32px 0 36px;
-  background: #17352f;
+  background: var(--color-brand-strong);
   color: white;
   &__inner {
     display: flex;
@@ -56,14 +56,14 @@ const props = defineProps<{
   }
   &__title {
     margin: 0;
-    font-family: Georgia, serif;
+    font-family: var(--font-display);
     font-size: 2.6rem;
     font-weight: 500;
     letter-spacing: -0.04em;
   }
   &__description {
     margin: 7px 0 0;
-    color: rgba(255, 255, 255, 0.58);
+    color: rgb(255 255 255 / 58%);
     font-size: 0.82rem;
   }
   &__user {
@@ -72,9 +72,9 @@ const props = defineProps<{
     align-items: center;
     gap: 9px;
     padding: 9px 11px;
-    border: 1px solid rgba(255, 255, 255, 0.14);
+    border: 1px solid rgb(255 255 255 / 14%);
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.06);
+    background: rgb(255 255 255 / 6%);
   }
   &__avatar {
     display: grid;
@@ -95,17 +95,17 @@ const props = defineProps<{
   }
   &__user-role {
     margin-top: 2px;
-    color: rgba(255, 255, 255, 0.55);
+    color: rgb(255 255 255 / 55%);
     font-size: 0.82rem;
   }
   &__shield {
-    color: #a7d7c8;
+    color: var(--color-brand-muted);
   }
 }
 .admin-content {
   padding-top: 22px;
 }
-@media (max-width: 800px) {
+@media (width <= 800px) {
   .admin-heading__user {
     display: none;
   }

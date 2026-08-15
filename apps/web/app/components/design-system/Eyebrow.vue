@@ -1,22 +1,19 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed } from "vue";
 
 interface Props {
-  tone?: 'default' | 'inverse'
+  tone?: "default" | "inverse";
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  tone: 'default',
-})
+  tone: "default",
+});
 
 defineSlots<{
-  default(): unknown
-}>()
+  default(): unknown;
+}>();
 
-const classes = computed(() => [
-  'eyebrow',
-  `eyebrow--${props.tone}`,
-])
+const classes = computed(() => ["eyebrow", `eyebrow--${props.tone}`]);
 </script>
 
 <template>
@@ -31,7 +28,7 @@ const classes = computed(() => [
   align-items: center;
   gap: 8px;
   margin: 0 0 16px;
-  color: #397a69;
+  color: var(--color-brand);
   font-size: 0.82rem;
   font-weight: 800;
   letter-spacing: 0.14em;

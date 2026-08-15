@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { ReportPeriodData } from "~/types";
+import { formatPercent } from "~/utils/formatters";
 
 const props = defineProps<{ report: ReportPeriodData }>();
 
@@ -26,11 +27,6 @@ const activated = computed(
       ?.value ?? 0,
 );
 
-function percent(value: number, total: number) {
-  if (!total) return "—";
-  return `${new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 }).format((value / total) * 100)}%`;
-}
-
 const cards = computed<SummaryCard[]>(() => [
   {
     key: "published",
@@ -52,7 +48,7 @@ const cards = computed<SummaryCard[]>(() => [
     key: "activated",
     label: "Perfis ativados",
     value: `${activated.value}/${published.value}`,
-    detail: `${percent(activated.value, published.value)} dos publicados`,
+    detail: `${formatPercent(activated.value, published.value)} dos publicados`,
     change: props.report.summaryChanges.activated,
     icon: "i-lucide-badge-check",
     tone: "purple",
@@ -68,7 +64,7 @@ const cards = computed<SummaryCard[]>(() => [
     key: "coverage",
     label: "Buscas com resultado",
     value: `${props.report.discovery.searchesWithResults}/${props.report.discovery.searches}`,
-    detail: `${percent(props.report.discovery.searchesWithResults, props.report.discovery.searches)} de cobertura`,
+    detail: `${formatPercent(props.report.discovery.searchesWithResults, props.report.discovery.searches)} de cobertura`,
     change: props.report.summaryChanges.searchCoverage,
     icon: "i-lucide-search-check",
     tone: "blue",
@@ -84,7 +80,7 @@ const cards = computed<SummaryCard[]>(() => [
     key: "handoffs",
     label: "Contatos iniciados",
     value: `${props.report.discovery.whatsappHandoffs}`,
-    detail: `${percent(props.report.discovery.whatsappHandoffs, props.report.discovery.profileViews)} dos perfis abertos`,
+    detail: `${formatPercent(props.report.discovery.whatsappHandoffs, props.report.discovery.profileViews)} dos perfis abertos`,
     change: props.report.summaryChanges.handoffs,
     icon: "i-lucide-message-circle-more",
     tone: "coral",
@@ -100,7 +96,7 @@ const cards = computed<SummaryCard[]>(() => [
     key: "returning",
     label: "Profissionais recorrentes",
     value: `${props.report.engagement.returningProfessionals}/${props.report.engagement.eligibleProfessionals}`,
-    detail: `${percent(props.report.engagement.returningProfessionals, props.report.engagement.eligibleProfessionals)} da base publicada`,
+    detail: `${formatPercent(props.report.engagement.returningProfessionals, props.report.engagement.eligibleProfessionals)} da base publicada`,
     change: props.report.summaryChanges.returning,
     icon: "i-lucide-refresh-cw",
     tone: "gold",
@@ -160,7 +156,7 @@ const cards = computed<SummaryCard[]>(() => [
   }
   &__heading h2 {
     margin-top: 2px;
-    font-family: Georgia, serif;
+    font-family: var(--font-display);
     font-size: 1.55rem;
     font-weight: 500;
     letter-spacing: -0.025em;
@@ -179,17 +175,17 @@ const cards = computed<SummaryCard[]>(() => [
   }
 }
 .summary-card {
-  --card-accent: #397a69;
-  --card-soft: #e8f4f0;
+  --card-accent: var(--color-brand);
+  --card-soft: var(--color-brand-tint);
   min-width: 0;
   padding: 15px;
   border: 1px solid var(--line);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.88);
-  box-shadow: 0 8px 24px rgba(30, 50, 44, 0.045);
+  background: rgb(255 255 255 / 88%);
+  box-shadow: 0 8px 24px rgb(30 50 44 / 4.5%);
   &--coral {
     --card-accent: #bd563f;
-    --card-soft: #fff0ec;
+    --card-soft: var(--color-accent-tint);
   }
   &--gold {
     --card-accent: #927019;
@@ -229,7 +225,7 @@ const cards = computed<SummaryCard[]>(() => [
   & > strong {
     display: block;
     margin-top: 13px;
-    font-family: Georgia, serif;
+    font-family: var(--font-display);
     font-size: 1.75rem;
     font-weight: 500;
     letter-spacing: -0.035em;
@@ -252,12 +248,12 @@ const cards = computed<SummaryCard[]>(() => [
     font-weight: 850;
   }
 }
-@media (max-width: 1020px) {
+@media (width <= 1020px) {
   .summary__grid {
     grid-template-columns: repeat(3, 1fr);
   }
 }
-@media (max-width: 680px) {
+@media (width <= 680px) {
   .summary__heading {
     align-items: start;
     flex-direction: column;
@@ -269,7 +265,7 @@ const cards = computed<SummaryCard[]>(() => [
     grid-template-columns: 1fr 1fr;
   }
 }
-@media (max-width: 430px) {
+@media (width <= 430px) {
   .summary__grid {
     grid-template-columns: 1fr;
   }

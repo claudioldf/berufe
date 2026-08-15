@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { computed, ref, shallowRef } from "vue";
 import catalogsData from "../../../data/catalogs.json";
-import { useMockupApp } from "~/composables/useMockupApp";
+import { useToast } from "~/composables/useToast";
 import type {
   CatalogEntry,
   CatalogEntryDraft,
   CatalogTab,
 } from "~/types/catalog";
+import { normalizeSearchText } from "~/utils/text";
 
-const { showToast } = useMockupApp();
+const { showToast } = useToast();
 const activeTab = shallowRef<CatalogTab>("services");
 const isFormOpen = shallowRef(false);
 const editingEntry = shallowRef<CatalogEntry | null>(null);
@@ -48,15 +49,15 @@ const entries = computed(() =>
 const visibleEntries = computed(() => {
   if (activeTab.value === "services") return services.value;
 
-  const stateCode = normalizeFilter(stateCodeFilter.value);
-  const city = normalizeFilter(cityFilter.value);
-  const neighborhood = normalizeFilter(neighborhoodFilter.value);
+  const stateCode = normalizeSearchText(stateCodeFilter.value);
+  const city = normalizeSearchText(cityFilter.value);
+  const neighborhood = normalizeSearchText(neighborhoodFilter.value);
 
   return neighborhoods.value.filter(
     (entry) =>
-      normalizeFilter(entry.stateCode).includes(stateCode) &&
-      normalizeFilter(entry.city).includes(city) &&
-      normalizeFilter(entry.name).includes(neighborhood),
+      normalizeSearchText(entry.stateCode).includes(stateCode) &&
+      normalizeSearchText(entry.city).includes(city) &&
+      normalizeSearchText(entry.name).includes(neighborhood),
   );
 });
 const formKey = computed(
@@ -71,14 +72,6 @@ const modalDescription = computed(() =>
     ? "Atualize os dados usados nos perfis profissionais e na busca."
     : "Atualize UF, cidade e bairro sem alterar o código histórico.",
 );
-
-function normalizeFilter(value: string | undefined) {
-  return (value ?? "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLocaleLowerCase("pt-BR")
-    .trim();
-}
 
 function selectTab(tab: CatalogTab) {
   activeTab.value = tab;
@@ -294,7 +287,7 @@ function moveEntry(id: string, direction: -1 | 1) {
     margin: 0;
   }
   &__title {
-    font-family: Georgia, serif;
+    font-family: var(--font-display);
     font-size: 1.5rem;
   }
   &__description {
@@ -319,8 +312,8 @@ function moveEntry(id: string, direction: -1 | 1) {
     cursor: pointer;
   }
   &__tabs button.catalog__tab--active {
-    border-bottom-color: #397a69;
-    color: #397a69;
+    border-bottom-color: var(--color-brand);
+    color: var(--color-brand);
   }
   &__tabs span {
     margin-left: 4px;
@@ -330,7 +323,7 @@ function moveEntry(id: string, direction: -1 | 1) {
     font-size: var(--font-size-min);
   }
 }
-@media (max-width: 700px) {
+@media (width <= 700px) {
   .catalog__header {
     display: grid;
   }

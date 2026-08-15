@@ -27,3 +27,18 @@ The quote token and customer data are synthetic. That route is prerendered only 
 All people, phone numbers, professional relationships, portfolio records, and newly generated profile/portfolio images in this prototype are synthetic. They demonstrate product behavior and must not be interpreted as real professionals, customers, work, credentials, or endorsements.
 
 Generate a static build with `npm run generate`; the result is written to `.output/public`.
+
+## Architecture and quality gates
+
+- Shared domain contracts live in `app/types`; pure formatting, catalog, quote, contact, and text logic lives in `app/utils`.
+- Stateful workflows use focused composables (`useToast`, `useShare`, `useAppRole`, and feature-specific draft/search composables).
+- Design-system primitives stay in `app/components/design-system`; page features are split into folders such as `home`, `profile`, `auth`, `dashboard/quote`, and `admin/moderation`.
+- Search filters and report periods are URL-backed so views remain linkable and browser navigation behaves predictably.
+
+Run the complete local quality gate with:
+
+```bash
+npm run check
+```
+
+Useful focused commands are `npm run lint`, `npm run stylelint`, `npm run typecheck`, `npm run test`, and `npm run test:e2e`. Playwright starts the Nuxt development server automatically.

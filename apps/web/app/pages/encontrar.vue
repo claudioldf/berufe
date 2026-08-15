@@ -1,88 +1,26 @@
 <script setup lang="ts">
-import { computed } from "vue";
 import catalogsData from "../../data/catalogs.json";
 import professionalsData from "../../data/professionals.json";
 import type { Neighborhood, Professional, Service } from "~/types";
-import { useMockupApp } from "~/composables/useMockupApp";
+import { useProfessionalSearch } from "~/composables/useProfessionalSearch";
+import { useToast } from "~/composables/useToast";
+import { buildWhatsAppUrl } from "~/utils/contact";
 
-const route = useRoute();
-const router = useRouter();
-const { showToast } = useMockupApp();
+const { showToast } = useToast();
 const services = catalogsData.services as Service[];
 const neighborhoods = catalogsData.neighborhoods as Neighborhood[];
 const professionals = professionalsData as Professional[];
-
-const serviceQuery = computed(() =>
-  String(route.query.servico ?? "eletricista"),
-);
-const neighborhoodCode = computed(() => String(route.query.bairro ?? "all"));
-
-const selectedService = computed(() => {
-  const normalized = serviceQuery.value.toLocaleLowerCase("pt-BR");
-  return (
-    services.find((service) => service.slug === normalized) ??
-    services.find(
-      (service) => service.name.toLocaleLowerCase("pt-BR") === normalized,
-    ) ??
-    services.find((service) => service.aliases.includes(normalized))
-  );
-});
-
-const selectedNeighborhood = computed(
-  () =>
-    neighborhoods.find((item) => item.code === neighborhoodCode.value) ??
-    neighborhoods[0],
-);
-
-const results = computed(() => {
-  if (!selectedService.value) return [];
-  const service = selectedService.value;
-  const neighborhood = selectedNeighborhood.value;
-
-  return professionals
-    .filter((professional) => professional.services.includes(service.name))
-    .filter((professional) => {
-      return (
-        neighborhood?.code === "all" ||
-        professional.allJoinville ||
-        professional.neighborhoods.includes(neighborhood?.name ?? "")
-      );
-    })
-    .toSorted((a, b) => {
-      const score = (professional: Professional) => {
-        let value = 0;
-        if (professional.primaryService === service.name) value += 100;
-        if (
-          neighborhood?.code !== "all" &&
-          professional.neighborhoods.includes(neighborhood?.name ?? "")
-        )
-          value += 50;
-        if (
-          professional.evidence.some(
-            (item) => item.label === "Identidade verificada",
-          )
-        )
-          value += 25;
-        if (professional.portfolio.length) value += 10;
-        value += professional.relationships.length;
-        return value;
-      };
-      return score(b) - score(a) || b.updatedAt.localeCompare(a.updatedAt);
-    });
-});
-
-const relatedServices = computed(() => {
-  if (selectedService.value) {
-    return services
-      .filter(
-        (service) =>
-          service.category === selectedService.value?.category &&
-          service.id !== selectedService.value?.id,
-      )
-      .slice(0, 3);
-  }
-  return services.slice(0, 3);
-});
+const {
+  serviceInput,
+  neighborhoodInput,
+  serviceQuery,
+  neighborhoodCode,
+  selectedService,
+  selectedNeighborhood,
+  results,
+  relatedServices,
+  submitSearch,
+} = useProfessionalSearch({ services, neighborhoods, professionals });
 
 useSeoMeta({
   title: () =>
@@ -91,40 +29,18 @@ useSeoMeta({
     `Compare evidências e encontre ${selectedService.value?.name.toLocaleLowerCase("pt-BR") ?? "profissionais"} em Joinville.`,
 });
 
-async function search(payload: { service: string; neighborhood: string }) {
-  const normalized = payload.service.toLocaleLowerCase("pt-BR");
-  const service =
-    services.find(
-      (item) => item.name.toLocaleLowerCase("pt-BR") === normalized,
-    ) ??
-    services.find((item) =>
-      item.aliases.some(
-        (alias) => alias.includes(normalized) || normalized.includes(alias),
-      ),
-    );
-  await router.push({
-    path: "/encontrar",
-    query: {
-      servico: service?.slug ?? payload.service,
-      bairro: payload.neighborhood,
-    },
-  });
-}
-
-function contact(professional: Professional) {
-  const text = encodeURIComponent(
+function contactUrl(professional: Professional) {
+  return buildWhatsAppUrl(
+    professional.whatsapp,
     `Olá, ${professional.name}! Encontrei seu perfil na Berufe e gostaria de conversar sobre ${selectedService.value?.name ?? professional.primaryService}.`,
   );
+}
+
+function announceContact() {
   showToast({
     title: "Abrindo o WhatsApp",
     description: "O contato é direto com o profissional.",
   });
-  if (import.meta.client)
-    window.open(
-      `https://wa.me/${professional.whatsapp}?text=${text}`,
-      "_blank",
-      "noopener,noreferrer",
-    );
 }
 </script>
 
@@ -151,11 +67,10 @@ function contact(professional: Professional) {
           }}
         </p>
         <PublicServiceSearch
-          :key="`${serviceQuery}-${neighborhoodCode}`"
-          :initial-service="selectedService?.name ?? serviceQuery"
-          :initial-neighborhood="neighborhoodCode"
+          v-model:service="serviceInput"
+          v-model:neighborhood="neighborhoodInput"
           compact
-          @search="search"
+          @submit="submitSearch"
         />
       </DesignSystemContainer>
     </section>
@@ -213,7 +128,8 @@ function contact(professional: Professional) {
               :matching-service="
                 selectedService?.name ?? professional.primaryService
               "
-              @contact="contact"
+              :contact-url="contactUrl(professional)"
+              @contact="announceContact"
             />
           </div>
 
@@ -273,14 +189,14 @@ function contact(professional: Professional) {
   }
   &__masthead h1 {
     margin: 0;
-    font-family: Georgia, serif;
+    font-family: var(--font-display);
     font-size: clamp(2.4rem, 5vw, 4.5rem);
     font-weight: 500;
     letter-spacing: -0.045em;
     line-height: 1;
   }
   &__masthead h1 em {
-    color: #397a69;
+    color: var(--color-brand);
     font-weight: inherit;
   }
   &__masthead-inner > p:last-of-type {
@@ -323,11 +239,11 @@ function contact(professional: Professional) {
     margin-top: 20px;
     padding: 18px;
     border-radius: 17px;
-    background: #e7f3ef;
+    background: var(--color-brand-tint-muted);
   }
   &__explanation > svg {
     margin-bottom: 11px;
-    color: #397a69;
+    color: var(--color-brand);
     font-size: 1.3rem;
   }
   &__explanation strong {
@@ -341,7 +257,7 @@ function contact(professional: Professional) {
     line-height: 1.5;
   }
   &__explanation span {
-    color: #397a69;
+    color: var(--color-brand);
     font-size: 0.86rem;
     font-weight: 800;
   }
@@ -356,7 +272,7 @@ function contact(professional: Professional) {
     display: block;
   }
   & strong {
-    font-family: Georgia, serif;
+    font-family: var(--font-display);
     font-size: 1.35rem;
   }
   & > div span {
@@ -368,7 +284,7 @@ function contact(professional: Professional) {
     display: flex !important;
     align-items: center;
     gap: 5px;
-    color: #397a69;
+    color: var(--color-brand);
     font-size: 0.86rem;
     font-weight: 800;
   }
@@ -393,12 +309,12 @@ function contact(professional: Professional) {
     margin: 0 auto;
     border-radius: 18px;
     background: var(--mint);
-    color: #397a69;
+    color: var(--color-brand);
     font-size: 1.5rem;
   }
   & h2 {
     margin: 18px 0 7px;
-    font-family: Georgia, serif;
+    font-family: var(--font-display);
     font-size: 2rem;
   }
   & p {
@@ -437,7 +353,7 @@ function contact(professional: Professional) {
     padding: 17px;
     border: 1px dashed #aacbbf;
     border-radius: 16px;
-    color: #397a69;
+    color: var(--color-brand);
   }
   &__principle > svg {
     font-size: 1.5rem;
@@ -452,7 +368,7 @@ function contact(professional: Professional) {
     font-size: 0.82rem;
   }
 }
-@media (max-width: 800px) {
+@media (width <= 800px) {
   .finder {
     &__layout {
       grid-template-columns: 1fr;
@@ -465,7 +381,7 @@ function contact(professional: Professional) {
     }
   }
 }
-@media (max-width: 520px) {
+@media (width <= 520px) {
   .results-heading {
     &__order {
       display: none !important;

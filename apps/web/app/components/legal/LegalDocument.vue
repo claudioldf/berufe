@@ -1,18 +1,18 @@
 <script setup lang="ts">
-import type { LegalDocumentSection } from '~/types'
+import type { LegalDocumentSection } from "~/types";
 
 defineProps<{
-  eyebrow: string
-  title: string
-  description: string
-  version: string
-  updatedAt: string
-  sections: LegalDocumentSection[]
-}>()
+  eyebrow: string;
+  title: string;
+  description: string;
+  version: string;
+  updatedAt: string;
+  sections: LegalDocumentSection[];
+}>();
 
 defineSlots<{
-  default(): unknown
-}>()
+  default(): unknown;
+}>();
 </script>
 
 <template>
@@ -21,7 +21,9 @@ defineSlots<{
       <div class="legal-document__hero-shape" />
       <DesignSystemContainer class="legal-document__hero-inner">
         <div class="legal-document__heading">
-          <DesignSystemEyebrow tone="inverse">{{ eyebrow }}</DesignSystemEyebrow>
+          <DesignSystemEyebrow tone="inverse">{{
+            eyebrow
+          }}</DesignSystemEyebrow>
           <h1>{{ title }}</h1>
           <p>{{ description }}</p>
         </div>
@@ -44,7 +46,9 @@ defineSlots<{
         <UIcon name="i-lucide-file-check-2" />
         <p>
           <strong>Minuta para revisão.</strong>
-          Este documento reflete o produto planejado e ainda depende de validação jurídica e dos dados oficiais da responsável pela Berufe antes do lançamento com usuários reais.
+          Este documento reflete o produto planejado e ainda depende de
+          validação jurídica e dos dados oficiais da responsável pela Berufe
+          antes do lançamento com usuários reais.
         </p>
       </DesignSystemContainer>
     </div>
@@ -70,12 +74,12 @@ defineSlots<{
 
 <style scoped lang="scss">
 .legal-document {
-  background: #fffdfa;
+  background: var(--color-surface-warm);
   &__hero {
     position: relative;
     overflow: hidden;
     padding: 78px 0 72px;
-    background: #17352f;
+    background: var(--color-brand-strong);
     color: white;
   }
   &__hero-shape {
@@ -84,7 +88,7 @@ defineSlots<{
     right: -70px;
     width: 430px;
     height: 430px;
-    border: 92px solid rgba(216, 240, 231, 0.08);
+    border: 92px solid rgb(216 240 231 / 8%);
     border-radius: 999px;
   }
   &__hero-inner {
@@ -109,7 +113,7 @@ defineSlots<{
   &__heading > p:last-child {
     max-width: 680px;
     margin: 25px 0 0;
-    color: rgba(255, 255, 255, 0.67);
+    color: rgb(255 255 255 / 67%);
     font-size: 1rem;
     line-height: 1.75;
   }
@@ -117,14 +121,14 @@ defineSlots<{
     display: grid;
     min-width: 210px;
     margin: 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.18);
+    border-top: 1px solid rgb(255 255 255 / 18%);
   }
   &__metadata > div {
     padding: 13px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+    border-bottom: 1px solid rgb(255 255 255 / 18%);
   }
   &__metadata dt {
-    color: rgba(255, 255, 255, 0.5);
+    color: rgb(255 255 255 / 50%);
     font-size: var(--font-size-min);
     font-weight: 800;
     letter-spacing: 0.08em;
@@ -137,7 +141,7 @@ defineSlots<{
   }
   &__draft {
     border-bottom: 1px solid #d5a99f;
-    background: #fff0ec;
+    background: var(--color-accent-tint);
     color: #773d32;
   }
   &__draft-inner {
@@ -171,7 +175,7 @@ defineSlots<{
   }
   &__aside nav > p {
     margin: 0 0 14px;
-    color: #397a69;
+    color: var(--color-brand);
     font-size: var(--font-size-min);
     font-weight: 850;
     letter-spacing: 0.1em;
@@ -204,11 +208,11 @@ defineSlots<{
   &__aside a::before {
     content: counter(legal-section, decimal-leading-zero);
     color: #98a9a4;
-    font-family: Georgia, serif;
+    font-family: var(--font-display);
     font-size: var(--font-size-min);
   }
   &__aside a:hover {
-    color: #397a69;
+    color: var(--color-brand);
   }
   &__content {
     min-width: 0;
@@ -274,7 +278,7 @@ defineSlots<{
     color: var(--ink);
   }
   &__content :deep(.legal-section a) {
-    color: #397a69;
+    color: var(--color-brand);
     font-weight: 800;
     text-underline-offset: 3px;
   }
@@ -284,13 +288,13 @@ defineSlots<{
     gap: 9px;
     margin: 20px 0;
     padding: 15px 17px;
-    border-left: 3px solid #397a69;
+    border-left: 3px solid var(--color-brand);
     border-radius: 0 12px 12px 0;
     background: #edf7f3;
   }
   &__content :deep(.legal-note svg) {
     margin-top: 3px;
-    color: #397a69;
+    color: var(--color-brand);
   }
   &__content :deep(.legal-note p) {
     margin: 0;
@@ -325,7 +329,7 @@ defineSlots<{
   }
 }
 
-@media (max-width: 920px) {
+@media (width <= 920px) {
   .legal-document {
     &__hero-inner {
       grid-template-columns: 1fr;
@@ -336,7 +340,7 @@ defineSlots<{
       width: min(100%, 460px);
     }
     &__metadata > div {
-      border-top: 1px solid rgba(255, 255, 255, 0.18);
+      border-top: 1px solid rgb(255 255 255 / 18%);
     }
     &__layout {
       grid-template-columns: 1fr;
@@ -352,7 +356,7 @@ defineSlots<{
   }
 }
 
-@media (max-width: 620px) {
+@media (width <= 620px) {
   .legal-document {
     &__hero {
       padding: 54px 0 50px;

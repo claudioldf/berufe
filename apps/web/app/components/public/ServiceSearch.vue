@@ -1,80 +1,79 @@
 <script setup lang="ts">
-import { computed, shallowRef } from 'vue'
-import catalogsData from '../../../data/catalogs.json'
-import type { Neighborhood, Service } from '~/types'
+import catalogsData from "../../../data/catalogs.json";
+import type { Neighborhood, Service } from "~/types";
 
-const props = withDefaults(defineProps<{
-  initialService?: string
-  initialNeighborhood?: string
-  compact?: boolean
-}>(), {
-  initialService: '',
-  initialNeighborhood: 'all',
-  compact: false,
-})
+withDefaults(
+  defineProps<{
+    compact?: boolean;
+  }>(),
+  {
+    compact: false,
+  },
+);
 
 const emit = defineEmits<{
-  search: [payload: { service: string; neighborhood: string }]
-}>()
+  submit: [payload: { service: string; neighborhood: string }];
+}>();
 
-const services = catalogsData.services as Service[]
-const neighborhoods = catalogsData.neighborhoods as Neighborhood[]
-const query = shallowRef(props.initialService)
-const neighborhood = shallowRef(props.initialNeighborhood)
-const isFocused = shallowRef(false)
-
-const suggestions = computed(() => {
-  const normalized = query.value.trim().toLocaleLowerCase('pt-BR')
-  if (!normalized) return services.slice(0, 6)
-  return services
-    .filter((service) => {
-      return service.name.toLocaleLowerCase('pt-BR').includes(normalized)
-        || service.aliases.some((alias) => alias.includes(normalized))
-    })
-    .slice(0, 6)
-})
-
-function chooseService(service: Service) {
-  query.value = service.name
-  isFocused.value = false
-}
+const service = defineModel<string>("service", { default: "" });
+const neighborhood = defineModel<string>("neighborhood", { default: "all" });
+const services = catalogsData.services as Service[];
+const neighborhoods = catalogsData.neighborhoods as Neighborhood[];
 
 function submit() {
-  if (!query.value.trim()) return
-  emit('search', { service: query.value.trim(), neighborhood: neighborhood.value })
-  isFocused.value = false
+  const normalizedService = service.value.trim();
+  if (!normalizedService) return;
+  emit("submit", {
+    service: normalizedService,
+    neighborhood: neighborhood.value,
+  });
 }
 </script>
 
 <template>
-  <form class="service-search" :class="{ 'service-search--compact': compact }" @submit.prevent="submit">
+  <form
+    class="service-search"
+    :class="{ 'service-search--compact': compact }"
+    @submit.prevent="submit"
+  >
     <div class="service-search__field service-search__field--service">
       <UIcon name="i-lucide-search" />
       <label>
         <span>O que você precisa?</span>
-        <input
-          v-model="query"
+        <UInputMenu
+          v-model="service"
+          class="service-search__input"
+          mode="autocomplete"
+          :items="services"
+          value-key="name"
+          label-key="name"
+          :filter-fields="['name', 'aliases']"
+          open-on-focus
+          name="service"
           type="search"
           autocomplete="off"
-          placeholder="Ex.: eletricista, pintura..."
-          @focus="isFocused = true"
-          @blur="isFocused = false"
-          @keydown.esc="isFocused = false"
+          placeholder="Ex.: eletricista, pintura…"
+          :ui="{
+            base: 'p-0 border-0 ring-0 shadow-none bg-transparent focus-visible:outline-none focus-visible:ring-0',
+            content: 'min-w-[min(460px,calc(100vw-56px))]',
+          }"
         >
+          <template #item="{ item }">
+            <span class="service-search__suggestion-icon">
+              <UIcon :name="item.icon" aria-hidden="true" />
+            </span>
+            <span class="service-search__suggestion-text">
+              <strong>{{ item.name }}</strong>
+              <small>{{ item.description }}</small>
+            </span>
+            <UIcon
+              name="i-lucide-arrow-up-right"
+              class="service-search__suggestion-arrow"
+              aria-hidden="true"
+            />
+          </template>
+        </UInputMenu>
       </label>
-
-      <div v-if="isFocused && suggestions.length" class="service-search__suggestions">
-        <button
-          v-for="service in suggestions"
-          :key="service.id"
-          type="button"
-          @mousedown.prevent="chooseService(service)"
-        >
-          <span class="service-search__suggestion-icon"><UIcon :name="service.icon" /></span>
-          <span class="service-search__suggestion-text"><strong>{{ service.name }}</strong><small>{{ service.description }}</small></span>
-          <UIcon name="i-lucide-arrow-up-right" class="service-search__suggestion-arrow" />
-        </button>
-      </div>
     </div>
 
     <div class="service-search__divider" />
@@ -83,8 +82,12 @@ function submit() {
       <UIcon name="i-lucide-map-pin" />
       <label>
         <span>Onde?</span>
-        <select v-model="neighborhood">
-          <option v-for="item in neighborhoods" :key="item.code" :value="item.code">
+        <select v-model="neighborhood" name="neighborhood" autocomplete="off">
+          <option
+            v-for="item in neighborhoods"
+            :key="item.code"
+            :value="item.code"
+          >
             {{ item.name }}
           </option>
         </select>
@@ -108,10 +111,10 @@ function submit() {
   align-items: center;
   width: 100%;
   padding: 9px;
-  border: 1px solid rgba(23, 53, 47, 0.14);
+  border: 1px solid rgb(23 53 47 / 14%);
   border-radius: 18px;
   background: white;
-  box-shadow: 0 20px 55px rgba(23, 53, 47, 0.13);
+  box-shadow: 0 20px 55px rgb(23 53 47 / 13%);
   &__field {
     position: relative;
     display: grid;
@@ -122,7 +125,7 @@ function submit() {
     padding: 4px 11px;
   }
   &__field > svg {
-    color: #397a69;
+    color: var(--color-brand);
     font-size: 1.15rem;
   }
   &__field label {
@@ -136,21 +139,16 @@ function submit() {
     letter-spacing: 0;
     text-transform: uppercase;
   }
-  & input,
+  &__input,
   & select {
     width: 100%;
     min-width: 0;
     padding: 4px 0 0;
     border: 0;
-    outline: 0;
     background: transparent;
     color: var(--ink);
     font-size: 0.9rem;
     font-weight: 750;
-  }
-  & input::placeholder {
-    color: #8a9995;
-    font-weight: 600;
   }
   & select {
     appearance: none;
@@ -175,35 +173,6 @@ function submit() {
     border-radius: 13px;
     font-weight: 800;
   }
-  &__suggestions {
-    position: absolute;
-    top: calc(100% + 17px);
-    left: -10px;
-    width: min(460px, calc(100vw - 56px));
-    overflow: hidden;
-    padding: 7px;
-    border: 1px solid var(--line);
-    border-radius: 17px;
-    background: white;
-    box-shadow: var(--shadow-lg);
-  }
-  &__suggestions button {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    align-items: center;
-    gap: 11px;
-    width: 100%;
-    padding: 10px;
-    border: 0;
-    border-radius: 12px;
-    background: transparent;
-    color: var(--ink);
-    text-align: left;
-    cursor: pointer;
-  }
-  &__suggestions button:hover {
-    background: var(--paper);
-  }
   &__suggestion-icon {
     display: grid;
     place-items: center;
@@ -211,19 +180,19 @@ function submit() {
     height: 36px;
     border-radius: 10px;
     background: var(--mint);
-    color: #397a69;
+    color: var(--color-brand);
   }
   &__suggestion-text {
     min-width: 0;
   }
-  &__suggestions strong,
-  &__suggestions small {
+  &__suggestion-text strong,
+  &__suggestion-text small {
     display: block;
   }
-  &__suggestions strong {
+  &__suggestion-text strong {
     font-size: 0.84rem;
   }
-  &__suggestions small {
+  &__suggestion-text small {
     overflow: hidden;
     margin-top: 2px;
     color: var(--ink-soft);
@@ -233,6 +202,8 @@ function submit() {
   }
   &__suggestion-arrow {
     flex-shrink: 0;
+    align-self: center;
+    margin-left: auto;
     color: #789089;
   }
   &--compact {
@@ -240,7 +211,7 @@ function submit() {
   }
 }
 
-@media (max-width: 760px) {
+@media (width <= 760px) {
   .service-search {
     grid-template-columns: 1fr;
     gap: 0;
@@ -257,10 +228,6 @@ function submit() {
     &__button {
       min-height: 48px;
       margin-top: 5px;
-    }
-    &__suggestions {
-      top: calc(100% + 8px);
-      left: 0;
     }
   }
 }

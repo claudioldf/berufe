@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { ReportPeriodData } from "~/types";
+import { formatPercent } from "~/utils/formatters";
 
 const props = defineProps<{
   discovery: ReportPeriodData["discovery"];
@@ -35,11 +36,6 @@ const discoveryStages = computed(() => [
 const maxDemand = computed(() =>
   Math.max(...props.discovery.demand.map((item) => item.value), 1),
 );
-
-function percent(value: number, total: number) {
-  if (!total) return "—";
-  return `${new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 }).format((value / total) * 100)}%`;
-}
 </script>
 
 <template>
@@ -79,11 +75,11 @@ function percent(value: number, total: number) {
             ><strong>{{ stage.value }}</strong>
           </div>
           <div class="discovery-stage__bar">
-            <i :style="{ width: percent(stage.value, stage.total) }" />
+            <i :style="{ width: formatPercent(stage.value, stage.total) }" />
           </div>
           <small>{{
             index > 0
-              ? `${percent(stage.value, stage.total)} das buscas`
+              ? `${formatPercent(stage.value, stage.total)} das buscas`
               : "base do período"
           }}</small>
         </div>
@@ -191,7 +187,7 @@ function percent(value: number, total: number) {
 }
 .section-heading h2 {
   margin-top: 2px;
-  font-family: Georgia, serif;
+  font-family: var(--font-display);
   font-size: 1.55rem;
   font-weight: 500;
 }
@@ -223,7 +219,7 @@ function percent(value: number, total: number) {
     margin-top: 6px;
     overflow: hidden;
     border-radius: 99px;
-    background: #e9e8e3;
+    background: var(--color-surface-disabled);
   }
   &__bar i {
     display: block;
@@ -260,7 +256,7 @@ function percent(value: number, total: number) {
 .demand-card h3,
 .gaps-card h3,
 .widget-heading h3 {
-  font-family: Georgia, serif;
+  font-family: var(--font-display);
   font-size: 1.15rem;
   font-weight: 500;
 }
@@ -277,13 +273,13 @@ function percent(value: number, total: number) {
   gap: 8px;
 }
 .widget-actions > svg {
-  color: #397a69;
+  color: var(--color-brand);
   font-size: 1.2rem;
 }
 .widget-actions > span {
   padding: 6px 8px;
   border-radius: 8px;
-  background: #fff0ec;
+  background: var(--color-accent-tint);
   color: #a94734;
   font-size: var(--font-size-min);
   font-weight: 850;
@@ -307,13 +303,13 @@ function percent(value: number, total: number) {
   height: 7px;
   overflow: hidden;
   border-radius: 99px;
-  background: #e9e8e3;
+  background: var(--color-surface-disabled);
 }
 .demand-bars b {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: #397a69;
+  background: var(--color-brand);
 }
 .demand-bars strong {
   text-align: right;
@@ -332,7 +328,7 @@ function percent(value: number, total: number) {
     gap: 9px;
     padding: 12px;
     border-radius: 12px;
-    background: #f7f5f0;
+    background: var(--color-surface-neutral);
   }
   & > div > span {
     display: grid;
@@ -340,11 +336,11 @@ function percent(value: number, total: number) {
     width: 32px;
     height: 32px;
     border-radius: 9px;
-    background: #fff0ec;
+    background: var(--color-accent-tint);
     color: #a94734;
   }
   & > div > &__icon--catalog {
-    background: #fff7de;
+    background: var(--color-warning-tint);
     color: #8a6918;
   }
   & strong,
@@ -365,12 +361,12 @@ function percent(value: number, total: number) {
   }
   & em {
     grid-column: 2;
-    color: #397a69;
+    color: var(--color-brand);
     font-style: normal;
     font-weight: 850;
   }
 }
-@media (max-width: 800px) {
+@media (width <= 800px) {
   .discovery__grid {
     grid-template-columns: 1fr;
   }
@@ -381,7 +377,7 @@ function percent(value: number, total: number) {
     grid-template-columns: 1fr;
   }
 }
-@media (max-width: 620px) {
+@media (width <= 620px) {
   .section-heading {
     align-items: start;
     flex-direction: column;

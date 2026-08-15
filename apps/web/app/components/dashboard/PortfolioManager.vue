@@ -1,11 +1,37 @@
 <script setup lang="ts">
 import { shallowRef } from "vue";
-import type { PortfolioItem } from "~/types";
+import type { PortfolioItem, PortfolioItemDraft } from "~/types";
 
 defineProps<{ items: PortfolioItem[] }>();
-const emit = defineEmits<{ added: [] }>();
+const emit = defineEmits<{ added: [draft: PortfolioItemDraft] }>();
 const uploadOpen = shallowRef(false);
+const file = shallowRef<File | null>(null);
 const title = shallowRef("");
+const service = shallowRef("Eletricista");
+const description = shallowRef("");
+
+function selectFile(event: Event) {
+  file.value = (event.target as HTMLInputElement).files?.[0] ?? null;
+}
+
+function resetUpload() {
+  file.value = null;
+  title.value = "";
+  service.value = "Eletricista";
+  description.value = "";
+}
+
+function submitUpload() {
+  if (!file.value || !title.value.trim()) return;
+  emit("added", {
+    file: file.value,
+    title: title.value.trim(),
+    service: service.value,
+    description: description.value.trim(),
+  });
+  uploadOpen.value = false;
+  resetUpload();
+}
 </script>
 
 <template>
@@ -28,7 +54,13 @@ const title = shallowRef("");
     </DesignSystemSurfaceCard>
     <div class="portfolio-manager__grid">
       <article v-for="item in items" :key="item.id">
-        <img :src="item.image" :alt="item.title" />
+        <img
+          :src="item.image"
+          :alt="item.title"
+          width="640"
+          height="380"
+          loading="lazy"
+        />
         <div>
           <span
             ><strong>{{ item.title }}</strong
@@ -58,34 +90,40 @@ const title = shallowRef("");
         <form
           id="portfolio-upload"
           class="portfolio-upload"
-          @submit.prevent="
-            uploadOpen = false;
-            emit('added');
-          "
+          @submit.prevent="submitUpload"
         >
           <label class="portfolio-upload__drop"
             ><UIcon name="i-lucide-cloud-upload" /><strong
               >Arraste uma foto ou selecione do dispositivo</strong
             ><small>JPG ou PNG · até 10 MB</small
-            ><input type="file" accept="image/jpeg,image/png"
+            ><input
+              name="portfolio-image"
+              type="file"
+              accept="image/jpeg,image/png"
+              required
+              @change="selectFile"
           /></label>
           <DesignSystemFormField label="Título do trabalho"
             ><input
               v-model="title"
+              name="portfolio-title"
               required
               maxlength="80"
-              placeholder="Ex.: Iluminação da cozinha"
+              autocomplete="off"
+              placeholder="Ex.: Iluminação da cozinha…"
           /></DesignSystemFormField>
           <DesignSystemFormField label="Serviço"
-            ><select required>
+            ><select v-model="service" name="portfolio-service" required>
               <option>Eletricista</option>
               <option>Marido de aluguel</option>
             </select></DesignSystemFormField
           >
           <DesignSystemFormField label="Descrição opcional">
             <textarea
+              v-model="description"
+              name="portfolio-description"
               maxlength="300"
-              placeholder="Explique brevemente o que foi feito..."
+              placeholder="Explique brevemente o que foi feito…"
             />
           </DesignSystemFormField>
         </form>
@@ -97,7 +135,7 @@ const title = shallowRef("");
           type="submit"
           form="portfolio-upload"
           color="primary"
-          :disabled="!title"
+          :disabled="!file || !title.trim()"
           >Enviar para análise</UButton
         ></template
       >
@@ -118,7 +156,7 @@ const title = shallowRef("");
   }
   &__intro h2 {
     margin: 0;
-    font-family: Georgia, serif;
+    font-family: var(--font-display);
     font-size: 2rem;
   }
   &__intro p:last-child {
@@ -183,7 +221,7 @@ const title = shallowRef("");
     height: 31px;
     border: 0;
     border-radius: 9px;
-    background: rgba(255, 255, 255, 0.92);
+    background: rgb(255 255 255 / 92%);
     cursor: pointer;
   }
   &__add {
@@ -195,7 +233,7 @@ const title = shallowRef("");
     border: 1px dashed #9ab9af;
     border-radius: 16px;
     background: transparent;
-    color: #397a69;
+    color: var(--color-brand);
     cursor: pointer;
   }
   &__add > svg {
@@ -220,12 +258,12 @@ const title = shallowRef("");
     padding: 30px;
     border: 1px dashed #8eb6aa;
     border-radius: 13px;
-    background: #eff7f4;
+    background: var(--color-brand-tint-subtle);
     text-align: center;
     cursor: pointer;
   }
   &__drop svg {
-    color: #397a69;
+    color: var(--color-brand);
     font-size: 1.8rem;
   }
   &__drop small {
@@ -238,7 +276,7 @@ const title = shallowRef("");
     cursor: pointer;
   }
 }
-@media (max-width: 780px) {
+@media (width <= 780px) {
   .portfolio-manager {
     &__grid {
       grid-template-columns: repeat(2, 1fr);
@@ -248,7 +286,7 @@ const title = shallowRef("");
     }
   }
 }
-@media (max-width: 500px) {
+@media (width <= 500px) {
   .portfolio-manager {
     &__grid {
       grid-template-columns: 1fr;

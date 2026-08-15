@@ -154,7 +154,7 @@ function retentionWidth(value: number | null, size: number) {
 }
 .section-heading h2 {
   margin-top: 2px;
-  font-family: Georgia, serif;
+  font-family: var(--font-display);
   font-size: 1.55rem;
   font-weight: 500;
 }
@@ -184,7 +184,7 @@ function retentionWidth(value: number | null, size: number) {
 }
 .activity-card h3,
 .cohort-card h3 {
-  font-family: Georgia, serif;
+  font-family: var(--font-display);
   font-size: 1.15rem;
   font-weight: 500;
 }
@@ -202,14 +202,14 @@ function retentionWidth(value: number | null, size: number) {
 .returning-chip {
   padding: 7px 9px;
   border-radius: 10px;
-  background: #e8f4f0;
-  color: #2f6b5f;
+  background: var(--color-brand-tint);
+  color: var(--color-success);
   font-size: var(--font-size-min);
   text-align: center;
 }
 .returning-chip strong {
   display: block;
-  font-family: Georgia, serif;
+  font-family: var(--font-display);
   font-size: 1.1rem;
 }
 .action-list {
@@ -231,7 +231,7 @@ function retentionWidth(value: number | null, size: number) {
   height: 7px;
   overflow: hidden;
   border-radius: 99px;
-  background: #e9e8e3;
+  background: var(--color-surface-disabled);
 }
 .action-list b {
   display: block;
@@ -251,7 +251,7 @@ function retentionWidth(value: number | null, size: number) {
 .frequency-strip > div {
   padding: 9px 5px;
   border-radius: 9px;
-  background: #f7f5f0;
+  background: var(--color-surface-neutral);
   text-align: center;
 }
 .frequency-strip strong,
@@ -259,7 +259,7 @@ function retentionWidth(value: number | null, size: number) {
   display: block;
 }
 .frequency-strip strong {
-  font-family: Georgia, serif;
+  font-family: var(--font-display);
   font-size: 1.05rem;
 }
 .frequency-strip small,
@@ -305,13 +305,13 @@ function retentionWidth(value: number | null, size: number) {
     height: 5px;
     overflow: hidden;
     border-radius: 99px;
-    background: #e9e8e3;
+    background: var(--color-surface-disabled);
   }
   &__row b {
     display: block;
     height: 100%;
     border-radius: inherit;
-    background: #397a69;
+    background: var(--color-brand);
   }
   &__row em {
     color: var(--ink-soft);
@@ -320,12 +320,12 @@ function retentionWidth(value: number | null, size: number) {
     text-align: right;
   }
 }
-@media (max-width: 880px) {
+@media (width <= 880px) {
   .engagement__grid {
     grid-template-columns: 1fr;
   }
 }
-@media (max-width: 620px) {
+@media (width <= 620px) {
   .section-heading {
     align-items: start;
     flex-direction: column;
