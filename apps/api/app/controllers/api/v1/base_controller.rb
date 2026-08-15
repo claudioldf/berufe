@@ -18,6 +18,10 @@ module Api
 
       private
 
+      def prevent_caching
+        response.set_header("Cache-Control", "no-store")
+      end
+
       def render_api_error(code:, message:, status:, field_errors: nil)
         error = {code:, message:, request_id: Current.request_id}
         error[:field_errors] = field_errors if field_errors.present?

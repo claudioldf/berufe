@@ -33,6 +33,7 @@ RSpec.describe "Phone OTP challenge requests", type: :request, openapi: true do
     response_data = response.parsed_body.fetch("data")
 
     expect(response).to have_http_status(:created)
+    expect(response.headers.fetch("Cache-Control")).to eq("no-store")
     expect(response_data).to include(
       "status" => "accepted",
       "expires_in" => 600,

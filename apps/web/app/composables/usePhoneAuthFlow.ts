@@ -2,7 +2,9 @@ import { computed, onScopeDispose, shallowRef } from "vue";
 import {
   PhoneOtpRequestError,
   requestPhoneOtp,
+  verifyPhoneOtp,
   type RequestedPhoneOtp,
+  type VerifyPhoneOtpInput,
 } from "~/services/api/phone-auth";
 import { useApiClient } from "~/services/api/client";
 import { ApiRequestError } from "~/services/api/errors";
@@ -15,6 +17,7 @@ export type PhoneAuthStep = 1 | 2 | 3;
 
 interface PhoneAuthFlowDependencies {
   requestOtp?: (phone: string) => Promise<RequestedPhoneOtp>;
+  verifyOtp?: (input: VerifyPhoneOtpInput) => Promise<void>;
 }
 
 export function usePhoneAuthFlow(dependencies: PhoneAuthFlowDependencies = {}) {
@@ -27,29 +30,19 @@ export function usePhoneAuthFlow(dependencies: PhoneAuthFlowDependencies = {}) {
   const error = shallowRef("");
   const cooldown = shallowRef(0);
   const challengeToken = shallowRef("");
-  let loadingTimer: ReturnType<typeof setTimeout> | undefined;
   let cooldownTimer: ReturnType<typeof setInterval> | undefined;
 
   const cleanPhone = computed(() => normalizeBrazilianMobilePhone(phone.value));
   const sendOtp =
     dependencies.requestOtp ??
     ((phoneE164: string) => requestPhoneOtp(useApiClient(), phoneE164));
+  const confirmOtp =
+    dependencies.verifyOtp ??
+    ((input: VerifyPhoneOtpInput) => verifyPhoneOtp(useApiClient(), input));
 
   function clearTimers() {
-    if (loadingTimer) clearTimeout(loadingTimer);
     if (cooldownTimer) clearInterval(cooldownTimer);
-    loadingTimer = undefined;
     cooldownTimer = undefined;
-  }
-
-  function simulateLoading(action: () => void) {
-    if (loadingTimer) clearTimeout(loadingTimer);
-    isLoading.value = true;
-    loadingTimer = setTimeout(() => {
-      loadingTimer = undefined;
-      isLoading.value = false;
-      action();
-    }, 650);
   }
 
   function startCooldown(seconds: number) {
@@ -96,15 +89,31 @@ export function usePhoneAuthFlow(dependencies: PhoneAuthFlowDependencies = {}) {
     }
   }
 
-  function verifyCode() {
+  async function verifyCode() {
+    if (isLoading.value) return;
+
     error.value = "";
-    if (code.value !== "123456") {
+    if (!challengeToken.value || !/^\d{6}$/.test(code.value)) {
       error.value = "Código inválido ou expirado.";
       return;
     }
-    simulateLoading(() => {
+
+    isLoading.value = true;
+    try {
+      await confirmOtp({
+        challengeToken: challengeToken.value,
+        code: code.value,
+      });
+      challengeToken.value = "";
       step.value = 3;
-    });
+    } catch (verificationError) {
+      error.value =
+        verificationError instanceof ApiRequestError
+          ? verificationError.message
+          : "Não foi possível confirmar o código agora. Tente novamente em instantes.";
+    } finally {
+      isLoading.value = false;
+    }
   }
 
   function changePhone() {

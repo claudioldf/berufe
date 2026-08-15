@@ -11,6 +11,11 @@ export interface RequestedPhoneOtp {
   resendAvailableIn: number;
 }
 
+export interface VerifyPhoneOtpInput {
+  challengeToken: string;
+  code: string;
+}
+
 export class PhoneOtpRequestError extends ApiRequestError {
   readonly retryAfter?: number;
 
@@ -44,6 +49,29 @@ export async function requestPhoneOtp(
     expiresIn: data.data.expires_in,
     resendAvailableIn: data.data.resend_available_in,
   };
+}
+
+export async function verifyPhoneOtp(
+  client: BerufeApiClient,
+  input: VerifyPhoneOtpInput,
+): Promise<void> {
+  const { data, error, response } = await client.POST(
+    "/api/v1/auth/otp/verifications",
+    {
+      body: {
+        challenge_token: input.challengeToken,
+        code: input.code,
+      },
+    },
+  );
+  if (error || !data) {
+    throw new ApiRequestError(
+      normalizeApiError(
+        error,
+        response.headers.get("X-Request-Id") ?? "client",
+      ),
+    );
+  }
 }
 
 function parseRetryAfter(value: string | null): number | undefined {

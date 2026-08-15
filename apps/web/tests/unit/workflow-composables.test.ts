@@ -7,6 +7,7 @@ import { useModerationQueue } from "~/composables/useModerationQueue";
 import { usePhoneAuthFlow } from "~/composables/usePhoneAuthFlow";
 import { useProfessionalProfileDraft } from "~/composables/useProfessionalProfileDraft";
 import { PhoneOtpRequestError } from "~/services/api/phone-auth";
+import { ApiRequestError } from "~/services/api/errors";
 
 afterEach(() => {
   vi.useRealTimers();
@@ -55,7 +56,16 @@ describe("phone authentication", () => {
       expiresIn: 600,
       resendAvailableIn: 30,
     });
-    const workflow = scope.run(() => usePhoneAuthFlow({ requestOtp }))!;
+    let resolveVerification: (() => void) | undefined;
+    const verifyOtp = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveVerification = resolve;
+        }),
+    );
+    const workflow = scope.run(() =>
+      usePhoneAuthFlow({ requestOtp, verifyOtp }),
+    )!;
 
     expect(workflow.phone.value).toBe("");
     expect(workflow.name.value).toBe("");
@@ -70,17 +80,25 @@ describe("phone authentication", () => {
     await workflow.requestCode();
     expect(requestOtp).toHaveBeenCalledTimes(1);
 
-    workflow.code.value = "000000";
-    workflow.verifyCode();
+    workflow.code.value = "12ab56";
+    await workflow.verifyCode();
     expect(workflow.error.value).toBe("Código inválido ou expirado.");
+    expect(verifyOtp).not.toHaveBeenCalled();
 
     workflow.code.value = "123456";
-    workflow.verifyCode();
-    workflow.verifyCode();
-    vi.advanceTimersByTime(650);
+    const firstVerification = workflow.verifyCode();
+    await workflow.verifyCode();
+    expect(verifyOtp).toHaveBeenCalledOnce();
+    expect(verifyOtp).toHaveBeenCalledWith({
+      challengeToken: "browser-challenge-token",
+      code: "123456",
+    });
+    resolveVerification?.();
+    await firstVerification;
     expect(workflow.step.value).toBe(3);
+    expect(workflow.challengeToken.value).toBe("");
 
-    vi.advanceTimersByTime(29_350);
+    vi.advanceTimersByTime(30_000);
     expect(workflow.cooldown.value).toBe(0);
 
     workflow.changePhone();
@@ -188,8 +206,6 @@ describe("phone authentication", () => {
       resendAvailableIn: 30,
     });
     await firstRequest;
-    workflow.code.value = "123456";
-    workflow.verifyCode();
 
     scope.stop();
     expect(vi.getTimerCount()).toBe(0);
@@ -205,6 +221,55 @@ describe("phone authentication", () => {
     expect(workflow.error.value).toBe(
       "Não foi possível enviar o código agora. Tente novamente em instantes.",
     );
+
+    workflow.step.value = 2;
+    workflow.challengeToken.value = "browser-challenge-token";
+    workflow.code.value = "123456";
+    await workflow.verifyCode();
+    expect(workflow.error.value).toBe(
+      "Não foi possível confirmar o código agora. Tente novamente em instantes.",
+    );
+    scope.stop();
+  });
+
+  it("keeps provider verification failures on the existing code step", async () => {
+    const requestOtp = vi.fn().mockResolvedValue({
+      challengeToken: "browser-challenge-token",
+      expiresIn: 600,
+      resendAvailableIn: 30,
+    });
+    const verifyOtp = vi
+      .fn()
+      .mockRejectedValueOnce(
+        new ApiRequestError({
+          code: "invalid_otp",
+          message: "Código inválido ou expirado.",
+          fieldErrors: {},
+          requestId: "otp-invalid",
+        }),
+      )
+      .mockRejectedValueOnce(new Error("private transport details"));
+    const scope = effectScope();
+    const workflow = scope.run(() =>
+      usePhoneAuthFlow({ requestOtp, verifyOtp }),
+    )!;
+    workflow.phone.value = "47999991111";
+    await workflow.requestCode();
+    workflow.code.value = "000000";
+
+    await workflow.verifyCode();
+    expect(workflow.step.value).toBe(2);
+    expect(workflow.error.value).toBe("Código inválido ou expirado.");
+
+    await workflow.verifyCode();
+    expect(workflow.error.value).toBe(
+      "Não foi possível confirmar o código agora. Tente novamente em instantes.",
+    );
+
+    workflow.changePhone();
+    workflow.code.value = "123456";
+    await workflow.verifyCode();
+    expect(workflow.error.value).toBe("Código inválido ou expirado.");
     scope.stop();
   });
 });

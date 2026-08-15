@@ -58,6 +58,49 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/auth/otp/verifications:
+    post:
+      operationId: verifyPhoneOtp
+      summary: Verify a phone OTP and create an application session
+      tags:
+        - Authentication
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PhoneOtpVerificationRequest"
+      responses:
+        "200":
+          description: The provider verified the code and Rails created an application session.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Set-Cookie:
+              $ref: "#/components/headers/ApplicationSessionCookie"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PhoneOtpVerificationResponse"
+        "422":
+          description: The code or browser challenge is invalid, expired, or consumed.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: The provider or session persistence is unavailable.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/catalog:
     get:
       operationId: getPublicCatalog
@@ -123,6 +166,11 @@ components:
       name: X-CSRF-Token
       description: Rotating session-bound token required for authenticated mutations.
   headers:
+    ApplicationSessionCookie:
+      description: Host-only opaque Rails application-session cookie.
+      schema:
+        type: string
+        minLength: 1
     RequestId:
       description: Bounded request identifier used for safe cross-service correlation.
       schema:
@@ -203,6 +251,38 @@ components:
         resend_available_in:
           type: integer
           minimum: 1
+    PhoneOtpVerificationRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - challenge_token
+        - code
+      properties:
+        challenge_token:
+          type: string
+          minLength: 40
+          maxLength: 100
+        code:
+          type: string
+          pattern: "^[0-9]{6}$"
+    PhoneOtpVerificationResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required:
+            - status
+          properties:
+            status:
+              type: string
+              const: verified
+        request_id:
+          $ref: "#/components/schemas/RequestId"
     CatalogResponse:
       type: object
       additionalProperties: false

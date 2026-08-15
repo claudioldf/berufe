@@ -3,6 +3,8 @@
 module Api
   module V1
     class OtpChallengesController < BaseController
+      before_action :prevent_caching
+
       def create
         result = PhoneOtpChallengeStarter.new.call(
           phone: params[:phone],

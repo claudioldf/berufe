@@ -21,6 +21,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/otp/verifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verify a phone OTP and create an application session */
+        post: operations["verifyPhoneOtp"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/catalog": {
         parameters: {
             query?: never;
@@ -73,6 +90,17 @@ export interface components {
             challenge_token: string;
             expires_in: number;
             resend_available_in: number;
+        };
+        PhoneOtpVerificationRequest: {
+            challenge_token: string;
+            code: string;
+        };
+        PhoneOtpVerificationResponse: {
+            data: {
+                /** @constant */
+                status: "verified";
+            };
+            request_id: components["schemas"]["RequestId"];
         };
         CatalogResponse: {
             data: components["schemas"]["CatalogData"];
@@ -147,6 +175,8 @@ export interface components {
     };
     requestBodies: never;
     headers: {
+        /** @description Host-only opaque Rails application-session cookie. */
+        ApplicationSessionCookie: string;
         /** @description Bounded request identifier used for safe cross-service correlation. */
         RequestId: components["schemas"]["RequestId"];
         /** @description Whole seconds before another OTP request may be attempted. */
@@ -201,6 +231,52 @@ export interface operations {
                 };
             };
             /** @description The SMS provider or challenge persistence is unavailable. */
+            503: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    verifyPhoneOtp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PhoneOtpVerificationRequest"];
+            };
+        };
+        responses: {
+            /** @description The provider verified the code and Rails created an application session. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Set-Cookie": components["headers"]["ApplicationSessionCookie"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PhoneOtpVerificationResponse"];
+                };
+            };
+            /** @description The code or browser challenge is invalid, expired, or consumed. */
+            422: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The provider or session persistence is unavailable. */
             503: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];

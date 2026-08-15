@@ -43,6 +43,7 @@ module BerufeApi
       generators.orm :active_record, primary_key_type: :uuid
     end
     config.middleware.insert_before ActionDispatch::RequestId, RequestIdSanitizer
+    config.middleware.use ActionDispatch::Cookies
 
     # Only loads a smaller set of middleware suitable for API only apps.
     # Middleware like session, flash, cookies can be added back manually.

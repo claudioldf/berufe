@@ -10,10 +10,39 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_15_183000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_15_193000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
+
+  create_table "application_sessions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "absolute_expires_at", null: false
+    t.datetime "authenticated_at", null: false
+    t.text "authentication_method", default: "sms_otp", null: false
+    t.datetime "created_at", null: false
+    t.text "csrf_token_digest", null: false
+    t.datetime "idle_expires_at", null: false
+    t.datetime "last_active_at", null: false
+    t.datetime "mfa_authenticated_at"
+    t.datetime "revoked_at"
+    t.text "token_digest", null: false
+    t.datetime "updated_at", null: false
+    t.uuid "user_account_id", null: false
+    t.index ["absolute_expires_at"], name: "index_application_sessions_on_absolute_expires_at"
+    t.index ["idle_expires_at"], name: "index_application_sessions_on_idle_expires_at"
+    t.index ["token_digest"], name: "index_application_sessions_on_token_digest", unique: true
+    t.index ["user_account_id", "created_at"], name: "index_application_sessions_on_user_account_id_and_created_at"
+    t.index ["user_account_id"], name: "index_application_sessions_on_user_account_id"
+    t.check_constraint "absolute_expires_at > authenticated_at", name: "application_sessions_absolute_after_authentication"
+    t.check_constraint "authentication_method = 'sms_otp'::text", name: "application_sessions_known_authentication_method"
+    t.check_constraint "csrf_token_digest ~ '^[0-9a-f]{64}$'::text", name: "application_sessions_csrf_digest_format"
+    t.check_constraint "idle_expires_at <= absolute_expires_at", name: "application_sessions_idle_within_absolute"
+    t.check_constraint "idle_expires_at > last_active_at", name: "application_sessions_idle_after_activity"
+    t.check_constraint "last_active_at >= authenticated_at", name: "application_sessions_activity_after_authentication"
+    t.check_constraint "mfa_authenticated_at IS NULL OR mfa_authenticated_at >= authenticated_at", name: "application_sessions_mfa_after_authentication"
+    t.check_constraint "revoked_at IS NULL OR revoked_at >= authenticated_at", name: "application_sessions_revoked_after_authentication"
+    t.check_constraint "token_digest ~ '^[0-9a-f]{64}$'::text", name: "application_sessions_token_digest_format"
+  end
 
   create_table "good_job_batches", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.integer "callback_priority"
@@ -204,5 +233,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_15_183000) do
     t.check_constraint "sort_order >= 0", name: "services_sort_order_nonnegative"
   end
 
+  create_table "user_accounts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "last_login_at"
+    t.text "phone_e164", null: false
+    t.text "role", default: "professional", null: false
+    t.text "status", default: "active", null: false
+    t.datetime "terms_accepted_at"
+    t.datetime "updated_at", null: false
+    t.index ["phone_e164"], name: "index_user_accounts_on_phone_e164", unique: true
+    t.index ["role", "status"], name: "index_user_accounts_on_role_and_status"
+    t.check_constraint "phone_e164 ~ '^\\+55[1-9][1-9]9[0-9]{8}$'::text", name: "user_accounts_brazilian_mobile_phone"
+    t.check_constraint "role = ANY (ARRAY['professional'::text, 'admin'::text])", name: "user_accounts_known_role"
+    t.check_constraint "status = ANY (ARRAY['active'::text, 'suspended'::text])", name: "user_accounts_known_status"
+  end
+
+  add_foreign_key "application_sessions", "user_accounts"
   add_foreign_key "services", "service_categories", column: "category_id"
 end

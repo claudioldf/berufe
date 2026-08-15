@@ -1,5 +1,5 @@
 import type { BerufeApiClient } from "@app/services/api/client";
-import { requestPhoneOtp } from "@app/services/api/phone-auth";
+import { requestPhoneOtp, verifyPhoneOtp } from "@app/services/api/phone-auth";
 import type { PhoneOtpRequestError } from "@app/services/api/phone-auth";
 
 function apiClientReturning(result: object) {
@@ -78,5 +78,71 @@ describe("phone OTP API", () => {
         retryAfter: undefined,
       });
     }
+  });
+
+  it("verifies a challenge through the generated operation without returning session material", async () => {
+    const client = apiClientReturning({
+      data: {
+        data: { status: "verified" },
+        request_id: "otp-verified",
+      },
+      error: undefined,
+      response: new Response(null),
+    });
+
+    await expect(
+      verifyPhoneOtp(client, {
+        challengeToken: "browser-challenge-token",
+        code: "123456",
+      }),
+    ).resolves.toBeUndefined();
+    expect(client.POST).toHaveBeenCalledWith("/api/v1/auth/otp/verifications", {
+      body: {
+        challenge_token: "browser-challenge-token",
+        code: "123456",
+      },
+    });
+  });
+
+  it("normalizes verification failures through the shared safe envelope", async () => {
+    const client = apiClientReturning({
+      data: undefined,
+      error: {
+        error: {
+          code: "invalid_otp",
+          message: "Código inválido ou expirado.",
+          request_id: "otp-invalid",
+        },
+      },
+      response: new Response(null, {
+        headers: { "X-Request-Id": "otp-invalid" },
+      }),
+    });
+
+    await expect(
+      verifyPhoneOtp(client, {
+        challengeToken: "browser-challenge-token",
+        code: "000000",
+      }),
+    ).rejects.toMatchObject({
+      name: "ApiRequestError",
+      code: "invalid_otp",
+      requestId: "otp-invalid",
+    });
+
+    const missingDataClient = apiClientReturning({
+      data: undefined,
+      error: undefined,
+      response: new Response(null),
+    });
+    await expect(
+      verifyPhoneOtp(missingDataClient, {
+        challengeToken: "browser-challenge-token",
+        code: "000000",
+      }),
+    ).rejects.toMatchObject({
+      code: "unexpected_error",
+      requestId: "client",
+    });
   });
 });
