@@ -50,9 +50,9 @@ defineEmits<{ submit: [] }>();
         <UIcon name="i-lucide-circle-alert" /> {{ error }}
       </p>
       <UButton
+        class="registration-step__submit"
         type="submit"
         color="primary"
-        block
         trailing-icon="i-lucide-arrow-right"
       >
         Criar meu perfil
@@ -60,3 +60,10 @@ defineEmits<{ submit: [] }>();
     </form>
   </section>
 </template>
+
+<style scoped>
+.registration-step__submit {
+  justify-self: end;
+  min-height: 2.5rem;
+}
+</style>
