@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import professionalsData from "../../../data/professionals.json";
+import professionalsData from "@data/professionals.json";
 import type { Professional } from "~/types";
 import { useToast } from "~/composables/useToast";
 
@@ -19,7 +19,10 @@ const activeTab = computed(() =>
     : "dados",
 );
 
-useSeoMeta({ title: "Editar perfil profissional" });
+useSeoMeta({
+  title: "Editar perfil profissional",
+  robots: "noindex, nofollow",
+});
 
 async function selectTab(id: string) {
   await router.replace({ query: id === "dados" ? {} : { tab: id } });
@@ -31,7 +34,7 @@ async function selectTab(id: string) {
     <section class="workspace-heading">
       <DesignSystemContainer class="workspace-heading__inner">
         <div>
-          <NuxtLink to="/painel"
+          <NuxtLink to="/app/professional"
             ><UIcon name="i-lucide-arrow-left" /> Painel</NuxtLink
           >
           <h1>Meu perfil</h1>

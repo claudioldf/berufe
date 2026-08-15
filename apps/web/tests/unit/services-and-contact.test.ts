@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import catalogsData from "../../data/catalogs.json";
-import professionalsData from "../../data/professionals.json";
+import catalogsData from "@data/catalogs.json";
+import professionalsData from "@data/professionals.json";
 import type { Neighborhood, Professional, Service } from "~/types";
 import { buildWhatsAppUrl } from "~/utils/contact";
 import { findService, professionalRelevance } from "~/utils/services";

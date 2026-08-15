@@ -8,8 +8,13 @@ const router = useRouter();
 const { role: activeRole, setRole } = useAppRole();
 const isMenuOpen = shallowRef(false);
 
-const isProfessional = computed(() => route.path.startsWith("/painel"));
-const isAdmin = computed(() => route.path.startsWith("/admin"));
+const professionalLoginPath = "/app/professional/login";
+const isProfessional = computed(
+  () =>
+    route.path.startsWith("/app/professional") &&
+    route.path !== professionalLoginPath,
+);
+const isAdmin = computed(() => route.path.startsWith("/app/admin"));
 const currentRole = computed(() =>
   isProfessional.value
     ? "professional"
@@ -21,22 +26,22 @@ const currentRole = computed(() =>
 const links = computed(() => {
   if (isProfessional.value) {
     return [
-      { label: "Visão geral", to: "/painel" },
-      { label: "Meu perfil", to: "/painel/perfil" },
-      { label: "Orçamentos", to: "/painel/orcamentos/novo" },
+      { label: "Visão geral", to: "/app/professional" },
+      { label: "Meu perfil", to: "/app/professional/profile" },
+      { label: "Orçamentos", to: "/app/professional/quotes/new" },
     ];
   }
   if (isAdmin.value) {
     return [
-      { label: "Moderação", to: "/admin" },
-      { label: "Catálogo", to: "/admin/catalogo" },
-      { label: "Relatórios", to: "/admin/relatorios" },
+      { label: "Moderação", to: "/app/admin" },
+      { label: "Catálogo", to: "/app/admin/catalog" },
+      { label: "Relatórios", to: "/app/admin/reports" },
     ];
   }
   return [
     { label: "Encontrar profissional", to: "/encontrar" },
     { label: "Como funciona", to: "/#como-funciona" },
-    { label: "Para profissionais", to: "/entrar" },
+    { label: "Para profissionais", to: professionalLoginPath },
   ];
 });
 
@@ -45,19 +50,23 @@ async function changeRole(event: Event) {
   setRole(role);
   isMenuOpen.value = false;
   await router.push(
-    role === "professional" ? "/painel" : role === "admin" ? "/admin" : "/",
+    role === "professional"
+      ? "/app/professional"
+      : role === "admin"
+        ? "/app/admin"
+        : "/",
   );
 }
 
 function isLinkActive(to: string) {
-  if (to === "/admin") {
-    return route.path === "/admin";
+  if (to === "/app/admin") {
+    return route.path === "/app/admin";
   }
-  if (to === "/admin/relatorios") {
-    return route.path === "/admin/relatorios";
+  if (to === "/app/admin/reports") {
+    return route.path === "/app/admin/reports";
   }
-  if (to === "/admin/catalogo") {
-    return route.path === "/admin/catalogo";
+  if (to === "/app/admin/catalog") {
+    return route.path === "/app/admin/catalog";
   }
   return route.path === to;
 }
@@ -97,7 +106,7 @@ function isLinkActive(to: string) {
         </label>
         <UButton
           v-if="!isProfessional && !isAdmin"
-          to="/entrar"
+          :to="professionalLoginPath"
           color="primary"
           label="Entrar"
           class="header__login"

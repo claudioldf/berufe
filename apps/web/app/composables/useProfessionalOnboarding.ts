@@ -331,7 +331,7 @@ export function useProfessionalOnboarding() {
     professionalOnboardingSteps.map((step) => ({
       ...step,
       done: stepCompletion.value[step.id],
-      to: `/painel/onboarding?step=${step.id}`,
+      to: `/app/professional/onboarding?step=${step.id}`,
     })),
   );
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, shallowRef, useTemplateRef, watch } from "vue";
-import catalogsData from "../../../data/catalogs.json";
+import catalogsData from "@data/catalogs.json";
 import type {
   Neighborhood,
   OnboardingStepId,
@@ -144,7 +144,7 @@ watch(
             clareza. Você pode sair e continuar depois.
           </p>
         </div>
-        <UButton to="/painel" color="neutral" variant="outline">
+        <UButton to="/app/professional" color="neutral" variant="outline">
           Pular por agora
         </UButton>
       </DesignSystemContainer>

@@ -13,7 +13,7 @@
           orçamentos sem pagar por contatos.
         </p>
         <UButton
-          to="/entrar"
+          to="/app/professional/login"
           color="secondary"
           trailing-icon="i-lucide-arrow-right"
         >

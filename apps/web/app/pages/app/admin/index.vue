@@ -1,14 +1,17 @@
 <script setup lang="ts">
-import moderationData from "../../../data/moderation.json";
+import moderationData from "@data/moderation.json";
 
-useSeoMeta({ title: "Fila de moderação" });
+useSeoMeta({
+  title: "Fila de moderação",
+  robots: "noindex, nofollow",
+});
 definePageMeta({
   middleware: (to) => {
     if (to.query.view === "catalogos") {
-      return navigateTo("/admin/catalogo", { replace: true });
+      return navigateTo("/app/admin/catalog", { replace: true });
     }
     if (to.query.view === "relatorios") {
-      return navigateTo("/admin/relatorios", { replace: true });
+      return navigateTo("/app/admin/reports", { replace: true });
     }
   },
 });

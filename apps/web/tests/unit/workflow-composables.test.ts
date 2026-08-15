@@ -1,7 +1,7 @@
 import { effectScope, nextTick } from "vue";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import moderationData from "../../data/moderation.json";
-import professionalsData from "../../data/professionals.json";
+import moderationData from "@data/moderation.json";
+import professionalsData from "@data/professionals.json";
 import type { ModerationQueueItem, Professional } from "~/types";
 import { useModerationQueue } from "~/composables/useModerationQueue";
 import { usePhoneAuthFlow } from "~/composables/usePhoneAuthFlow";

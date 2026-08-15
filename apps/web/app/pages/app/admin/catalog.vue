@@ -1,5 +1,8 @@
 <script setup lang="ts">
-useSeoMeta({ title: "Catálogo" });
+useSeoMeta({
+  title: "Catálogo",
+  robots: "noindex, nofollow",
+});
 </script>
 
 <template>

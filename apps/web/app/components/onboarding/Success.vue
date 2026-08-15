@@ -21,7 +21,7 @@ defineEmits<{ review: [] }>();
         Revisar etapas
       </UButton>
       <UButton
-        to="/painel"
+        to="/app/professional"
         color="primary"
         trailing-icon="i-lucide-arrow-right"
       >

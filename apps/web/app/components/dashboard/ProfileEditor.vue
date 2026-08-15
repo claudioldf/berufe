@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import catalogsData from "../../../data/catalogs.json";
+import catalogsData from "@data/catalogs.json";
 import type {
   Neighborhood,
   Professional,

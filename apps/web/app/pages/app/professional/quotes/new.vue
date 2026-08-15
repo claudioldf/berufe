@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import quotesData from "../../../../data/quotes.json";
-import professionalsData from "../../../../data/professionals.json";
+import quotesData from "@data/quotes.json";
+import professionalsData from "@data/professionals.json";
 import type { Professional, Quote } from "~/types";
 import { useToast } from "~/composables/useToast";
 
@@ -8,7 +8,10 @@ const { showToast } = useToast();
 const professional = (professionalsData as Professional[])[0]!;
 const quote = quotesData.default as Quote;
 
-useSeoMeta({ title: "Novo orçamento" });
+useSeoMeta({
+  title: "Novo orçamento",
+  robots: "noindex, nofollow",
+});
 
 function handleShared(method: "whatsapp" | "copy") {
   if (method === "copy") return;
@@ -23,7 +26,7 @@ function handleShared(method: "whatsapp" | "copy") {
   <div class="quote-workspace">
     <section class="quote-workspace__heading">
       <DesignSystemContainer class="quote-workspace__heading-inner">
-        <NuxtLink to="/painel"
+        <NuxtLink to="/app/professional"
           ><UIcon name="i-lucide-arrow-left" /> Voltar ao painel</NuxtLink
         >
         <div>

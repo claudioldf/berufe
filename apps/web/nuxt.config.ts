@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import professionalsData from "./data/professionals.json";
 
 const professionalRoutes = professionalsData.map(
@@ -7,6 +8,11 @@ const professionalRoutes = professionalsData.map(
 export default defineNuxtConfig({
   compatibilityDate: "2026-08-01",
   devtools: { enabled: true },
+  alias: {
+    "@app": fileURLToPath(new URL("./app", import.meta.url)),
+    "@components": fileURLToPath(new URL("./app/components", import.meta.url)),
+    "@data": fileURLToPath(new URL("./data", import.meta.url)),
+  },
   modules: ["@nuxt/ui", "@nuxt/eslint"],
   colorMode: {
     preference: "light",
@@ -124,19 +130,19 @@ export default defineNuxtConfig({
       routes: [
         "/",
         "/encontrar",
-        "/entrar",
+        "/app/professional/login",
         "/privacidade",
         "/termos-de-uso",
-        "/painel",
-        "/painel/onboarding",
-        "/painel/perfil",
-        "/painel/orcamentos/novo",
+        "/app/professional",
+        "/app/professional/onboarding",
+        "/app/professional/profile",
+        "/app/professional/quotes/new",
         "/profissionais/marina-alves",
         ...professionalRoutes,
         "/orcamento/BERUFE-DEMO-1042",
-        "/admin",
-        "/admin/catalogo",
-        "/admin/relatorios",
+        "/app/admin",
+        "/app/admin/catalog",
+        "/app/admin/reports",
       ],
     },
   },

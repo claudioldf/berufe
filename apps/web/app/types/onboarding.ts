@@ -1,4 +1,4 @@
-import type { ProfessionalProfileDraft } from "./professional";
+import type { ProfessionalProfileDraft } from "@app/types/professional";
 
 export type OnboardingStepId =
   "profile" | "services" | "portfolio" | "verification";

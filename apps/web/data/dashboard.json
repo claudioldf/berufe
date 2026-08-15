@@ -8,28 +8,28 @@
       "label": "Identidade e contato",
       "description": "Nome, apresentação e WhatsApp",
       "done": true,
-      "to": "/painel/perfil"
+      "to": "/app/professional/profile"
     },
     {
       "id": "services",
       "label": "Serviços e bairros",
       "description": "2 serviços e 6 bairros selecionados",
       "done": true,
-      "to": "/painel/perfil"
+      "to": "/app/professional/profile"
     },
     {
       "id": "portfolio",
       "label": "Adicione mais trabalhos",
       "description": "4 de 6 exemplos recomendados",
       "done": false,
-      "to": "/painel/perfil?tab=portfolio"
+      "to": "/app/professional/profile?tab=portfolio"
     },
     {
       "id": "verification",
       "label": "Identidade verificada",
       "description": "Sua evidência foi aprovada pela equipe",
       "done": true,
-      "to": "/painel/perfil?tab=verificacoes"
+      "to": "/app/professional/profile?tab=verificacoes"
     }
   ],
   "pending": [

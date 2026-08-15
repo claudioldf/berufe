@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, shallowRef } from "vue";
-import professionalsData from "../../../data/professionals.json";
+import professionalsData from "@data/professionals.json";
 import type { Professional } from "~/types";
 import { useAppRole } from "~/composables/useAppRole";
 import { useShare } from "~/composables/useShare";

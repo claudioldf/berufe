@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, shallowRef } from "vue";
-import catalogsData from "../../../data/catalogs.json";
+import catalogsData from "@data/catalogs.json";
 import { useToast } from "~/composables/useToast";
 import type {
   CatalogEntry,

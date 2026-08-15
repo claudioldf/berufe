@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, shallowRef, watch } from "vue";
-import reportsData from "../../../../data/reports.json";
+import reportsData from "@data/reports.json";
 import type { GrowthReportsData, ReportPeriodKey } from "~/types";
 import { formatDateTime } from "~/utils/formatters";
 

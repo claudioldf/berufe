@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 async function completeProfessionalSignIn(
   page: import("@playwright/test").Page,
 ) {
-  await page.goto("/entrar");
+  await page.goto("/app/professional/login");
   await page.getByRole("button", { name: "Receber código" }).click();
   await page.getByLabel("Código de 6 dígitos").fill("123456");
   await page.getByRole("button", { name: "Confirmar e continuar" }).click();
@@ -38,7 +38,7 @@ test("an incomplete professional sees onboarding and can skip it", async ({
   page,
 }) => {
   await completeProfessionalSignIn(page);
-  await expect(page).toHaveURL(/\/painel\/onboarding$/);
+  await expect(page).toHaveURL(/\/app\/professional\/onboarding$/);
   await expect(
     page.getByRole("heading", { level: 1, name: /deixar seu perfil pronto/i }),
   ).toBeVisible();
@@ -47,7 +47,7 @@ test("an incomplete professional sees onboarding and can skip it", async ({
   ).toHaveAttribute("aria-valuenow", "0");
 
   await page.getByRole("link", { name: "Pular por agora" }).click();
-  await expect(page).toHaveURL(/\/painel$/);
+  await expect(page).toHaveURL(/\/app\/professional$/);
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Marcos");
 });
 
@@ -103,5 +103,5 @@ test("professional can reach 100% and retain frontend progress", async ({
   await expect(page.getByText("Perfil 100% completo")).toBeVisible();
 
   await completeProfessionalSignIn(page);
-  await expect(page).toHaveURL(/\/painel$/);
+  await expect(page).toHaveURL(/\/app\/professional$/);
 });

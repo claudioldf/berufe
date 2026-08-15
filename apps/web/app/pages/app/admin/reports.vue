@@ -1,5 +1,8 @@
 <script setup lang="ts">
-useSeoMeta({ title: "Visão do produto" });
+useSeoMeta({
+  title: "Visão do produto",
+  robots: "noindex, nofollow",
+});
 </script>
 
 <template>

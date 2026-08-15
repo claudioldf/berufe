@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import quotesData from "../../../data/quotes.json";
-import professionalsData from "../../../data/professionals.json";
+import quotesData from "@data/quotes.json";
+import professionalsData from "@data/professionals.json";
 import type { Professional, Quote } from "~/types";
 
 const route = useRoute();

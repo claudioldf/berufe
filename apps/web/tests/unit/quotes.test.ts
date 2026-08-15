@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import quotesData from "../../data/quotes.json";
+import quotesData from "@data/quotes.json";
 import type { Quote } from "~/types";
 import { useQuoteDraft } from "~/composables/useQuoteDraft";
 import {

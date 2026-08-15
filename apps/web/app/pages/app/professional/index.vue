@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import dashboardData from "../../../data/dashboard.json";
-import professionalsData from "../../../data/professionals.json";
+import dashboardData from "@data/dashboard.json";
+import professionalsData from "@data/professionals.json";
 import type { Professional } from "~/types";
 import { useProfessionalOnboarding } from "~/composables/useProfessionalOnboarding";
 import { useShare } from "~/composables/useShare";
@@ -19,7 +19,10 @@ const professionalFirstName = computed(
     professional.name.split(" ")[0],
 );
 
-useSeoMeta({ title: "Painel profissional" });
+useSeoMeta({
+  title: "Painel profissional",
+  robots: "noindex, nofollow",
+});
 
 async function shareProfile() {
   await share({
@@ -56,7 +59,7 @@ function respondRelationship(accepted: boolean) {
             >Compartilhar perfil</UButton
           >
           <UButton
-            to="/painel/orcamentos/novo"
+            to="/app/professional/quotes/new"
             color="secondary"
             icon="i-lucide-plus"
             >Novo orçamento</UButton
@@ -87,17 +90,17 @@ function respondRelationship(accepted: boolean) {
             <span>Ações rápidas</span><small>Fortaleça seu perfil</small>
           </header>
           <div class="actions-card__grid">
-            <NuxtLink to="/painel/perfil"
+            <NuxtLink to="/app/professional/profile"
               ><span><UIcon name="i-lucide-pencil" /></span
               ><strong>Editar perfil</strong
               ><small>Dados e serviços</small></NuxtLink
             >
-            <NuxtLink to="/painel/perfil?tab=portfolio"
+            <NuxtLink to="/app/professional/profile?tab=portfolio"
               ><span><UIcon name="i-lucide-image-plus" /></span
               ><strong>Novo trabalho</strong
               ><small>Adicionar ao portfólio</small></NuxtLink
             >
-            <NuxtLink to="/painel/perfil?tab=verificacoes"
+            <NuxtLink to="/app/professional/profile?tab=verificacoes"
               ><span><UIcon name="i-lucide-id-card" /></span
               ><strong>Ver verificações</strong
               ><small>Identidade aprovada</small></NuxtLink
@@ -163,7 +166,7 @@ function respondRelationship(accepted: boolean) {
             <h2>Orçamentos recentes.</h2>
           </div>
           <UButton
-            to="/painel/orcamentos/novo"
+            to="/app/professional/quotes/new"
             variant="link"
             trailing-icon="i-lucide-arrow-right"
             >Criar orçamento</UButton
@@ -177,7 +180,7 @@ function respondRelationship(accepted: boolean) {
           <NuxtLink
             v-for="quote in dashboardData.recentQuotes"
             :key="quote.id"
-            to="/painel/orcamentos/novo"
+            to="/app/professional/quotes/new"
           >
             <span
               ><strong>#{{ quote.number }}</strong

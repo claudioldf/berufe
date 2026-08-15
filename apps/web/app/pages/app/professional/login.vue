@@ -23,7 +23,10 @@ const {
   validateRegistration,
 } = usePhoneAuthFlow();
 
-useSeoMeta({ title: "Entrar ou criar perfil" });
+useSeoMeta({
+  title: "Entrar ou criar perfil",
+  robots: "noindex, nofollow",
+});
 
 async function register() {
   if (!validateRegistration()) return;
@@ -35,7 +38,9 @@ async function register() {
       ? "Que bom ter você de volta."
       : "Vamos completar sua presença na Berufe.",
   });
-  await router.push(isComplete.value ? "/painel" : "/painel/onboarding");
+  await router.push(
+    isComplete.value ? "/app/professional" : "/app/professional/onboarding",
+  );
 }
 </script>
 

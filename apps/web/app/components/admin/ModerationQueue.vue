@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import moderationData from "../../../data/moderation.json";
+import moderationData from "@data/moderation.json";
 import type { ModerationDecision, ModerationQueueItem } from "~/types";
 import { useModerationQueue } from "~/composables/useModerationQueue";
 import { useToast } from "~/composables/useToast";

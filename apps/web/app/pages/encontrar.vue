@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import catalogsData from "../../data/catalogs.json";
-import professionalsData from "../../data/professionals.json";
+import catalogsData from "@data/catalogs.json";
+import professionalsData from "@data/professionals.json";
 import type { Neighborhood, Professional, Service } from "~/types";
 import { useProfessionalSearch } from "~/composables/useProfessionalSearch";
 import { useToast } from "~/composables/useToast";
