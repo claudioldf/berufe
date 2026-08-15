@@ -1,0 +1,15 @@
+.git
+.env
+apps/api/.bundle
+apps/api/config/master.key
+apps/api/coverage
+apps/api/log/*
+apps/api/storage/*
+apps/api/tmp/*
+apps/web/.nuxt
+apps/web/.output
+apps/web/node_modules
+full_mockups
+leads
+mockups
+qa-screenshots

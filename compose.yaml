@@ -2,7 +2,8 @@ name: berufe
 
 x-api-service: &api-service
   build:
-    context: ./apps/api
+    context: .
+    dockerfile: apps/api/Dockerfile
   image: berufe-api:development
   env_file:
     - .env
@@ -10,6 +11,7 @@ x-api-service: &api-service
   volumes:
     - ./apps/api:/app
     - ./apps/contracts:/contracts:ro
+    - ./apps/web/data:/catalog-data:ro
     - api_bundle:/usr/local/bundle
   depends_on:
     db:

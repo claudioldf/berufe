@@ -10,10 +10,13 @@ RUN apt-get update -qq \
 
 WORKDIR /app
 
-COPY Gemfile Gemfile.lock ./
+COPY apps/api/Gemfile apps/api/Gemfile.lock ./
 RUN bundle install
 
-COPY . .
+COPY apps/api/ .
+COPY apps/web/data/catalogs.json /catalog-data/catalogs.json
+
+ENV CATALOG_SEED_PATH=/catalog-data/catalogs.json
 
 ENTRYPOINT ["bin/docker-entrypoint"]
 CMD ["bin/rails", "server", "--binding", "0.0.0.0", "--port", "3000"]

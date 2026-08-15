@@ -4,6 +4,7 @@ Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
       resource :status, only: :show, controller: :status
+      resource :catalog, only: :show, controller: :catalogs
     end
   end
 

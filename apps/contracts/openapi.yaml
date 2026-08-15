@@ -6,6 +6,32 @@ info:
 servers:
   - url: /
 paths:
+  /api/v1/catalog:
+    get:
+      operationId: getPublicCatalog
+      summary: Read the active service and Joinville neighborhood catalog
+      tags:
+        - Catalog
+      security: []
+      responses:
+        "200":
+          description: Active catalog entries in their configured order.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CatalogResponse"
+        "503":
+          description: The catalog database query is temporarily unavailable.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/status:
     get:
       operationId: getApiStatus
@@ -76,6 +102,114 @@ components:
         type: string
         minLength: 1
   schemas:
+    CatalogResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          $ref: "#/components/schemas/CatalogData"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    CatalogData:
+      type: object
+      additionalProperties: false
+      required:
+        - categories
+        - services
+        - neighborhoods
+      properties:
+        categories:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicServiceCategory"
+        services:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicService"
+        neighborhoods:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicNeighborhood"
+    PublicServiceCategory:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - slug
+        - name
+        - icon
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        name:
+          type: string
+          minLength: 1
+        icon:
+          type: string
+          minLength: 1
+    PublicService:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - name
+        - slug
+        - categorySlug
+        - icon
+        - description
+        - aliases
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+        slug:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        categorySlug:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        icon:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          minLength: 1
+        aliases:
+          type: array
+          items:
+            type: string
+            minLength: 1
+    PublicNeighborhood:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - name
+        - stateCode
+        - city
+      properties:
+        code:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        name:
+          type: string
+          minLength: 1
+        stateCode:
+          type: string
+          const: SC
+        city:
+          type: string
+          const: Joinville
     RequestId:
       type: string
       pattern: "^[A-Za-z0-9._-]{1,100}$"
@@ -159,4 +293,5 @@ security:
   - applicationSession: []
     csrfToken: []
 tags:
+  - name: Catalog
   - name: Foundation

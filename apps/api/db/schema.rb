@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_15_054000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_15_170000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -114,4 +114,60 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_15_054000) do
     t.index ["scheduled_at", "queue_name"], name: "index_good_jobs_on_scheduled_at_and_queue_name"
     t.index ["scheduled_at"], name: "index_good_jobs_on_scheduled_at", where: "(finished_at IS NULL)"
   end
+
+  create_table "neighborhoods", primary_key: "code", id: :text, force: :cascade do |t|
+    t.text "city_code", null: false
+    t.datetime "created_at", null: false
+    t.boolean "is_active", default: true, null: false
+    t.text "name", null: false
+    t.integer "sort_order", limit: 2, null: false
+    t.string "state_code", limit: 2, null: false
+    t.datetime "updated_at", null: false
+    t.index "state_code, city_code, lower(name)", name: "index_active_neighborhoods_on_location_and_name", unique: true, where: "is_active"
+    t.index ["sort_order", "code"], name: "index_neighborhoods_on_sort_order_and_code"
+    t.check_constraint "btrim(name) <> ''::text", name: "neighborhoods_name_present"
+    t.check_constraint "city_code = 'Joinville'::text", name: "neighborhoods_launch_city"
+    t.check_constraint "code ~ '^[a-z0-9]+(-[a-z0-9]+)*$'::text", name: "neighborhoods_code_format"
+    t.check_constraint "sort_order >= 0", name: "neighborhoods_sort_order_nonnegative"
+    t.check_constraint "state_code::text = 'SC'::text", name: "neighborhoods_launch_state"
+  end
+
+  create_table "service_categories", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "icon", null: false
+    t.boolean "is_active", default: true, null: false
+    t.text "name", null: false
+    t.text "slug", null: false
+    t.integer "sort_order", limit: 2, null: false
+    t.datetime "updated_at", null: false
+    t.index "lower(name)", name: "index_active_service_categories_on_name", unique: true, where: "is_active"
+    t.index ["slug"], name: "index_service_categories_on_slug", unique: true
+    t.index ["sort_order", "slug"], name: "index_service_categories_on_sort_order_and_slug"
+    t.check_constraint "btrim(name) <> ''::text", name: "service_categories_name_present"
+    t.check_constraint "slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'::text", name: "service_categories_slug_format"
+    t.check_constraint "sort_order >= 0", name: "service_categories_sort_order_nonnegative"
+  end
+
+  create_table "services", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.text "aliases", default: [], null: false, array: true
+    t.uuid "category_id", null: false
+    t.datetime "created_at", null: false
+    t.text "description", null: false
+    t.text "icon", null: false
+    t.boolean "is_active", default: true, null: false
+    t.text "name", null: false
+    t.text "slug", null: false
+    t.integer "sort_order", limit: 2, null: false
+    t.datetime "updated_at", null: false
+    t.index ["category_id", "sort_order", "slug"], name: "index_services_on_category_id_and_sort_order_and_slug"
+    t.index ["category_id"], name: "index_services_on_category_id"
+    t.index ["slug"], name: "index_services_on_slug", unique: true
+    t.index ["sort_order", "slug"], name: "index_services_on_sort_order_and_slug"
+    t.check_constraint "btrim(description) <> ''::text", name: "services_description_present"
+    t.check_constraint "btrim(name) <> ''::text", name: "services_name_present"
+    t.check_constraint "slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'::text", name: "services_slug_format"
+    t.check_constraint "sort_order >= 0", name: "services_sort_order_nonnegative"
+  end
+
+  add_foreign_key "services", "service_categories", column: "category_id"
 end
