@@ -2,13 +2,21 @@ import { expect, test } from "@playwright/test";
 
 async function completeProfessionalSignIn(
   page: import("@playwright/test").Page,
+  phone: string,
 ) {
   await page.goto("/app/professional/login");
+  await page.getByLabel("Celular com DDD").fill(phone);
   await page.getByRole("button", { name: "Receber código" }).click();
   await page.getByLabel("Código de 6 dígitos").fill("123456");
   await page.getByRole("button", { name: "Confirmar e continuar" }).click();
+  await page.getByLabel("Nome profissional").fill("Marcos Alves");
   await page.getByLabel(/li e aceito/i).check();
   await page.getByRole("button", { name: "Criar meu perfil" }).click();
+}
+
+function syntheticPhone(projectName: string, sequence: number) {
+  const projectDigit = projectName.startsWith("mobile") ? "2" : "1";
+  return `479${projectDigit}111${sequence.toString().padStart(4, "0")}`;
 }
 
 test("visitor can discover and open a professional profile", async ({
@@ -36,8 +44,11 @@ test("visitor can discover and open a professional profile", async ({
 
 test("an incomplete professional sees onboarding and can skip it", async ({
   page,
-}) => {
-  await completeProfessionalSignIn(page);
+}, testInfo) => {
+  await completeProfessionalSignIn(
+    page,
+    syntheticPhone(testInfo.project.name, 1),
+  );
   await expect(page).toHaveURL(/\/app\/professional\/onboarding$/);
   await expect(
     page.getByRole("heading", { level: 1, name: /deixar seu perfil pronto/i }),
@@ -53,8 +64,11 @@ test("an incomplete professional sees onboarding and can skip it", async ({
 
 test("professional can reach 100% and retain frontend progress", async ({
   page,
-}) => {
-  await completeProfessionalSignIn(page);
+}, testInfo) => {
+  await completeProfessionalSignIn(
+    page,
+    syntheticPhone(testInfo.project.name, 2),
+  );
 
   await page
     .getByLabel("Frase de apresentação")
@@ -102,6 +116,9 @@ test("professional can reach 100% and retain frontend progress", async ({
   await page.reload();
   await expect(page.getByText("Perfil 100% completo")).toBeVisible();
 
-  await completeProfessionalSignIn(page);
+  await completeProfessionalSignIn(
+    page,
+    syntheticPhone(testInfo.project.name, 3),
+  );
   await expect(page).toHaveURL(/\/app\/professional$/);
 });

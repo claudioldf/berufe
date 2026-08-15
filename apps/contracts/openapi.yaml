@@ -6,6 +6,58 @@ info:
 servers:
   - url: /
 paths:
+  /api/v1/auth/otp/challenges:
+    post:
+      operationId: requestPhoneOtp
+      summary: Request a Brazilian phone OTP challenge
+      tags:
+        - Authentication
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PhoneOtpRequest"
+      responses:
+        "201":
+          description: The SMS provider accepted the challenge synchronously.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PhoneOtpChallengeResponse"
+        "422":
+          description: The phone is invalid or SMS delivery was rejected.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: A Rails or provider cooldown/daily allowance was reached.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Retry-After:
+              $ref: "#/components/headers/RetryAfter"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: The SMS provider or challenge persistence is unavailable.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/catalog:
     get:
       operationId: getPublicCatalog
@@ -75,6 +127,11 @@ components:
       description: Bounded request identifier used for safe cross-service correlation.
       schema:
         $ref: "#/components/schemas/RequestId"
+    RetryAfter:
+      description: Whole seconds before another OTP request may be attempted.
+      schema:
+        type: integer
+        minimum: 1
   parameters:
     Page:
       name: page
@@ -102,6 +159,50 @@ components:
         type: string
         minLength: 1
   schemas:
+    PhoneOtpRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - phone
+      properties:
+        phone:
+          type: string
+          minLength: 1
+          maxLength: 40
+          description: Brazilian mobile number in national, formatted, or E.164 form.
+    PhoneOtpChallengeResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          $ref: "#/components/schemas/PhoneOtpChallenge"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    PhoneOtpChallenge:
+      type: object
+      additionalProperties: false
+      required:
+        - status
+        - challenge_token
+        - expires_in
+        - resend_available_in
+      properties:
+        status:
+          type: string
+          const: accepted
+        challenge_token:
+          type: string
+          minLength: 40
+          maxLength: 100
+        expires_in:
+          type: integer
+          minimum: 1
+        resend_available_in:
+          type: integer
+          minimum: 1
     CatalogResponse:
       type: object
       additionalProperties: false
@@ -293,5 +394,6 @@ security:
   - applicationSession: []
     csrfToken: []
 tags:
+  - name: Authentication
   - name: Catalog
   - name: Foundation

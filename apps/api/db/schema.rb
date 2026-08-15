@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_15_170000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_15_183000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -130,6 +130,41 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_15_170000) do
     t.check_constraint "code ~ '^[a-z0-9]+(-[a-z0-9]+)*$'::text", name: "neighborhoods_code_format"
     t.check_constraint "sort_order >= 0", name: "neighborhoods_sort_order_nonnegative"
     t.check_constraint "state_code::text = 'SC'::text", name: "neighborhoods_launch_state"
+  end
+
+  create_table "otp_challenges", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "consumed_at"
+    t.datetime "created_at", null: false
+    t.datetime "expires_at", null: false
+    t.text "infobip_challenge_id_ciphertext", null: false
+    t.text "phone_e164_ciphertext", null: false
+    t.text "public_token_digest", null: false
+    t.datetime "updated_at", null: false
+    t.index ["expires_at"], name: "index_otp_challenges_on_expires_at"
+    t.index ["public_token_digest"], name: "index_otp_challenges_on_public_token_digest", unique: true
+    t.check_constraint "btrim(infobip_challenge_id_ciphertext) <> ''::text", name: "otp_challenges_provider_ciphertext_present"
+    t.check_constraint "btrim(phone_e164_ciphertext) <> ''::text", name: "otp_challenges_phone_ciphertext_present"
+    t.check_constraint "btrim(public_token_digest) <> ''::text", name: "otp_challenges_public_token_digest_present"
+    t.check_constraint "consumed_at IS NULL OR consumed_at >= created_at", name: "otp_challenges_consumed_after_creation"
+    t.check_constraint "expires_at > created_at", name: "otp_challenges_expire_after_creation"
+  end
+
+  create_table "otp_request_counters", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "expires_at", null: false
+    t.datetime "last_requested_at"
+    t.integer "request_count", limit: 2, default: 0, null: false
+    t.text "scope_kind", null: false
+    t.text "subject_digest", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "window_started_at", null: false
+    t.index ["expires_at"], name: "index_otp_request_counters_on_expires_at"
+    t.index ["scope_kind", "subject_digest", "window_started_at"], name: "index_otp_counters_on_scope_subject_and_window", unique: true
+    t.check_constraint "expires_at > window_started_at", name: "otp_request_counters_valid_window"
+    t.check_constraint "last_requested_at IS NULL OR last_requested_at >= window_started_at", name: "otp_request_counters_request_inside_window"
+    t.check_constraint "request_count >= 0", name: "otp_request_counters_nonnegative_count"
+    t.check_constraint "scope_kind = ANY (ARRAY['phone'::text, 'ip'::text])", name: "otp_request_counters_known_scope"
+    t.check_constraint "subject_digest ~ '^[0-9a-f]{64}$'::text", name: "otp_request_counters_digest_format"
   end
 
   create_table "service_categories", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|

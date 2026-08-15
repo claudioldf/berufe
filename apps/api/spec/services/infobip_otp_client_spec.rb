@@ -90,4 +90,23 @@ RSpec.describe InfobipOtpClient do
     expect { client.start_challenge(phone: "+5547999999999") }
       .to raise_error(SmsOtp::ProviderUnavailable, "SMS OTP provider returned an invalid response")
   end
+
+  it "maps provider timeouts to a safe unavailable error" do
+    timeout_http = Class.new do
+      def self.start(*, **)
+        raise Timeout::Error
+      end
+    end
+    client = described_class.new(
+      base_url: "https://example.api.infobip.com",
+      api_key: "private-api-key",
+      application_id: "application-id",
+      message_id: "message-id",
+      sender: "Berufe",
+      http: timeout_http
+    )
+
+    expect { client.start_challenge(phone: "+5547999999999") }
+      .to raise_error(SmsOtp::ProviderUnavailable, "SMS OTP provider is unavailable")
+  end
 end

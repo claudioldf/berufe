@@ -1,12 +1,18 @@
 <script setup lang="ts">
 const code = defineModel<string>({ required: true });
-defineProps<{
+const props = defineProps<{
   phone: string;
   loading: boolean;
   error: string;
   cooldown: number;
 }>();
 defineEmits<{ submit: []; resend: []; changePhone: [] }>();
+
+const resendLabel = computed(() => {
+  if (props.cooldown >= 3600) return "Reenviar código amanhã";
+  if (props.cooldown > 0) return `Reenviar código em ${props.cooldown}s`;
+  return "Reenviar código";
+});
 </script>
 
 <template>
@@ -60,9 +66,7 @@ defineEmits<{ submit: []; resend: []; changePhone: [] }>();
         :disabled="cooldown > 0"
         @click="$emit('resend')"
       >
-        {{
-          cooldown > 0 ? `Reenviar código em ${cooldown}s` : "Reenviar código"
-        }}
+        {{ resendLabel }}
       </button>
     </form>
   </section>

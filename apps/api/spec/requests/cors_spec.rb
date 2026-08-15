@@ -14,6 +14,7 @@ RSpec.describe "CORS", type: :request do
     expect(response.headers.fetch("Access-Control-Allow-Origin")).to eq(ENV.fetch("WEB_ORIGIN"))
     expect(response.headers.fetch("Access-Control-Allow-Credentials")).to eq("true")
     expect(response.headers.fetch("Access-Control-Allow-Headers").downcase).to include("x-csrf-token", "x-request-id")
+    expect(response.headers.fetch("Access-Control-Expose-Headers").downcase).to include("retry-after", "x-request-id")
   end
 
   it "does not emit CORS permission for any other origin" do

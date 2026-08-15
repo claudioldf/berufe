@@ -1,20 +1,39 @@
 import { computed, onScopeDispose, shallowRef } from "vue";
+import {
+  PhoneOtpRequestError,
+  requestPhoneOtp,
+  type RequestedPhoneOtp,
+} from "~/services/api/phone-auth";
+import { useApiClient } from "~/services/api/client";
+import { ApiRequestError } from "~/services/api/errors";
+import {
+  formatBrazilianMobilePhone,
+  normalizeBrazilianMobilePhone,
+} from "~/utils/brazilian-phone";
 
 export type PhoneAuthStep = 1 | 2 | 3;
 
-export function usePhoneAuthFlow() {
+interface PhoneAuthFlowDependencies {
+  requestOtp?: (phone: string) => Promise<RequestedPhoneOtp>;
+}
+
+export function usePhoneAuthFlow(dependencies: PhoneAuthFlowDependencies = {}) {
   const step = shallowRef<PhoneAuthStep>(1);
-  const phone = shallowRef("(47) 99999-1111");
+  const phone = shallowRef("");
   const code = shallowRef("");
-  const name = shallowRef("Marcos Alves");
+  const name = shallowRef("");
   const accepted = shallowRef(false);
   const isLoading = shallowRef(false);
   const error = shallowRef("");
   const cooldown = shallowRef(0);
+  const challengeToken = shallowRef("");
   let loadingTimer: ReturnType<typeof setTimeout> | undefined;
   let cooldownTimer: ReturnType<typeof setInterval> | undefined;
 
-  const cleanPhone = computed(() => phone.value.replace(/\D/g, ""));
+  const cleanPhone = computed(() => normalizeBrazilianMobilePhone(phone.value));
+  const sendOtp =
+    dependencies.requestOtp ??
+    ((phoneE164: string) => requestPhoneOtp(useApiClient(), phoneE164));
 
   function clearTimers() {
     if (loadingTimer) clearTimeout(loadingTimer);
@@ -33,9 +52,9 @@ export function usePhoneAuthFlow() {
     }, 650);
   }
 
-  function startCooldown() {
+  function startCooldown(seconds: number) {
     if (cooldownTimer) clearInterval(cooldownTimer);
-    cooldown.value = 30;
+    cooldown.value = seconds;
     cooldownTimer = setInterval(() => {
       cooldown.value -= 1;
       if (cooldown.value <= 0 && cooldownTimer) {
@@ -45,16 +64,36 @@ export function usePhoneAuthFlow() {
     }, 1000);
   }
 
-  function requestCode() {
+  async function requestCode() {
+    if (isLoading.value || (step.value === 2 && cooldown.value > 0)) return;
+
     error.value = "";
-    if (cleanPhone.value.length < 10) {
+    if (!cleanPhone.value) {
       error.value = "Digite um número brasileiro válido.";
       return;
     }
-    simulateLoading(() => {
+
+    isLoading.value = true;
+    try {
+      const requestedOtp = await sendOtp(cleanPhone.value);
+      challengeToken.value = requestedOtp.challengeToken;
+      phone.value = formatBrazilianMobilePhone(cleanPhone.value);
       step.value = 2;
-      startCooldown();
-    });
+      startCooldown(requestedOtp.resendAvailableIn);
+    } catch (requestError) {
+      if (
+        requestError instanceof PhoneOtpRequestError &&
+        requestError.retryAfter
+      ) {
+        startCooldown(requestError.retryAfter);
+      }
+      error.value =
+        requestError instanceof ApiRequestError
+          ? requestError.message
+          : "Não foi possível enviar o código agora. Tente novamente em instantes.";
+    } finally {
+      isLoading.value = false;
+    }
   }
 
   function verifyCode() {
@@ -71,6 +110,7 @@ export function usePhoneAuthFlow() {
   function changePhone() {
     error.value = "";
     code.value = "";
+    challengeToken.value = "";
     step.value = 1;
   }
 
@@ -98,6 +138,7 @@ export function usePhoneAuthFlow() {
     isLoading,
     error,
     cooldown,
+    challengeToken,
     requestCode,
     verifyCode,
     changePhone,
