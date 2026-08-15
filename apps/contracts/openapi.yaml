@@ -2,4 +2,161 @@ openapi: 3.1.0
 info:
   title: Berufe API
   version: 1.0.0
-paths: {}
+  description: Contract for the Berufe MVP Rails API.
+servers:
+  - url: /
+paths:
+  /api/v1/status:
+    get:
+      operationId: getApiStatus
+      summary: Read API and database readiness
+      tags:
+        - Foundation
+      security: []
+      responses:
+        "200":
+          description: The API and its database are ready.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusResponse"
+        "503":
+          description: The API cannot currently reach a required dependency.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+components:
+  securitySchemes:
+    applicationSession:
+      type: apiKey
+      in: cookie
+      name: __Host-berufe_session
+      description: Opaque Rails-owned application-session cookie.
+    csrfToken:
+      type: apiKey
+      in: header
+      name: X-CSRF-Token
+      description: Rotating session-bound token required for authenticated mutations.
+  headers:
+    RequestId:
+      description: Bounded request identifier used for safe cross-service correlation.
+      schema:
+        $ref: "#/components/schemas/RequestId"
+  parameters:
+    Page:
+      name: page
+      in: query
+      description: One-based result page.
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSize:
+      name: per_page
+      in: query
+      description: Result count per page.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    Order:
+      name: order
+      in: query
+      required: true
+      description: Endpoint-specific deterministic ordering key.
+      schema:
+        type: string
+        minLength: 1
+  schemas:
+    RequestId:
+      type: string
+      pattern: "^[A-Za-z0-9._-]{1,100}$"
+    StatusResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required:
+            - service
+            - status
+          properties:
+            service:
+              type: string
+              const: berufe-api
+            status:
+              type: string
+              const: ok
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    Error:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - message
+        - request_id
+      properties:
+        code:
+          type: string
+          pattern: "^[a-z0-9_]+$"
+        message:
+          type: string
+          minLength: 1
+        field_errors:
+          type: object
+          additionalProperties:
+            type: array
+            minItems: 1
+            items:
+              type: string
+              minLength: 1
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - error
+      properties:
+        error:
+          $ref: "#/components/schemas/Error"
+    PageMeta:
+      type: object
+      additionalProperties: false
+      required:
+        - page
+        - per_page
+        - total_count
+        - total_pages
+      properties:
+        page:
+          type: integer
+          minimum: 1
+        per_page:
+          type: integer
+          minimum: 1
+          maximum: 100
+        total_count:
+          type: integer
+          minimum: 0
+        total_pages:
+          type: integer
+          minimum: 0
+security:
+  - applicationSession: []
+    csrfToken: []
+tags:
+  - name: Foundation

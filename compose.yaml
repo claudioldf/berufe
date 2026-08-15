@@ -9,6 +9,7 @@ x-api-service: &api-service
   init: true
   volumes:
     - ./apps/api:/app
+    - ./apps/contracts:/contracts:ro
     - api_bundle:/usr/local/bundle
   depends_on:
     db:
@@ -27,6 +28,7 @@ services:
       - "3000:3000"
     volumes:
       - ./apps/web:/app
+      - ./apps/contracts:/contracts:ro
       - web_node_modules:/app/node_modules
     depends_on:
       api:
