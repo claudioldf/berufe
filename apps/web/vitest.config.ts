@@ -13,7 +13,7 @@ export default defineVitestConfig({
       include: [
         "app/components/**/*.vue",
         "app/composables/**/*.ts",
-        "app/services/api/{application-session,catalog,client,errors,phone-auth}.ts",
+        "app/services/api/{application-session,catalog,client,errors,phone-auth,professional-registration}.ts",
         "app/middleware/**/*.ts",
         "app/utils/**/*.ts",
       ],

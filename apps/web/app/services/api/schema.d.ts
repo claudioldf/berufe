@@ -55,6 +55,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/professional-registration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Accept the current legal documents and create one draft professional profile */
+        put: operations["completeProfessionalRegistration"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/session": {
         parameters: {
             query?: never;
@@ -120,6 +137,26 @@ export interface components {
             };
             request_id: components["schemas"]["RequestId"];
         };
+        ProfessionalRegistrationRequest: {
+            display_name: string;
+            accepted: boolean;
+        };
+        ProfessionalRegistrationResponse: {
+            data: components["schemas"]["ProfessionalRegistration"];
+            request_id: components["schemas"]["RequestId"];
+        };
+        ProfessionalRegistration: {
+            /** @constant */
+            status: "completed";
+            profile: components["schemas"]["RegisteredProfessionalProfile"];
+        };
+        RegisteredProfessionalProfile: {
+            /** Format: uuid */
+            id: string;
+            display_name: string;
+            /** @constant */
+            profile_status: "draft";
+        };
         CurrentSessionResponse: {
             data: components["schemas"]["CurrentSessionData"];
             request_id: components["schemas"]["RequestId"];
@@ -136,6 +173,7 @@ export interface components {
             role: "professional" | "admin";
             /** @constant */
             status: "active";
+            registration_completed: boolean;
         };
         ApplicationSessionSummary: {
             /** @constant */
@@ -354,6 +392,71 @@ export interface operations {
                 };
             };
             /** @description The catalog database query is temporarily unavailable. */
+            503: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    completeProfessionalRegistration: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfessionalRegistrationRequest"];
+            };
+        };
+        responses: {
+            /** @description Registration is complete and the account owns exactly one draft profile. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalRegistrationResponse"];
+                };
+            };
+            /** @description An active Rails application session is required. */
+            401: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The account role, CSRF token, or exact request origin is not permitted. */
+            403: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The display name or legal acceptance is invalid. */
+            422: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Registration persistence is temporarily unavailable. */
             503: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];

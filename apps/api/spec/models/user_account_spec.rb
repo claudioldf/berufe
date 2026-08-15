@@ -12,9 +12,27 @@ RSpec.describe UserAccount, type: :model do
 
     expect(account.id).to match(/\A[0-9a-f-]{36}\z/)
     expect(account).not_to be_admin
+    expect(account).to be_professional
+    expect(account).not_to be_registration_completed
     expect do
       described_class.create!(phone_e164: account.phone_e164, role: "professional", status: "active")
     end.to raise_error(ActiveRecord::RecordInvalid)
+  end
+
+  it "requires the acceptance timestamp and both legal document versions as one complete record" do
+    account = described_class.new(
+      phone_e164: "+5547999993333",
+      role: "professional",
+      status: "active",
+      terms_accepted_at: Time.current,
+      terms_version: "0.2"
+    )
+
+    expect(account).not_to be_valid
+    expect(account.errors[:terms_accepted_at]).to be_present
+
+    account.privacy_notice_version = "0.2"
+    expect(account).to be_valid
   end
 
   it "recognizes deliberately provisioned admin accounts" do

@@ -63,8 +63,15 @@ describe("phone authentication", () => {
           resolveVerification = resolve;
         }),
     );
+    let resolveRegistration: (() => void) | undefined;
+    const completeRegistration = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveRegistration = resolve;
+        }),
+    );
     const workflow = scope.run(() =>
-      usePhoneAuthFlow({ requestOtp, verifyOtp }),
+      usePhoneAuthFlow({ requestOtp, verifyOtp, completeRegistration }),
     )!;
 
     expect(workflow.phone.value).toBe("");
@@ -113,6 +120,22 @@ describe("phone authentication", () => {
     expect(workflow.error.value).toContain("aceitar os termos");
     workflow.accepted.value = true;
     expect(workflow.validateRegistration()).toBe(true);
+
+    workflow.name.value = "  Ana Reparos  ";
+    const registration = workflow.registerProfessional();
+    await expect(workflow.registerProfessional()).resolves.toBe(false);
+    expect(completeRegistration).toHaveBeenCalledOnce();
+    expect(completeRegistration).toHaveBeenCalledWith({
+      displayName: "Ana Reparos",
+      accepted: true,
+    });
+    resolveRegistration?.();
+    await expect(registration).resolves.toBe(true);
+
+    workflow.resumeRegistration();
+    expect(workflow.step.value).toBe(3);
+    expect(workflow.code.value).toBe("");
+    expect(workflow.challengeToken.value).toBe("");
 
     scope.stop();
     expect(vi.getTimerCount()).toBe(0);
@@ -228,6 +251,43 @@ describe("phone authentication", () => {
     await workflow.verifyCode();
     expect(workflow.error.value).toBe(
       "Não foi possível confirmar o código agora. Tente novamente em instantes.",
+    );
+
+    workflow.name.value = "Ana Reparos";
+    workflow.accepted.value = true;
+    await expect(workflow.registerProfessional()).resolves.toBe(false);
+    expect(workflow.error.value).toBe(
+      "Não foi possível criar seu perfil agora. Tente novamente em instantes.",
+    );
+    scope.stop();
+  });
+
+  it("keeps safe registration failures on the existing final step", async () => {
+    const completeRegistration = vi
+      .fn()
+      .mockRejectedValueOnce(
+        new ApiRequestError({
+          code: "validation_failed",
+          message: "Revise os campos informados.",
+          fieldErrors: { display_name: ["é inválido"] },
+          requestId: "registration-invalid",
+        }),
+      )
+      .mockRejectedValueOnce(new Error("private transport details"));
+    const scope = effectScope();
+    const workflow = scope.run(() =>
+      usePhoneAuthFlow({ completeRegistration }),
+    )!;
+    workflow.resumeRegistration();
+    workflow.name.value = "Ana Reparos";
+    workflow.accepted.value = true;
+
+    await expect(workflow.registerProfessional()).resolves.toBe(false);
+    expect(workflow.error.value).toBe("Revise os campos informados.");
+
+    await expect(workflow.registerProfessional()).resolves.toBe(false);
+    expect(workflow.error.value).toBe(
+      "Não foi possível criar seu perfil agora. Tente novamente em instantes.",
     );
     scope.stop();
   });

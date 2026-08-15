@@ -31,6 +31,13 @@ export default defineNuxtRouteMiddleware(async (to) => {
       { replace: true },
     );
   }
+
+  if (
+    requiredRole === "professional" &&
+    account.value?.registrationCompleted === false
+  ) {
+    return navigateTo(professionalLoginPath, { replace: true });
+  }
 });
 
 export { requiredWorkspaceRole, requiresApplicationSession };

@@ -8,6 +8,7 @@ const restoredSession: RestoredApplicationSession = {
     id: "23a94f5e-1429-4ec7-bbc4-a6f805d5182d",
     role: "professional",
     status: "active",
+    registrationCompleted: true,
   },
   session: {
     authenticationMethod: "sms_otp",
@@ -74,6 +75,65 @@ describe("application-session state", () => {
     expect(workflow.session.value).toBeNull();
     expect(role.value).toBe("visitor");
     expect(setCsrfToken).toHaveBeenCalledWith(undefined);
+  });
+
+  it("forces a fresh read after authentication changes", async () => {
+    const read = vi
+      .fn()
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(restoredSession);
+    const workflow = useApplicationSession({ read, setCsrfToken: vi.fn() });
+
+    await expect(workflow.restoreSession()).resolves.toBe(false);
+    await expect(workflow.refreshSession()).resolves.toBe(true);
+
+    expect(read).toHaveBeenCalledTimes(2);
+    expect(workflow.account.value).toEqual(restoredSession.account);
+  });
+
+  it("waits for an active restoration before refreshing it", async () => {
+    let resolveRead:
+      ((value: RestoredApplicationSession | null) => void) | undefined;
+    const read = vi
+      .fn()
+      .mockImplementationOnce(
+        () =>
+          new Promise<RestoredApplicationSession | null>((resolve) => {
+            resolveRead = resolve;
+          }),
+      )
+      .mockResolvedValueOnce(restoredSession);
+    const workflow = useApplicationSession({ read, setCsrfToken: vi.fn() });
+
+    const restoration = workflow.restoreSession();
+    const refresh = workflow.refreshSession();
+    resolveRead?.(null);
+
+    await expect(restoration).resolves.toBe(false);
+    await expect(refresh).resolves.toBe(true);
+    expect(read).toHaveBeenCalledTimes(2);
+  });
+
+  it("refreshes after an overlapping restoration fails", async () => {
+    let rejectRead: ((reason: Error) => void) | undefined;
+    const read = vi
+      .fn()
+      .mockImplementationOnce(
+        () =>
+          new Promise<RestoredApplicationSession | null>((_resolve, reject) => {
+            rejectRead = reject;
+          }),
+      )
+      .mockResolvedValueOnce(restoredSession);
+    const workflow = useApplicationSession({ read, setCsrfToken: vi.fn() });
+
+    const restoration = workflow.restoreSession();
+    const refresh = workflow.refreshSession();
+    rejectRead?.(new Error("stale read failed"));
+
+    await expect(restoration).rejects.toThrow("stale read failed");
+    await expect(refresh).resolves.toBe(true);
+    expect(read).toHaveBeenCalledTimes(2);
   });
 
   it("allows a failed restoration to be retried without retaining CSRF state", async () => {

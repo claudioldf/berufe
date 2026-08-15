@@ -7,7 +7,12 @@ import authenticatedMiddleware, {
 const mocks = vi.hoisted(() => ({
   restoreSession: vi.fn(),
   navigateTo: vi.fn(),
-  account: { value: null as { role: "professional" | "admin" } | null },
+  account: {
+    value: null as {
+      role: "professional" | "admin";
+      registrationCompleted: boolean;
+    } | null,
+  },
 }));
 
 vi.mock("~/composables/useApplicationSession", () => ({
@@ -60,7 +65,10 @@ describe("authenticated route middleware", () => {
 
   it("keeps authenticated users on the requested workspace route", async () => {
     mocks.restoreSession.mockResolvedValue(true);
-    mocks.account.value = { role: "professional" };
+    mocks.account.value = {
+      role: "professional",
+      registrationCompleted: true,
+    };
 
     await authenticatedMiddleware(
       { path: "/app/professional/profile" } as never,
@@ -77,7 +85,7 @@ describe("authenticated route middleware", () => {
     "redirects an authenticated %s away from the other role workspace",
     async (role, requestedPath, expectedPath) => {
       mocks.restoreSession.mockResolvedValue(true);
-      mocks.account.value = { role };
+      mocks.account.value = { role, registrationCompleted: true };
       mocks.navigateTo.mockResolvedValue(undefined);
 
       await authenticatedMiddleware(
@@ -96,6 +104,24 @@ describe("authenticated route middleware", () => {
     mocks.navigateTo.mockResolvedValue(undefined);
 
     await authenticatedMiddleware({ path: "/app/admin" } as never, {} as never);
+
+    expect(mocks.navigateTo).toHaveBeenCalledWith("/app/professional/login", {
+      replace: true,
+    });
+  });
+
+  it("returns an incomplete professional to the existing registration flow", async () => {
+    mocks.restoreSession.mockResolvedValue(true);
+    mocks.account.value = {
+      role: "professional",
+      registrationCompleted: false,
+    };
+    mocks.navigateTo.mockResolvedValue(undefined);
+
+    await authenticatedMiddleware(
+      { path: "/app/professional" } as never,
+      {} as never,
+    );
 
     expect(mocks.navigateTo).toHaveBeenCalledWith("/app/professional/login", {
       replace: true,

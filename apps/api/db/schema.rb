@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_15_193000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_15_210000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -196,6 +196,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_15_193000) do
     t.check_constraint "subject_digest ~ '^[0-9a-f]{64}$'::text", name: "otp_request_counters_digest_format"
   end
 
+  create_table "professional_profiles", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "display_name", null: false
+    t.text "profile_status", default: "draft", null: false
+    t.datetime "updated_at", null: false
+    t.uuid "user_account_id", null: false
+    t.index ["profile_status"], name: "index_professional_profiles_on_profile_status"
+    t.index ["user_account_id"], name: "index_professional_profiles_on_user_account_id", unique: true
+    t.check_constraint "char_length(btrim(display_name)) >= 3 AND char_length(btrim(display_name)) <= 70", name: "professional_profiles_display_name_length"
+    t.check_constraint "profile_status = ANY (ARRAY['draft'::text, 'pending_review'::text, 'published'::text, 'suspended'::text])", name: "professional_profiles_known_status"
+  end
+
   create_table "service_categories", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "icon", null: false
@@ -237,17 +249,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_15_193000) do
     t.datetime "created_at", null: false
     t.datetime "last_login_at"
     t.text "phone_e164", null: false
+    t.text "privacy_notice_version"
     t.text "role", default: "professional", null: false
     t.text "status", default: "active", null: false
     t.datetime "terms_accepted_at"
+    t.text "terms_version"
     t.datetime "updated_at", null: false
     t.index ["phone_e164"], name: "index_user_accounts_on_phone_e164", unique: true
     t.index ["role", "status"], name: "index_user_accounts_on_role_and_status"
     t.check_constraint "phone_e164 ~ '^\\+55[1-9][1-9]9[0-9]{8}$'::text", name: "user_accounts_brazilian_mobile_phone"
     t.check_constraint "role = ANY (ARRAY['professional'::text, 'admin'::text])", name: "user_accounts_known_role"
     t.check_constraint "status = ANY (ARRAY['active'::text, 'suspended'::text])", name: "user_accounts_known_status"
+    t.check_constraint "terms_accepted_at IS NULL AND terms_version IS NULL AND privacy_notice_version IS NULL OR terms_accepted_at IS NOT NULL AND terms_version IS NOT NULL AND privacy_notice_version IS NOT NULL AND btrim(terms_version) <> ''::text AND btrim(privacy_notice_version) <> ''::text", name: "user_accounts_complete_legal_acceptance"
   end
 
   add_foreign_key "application_sessions", "user_accounts"
+  add_foreign_key "professional_profiles", "user_accounts"
   add_foreign_key "services", "service_categories", column: "category_id"
 end

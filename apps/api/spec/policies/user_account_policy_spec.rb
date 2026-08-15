@@ -7,6 +7,9 @@ RSpec.describe UserAccountPolicy do
   let!(:non_owner) { create_account(phone: "+5547999992002") }
   let!(:admin) { create_account(phone: "+5547999992003", role: "admin") }
   let!(:suspended_admin) { create_account(phone: "+5547999992004", role: "admin", status: "suspended") }
+  let!(:suspended_professional) do
+    create_account(phone: "+5547999992005", status: "suspended")
+  end
 
   it "allows an active professional to read and update only their own account" do
     expect(described_class.new(owner, owner).show?).to be(true)
@@ -15,6 +18,8 @@ RSpec.describe UserAccountPolicy do
     expect(described_class.new(owner, non_owner).update?).to be(false)
     expect(described_class.new(owner, non_owner).suspend?).to be(false)
     expect(described_class.new(owner, non_owner).revoke_all_sessions?).to be(false)
+    expect(described_class.new(owner, owner).complete_registration?).to be(true)
+    expect(described_class.new(owner, non_owner).complete_registration?).to be(false)
     expect(resolve_scope(owner)).to contain_exactly(owner)
   end
 
@@ -25,7 +30,14 @@ RSpec.describe UserAccountPolicy do
     expect(policy.update?).to be(false)
     expect(policy.suspend?).to be(true)
     expect(policy.revoke_all_sessions?).to be(true)
-    expect(resolve_scope(admin)).to contain_exactly(owner, non_owner, admin, suspended_admin)
+    expect(policy.complete_registration?).to be(false)
+    expect(resolve_scope(admin)).to contain_exactly(
+      owner,
+      non_owner,
+      admin,
+      suspended_admin,
+      suspended_professional
+    )
   end
 
   it "denies anonymous and suspended actors and returns no records" do
@@ -36,8 +48,12 @@ RSpec.describe UserAccountPolicy do
       expect(policy.update?).to be(false)
       expect(policy.suspend?).to be(false)
       expect(policy.revoke_all_sessions?).to be(false)
+      expect(policy.complete_registration?).to be(false)
       expect(resolve_scope(actor)).to be_empty
     end
+
+    suspended_policy = described_class.new(suspended_professional, suspended_professional)
+    expect(suspended_policy.complete_registration?).to be(false)
   end
 
   private

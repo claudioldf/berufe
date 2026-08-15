@@ -23,7 +23,8 @@ RSpec.describe "Application sessions", type: :request, openapi: true do
         "account" => {
           "id" => account.id,
           "role" => "professional",
-          "status" => "active"
+          "status" => "active",
+          "registration_completed" => false
         },
         "session" => {
           "authentication_method" => "sms_otp",
@@ -64,7 +65,8 @@ RSpec.describe "Application sessions", type: :request, openapi: true do
     expect(response.parsed_body.dig("data", "account")).to eq(
       "id" => account.id,
       "role" => "admin",
-      "status" => "active"
+      "status" => "active",
+      "registration_completed" => false
     )
     expect(response.parsed_body.dig("data", "session", "mfa_authenticated")).to be(true)
     expect(response.body).not_to include(account.phone_e164)

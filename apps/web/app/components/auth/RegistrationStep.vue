@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const name = defineModel<string>("name", { required: true });
 const accepted = defineModel<boolean>("accepted", { required: true });
-defineProps<{ error: string }>();
+defineProps<{ error: string; loading: boolean }>();
 defineEmits<{ submit: [] }>();
 </script>
 
@@ -54,6 +54,8 @@ defineEmits<{ submit: [] }>();
         type="submit"
         color="primary"
         trailing-icon="i-lucide-arrow-right"
+        :loading="loading"
+        :disabled="loading"
       >
         Criar meu perfil
       </UButton>

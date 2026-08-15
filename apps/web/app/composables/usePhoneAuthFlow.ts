@@ -9,6 +9,10 @@ import {
 import { useApiClient } from "~/services/api/client";
 import { ApiRequestError } from "~/services/api/errors";
 import {
+  completeProfessionalRegistration,
+  type CompleteProfessionalRegistrationInput,
+} from "~/services/api/professional-registration";
+import {
   formatBrazilianMobilePhone,
   normalizeBrazilianMobilePhone,
 } from "~/utils/brazilian-phone";
@@ -18,6 +22,9 @@ export type PhoneAuthStep = 1 | 2 | 3;
 interface PhoneAuthFlowDependencies {
   requestOtp?: (phone: string) => Promise<RequestedPhoneOtp>;
   verifyOtp?: (input: VerifyPhoneOtpInput) => Promise<void>;
+  completeRegistration?: (
+    input: CompleteProfessionalRegistrationInput,
+  ) => Promise<unknown>;
 }
 
 export function usePhoneAuthFlow(dependencies: PhoneAuthFlowDependencies = {}) {
@@ -39,6 +46,10 @@ export function usePhoneAuthFlow(dependencies: PhoneAuthFlowDependencies = {}) {
   const confirmOtp =
     dependencies.verifyOtp ??
     ((input: VerifyPhoneOtpInput) => verifyPhoneOtp(useApiClient(), input));
+  const submitRegistration =
+    dependencies.completeRegistration ??
+    ((input: CompleteProfessionalRegistrationInput) =>
+      completeProfessionalRegistration(useApiClient(), input));
 
   function clearTimers() {
     if (cooldownTimer) clearInterval(cooldownTimer);
@@ -123,6 +134,14 @@ export function usePhoneAuthFlow(dependencies: PhoneAuthFlowDependencies = {}) {
     step.value = 1;
   }
 
+  function resumeRegistration() {
+    clearTimers();
+    error.value = "";
+    code.value = "";
+    challengeToken.value = "";
+    step.value = 3;
+  }
+
   function validateRegistration() {
     error.value = "";
     if (name.value.trim().length < 3) {
@@ -134,6 +153,27 @@ export function usePhoneAuthFlow(dependencies: PhoneAuthFlowDependencies = {}) {
       return false;
     }
     return true;
+  }
+
+  async function registerProfessional(): Promise<boolean> {
+    if (isLoading.value || !validateRegistration()) return false;
+
+    isLoading.value = true;
+    try {
+      await submitRegistration({
+        displayName: name.value.trim(),
+        accepted: accepted.value,
+      });
+      return true;
+    } catch (registrationError) {
+      error.value =
+        registrationError instanceof ApiRequestError
+          ? registrationError.message
+          : "Não foi possível criar seu perfil agora. Tente novamente em instantes.";
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
   }
 
   onScopeDispose(clearTimers);
@@ -151,6 +191,8 @@ export function usePhoneAuthFlow(dependencies: PhoneAuthFlowDependencies = {}) {
     requestCode,
     verifyCode,
     changePhone,
+    resumeRegistration,
     validateRegistration,
+    registerProfessional,
   };
 }

@@ -28,6 +28,7 @@ async function mountHeader(route: string) {
       id: "23a94f5e-1429-4ec7-bbc4-a6f805d5182d",
       role,
       status: "active",
+      registrationCompleted: true,
     };
   }
 

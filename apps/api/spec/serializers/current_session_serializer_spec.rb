@@ -14,7 +14,12 @@ RSpec.describe CurrentSessionSerializer do
     ).as_json
 
     expect(serialized).to eq(
-      account: {id: account.id, role: "professional", status: "active"},
+      account: {
+        id: account.id,
+        role: "professional",
+        status: "active",
+        registration_completed: false
+      },
       session: {
         authentication_method: "sms_otp",
         authenticated_at: now,

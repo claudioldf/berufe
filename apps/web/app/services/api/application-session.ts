@@ -5,6 +5,7 @@ export interface CurrentAccount {
   id: string;
   role: "professional" | "admin";
   status: "active";
+  registrationCompleted: boolean;
 }
 
 export interface CurrentSession {
@@ -36,7 +37,12 @@ export async function getCurrentApplicationSession(
   }
 
   return {
-    account: data.data.account,
+    account: {
+      id: data.data.account.id,
+      role: data.data.account.role,
+      status: data.data.account.status,
+      registrationCompleted: data.data.account.registration_completed,
+    },
     session: {
       authenticationMethod: data.data.session.authentication_method,
       authenticatedAt: data.data.session.authenticated_at,

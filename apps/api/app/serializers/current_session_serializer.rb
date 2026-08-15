@@ -12,7 +12,8 @@ class CurrentSessionSerializer
       account: {
         id: @account.id,
         role: @account.role,
-        status: @account.status
+        status: @account.status,
+        registration_completed: @account.registration_completed?
       },
       session: {
         authentication_method: @application_session.authentication_method,

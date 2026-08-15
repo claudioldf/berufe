@@ -20,6 +20,7 @@ describe("application-session API", () => {
             id: "23a94f5e-1429-4ec7-bbc4-a6f805d5182d",
             role: "professional",
             status: "active",
+            registration_completed: true,
           },
           session: {
             authentication_method: "sms_otp",
@@ -41,6 +42,7 @@ describe("application-session API", () => {
         id: "23a94f5e-1429-4ec7-bbc4-a6f805d5182d",
         role: "professional",
         status: "active",
+        registrationCompleted: true,
       },
       session: {
         authenticationMethod: "sms_otp",

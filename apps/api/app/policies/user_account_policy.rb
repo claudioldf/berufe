@@ -9,6 +9,10 @@ class UserAccountPolicy < ApplicationPolicy
     active_user? && owns_account?
   end
 
+  def complete_registration?
+    active_user? && owns_account? && user.professional?
+  end
+
   def suspend?
     active_admin?
   end

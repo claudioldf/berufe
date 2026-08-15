@@ -87,6 +87,18 @@ export function useApplicationSession(
     return restoration;
   }
 
+  async function refreshSession(): Promise<boolean> {
+    if (restoration) {
+      try {
+        await restoration;
+      } catch {
+        // A refresh must retry after an overlapping stale restoration fails.
+      }
+    }
+    status.value = "unknown";
+    return restoreSession();
+  }
+
   async function logout(): Promise<void> {
     if (isEnding.value) return;
 
@@ -105,6 +117,7 @@ export function useApplicationSession(
     status: readonly(status),
     isEnding: readonly(isEnding),
     restoreSession,
+    refreshSession,
     logout,
     clearSession,
   };
