@@ -5,6 +5,7 @@ Rails.application.routes.draw do
     namespace :v1 do
       resource :status, only: :show, controller: :status
       resource :catalog, only: :show, controller: :catalogs
+      resource :session, only: %i[show destroy]
       resources :otp_challenges, only: :create, path: "auth/otp/challenges"
       resources :otp_verifications, only: :create, path: "auth/otp/verifications"
     end

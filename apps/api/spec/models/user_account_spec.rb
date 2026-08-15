@@ -26,4 +26,37 @@ RSpec.describe UserAccount, type: :model do
 
     expect(account).to be_admin
   end
+
+  it "revokes all sessions immediately when access is suspended" do
+    now = Time.zone.parse("2026-08-15 12:00:00 UTC")
+    account = described_class.create!(
+      phone_e164: "+5547999991111",
+      role: "professional",
+      status: "active"
+    )
+    first_session, = ApplicationSession.issue!(user_account: account, now:)
+    second_session, = ApplicationSession.issue!(user_account: account, now: now + 1.minute)
+
+    expect(account).to be_active
+    account.suspend!(now: now + 2.minutes)
+
+    expect(account.reload.status).to eq("suspended")
+    expect(account).not_to be_active
+    expect(first_session.reload.revoked_at).to eq(now + 2.minutes)
+    expect(second_session.reload.revoked_at).to eq(now + 2.minutes)
+  end
+
+  it "supports an administrative revoke-all action without suspending the account" do
+    now = Time.zone.parse("2026-08-15 12:00:00 UTC")
+    account = described_class.create!(
+      phone_e164: "+5547999991111",
+      role: "professional",
+      status: "active"
+    )
+    session, = ApplicationSession.issue!(user_account: account, now:)
+
+    expect(account.revoke_all_sessions!(now: now + 1.minute)).to eq(1)
+    expect(account.reload).to be_active
+    expect(session.reload.revoked_at).to eq(now + 1.minute)
+  end
 end

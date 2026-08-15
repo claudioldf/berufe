@@ -16,8 +16,8 @@ class ApplicationSession < ApplicationRecord
   validates :authenticated_at, :last_active_at, :idle_expires_at, :absolute_expires_at, presence: true
 
   def self.issue!(user_account:, now: Time.current, mfa_authenticated_at: nil)
-    session_token = SecureRandom.urlsafe_base64(TOKEN_BYTES, false)
-    csrf_token = SecureRandom.urlsafe_base64(TOKEN_BYTES, false)
+    session_token = generate_token
+    csrf_token = generate_token
     durations = SESSION_DURATIONS.fetch(user_account.role)
     session = create!(
       user_account:,
@@ -38,6 +38,10 @@ class ApplicationSession < ApplicationRecord
     SessionSecurityDigest.call(purpose: "session_token", value: token)
   end
 
+  def self.generate_token
+    SecureRandom.urlsafe_base64(TOKEN_BYTES, false)
+  end
+
   def active?(now: Time.current)
     revoked_at.nil? && now < idle_expires_at && now < absolute_expires_at
   end
@@ -52,5 +56,24 @@ class ApplicationSession < ApplicationRecord
       idle_expires_at: [now + durations.fetch(:idle), absolute_expires_at].min
     )
     true
+  end
+
+  def rotate_csrf_token!(now: Time.current)
+    with_lock do
+      next unless active?(now:) && user_account.active?
+
+      csrf_token = self.class.generate_token
+      update!(csrf_token_digest: SessionSecurityDigest.call(purpose: "csrf_token", value: csrf_token))
+      csrf_token
+    end
+  end
+
+  def revoke!(now: Time.current)
+    with_lock do
+      next false if revoked_at
+
+      update!(revoked_at: now)
+      true
+    end
   end
 end

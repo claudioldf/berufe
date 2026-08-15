@@ -55,6 +55,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Restore the current Rails application session */
+        get: operations["getCurrentSession"];
+        put?: never;
+        post?: never;
+        /** Revoke the current Rails application session */
+        delete: operations["endCurrentSession"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/status": {
         parameters: {
             query?: never;
@@ -101,6 +119,34 @@ export interface components {
                 status: "verified";
             };
             request_id: components["schemas"]["RequestId"];
+        };
+        CurrentSessionResponse: {
+            data: components["schemas"]["CurrentSessionData"];
+            request_id: components["schemas"]["RequestId"];
+        };
+        CurrentSessionData: {
+            account: components["schemas"]["CurrentAccountSummary"];
+            session: components["schemas"]["ApplicationSessionSummary"];
+            csrf_token: string;
+        };
+        CurrentAccountSummary: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            role: "professional" | "admin";
+            /** @constant */
+            status: "active";
+        };
+        ApplicationSessionSummary: {
+            /** @constant */
+            authentication_method: "sms_otp";
+            /** Format: date-time */
+            authenticated_at: string;
+            mfa_authenticated: boolean;
+            /** Format: date-time */
+            idle_expires_at: string;
+            /** Format: date-time */
+            absolute_expires_at: string;
         };
         CatalogResponse: {
             data: components["schemas"]["CatalogData"];
@@ -308,6 +354,87 @@ export interface operations {
                 };
             };
             /** @description The catalog database query is temporarily unavailable. */
+            503: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getCurrentSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The active account/session summary and a newly rotated CSRF token. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurrentSessionResponse"];
+                };
+            };
+            /** @description The cookie is missing, unknown, expired, revoked, or belongs to a suspended account. */
+            401: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The application-session database operation is unavailable. */
+            503: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    endCurrentSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The current session was revoked and its cookie was cleared. */
+            204: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Set-Cookie": components["headers"]["ApplicationSessionCookie"];
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The cookie is missing, unknown, expired, revoked, or belongs to a suspended account. */
+            401: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The application-session database operation is unavailable. */
             503: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];

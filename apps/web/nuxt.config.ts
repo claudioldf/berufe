@@ -84,6 +84,7 @@ export default defineNuxtConfig({
         "lucide:link",
         "lucide:list-ordered",
         "lucide:lock-keyhole",
+        "lucide:log-out",
         "lucide:mail",
         "lucide:map",
         "lucide:map-pin",
@@ -140,6 +141,7 @@ export default defineNuxtConfig({
   routeRules: {
     "/foundation": { prerender: false },
     "/app/**": {
+      ssr: false,
       prerender: false,
       headers: { "cache-control": "private, no-store" },
     },

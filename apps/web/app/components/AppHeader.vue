@@ -115,6 +115,10 @@ function isLinkActive(to: string) {
           label="Entrar"
           class="header__login"
         />
+        <AuthSessionLogoutButton
+          v-if="isProfessional || isAdmin"
+          class="header__logout"
+        />
         <button
           class="header__menu"
           type="button"
@@ -140,6 +144,10 @@ function isLinkActive(to: string) {
       >
         {{ link.label }}
       </NuxtLink>
+      <AuthSessionLogoutButton
+        v-if="isProfessional || isAdmin"
+        class="header__mobile-logout"
+      />
     </nav>
   </header>
 </template>
@@ -244,6 +252,9 @@ function isLinkActive(to: string) {
   &__mobile-nav {
     display: none;
   }
+  &__mobile-logout {
+    display: none;
+  }
 }
 
 @media (width <= 900px) {
@@ -252,7 +263,8 @@ function isLinkActive(to: string) {
       grid-template-columns: 1fr auto;
     }
     &__nav,
-    &__login {
+    &__login,
+    &__logout {
       display: none;
     }
     &__menu {
@@ -270,6 +282,12 @@ function isLinkActive(to: string) {
       color: inherit;
       font-weight: 700;
       text-decoration: none;
+    }
+    &__mobile-logout {
+      display: flex;
+      justify-content: flex-start;
+      margin-top: 8px;
+      border-color: currentcolor;
     }
   }
   .role-switcher span {

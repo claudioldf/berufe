@@ -127,6 +127,76 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/session:
+    get:
+      operationId: getCurrentSession
+      summary: Restore the current Rails application session
+      tags:
+        - Authentication
+      security:
+        - applicationSession: []
+      responses:
+        "200":
+          description: The active account/session summary and a newly rotated CSRF token.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentSessionResponse"
+        "401":
+          description: The cookie is missing, unknown, expired, revoked, or belongs to a suspended account.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: The application-session database operation is unavailable.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: endCurrentSession
+      summary: Revoke the current Rails application session
+      tags:
+        - Authentication
+      security:
+        - applicationSession: []
+          csrfToken: []
+      responses:
+        "204":
+          description: The current session was revoked and its cookie was cleared.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Set-Cookie:
+              $ref: "#/components/headers/ApplicationSessionCookie"
+        "401":
+          description: The cookie is missing, unknown, expired, revoked, or belongs to a suspended account.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: The application-session database operation is unavailable.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/status:
     get:
       operationId: getApiStatus
@@ -283,6 +353,76 @@ components:
               const: verified
         request_id:
           $ref: "#/components/schemas/RequestId"
+    CurrentSessionResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          $ref: "#/components/schemas/CurrentSessionData"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    CurrentSessionData:
+      type: object
+      additionalProperties: false
+      required:
+        - account
+        - session
+        - csrf_token
+      properties:
+        account:
+          $ref: "#/components/schemas/CurrentAccountSummary"
+        session:
+          $ref: "#/components/schemas/ApplicationSessionSummary"
+        csrf_token:
+          type: string
+          minLength: 40
+          maxLength: 100
+    CurrentAccountSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - role
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        role:
+          type: string
+          enum:
+            - professional
+            - admin
+        status:
+          type: string
+          const: active
+    ApplicationSessionSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - authentication_method
+        - authenticated_at
+        - mfa_authenticated
+        - idle_expires_at
+        - absolute_expires_at
+      properties:
+        authentication_method:
+          type: string
+          const: sms_otp
+        authenticated_at:
+          type: string
+          format: date-time
+        mfa_authenticated:
+          type: boolean
+        idle_expires_at:
+          type: string
+          format: date-time
+        absolute_expires_at:
+          type: string
+          format: date-time
     CatalogResponse:
       type: object
       additionalProperties: false

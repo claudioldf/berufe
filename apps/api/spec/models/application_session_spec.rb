@@ -65,6 +65,33 @@ RSpec.describe ApplicationSession, type: :model do
     expect(session).not_to be_active(now: now + 2.minutes)
   end
 
+  it "rotates CSRF material without storing the raw token" do
+    now = Time.zone.parse("2026-08-15 12:00:00 UTC")
+    account = create_account(role: "professional")
+    session, = described_class.issue!(user_account: account, now:)
+    previous_digest = session.csrf_token_digest
+
+    csrf_token = session.rotate_csrf_token!(now: now + 1.minute)
+
+    expect(csrf_token).to match(/\A[A-Za-z0-9_-]{43}\z/)
+    expect(session.reload.csrf_token_digest).to eq(
+      SessionSecurityDigest.call(purpose: "csrf_token", value: csrf_token)
+    )
+    expect(session.csrf_token_digest).not_to eq(previous_digest)
+    expect(session.csrf_token_digest).not_to eq(csrf_token)
+  end
+
+  it "revokes a session once and refuses to rotate an inactive session" do
+    now = Time.zone.parse("2026-08-15 12:00:00 UTC")
+    account = create_account(role: "professional")
+    session, = described_class.issue!(user_account: account, now:)
+
+    expect(session.revoke!(now: now + 1.minute)).to be(true)
+    expect(session.revoke!(now: now + 2.minutes)).to be(false)
+    expect(session.reload.revoked_at).to eq(now + 1.minute)
+    expect(session.rotate_csrf_token!(now: now + 2.minutes)).to be_nil
+  end
+
   private
 
   def create_account(role:, phone: "+5547999991111")

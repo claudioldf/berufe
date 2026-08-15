@@ -6,6 +6,7 @@ Rails.application.configure do
   else
     config.active_job.queue_adapter = :good_job
     config.good_job.execution_mode = ENV.fetch("GOOD_JOB_EXECUTION_MODE").to_sym
+    config.good_job.enable_cron = true
   end
 
   config.good_job.queues = ENV.fetch("GOOD_JOB_QUEUES", "default")
@@ -17,4 +18,11 @@ Rails.application.configure do
   config.good_job.cleanup_discarded_jobs = false
   config.good_job.dequeue_query_sort = :scheduled_at
   config.good_job.on_thread_error = ->(exception) { Rails.error.report(exception) }
+  config.good_job.cron = {
+    authentication_records_cleanup: {
+      cron: "17 * * * *",
+      class: "AuthenticationRecordsCleanupJob",
+      description: "Purge expired OTP and application-session records"
+    }
+  }
 end

@@ -14,4 +14,19 @@ class UserAccount < ApplicationRecord
   def admin?
     role == "admin"
   end
+
+  def active?
+    status == "active"
+  end
+
+  def revoke_all_sessions!(now: Time.current)
+    application_sessions.where(revoked_at: nil).update_all(revoked_at: now, updated_at: now)
+  end
+
+  def suspend!(now: Time.current)
+    with_lock do
+      update!(status: "suspended")
+      revoke_all_sessions!(now:)
+    end
+  end
 end
