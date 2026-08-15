@@ -177,7 +177,7 @@ Apply these rules whenever they are relevant to the story:
 
 ### S009 — Add continuous integration and build verification
 
-**Story:** As a team, we want every proposed change checked automatically so that broken builds do not reach `main`.
+**Story:** As a team, we want every proposed change checked automatically so that broken builds do not reach `master`.
 
 **Acceptance criteria:**
 

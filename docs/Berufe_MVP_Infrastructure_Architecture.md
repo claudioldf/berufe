@@ -437,7 +437,7 @@ Tests use synthetic data and never send real SMS or WhatsApp messages.
 
 Use one repository with `apps/web/`, `apps/api/`, and `apps/contracts/`. This keeps API and UI changes coordinated without merging their runtimes or creating a separate client package.
 
-- Pull requests merge into `main` after CI.
+- Pull requests merge into `master` after CI.
 - CI builds both Dockerfiles and runs the integration stack from the root Compose definition when a change crosses the API boundary.
 - Frontend scripts include `api:generate` (`openapi-typescript ../contracts/openapi.yaml -o app/services/api/schema.d.ts`) and `typecheck` (`nuxt typecheck`).
 - Frontend CI runs `pnpm api:generate`, `git diff --exit-code app/services/api/schema.d.ts`, ESLint, Prettier check, Nuxt typecheck, Vitest, and the Nuxt production build.
