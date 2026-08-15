@@ -82,17 +82,39 @@ function submit() {
       <UIcon name="i-lucide-map-pin" />
       <label>
         <span>Onde?</span>
-        <select v-model="neighborhood" name="neighborhood" autocomplete="off">
-          <option
-            v-for="item in neighborhoods"
-            :key="item.code"
-            :value="item.code"
-          >
-            {{ item.name }}
-          </option>
-        </select>
+        <UInputMenu
+          v-model="neighborhood"
+          class="service-search__input"
+          :items="neighborhoods"
+          value-key="code"
+          label-key="name"
+          :filter-fields="['name']"
+          open-on-focus
+          name="neighborhood"
+          type="search"
+          autocomplete="off"
+          placeholder="Ex.: Centro, América…"
+          :ui="{
+            base: 'p-0 border-0 ring-0 shadow-none bg-transparent focus-visible:outline-none focus-visible:ring-0',
+            content: 'min-w-[min(360px,calc(100vw-56px))]',
+          }"
+        >
+          <template #item="{ item }">
+            <span class="service-search__suggestion-icon">
+              <UIcon name="i-lucide-map-pin" aria-hidden="true" />
+            </span>
+            <span class="service-search__suggestion-text">
+              <strong>{{ item.name }}</strong>
+              <small>{{ item.city }} · {{ item.stateCode }}</small>
+            </span>
+            <UIcon
+              name="i-lucide-arrow-up-right"
+              class="service-search__suggestion-arrow"
+              aria-hidden="true"
+            />
+          </template>
+        </UInputMenu>
       </label>
-      <UIcon name="i-lucide-chevron-down" class="service-search__chevron" />
     </div>
 
     <UButton type="submit" color="primary" class="service-search__button">
@@ -139,8 +161,7 @@ function submit() {
     letter-spacing: 0;
     text-transform: uppercase;
   }
-  &__input,
-  & select {
+  &__input {
     width: 100%;
     min-width: 0;
     padding: 4px 0 0;
@@ -150,20 +171,10 @@ function submit() {
     font-size: 0.9rem;
     font-weight: 750;
   }
-  & select {
-    appearance: none;
-    cursor: pointer;
-  }
   &__divider {
     width: 1px;
     height: 38px;
     background: var(--line);
-  }
-  &__chevron {
-    position: absolute;
-    right: 13px;
-    color: var(--ink-soft) !important;
-    pointer-events: none;
   }
   &__button {
     align-self: stretch;
@@ -208,6 +219,17 @@ function submit() {
   }
   &--compact {
     box-shadow: var(--shadow-sm);
+  }
+
+  &__field {
+    :deep(input[type="search"]::-webkit-search-cancel-button) {
+      appearance: none;
+      -webkit-appearance: none;
+    }
+
+    :deep(button) {
+      top: calc(-50% - 20px / 2);
+    }
   }
 }
 
