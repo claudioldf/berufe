@@ -38,11 +38,11 @@ These are operating indicators, not a numeric trust score, lead marketplace, hir
 
 All timestamps are stored as UTC `timestamptz`. Reporting boundaries use `America/Sao_Paulo`, matching the product's initial Joinville market.
 
-| Period key | Start, inclusive | End, exclusive |
-|---|---|---|
-| `since_launch` | Start of the configured product launch date | Start of tomorrow in local time |
+| Period key     | Start, inclusive                             | End, exclusive                  |
+| -------------- | -------------------------------------------- | ------------------------------- |
+| `since_launch` | Start of the configured product launch date  | Start of tomorrow in local time |
 | `last_30_days` | Start of the local date 29 days before today | Start of tomorrow in local time |
-| `last_7_days` | Start of the local date 6 days before today | Start of tomorrow in local time |
+| `last_7_days`  | Start of the local date 6 days before today  | Start of tomorrow in local time |
 
 `since_launch` must use an explicit application setting such as `product_launch_date`. Do not silently substitute the oldest database row, because seeds, previews, and pre-launch tests would corrupt the result.
 
@@ -137,13 +137,13 @@ The report must use IDs and explicit associations. It must not infer identity fr
 
 The implementation stories already require these data points; migrations must make them explicit:
 
-| Data | Recommended implementation | Required by |
-|---|---|---|
-| A search produced at least one profile open | `search_events.profile_opened boolean NOT NULL DEFAULT false` | S034–S035 |
-| WhatsApp handoff source | `professional_daily_metrics.whatsapp_clicks_public_profile` and `whatsapp_clicks_search_result`, both non-negative | MVP S037 |
-| Invite claimant | `professional_invites.invitee_professional_id`, nullable until claimed | V2-011–V2-012 |
-| Invite-created relationship | `professional_invites.professional_relationship_id`, nullable and unique | V2-012 |
-| Immutable request correlation | `moderation_actions.request_id` | S023 |
+| Data                                        | Recommended implementation                                                                                         | Required by   |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ------------- |
+| A search produced at least one profile open | `search_events.profile_opened boolean NOT NULL DEFAULT false`                                                      | S034–S035     |
+| WhatsApp handoff source                     | `professional_daily_metrics.whatsapp_clicks_public_profile` and `whatsapp_clicks_search_result`, both non-negative | MVP S037      |
+| Invite claimant                             | `professional_invites.invitee_professional_id`, nullable until claimed                                             | V2-011–V2-012 |
+| Invite-created relationship                 | `professional_invites.professional_relationship_id`, nullable and unique                                           | V2-012        |
+| Immutable request correlation               | `moderation_actions.request_id`                                                                                    | S023          |
 
 Keep `professional_daily_metrics.whatsapp_clicks` for the Feature Plan total and enforce:
 
@@ -165,15 +165,15 @@ Add a privacy-safe daily aggregate rather than an external analytics provider:
 
 `professional_daily_activities`
 
-| Field | Type | Rule |
-|---|---|---|
-| `professional_id` | UUID FK | Required |
-| `activity_date` | local date | Required |
-| `profile_updates` | integer | Non-negative |
-| `evidence_creations` | integer | Non-negative; portfolio item or recommendation request created |
-| `relationship_interactions` | integer | Non-negative; initiated, accepted, or declined |
-| `quotes_created` | integer | Non-negative |
-| `created_at`, `updated_at` | timestamptz | Required |
+| Field                       | Type        | Rule                                                           |
+| --------------------------- | ----------- | -------------------------------------------------------------- |
+| `professional_id`           | UUID FK     | Required                                                       |
+| `activity_date`             | local date  | Required                                                       |
+| `profile_updates`           | integer     | Non-negative                                                   |
+| `evidence_creations`        | integer     | Non-negative; portfolio item or recommendation request created |
+| `relationship_interactions` | integer     | Non-negative; initiated, accepted, or declined                 |
+| `quotes_created`            | integer     | Non-negative                                                   |
+| `created_at`, `updated_at`  | timestamptz | Required                                                       |
 
 Unique index: `(professional_id, activity_date)`.
 
@@ -365,13 +365,13 @@ Do not show a percentage change when the previous count is zero. For `since_laun
 
 The measurable production funnel is cohort-based. Its denominator is professional profiles created during the selected period. Later stages show how many of that same cohort have reached each state by report generation time.
 
-| Stage | Source and association | Condition | Calculation |
-|---|---|---|---|
-| Cadastrados | `professional_profiles` → `user_accounts` | profile `created_at` in period; account role `professional`; account not a seed/test record | Distinct profile IDs |
-| Identidade verificada | cohort → `verification_requests` | at least one identity request currently `approved` | Distinct cohort profile IDs satisfying `EXISTS` |
-| Perfil enviado | cohort → moderation submission | first profile `submitted_at IS NOT NULL` | Distinct cohort profile IDs |
-| Publicados | cohort | `published_at IS NOT NULL` | Distinct cohort profile IDs |
-| Ativados | cohort → verification, portfolio, relationships | all R004 criteria currently true | Distinct cohort profile IDs |
+| Stage                 | Source and association                          | Condition                                                                                   | Calculation                                     |
+| --------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| Cadastrados           | `professional_profiles` → `user_accounts`       | profile `created_at` in period; account role `professional`; account not a seed/test record | Distinct profile IDs                            |
+| Identidade verificada | cohort → `verification_requests`                | at least one identity request currently `approved`                                          | Distinct cohort profile IDs satisfying `EXISTS` |
+| Perfil enviado        | cohort → moderation submission                  | first profile `submitted_at IS NOT NULL`                                                    | Distinct cohort profile IDs                     |
+| Publicados            | cohort                                          | `published_at IS NOT NULL`                                                                  | Distinct cohort profile IDs                     |
+| Ativados              | cohort → verification, portfolio, relationships | all R004 criteria currently true                                                            | Distinct cohort profile IDs                     |
 
 “Cadastrado” means a successful professional registration that created the one draft profile required by S016. It is not merely an OTP challenge attempt.
 
@@ -467,13 +467,13 @@ The initial goal is upward movement in every criterion and in their intersection
 
 All funnel stages use the same set of valid `search_events` created in the selected period.
 
-| Stage | Field/association | Condition | Calculation |
-|---|---|---|---|
-| Buscas realizadas | `search_events` | valid search scope | `COUNT(*)` |
-| Com algum resultado | `result_count` | `>= 1` | count and count / searches |
-| Com 3+ opções | `result_count` | `>= 3` | count and count / searches |
-| Com perfil aberto | `profile_opened` | `true` | count and count / searches |
-| Contato iniciado | `whatsapp_handoff_occurred` | `true` | count and count / searches |
+| Stage               | Field/association           | Condition          | Calculation                |
+| ------------------- | --------------------------- | ------------------ | -------------------------- |
+| Buscas realizadas   | `search_events`             | valid search scope | `COUNT(*)`                 |
+| Com algum resultado | `result_count`              | `>= 1`             | count and count / searches |
+| Com 3+ opções       | `result_count`              | `>= 3`             | count and count / searches |
+| Com perfil aberto   | `profile_opened`            | `true`             | count and count / searches |
+| Contato iniciado    | `whatsapp_handoff_occurred` | `true`             | count and count / searches |
 
 The three-option stage indicates choice depth; it must use profiles returned at search time, not the current number of professionals in that category.
 
@@ -630,12 +630,12 @@ A professional is active in the period when at least one daily row inside the lo
 
 Each bar counts distinct professionals who performed that type at least once, not the number of raw actions:
 
-| UI label | Aggregate field | Domain actions that increment it |
-|---|---|---|
-| Atualizou perfil | `profile_updates` | owner saves a material profile edit |
-| Criou evidência | `evidence_creations` | creates portfolio item or client recommendation request |
+| UI label             | Aggregate field             | Domain actions that increment it                                     |
+| -------------------- | --------------------------- | -------------------------------------------------------------------- |
+| Atualizou perfil     | `profile_updates`           | owner saves a material profile edit                                  |
+| Criou evidência      | `evidence_creations`        | creates portfolio item or client recommendation request              |
 | Interagiu com a rede | `relationship_interactions` | initiates a relationship/invite, accepts, or declines a relationship |
-| Criou orçamento | `quotes_created` | successfully creates a quote draft |
+| Criou orçamento      | `quotes_created`            | successfully creates a quote draft                                   |
 
 One professional can appear in multiple bars, so the bars must never be summed to derive active professionals.
 
@@ -833,13 +833,13 @@ The moderation widget combines a current queue snapshot with decision flows insi
 
 Use the exact same query object as the admin moderation queue to prevent reporting drift. It should union pending work from:
 
-| Target | Pending condition | Submission timestamp |
-|---|---|---|
-| Profile/profile revision/photo | pending-review revision/snapshot | immutable `submitted_at` |
-| Portfolio item | `moderation_status = 'pending'` | `submitted_at` or initial submission time |
-| Client recommendation | `moderation_status = 'pending'` | `submitted_at` |
-| Professional relationship | `status = 'accepted'` and no effective approve/reject decision | `responded_at` |
-| Verification request | `status = 'pending'` | `submitted_at` |
+| Target                         | Pending condition                                              | Submission timestamp                      |
+| ------------------------------ | -------------------------------------------------------------- | ----------------------------------------- |
+| Profile/profile revision/photo | pending-review revision/snapshot                               | immutable `submitted_at`                  |
+| Portfolio item                 | `moderation_status = 'pending'`                                | `submitted_at` or initial submission time |
+| Client recommendation          | `moderation_status = 'pending'`                                | `submitted_at`                            |
+| Professional relationship      | `status = 'accepted'` and no effective approve/reject decision | `responded_at`                            |
+| Verification request           | `status = 'pending'`                                           | `submitted_at`                            |
 
 Content reports are triage work but should be returned separately from evidence moderation unless the product intentionally includes them in the same queue.
 
@@ -988,23 +988,23 @@ Do not add Redis, a warehouse, event streaming, or an external analytics/search 
 
 ## 5. Metric-to-table reference matrix
 
-| Card/widget | Primary tables | Supporting tables | Metric type | Additional support |
-|---|---|---|---|---|
-| Publicados no período | `professional_profiles` | `user_accounts` | Flow | `published_at` |
-| Perfis ativados | `professional_profiles` | `verification_requests`, `portfolio_items`, `professional_relationships`, `moderation_actions`, `user_accounts` | Cohort outcome | `published_at`; effective relationship moderation query |
-| Buscas com resultado | `search_events` | `services` | Flow | none beyond S034 fields |
-| Contatos iniciados | `professional_daily_metrics` | — | Flow | source counters from MVP S037 |
-| Profissionais recorrentes | `professional_daily_activities` | `professional_profiles`, `user_accounts` | Flow/current eligible base | new daily activity aggregate |
-| Funil de profissionais | `professional_profiles` | `user_accounts`, `verification_requests`, evidence/relationship tables | Cohort outcome | first submission and publication timestamps; no founding invite source |
-| Qualidade da oferta | `professional_profiles` | verification, portfolio, relationship, moderation, accounts | Current stock | reusable public scopes |
-| Cobertura da jornada | `search_events` | `professional_daily_metrics` | Flow | `profile_opened`; optional search handoff boolean |
-| Demanda por serviço | `search_events` | `services`, `service_categories` | Flow | aggregate-only query |
-| Gaps de crescimento | `search_events` | services, professional services/areas/profiles/accounts | Flow + current supply | privacy threshold for unmatched terms |
-| Ações significativas | `professional_daily_activities` | domain tables for reconciliation | Flow | new daily activity aggregate |
-| Coortes W1/W4 | `professional_profiles` | `professional_daily_activities` | Cohort | `published_at` |
-| Relações profissionais | `professional_relationships` | moderation, profiles/accounts | Cohort outcome | response timestamp and public-relationship scope |
-| Orçamentos | `quotes` | `professional_daily_metrics` | Cohort outcome | existing timestamps/status |
-| Saúde da moderação | queue target tables, `moderation_actions` | `content_reports` | Current stock + flow | immutable/versioned submission time |
+| Card/widget               | Primary tables                            | Supporting tables                                                                                               | Metric type                | Additional support                                                     |
+| ------------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------- | -------------------------- | ---------------------------------------------------------------------- |
+| Publicados no período     | `professional_profiles`                   | `user_accounts`                                                                                                 | Flow                       | `published_at`                                                         |
+| Perfis ativados           | `professional_profiles`                   | `verification_requests`, `portfolio_items`, `professional_relationships`, `moderation_actions`, `user_accounts` | Cohort outcome             | `published_at`; effective relationship moderation query                |
+| Buscas com resultado      | `search_events`                           | `services`                                                                                                      | Flow                       | none beyond S034 fields                                                |
+| Contatos iniciados        | `professional_daily_metrics`              | —                                                                                                               | Flow                       | source counters from MVP S037                                          |
+| Profissionais recorrentes | `professional_daily_activities`           | `professional_profiles`, `user_accounts`                                                                        | Flow/current eligible base | new daily activity aggregate                                           |
+| Funil de profissionais    | `professional_profiles`                   | `user_accounts`, `verification_requests`, evidence/relationship tables                                          | Cohort outcome             | first submission and publication timestamps; no founding invite source |
+| Qualidade da oferta       | `professional_profiles`                   | verification, portfolio, relationship, moderation, accounts                                                     | Current stock              | reusable public scopes                                                 |
+| Cobertura da jornada      | `search_events`                           | `professional_daily_metrics`                                                                                    | Flow                       | `profile_opened`; optional search handoff boolean                      |
+| Demanda por serviço       | `search_events`                           | `services`, `service_categories`                                                                                | Flow                       | aggregate-only query                                                   |
+| Gaps de crescimento       | `search_events`                           | services, professional services/areas/profiles/accounts                                                         | Flow + current supply      | privacy threshold for unmatched terms                                  |
+| Ações significativas      | `professional_daily_activities`           | domain tables for reconciliation                                                                                | Flow                       | new daily activity aggregate                                           |
+| Coortes W1/W4             | `professional_profiles`                   | `professional_daily_activities`                                                                                 | Cohort                     | `published_at`                                                         |
+| Relações profissionais    | `professional_relationships`              | moderation, profiles/accounts                                                                                   | Cohort outcome             | response timestamp and public-relationship scope                       |
+| Orçamentos                | `quotes`                                  | `professional_daily_metrics`                                                                                    | Cohort outcome             | existing timestamps/status                                             |
+| Saúde da moderação        | queue target tables, `moderation_actions` | `content_reports`                                                                                               | Current stock + flow       | immutable/versioned submission time                                    |
 
 ## 6. Recommended delivery order
 

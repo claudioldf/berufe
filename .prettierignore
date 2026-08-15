@@ -1,0 +1,23 @@
+# Secrets and local runtime configuration
+.env
+.env.*
+
+# Dependencies and build output
+**/node_modules/
+**/.pnpm-store/
+**/.nuxt/
+**/.output/
+**/coverage/
+
+# Generated API types and package locks
+**/app/services/api/schema.d.ts
+**/Gemfile.lock
+**/package-lock.json
+**/pnpm-lock.yaml
+**/yarn.lock
+
+# Ruby and Rails-owned formats
+apps/api/**/*.rb
+apps/api/**/*.erb
+apps/api/**/*.yaml
+apps/api/**/*.yml
