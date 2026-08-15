@@ -224,7 +224,6 @@ function submit() {
   &__field {
     :deep(input[type="search"]::-webkit-search-cancel-button) {
       appearance: none;
-      -webkit-appearance: none;
     }
 
     :deep(button) {
