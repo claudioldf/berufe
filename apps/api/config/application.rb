@@ -36,6 +36,12 @@ module BerufeApi
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
 
+    config.time_zone = "UTC"
+    config.active_record.default_timezone = :utc
+    config.generators do |generators|
+      generators.orm :active_record, primary_key_type: :uuid
+    end
+
     # Only loads a smaller set of middleware suitable for API only apps.
     # Middleware like session, flash, cookies can be added back manually.
     # Skip views, helpers and assets when generating a new resource.

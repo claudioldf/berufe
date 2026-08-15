@@ -16,7 +16,7 @@ module Berufe
       "test" => ["fake", "local"]
     }.freeze
 
-    COMMON_REQUIRED = %w[DATABASE_URL WEB_ORIGIN API_PUBLIC_URL].freeze
+    COMMON_REQUIRED = %w[DATABASE_URL DB_POOL WEB_ORIGIN API_PUBLIC_URL].freeze
     FAKE_OTP_REQUIRED = %w[FAKE_SMS_OTP_CODE].freeze
     LOCAL_STORAGE_REQUIRED = %w[LOCAL_STORAGE_ROOT].freeze
     DEPLOYMENT_SECRET_REQUIRED = %w[SECRET_KEY_BASE].freeze
@@ -76,7 +76,7 @@ module Berufe
     end
 
     def self.required_variables(name, sms_otp_adapter, media_storage_adapter)
-      required = (name == "test") ? %w[TEST_DATABASE_URL] : COMMON_REQUIRED.dup
+      required = (name == "test") ? %w[TEST_DATABASE_URL DB_POOL] : COMMON_REQUIRED.dup
       required.concat(FAKE_OTP_REQUIRED) if sms_otp_adapter == "fake"
       required.concat(INFOBIP_REQUIRED) if sms_otp_adapter == "infobip"
       required.concat(LOCAL_STORAGE_REQUIRED) if media_storage_adapter == "local"

@@ -9,6 +9,7 @@ RSpec.describe Berufe::Environment do
       "SMS_OTP_ADAPTER" => "fake",
       "MEDIA_STORAGE_ADAPTER" => "local",
       "DATABASE_URL" => "postgresql://local.example/berufe",
+      "DB_POOL" => "5",
       "WEB_ORIGIN" => "http://localhost:3000",
       "API_PUBLIC_URL" => "http://localhost:3001",
       "FAKE_SMS_OTP_CODE" => "123456",
@@ -48,6 +49,7 @@ RSpec.describe Berufe::Environment do
   it "defaults Rails test processes to fake and local adapters" do
     environment = {
       "TEST_DATABASE_URL" => "postgresql://test.example/berufe",
+      "DB_POOL" => "5",
       "FAKE_SMS_OTP_CODE" => "123456",
       "LOCAL_STORAGE_ROOT" => "/tmp/berufe-test"
     }

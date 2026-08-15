@@ -30,3 +30,14 @@ Local, preview, and stable staging must keep `SMS_OTP_ADAPTER=fake` and receive 
 ## R2 boundary
 
 Stable staging, integration, and production use dedicated Cloudflare R2 credentials and the configured public/private buckets. Local and automated tests write under `LOCAL_STORAGE_ROOT`; they do not require R2 or an object-storage emulator.
+
+## Database lifecycle
+
+From the repository root, recreate development data and verify the isolated test database with:
+
+```bash
+docker compose run --rm api bin/rails db:drop db:create db:migrate db:seed
+docker compose run --rm -e RAILS_ENV=test -e BERUFE_ENV=test api bin/rails db:drop db:create db:migrate
+```
+
+Committed Rails migrations are the only supported way to change the schema. Application generators use UUID primary keys, Rails stores time in UTC, and PostgreSQL maps Rails `datetime` columns to `timestamptz`.
