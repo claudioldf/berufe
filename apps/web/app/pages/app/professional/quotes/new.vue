@@ -8,6 +8,8 @@ const { showToast } = useToast();
 const professional = (professionalsData as Professional[])[0]!;
 const quote = quotesData.default as Quote;
 
+definePageMeta({ layout: "workspace" });
+
 useSeoMeta({
   title: "Novo orçamento",
   robots: "noindex, nofollow",

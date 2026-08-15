@@ -1,9 +1,9 @@
 import { fileURLToPath } from "node:url";
-import professionalsData from "./data/professionals.json";
+const prototypeMode = process.env.NUXT_PUBLIC_PROTOTYPE_MODE === "true";
 
-const professionalRoutes = professionalsData.map(
-  (professional) => `/profissionais/${professional.slug}`,
-);
+if (process.env.BERUFE_ENV === "production" && prototypeMode) {
+  throw new Error("NUXT_PUBLIC_PROTOTYPE_MODE must be disabled in production");
+}
 
 export default defineNuxtConfig({
   compatibilityDate: "2026-08-01",
@@ -12,7 +12,7 @@ export default defineNuxtConfig({
     apiInternalBaseUrl: process.env.NUXT_API_INTERNAL_BASE_URL,
     public: {
       apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL,
-      prototypeMode: process.env.NUXT_PUBLIC_PROTOTYPE_MODE === "true",
+      prototypeMode,
     },
   },
   alias: {
@@ -132,25 +132,19 @@ export default defineNuxtConfig({
       ],
     },
   },
-  nitro: {
-    prerender: {
-      routes: [
-        "/",
-        "/encontrar",
-        "/app/professional/login",
-        "/privacidade",
-        "/termos-de-uso",
-        "/app/professional",
-        "/app/professional/onboarding",
-        "/app/professional/profile",
-        "/app/professional/quotes/new",
-        "/profissionais/marina-alves",
-        ...professionalRoutes,
-        "/orcamento/BERUFE-DEMO-1042",
-        "/app/admin",
-        "/app/admin/catalog",
-        "/app/admin/reports",
-      ],
+  routeRules: {
+    "/foundation": { prerender: false },
+    "/app/**": {
+      prerender: false,
+      headers: { "cache-control": "private, no-store" },
+    },
+    "/orcamento/**": {
+      prerender: false,
+      headers: {
+        "cache-control": "private, no-store",
+        "referrer-policy": "no-referrer",
+        "x-robots-tag": "noindex, nofollow",
+      },
     },
   },
 });

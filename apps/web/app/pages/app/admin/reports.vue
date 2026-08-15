@@ -1,4 +1,6 @@
 <script setup lang="ts">
+definePageMeta({ layout: "workspace" });
+
 useSeoMeta({
   title: "Visão do produto",
   robots: "noindex, nofollow",
