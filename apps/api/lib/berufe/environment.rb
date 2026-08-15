@@ -16,7 +16,17 @@ module Berufe
       "test" => ["fake", "local"]
     }.freeze
 
-    COMMON_REQUIRED = %w[DATABASE_URL DB_POOL WEB_ORIGIN API_PUBLIC_URL].freeze
+    COMMON_REQUIRED = %w[
+      DATABASE_URL
+      DB_POOL
+      RAILS_MAX_THREADS
+      GOOD_JOB_EXECUTION_MODE
+      GOOD_JOB_MAX_THREADS
+      GOOD_JOB_QUEUES
+      GOOD_JOB_PROBE_PORT
+      WEB_ORIGIN
+      API_PUBLIC_URL
+    ].freeze
     FAKE_OTP_REQUIRED = %w[FAKE_SMS_OTP_CODE].freeze
     LOCAL_STORAGE_REQUIRED = %w[LOCAL_STORAGE_ROOT].freeze
     DEPLOYMENT_SECRET_REQUIRED = %w[SECRET_KEY_BASE].freeze
@@ -69,6 +79,7 @@ module Berufe
       errors << "missing required variables: #{missing.sort.join(", ")}" if missing.any?
 
       validate_credential_scope(name, values, errors)
+      validate_job_configuration(name, values, errors)
 
       raise InvalidConfiguration, "Invalid Berufe configuration: #{errors.join("; ")}" if errors.any?
 
@@ -98,5 +109,21 @@ module Berufe
       end
     end
     private_class_method :validate_credential_scope
+
+    def self.validate_job_configuration(name, values, errors)
+      return if name == "test"
+
+      expected = {
+        "DB_POOL" => "5",
+        "RAILS_MAX_THREADS" => "5",
+        "GOOD_JOB_EXECUTION_MODE" => "external",
+        "GOOD_JOB_MAX_THREADS" => "2",
+        "GOOD_JOB_QUEUES" => "default"
+      }
+      expected.each do |key, value|
+        errors << "#{key} must be #{value}" unless values[key] == value
+      end
+    end
+    private_class_method :validate_job_configuration
   end
 end

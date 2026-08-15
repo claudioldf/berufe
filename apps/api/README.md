@@ -41,3 +41,26 @@ docker compose run --rm -e RAILS_ENV=test -e BERUFE_ENV=test api bin/rails db:dr
 ```
 
 Committed Rails migrations are the only supported way to change the schema. Application generators use UUID primary keys, Rails stores time in UTC, and PostgreSQL maps Rails `datetime` columns to `timestamptz`.
+
+## GoodJob worker
+
+The API enqueues with GoodJob in `external` mode and the dedicated worker processes one `default` queue. That queue is reserved for image sanitization/processing, expired counter/token/file/session cleanup, aggregate maintenance, and nonurgent provider reconciliation. Interactive OTP initiation is synchronous and must never be enqueued.
+
+The database connection budget is:
+
+```text
+(API replicas × API pool) + (worker replicas × worker pool) + migration/admin allowance
+```
+
+With one API and one worker, reserve 15 connections: five for Rails, five for GoodJob, and five for migrations/administration. Select a managed PostgreSQL plan with at least 20 available connections and recalculate before adding replicas or threads.
+
+The worker exposes `:7001/status`, `:7001/status/started`, and `:7001/status/connected`; Compose requires both started and connected status. The GoodJob dashboard is mounted at `/admin/jobs` only when the request contains an active Rails-owned administrator application session with current MFA. It intentionally returns not found until the access stories supply that session.
+
+Every job carries a validated web request ID or a generated correlation UUID. Job implementations must be retry-safe: check current state, use database constraints/transactions or idempotent writes, and treat already-completed work as success. Never place OTPs, phone numbers, raw tokens, signed URLs, customer details, or file contents in job arguments or logs.
+
+The harmless foundation probe can validate normal processing and one retry:
+
+```bash
+docker compose exec api bin/rails runner 'FoundationProbeJob.perform_later(probe_id: SecureRandom.uuid)'
+docker compose exec api bin/rails runner 'FoundationProbeJob.perform_later(probe_id: SecureRandom.uuid, fail_once: true)'
+```

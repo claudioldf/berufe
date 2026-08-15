@@ -10,6 +10,11 @@ RSpec.describe Berufe::Environment do
       "MEDIA_STORAGE_ADAPTER" => "local",
       "DATABASE_URL" => "postgresql://local.example/berufe",
       "DB_POOL" => "5",
+      "RAILS_MAX_THREADS" => "5",
+      "GOOD_JOB_EXECUTION_MODE" => "external",
+      "GOOD_JOB_MAX_THREADS" => "2",
+      "GOOD_JOB_QUEUES" => "default",
+      "GOOD_JOB_PROBE_PORT" => "7001",
       "WEB_ORIGIN" => "http://localhost:3000",
       "API_PUBLIC_URL" => "http://localhost:3001",
       "FAKE_SMS_OTP_CODE" => "123456",
@@ -66,6 +71,13 @@ RSpec.describe Berufe::Environment do
 
     expect { described_class.load!(environment:) }
       .to raise_error(described_class::InvalidConfiguration, /SMS_OTP_ADAPTER must be fake for local/)
+  end
+
+  it "keeps the foundation on the documented database and worker budgets" do
+    environment = local_environment.merge("GOOD_JOB_QUEUES" => "default,mailers", "GOOD_JOB_MAX_THREADS" => "4")
+
+    expect { described_class.load!(environment:) }
+      .to raise_error(described_class::InvalidConfiguration, /GOOD_JOB_MAX_THREADS must be 2.*GOOD_JOB_QUEUES must be default/)
   end
 
   it "requires live purpose-specific adapters and credentials in production" do
