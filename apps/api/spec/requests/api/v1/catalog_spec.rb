@@ -104,6 +104,50 @@ RSpec.describe "Public catalog", type: :request, openapi: true do
     assert_api_conform(status: 200)
   end
 
+  it "removes catalog content from public responses immediately after deactivation" do
+    category = ServiceCategory.create!(
+      name: "Instalações",
+      slug: "instalacoes",
+      icon: "i-lucide-wrench",
+      is_active: true,
+      sort_order: 0
+    )
+    service = Service.create!(
+      category:,
+      name: "Eletricista",
+      slug: "eletricista",
+      icon: "i-lucide-zap",
+      description: "Instalações elétricas.",
+      aliases: [],
+      is_active: true,
+      sort_order: 0
+    )
+    neighborhood = Neighborhood.create!(
+      code: "america",
+      state_code: "SC",
+      city_code: "Joinville",
+      name: "América",
+      is_active: true,
+      sort_order: 0
+    )
+
+    get "/api/v1/catalog", headers: {"X-Request-Id" => "catalog-before-hide"}
+    expect(response.parsed_body.dig("data", "services").pluck("id")).to contain_exactly(service.id)
+    expect(response.parsed_body.dig("data", "neighborhoods").pluck("code")).to contain_exactly(neighborhood.code)
+
+    category.update!(is_active: false)
+    neighborhood.update!(is_active: false)
+    get "/api/v1/catalog", headers: {"X-Request-Id" => "catalog-after-hide"}
+
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body.fetch("data")).to eq(
+      "categories" => [],
+      "services" => [],
+      "neighborhoods" => []
+    )
+    assert_api_conform(status: 200)
+  end
+
   it "returns the shared safe error when the catalog query is unavailable" do
     allow(ServiceCategory).to receive(:active).and_raise(ActiveRecord::ConnectionNotEstablished)
 

@@ -48,6 +48,50 @@ RSpec.describe "Application sessions", type: :request, openapi: true do
     expect(response.parsed_body.dig("data", "csrf_token")).not_to eq(csrf_token)
   end
 
+  it "restores an authorized admin session without exposing private account fields" do
+    now = Time.zone.parse("2026-08-15 12:00:00 UTC")
+    travel_to(now)
+    account = UserAccount.create!(phone_e164: "+5547999992222", role: "admin", status: "active")
+    _application_session, session_token = ApplicationSession.issue!(
+      user_account: account,
+      now:,
+      mfa_authenticated_at: now
+    )
+
+    get_current_session(session_token:, request_id: "admin-session-current")
+
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body.dig("data", "account")).to eq(
+      "id" => account.id,
+      "role" => "admin",
+      "status" => "active"
+    )
+    expect(response.parsed_body.dig("data", "session", "mfa_authenticated")).to be(true)
+    expect(response.body).not_to include(account.phone_e164)
+    assert_api_conform(status: 200)
+  end
+
+  it "returns a generic forbidden response when record authorization denies access" do
+    account = create_account
+    application_session, session_token = ApplicationSession.issue!(user_account: account)
+    previous_csrf_digest = application_session.csrf_token_digest
+    allow_any_instance_of(ApplicationSessionPolicy).to receive(:show?).and_return(false)
+
+    get_current_session(session_token:, request_id: "session-policy-denied")
+
+    expect(response).to have_http_status(:forbidden)
+    expect(response.parsed_body).to eq(
+      "error" => {
+        "code" => "authorization_denied",
+        "message" => "Você não tem permissão para realizar esta ação.",
+        "request_id" => "session-policy-denied"
+      }
+    )
+    expect(response.body).not_to include(account.phone_e164)
+    expect(application_session.reload.csrf_token_digest).to eq(previous_csrf_digest)
+    assert_api_conform(status: 403)
+  end
+
   it "rejects missing, unknown, idle-expired, and absolute-expired sessions generically" do
     now = Time.zone.parse("2026-08-15 12:00:00 UTC")
     travel_to(now)

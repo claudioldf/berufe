@@ -3,8 +3,18 @@
 module Api
   module V1
     class BaseController < ApplicationController
+      include Pundit::Authorization
+
       rescue_from ActiveRecord::RecordNotFound do
         render_api_error(code: "not_found", message: "Recurso não encontrado.", status: :not_found)
+      end
+
+      rescue_from Pundit::NotAuthorizedError do
+        render_api_error(
+          code: "authorization_denied",
+          message: "Você não tem permissão para realizar esta ação.",
+          status: :forbidden
+        )
       end
 
       rescue_from ActionController::ParameterMissing do |exception|
@@ -17,6 +27,10 @@ module Api
       end
 
       private
+
+      def pundit_user
+        Current.user_account
+      end
 
       def authenticate_application_session!
         application_session = ApplicationSessionAuthenticator.new.call(

@@ -1,6 +1,7 @@
 import { mountSuspended } from "@nuxt/test-utils/runtime";
 import { defineComponent } from "vue";
 import AppHeader from "~/components/AppHeader.vue";
+import type { CurrentAccount } from "~/services/api/application-session";
 
 const NuxtLinkStub = defineComponent({
   props: { to: { type: String, required: true } },
@@ -17,8 +18,17 @@ async function mountHeader(route: string) {
     (route.startsWith("/app/professional") &&
       route !== "/app/professional/login")
   ) {
+    const role = route.startsWith("/app/admin") ? "admin" : "professional";
     useState("application-session-status", () => "authenticated").value =
       "authenticated";
+    useState<CurrentAccount | null>(
+      "application-session-account",
+      () => null,
+    ).value = {
+      id: "23a94f5e-1429-4ec7-bbc4-a6f805d5182d",
+      role,
+      status: "active",
+    };
   }
 
   return mountSuspended(AppHeader, {

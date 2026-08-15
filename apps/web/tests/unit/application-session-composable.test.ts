@@ -1,6 +1,7 @@
 import { clearNuxtState } from "#app";
 import type { RestoredApplicationSession } from "~/services/api/application-session";
 import { useApplicationSession } from "~/composables/useApplicationSession";
+import { useAppRole } from "~/composables/useAppRole";
 
 const restoredSession: RestoredApplicationSession = {
   account: {
@@ -24,6 +25,7 @@ beforeEach(() => {
 
 describe("application-session state", () => {
   it("deduplicates restoration and keeps the CSRF token outside reactive state", async () => {
+    const { role } = useAppRole();
     let resolveRead:
       ((value: RestoredApplicationSession | null) => void) | undefined;
     const read = vi.fn(
@@ -46,6 +48,7 @@ describe("application-session state", () => {
     expect(workflow.status.value).toBe("authenticated");
     expect(workflow.account.value).toEqual(restoredSession.account);
     expect(workflow.session.value).toEqual(restoredSession.session);
+    expect(role.value).toBe("professional");
     expect(setCsrfToken).toHaveBeenCalledWith(restoredSession.csrfToken);
     expect(JSON.stringify(workflow.account.value)).not.toContain(
       restoredSession.csrfToken,
@@ -56,6 +59,8 @@ describe("application-session state", () => {
   });
 
   it("caches an anonymous result and clears prior in-memory authorization", async () => {
+    const { role, setRole } = useAppRole();
+    setRole("admin");
     const read = vi.fn().mockResolvedValue(null);
     const setCsrfToken = vi.fn();
     const workflow = useApplicationSession({ read, setCsrfToken });
@@ -67,6 +72,7 @@ describe("application-session state", () => {
     expect(workflow.status.value).toBe("anonymous");
     expect(workflow.account.value).toBeNull();
     expect(workflow.session.value).toBeNull();
+    expect(role.value).toBe("visitor");
     expect(setCsrfToken).toHaveBeenCalledWith(undefined);
   });
 
@@ -89,6 +95,7 @@ describe("application-session state", () => {
   });
 
   it("ends one session once, then clears account, session, and CSRF state", async () => {
+    const { role } = useAppRole();
     let resolveEnd: (() => void) | undefined;
     const end = vi.fn(
       () =>
@@ -115,6 +122,7 @@ describe("application-session state", () => {
     expect(workflow.status.value).toBe("anonymous");
     expect(workflow.account.value).toBeNull();
     expect(workflow.session.value).toBeNull();
+    expect(role.value).toBe("visitor");
     expect(setCsrfToken).toHaveBeenLastCalledWith(undefined);
   });
 

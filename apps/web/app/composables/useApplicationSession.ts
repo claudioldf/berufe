@@ -21,6 +21,7 @@ let restoration: Promise<boolean> | undefined;
 export function useApplicationSession(
   dependencies: ApplicationSessionDependencies = {},
 ) {
+  const { setRole } = useAppRole();
   const account = useState<CurrentAccount | null>(
     "application-session-account",
     () => null,
@@ -47,6 +48,7 @@ export function useApplicationSession(
     account.value = null;
     session.value = null;
     status.value = nextStatus;
+    setRole("visitor");
     updateCsrfToken(undefined);
   }
 
@@ -71,6 +73,7 @@ export function useApplicationSession(
         account.value = restored.account;
         session.value = restored.session;
         status.value = "authenticated";
+        setRole(restored.account.role);
         updateCsrfToken(restored.csrfToken);
         return true;
       } catch (error) {
