@@ -6,6 +6,7 @@ import createClient, {
 import type { paths } from "./schema";
 
 const requestIdPattern = /^[A-Za-z0-9._-]{1,100}$/;
+const csrfSafeMethods = new Set(["GET", "HEAD", "OPTIONS"]);
 let browserCsrfToken: string | undefined;
 
 export type BerufeApiClient = Client<paths>;
@@ -34,6 +35,9 @@ export function createApiClient(options: ApiClientOptions): BerufeApiClient {
     credentials: "include",
     fetch: options.fetch,
   });
+  const readCsrfToken =
+    options.csrfToken ??
+    (() => (import.meta.client ? browserCsrfToken : undefined));
   const requestMiddleware: Middleware = {
     onRequest({ request }) {
       const suppliedRequestId = options.requestId?.();
@@ -43,8 +47,8 @@ export function createApiClient(options: ApiClientOptions): BerufeApiClient {
           : globalThis.crypto.randomUUID();
       request.headers.set("X-Request-Id", requestId);
 
-      const csrfToken = options.csrfToken?.();
-      if (csrfToken) {
+      const csrfToken = readCsrfToken();
+      if (csrfToken && !csrfSafeMethods.has(request.method)) {
         request.headers.set("X-CSRF-Token", csrfToken);
       }
 
@@ -66,7 +70,6 @@ export function useApiClient(): BerufeApiClient {
     baseUrl: import.meta.server
       ? runtimeConfig.apiInternalBaseUrl
       : runtimeConfig.public.apiBaseUrl,
-    csrfToken: () => (import.meta.client ? browserCsrfToken : undefined),
     requestId: () => inboundRequestId ?? undefined,
   });
 }

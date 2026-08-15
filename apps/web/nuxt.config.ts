@@ -1,5 +1,10 @@
 import { fileURLToPath } from "node:url";
 const prototypeMode = process.env.NUXT_PUBLIC_PROTOTYPE_MODE === "true";
+const browserSecurityHeaders = {
+  "x-content-type-options": "nosniff",
+  "x-frame-options": "DENY",
+  "referrer-policy": "strict-origin-when-cross-origin",
+};
 
 if (process.env.BERUFE_ENV === "production" && prototypeMode) {
   throw new Error("NUXT_PUBLIC_PROTOTYPE_MODE must be disabled in production");
@@ -139,15 +144,20 @@ export default defineNuxtConfig({
     },
   },
   routeRules: {
+    "/**": { headers: browserSecurityHeaders },
     "/foundation": { prerender: false },
     "/app/**": {
       ssr: false,
       prerender: false,
-      headers: { "cache-control": "private, no-store" },
+      headers: {
+        ...browserSecurityHeaders,
+        "cache-control": "private, no-store",
+      },
     },
     "/orcamento/**": {
       prerender: false,
       headers: {
+        ...browserSecurityHeaders,
         "cache-control": "private, no-store",
         "referrer-policy": "no-referrer",
         "x-robots-tag": "noindex, nofollow",

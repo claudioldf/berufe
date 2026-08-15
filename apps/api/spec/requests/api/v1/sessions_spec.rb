@@ -84,7 +84,14 @@ RSpec.describe "Application sessions", type: :request, openapi: true do
     first_session, first_token = ApplicationSession.issue!(user_account: account, now:)
     second_session, second_token = ApplicationSession.issue!(user_account: account, now: now + 1.minute)
 
-    delete_current_session(session_token: first_token, request_id: "session-logout")
+    get_current_session(session_token: first_token, request_id: "session-before-logout")
+    csrf_token = response.parsed_body.dig("data", "csrf_token")
+    delete_current_session(
+      session_token: first_token,
+      csrf_token:,
+      origin: ENV.fetch("WEB_ORIGIN"),
+      request_id: "session-logout"
+    )
 
     expect(response).to have_http_status(:no_content)
     expect(response.body).to be_empty
@@ -98,6 +105,41 @@ RSpec.describe "Application sessions", type: :request, openapi: true do
 
     get_current_session(session_token: second_token, request_id: "session-still-active")
     expect(response).to have_http_status(:ok)
+  end
+
+  it "rejects missing, invalid, malformed, preview, and cross-site mutation credentials" do
+    now = Time.zone.parse("2026-08-15 12:00:00 UTC")
+    account = create_account
+    application_session, session_token = ApplicationSession.issue!(user_account: account, now:)
+    get_current_session(session_token:, request_id: "session-before-rejected-logout")
+    csrf_token = response.parsed_body.dig("data", "csrf_token")
+    allowed_origin = ENV.fetch("WEB_ORIGIN")
+    attempts = [
+      {origin: allowed_origin, csrf_token: nil},
+      {origin: allowed_origin, csrf_token: "invalid-csrf-token"},
+      {origin: nil, csrf_token:},
+      {origin: "#{allowed_origin}/", csrf_token:},
+      {origin: "#{allowed_origin}, https://untrusted.example", csrf_token:},
+      {origin: "null", csrf_token:},
+      {origin: "https://berufe-git-feature-preview.vercel.app", csrf_token:},
+      {origin: "https://untrusted.example", csrf_token:}
+    ]
+
+    attempts.each_with_index do |attempt, index|
+      delete_current_session(
+        session_token:,
+        request_id: "session-forbidden-#{index}",
+        **attempt
+      )
+
+      expect(response).to have_http_status(:forbidden)
+      expect(response.parsed_body.dig("error", "code")).to eq("request_not_allowed")
+      expect(response.parsed_body.dig("error", "message")).to eq("Não foi possível validar esta solicitação.")
+      expect(response.headers["Access-Control-Allow-Origin"]).to be_nil unless attempt[:origin] == allowed_origin
+      expect(response.headers["Set-Cookie"]).to be_nil
+      expect(application_session.reload.revoked_at).to be_nil
+    end
+    assert_api_conform(status: 403)
   end
 
   it "clears stale cookies when logout no longer has an active session" do
@@ -193,7 +235,10 @@ RSpec.describe "Application sessions", type: :request, openapi: true do
     get "/api/v1/session", headers: session_headers(session_token:, request_id:)
   end
 
-  def delete_current_session(session_token:, request_id:)
-    delete "/api/v1/session", headers: session_headers(session_token:, request_id:)
+  def delete_current_session(session_token:, request_id:, csrf_token: nil, origin: nil)
+    headers = session_headers(session_token:, request_id:)
+    headers["X-CSRF-Token"] = csrf_token if csrf_token
+    headers["Origin"] = origin if origin
+    delete "/api/v1/session", headers:
   end
 end

@@ -28,6 +28,16 @@ module Api
         Current.user_account = application_session.user_account
       end
 
+      def verify_csrf_and_origin!
+        return if valid_request_origin? && valid_csrf_token?
+
+        render_api_error(
+          code: "request_not_allowed",
+          message: "Não foi possível validar esta solicitação.",
+          status: :forbidden
+        )
+      end
+
       def render_authentication_required
         clear_application_session_cookie
         render_api_error(
@@ -44,6 +54,21 @@ module Api
           httponly: true,
           same_site: :lax,
           path: "/"
+        )
+      end
+
+      def valid_request_origin?
+        request.headers["Origin"] == ENV.fetch("WEB_ORIGIN")
+      end
+
+      def valid_csrf_token?
+        supplied_token = request.headers["X-CSRF-Token"].to_s
+        return false if supplied_token.empty?
+
+        supplied_digest = SessionSecurityDigest.call(purpose: "csrf_token", value: supplied_token)
+        ActiveSupport::SecurityUtils.secure_compare(
+          supplied_digest,
+          Current.application_session.csrf_token_digest
         )
       end
 

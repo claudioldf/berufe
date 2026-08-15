@@ -5,6 +5,7 @@ module Api
     class SessionsController < BaseController
       before_action :prevent_caching
       before_action :authenticate_application_session!
+      before_action :verify_csrf_and_origin!, only: :destroy
 
       rescue_from ActiveRecord::ActiveRecordError do
         render_api_error(
