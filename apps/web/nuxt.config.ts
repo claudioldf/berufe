@@ -8,6 +8,13 @@ const professionalRoutes = professionalsData.map(
 export default defineNuxtConfig({
   compatibilityDate: "2026-08-01",
   devtools: { enabled: true },
+  runtimeConfig: {
+    apiInternalBaseUrl: process.env.NUXT_API_INTERNAL_BASE_URL,
+    public: {
+      apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL,
+      prototypeMode: process.env.NUXT_PUBLIC_PROTOTYPE_MODE === "true",
+    },
+  },
   alias: {
     "@app": fileURLToPath(new URL("./app", import.meta.url)),
     "@components": fileURLToPath(new URL("./app/components", import.meta.url)),
