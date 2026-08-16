@@ -227,7 +227,7 @@ The four-service source-mounted setup was validated on 2026-08-15 on macOS 26 ar
 
 Keep Dockerfiles inside `apps/web/` and `apps/api/`, but keep orchestration at the repository root. There is one Node application, so use pnpm without a workspace and keep generated API types inside the frontend. Commit `.env.example` with names and safe defaults only; never commit real credentials.
 
-Local development uses a local-disk storage adapter and a fake SMS-OTP adapter by default. R2 and live Infobip calls are opt-in integration checks, not requirements for starting the stack. Do not add Redis, MinIO, a mail catcher, or other support containers until an implemented feature needs them.
+Local development uses a local-disk storage adapter and a dedicated non-production Infobip profile with an explicit recipient allowlist. Automated tests alone use the fake SMS-OTP adapter. R2 remains unnecessary for the local stack. Do not add Redis, MinIO, a mail catcher, or other support containers until an implemented feature needs them.
 
 Docker Compose standardizes local development and CI integration runs; it is not the MVP production orchestrator. Production keeps the Nuxt and Rails deployments separate on Vercel and Render.
 
@@ -235,7 +235,7 @@ Docker Compose standardizes local development and CI integration runs; it is not
 
 ### Professional login
 
-Use Infobip's 2FA API for the narrow purpose of starting and verifying Brazilian SMS OTP challenges. Before production onboarding, complete the required Brazilian sender registration/Letter of Authorization process, provision a dedicated 2FA application and message template, record cost/delivery limits, and approve the privacy/data-processing terms. Keep the integration behind a purpose-specific `InfobipOtpClient` so tests and non-production environments can use a fake without turning authentication into a generic provider framework.
+Use Infobip's 2FA API for the narrow purpose of starting and verifying Brazilian SMS OTP challenges. Before production onboarding, complete the required Brazilian sender registration/Letter of Authorization process, provision a dedicated 2FA application and message template, record cost/delivery limits, and approve the privacy/data-processing terms. Keep the integration behind a purpose-specific `InfobipOtpClient`; automated tests use the fake implementation without turning authentication into a generic provider framework.
 
 1. The user enters a Brazilian phone number.
 2. Rails normalizes the number to E.164 and checks the OTP cooldown and daily allowance.
@@ -265,7 +265,7 @@ To control SMS abuse without Rack::Attack or Turnstile, Rails enforces a short r
 
 Use `www.berufe...` and `api.berufe...` under the same parent domain. Requests include credentials, CORS uses an exact origin allowlist, and state-changing requests require the session-bound CSRF token plus origin validation. Never store auth or CSRF tokens in `localStorage`.
 
-Production uses a dedicated Infobip API key, 2FA application, and message template. Stable staging, local development, and Vercel pull-request previews use the fake adapter and never receive production credentials. An explicit integration environment may use a separate restricted Infobip configuration and allowlisted synthetic test numbers.
+Production uses a dedicated Infobip API key, 2FA application, and message template. Stable staging, local development, Vercel pull-request previews, and the integration environment use a separate restricted Infobip configuration and may send only to allowlisted test numbers. Automated tests alone select the fake adapter.
 
 ### Admin access
 
@@ -446,7 +446,7 @@ Use one repository with `apps/web/`, `apps/api/`, and `apps/contracts/`. This ke
 - Rails request tests use `openapi_first` against `apps/contracts/openapi.yaml`; important operations validate request and response variants, and contract coverage fails for unintended omissions.
 - A small repository formatting check may run Prettier over Markdown, JSON, and compatible YAML; it must exclude Ruby, generated files such as `schema.d.ts`, lockfiles, and Rails YAML/ERB files that Prettier cannot safely parse.
 - Playwright runs for release-critical changes and before production release.
-- A stable staging Nuxt deployment uses a stable staging Rails API/worker, PostgreSQL database, R2 configuration, and fake SMS-OTP adapter with synthetic data.
+- A stable staging Nuxt deployment uses a stable staging Rails API/worker, PostgreSQL database, R2 configuration, and a restricted Infobip profile with allowlisted test numbers.
 - Vercel pull-request previews are mock-only: they receive no staging API URL or credentials and never mutate the shared staging environment.
 - Production deploys only after checks pass; run Rails migrations as an explicit release step before dependent code.
 

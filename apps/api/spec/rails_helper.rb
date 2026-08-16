@@ -2,6 +2,8 @@
 
 ENV["RAILS_ENV"] = "test"
 ENV["BERUFE_ENV"] = "test"
+ENV["SMS_OTP_ADAPTER"] = "fake"
+ENV["MEDIA_STORAGE_ADAPTER"] = "local"
 ENV["DATABASE_URL"] = ENV.fetch("TEST_DATABASE_URL")
 
 require_relative "../config/environment"

@@ -85,9 +85,9 @@ Apply these rules whenever they are relevant to the story:
 
 - `.env.example` lists required variable names and safe development defaults without secrets.
 - Rails validates required environment variables at boot for the selected environment.
-- Development uses a local-disk storage adapter and a fake SMS-OTP adapter by default.
+- Development uses a local-disk storage adapter and a restricted Infobip profile with allowlisted test numbers; automated tests alone use the fake SMS-OTP adapter.
 - Production SMS OTP uses Infobip's 2FA API through a purpose-specific adapter. The integration documents application/message-template identifiers, Brazilian sender-registration prerequisites, API-key ownership, delivery limits, challenge verification, and provider-failure behavior.
-- Production credentials are dedicated to Berufe. Stable staging, local development, and pull-request previews use the fake adapter by default; any explicit integration check uses a separate restricted Infobip application/profile and allowlisted test numbers, never production credentials or real-user data.
+- Production credentials are dedicated to Berufe. Stable staging, local development, pull-request previews, and integration use a separate restricted Infobip application/profile and allowlisted test numbers, never production credentials or real-user data.
 - Infobip is not Berufe's account, session, authorization, or administrator-password provider.
 - Production-only credentials remain server-side and cannot enter the Nuxt client bundle.
 - Local, pull-request preview, stable staging, and production configuration are clearly separated.
@@ -217,7 +217,7 @@ Apply these rules whenever they are relevant to the story:
 
 - The login page accepts and normalizes Brazilian numbers to E.164.
 - Rails applies a resend cooldown and conservative daily allowances by phone and IP using short-lived PostgreSQL digests/counters.
-- Rails synchronously starts the challenge through a small Infobip 2FA adapter; local, test, stable staging, and pull-request preview environments use a fake implementation by default. No OTP-delivery job is enqueued.
+- Rails synchronously starts the challenge through a small Infobip 2FA adapter in every runtime environment; automated tests use a fake implementation. Non-production runtime environments restrict delivery to an explicit allowlist. No OTP-delivery job is enqueued.
 - Infobip owns the OTP value and delivery result. Rails stores a short-lived `otp_challenge` that binds an encrypted normalized phone and encrypted Infobip challenge ID to a separate high-entropy browser token stored only as a digest; it also stores short-lived abuse-control digests/counters.
 - The API contract defines accepted, invalid-phone, rate-limited, provider-unavailable, and delivery-rejected outcomes. Rate-limit responses include `Retry-After` and every failure uses the shared safe error envelope.
 - Responses do not reveal whether an account exists and do not log phone numbers, OTPs, or request bodies.
@@ -833,7 +833,7 @@ The MVP report includes only implemented launch domains: professional supply and
 
 - Nuxt deploys to Vercel and Rails plus the GoodJob worker deploy from the same backend image to Render.
 - Render PostgreSQL is the only production application database; Nuxt cannot connect to it directly.
-- One stable staging Nuxt deployment connects to one stable staging Rails API/worker, PostgreSQL database, R2 configuration, and fake SMS-OTP adapter containing synthetic data only.
+- One stable staging Nuxt deployment connects to one stable staging Rails API/worker, PostgreSQL database, R2 configuration, and a restricted Infobip profile limited to allowlisted test numbers.
 - Vercel pull-request previews are mock-only and receive neither a staging API URL nor staging credentials. Credentialed CORS excludes preview origins and contains no wildcard.
 - Production Infobip credentials are absent from stable staging and previews. Any separately approved integration environment uses a restricted Infobip application/message profile and allowlisted test numbers.
 - The Nuxt SSR execution location and Rails/PostgreSQL region are recorded. Rails and PostgreSQL run together in the closest practical Render region.

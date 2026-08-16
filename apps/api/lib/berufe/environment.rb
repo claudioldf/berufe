@@ -8,13 +8,15 @@ module Berufe
 
     ENVIRONMENTS = %w[local preview staging integration production test].freeze
     ADAPTERS = {
-      "local" => ["fake", "local"],
-      "preview" => ["fake", "local"],
-      "staging" => ["fake", "r2"],
+      "local" => ["infobip", "local"],
+      "preview" => ["infobip", "local"],
+      "staging" => ["infobip", "r2"],
       "integration" => ["infobip", "r2"],
       "production" => ["infobip", "r2"],
       "test" => ["fake", "local"]
     }.freeze
+    NON_PRODUCTION_INFOBIP_ENVIRONMENTS = %w[local preview staging integration].freeze
+    INFOBIP_TEST_PHONE_PATTERN = /\A\+55\d{2}9\d{8}\z/
 
     COMMON_REQUIRED = %w[
       DATABASE_URL
@@ -48,7 +50,7 @@ module Berufe
     DEFAULTS = {
       "development" => {
         "BERUFE_ENV" => "local",
-        "SMS_OTP_ADAPTER" => "fake",
+        "SMS_OTP_ADAPTER" => "infobip",
         "MEDIA_STORAGE_ADAPTER" => "local"
       },
       "test" => {
@@ -78,7 +80,7 @@ module Berufe
       missing = required.select { |key| values[key].to_s.strip.empty? }
       errors << "missing required variables: #{missing.sort.join(", ")}" if missing.any?
 
-      validate_credential_scope(name, values, errors)
+      validate_infobip_configuration(name, sms_otp_adapter, values, errors)
       validate_job_configuration(name, values, errors)
 
       raise InvalidConfiguration, "Invalid Berufe configuration: #{errors.join("; ")}" if errors.any?
@@ -98,17 +100,27 @@ module Berufe
     end
     private_class_method :required_variables
 
-    def self.validate_credential_scope(name, values, errors)
-      return unless %w[integration production].include?(name)
+    def self.validate_infobip_configuration(name, sms_otp_adapter, values, errors)
+      return unless sms_otp_adapter == "infobip" && ENVIRONMENTS.include?(name)
 
       scope = values["INFOBIP_CREDENTIAL_SCOPE"]
-      errors << "INFOBIP_CREDENTIAL_SCOPE must be #{name}" unless scope == name
+      expected_scope = (name == "production") ? "production" : "integration"
+      errors << "INFOBIP_CREDENTIAL_SCOPE must be #{expected_scope} for #{name}" unless scope == expected_scope
 
-      if name == "integration" && values["INFOBIP_TEST_NUMBERS"].to_s.strip.empty?
+      return unless NON_PRODUCTION_INFOBIP_ENVIRONMENTS.include?(name)
+
+      test_numbers = values["INFOBIP_TEST_NUMBERS"].to_s
+      if test_numbers.strip.empty?
         errors << "missing required variables: INFOBIP_TEST_NUMBERS"
+        return
       end
+
+      parsed_numbers = test_numbers.split(",", -1).map(&:strip)
+      return if parsed_numbers.all? { |phone| INFOBIP_TEST_PHONE_PATTERN.match?(phone) }
+
+      errors << "INFOBIP_TEST_NUMBERS must contain comma-separated Brazilian E.164 mobile numbers"
     end
-    private_class_method :validate_credential_scope
+    private_class_method :validate_infobip_configuration
 
     def self.validate_job_configuration(name, values, errors)
       return if name == "test"

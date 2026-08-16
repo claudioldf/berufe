@@ -4,11 +4,11 @@ The deployment environment is selected with `BERUFE_ENV`. Rails refuses to boot 
 
 | `BERUFE_ENV` | SMS OTP    | Media storage | Intended use                                      |
 | ------------ | ---------- | ------------- | ------------------------------------------------- |
-| `local`      | fake       | local disk    | Docker Compose development with synthetic data    |
+| `local`      | Infobip    | local disk    | Docker Compose development with allowlisted SMS   |
 | `test`       | fake       | local disk    | automated tests with synthetic data               |
-| `preview`    | fake       | local disk    | isolated pull-request mocks; no shared staging API |
-| `staging`    | fake       | R2            | stable isolated staging                           |
-| `integration` | Infobip    | R2            | explicit restricted-provider checks only          |
+| `preview`    | Infobip    | local disk    | isolated pull-request previews with allowlisted SMS |
+| `staging`    | Infobip    | R2            | stable staging with allowlisted SMS               |
+| `integration` | Infobip    | R2            | restricted-provider checks                        |
 | `production` | Infobip    | R2            | live service                                      |
 
 Only values prefixed `NUXT_PUBLIC_` are exposed through Nuxt's public runtime configuration. Database, Infobip, R2, Rails, and Bugsnag credentials are server-only and belong in the relevant hosting platform's secret store.
@@ -19,13 +19,14 @@ Infobip is used only to synchronously start and verify professional SMS OTP chal
 
 Before enabling production delivery:
 
-1. Assign a Berufe owner for the Infobip account, API key, spend, and rotation process. Use a dedicated production API key, 2FA application ID, and message-template ID.
+1. Assign a Berufe owner for the Infobip account, API key, spend, and rotation process. Use a dedicated production API key with at least the `2fa:pin:send` scope, 2FA application ID, and message-template ID.
 2. Complete Infobip's Brazilian sender-registration and Letter of Authorization process for `INFOBIP_SENDER`; do not launch while the sender is unregistered.
 3. Record the approved sender, application/message-template identifiers, per-message price, monthly spend cap, provider throughput/delivery limits, and escalation contact in the restricted operations inventory.
+
 4. Confirm the challenge flow starts with `POST /2fa/2/pin` and verifies with `POST /2fa/2/pin/{pinId}/verify`. The provider challenge reference stays server-side and OTP values are never stored or logged by Berufe.
 5. Configure Rails cooldowns and daily phone/IP allowances in addition to Infobip limits. Delivery rejection returns a safe client error; rate limiting preserves `Retry-After`; timeout, malformed response, or provider failure returns a safe unavailable result. Existing Rails sessions remain usable during a provider outage.
 
-Local, preview, and stable staging must keep `SMS_OTP_ADAPTER=fake` and receive no Infobip credential. Explicit integration checks use `BERUFE_ENV=integration`, a separate restricted Infobip application/profile, `INFOBIP_CREDENTIAL_SCOPE=integration`, synthetic allowlisted `INFOBIP_TEST_NUMBERS`, and never production credentials or real-user data. Production requires `INFOBIP_CREDENTIAL_SCOPE=production`.
+Every environment except automated test uses Infobip. Local, preview, stable staging, and integration use a separate restricted Infobip application/profile, require `INFOBIP_CREDENTIAL_SCOPE=integration`, and may send only to normalized Brazilian E.164 numbers listed in `INFOBIP_TEST_NUMBERS`. They never receive production credentials or fall back to fake delivery. Production requires `INFOBIP_CREDENTIAL_SCOPE=production` and does not apply the non-production recipient allowlist.
 
 ## Administrator accounts
 
@@ -38,6 +39,19 @@ docker compose exec -e EMAIL=admin@example.com -e OPERATOR=ops@example.com api b
 ```
 
 The reset operation prompts for the password without echoing it and appends an administrator access event. Password reset revokes all existing sessions for the account. The browser login is `/app/admin/login`.
+
+## Infobip smoke check
+
+After changing Infobip settings, recreate the API process and call the provider service directly with the first allowlisted number:
+
+```bash
+docker compose up -d --force-recreate api worker
+docker compose exec -T api bin/infobip-smoke
+```
+
+This non-production-only command sends one real SMS to the first number in `INFOBIP_TEST_NUMBERS` and bypasses the controller, database challenge record, and Rails rate limiter. It prints neither the destination nor the provider reference. Confirm receipt on the allowlisted phone and the corresponding request in Infobip's logs.
+
+An HTTP `403` in the privacy-safe Rails outcome log means the API key or account is not authorized to send 2FA PINs. Grant the dedicated key the `2fa:pin:send` scope and confirm that the configured 2FA application/profile is enabled before rerunning the smoke check.
 
 ## R2 boundary
 

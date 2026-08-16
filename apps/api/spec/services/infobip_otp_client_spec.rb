@@ -38,7 +38,7 @@ module InfobipOtpClientSpecSupport
 end
 
 RSpec.describe InfobipOtpClient do
-  def build_client(response)
+  def build_client(response, allowed_phone_numbers: nil, logger: nil)
     http = InfobipOtpClientSpecSupport::FakeHttp.new(response)
     client = described_class.new(
       base_url: "https://example.api.infobip.com",
@@ -46,6 +46,8 @@ RSpec.describe InfobipOtpClient do
       application_id: "application-id",
       message_id: "message-id",
       sender: "Berufe",
+      allowed_phone_numbers:,
+      logger:,
       http:
     )
     [client, http]
@@ -60,7 +62,43 @@ RSpec.describe InfobipOtpClient do
     expect(challenge.reference).to eq("pin-reference")
     expect(http.connection.last_request.path).to eq("/2fa/2/pin")
     expect(http.connection.last_request["Authorization"]).to eq("App private-api-key")
-    expect(request_body).to include("applicationId" => "application-id", "messageId" => "message-id", "from" => "Berufe")
+    expect(request_body).to include(
+      "applicationId" => "application-id",
+      "messageId" => "message-id",
+      "from" => "Berufe",
+      "to" => "+5547999999999"
+    )
+  end
+
+  it "allows only configured recipients when a non-production allowlist is present" do
+    response = InfobipOtpClientSpecSupport::Response.new("200", '{"pinId":"pin-reference"}', {})
+    client, http = build_client(response, allowed_phone_numbers: ["+5547999999999"])
+
+    expect(client.start_challenge(phone: "+5547999999999").status).to eq("accepted")
+
+    expect { client.start_challenge(phone: "+5547888888888") }
+      .to raise_error(SmsOtp::DeliveryRejected, "SMS OTP recipient is not allowed in this environment")
+    expect(JSON.parse(http.connection.last_request.body).fetch("to")).to eq("+5547999999999")
+  end
+
+  it "logs a provider outcome without phone numbers or provider references" do
+    logger = spy("logger")
+    client, = build_client(
+      InfobipOtpClientSpecSupport::Response.new("200", '{"pinId":"private-reference"}', {}),
+      logger:
+    )
+
+    client.start_challenge(phone: "+5547999999999")
+
+    expect(logger).to have_received(:info) do |payload|
+      expect(payload).to include(
+        event: "infobip_otp_request_accepted",
+        provider: "infobip",
+        operation: "start_challenge",
+        http_status: 200
+      )
+      expect(payload.to_json).not_to include("+5547999999999", "private-reference")
+    end
   end
 
   it "verifies the provider challenge without exposing a provider session" do
@@ -82,6 +120,17 @@ RSpec.describe InfobipOtpClient do
         expect(error.retry_after).to eq("30")
         expect(error.message).not_to include("private")
       }
+  end
+
+  it "maps provider authentication and authorization failures to unavailability" do
+    ["401", "403"].each do |status|
+      client, = build_client(
+        InfobipOtpClientSpecSupport::Response.new(status, '{"requestError":"private"}', {})
+      )
+
+      expect { client.start_challenge(phone: "+5547999999999") }
+        .to raise_error(SmsOtp::ProviderUnavailable, "SMS OTP provider rejected the request")
+    end
   end
 
   it "maps malformed provider responses to a safe unavailable error" do
