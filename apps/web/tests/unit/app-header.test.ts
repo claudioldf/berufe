@@ -1,7 +1,10 @@
 import { mountSuspended } from "@nuxt/test-utils/runtime";
 import { defineComponent } from "vue";
 import AppHeader from "~/components/AppHeader.vue";
-import type { CurrentAccount } from "~/services/api/application-session";
+import type {
+  CurrentAccount,
+  CurrentSession,
+} from "~/services/api/application-session";
 
 const NuxtLinkStub = defineComponent({
   props: { to: { type: String, required: true } },
@@ -29,6 +32,15 @@ async function mountHeader(route: string) {
       role,
       status: "active",
       registrationCompleted: true,
+    };
+    useState<CurrentSession | null>(
+      "application-session-summary",
+      () => null,
+    ).value = {
+      authenticationMethod: role === "admin" ? "password" : "sms_otp",
+      authenticatedAt: "2026-08-15T12:00:00.000Z",
+      idleExpiresAt: "2026-08-15T12:30:00.000Z",
+      absoluteExpiresAt: "2026-08-16T00:00:00.000Z",
     };
   }
 
@@ -92,5 +104,14 @@ describe("application header", () => {
       "header__link--active",
     );
     expect(wrapper.findAll(".logout-stub")).toHaveLength(1);
+  });
+
+  it("keeps the dedicated administrator login outside workspace navigation", async () => {
+    const wrapper = await mountHeader("/app/admin/login");
+
+    expect(wrapper.classes()).not.toContain("header--workspace");
+    expect(wrapper.text()).not.toContain("Moderação");
+    expect(wrapper.text()).toContain("Entrar");
+    expect(wrapper.find(".logout-stub").exists()).toBe(false);
   });
 });

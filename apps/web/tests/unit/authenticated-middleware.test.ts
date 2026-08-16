@@ -13,11 +13,15 @@ const mocks = vi.hoisted(() => ({
       registrationCompleted: boolean;
     } | null,
   },
+  session: {
+    value: null as { authenticationMethod: "sms_otp" | "password" } | null,
+  },
 }));
 
 vi.mock("~/composables/useApplicationSession", () => ({
   useApplicationSession: () => ({
     account: mocks.account,
+    session: mocks.session,
     restoreSession: mocks.restoreSession,
   }),
 }));
@@ -28,6 +32,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
   vi.clearAllMocks();
   mocks.account.value = null;
+  mocks.session.value = null;
 });
 
 describe("authenticated route middleware", () => {
@@ -37,6 +42,7 @@ describe("authenticated route middleware", () => {
       true,
     );
     expect(requiresApplicationSession("/app/admin/reports")).toBe(true);
+    expect(requiresApplicationSession("/app/admin/login")).toBe(false);
     expect(requiresApplicationSession("/app/professional/login")).toBe(false);
     expect(requiresApplicationSession("/encontrar")).toBe(false);
     expect(requiredWorkspaceRole("/app/professional/profile")).toBe(
@@ -69,6 +75,7 @@ describe("authenticated route middleware", () => {
       role: "professional",
       registrationCompleted: true,
     };
+    mocks.session.value = { authenticationMethod: "sms_otp" };
 
     await authenticatedMiddleware(
       { path: "/app/professional/profile" } as never,
@@ -86,6 +93,9 @@ describe("authenticated route middleware", () => {
     async (role, requestedPath, expectedPath) => {
       mocks.restoreSession.mockResolvedValue(true);
       mocks.account.value = { role, registrationCompleted: true };
+      mocks.session.value = {
+        authenticationMethod: role === "admin" ? "password" : "sms_otp",
+      };
       mocks.navigateTo.mockResolvedValue(undefined);
 
       await authenticatedMiddleware(
@@ -99,13 +109,35 @@ describe("authenticated route middleware", () => {
     },
   );
 
-  it("redirects anonymous users to the existing professional login", async () => {
+  it("redirects anonymous users to the login dedicated to the requested role", async () => {
     mocks.restoreSession.mockResolvedValue(false);
     mocks.navigateTo.mockResolvedValue(undefined);
 
     await authenticatedMiddleware({ path: "/app/admin" } as never, {} as never);
 
-    expect(mocks.navigateTo).toHaveBeenCalledWith("/app/professional/login", {
+    expect(mocks.navigateTo).toHaveBeenCalledWith("/app/admin/login", {
+      replace: true,
+    });
+
+    await authenticatedMiddleware(
+      { path: "/app/professional" } as never,
+      {} as never,
+    );
+    expect(mocks.navigateTo).toHaveBeenLastCalledWith(
+      "/app/professional/login",
+      { replace: true },
+    );
+  });
+
+  it("requires a password-authenticated session for the admin workspace", async () => {
+    mocks.restoreSession.mockResolvedValue(true);
+    mocks.account.value = { role: "admin", registrationCompleted: false };
+    mocks.session.value = { authenticationMethod: "sms_otp" };
+    mocks.navigateTo.mockResolvedValue(undefined);
+
+    await authenticatedMiddleware({ path: "/app/admin" } as never, {} as never);
+
+    expect(mocks.navigateTo).toHaveBeenCalledWith("/app/admin/login", {
       replace: true,
     });
   });

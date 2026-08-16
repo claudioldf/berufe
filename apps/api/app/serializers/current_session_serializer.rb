@@ -18,7 +18,6 @@ class CurrentSessionSerializer
       session: {
         authentication_method: @application_session.authentication_method,
         authenticated_at: @application_session.authenticated_at,
-        mfa_authenticated: @application_session.mfa_authenticated_at.present?,
         idle_expires_at: @application_session.idle_expires_at,
         absolute_expires_at: @application_session.absolute_expires_at
       },

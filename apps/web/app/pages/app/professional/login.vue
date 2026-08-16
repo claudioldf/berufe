@@ -42,9 +42,9 @@ async function continueAuthenticatedFlow() {
   const currentAccount = account.value;
   if (!currentAccount) return;
 
-  if (currentAccount.role === "admin") {
-    await router.replace("/app/admin");
-  } else if (currentAccount.registrationCompleted) {
+  if (currentAccount.role !== "professional") return;
+
+  if (currentAccount.registrationCompleted) {
     await enterProfessionalWorkspace();
   } else {
     resumeRegistration();

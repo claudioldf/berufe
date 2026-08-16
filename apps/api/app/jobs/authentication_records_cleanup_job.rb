@@ -9,5 +9,8 @@ class AuthenticationRecordsCleanupJob < ApplicationJob
     ApplicationSession
       .where("idle_expires_at <= :now OR absolute_expires_at <= :now", now:)
       .delete_all
+    AdminLoginAttemptCounter
+      .where(window_started_at: ...(now - AdminLoginRateLimiter::WINDOW))
+      .delete_all
   end
 end

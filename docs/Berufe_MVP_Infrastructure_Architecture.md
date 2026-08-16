@@ -38,25 +38,25 @@ Frontend and backend live in one monorepo. Local development and integration tes
 
 ## 3. MVP stack
 
-| Concern          | Decision                                                                       | Purpose                                                                                                                            |
-| ---------------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Frontend         | Nuxt + Vue + TypeScript                                                        | Public SSR pages and authenticated dashboard in one Vue application.                                                               |
-| Frontend UI      | Nuxt UI (`@nuxt/ui`)                                                           | Accessible Vue components and Tailwind-based theming without building a separate design system.                                    |
-| Frontend hosting | Vercel                                                                         | Nuxt deployments, CDN, previews, and environment variables.                                                                        |
-| Backend          | Rails API-only                                                                 | REST JSON API, business logic, authorization, and integrations.                                                                    |
-| Backend hosting  | Render web service                                                             | Managed Rails runtime close to the database.                                                                                       |
-| Worker hosting   | Render background worker                                                       | Runs GoodJob from the same backend image as Rails.                                                                                 |
-| Database         | Render PostgreSQL                                                              | The single source of truth for accounts and product data.                                                                          |
-| ORM/migrations   | Active Record                                                                  | Rails-native models, constraints, transactions, and migrations.                                                                    |
-| Background jobs  | GoodJob                                                                        | PostgreSQL-backed Active Job processing without Redis or a separate queue service.                                                 |
-| Local runtime    | Docker Compose                                                                 | Starts Nuxt, Rails, GoodJob worker, and PostgreSQL consistently from the monorepo.                                                 |
-| Authentication   | Infobip 2FA SMS API + Rails-owned accounts/sessions + Rails-managed admin TOTP | Infobip sends/verifies SMS codes; Rails owns identity, browser sessions, revocation, authorization, and the separate admin factor. |
-| File storage     | Cloudflare R2 through a small Rails storage adapter                            | S3-compatible public/private object storage using feature-owned media records.                                                     |
-| Source and CI    | GitHub + GitHub Actions                                                        | Pull requests and automated checks.                                                                                                |
-| API contract     | OpenAPI 3.1 in `apps/contracts/openapi.yaml`                                   | Language-independent source of truth for the Rails/Nuxt HTTP boundary.                                                             |
-| Error tracking   | Bugsnag                                                                        | Error-only reporting for Rails, GoodJob, Nuxt browser code, and Nuxt SSR.                                                          |
-| Code quality     | Standard Ruby, Nuxt ESLint, Prettier, Brakeman                                 | Backend/frontend linting, formatting, and backend security scanning.                                                               |
-| Tests            | RSpec, Vitest, and Playwright                                                  | Backend rules, frontend behavior, and critical complete flows.                                                                     |
+| Concern          | Decision                                                             | Purpose                                                                                                                           |
+| ---------------- | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Frontend         | Nuxt + Vue + TypeScript                                              | Public SSR pages and authenticated dashboard in one Vue application.                                                              |
+| Frontend UI      | Nuxt UI (`@nuxt/ui`)                                                 | Accessible Vue components and Tailwind-based theming without building a separate design system.                                   |
+| Frontend hosting | Vercel                                                               | Nuxt deployments, CDN, previews, and environment variables.                                                                       |
+| Backend          | Rails API-only                                                       | REST JSON API, business logic, authorization, and integrations.                                                                   |
+| Backend hosting  | Render web service                                                   | Managed Rails runtime close to the database.                                                                                      |
+| Worker hosting   | Render background worker                                             | Runs GoodJob from the same backend image as Rails.                                                                                |
+| Database         | Render PostgreSQL                                                    | The single source of truth for accounts and product data.                                                                         |
+| ORM/migrations   | Active Record                                                        | Rails-native models, constraints, transactions, and migrations.                                                                   |
+| Background jobs  | GoodJob                                                              | PostgreSQL-backed Active Job processing without Redis or a separate queue service.                                                |
+| Local runtime    | Docker Compose                                                       | Starts Nuxt, Rails, GoodJob worker, and PostgreSQL consistently from the monorepo.                                                |
+| Authentication   | Professional Infobip SMS OTP + admin email/password + Rails sessions | Infobip verifies professional SMS codes; Rails owns identity, admin credentials, browser sessions, revocation, and authorization. |
+| File storage     | Cloudflare R2 through a small Rails storage adapter                  | S3-compatible public/private object storage using feature-owned media records.                                                    |
+| Source and CI    | GitHub + GitHub Actions                                              | Pull requests and automated checks.                                                                                               |
+| API contract     | OpenAPI 3.1 in `apps/contracts/openapi.yaml`                         | Language-independent source of truth for the Rails/Nuxt HTTP boundary.                                                            |
+| Error tracking   | Bugsnag                                                              | Error-only reporting for Rails, GoodJob, Nuxt browser code, and Nuxt SSR.                                                         |
+| Code quality     | Standard Ruby, Nuxt ESLint, Prettier, Brakeman                       | Backend/frontend linting, formatting, and backend security scanning.                                                              |
+| Tests            | RSpec, Vitest, and Playwright                                        | Backend rules, frontend behavior, and critical complete flows.                                                                    |
 
 Use supported stable releases of Ruby, Rails, Node, Nuxt, and PostgreSQL. Pin Ruby/Node versions and dependency lockfiles in the repository.
 
@@ -250,14 +250,14 @@ Infobip owns OTP values and SMS delivery. Rails owns the stable user UUID, verif
 Store each application session in `application_sessions` with:
 
 - a random session token digest, never the raw token;
-- `user_account_id` and the `sms_otp` authentication method;
-- authentication time and, for admins, MFA time;
+- `user_account_id` and the `sms_otp` or `password` authentication method;
+- authentication time;
 - last activity, idle expiry, absolute expiry, and revocation time;
 - a digest binding the session to its rotating CSRF token.
 
 Use a host-only `__Host-berufe_session` cookie set by the API domain with `Secure`, `HttpOnly`, `SameSite=Lax`, and `Path=/`; omit `Domain`. The browser never receives an Infobip credential. The current-session endpoint returns a rotating CSRF token that Nuxt keeps only in memory and sends in a header for mutations; Rails validates its digest against the application session and also checks the exact request origin.
 
-Professional sessions have a 7-day idle expiry and 30-day absolute expiry. Admin sessions have a 30-minute idle expiry and 12-hour absolute expiry. Each new admin session requires SMS OTP followed by a separately enrolled TOTP; Rails encrypts TOTP secrets and stores recovery codes only as hashes. Throttle last-activity writes so normal requests do not update the session row continuously.
+Professional sessions have a 7-day idle expiry and 30-day absolute expiry. Admin sessions have a 30-minute idle expiry and 12-hour absolute expiry. Admins authenticate only through the dedicated email/password endpoint; Rails stores a BCrypt password digest and never serializes or logs the password. Throttle last-activity writes so normal requests do not update the session row continuously.
 
 Logout revokes the current application session and clears the cookie. Suspending an account or using the administrative revoke-all action invalidates every application session for that account immediately. Provider outages block new challenge initiation and verification with a safe `503`, but existing Rails sessions continue until their own expiry or revocation.
 
@@ -269,10 +269,11 @@ Production uses a dedicated Infobip API key, 2FA application, and message templa
 
 ### Admin access
 
-- Use a dedicated admin account.
-- Require separately enrolled TOTP after the SMS OTP; Infobip is not the admin-MFA authority.
-- Encrypt TOTP secrets, hash recovery codes, and audit manual enrollment/reset.
-- Check the admin role in Rails policies.
+- Use a dedicated admin account with a unique normalized email and strong password. `AdminSeed` is the only application service allowed to create one; there is no administrator-creation API or separate provisioning task.
+- Non-production `db:seed` idempotently creates the configured development admin account. The seed service refuses production execution before reading credentials or writing records and logs a warning.
+- Authenticate admins only through the dedicated email/password route; Infobip and professional SMS login never create an admin session.
+- Store only a BCrypt password digest, use generic failures with conservative database-backed throttling, and audit seed provisioning and manual password resets.
+- Check the admin role and `password` session authentication method in Rails policies and route constraints.
 - Log every verification, moderation, suspension, and restoration decision.
 
 ### Customers
@@ -297,7 +298,7 @@ PostgreSQL is the single application database. Rails/Active Record is the only a
 - Normalize optional Instagram and YouTube profile inputs at the Rails boundary and store canonical HTTPS profile URLs. Reject off-platform and non-profile paths; YouTube accepts only `@handle` channel URLs in the MVP.
 - Use foreign keys, unique indexes, check constraints, and explicit status values for important rules.
 - Apply schema changes only through reviewed Rails migrations.
-- Catalog mutations require current admin MFA, immutable stable slugs/codes, deterministic ordering, and an audit record; referenced entries are deactivated rather than deleted.
+- Catalog mutations require an active password-authenticated admin session, immutable stable slugs/codes, deterministic ordering, and an audit record; referenced entries are deactivated rather than deleted.
 - Use transactions for moderation, publication, relationship confirmation, and the first quote share/token transition.
 - Calculate quote line totals, subtotal, discount, and total in Rails with decimal arithmetic; browser totals are previews and are never trusted for persistence.
 - Use PostgreSQL filtering and indexes for Finder. Do not add a search service or numeric trust score.
@@ -312,12 +313,12 @@ PostgreSQL is the single application database. Rails/Active Record is the only a
 
 ### Data visibility
 
-| Visibility     | Examples                                                                                                                            | Rule                                                                                                    |
-| -------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| Public         | Published profile, approved Instagram/YouTube profile links, approved portfolio, services, approved trust labels                    | Returned by public serializers only after approval.                                                     |
-| Private        | Phone, moderation notes, and draft quotes/customer details                                                                          | Owner/admin access only as required.                                                                    |
-| Bearer-private | One shared quote and its customer-facing details                                                                                    | Returned only to the owner/admin or for the exact valid token; never indexed, logged, or shared-cached. |
-| Restricted     | Verification documents, Infobip credentials/challenge secrets, raw quote/session tokens, TOTP material, and stored session material | Server-only access and never logged; persist token digests rather than raw tokens.                      |
+| Visibility     | Examples                                                                                                                               | Rule                                                                                                    |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Public         | Published profile, approved Instagram/YouTube profile links, approved portfolio, services, approved trust labels                       | Returned by public serializers only after approval.                                                     |
+| Private        | Phone, moderation notes, and draft quotes/customer details                                                                             | Owner/admin access only as required.                                                                    |
+| Bearer-private | One shared quote and its customer-facing details                                                                                       | Returned only to the owner/admin or for the exact valid token; never indexed, logged, or shared-cached. |
+| Restricted     | Verification documents, Infobip credentials/challenge secrets, raw quote/session tokens, password digests, and stored session material | Server-only access and never logged; persist token/password digests rather than raw secrets.            |
 
 Collect only data required by the MVP. Define retention/deletion rules for private and restricted fields before launch. Support correction, suspension, and deletion requests. Obtain qualified Brazilian privacy/legal review before accepting real users.
 
@@ -459,7 +460,7 @@ Use local, pull-request preview, stable staging, and production environments. Lo
 - Configure Bugsnag callbacks and redaction to remove cookies, authorization and CSRF headers, request parameters/bodies, phone numbers, OTPs, raw Infobip/session/share tokens or challenge secrets, quote customer details, signed URLs, verification-file data, and job arguments. Send only the release, environment, normalized route or job class, request ID, exception, and stack trace needed for diagnosis.
 - Use separate Bugsnag projects for the web application and Rails API/worker. Upload production source maps without publishing them publicly. Production unhandled exceptions, terminal Active Job failures, and GoodJob executor/thread failures notify the named operations owner immediately.
 - Preserve successful GoodJob records for 14 days and reviewed discarded failures for 30 days. Never automatically delete an unresolved failure. Run cleanup daily; document inspection, retry, discard review, and escalation procedures.
-- Protect the GoodJob dashboard with an active admin application session whose MFA is still valid. Enable its dedicated HTTP worker probe and check process running, executor started, and database connected states.
+- Protect the GoodJob dashboard with an active password-authenticated admin application session. Enable its dedicated HTTP worker probe and check process running, executor started, and database connected states.
 - Warn when the oldest runnable GoodJob is more than five minutes old and alert critically at fifteen minutes. Monitor failed jobs/uploads and the age of the manual moderation queue.
 - Use a paid Render PostgreSQL plan with managed backups; verify its configured retention and complete one restore test before launch.
 - Keep Rails migrations and catalog seed data in Git.
@@ -474,7 +475,7 @@ If production breaks: disable the affected flow or credential, assess scope, rec
 ## 16. Implementation order
 
 1. **Foundation:** monorepo, Dockerfiles and root Compose stack, Nuxt with Nuxt UI, Rails API-only, PostgreSQL, GoodJob, Vercel/Render environments, CI, and security headers.
-2. **Access:** Infobip SMS OTP, Rails-owned accounts/application sessions, synchronous OTP initiation, cooldown/allowance controls, roles/policies, CSRF/CORS, and separate admin TOTP.
+2. **Access:** professional Infobip SMS OTP, dedicated admin email/password login, Rails-owned application sessions, abuse controls, roles/policies, and CSRF/CORS.
 3. **Profiles and evidence:** seeded and administrator-maintained service/location catalog, direct R2 uploads, background image processing, profile/portfolio/identity moderation, public serializers, and Nuxt public pages.
 4. **Discovery and trust graph:** Finder and WhatsApp handoff followed by moderated relationships between existing members.
 5. **Dashboard, quotes, and reporting:** profile readiness/sharing, simple quote creation and secure customer sharing, and the aggregate-only administrator growth report.
@@ -514,13 +515,13 @@ Accept real users only when:
 - OpenAPI generation is clean, Rails contract tests pass, and the frontend typecheck uses the generated schema;
 - ownership/admin policy tests pass;
 - private R2 verification objects cannot be read publicly;
-- OTP abuse controls, synchronous provider failure handling, application-session expiry/revocation/logout, account suspension, CSRF/CORS, and admin MFA work;
+- professional OTP and admin password abuse controls, provider failure handling, application-session expiry/revocation/logout, account suspension, and CSRF/CORS work;
 - platform logs and Bugsnag reports redact personal and restricted data;
 - failed GoodJob jobs are visible and retryable, the protected dashboard and worker probe work, and queue-age alerts have been exercised;
 - verification evidence accepts only safely regenerated JPEG/PNG images and rejected/quarantined originals cannot be viewed;
 - public Nuxt profile metadata and WhatsApp/copy fallback work on mobile;
 - quote calculation/ownership tests pass, invalid or revoked tokens reveal no customer data, and shared quote responses are read-only, `no-store`, `noindex`, and excluded from static generation;
-- the administrator report is MFA/admin-only, uses the OpenAPI-generated client, exposes aggregates only, suppresses low-frequency unmatched demand, and passes formula, period, zero-state, and privacy tests;
+- the administrator report is restricted to password-authenticated admins, uses the OpenAPI-generated client, exposes aggregates only, suppresses low-frequency unmatched demand, and passes formula, period, zero-state, and privacy tests;
 - the Vercel-to-Render path meets the public latency budgets, and the Rails-unavailable state is usable;
 - PostgreSQL backup retention is verified and a restore test has succeeded;
 - privacy notice, terms, retention rules, and operational owners are ready;
@@ -528,7 +529,7 @@ Accept real users only when:
 
 ## Final definition
 
-Berufe is developed in one monorepo with `apps/web`, `apps/api`, and the shared OpenAPI 3.1 contract in `apps/contracts`. Nuxt, Rails, GoodJob, and PostgreSQL run locally through Docker Compose. Production deploys Nuxt/Nuxt UI to Vercel and Rails to Render with managed PostgreSQL. Rails owns user identity, business rules, authorization, opaque application sessions, simple quote/token rules, privacy-safe administrator reporting, admin TOTP, moderation, and background jobs; Infobip owns only SMS OTP values and delivery. OTP initiation is synchronous. Cloudflare R2 stores sanitized images through a small Rails adapter, verification evidence is JPEG/PNG-only, WhatsApp remains a user-initiated deep link for contact and quote sharing, and Bugsnag provides tightly redacted error tracking. Stable staging is isolated; pull-request previews use mocks only.
+Berufe is developed in one monorepo with `apps/web`, `apps/api`, and the shared OpenAPI 3.1 contract in `apps/contracts`. Nuxt, Rails, GoodJob, and PostgreSQL run locally through Docker Compose. Production deploys Nuxt/Nuxt UI to Vercel and Rails to Render with managed PostgreSQL. Rails owns user identity, administrator credentials, business rules, authorization, opaque application sessions, simple quote/token rules, privacy-safe administrator reporting, moderation, and background jobs; Infobip owns only professional SMS OTP values and delivery. OTP initiation is synchronous. Cloudflare R2 stores sanitized images through a small Rails adapter, verification evidence is JPEG/PNG-only, WhatsApp remains a user-initiated deep link for contact and quote sharing, and Bugsnag provides tightly redacted error tracking. Stable staging is isolated; pull-request previews use mocks only.
 
 ## Implementation references
 

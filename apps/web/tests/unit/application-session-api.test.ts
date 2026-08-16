@@ -25,7 +25,6 @@ describe("application-session API", () => {
           session: {
             authentication_method: "sms_otp",
             authenticated_at: "2026-08-15T12:00:00.000Z",
-            mfa_authenticated: false,
             idle_expires_at: "2026-08-22T12:00:00.000Z",
             absolute_expires_at: "2026-09-14T12:00:00.000Z",
           },
@@ -47,7 +46,6 @@ describe("application-session API", () => {
       session: {
         authenticationMethod: "sms_otp",
         authenticatedAt: "2026-08-15T12:00:00.000Z",
-        mfaAuthenticated: false,
         idleExpiresAt: "2026-08-22T12:00:00.000Z",
         absoluteExpiresAt: "2026-09-14T12:00:00.000Z",
       },

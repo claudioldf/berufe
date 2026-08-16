@@ -23,7 +23,7 @@ RSpec.describe ApplicationSessionPolicy do
     owned_session = owner_session
     non_owner_session = ApplicationSession.issue!(user_account: non_owner).first
     now = Time.current
-    admin_session = ApplicationSession.issue!(user_account: admin, now:, mfa_authenticated_at: now).first
+    admin_session = ApplicationSession.issue!(user_account: admin, now:).first
 
     expect(resolve_scope(owner)).to contain_exactly(owned_session)
     expect(resolve_scope(non_owner)).to contain_exactly(non_owner_session)
@@ -35,7 +35,17 @@ RSpec.describe ApplicationSessionPolicy do
   private
 
   def create_account(phone:, role: "professional", status: "active")
-    UserAccount.create!(phone_e164: phone, role:, status:)
+    if role == "admin"
+      UserAccount.create!(
+        email: "admin-#{phone.delete("+")}@example.com",
+        password: "a-secure-admin-password",
+        password_confirmation: "a-secure-admin-password",
+        role:,
+        status:
+      )
+    else
+      UserAccount.create!(phone_e164: phone, role:, status:)
+    end
   end
 
   def resolve_scope(actor)

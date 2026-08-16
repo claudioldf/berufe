@@ -132,20 +132,27 @@ RSpec.describe "Phone OTP verification", type: :request, openapi: true do
     assert_api_conform(status: 503)
   end
 
-  it "uses the admin session boundaries for a deliberately provisioned admin account" do
+  it "never turns a provider reference into an administrator SMS session" do
     now = Time.zone.parse("2026-08-15 12:00:00 UTC")
     travel_to(now)
-    account = UserAccount.create!(phone_e164: "+5547999991111", role: "admin", status: "active")
-    _challenge, challenge_token = issue_challenge
-    allow_verified_provider
+    admin = UserAccount.create!(
+      email: "admin@example.com",
+      password: "a-secure-admin-password",
+      password_confirmation: "a-secure-admin-password",
+      role: "admin",
+      status: "active"
+    )
+    _challenge, challenge_token = issue_challenge(provider_reference: admin.id)
+    allow_verified_provider(reference: admin.id)
 
     verify_json(challenge_token:, code: "123456", request_id: "otp-admin-sms")
 
     session = ApplicationSession.last
-    expect(session.user_account).to eq(account)
-    expect(session.idle_expires_at).to eq(now + 30.minutes)
-    expect(session.absolute_expires_at).to eq(now + 12.hours)
-    expect(session.mfa_authenticated_at).to be_nil
+    expect(session.user_account).not_to eq(admin)
+    expect(session.user_account).to be_professional
+    expect(session.authentication_method).to eq("sms_otp")
+    expect(session.idle_expires_at).to eq(now + 7.days)
+    expect(session.absolute_expires_at).to eq(now + 30.days)
   end
 
   private

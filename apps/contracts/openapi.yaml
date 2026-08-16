@@ -101,6 +101,69 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/admin/session:
+    post:
+      operationId: createAdminSession
+      summary: Authenticate a deliberately provisioned administrator with email and password
+      tags:
+        - Authentication
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminSessionRequest"
+      responses:
+        "200":
+          description: The credentials were accepted and Rails created an administrator session.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Set-Cookie:
+              $ref: "#/components/headers/ApplicationSessionCookie"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminSessionResponse"
+        "401":
+          description: The credentials are invalid or the administrator is unavailable.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: The exact browser origin is invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: The email or source address reached its login-attempt allowance.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Retry-After:
+              $ref: "#/components/headers/RetryAfter"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: Administrator authentication persistence is temporarily unavailable.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/catalog:
     get:
       operationId: getPublicCatalog
@@ -325,7 +388,7 @@ components:
       schema:
         $ref: "#/components/schemas/RequestId"
     RetryAfter:
-      description: Whole seconds before another OTP request may be attempted.
+      description: Whole seconds before another rate-limited request may be attempted.
       schema:
         type: integer
         minimum: 1
@@ -356,6 +419,40 @@ components:
         type: string
         minLength: 1
   schemas:
+    AdminSessionRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 3
+          maxLength: 254
+        password:
+          type: string
+          minLength: 1
+          maxLength: 72
+    AdminSessionResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required:
+            - status
+          properties:
+            status:
+              type: string
+              const: authenticated
+        request_id:
+          $ref: "#/components/schemas/RequestId"
     PhoneOtpRequest:
       type: object
       additionalProperties: false
@@ -541,18 +638,17 @@ components:
       required:
         - authentication_method
         - authenticated_at
-        - mfa_authenticated
         - idle_expires_at
         - absolute_expires_at
       properties:
         authentication_method:
           type: string
-          const: sms_otp
+          enum:
+            - sms_otp
+            - password
         authenticated_at:
           type: string
           format: date-time
-        mfa_authenticated:
-          type: boolean
         idle_expires_at:
           type: string
           format: date-time

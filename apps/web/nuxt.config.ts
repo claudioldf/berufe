@@ -1,14 +1,9 @@
 import { fileURLToPath } from "node:url";
-const prototypeMode = process.env.NUXT_PUBLIC_PROTOTYPE_MODE === "true";
 const browserSecurityHeaders = {
   "x-content-type-options": "nosniff",
   "x-frame-options": "DENY",
   "referrer-policy": "strict-origin-when-cross-origin",
 };
-
-if (process.env.BERUFE_ENV === "production" && prototypeMode) {
-  throw new Error("NUXT_PUBLIC_PROTOTYPE_MODE must be disabled in production");
-}
 
 export default defineNuxtConfig({
   compatibilityDate: "2026-08-01",
@@ -17,7 +12,6 @@ export default defineNuxtConfig({
     apiInternalBaseUrl: process.env.NUXT_API_INTERNAL_BASE_URL,
     public: {
       apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL,
-      prototypeMode,
     },
   },
   alias: {

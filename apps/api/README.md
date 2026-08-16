@@ -15,7 +15,7 @@ Only values prefixed `NUXT_PUBLIC_` are exposed through Nuxt's public runtime co
 
 ## Infobip production prerequisite
 
-Infobip is used only to synchronously start and verify professional SMS OTP challenges. Rails remains the owner of accounts, sessions, roles, authorization, logout/revocation, and administrator TOTP MFA.
+Infobip is used only to synchronously start and verify professional SMS OTP challenges. Rails remains the owner of accounts, sessions, roles, authorization, logout/revocation, and administrator email/password authentication.
 
 Before enabling production delivery:
 
@@ -26,6 +26,18 @@ Before enabling production delivery:
 5. Configure Rails cooldowns and daily phone/IP allowances in addition to Infobip limits. Delivery rejection returns a safe client error; rate limiting preserves `Retry-After`; timeout, malformed response, or provider failure returns a safe unavailable result. Existing Rails sessions remain usable during a provider outage.
 
 Local, preview, and stable staging must keep `SMS_OTP_ADAPTER=fake` and receive no Infobip credential. Explicit integration checks use `BERUFE_ENV=integration`, a separate restricted Infobip application/profile, `INFOBIP_CREDENTIAL_SCOPE=integration`, synthetic allowlisted `INFOBIP_TEST_NUMBERS`, and never production credentials or real-user data. Production requires `INFOBIP_CREDENTIAL_SCOPE=production`.
+
+## Administrator accounts
+
+Administrators do not use professional SMS login or public registration. `AdminSeed` is the only application service allowed to create an administrator. In non-production environments, `db:seed` idempotently creates `ADMIN_AUTH_EMAIL` / `ADMIN_AUTH_PASSWORD`, defaulting to `admin@berufe.com.br` / `@Qwer1234`. The service refuses to run in production and logs a warning instead; there is no production administrator-creation task or API route.
+
+Reset a password with the same operator attribution:
+
+```bash
+docker compose exec -e EMAIL=admin@example.com -e OPERATOR=ops@example.com api bin/rake admin:reset_password
+```
+
+The reset operation prompts for the password without echoing it and appends an administrator access event. Password reset revokes all existing sessions for the account. The browser login is `/app/admin/login`.
 
 ## R2 boundary
 
@@ -54,7 +66,7 @@ The database connection budget is:
 
 With one API and one worker, reserve 15 connections: five for Rails, five for GoodJob, and five for migrations/administration. Select a managed PostgreSQL plan with at least 20 available connections and recalculate before adding replicas or threads.
 
-The worker exposes `:7001/status`, `:7001/status/started`, and `:7001/status/connected`; Compose requires both started and connected status. The GoodJob dashboard is mounted at `/admin/jobs` only when the request contains an active Rails-owned administrator application session with current MFA. It intentionally returns not found until the access stories supply that session.
+The worker exposes `:7001/status`, `:7001/status/started`, and `:7001/status/connected`; Compose requires both started and connected status. The GoodJob dashboard is mounted at `/admin/jobs` only when the request contains an active Rails-owned administrator password session.
 
 Every job carries a validated web request ID or a generated correlation UUID. Job implementations must be retry-safe: check current state, use database constraints/transactions or idempotent writes, and treat already-completed work as success. Never place OTPs, phone numbers, raw tokens, signed URLs, customer details, or file contents in job arguments or logs.
 

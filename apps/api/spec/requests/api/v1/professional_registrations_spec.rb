@@ -131,11 +131,7 @@ RSpec.describe "Professional registration", type: :request, openapi: true do
 
     now = Time.current
     admin = create_account(phone: "+5547999999005", role: "admin")
-    _admin_session, admin_token = ApplicationSession.issue!(
-      user_account: admin,
-      now:,
-      mfa_authenticated_at: now
-    )
+    _admin_session, admin_token = ApplicationSession.issue!(user_account: admin, now:)
     admin_csrf = restore_csrf_token(session_token: admin_token, request_id: "registration-admin-session")
     complete_registration(
       session_token: admin_token,
@@ -179,7 +175,17 @@ RSpec.describe "Professional registration", type: :request, openapi: true do
   private
 
   def create_account(phone:, role: "professional")
-    UserAccount.create!(phone_e164: phone, role:, status: "active")
+    if role == "admin"
+      UserAccount.create!(
+        email: "admin@example.com",
+        password: "a-secure-admin-password",
+        password_confirmation: "a-secure-admin-password",
+        role:,
+        status: "active"
+      )
+    else
+      UserAccount.create!(phone_e164: phone, role:, status: "active")
+    end
   end
 
   def restore_csrf_token(session_token:, request_id:)

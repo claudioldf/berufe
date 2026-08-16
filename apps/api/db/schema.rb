@@ -10,20 +10,45 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_15_210000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_15_220000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
 
+  create_table "admin_access_events", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.text "action", null: false
+    t.uuid "admin_user_id", null: false
+    t.datetime "created_at", null: false
+    t.text "operator_identifier", null: false
+    t.text "request_id", null: false
+    t.index ["admin_user_id", "created_at"], name: "index_admin_access_events_on_admin_user_id_and_created_at"
+    t.index ["admin_user_id"], name: "index_admin_access_events_on_admin_user_id"
+    t.check_constraint "action = ANY (ARRAY['provisioned'::text, 'password_reset'::text])", name: "admin_access_events_known_action"
+    t.check_constraint "operator_identifier <> ''::text", name: "admin_access_events_operator_present"
+    t.check_constraint "request_id ~ '^[A-Za-z0-9._-]{1,100}$'::text", name: "admin_access_events_request_id_format"
+  end
+
+  create_table "admin_login_attempt_counters", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.integer "attempt_count", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.text "scope", null: false
+    t.text "subject_digest", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "window_started_at", null: false
+    t.index ["scope", "subject_digest", "window_started_at"], name: "index_admin_login_attempts_on_subject_and_window", unique: true
+    t.check_constraint "attempt_count >= 0", name: "admin_login_attempt_counters_nonnegative_count"
+    t.check_constraint "scope = ANY (ARRAY['email'::text, 'ip'::text])", name: "admin_login_attempt_counters_known_scope"
+    t.check_constraint "subject_digest ~ '^[0-9a-f]{64}$'::text", name: "admin_login_attempt_counters_digest_format"
+  end
+
   create_table "application_sessions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.datetime "absolute_expires_at", null: false
     t.datetime "authenticated_at", null: false
-    t.text "authentication_method", default: "sms_otp", null: false
+    t.text "authentication_method", null: false
     t.datetime "created_at", null: false
     t.text "csrf_token_digest", null: false
     t.datetime "idle_expires_at", null: false
     t.datetime "last_active_at", null: false
-    t.datetime "mfa_authenticated_at"
     t.datetime "revoked_at"
     t.text "token_digest", null: false
     t.datetime "updated_at", null: false
@@ -34,12 +59,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_15_210000) do
     t.index ["user_account_id", "created_at"], name: "index_application_sessions_on_user_account_id_and_created_at"
     t.index ["user_account_id"], name: "index_application_sessions_on_user_account_id"
     t.check_constraint "absolute_expires_at > authenticated_at", name: "application_sessions_absolute_after_authentication"
-    t.check_constraint "authentication_method = 'sms_otp'::text", name: "application_sessions_known_authentication_method"
+    t.check_constraint "authentication_method = ANY (ARRAY['sms_otp'::text, 'password'::text])", name: "application_sessions_known_authentication_method"
     t.check_constraint "csrf_token_digest ~ '^[0-9a-f]{64}$'::text", name: "application_sessions_csrf_digest_format"
     t.check_constraint "idle_expires_at <= absolute_expires_at", name: "application_sessions_idle_within_absolute"
     t.check_constraint "idle_expires_at > last_active_at", name: "application_sessions_idle_after_activity"
     t.check_constraint "last_active_at >= authenticated_at", name: "application_sessions_activity_after_authentication"
-    t.check_constraint "mfa_authenticated_at IS NULL OR mfa_authenticated_at >= authenticated_at", name: "application_sessions_mfa_after_authentication"
     t.check_constraint "revoked_at IS NULL OR revoked_at >= authenticated_at", name: "application_sessions_revoked_after_authentication"
     t.check_constraint "token_digest ~ '^[0-9a-f]{64}$'::text", name: "application_sessions_token_digest_format"
   end
@@ -247,22 +271,28 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_15_210000) do
 
   create_table "user_accounts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.text "email"
     t.datetime "last_login_at"
-    t.text "phone_e164", null: false
+    t.text "password_digest"
+    t.text "phone_e164"
     t.text "privacy_notice_version"
     t.text "role", default: "professional", null: false
     t.text "status", default: "active", null: false
     t.datetime "terms_accepted_at"
     t.text "terms_version"
     t.datetime "updated_at", null: false
+    t.index ["email"], name: "index_user_accounts_on_email", unique: true
     t.index ["phone_e164"], name: "index_user_accounts_on_phone_e164", unique: true
     t.index ["role", "status"], name: "index_user_accounts_on_role_and_status"
+    t.check_constraint "email IS NULL OR email = lower(email) AND email = btrim(email)", name: "user_accounts_normalized_email"
     t.check_constraint "phone_e164 ~ '^\\+55[1-9][1-9]9[0-9]{8}$'::text", name: "user_accounts_brazilian_mobile_phone"
+    t.check_constraint "role = 'professional'::text AND phone_e164 IS NOT NULL AND email IS NULL AND password_digest IS NULL OR role = 'admin'::text AND phone_e164 IS NULL AND email IS NOT NULL AND email <> ''::text AND password_digest IS NOT NULL AND password_digest <> ''::text", name: "user_accounts_role_credentials"
     t.check_constraint "role = ANY (ARRAY['professional'::text, 'admin'::text])", name: "user_accounts_known_role"
     t.check_constraint "status = ANY (ARRAY['active'::text, 'suspended'::text])", name: "user_accounts_known_status"
     t.check_constraint "terms_accepted_at IS NULL AND terms_version IS NULL AND privacy_notice_version IS NULL OR terms_accepted_at IS NOT NULL AND terms_version IS NOT NULL AND privacy_notice_version IS NOT NULL AND btrim(terms_version) <> ''::text AND btrim(privacy_notice_version) <> ''::text", name: "user_accounts_complete_legal_acceptance"
   end
 
+  add_foreign_key "admin_access_events", "user_accounts", column: "admin_user_id"
   add_foreign_key "application_sessions", "user_accounts"
   add_foreign_key "professional_profiles", "user_accounts"
   add_foreign_key "services", "service_categories", column: "category_id"

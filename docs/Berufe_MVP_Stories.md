@@ -88,7 +88,7 @@ Apply these rules whenever they are relevant to the story:
 - Development uses a local-disk storage adapter and a fake SMS-OTP adapter by default.
 - Production SMS OTP uses Infobip's 2FA API through a purpose-specific adapter. The integration documents application/message-template identifiers, Brazilian sender-registration prerequisites, API-key ownership, delivery limits, challenge verification, and provider-failure behavior.
 - Production credentials are dedicated to Berufe. Stable staging, local development, and pull-request previews use the fake adapter by default; any explicit integration check uses a separate restricted Infobip application/profile and allowlisted test numbers, never production credentials or real-user data.
-- Infobip is not Berufe's account, session, authorization, or admin-MFA provider.
+- Infobip is not Berufe's account, session, authorization, or administrator-password provider.
 - Production-only credentials remain server-side and cannot enter the Nuxt client bundle.
 - Local, pull-request preview, stable staging, and production configuration are clearly separated.
 
@@ -120,7 +120,7 @@ Apply these rules whenever they are relevant to the story:
 - The API uses `RAILS_MAX_THREADS=5` and `DB_POOL=5`; the worker uses `GOOD_JOB_MAX_THREADS=2` and `DB_POOL=5`. Deployment documentation uses `(API replicas × API pool) + (worker replicas × worker pool) + migration/admin allowance`, reserves 15 connections for one API/worker replica plus administration, selects a plan with at least 20 available connections, and recalculates before scaling.
 - GoodJob tables are created through committed Rails migrations in the existing PostgreSQL database.
 - A harmless probe job can be enqueued, processed, failed, retried, and inspected.
-- The worker exposes GoodJob's HTTP running/started/connected probes; the dashboard is mounted only behind an active admin session with current MFA.
+- The worker exposes GoodJob's HTTP running/started/connected probes; the dashboard is mounted only behind an active password-authenticated admin session.
 - Jobs receive a request or correlation ID when originating from a web request.
 - Job code is documented as retry-safe; no Redis or alternative queue is added.
 
@@ -235,14 +235,14 @@ Apply these rules whenever they are relevant to the story:
 
 - Rails verifies the code through the Infobip adapter and never stores the OTP.
 - Verification requires the unexpired, unconsumed Rails challenge token, decrypts the bound Infobip reference/phone only server-side, and consumes the challenge atomically on success.
-- A successful check validates the challenge result and creates or finds the Rails-owned account by its unique verified E.164 phone. The Rails UUID is the stable Berufe identity; an Infobip challenge ID is not an account identifier.
-- Rails creates an `application_session` containing a unique token digest, account ID, `sms_otp` authentication method, authentication time, last activity, idle/absolute expiries, CSRF digest, and nullable revocation time. Admin sessions also record MFA time.
+- A successful check validates the challenge result and creates or finds the Rails-owned professional account by its unique verified E.164 phone. SMS verification never creates or authenticates an admin account. The Rails UUID is the stable Berufe identity; an Infobip challenge ID is not an account identifier.
+- Rails creates an `application_session` containing a unique token digest, account ID, `sms_otp` authentication method, authentication time, last activity, idle/absolute expiries, CSRF digest, and nullable revocation time.
 - The browser receives only the random application-session token in the host-only `__Host-berufe_session` cookie with `Secure`, `HttpOnly`, `SameSite=Lax`, and `Path=/`; no `Domain` is set.
 - Infobip credentials and raw Rails challenge/session tokens never enter browser storage or application logs; neither authentication nor CSRF tokens are stored in `localStorage`.
 - Professional sessions use 7-day idle and 30-day absolute expiry; admin sessions use 30-minute idle and 12-hour absolute expiry. Last-activity persistence is throttled.
 - Invalid, expired, and provider-unavailable results use generic safe messages.
 - The Infobip 2FA implementation is enabled only where explicitly configured behind the same small adapter.
-- Model/request tests cover token hashing, professional/admin idle and absolute boundaries, throttled activity writes, MFA time, invalid/expired verification, and safe provider-unavailable behavior.
+- Model/request tests cover token hashing, professional idle and absolute boundaries, throttled activity writes, refusal to authenticate admins by SMS, invalid/expired verification, and safe provider-unavailable behavior.
 
 **Depends on:** S011.
 **Covers:** Feature A1; Infrastructure §8.
@@ -309,16 +309,18 @@ Apply these rules whenever they are relevant to the story:
 **Depends on:** S013, S015.
 **Covers:** Feature A1 and the invited-professional entry path in Feature C1.
 
-### S017 — Secure admin access with MFA and audit context
+### S017 — Secure admin access with password authentication and audit context
 
 **Story:** As a Berufe admin, I want stronger access protection so that sensitive moderation and verification work is not protected by phone login alone.
 
 **Acceptance criteria:**
 
-- Admin accounts are provisioned deliberately and cannot be created through professional registration.
-- Every new admin application session requires a separately enrolled TOTP after successful SMS OTP and records `mfa_authenticated_at`.
-- TOTP secrets use Rails application-level encryption, recovery codes are stored only as hashes, enrollment/reset is an audited manual admin operation, and neither value is sent to Infobip.
-- Admin routes require the admin role, an unexpired 30-minute-idle/12-hour-absolute session, and current MFA context.
+- Admin accounts are provisioned deliberately with a unique normalized email and strong password and cannot be created through professional registration or SMS login.
+- `AdminSeed` is the only application service allowed to create an admin account; non-production `db:seed` calls it idempotently, while production execution is refused with a warning. There is no administrator-creation API or separate provisioning task.
+- Admins authenticate through a dedicated email/password API endpoint and Nuxt route; professional login remains SMS-only.
+- Rails stores only a BCrypt password digest, uses generic authentication failures and conservative database-backed throttling, and never logs or serializes credentials.
+- Seed provisioning and manual password resets are audited operations; each creates an append-only event with the target admin, operator identifier, request ID, action, and time.
+- Admin routes require the admin role, an unexpired 30-minute-idle/12-hour-absolute session, and the `password` authentication method.
 - Admin actions receive the acting admin ID and request ID for later audit records.
 - There is no multi-level moderator permission system in the MVP.
 
@@ -331,7 +333,7 @@ Apply these rules whenever they are relevant to the story:
 
 **Acceptance criteria:**
 
-- An active administrator with current MFA can list, add, rename, reorder, activate, and deactivate services and Joinville neighborhoods through typed OpenAPI operations and Nuxt forms.
+- An active administrator with a password-authenticated session can list, add, rename, reorder, activate, and deactivate services and Joinville neighborhoods through typed OpenAPI operations and Nuxt forms.
 - The neighborhood list exposes UF, city, and neighborhood columns and supports independent accent-insensitive free-text filters for all three fields; launch data remains limited to Joinville, SC.
 - When creating a neighborhood, Nuxt suggests its stable code from the typed name using lowercase ASCII kebab case (`Santo Antônio` → `santo-antonio`); the administrator may adjust it before saving, after which it is immutable.
 - A service retains its controlled category assignment; service-category hierarchy changes and search-alias administration remain post-MVP.
@@ -800,7 +802,7 @@ The MVP report includes only implemented launch domains: professional supply and
 - Production unhandled exceptions, terminal job failures, and GoodJob executor/thread failures immediately notify the named operations owner.
 - Health endpoints distinguish Rails readiness and GoodJob running/started/database-connected states without leaking secrets.
 - Successful GoodJob records are retained for 14 days and reviewed discarded failures for 30 days; unresolved failures are not automatically deleted and cleanup runs daily.
-- The GoodJob dashboard requires an active admin application session with current MFA. The documented procedure covers inspection, retry, discard review, and escalation.
+- The GoodJob dashboard requires an active password-authenticated admin application session. The documented procedure covers inspection, retry, discard review, and escalation.
 - Queue monitoring warns when the oldest runnable job exceeds five minutes and alerts critically at fifteen minutes; operators can also identify failed logins/uploads and old moderation work.
 - Automated tests prove the redaction callbacks remove every prohibited field, and a production-like smoke event verifies delivery, project routing, release metadata, source-map resolution, and owner notification before launch.
 

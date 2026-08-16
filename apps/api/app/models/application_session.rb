@@ -3,7 +3,10 @@
 class ApplicationSession < ApplicationRecord
   COOKIE_NAME = "__Host-berufe_session"
   TOKEN_BYTES = 32
-  AUTHENTICATION_METHOD = "sms_otp"
+  AUTHENTICATION_METHODS = {
+    "professional" => "sms_otp",
+    "admin" => "password"
+  }.freeze
   SESSION_DURATIONS = {
     "professional" => {idle: 7.days, absolute: 30.days},
     "admin" => {idle: 30.minutes, absolute: 12.hours}
@@ -11,21 +14,21 @@ class ApplicationSession < ApplicationRecord
 
   belongs_to :user_account
 
-  validates :authentication_method, inclusion: {in: [AUTHENTICATION_METHOD]}
+  validates :authentication_method, inclusion: {in: AUTHENTICATION_METHODS.values}
   validates :token_digest, :csrf_token_digest, format: {with: /\A[0-9a-f]{64}\z/}
   validates :authenticated_at, :last_active_at, :idle_expires_at, :absolute_expires_at, presence: true
+  validate :authentication_method_matches_role
 
-  def self.issue!(user_account:, now: Time.current, mfa_authenticated_at: nil)
+  def self.issue!(user_account:, now: Time.current)
     session_token = generate_token
     csrf_token = generate_token
     durations = SESSION_DURATIONS.fetch(user_account.role)
     session = create!(
       user_account:,
-      authentication_method: AUTHENTICATION_METHOD,
+      authentication_method: AUTHENTICATION_METHODS.fetch(user_account.role),
       token_digest: digest_token(session_token),
       csrf_token_digest: SessionSecurityDigest.call(purpose: "csrf_token", value: csrf_token),
       authenticated_at: now,
-      mfa_authenticated_at:,
       last_active_at: now,
       idle_expires_at: now + durations.fetch(:idle),
       absolute_expires_at: now + durations.fetch(:absolute)
@@ -75,5 +78,14 @@ class ApplicationSession < ApplicationRecord
       update!(revoked_at: now)
       true
     end
+  end
+
+  private
+
+  def authentication_method_matches_role
+    return unless user_account && authentication_method
+    return if authentication_method == AUTHENTICATION_METHODS[user_account.role]
+
+    errors.add(:authentication_method, :invalid)
   end
 end

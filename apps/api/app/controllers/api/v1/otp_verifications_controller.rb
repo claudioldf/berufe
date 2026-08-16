@@ -10,7 +10,7 @@ module Api
           challenge_token: params[:challenge_token],
           code: params[:code]
         )
-        set_session_cookie(result)
+        set_application_session_cookie(session: result.session, token: result.session_token)
 
         render json: {
           data: {status: "verified"},
@@ -28,17 +28,6 @@ module Api
       end
 
       private
-
-      def set_session_cookie(result)
-        response.set_cookie(ApplicationSession::COOKIE_NAME, {
-          value: result.session_token,
-          expires: result.session.absolute_expires_at,
-          secure: true,
-          httponly: true,
-          same_site: :lax,
-          path: "/"
-        })
-      end
 
       def render_invalid_verification
         render_api_error(

@@ -4,13 +4,27 @@ class UserAccount < ApplicationRecord
   ROLES = %w[admin professional].freeze
   STATUSES = %w[active suspended].freeze
   BRAZILIAN_MOBILE_PATTERN = /\A\+55[1-9][1-9]9\d{8}\z/
+  ADMIN_PASSWORD_MINIMUM_LENGTH = 8
+  ADMIN_PASSWORD_MAXIMUM_BYTES = 72
 
   has_many :application_sessions, dependent: :restrict_with_exception
+  has_many :admin_access_events, foreign_key: :admin_user_id, dependent: :restrict_with_exception,
+    inverse_of: :admin_user
   has_one :professional_profile, dependent: :restrict_with_exception
+  has_secure_password validations: false
 
-  validates :phone_e164, format: {with: BRAZILIAN_MOBILE_PATTERN}, uniqueness: true
+  before_validation :normalize_email
+
+  validates :phone_e164, format: {with: BRAZILIAN_MOBILE_PATTERN}, uniqueness: true, if: :professional?
+  validates :phone_e164, absence: true, if: :admin?
+  validates :email, absence: true, if: :professional?
+  validates :email, presence: true, uniqueness: true,
+    format: {with: URI::MailTo::EMAIL_REGEXP}, if: :admin?
+  validates :password_digest, presence: true, if: :admin?
+  validates :password, confirmation: true, if: -> { admin? && password.present? }
   validates :role, inclusion: {in: ROLES}
   validates :status, inclusion: {in: STATUSES}
+  validate :admin_password_is_strong, if: -> { admin? && password.present? }
   validate :legal_acceptance_is_complete
 
   def admin?
@@ -45,6 +59,19 @@ class UserAccount < ApplicationRecord
   end
 
   private
+
+  def normalize_email
+    self.email = AdminEmail.normalize(email)
+  end
+
+  def admin_password_is_strong
+    if password.length < ADMIN_PASSWORD_MINIMUM_LENGTH
+      errors.add(:password, :too_short, count: ADMIN_PASSWORD_MINIMUM_LENGTH)
+    end
+    if password.bytesize > ADMIN_PASSWORD_MAXIMUM_BYTES
+      errors.add(:password, :too_long, count: ADMIN_PASSWORD_MAXIMUM_BYTES)
+    end
+  end
 
   def legal_acceptance_is_complete
     acceptance_values = [terms_accepted_at, terms_version, privacy_notice_version]

@@ -16,9 +16,7 @@ in `app/services/api/client.ts`; pages do not call Rails directly.
 
 The `/foundation` route demonstrates the public layout, central visual tokens,
 form validation, feedback states, and live Nuxt-to-Rails integration. Routes
-under `/app` use the responsive workspace layout. The local-only role switcher
-is controlled by `NUXT_PUBLIC_PROTOTYPE_MODE` and the build rejects it for the
-production environment.
+under `/app` use the responsive workspace layout.
 
 Run the local checks with:
 

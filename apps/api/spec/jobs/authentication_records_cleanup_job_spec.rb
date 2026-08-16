@@ -21,6 +21,12 @@ RSpec.describe AuthenticationRecordsCleanupJob, type: :job do
     account = UserAccount.create!(phone_e164: "+5547999991111", role: "professional", status: "active")
     expired_session, = ApplicationSession.issue!(user_account: account, now: now - 7.days)
     active_session, = ApplicationSession.issue!(user_account: account, now:)
+    expired_admin_counter = create_admin_counter(window_started_at: now - 16.minutes)
+    active_admin_counter = create_admin_counter(
+      scope: "ip",
+      subject_digest: "d" * 64,
+      window_started_at: now - 14.minutes
+    )
 
     2.times { described_class.perform_now(now:) }
 
@@ -30,6 +36,8 @@ RSpec.describe AuthenticationRecordsCleanupJob, type: :job do
     expect(OtpRequestCounter.exists?(active_counter.id)).to be(true)
     expect(ApplicationSession.exists?(expired_session.id)).to be(false)
     expect(ApplicationSession.exists?(active_session.id)).to be(true)
+    expect(AdminLoginAttemptCounter.exists?(expired_admin_counter.id)).to be(false)
+    expect(AdminLoginAttemptCounter.exists?(active_admin_counter.id)).to be(true)
   end
 
   it "runs on the worker's default queue" do
@@ -62,5 +70,9 @@ RSpec.describe AuthenticationRecordsCleanupJob, type: :job do
       request_count: 1,
       last_requested_at: window_started_at
     )
+  end
+
+  def create_admin_counter(window_started_at:, scope: "email", subject_digest: "c" * 64)
+    AdminLoginAttemptCounter.create!(scope:, subject_digest:, window_started_at:, attempt_count: 1)
   end
 end

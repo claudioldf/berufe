@@ -38,6 +38,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Authenticate a deliberately provisioned administrator with email and password */
+        post: operations["createAdminSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/catalog": {
         parameters: {
             query?: never;
@@ -111,6 +128,18 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AdminSessionRequest: {
+            /** Format: email */
+            email: string;
+            password: string;
+        };
+        AdminSessionResponse: {
+            data: {
+                /** @constant */
+                status: "authenticated";
+            };
+            request_id: components["schemas"]["RequestId"];
+        };
         PhoneOtpRequest: {
             /** @description Brazilian mobile number in national, formatted, or E.164 form. */
             phone: string;
@@ -176,11 +205,10 @@ export interface components {
             registration_completed: boolean;
         };
         ApplicationSessionSummary: {
-            /** @constant */
-            authentication_method: "sms_otp";
+            /** @enum {string} */
+            authentication_method: "sms_otp" | "password";
             /** Format: date-time */
             authenticated_at: string;
-            mfa_authenticated: boolean;
             /** Format: date-time */
             idle_expires_at: string;
             /** Format: date-time */
@@ -263,7 +291,7 @@ export interface components {
         ApplicationSessionCookie: string;
         /** @description Bounded request identifier used for safe cross-service correlation. */
         RequestId: components["schemas"]["RequestId"];
-        /** @description Whole seconds before another OTP request may be attempted. */
+        /** @description Whole seconds before another rate-limited request may be attempted. */
         RetryAfter: number;
     };
     pathItems: never;
@@ -361,6 +389,73 @@ export interface operations {
                 };
             };
             /** @description The provider or session persistence is unavailable. */
+            503: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    createAdminSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminSessionRequest"];
+            };
+        };
+        responses: {
+            /** @description The credentials were accepted and Rails created an administrator session. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Set-Cookie": components["headers"]["ApplicationSessionCookie"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminSessionResponse"];
+                };
+            };
+            /** @description The credentials are invalid or the administrator is unavailable. */
+            401: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The exact browser origin is invalid. */
+            403: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The email or source address reached its login-attempt allowance. */
+            429: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Retry-After": components["headers"]["RetryAfter"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Administrator authentication persistence is temporarily unavailable. */
             503: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];

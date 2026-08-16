@@ -9,9 +9,8 @@ export interface CurrentAccount {
 }
 
 export interface CurrentSession {
-  authenticationMethod: "sms_otp";
+  authenticationMethod: "sms_otp" | "password";
   authenticatedAt: string;
-  mfaAuthenticated: boolean;
   idleExpiresAt: string;
   absoluteExpiresAt: string;
 }
@@ -46,7 +45,6 @@ export async function getCurrentApplicationSession(
     session: {
       authenticationMethod: data.data.session.authentication_method,
       authenticatedAt: data.data.session.authenticated_at,
-      mfaAuthenticated: data.data.session.mfa_authenticated,
       idleExpiresAt: data.data.session.idle_expires_at,
       absoluteExpiresAt: data.data.session.absolute_expires_at,
     },

@@ -16,22 +16,21 @@ RSpec.describe ApplicationSession, type: :model do
     expect(session.token_digest).to eq(described_class.digest_token(token))
     expect(session.token_digest).not_to eq(token)
     expect(session.csrf_token_digest).to match(/\A[0-9a-f]{64}\z/)
+    expect(session.authentication_method).to eq("sms_otp")
     expect(session.idle_expires_at).to eq(now + 7.days)
     expect(session.absolute_expires_at).to eq(now + 30.days)
-    expect(session.mfa_authenticated_at).to be_nil
     expect(session).to be_active(now: session.idle_expires_at - 1.second)
     expect(session).not_to be_active(now: session.idle_expires_at)
   end
 
-  it "applies admin expiry boundaries and records MFA time when supplied" do
+  it "uses password authentication and the shorter administrator expiry boundaries" do
     now = Time.zone.parse("2026-08-15 12:00:00 UTC")
-    mfa_authenticated_at = now + 1.minute
-    account = create_account(role: "admin", phone: "+5547999992222")
-    session, = described_class.issue!(user_account: account, now:, mfa_authenticated_at:)
+    account = create_account(role: "admin")
+    session, = described_class.issue!(user_account: account, now:)
 
+    expect(session.authentication_method).to eq("password")
     expect(session.idle_expires_at).to eq(now + 30.minutes)
     expect(session.absolute_expires_at).to eq(now + 12.hours)
-    expect(session.mfa_authenticated_at).to eq(mfa_authenticated_at)
     expect(session).to be_active(now: session.idle_expires_at - 1.second)
     expect(session).not_to be_active(now: session.idle_expires_at)
   end
@@ -94,7 +93,17 @@ RSpec.describe ApplicationSession, type: :model do
 
   private
 
-  def create_account(role:, phone: "+5547999991111")
-    UserAccount.create!(phone_e164: phone, role:, status: "active")
+  def create_account(role:)
+    if role == "admin"
+      UserAccount.create!(
+        email: "admin@example.com",
+        password: "a-secure-admin-password",
+        password_confirmation: "a-secure-admin-password",
+        role:,
+        status: "active"
+      )
+    else
+      UserAccount.create!(phone_e164: "+5547999991111", role:, status: "active")
+    end
   end
 end

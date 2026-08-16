@@ -35,14 +35,35 @@ RSpec.describe UserAccount, type: :model do
     expect(account).to be_valid
   end
 
-  it "recognizes deliberately provisioned admin accounts" do
-    account = described_class.new(
-      phone_e164: "+5547999992222",
+  it "keeps administrator credentials separate from professional phone credentials" do
+    account = described_class.create!(
+      email: " ADMIN@EXAMPLE.COM ",
+      password: "a-secure-admin-password",
+      password_confirmation: "a-secure-admin-password",
       role: "admin",
       status: "active"
     )
 
     expect(account).to be_admin
+    expect(account.email).to eq("admin@example.com")
+    expect(account.phone_e164).to be_nil
+    expect(account.password_digest).not_to eq("a-secure-admin-password")
+    expect(account.authenticate("a-secure-admin-password")).to eq(account)
+
+    account.phone_e164 = "+5547999992222"
+    expect(account).not_to be_valid
+  end
+
+  it "rejects short and overlong administrator passwords" do
+    account = described_class.new(email: "admin@example.com", role: "admin", status: "active")
+
+    account.password = account.password_confirmation = "short"
+    expect(account).not_to be_valid
+    expect(account.errors[:password]).to be_present
+
+    account.password = account.password_confirmation = "á" * 37
+    expect(account).not_to be_valid
+    expect(account.errors[:password]).to be_present
   end
 
   it "revokes all sessions immediately when access is suspended" do

@@ -68,9 +68,9 @@ useSeoMeta({
         em dispositivos compartilhados.
       </p>
       <p>
-        Contas administrativas são individuais e exigem segundo fator TOTP. É
-        proibido compartilhar acesso, tentar usar a conta de outra pessoa ou
-        contornar limites de segurança.
+        Contas administrativas usam e-mail e senha individuais. É proibido
+        compartilhar acesso, tentar usar a conta de outra pessoa ou contornar
+        limites de segurança.
       </p>
     </section>
 

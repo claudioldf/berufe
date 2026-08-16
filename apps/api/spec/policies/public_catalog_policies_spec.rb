@@ -39,7 +39,17 @@ RSpec.describe "Public catalog policies" do
   private
 
   def create_account(phone:, role: "professional", status: "active")
-    UserAccount.create!(phone_e164: phone, role:, status:)
+    if role == "admin"
+      UserAccount.create!(
+        email: "admin-#{phone.delete("+")}@example.com",
+        password: "a-secure-admin-password",
+        password_confirmation: "a-secure-admin-password",
+        role:,
+        status:
+      )
+    else
+      UserAccount.create!(phone_e164: phone, role:, status:)
+    end
   end
 
   def create_category(name:, slug:, active: true, order: 0)

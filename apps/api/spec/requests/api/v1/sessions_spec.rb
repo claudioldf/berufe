@@ -29,7 +29,6 @@ RSpec.describe "Application sessions", type: :request, openapi: true do
         "session" => {
           "authentication_method" => "sms_otp",
           "authenticated_at" => now.iso8601(3),
-          "mfa_authenticated" => false,
           "idle_expires_at" => (now + 7.days).iso8601(3),
           "absolute_expires_at" => (now + 30.days).iso8601(3)
         },
@@ -52,12 +51,14 @@ RSpec.describe "Application sessions", type: :request, openapi: true do
   it "restores an authorized admin session without exposing private account fields" do
     now = Time.zone.parse("2026-08-15 12:00:00 UTC")
     travel_to(now)
-    account = UserAccount.create!(phone_e164: "+5547999992222", role: "admin", status: "active")
-    _application_session, session_token = ApplicationSession.issue!(
-      user_account: account,
-      now:,
-      mfa_authenticated_at: now
+    account = UserAccount.create!(
+      email: "admin@example.com",
+      password: "a-secure-admin-password",
+      password_confirmation: "a-secure-admin-password",
+      role: "admin",
+      status: "active"
     )
+    _application_session, session_token = ApplicationSession.issue!(user_account: account, now:)
 
     get_current_session(session_token:, request_id: "admin-session-current")
 
@@ -68,8 +69,8 @@ RSpec.describe "Application sessions", type: :request, openapi: true do
       "status" => "active",
       "registration_completed" => false
     )
-    expect(response.parsed_body.dig("data", "session", "mfa_authenticated")).to be(true)
-    expect(response.body).not_to include(account.phone_e164)
+    expect(response.parsed_body.dig("data", "session", "authentication_method")).to eq("password")
+    expect(response.body).not_to include(account.email, account.password_digest)
     assert_api_conform(status: 200)
   end
 

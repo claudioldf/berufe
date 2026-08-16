@@ -54,7 +54,13 @@ RSpec.describe ProfessionalRegistration do
   end
 
   it "rejects admin and suspended accounts even when called outside the controller" do
-    admin = UserAccount.create!(phone_e164: "+5547999996002", role: "admin", status: "active")
+    admin = UserAccount.create!(
+      email: "admin@example.com",
+      password: "a-secure-admin-password",
+      password_confirmation: "a-secure-admin-password",
+      role: "admin",
+      status: "active"
+    )
     suspended = UserAccount.create!(phone_e164: "+5547999996003", role: "professional", status: "suspended")
 
     [admin, suspended].each do |invalid_account|

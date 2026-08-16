@@ -7,12 +7,15 @@ Rails.application.routes.draw do
       resource :catalog, only: :show, controller: :catalogs
       put "professional-registration", to: "professional_registrations#update"
       resource :session, only: %i[show destroy]
+      namespace :admin do
+        resource :session, only: :create
+      end
       resources :otp_challenges, only: :create, path: "auth/otp/challenges"
       resources :otp_verifications, only: :create, path: "auth/otp/verifications"
     end
   end
 
-  constraints AdminMfaConstraint.new do
+  constraints AdminSessionConstraint.new do
     mount GoodJob::Engine => "/admin/jobs"
   end
 
