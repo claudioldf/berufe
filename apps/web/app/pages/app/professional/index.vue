@@ -19,6 +19,8 @@ const professionalFirstName = computed(
     professional.name.split(" ")[0],
 );
 
+definePageMeta({ layout: "workspace" });
+
 useSeoMeta({
   title: "Painel profissional",
   robots: "noindex, nofollow",

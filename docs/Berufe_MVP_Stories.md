@@ -1,6 +1,6 @@
 # Berufe — MVP Implementation Stories
 
-**Status:** implementation backlog  
+**Status:** implementation backlog
 **Updated:** August 13, 2026
 **Sources:** _Berufe — MVP Feature Plan_ and _Berufe — Lean MVP Infrastructure and Architecture_
 
@@ -59,7 +59,7 @@ Apply these rules whenever they are relevant to the story:
 - Ruby, Node, Rails, Nuxt, and package versions are pinned; dependency lockfiles are committed.
 - The README contains only the commands needed to install, start, test, lint, format, and stop the project.
 
-**Depends on:** none.  
+**Depends on:** none.
 **Covers:** Infrastructure §§2–3 and §7.1.
 
 ### S002 — Run the local stack through Docker Compose
@@ -74,7 +74,7 @@ Apply these rules whenever they are relevant to the story:
 - Nuxt and Rails source changes reload without rebuilding the entire stack, and the team records that hot reload is comfortable on its supported development machines before retaining the four-service setup.
 - The local stack does not require Redis, MinIO, live Infobip delivery, R2, or production credentials.
 
-**Depends on:** S001.  
+**Depends on:** S001.
 **Covers:** Infrastructure §7.1.
 
 ### S003 — Establish environment configuration and safe local adapters
@@ -92,7 +92,7 @@ Apply these rules whenever they are relevant to the story:
 - Production-only credentials remain server-side and cannot enter the Nuxt client bundle.
 - Local, pull-request preview, stable staging, and production configuration are clearly separated.
 
-**Depends on:** S002.  
+**Depends on:** S002.
 **Covers:** Infrastructure §§4, 7.1, 12, and 14.
 
 ### S004 — Configure PostgreSQL and the database baseline
@@ -106,7 +106,7 @@ Apply these rules whenever they are relevant to the story:
 - Migrations are the only supported mechanism for schema changes.
 - A database readiness check is exposed through the Rails health endpoint without leaking configuration.
 
-**Depends on:** S002.  
+**Depends on:** S002.
 **Covers:** Infrastructure §§3 and 9.
 
 ### S005 — Configure GoodJob and the worker
@@ -124,7 +124,7 @@ Apply these rules whenever they are relevant to the story:
 - Jobs receive a request or correlation ID when originating from a web request.
 - Job code is documented as retry-safe; no Redis or alternative queue is added.
 
-**Depends on:** S004.  
+**Depends on:** S004.
 **Covers:** Infrastructure §§3, 6, and 15.
 
 ### S006 — Establish API and frontend integration conventions
@@ -142,7 +142,7 @@ Apply these rules whenever they are relevant to the story:
 - Rails request specs use `openapi_first` against the same file to validate important requests/responses and report operation/status coverage.
 - A sample endpoint proves browser-to-Nuxt-to-Rails communication and contract validation in Compose.
 
-**Depends on:** S003, S004.  
+**Depends on:** S003, S004.
 **Covers:** Infrastructure §5 and §§6–7.
 
 ### S007 — Configure the UI foundation
@@ -157,7 +157,7 @@ Apply these rules whenever they are relevant to the story:
 - A small page demonstrates form controls, validation feedback, buttons, navigation, loading, empty, and error states.
 - No second component library, standalone design-system package, or Storybook is added.
 
-**Depends on:** S001.  
+**Depends on:** S001.
 **Covers:** Infrastructure §§3, 7, and 13.
 
 ### S008 — Enforce code quality and automated tests
@@ -172,12 +172,12 @@ Apply these rules whenever they are relevant to the story:
 - RSpec request-test and Vitest component-test examples pass in containers.
 - Test data is synthetic and no test reaches a real provider.
 
-**Depends on:** S002, S006, S007.  
+**Depends on:** S002, S006, S007.
 **Covers:** Infrastructure §§13–14.
 
 ### S009 — Add continuous integration and build verification
 
-**Story:** As a team, we want every proposed change checked automatically so that broken builds do not reach `main`.
+**Story:** As a team, we want every proposed change checked automatically so that broken builds do not reach `master`.
 
 **Acceptance criteria:**
 
@@ -188,7 +188,7 @@ Apply these rules whenever they are relevant to the story:
 - An integration job can start the root Compose stack for changes crossing the API boundary.
 - CI excludes secrets, generated files such as `schema.d.ts`, lockfiles, and incompatible Rails YAML/ERB from repository formatting.
 
-**Depends on:** S008.  
+**Depends on:** S008.
 **Covers:** Infrastructure §§3 and 14.
 
 ## 5. Increment 1 — Access, roles, and controlled catalogs
@@ -202,11 +202,11 @@ Apply these rules whenever they are relevant to the story:
 **Acceptance criteria:**
 
 - Migrations create `service_categories`, `services`, and `neighborhoods` with the constraints defined in Feature E2.
-- Seed data contains the 16 approved residential renovation/maintenance services—electrician, plumber, painter, mason, tile installer, drywall/plaster professional, carpenter, furniture installer, architect, interior designer, handyman, roof/gutter professional, residential air-conditioning technician, metalworker, glazier, and waterproofing specialist—and the approved Joinville neighborhoods.
+- Seed data using ./apps/web/data/catalogs.json.
 - Seeds are idempotent and use stable slugs/codes plus deterministic `sort_order` values for every reorderable catalog, including neighborhoods.
 - Public read endpoints return active entries in configured order.
 
-**Depends on:** S004, S006.  
+**Depends on:** S004, S006.
 **Covers:** Feature E2.
 
 ### S011 — Request a phone OTP
@@ -224,7 +224,7 @@ Apply these rules whenever they are relevant to the story:
 - The UI immediately explains cooldown, delivery rejection, and provider-unavailable states without polling or bypassing verification.
 - Request/contract tests cover accepted, malformed phone, cooldown/daily rate limit with `Retry-After`, delivery rejection, provider timeout/unavailability, and the invariant that no OTP-delivery job is enqueued.
 
-**Depends on:** S005, S006, S008.  
+**Depends on:** S005, S006, S008.
 **Covers:** Feature A1; Infrastructure §§8 and 12.
 
 ### S012 — Verify the Infobip OTP and create a Rails application session
@@ -244,7 +244,7 @@ Apply these rules whenever they are relevant to the story:
 - The Infobip 2FA implementation is enabled only where explicitly configured behind the same small adapter.
 - Model/request tests cover token hashing, professional/admin idle and absolute boundaries, throttled activity writes, MFA time, invalid/expired verification, and safe provider-unavailable behavior.
 
-**Depends on:** S011.  
+**Depends on:** S011.
 **Covers:** Feature A1; Infrastructure §8.
 
 ### S013 — Restore, inspect, and end a session
@@ -261,7 +261,7 @@ Apply these rules whenever they are relevant to the story:
 - Authenticated routes redirect cleanly to login while Rails remains the authorization authority.
 - Request tests cover current-session CSRF rotation, idle/absolute expiry, logout of one session, revoke-all/suspension, and continued local authentication during provider outage.
 
-**Depends on:** S012, S005.  
+**Depends on:** S012, S005.
 **Covers:** Feature A1; Infrastructure §§6 and 8.
 
 ### S014 — Protect browser sessions with CORS and CSRF controls
@@ -276,7 +276,7 @@ Apply these rules whenever they are relevant to the story:
 - Security headers cover content type, framing, and referrer behavior.
 - Request tests prove exact allowed-origin success; missing/invalid CSRF, malformed origins, Vercel preview origins, and all other cross-origin mutations are rejected.
 
-**Depends on:** S012.  
+**Depends on:** S012.
 **Covers:** Infrastructure §§8 and 12.
 
 ### S015 — Add roles and record-level authorization
@@ -292,7 +292,7 @@ Apply these rules whenever they are relevant to the story:
 - Policy/request tests prove anonymous, owner, non-owner, admin, and suspended-user behavior.
 - Hiding or suspending public content removes it from public API responses immediately.
 
-**Depends on:** S013.  
+**Depends on:** S013.
 **Covers:** Features A1 and E1; Infrastructure §§6, 8–9, and 12.
 
 ### S016 — Complete professional registration and create a draft profile
@@ -306,7 +306,7 @@ Apply these rules whenever they are relevant to the story:
 - Returning professionals skip completed registration and enter the dashboard/setup flow.
 - Customers do not receive general-purpose accounts.
 
-**Depends on:** S013, S015.  
+**Depends on:** S013, S015.
 **Covers:** Feature A1 and the invited-professional entry path in Feature C1.
 
 ### S017 — Secure admin access with MFA and audit context
@@ -322,7 +322,7 @@ Apply these rules whenever they are relevant to the story:
 - Admin actions receive the acting admin ID and request ID for later audit records.
 - There is no multi-level moderator permission system in the MVP.
 
-**Depends on:** S012, S015.  
+**Depends on:** S012, S015.
 **Covers:** Feature E1; Infrastructure §8.
 
 ### S018 — Manage services and Joinville neighborhoods
@@ -361,7 +361,7 @@ Apply these rules whenever they are relevant to the story:
 - The professional can edit only their own draft or permitted published profile fields.
 - Declared experience is labeled as declared, never verified.
 
-**Depends on:** S016, S007.  
+**Depends on:** S016, S007.
 **Covers:** Feature A2.
 
 ### S020 — Select services and service areas
@@ -376,7 +376,7 @@ Apply these rules whenever they are relevant to the story:
 - Duplicate service and service-area records are prevented by database constraints. The all-city nullable area uses a partial unique index or `NULLS NOT DISTINCT`, so multiple “all Joinville” rows cannot bypass uniqueness through `NULL` semantics.
 - Optional specialization notes are short and do not create new categories.
 
-**Depends on:** S010, S019.  
+**Depends on:** S010, S019.
 **Covers:** Feature A2.
 
 ### S021 — Create a stable public slug and inline profile representation
@@ -390,7 +390,7 @@ Apply these rules whenever they are relevant to the story:
 - Anonymous requests cannot infer draft or pending records.
 - Later display-name changes do not silently break an already shared slug.
 
-**Depends on:** S019, S020.  
+**Depends on:** S019, S020.
 **Covers:** Features A2 and B3.
 
 ### S022 — Submit a profile for moderation
@@ -405,7 +405,7 @@ Apply these rules whenever they are relevant to the story:
 - A professional can see the current status but cannot publish their own profile.
 - Editing material published content returns the profile to `pending_review`; it is not publicly served until reapproved. Operations has a documented manual correction path for urgent founding-cohort changes.
 
-**Depends on:** S021.  
+**Depends on:** S021.
 **Covers:** Features A2 and A6.
 
 ### S023 — Build the shared moderation queue and audit trail
@@ -420,7 +420,7 @@ Apply these rules whenever they are relevant to the story:
 - Rejection and hide require a private reason.
 - Pending, rejected, and hidden items never appear through public scopes.
 
-**Depends on:** S017, S022.  
+**Depends on:** S017, S022.
 **Covers:** Feature E1.
 
 ### S024 — Approve and publish a professional profile
@@ -435,7 +435,7 @@ Apply these rules whenever they are relevant to the story:
 - Professionals can see moderation status and rejection guidance in the authenticated UI.
 - State-transition, policy, and serializer tests cover every allowed path.
 
-**Depends on:** S023.  
+**Depends on:** S023.
 **Covers:** Features A2 and E1.
 
 ### S025 — Configure local and R2 object storage
@@ -452,7 +452,7 @@ Apply these rules whenever they are relevant to the story:
 - R2 credentials and permanent verification-file URLs never reach Nuxt.
 - Provider adapter tests use fakes and do not contact R2.
 
-**Depends on:** S003, S015.  
+**Depends on:** S003, S015.
 **Covers:** Features A2–A4; Infrastructure §§4 and 10.
 
 ### S026 — Upload and moderate the profile photo
@@ -467,7 +467,7 @@ Apply these rules whenever they are relevant to the story:
 - Upload, processing, rejection, and replacement states are visible to the owner.
 - A failed processing job is visible and retryable without duplicating records.
 
-**Depends on:** S005, S023, S025.  
+**Depends on:** S005, S023, S025.
 **Covers:** Features A2 and E1; Infrastructure §§6 and 10.
 
 ### S027 — Create and manage portfolio items
@@ -482,7 +482,7 @@ Apply these rules whenever they are relevant to the story:
 - Images use the same private-upload, libvips-processing, and public-variant rules as profile photos.
 - Pending or rejected items are visible to the owner but not anonymous users.
 
-**Depends on:** S020, S025, S026.  
+**Depends on:** S020, S025, S026.
 **Covers:** Feature A3.
 
 ### S028 — Moderate portfolio items
@@ -497,7 +497,7 @@ Apply these rules whenever they are relevant to the story:
 - The owner sees item status and rejection guidance.
 - Public portfolio queries return approved items only.
 
-**Depends on:** S027.  
+**Depends on:** S027.
 **Covers:** Features A3 and E1.
 
 ### S029 — Submit private verification evidence
@@ -514,7 +514,7 @@ Apply these rules whenever they are relevant to the story:
 - Only the owner can see request status; only admins can access the evidence through short-lived authorized access.
 - The UI explains that verification is evidence checking, not a work guarantee.
 
-**Depends on:** S025, S024.  
+**Depends on:** S025, S024.
 **Covers:** Feature A4.
 
 ### S030 — Review verification and publish precise labels
@@ -529,7 +529,7 @@ Apply these rules whenever they are relevant to the story:
 - Public APIs return only the label and verification date, never files, identifiers, or review notes.
 - Phone confirmation is represented separately from manually reviewed identity evidence. Company/certificate verification types are not accepted by the MVP API.
 
-**Depends on:** S029, S023.  
+**Depends on:** S029, S023.
 **Covers:** Features A4 and E1.
 
 ### S031 — Protect and retain restricted files
@@ -545,7 +545,7 @@ Apply these rules whenever they are relevant to the story:
 - Deleted evidence cannot be regenerated through an old URL.
 - Tests prove anonymous, professional, non-reviewing path, quarantined/failed object, content-signature mismatch, oversized/dimension-limit, and expired-link denial.
 
-**Depends on:** S030, S005.  
+**Depends on:** S030, S005.
 **Covers:** Feature A4; Infrastructure §§9–10 and 12.
 
 ## 7. Increment 3 — Public discovery and direct contact
@@ -563,7 +563,7 @@ Apply these rules whenever they are relevant to the story:
 - Public pages include correct title, description, canonical URL, and share metadata.
 - Results URLs preserve selected service/neighborhood state. No dedicated category landing page, free-form lead request, multi-city selector, map, or paid placement is present.
 
-**Depends on:** S010, S007, S024.  
+**Depends on:** S010, S007, S024.
 **Covers:** Feature B1.
 
 ### S033 — Search published professionals
@@ -578,7 +578,7 @@ Apply these rules whenever they are relevant to the story:
 - Common known spelling variations are normalized in application code.
 - No-result responses suggest a related active service or changing the neighborhood; they never create a lead.
 
-**Depends on:** S024, S032.  
+**Depends on:** S024, S032.
 **Covers:** Feature B1.
 
 ### S034 — Record privacy-friendly search aggregates
@@ -595,7 +595,7 @@ Apply these rules whenever they are relevant to the story:
 - Admin/product access is aggregate-only for the MVP.
 - Daily aggregate data retains the total searches needed as the denominator for the search-to-profile-open success signal and supplies the administrator growth report defined by R001–R014.
 
-**Depends on:** S033.  
+**Depends on:** S033.
 **Covers:** Feature B1 and MVP success signals.
 
 ### S035 — Show transparent, deterministic results
@@ -611,7 +611,7 @@ Apply these rules whenever they are relevant to the story:
 - Pending, rejected, hidden, or suspended evidence contributes neither labels nor counts.
 - Result-to-profile links carry the anonymous search-event context. The first profile open marks that search as having produced an open; later opens from the same search do not increase the search-level numerator.
 
-**Depends on:** S033, S028, S030.  
+**Depends on:** S033, S028, S030.
 **Covers:** Feature B2.
 
 ### S036 — Render the public professional profile
@@ -628,7 +628,7 @@ Apply these rules whenever they are relevant to the story:
 - Only present, approved social links are rendered; each is labeled for its platform, opens as a safe external link in a new tab, and no empty social-links container appears.
 - A successful public-profile render increments the privacy-friendly daily profile-view aggregate with short-lived duplicate filtering; metric failure never blocks the page.
 
-**Depends on:** S035.  
+**Depends on:** S035.
 **Covers:** Feature B3.
 
 ### S037 — Open a direct WhatsApp conversation and count the handoff
@@ -644,7 +644,7 @@ Apply these rules whenever they are relevant to the story:
 - Basic short-lived deduplication prevents obvious repeated browser taps from inflating counts without creating a permanent visitor table.
 - Internal aggregates can calculate search-to-profile-open and public-profile-to-WhatsApp conversion without a visitor identity; no professional-facing analytics UI is added.
 
-**Depends on:** S035, S036.  
+**Depends on:** S035, S036.
 **Covers:** Feature B4 and Feature A6 metrics; Infrastructure §11.
 
 Public profiles also show a visible Berufe support/report contact that routes to the documented manual operations process. The launch MVP does not persist a `content_report` record or expose an anonymous report API.
@@ -665,7 +665,7 @@ Public profiles also show a visible Berufe support/report contact that routes to
 - The new relationship is pending and not public.
 - Search for recipients exposes published professional identity only.
 
-**Depends on:** S030, S035.  
+**Depends on:** S030, S035.
 **Covers:** Feature C1.
 
 ### S043 — Accept or decline a professional relationship
@@ -680,7 +680,7 @@ Public profiles also show a visible Berufe support/report contact that routes to
 - Declined relationships remain private and do not affect public counts.
 - “Worked together” is never public without confirmation by both parties.
 
-**Depends on:** S042.  
+**Depends on:** S042.
 **Covers:** Feature C1 and Feature A6 pending actions.
 
 ### S046 — Moderate and display professional trust relationships publicly
@@ -804,7 +804,7 @@ The MVP report includes only implemented launch domains: professional supply and
 - Queue monitoring warns when the oldest runnable job exceeds five minutes and alerts critically at fifteen minutes; operators can also identify failed logins/uploads and old moderation work.
 - Automated tests prove the redaction callbacks remove every prohibited field, and a production-like smoke event verifies delivery, project routing, release metadata, source-map resolution, and owner notification before launch.
 
-**Depends on:** S005, S013, S025.  
+**Depends on:** S005, S013, S025.
 **Covers:** Infrastructure §§12 and 15.
 
 ### S053 — Define privacy, terms, retention, and user-data operations
@@ -841,7 +841,7 @@ The MVP report includes only implemented launch domains: professional supply and
 - Migrations run as an explicit release step before dependent code.
 - Deployment failure preserves the last working version or has a documented forward-fix path.
 
-**Depends on:** S009, S052.  
+**Depends on:** S009, S052.
 **Covers:** Infrastructure §§3–4, 7.1, 14–15.
 
 ### S055 — Implement the five release-critical end-to-end flows
@@ -872,7 +872,7 @@ The MVP report includes only implemented launch domains: professional supply and
 - Public media re-upload and private-evidence re-request are documented as the MVP storage-loss approach.
 - No custom cross-provider backup system is added.
 
-**Depends on:** S053, S054.  
+**Depends on:** S053, S054.
 **Covers:** Infrastructure §§15 and 18.
 
 ### S057 — Complete the launch checklist and operating ownership

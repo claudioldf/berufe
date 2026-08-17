@@ -19,6 +19,8 @@ const activeTab = computed(() =>
     : "dados",
 );
 
+definePageMeta({ layout: "workspace" });
+
 useSeoMeta({
   title: "Editar perfil profissional",
   robots: "noindex, nofollow",

@@ -5,8 +5,12 @@ import type { AppRole } from "~/types";
 
 const route = useRoute();
 const router = useRouter();
+const runtimeConfig = useRuntimeConfig();
 const { role: activeRole, setRole } = useAppRole();
 const isMenuOpen = shallowRef(false);
+const isPrototypeMode = computed(
+  () => runtimeConfig.public.prototypeMode === true,
+);
 
 const professionalLoginPath = "/app/professional/login";
 const isProfessional = computed(
@@ -95,7 +99,7 @@ function isLinkActive(to: string) {
       </nav>
 
       <div class="header__actions">
-        <label class="role-switcher">
+        <label v-if="isPrototypeMode" class="role-switcher">
           <span>Explorar como</span>
           <select name="preview-role" :value="currentRole" @change="changeRole">
             <option value="visitor">Visitante</option>

@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+bundle exec standardrb
+bundle exec brakeman --quiet --no-pager --exit-on-warn --exit-on-error
+bundle exec rspec

@@ -6,6 +6,7 @@ useSeoMeta({
   robots: "noindex, nofollow",
 });
 definePageMeta({
+  layout: "workspace",
   middleware: (to) => {
     if (to.query.view === "catalogos") {
       return navigateTo("/app/admin/catalog", { replace: true });

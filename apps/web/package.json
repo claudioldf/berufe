@@ -1,50 +1,68 @@
 {
-  "name": "berufe-interactive-mockup",
+  "name": "@berufe/web",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@10.34.5",
+  "engines": {
+    "node": "24.18.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@parcel/watcher",
+      "esbuild",
+      "unrs-resolver",
+      "vue-demi"
+    ]
+  },
   "scripts": {
     "dev": "nuxt dev",
     "build": "nuxt build",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
+    "api:generate": "openapi-typescript ../contracts/openapi.yaml -o app/services/api/schema.d.ts",
     "typecheck": "nuxt typecheck",
     "format": "prettier --write \"app/**/*.{vue,ts,scss,css}\" \"tests/**/*.ts\" \"*.{ts,mjs,json,md}\"",
     "format:check": "prettier --check \"app/**/*.{vue,ts,scss,css}\" \"tests/**/*.ts\" \"*.{ts,mjs,json,md}\"",
+    "format:repo:check": "prettier --check \"../../README.md\" \"../../docs/**/*.md\" \"../../compose.yaml\" \"../../.github/workflows/**/*.yml\" --ignore-path ../../.prettierignore",
     "format:styles": "prettier --write \"app/**/*.vue\" \"app/**/*.{css,scss}\"",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "stylelint": "stylelint \"app/**/*.{vue,scss}\"",
     "stylelint:fix": "stylelint \"app/**/*.{vue,scss}\" --fix",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "check": "npm run format:check && npm run lint && npm run stylelint && npm run typecheck && npm run test"
+    "check": "pnpm format:check && pnpm lint && pnpm stylelint && pnpm typecheck && pnpm test"
   },
   "dependencies": {
     "@iconify-json/lucide": "1.2.123",
     "@nuxt/ui": "4.10.0",
     "nuxt": "4.5.2",
+    "openapi-fetch": "0.17.0",
     "vue": "3.5.41"
   },
   "devDependencies": {
-    "@nuxt/eslint": "^1.17.0",
-    "@nuxt/test-utils": "^4.1.0",
-    "@playwright/test": "^1.62.1",
-    "@vue/test-utils": "^2.4.11",
-    "eslint": "^10.8.1",
-    "happy-dom": "^20.11.2",
-    "postcss-html": "^2.0.0",
-    "postcss-scss": "^4.0.9",
-    "prettier": "^3.9.6",
-    "sass": "^1.102.0",
-    "stylelint": "^17.14.1",
-    "stylelint-config-html": "^2.0.0",
-    "stylelint-config-recommended": "^18.0.0",
-    "stylelint-config-recommended-scss": "^17.0.1",
-    "stylelint-config-recommended-vue": "^2.0.0",
-    "stylelint-config-standard-scss": "^17.0.0",
-    "typescript": "6.0.3",
-    "vitest": "^4.1.10",
+    "@nuxt/eslint": "1.17.0",
+    "@nuxt/test-utils": "4.1.0",
+    "@playwright/test": "1.62.1",
+    "@vitest/coverage-v8": "4.1.10",
+    "@vue/test-utils": "2.4.11",
+    "eslint": "10.8.1",
+    "happy-dom": "20.11.2",
+    "openapi-typescript": "7.13.0",
+    "postcss-html": "2.0.0",
+    "postcss-scss": "4.0.9",
+    "prettier": "3.9.6",
+    "sass": "1.102.0",
+    "stylelint": "17.14.1",
+    "stylelint-config-html": "2.0.0",
+    "stylelint-config-recommended": "18.0.0",
+    "stylelint-config-recommended-scss": "17.0.1",
+    "stylelint-config-recommended-vue": "2.0.0",
+    "stylelint-config-standard-scss": "17.0.0",
+    "typescript": "5.9.3",
+    "vitest": "4.1.10",
     "vue-tsc": "3.3.9"
   }
 }

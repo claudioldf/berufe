@@ -4,10 +4,18 @@ export default defineVitestConfig({
   test: {
     environment: "nuxt",
     globals: true,
+    hookTimeout: 30_000,
     include: ["tests/unit/**/*.test.ts"],
+    maxWorkers: 1,
     coverage: {
-      reporter: ["text", "html"],
-      include: ["app/composables/**/*.ts", "app/utils/**/*.ts"],
+      provider: "v8",
+      reporter: ["text-summary", "html"],
+      include: [
+        "app/components/**/*.vue",
+        "app/composables/**/*.ts",
+        "app/services/api/{client,errors}.ts",
+        "app/utils/**/*.ts",
+      ],
     },
     environmentOptions: {
       nuxt: {
