@@ -93,7 +93,11 @@ export type ProfessionalProfileStatus =
 export interface ProfessionalWorkspace {
   profile: {
     id: string;
+    publicSlug: string;
     status: ProfessionalProfileStatus;
+    revisionStatus:
+      "draft" | "pending_review" | "approved" | "rejected" | "superseded";
+    hasPublishedRevision: boolean;
     identity: Pick<
       ProfessionalProfileDraft,
       | "name"

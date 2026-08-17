@@ -36,6 +36,7 @@ const saving = shallowRef(false);
 const professional = computed<Professional>(() => ({
   ...mockProfessional,
   id: workspace.value!.profile.id,
+  slug: workspace.value!.profile.publicSlug,
   name: workspace.value!.profile.identity.name,
   headline: workspace.value!.profile.identity.headline,
   bio: workspace.value!.profile.identity.bio,
@@ -61,8 +62,11 @@ const statusLabels = {
   published: "Publicado",
   suspended: "Suspenso",
 } as const;
-const statusLabel = computed(
-  () => statusLabels[workspace.value!.profile.status],
+const statusLabel = computed(() =>
+  workspace.value!.profile.hasPublishedRevision &&
+  workspace.value!.profile.revisionStatus === "pending_review"
+    ? "Alterações em análise"
+    : statusLabels[workspace.value!.profile.status],
 );
 const tabs = [
   { id: "dados", label: "Dados do perfil", icon: "i-lucide-user-round" },

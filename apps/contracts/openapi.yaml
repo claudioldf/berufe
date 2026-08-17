@@ -1071,7 +1071,10 @@ components:
       additionalProperties: false
       required:
         - id
+        - public_slug
         - profile_status
+        - revision_status
+        - has_published_revision
         - identity
         - services
         - coverage
@@ -1079,6 +1082,10 @@ components:
         id:
           type: string
           format: uuid
+        public_slug:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          maxLength: 100
         profile_status:
           type: string
           enum:
@@ -1086,6 +1093,16 @@ components:
             - pending_review
             - published
             - suspended
+        revision_status:
+          type: string
+          enum:
+            - draft
+            - pending_review
+            - approved
+            - rejected
+            - superseded
+        has_published_revision:
+          type: boolean
         identity:
           $ref: "#/components/schemas/ProfessionalIdentity"
         services:

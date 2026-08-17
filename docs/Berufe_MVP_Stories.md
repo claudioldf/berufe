@@ -414,7 +414,7 @@ Apply these rules whenever they are relevant to the story:
 
 ### S021 — Create a stable public slug and inline profile representation
 
-**Status:** PENDING
+**Status:** DONE
 
 **Story:** As a professional, I want a stable public profile URL and an inline representation of public fields so that I understand what customers will eventually see.
 

@@ -13,7 +13,10 @@ type WorkspaceData = components["schemas"]["ProfessionalWorkspaceData"];
 const workspaceData: WorkspaceData = {
   profile: {
     id: "23a94f5e-1429-4ec7-bbc4-a6f805d5182d",
+    public_slug: "ana-souza",
     profile_status: "draft",
+    revision_status: "draft",
+    has_published_revision: false,
     identity: {
       display_name: "Ana Souza",
       headline: "Elétrica residencial.",
@@ -49,7 +52,10 @@ describe("professional workspace API", () => {
     expect(mapProfessionalWorkspace(workspaceData)).toEqual({
       profile: {
         id: workspaceData.profile.id,
+        publicSlug: "ana-souza",
         status: "draft",
+        revisionStatus: "draft",
+        hasPublishedRevision: false,
         identity: {
           name: "Ana Souza",
           headline: "Elétrica residencial.",

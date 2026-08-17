@@ -48,11 +48,11 @@ RSpec.describe ProfessionalProfileSupplyUpdater do
       coverage: {all_joinville: false, neighborhood_codes: [neighborhood.code]}
     )
 
-    selection = profile.professional_profile_services.includes(:service).sole
+    selection = profile.working_revision.professional_profile_services.includes(:service).sole
     expect(selection.service).to eq(service)
     expect(selection).to be_is_primary
     expect(selection.note).to eq("Quadros elétricos")
-    expect(profile.professional_profile_service_areas.sole.neighborhood).to eq(neighborhood)
+    expect(profile.working_revision.professional_profile_service_areas.sole.neighborhood).to eq(neighborhood)
   end
 
   it "represents all Joinville with one nullable area" do
@@ -62,7 +62,7 @@ RSpec.describe ProfessionalProfileSupplyUpdater do
       coverage: {all_joinville: true, neighborhood_codes: []}
     )
 
-    expect(profile.professional_profile_service_areas.sole.neighborhood_code).to be_nil
+    expect(profile.working_revision.professional_profile_service_areas.sole.neighborhood_code).to be_nil
   end
 
   it "rejects contradictory, inactive, duplicate, and primary-less selections without partial replacement" do
@@ -89,6 +89,6 @@ RSpec.describe ProfessionalProfileSupplyUpdater do
         described_class.new.call(profile:, **input)
       end.to raise_error(described_class::Invalid)
     end
-    expect(profile.professional_profile_services).to be_empty
+    expect(profile.working_revision.professional_profile_services).to be_empty
   end
 end

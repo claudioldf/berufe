@@ -18,8 +18,9 @@ class ProfessionalProfileSupplyUpdater
 
     profile.with_lock do
       validate_catalog!(normalized_services, normalized_coverage)
-      replace_services!(profile, normalized_services)
-      replace_coverage!(profile, normalized_coverage)
+      revision = ProfessionalProfileRevisionEditor.new.call(profile:)
+      replace_services!(revision, normalized_services)
+      replace_coverage!(revision, normalized_coverage)
     end
     profile
   rescue ActiveRecord::RecordInvalid => error
@@ -82,18 +83,18 @@ class ProfessionalProfileSupplyUpdater
     raise Invalid.new(coverage: ["escolha apenas bairros ativos de Joinville"])
   end
 
-  def replace_services!(profile, services)
-    profile.professional_profile_services.delete_all
+  def replace_services!(revision, services)
+    revision.professional_profile_services.delete_all
     services.each do |entry|
-      profile.professional_profile_services.create!(entry)
+      revision.professional_profile_services.create!(entry)
     end
   end
 
-  def replace_coverage!(profile, coverage)
-    profile.professional_profile_service_areas.delete_all
+  def replace_coverage!(revision, coverage)
+    revision.professional_profile_service_areas.delete_all
     codes = coverage[:all_joinville] ? [nil] : coverage[:neighborhood_codes]
     codes.each do |neighborhood_code|
-      profile.professional_profile_service_areas.create!(
+      revision.professional_profile_service_areas.create!(
         city_code: ProfessionalProfileServiceArea::JOINVILLE,
         neighborhood_code:
       )

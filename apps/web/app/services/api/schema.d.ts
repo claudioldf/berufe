@@ -367,8 +367,12 @@ export interface components {
         ProfessionalWorkspaceProfile: {
             /** Format: uuid */
             id: string;
+            public_slug: string;
             /** @enum {string} */
             profile_status: "draft" | "pending_review" | "published" | "suspended";
+            /** @enum {string} */
+            revision_status: "draft" | "pending_review" | "approved" | "rejected" | "superseded";
+            has_published_revision: boolean;
             identity: components["schemas"]["ProfessionalIdentity"];
             services: components["schemas"]["ProfessionalServiceSelection"][];
             coverage: components["schemas"]["ProfessionalCoverage"];

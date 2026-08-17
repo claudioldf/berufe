@@ -22,7 +22,10 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
       "data" => {
         "profile" => {
           "id" => profile.id,
+          "public_slug" => "ana-souza",
           "profile_status" => "draft",
+          "revision_status" => "draft",
+          "has_published_revision" => false,
           "identity" => {
             "display_name" => "Ana Souza",
             "headline" => "",

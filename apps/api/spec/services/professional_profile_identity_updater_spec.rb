@@ -24,7 +24,7 @@ RSpec.describe ProfessionalProfileIdentityUpdater do
       }
     )
 
-    expect(result.attributes).to include(
+    expect(result.working_revision.attributes).to include(
       "display_name" => "Ana Souza",
       "headline" => "Elétrica residencial com cuidado.",
       "bio" => "Instalações e manutenção em Joinville.",

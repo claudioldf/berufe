@@ -21,7 +21,10 @@ export function mapProfessionalWorkspace(
   return {
     profile: {
       id: data.profile.id,
+      publicSlug: data.profile.public_slug,
       status: data.profile.profile_status,
+      revisionStatus: data.profile.revision_status,
+      hasPublishedRevision: data.profile.has_published_revision,
       identity: {
         name: identity.display_name,
         headline: identity.headline,

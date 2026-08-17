@@ -13,8 +13,11 @@ class ProfessionalProfileIdentityUpdater
   def call(profile:, attributes:)
     normalized = normalize(attributes)
     validate!(normalized)
-    profile.update!(normalized)
-    profile
+    profile.with_lock do
+      revision = ProfessionalProfileRevisionEditor.new.call(profile:)
+      revision.update!(normalized)
+    end
+    profile.reload
   rescue BrazilianPhoneNumber::Invalid
     raise Invalid.new(whatsapp: ["informe um celular brasileiro com DDD"])
   rescue SocialProfileUrl::Invalid => error

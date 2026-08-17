@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_17_092000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_17_094000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -239,15 +239,42 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_092000) do
     t.check_constraint "subject_digest ~ '^[0-9a-f]{64}$'::text", name: "otp_request_counters_digest_format"
   end
 
+  create_table "professional_profile_revisions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.text "bio"
+    t.datetime "created_at", null: false
+    t.text "display_name", null: false
+    t.text "headline"
+    t.text "instagram_url"
+    t.uuid "professional_profile_id", null: false
+    t.text "rejection_reason"
+    t.datetime "reviewed_at"
+    t.text "status", default: "draft", null: false
+    t.datetime "submitted_at"
+    t.datetime "updated_at", null: false
+    t.integer "version", null: false
+    t.text "whatsapp_e164"
+    t.integer "years_experience"
+    t.text "youtube_url"
+    t.index ["professional_profile_id", "version"], name: "idx_profile_revisions_unique_version", unique: true
+    t.index ["professional_profile_id"], name: "idx_on_professional_profile_id_7926e53c9d"
+    t.index ["professional_profile_id"], name: "idx_profile_revisions_one_working", unique: true, where: "(status = ANY (ARRAY['draft'::text, 'pending_review'::text]))"
+    t.check_constraint "bio IS NULL OR char_length(btrim(bio)) >= 1 AND char_length(btrim(bio)) <= 500", name: "professional_profile_revisions_bio_length"
+    t.check_constraint "char_length(btrim(display_name)) >= 3 AND char_length(btrim(display_name)) <= 70", name: "professional_profile_revisions_display_name_length"
+    t.check_constraint "headline IS NULL OR char_length(btrim(headline)) >= 1 AND char_length(btrim(headline)) <= 120", name: "professional_profile_revisions_headline_length"
+    t.check_constraint "status = ANY (ARRAY['draft'::text, 'pending_review'::text, 'approved'::text, 'rejected'::text, 'superseded'::text])", name: "professional_profile_revisions_known_status"
+    t.check_constraint "whatsapp_e164 IS NULL OR whatsapp_e164 ~ '^\\+55[1-9][1-9]9[0-9]{8}$'::text", name: "professional_profile_revisions_whatsapp_format"
+    t.check_constraint "years_experience IS NULL OR years_experience >= 0 AND years_experience <= 70", name: "professional_profile_revisions_experience_range"
+  end
+
   create_table "professional_profile_service_areas", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.text "city_code", default: "Joinville", null: false
     t.datetime "created_at", null: false
     t.text "neighborhood_code"
-    t.uuid "professional_profile_id", null: false
+    t.uuid "professional_profile_revision_id", null: false
     t.datetime "updated_at", null: false
-    t.index ["professional_profile_id", "city_code", "neighborhood_code"], name: "idx_profile_service_areas_unique_neighborhood", unique: true, where: "(neighborhood_code IS NOT NULL)"
-    t.index ["professional_profile_id", "city_code"], name: "idx_profile_service_areas_unique_all_city", unique: true, where: "(neighborhood_code IS NULL)"
-    t.index ["professional_profile_id"], name: "idx_profile_service_areas_profile"
+    t.index ["professional_profile_revision_id", "city_code", "neighborhood_code"], name: "idx_revision_service_areas_unique_neighborhood", unique: true, where: "(neighborhood_code IS NOT NULL)"
+    t.index ["professional_profile_revision_id", "city_code"], name: "idx_revision_service_areas_unique_all_city", unique: true, where: "(neighborhood_code IS NULL)"
+    t.index ["professional_profile_revision_id"], name: "idx_revision_service_areas_revision"
     t.check_constraint "city_code = 'Joinville'::text", name: "professional_profile_service_areas_joinville_only"
   end
 
@@ -255,38 +282,30 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_092000) do
     t.datetime "created_at", null: false
     t.boolean "is_primary", default: false, null: false
     t.text "note"
-    t.uuid "professional_profile_id", null: false
+    t.uuid "professional_profile_revision_id", null: false
     t.uuid "service_id", null: false
     t.datetime "updated_at", null: false
-    t.index ["professional_profile_id", "service_id"], name: "idx_profile_services_unique_service", unique: true
-    t.index ["professional_profile_id"], name: "idx_profile_services_one_primary", unique: true, where: "is_primary"
-    t.index ["professional_profile_id"], name: "index_professional_profile_services_on_professional_profile_id"
+    t.index ["professional_profile_revision_id", "service_id"], name: "idx_revision_services_unique_service", unique: true
+    t.index ["professional_profile_revision_id"], name: "idx_revision_services_one_primary", unique: true, where: "is_primary"
     t.index ["service_id"], name: "index_professional_profile_services_on_service_id"
     t.check_constraint "note IS NULL OR char_length(btrim(note)) >= 1 AND char_length(btrim(note)) <= 120", name: "professional_profile_services_note_length"
   end
 
   create_table "professional_profiles", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.text "bio"
     t.datetime "created_at", null: false
-    t.text "display_name", null: false
-    t.text "headline"
-    t.text "instagram_url"
     t.text "profile_status", default: "draft", null: false
+    t.text "public_slug", null: false
+    t.uuid "published_revision_id"
     t.datetime "updated_at", null: false
     t.uuid "user_account_id", null: false
-    t.text "whatsapp_e164"
-    t.integer "years_experience"
-    t.text "youtube_url"
+    t.uuid "working_revision_id"
     t.index ["profile_status"], name: "index_professional_profiles_on_profile_status"
+    t.index ["public_slug"], name: "index_professional_profiles_on_public_slug", unique: true
+    t.index ["published_revision_id"], name: "index_professional_profiles_on_published_revision_id", unique: true
     t.index ["user_account_id"], name: "index_professional_profiles_on_user_account_id", unique: true
-    t.check_constraint "bio IS NULL OR char_length(btrim(bio)) >= 1 AND char_length(btrim(bio)) <= 500", name: "professional_profiles_bio_length"
-    t.check_constraint "char_length(btrim(display_name)) >= 3 AND char_length(btrim(display_name)) <= 70", name: "professional_profiles_display_name_length"
-    t.check_constraint "headline IS NULL OR char_length(btrim(headline)) >= 1 AND char_length(btrim(headline)) <= 120", name: "professional_profiles_headline_length"
-    t.check_constraint "instagram_url IS NULL OR char_length(instagram_url) <= 200", name: "professional_profiles_instagram_length"
+    t.index ["working_revision_id"], name: "index_professional_profiles_on_working_revision_id", unique: true
     t.check_constraint "profile_status = ANY (ARRAY['draft'::text, 'pending_review'::text, 'published'::text, 'suspended'::text])", name: "professional_profiles_known_status"
-    t.check_constraint "whatsapp_e164 IS NULL OR whatsapp_e164 ~ '^\\+55[1-9][1-9]9[0-9]{8}$'::text", name: "professional_profiles_whatsapp_format"
-    t.check_constraint "years_experience IS NULL OR years_experience >= 0 AND years_experience <= 70", name: "professional_profiles_experience_range"
-    t.check_constraint "youtube_url IS NULL OR char_length(youtube_url) <= 200", name: "professional_profiles_youtube_length"
+    t.check_constraint "public_slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'::text", name: "professional_profiles_public_slug_format"
   end
 
   create_table "service_categories", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -355,10 +374,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_092000) do
   add_foreign_key "admin_access_events", "user_accounts", column: "admin_user_id"
   add_foreign_key "application_sessions", "user_accounts"
   add_foreign_key "catalog_change_events", "user_accounts", column: "admin_user_id"
+  add_foreign_key "professional_profile_revisions", "professional_profiles"
   add_foreign_key "professional_profile_service_areas", "neighborhoods", column: "neighborhood_code", primary_key: "code"
-  add_foreign_key "professional_profile_service_areas", "professional_profiles"
-  add_foreign_key "professional_profile_services", "professional_profiles"
+  add_foreign_key "professional_profile_service_areas", "professional_profile_revisions"
+  add_foreign_key "professional_profile_services", "professional_profile_revisions"
   add_foreign_key "professional_profile_services", "services"
+  add_foreign_key "professional_profiles", "professional_profile_revisions", column: "published_revision_id"
+  add_foreign_key "professional_profiles", "professional_profile_revisions", column: "working_revision_id"
   add_foreign_key "professional_profiles", "user_accounts"
   add_foreign_key "services", "service_categories", column: "category_id"
 end

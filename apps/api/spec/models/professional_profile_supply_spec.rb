@@ -33,7 +33,7 @@ RSpec.describe "Professional profile supply", type: :model do
 
   it "normalizes specialization notes and prevents duplicate services or primary rows" do
     described_service = ProfessionalProfileService.create!(
-      professional_profile: profile,
+      professional_profile_revision: profile.working_revision,
       service:,
       is_primary: true,
       note: "  Quadros   e circuitos  "
@@ -42,7 +42,7 @@ RSpec.describe "Professional profile supply", type: :model do
     expect(described_service.note).to eq("Quadros e circuitos")
     expect do
       ProfessionalProfileService.create!(
-        professional_profile: profile,
+        professional_profile_revision: profile.working_revision,
         service:,
         is_primary: false
       )
@@ -60,7 +60,7 @@ RSpec.describe "Professional profile supply", type: :model do
     )
     expect do
       ProfessionalProfileService.create!(
-        professional_profile: profile,
+        professional_profile_revision: profile.working_revision,
         service: second,
         is_primary: true
       )
@@ -76,20 +76,21 @@ RSpec.describe "Professional profile supply", type: :model do
       is_active: true,
       sort_order: 0
     )
-    ProfessionalProfileServiceArea.create!(professional_profile: profile, city_code: "Joinville")
+    revision = profile.working_revision
+    ProfessionalProfileServiceArea.create!(professional_profile_revision: revision, city_code: "Joinville")
 
     expect do
-      ProfessionalProfileServiceArea.create!(professional_profile: profile, city_code: "Joinville")
+      ProfessionalProfileServiceArea.create!(professional_profile_revision: revision, city_code: "Joinville")
     end.to raise_error(ActiveRecord::RecordNotUnique)
 
     ProfessionalProfileServiceArea.create!(
-      professional_profile: profile,
+      professional_profile_revision: revision,
       city_code: "Joinville",
       neighborhood_code: "america-supply"
     )
     expect do
       ProfessionalProfileServiceArea.create!(
-        professional_profile: profile,
+        professional_profile_revision: revision,
         city_code: "Joinville",
         neighborhood_code: "america-supply"
       )
