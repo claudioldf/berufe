@@ -116,6 +116,32 @@ RSpec.describe "Public professional searches", type: :request, openapi: true do
     assert_api_conform(status: 200)
   end
 
+  it "returns cards in the deterministic evidence order" do
+    all_city = create_published_profile(
+      phone: "+5547999997502",
+      name: "Beto Toda Cidade",
+      all_city: true,
+      reviewed_at: 1.day.ago
+    )
+    exact_area = create_published_profile(
+      phone: "+5547999997503",
+      name: "Ana Área Exata",
+      reviewed_at: 30.days.ago
+    )
+
+    post "/api/v1/public/professional-searches",
+      params: {service: electrician.slug, neighborhoodCode: neighborhood.code},
+      headers: request_headers("search-ranking"),
+      as: :json
+
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body.dig("data", "professionals").pluck("id")).to eq([
+      exact_area.id,
+      all_city.id
+    ])
+    assert_api_conform(status: 200)
+  end
+
   it "returns customer results when event persistence fails" do
     create_published_profile
     allow(SearchEvent).to receive(:create!).and_raise(ActiveRecord::ConnectionNotEstablished)
@@ -184,18 +210,26 @@ RSpec.describe "Public professional searches", type: :request, openapi: true do
     {"Origin" => ENV.fetch("WEB_ORIGIN"), "X-Request-Id" => request_id}
   end
 
-  def create_published_profile
-    account = UserAccount.create!(phone_e164: "+5547999997501", role: "professional", status: "active")
+  def create_published_profile(
+    phone: "+5547999997501",
+    name: "Ana Contratada",
+    all_city: false,
+    reviewed_at: Time.current
+  )
+    account = UserAccount.create!(phone_e164: phone, role: "professional", status: "active")
     profile = ProfessionalProfile.create!(
       user_account: account,
-      display_name: "Ana Contratada",
+      display_name: name,
       headline: "Elétrica residencial segura.",
       whatsapp_e164: account.phone_e164
     )
     revision = profile.working_revision
     revision.professional_profile_services.create!(service: electrician, is_primary: true)
-    revision.professional_profile_service_areas.create!(city_code: "Joinville", neighborhood:)
-    revision.update!(status: "approved", reviewed_at: Time.current)
+    revision.professional_profile_service_areas.create!(
+      city_code: "Joinville",
+      neighborhood: (neighborhood unless all_city)
+    )
+    revision.update!(status: "approved", reviewed_at:)
     profile.update!(profile_status: "published", published_revision: revision)
     profile
   end

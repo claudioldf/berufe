@@ -3,7 +3,7 @@ import { computed } from "vue";
 import type { Evidence } from "~/types";
 
 const props = defineProps<{
-  evidence: Evidence;
+  evidence: Pick<Evidence, "label">;
   compact?: boolean;
 }>();
 

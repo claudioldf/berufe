@@ -1,13 +1,10 @@
 import { describe, expect, it } from "vitest";
 import catalogsData from "@data/catalogs.json";
-import professionalsData from "@data/professionals.json";
-import type { Neighborhood, Professional, Service } from "~/types";
+import type { Service } from "~/types";
 import { buildWhatsAppUrl } from "~/utils/contact";
-import { findService, professionalRelevance } from "~/utils/services";
+import { findService } from "~/utils/services";
 
 const services = catalogsData.services as Service[];
-const neighborhoods = catalogsData.neighborhoods as Neighborhood[];
-const professionals = professionalsData as Professional[];
 
 describe("service discovery", () => {
   it("matches slugs, names, accents, and aliases", () => {
@@ -15,15 +12,6 @@ describe("service discovery", () => {
     expect(findService(services, "Elétrica")?.slug).toBe("eletricista");
     expect(findService(services, "pintura")?.slug).toBe("pintor");
     expect(findService(services, "")).toBeUndefined();
-  });
-
-  it("prioritizes exact service and neighborhood evidence", () => {
-    const service = findService(services, "eletricista")!;
-    const neighborhood = neighborhoods.find((item) => item.code === "america")!;
-    const scores = professionals.map((professional) =>
-      professionalRelevance(professional, service, neighborhood),
-    );
-    expect(Math.max(...scores)).toBeGreaterThan(100);
   });
 });
 

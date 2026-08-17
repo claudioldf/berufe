@@ -124,6 +124,95 @@ RSpec.describe PublicProfessionalSearch do
     ).to be(true)
   end
 
+  it "orders lexicographically by explicit coverage, approved evidence, snapshot time, and UUID" do
+    explicit_area = create_published_profile(
+      "+5547999997410",
+      "Área explícita",
+      services: [electrician],
+      neighborhoods: [america],
+      reviewed_at: 30.days.ago
+    )
+    identity = create_published_profile(
+      "+5547999997411",
+      "Identidade aprovada",
+      services: [electrician],
+      all_city: true,
+      reviewed_at: 20.days.ago
+    )
+    identity.verification_requests.create!(
+      verification_type: "identity",
+      status: "approved",
+      public_label: ModerationDecision::IDENTITY_LABEL,
+      submitted_at: 2.days.ago,
+      reviewed_at: 1.day.ago,
+      verified_at: 1.day.ago
+    )
+    portfolio = create_published_profile(
+      "+5547999997412",
+      "Portfólio aprovado",
+      services: [electrician],
+      all_city: true,
+      reviewed_at: 10.days.ago
+    )
+    create_portfolio_item(portfolio, status: "approved")
+    relationship = create_published_profile(
+      "+5547999997413",
+      "Relação aprovada",
+      services: [electrician],
+      all_city: true,
+      reviewed_at: 5.days.ago
+    )
+    partner = create_published_profile(
+      "+5547999997414",
+      "Parceiro público",
+      services: [plumber],
+      all_city: true
+    )
+    create_public_relationship(relationship, partner)
+    recent = create_published_profile(
+      "+5547999997415",
+      "Snapshot recente",
+      services: [electrician],
+      all_city: true,
+      reviewed_at: 1.day.ago
+    )
+    recent.verification_requests.create!(
+      verification_type: "identity",
+      status: "pending_review",
+      submitted_at: Time.current
+    )
+    create_portfolio_item(recent, status: "hidden")
+    create_unreviewed_relationship(recent, partner)
+    tied_reviewed_at = 40.days.ago
+    tied = [
+      create_published_profile(
+        "+5547999997416",
+        "Empate A",
+        services: [electrician],
+        all_city: true,
+        reviewed_at: tied_reviewed_at
+      ),
+      create_published_profile(
+        "+5547999997417",
+        "Empate B",
+        services: [electrician],
+        all_city: true,
+        reviewed_at: tied_reviewed_at
+      )
+    ].sort_by(&:id)
+
+    result = described_class.new.call(term: electrician.slug, neighborhood_code: america.code)
+
+    expect(result.professionals.to_a).to eq([
+      explicit_area,
+      identity,
+      portfolio,
+      relationship,
+      recent,
+      *tied
+    ])
+  end
+
   private
 
   def create_service(name, slug, aliases, order)
@@ -139,7 +228,14 @@ RSpec.describe PublicProfessionalSearch do
     )
   end
 
-  def create_published_profile(phone, name, services:, all_city: false, neighborhoods: [])
+  def create_published_profile(
+    phone,
+    name,
+    services:,
+    all_city: false,
+    neighborhoods: [],
+    reviewed_at: Time.current
+  )
     account = UserAccount.create!(phone_e164: phone, role: "professional", status: "active")
     profile = ProfessionalProfile.create!(user_account: account, display_name: name, whatsapp_e164: phone)
     revision = profile.working_revision
@@ -153,9 +249,79 @@ RSpec.describe PublicProfessionalSearch do
         revision.professional_profile_service_areas.create!(city_code: "Joinville", neighborhood:)
       end
     end
-    revision.update!(status: "approved", reviewed_at: Time.current)
+    revision.update!(status: "approved", reviewed_at:)
     profile.update!(profile_status: "published", published_revision: revision)
     profile
+  end
+
+  def create_portfolio_item(profile, status:)
+    upload = MediaUpload.create!(
+      professional_profile: profile,
+      purpose: "portfolio_image",
+      state: "attached",
+      declared_content_type: "image/png",
+      declared_byte_size: 120,
+      actual_content_type: "image/png",
+      sanitized_content_type: "image/png",
+      actual_byte_size: 120,
+      sanitized_byte_size: 100,
+      width: 640,
+      height: 380,
+      quarantine_key: "quarantine/#{profile.id}/#{SecureRandom.uuid}",
+      sanitized_key: "sanitized/#{profile.id}/#{SecureRandom.uuid}.png",
+      authorization_expires_at: 5.minutes.from_now,
+      uploaded_at: 1.minute.ago,
+      processed_at: Time.current,
+      attached_at: Time.current
+    )
+    profile.portfolio_items.create!(
+      media_upload: upload,
+      service: electrician,
+      title: "Evidência #{status}",
+      status:,
+      private_key: upload.sanitized_key,
+      public_key: ("public/#{SecureRandom.uuid}.png" if status == "approved"),
+      content_type: "image/png",
+      byte_size: 100,
+      width: 640,
+      height: 380,
+      submitted_at: Time.current
+    )
+  end
+
+  def create_public_relationship(profile, partner)
+    relationship = ProfessionalRelationship.create!(
+      initiator_professional: profile,
+      recipient_professional: partner,
+      relationship_type: "recommendation",
+      status: "accepted",
+      responded_at: Time.current
+    )
+    admin = UserAccount.create!(
+      email: "search-ranking@example.com",
+      password: "a-secure-admin-password",
+      password_confirmation: "a-secure-admin-password",
+      role: "admin",
+      status: "active"
+    )
+    ModerationAction.create!(
+      admin_user: admin,
+      target_type: "professional_relationship",
+      target_id: relationship.id,
+      action: "approved",
+      request_id: "search-ranking-relationship",
+      created_at: Time.current
+    )
+  end
+
+  def create_unreviewed_relationship(profile, partner)
+    ProfessionalRelationship.create!(
+      initiator_professional: profile,
+      recipient_professional: partner,
+      relationship_type: "worked_together",
+      status: "accepted",
+      responded_at: Time.current
+    )
   end
 
   def create_draft_profile(phone, name, service)

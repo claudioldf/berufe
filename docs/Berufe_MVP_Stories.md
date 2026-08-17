@@ -665,6 +665,8 @@ Apply these rules whenever they are relevant to the story:
 
 ### S035 — Show transparent, deterministic results
 
+**Status:** DONE
+
 **Story:** As a customer, I want each result to show relevant evidence and explainable ordering so that I can choose whom to inspect without trusting an opaque score.
 
 **Acceptance criteria:**

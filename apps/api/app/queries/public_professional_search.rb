@@ -90,8 +90,69 @@ class PublicProfessionalSearch
           professional_profile_service_areas: :neighborhood
         }
       )
-      .distinct
-      .order(:id)
+      .order(*ranking_order(neighborhood))
+  end
+
+  def ranking_order(neighborhood)
+    [
+      explicit_neighborhood_order(neighborhood),
+      approved_identity_order,
+      approved_portfolio_order,
+      public_relationship_order,
+      Arel.sql("professional_profile_revisions.reviewed_at DESC NULLS LAST"),
+      Arel.sql("professional_profiles.id ASC")
+    ].compact
+  end
+
+  def explicit_neighborhood_order(neighborhood)
+    return unless neighborhood
+
+    quoted_code = ActiveRecord::Base.connection.quote(neighborhood.code)
+    Arel.sql(<<~SQL.squish)
+      CASE WHEN EXISTS (
+        SELECT 1
+        FROM professional_profile_service_areas ranked_areas
+        WHERE ranked_areas.professional_profile_revision_id = professional_profiles.published_revision_id
+          AND ranked_areas.neighborhood_code = #{quoted_code}
+      ) THEN 0 ELSE 1 END ASC
+    SQL
+  end
+
+  def approved_identity_order
+    label = ActiveRecord::Base.connection.quote(ModerationDecision::IDENTITY_LABEL)
+    Arel.sql(<<~SQL.squish)
+      CASE WHEN EXISTS (
+        SELECT 1
+        FROM verification_requests ranked_verifications
+        WHERE ranked_verifications.professional_profile_id = professional_profiles.id
+          AND ranked_verifications.verification_type = 'identity'
+          AND ranked_verifications.status = 'approved'
+          AND ranked_verifications.public_label = #{label}
+          AND ranked_verifications.verified_at IS NOT NULL
+      ) THEN 0 ELSE 1 END ASC
+    SQL
+  end
+
+  def approved_portfolio_order
+    Arel.sql(<<~SQL.squish)
+      CASE WHEN EXISTS (
+        SELECT 1
+        FROM portfolio_items ranked_portfolio
+        WHERE ranked_portfolio.professional_profile_id = professional_profiles.id
+          AND ranked_portfolio.status = 'approved'
+          AND ranked_portfolio.deleted_at IS NULL
+      ) THEN 0 ELSE 1 END ASC
+    SQL
+  end
+
+  def public_relationship_order
+    public_relationship = PublicProfessionalRelationshipQuery.call
+      .where(
+        "professional_relationships.initiator_professional_id = professional_profiles.id OR " \
+          "professional_relationships.recipient_professional_id = professional_profiles.id"
+      )
+      .select("1")
+    Arel.sql("CASE WHEN EXISTS (#{public_relationship.to_sql}) THEN 0 ELSE 1 END ASC")
   end
 
   def coverage_sql
