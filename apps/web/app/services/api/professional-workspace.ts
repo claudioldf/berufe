@@ -54,6 +54,19 @@ export function mapProfessionalWorkspace(
         rejectionReason: item.rejection_reason,
         submittedAt: item.submitted_at,
       })),
+      verification: {
+        current: data.profile.verification.current
+          ? {
+              id: data.profile.verification.current.id,
+              verificationType:
+                data.profile.verification.current.verification_type,
+              status: data.profile.verification.current.status,
+              rejectionReason:
+                data.profile.verification.current.rejection_reason,
+              submittedAt: data.profile.verification.current.submitted_at,
+            }
+          : null,
+      },
       identity: {
         name: identity.display_name,
         headline: identity.headline,
@@ -244,6 +257,26 @@ export async function deleteProfessionalPortfolioItem(
   const { data, error, response } = await client.DELETE(
     "/api/v1/professional/portfolio-items/{id}",
     { params: { path: { id } } },
+  );
+  if (error || !data) throw requestError(error, response);
+
+  return mapProfessionalWorkspace(data.data);
+}
+
+export async function attachProfessionalVerificationRequest(
+  client: BerufeApiClient,
+  mediaUploadId: string,
+): Promise<ProfessionalWorkspace> {
+  const { data, error, response } = await client.POST(
+    "/api/v1/professional/verification-requests",
+    {
+      body: {
+        verification_request: {
+          media_upload_id: mediaUploadId,
+          verification_type: "identity",
+        },
+      },
+    },
   );
   if (error || !data) throw requestError(error, response);
 

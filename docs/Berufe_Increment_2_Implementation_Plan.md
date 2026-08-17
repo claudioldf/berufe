@@ -69,6 +69,8 @@ This order lets media, portfolio, and identity evidence exist before the initial
 - A portfolio item may reference only an active service already selected on the profile's working revision. It attaches one processed `portfolio_image` upload, stores the sanitized JPEG or PNG privately, and enters `pending_review`; creation never exposes the private key or a private media URL to Nuxt.
 - The authenticated workspace lists non-deleted pending, approved, rejected, and hidden portfolio records newest first. The existing card surface uses a neutral image placeholder until an approved public URL exists and shows private rejection guidance to the owner. Soft deletion immediately removes the record from owner/public projections, frees one of the 12 slots, and retains the row for audit and later storage cleanup.
 - The launch identity-verification request accepts exactly one regenerated image. It does not collect document numbers or accept PDF, company, or certificate evidence.
+- An identity request attaches one successfully processed `verification_identity` upload to exactly one `verification_file`. A partial unique index and a profile lock permit at most one pending identity request; repeating the same attachment is idempotent, while a rejected or expired request may be replaced with a new upload.
+- The professional workspace returns only the latest identity request's type, status, private rejection guidance, and submission time. It never returns verification-file identifiers, storage keys, dimensions, content type, or a retrieval URL. The authenticated verification surface uses this server state, keeps the phone-confirmed label distinct, and states that evidence checking is not a work guarantee.
 
 ### Moderation and restricted access
 

@@ -26,6 +26,7 @@ const {
   uploadPhoto,
   retryPhoto,
   createPortfolioItem,
+  createVerificationRequest,
 } = await useProfessionalWorkspace();
 if (workspaceError.value || !workspace.value) {
   throw createError({
@@ -75,6 +76,13 @@ async function saveOnboardingPortfolio(
   };
 }
 
+async function saveOnboardingVerification(file: File) {
+  const updated = await createVerificationRequest(file);
+  const request = updated?.profile.verification.current;
+  if (!request) throw new Error("Verification request was not persisted");
+  return { submittedAt: request.submittedAt };
+}
+
 useSeoMeta({
   title: "Complete seu perfil profissional",
   robots: "noindex, nofollow",
@@ -89,6 +97,7 @@ useSeoMeta({
     :save-identity="saveOnboardingIdentity"
     :save-supply="saveOnboardingSupply"
     :save-portfolio="saveOnboardingPortfolio"
+    :save-verification="saveOnboardingVerification"
     :upload-photo="uploadPhoto"
     :retry-photo="retryPhoto"
     :photo-uploading="photoUploading"

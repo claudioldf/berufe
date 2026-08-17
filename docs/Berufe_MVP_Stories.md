@@ -554,7 +554,7 @@ Apply these rules whenever they are relevant to the story:
 
 ### S029 — Submit private verification evidence
 
-**Status:** PENDING
+**Status:** DONE
 
 **Story:** As a professional, I want to request identity verification so that Berufe can publish a precise evidence label.
 

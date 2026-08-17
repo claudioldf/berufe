@@ -15,6 +15,7 @@ class ProfessionalProfile < ApplicationRecord
     dependent: :destroy
   has_many :media_uploads, dependent: :destroy
   has_many :portfolio_items, dependent: :destroy
+  has_many :verification_requests, dependent: :destroy
   has_many :profile_photos,
     class_name: "ProfessionalProfilePhoto",
     dependent: :destroy

@@ -29,6 +29,7 @@ const props = defineProps<{
     description: string;
     submittedAt: string;
   }>;
+  saveVerification: (file: File) => Promise<{ submittedAt: string }>;
   uploadPhoto: (file: File) => Promise<unknown>;
   retryPhoto: () => Promise<unknown>;
   photoUploading?: boolean;
@@ -55,10 +56,13 @@ const {
   supplyError,
   portfolioSaving,
   portfolioError,
+  verificationSaving,
+  verificationError,
 } = useProfessionalOnboarding({
   saveIdentity: props.saveIdentity,
   saveSupply: props.saveSupply,
   savePortfolio: props.savePortfolio,
+  saveVerification: props.saveVerification,
 });
 
 const activeStep = shallowRef<OnboardingStepId>("profile");
@@ -146,8 +150,8 @@ async function handlePortfolio(draft: PortfolioItemDraft) {
   if (await completePortfolio(draft)) void goToStep("verification");
 }
 
-function handleVerification(file: File) {
-  if (!completeVerification(file)) return;
+async function handleVerification(file: File) {
+  if (!(await completeVerification(file))) return;
   reviewing.value = false;
   void router.replace({ query: {} });
 }
@@ -205,6 +209,7 @@ watch(
             submittedAt: firstPortfolioItem.submittedAt,
           }
         : null,
+      workspace.profile.verification.current?.submittedAt ?? null,
     );
   },
   { immediate: true },
@@ -297,6 +302,8 @@ watch(
           <OnboardingVerificationStep
             v-else
             :submitted="state.verificationStatus === 'submitted'"
+            :saving="verificationSaving"
+            :server-error="verificationError"
             @back="previousStep"
             @complete="handleVerification"
             @finish="finishReview"

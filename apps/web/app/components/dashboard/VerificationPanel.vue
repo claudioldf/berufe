@@ -1,10 +1,30 @@
 <script setup lang="ts">
-import type { Evidence, VerificationSubmission } from "~/types";
+import { computed } from "vue";
+import type {
+  Evidence,
+  ProfessionalVerificationState,
+  VerificationSubmission,
+} from "~/types";
 
-defineProps<{ evidence: Evidence[] }>();
+const props = defineProps<{
+  evidence: Evidence[];
+  verification: ProfessionalVerificationState;
+  submitting?: boolean;
+  serverError?: string;
+}>();
 const emit = defineEmits<{
   submitted: [submission: VerificationSubmission];
 }>();
+const status = computed(() => props.verification.current);
+const statusLabels = {
+  pending_review: "Aguardando análise",
+  approved: "Identidade verificada",
+  rejected: "Evidência recusada",
+  expired: "Verificação expirada",
+} as const;
+const canSubmit = computed(
+  () => !status.value || ["rejected", "expired"].includes(status.value.status),
+);
 </script>
 
 <template>
@@ -30,7 +50,26 @@ const emit = defineEmits<{
         /></div
     ></DesignSystemSurfaceCard>
     <DesignSystemSurfaceCard as="section" class="verification-panel__request">
+      <div v-if="status" class="verification-panel__status">
+        <span><UIcon name="i-lucide-shield-check" /></span>
+        <div>
+          <strong>{{ statusLabels[status.status] }}</strong>
+          <p v-if="status.rejectionReason">{{ status.rejectionReason }}</p>
+          <p v-else-if="status.status === 'pending_review'">
+            A evidência está privada enquanto a equipe Berufe faz a conferência.
+          </p>
+        </div>
+      </div>
+      <p
+        v-if="props.serverError"
+        class="verification-panel__error"
+        role="alert"
+      >
+        {{ props.serverError }}
+      </p>
       <DashboardVerificationIdentityUploadForm
+        v-if="canSubmit"
+        :submitting="props.submitting"
         @submitted="emit('submitted', $event)"
       />
     </DesignSystemSurfaceCard>
@@ -80,6 +119,40 @@ const emit = defineEmits<{
   }
   &__request {
     padding: 22px;
+  }
+  &__status {
+    display: flex;
+    gap: 11px;
+    align-items: start;
+  }
+  &__status > span {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--color-brand-tint-subtle);
+    color: var(--color-brand);
+  }
+  &__status strong {
+    font-size: 0.9rem;
+  }
+  &__status p {
+    margin: 4px 0 0;
+    color: var(--ink-soft);
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
+  &__status + .identity-upload-form {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+  }
+  &__error {
+    margin: 0 0 14px;
+    color: var(--color-danger);
+    font-size: 0.84rem;
+    font-weight: 700;
   }
 }
 </style>

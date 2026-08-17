@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import professionalsData from "@data/professionals.json";
-import type { Professional, ProfessionalProfileDraft } from "~/types";
+import type {
+  Professional,
+  ProfessionalProfileDraft,
+  VerificationSubmission,
+} from "~/types";
 import { useCatalogs } from "~/composables/useCatalogs";
 import { useToast } from "~/composables/useToast";
 import { ApiRequestError } from "~/services/api/errors";
@@ -32,6 +36,9 @@ const {
   portfolioSaving,
   createPortfolioItem,
   deletePortfolioItem,
+  verificationSaving,
+  verificationError,
+  createVerificationRequest,
 } = await useProfessionalWorkspace();
 if (workspaceError.value || !workspace.value) {
   throw createError({
@@ -64,6 +71,12 @@ const professional = computed<Professional>(() => ({
     (neighborhood) => neighborhood.name,
   ),
   portfolio: [],
+  evidence: [
+    { id: "phone-confirmed", label: "Telefone confirmado" },
+    ...(workspace.value!.profile.verification.current?.status === "approved"
+      ? [{ id: "identity-verified", label: "Identidade verificada" }]
+      : []),
+  ],
 }));
 const statusLabels = {
   draft: "Rascunho",
@@ -199,6 +212,26 @@ async function handlePortfolioRemove(id: string) {
     });
   }
 }
+
+async function handleVerificationSubmission(
+  submission: VerificationSubmission,
+) {
+  try {
+    await createVerificationRequest(submission.file);
+    showToast({
+      title: "Verificação enviada",
+      description: "A equipe Berufe fará a conferência manual.",
+    });
+  } catch (error) {
+    showToast({
+      title: "Não foi possível enviar a verificação",
+      description:
+        error instanceof ApiRequestError
+          ? error.message
+          : "Tente novamente em instantes.",
+    });
+  }
+}
 </script>
 
 <template>
@@ -254,12 +287,10 @@ async function handlePortfolioRemove(id: string) {
       <DashboardVerificationPanel
         v-else
         :evidence="professional.evidence"
-        @submitted="
-          showToast({
-            title: 'Verificação enviada',
-            description: 'A equipe Berufe fará a conferência manual.',
-          })
-        "
+        :verification="workspace?.profile.verification ?? { current: null }"
+        :submitting="verificationSaving"
+        :server-error="verificationError"
+        @submitted="handleVerificationSubmission"
       />
     </DesignSystemContainer>
   </div>

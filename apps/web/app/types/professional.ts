@@ -129,6 +129,16 @@ export interface ProfessionalProfilePhotoState {
   latestUpload: ProfessionalMediaUploadState | null;
 }
 
+export interface ProfessionalVerificationState {
+  current: {
+    id: string;
+    verificationType: "identity";
+    status: "pending_review" | "approved" | "rejected" | "expired";
+    rejectionReason: string | null;
+    submittedAt: string;
+  } | null;
+}
+
 export interface ProfessionalWorkspace {
   profile: {
     id: string;
@@ -139,6 +149,7 @@ export interface ProfessionalWorkspace {
     hasPublishedRevision: boolean;
     photo: ProfessionalProfilePhotoState;
     portfolioItems: ProfessionalPortfolioItem[];
+    verification: ProfessionalVerificationState;
     identity: Pick<
       ProfessionalProfileDraft,
       | "name"

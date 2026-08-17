@@ -4,6 +4,7 @@ import {
   attachProfessionalProfilePhoto,
   attachProfessionalPortfolioItem,
   deleteProfessionalPortfolioItem,
+  attachProfessionalVerificationRequest,
   mapProfessionalWorkspace,
   updateProfessionalIdentity,
   updateProfessionalSupply,
@@ -26,6 +27,7 @@ const workspaceData: WorkspaceData = {
       latest_upload: null,
     },
     portfolio_items: [],
+    verification: { current: null },
     identity: {
       display_name: "Ana Souza",
       headline: "Elétrica residencial.",
@@ -74,6 +76,7 @@ describe("professional workspace API", () => {
           latestUpload: null,
         },
         portfolioItems: [],
+        verification: { current: null },
         identity: {
           name: "Ana Souza",
           headline: "Elétrica residencial.",
@@ -175,6 +178,31 @@ describe("professional workspace API", () => {
       {
         params: {
           path: { id: "22d12a91-582e-4f1b-aa6b-49b5fd7ce1eb" },
+        },
+      },
+    );
+  });
+
+  it("attaches one processed identity image without requesting document fields", async () => {
+    const client = apiClientReturning("POST", {
+      data: { data: workspaceData, request_id: "verification-create" },
+      error: undefined,
+      response: new Response(null),
+    });
+
+    await attachProfessionalVerificationRequest(
+      client,
+      "32d12a91-582e-4f1b-aa6b-49b5fd7ce1eb",
+    );
+
+    expect(client.POST).toHaveBeenCalledWith(
+      "/api/v1/professional/verification-requests",
+      {
+        body: {
+          verification_request: {
+            media_upload_id: "32d12a91-582e-4f1b-aa6b-49b5fd7ce1eb",
+            verification_type: "identity",
+          },
         },
       },
     );

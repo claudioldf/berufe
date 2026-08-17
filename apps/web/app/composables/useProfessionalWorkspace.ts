@@ -3,6 +3,7 @@ import {
   attachProfessionalProfilePhoto,
   attachProfessionalPortfolioItem,
   deleteProfessionalPortfolioItem,
+  attachProfessionalVerificationRequest,
   updateProfessionalIdentity,
   updateProfessionalProfile,
   updateProfessionalSupply,
@@ -31,6 +32,8 @@ export async function useProfessionalWorkspace() {
   const photoError = shallowRef("");
   const portfolioSaving = shallowRef(false);
   const portfolioError = shallowRef("");
+  const verificationSaving = shallowRef(false);
+  const verificationError = shallowRef("");
 
   function reflectPhotoUpload(upload: MediaUpload) {
     if (!workspace.data.value) return;
@@ -162,6 +165,30 @@ export async function useProfessionalWorkspace() {
     }
   }
 
+  async function createVerificationRequest(file: File) {
+    if (verificationSaving.value) return workspace.data.value;
+    verificationSaving.value = true;
+    verificationError.value = "";
+    try {
+      const upload = await uploadMedia(client, file, "verification_identity");
+      const processed = await processedMedia(upload, "a imagem");
+      const updated = await attachProfessionalVerificationRequest(
+        client,
+        processed.id,
+      );
+      workspace.data.value = updated;
+      return updated;
+    } catch (error) {
+      verificationError.value =
+        error instanceof ApiRequestError
+          ? error.message
+          : "Não foi possível enviar a evidência. Tente novamente.";
+      throw error;
+    } finally {
+      verificationSaving.value = false;
+    }
+  }
+
   async function saveIdentity(draft: ProfessionalProfileDraft) {
     const updated = await updateProfessionalIdentity(client, draft);
     workspace.data.value = updated;
@@ -211,5 +238,8 @@ export async function useProfessionalWorkspace() {
     portfolioError,
     createPortfolioItem,
     deletePortfolioItem,
+    verificationSaving,
+    verificationError,
+    createVerificationRequest,
   };
 }

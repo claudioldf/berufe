@@ -11,6 +11,7 @@ Rails.application.routes.draw do
         resource :profile, only: :update, controller: :profiles
         put "profile/photo", to: "profile_photos#update"
         resources :portfolio_items, only: %i[create destroy], path: "portfolio-items"
+        resources :verification_requests, only: :create, path: "verification-requests"
         resources :media_uploads, only: %i[create show], path: "media-uploads" do
           member do
             put :content

@@ -15,6 +15,7 @@ class ProfessionalWorkspaceSerializer
         has_published_revision: profile.published_revision.present?,
         photo: serialized_photo,
         portfolio_items: serialized_portfolio_items,
+        verification: serialized_verification,
         identity: {
           display_name: profile.display_name,
           headline: profile.headline.to_s,
@@ -74,6 +75,19 @@ class ProfessionalWorkspaceSerializer
         image_url: item.approved? ? item.public_key : nil
       }
     end
+  end
+
+  def serialized_verification
+    request_record = profile.verification_requests.identity.newest_first.first
+    {
+      current: request_record && {
+        id: request_record.id,
+        verification_type: request_record.verification_type,
+        status: request_record.status,
+        rejection_reason: request_record.rejected? ? request_record.review_note : nil,
+        submitted_at: request_record.submitted_at.iso8601
+      }
+    }
   end
 
   def serialized_coverage

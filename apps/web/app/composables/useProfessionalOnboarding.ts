@@ -26,6 +26,7 @@ interface ProfessionalOnboardingDependencies {
   savePortfolio?: (
     draft: OnboardingPortfolioSubmission,
   ) => Promise<OnboardingPortfolioItem>;
+  saveVerification?: (file: File) => Promise<{ submittedAt: string }>;
 }
 
 export const professionalOnboardingStorageKey =
@@ -322,6 +323,8 @@ export function useProfessionalOnboarding(
   const supplyError = shallowRef("");
   const portfolioSaving = shallowRef(false);
   const portfolioError = shallowRef("");
+  const verificationSaving = shallowRef(false);
+  const verificationError = shallowRef("");
   const apiClient = dependencies.saveIdentity ? undefined : useApiClient();
   const saveIdentity =
     dependencies.saveIdentity ??
@@ -341,6 +344,11 @@ export function useProfessionalOnboarding(
     dependencies.savePortfolio ??
     (async () => {
       throw new Error("Professional portfolio persistence is unavailable");
+    });
+  const saveVerification =
+    dependencies.saveVerification ??
+    (async () => {
+      throw new Error("Professional verification persistence is unavailable");
     });
 
   function persist() {
@@ -406,6 +414,7 @@ export function useProfessionalOnboarding(
   function initializeFromWorkspace(
     identity: ProfessionalOnboardingState["profile"],
     portfolio?: OnboardingPortfolioItem | null,
+    verificationSubmittedAt?: string | null,
   ) {
     hydrate();
     const complete = Object.values(validateOnboardingProfile(identity)).every(
@@ -419,6 +428,12 @@ export function useProfessionalOnboarding(
       initialized: true,
       profile: cloneProfileDraft(identity),
       portfolio: portfolio === undefined ? state.value.portfolio : portfolio,
+      verificationStatus:
+        verificationSubmittedAt === undefined
+          ? state.value.verificationStatus
+          : verificationSubmittedAt
+            ? "submitted"
+            : "not_started",
       completion: {
         ...state.value.completion,
         profile: complete
@@ -431,6 +446,10 @@ export function useProfessionalOnboarding(
           portfolio === undefined
             ? state.value.completion.portfolio
             : (portfolio?.submittedAt ?? null),
+        verification:
+          verificationSubmittedAt === undefined
+            ? state.value.completion.verification
+            : verificationSubmittedAt,
       },
     };
     persist();
@@ -534,20 +553,34 @@ export function useProfessionalOnboarding(
     }
   }
 
-  function completeVerification(file: File) {
+  async function completeVerification(file: File) {
     const validation = validateOnboardingImage(file);
     if (!validation.valid) return false;
-    const completedAt = new Date().toISOString();
-    state.value = {
-      ...state.value,
-      verificationStatus: "submitted",
-      completion: {
-        ...state.value.completion,
-        verification: completedAt,
-      },
-    };
-    persist();
-    return true;
+    if (verificationSaving.value) return false;
+
+    verificationSaving.value = true;
+    verificationError.value = "";
+    try {
+      const saved = await saveVerification(file);
+      state.value = {
+        ...state.value,
+        verificationStatus: "submitted",
+        completion: {
+          ...state.value.completion,
+          verification: saved.submittedAt,
+        },
+      };
+      persist();
+      return true;
+    } catch (error) {
+      verificationError.value =
+        error instanceof ApiRequestError
+          ? error.message
+          : "Não foi possível enviar a identidade agora. Tente novamente.";
+      return false;
+    } finally {
+      verificationSaving.value = false;
+    }
   }
 
   function reset() {
@@ -579,6 +612,8 @@ export function useProfessionalOnboarding(
     supplyError: readonly(supplyError),
     portfolioSaving: readonly(portfolioSaving),
     portfolioError: readonly(portfolioError),
+    verificationSaving: readonly(verificationSaving),
+    verificationError: readonly(verificationError),
     reset,
   };
 }

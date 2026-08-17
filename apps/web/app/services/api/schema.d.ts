@@ -300,6 +300,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/professional/verification-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit one regenerated private identity image for review */
+        post: operations["createProfessionalVerificationRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/professional/media-uploads": {
         parameters: {
             query?: never;
@@ -526,6 +543,7 @@ export interface components {
             has_published_revision: boolean;
             photo: components["schemas"]["ProfessionalWorkspacePhoto"];
             portfolio_items: components["schemas"]["ProfessionalPortfolioItem"][];
+            verification: components["schemas"]["ProfessionalVerificationState"];
             identity: components["schemas"]["ProfessionalIdentity"];
             services: components["schemas"]["ProfessionalServiceSelection"][];
             coverage: components["schemas"]["ProfessionalCoverage"];
@@ -574,6 +592,28 @@ export interface components {
             /** Format: date-time */
             submitted_at: string;
             image_url: string | null;
+        };
+        ProfessionalVerificationRequestCreateRequest: {
+            verification_request: {
+                /** Format: uuid */
+                media_upload_id: string;
+                /** @constant */
+                verification_type: "identity";
+            };
+        };
+        ProfessionalVerificationState: {
+            current: components["schemas"]["ProfessionalVerificationRequest"] | null;
+        };
+        ProfessionalVerificationRequest: {
+            /** Format: uuid */
+            id: string;
+            /** @constant */
+            verification_type: "identity";
+            /** @enum {string} */
+            status: "pending_review" | "approved" | "rejected" | "expired";
+            rejection_reason: string | null;
+            /** Format: date-time */
+            submitted_at: string;
         };
         ProfessionalIdentity: {
             display_name: string;
@@ -1739,6 +1779,72 @@ export interface operations {
             };
             /** @description Professional registration or the active owned item was not found. */
             404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    createProfessionalVerificationRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfessionalVerificationRequestCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description The identity request and its one private regenerated image were persisted. */
+            201: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalWorkspaceResponse"];
+                };
+            };
+            /** @description An active Rails application session is required. */
+            401: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The exact browser origin or profile owner is invalid. */
+            403: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Professional registration or the owned upload was not found. */
+            404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The type, processed upload, or one-pending-request rule is invalid. */
+            422: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;

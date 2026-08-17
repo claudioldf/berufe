@@ -113,6 +113,9 @@ describe("professional onboarding rules", () => {
             description: draft.description,
             submittedAt: "2026-08-15T12:02:00.000Z",
           }),
+          saveVerification: async () => ({
+            submittedAt: "2026-08-15T12:03:00.000Z",
+          }),
         });
         return () => h("div");
       },
@@ -140,7 +143,7 @@ describe("professional onboarding rules", () => {
         description: "",
       }),
     ).resolves.toBe(true);
-    expect(workflow.completeVerification(file)).toBe(true);
+    await expect(workflow.completeVerification(file)).resolves.toBe(true);
 
     const stored = window.localStorage.getItem(
       professionalOnboardingStorageKey,

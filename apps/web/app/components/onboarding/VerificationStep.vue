@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import type { VerificationSubmission } from "~/types";
 
-defineProps<{ submitted: boolean }>();
+defineProps<{
+  submitted: boolean;
+  saving?: boolean;
+  serverError?: string;
+}>();
 defineEmits<{
   back: [];
   complete: [file: File];
@@ -19,8 +23,8 @@ function submit(submission: VerificationSubmission) {
       <DesignSystemEyebrow>Etapa 4 de 4</DesignSystemEyebrow>
       <h2 id="onboarding-verification-title">Finalize com sua identidade.</h2>
       <p>
-        O envio conta para a conclusão; a análise pode continuar pendente. Como
-        este é um mockup, nenhum arquivo é transmitido ou armazenado.
+        O envio conta para a conclusão; a análise pode continuar pendente. A
+        conferência da identidade não é uma garantia sobre o serviço realizado.
       </p>
     </header>
 
@@ -33,8 +37,12 @@ function submit(submission: VerificationSubmission) {
     </DesignSystemSurfaceCard>
 
     <DesignSystemSurfaceCard v-else class="onboarding-upload-card">
+      <p v-if="serverError" class="onboarding-step-error" role="alert">
+        <UIcon name="i-lucide-circle-alert" /> {{ serverError }}
+      </p>
       <DashboardVerificationIdentityUploadForm
         submit-label="Enviar e concluir"
+        :submitting="saving"
         @submitted="$emit('complete', submit($event))"
       />
     </DesignSystemSurfaceCard>
@@ -45,6 +53,7 @@ function submit(submission: VerificationSubmission) {
         color="neutral"
         variant="ghost"
         icon="i-lucide-arrow-left"
+        :disabled="saving"
         @click="$emit('back')"
       >
         Voltar

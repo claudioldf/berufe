@@ -3,9 +3,13 @@ import { shallowRef } from "vue";
 import type { VerificationSubmission } from "~/types";
 import { validateOnboardingImage } from "~/composables/useProfessionalOnboarding";
 
-withDefaults(defineProps<{ submitLabel?: string }>(), {
-  submitLabel: "Enviar imagem para análise",
-});
+const props = withDefaults(
+  defineProps<{ submitLabel?: string; submitting?: boolean }>(),
+  {
+    submitLabel: "Enviar imagem para análise",
+    submitting: false,
+  },
+);
 const emit = defineEmits<{
   submitted: [submission: VerificationSubmission];
 }>();
@@ -34,8 +38,8 @@ function submit() {
       <div>
         <h3>Enviar evidência de identidade</h3>
         <p>
-          Selecione uma imagem de documento oficial com foto. Neste mockup, o
-          arquivo não sai do seu navegador.
+          Selecione uma imagem de documento oficial com foto. A imagem será
+          processada e mantida privada durante a análise.
         </p>
       </div>
       <span><UIcon name="i-lucide-lock-keyhole" /> Arquivo protegido</span>
@@ -48,6 +52,7 @@ function submit() {
         :aria-describedby="error ? 'identity-document-error' : undefined"
         :aria-invalid="Boolean(error)"
         required
+        :disabled="props.submitting"
         @change="selectFile"
       />
       <UIcon :name="file ? 'i-lucide-file-check-2' : 'i-lucide-file-up'" />
@@ -56,7 +61,7 @@ function submit() {
           file ? file.name : "Selecione a imagem do documento"
         }}</strong>
         <small>{{
-          file ? "Pronta para envio simulado" : "JPG ou PNG · até 10 MB"
+          file ? "Pronta para envio protegido" : "JPG ou PNG · até 10 MB"
         }}</small>
       </span>
       <em>{{ file ? "Trocar" : "Escolher arquivo" }}</em>
@@ -69,7 +74,12 @@ function submit() {
     >
       {{ error }}
     </p>
-    <UButton type="submit" color="primary" :disabled="!file">
+    <UButton
+      type="submit"
+      color="primary"
+      :loading="props.submitting"
+      :disabled="props.submitting || !file"
+    >
       {{ submitLabel }}
     </UButton>
   </form>

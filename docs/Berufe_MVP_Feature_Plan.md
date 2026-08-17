@@ -319,28 +319,33 @@ For the first 30–50 professionals, accept only one JPEG/PNG identity-evidence 
 
 **`verification_request`**
 
-| Field                 | Type      | Rules                                        |
-| --------------------- | --------- | -------------------------------------------- |
-| `id`                  | UUID      | Primary key                                  |
-| `professional_id`     | UUID      | Foreign reference to profile                 |
-| `verification_type`   | enum      | `identity` at launch                         |
-| `status`              | enum      | `pending`, `approved`, `rejected`, `expired` |
-| `submitted_at`        | timestamp | Required                                     |
-| `reviewed_at`         | timestamp | Nullable                                     |
-| `reviewed_by_user_id` | UUID      | Nullable; admin account                      |
-| `review_note`         | text      | Private; required on rejection               |
-| `public_label`        | text      | Controlled label, never user-written         |
+| Field                         | Type      | Rules                                               |
+| ----------------------------- | --------- | --------------------------------------------------- |
+| `id`                          | UUID      | Primary key                                         |
+| `professional_profile_id`     | UUID      | Foreign reference to profile                        |
+| `verification_type`           | enum      | `identity` at launch                                |
+| `status`                      | enum      | `pending_review`, `approved`, `rejected`, `expired` |
+| `submitted_at`                | timestamp | Required                                            |
+| `reviewed_at`                 | timestamp | Nullable                                            |
+| `reviewed_by_user_account_id` | UUID      | Nullable; admin account                             |
+| `review_note`                 | text      | Private; required on rejection                      |
+| `public_label`                | text      | Controlled label, never user-written                |
+| `verified_at`                 | timestamp | Nullable public verification date                   |
 
 **`verification_file`**
 
-| Field                     | Type      | Rules                               |
-| ------------------------- | --------- | ----------------------------------- |
-| `id`                      | UUID      | Primary key                         |
-| `verification_request_id` | UUID      | Foreign reference to request        |
-| `private_storage_key`     | text      | Never public                        |
-| `file_kind`               | text      | Controlled internal category        |
-| `uploaded_at`             | timestamp | Required                            |
-| `deleted_at`              | timestamp | Nullable; supports retention policy |
+| Field                     | Type      | Rules                                      |
+| ------------------------- | --------- | ------------------------------------------ |
+| `id`                      | UUID      | Primary key                                |
+| `verification_request_id` | UUID      | Unique foreign reference to request        |
+| `media_upload_id`         | UUID      | Unique processed identity upload           |
+| `private_key`             | text      | Never public                               |
+| `content_type`            | text      | Regenerated `image/jpeg` or `image/png`    |
+| `byte_size`               | bigint    | Positive regenerated-image size            |
+| `width`                   | integer   | Positive regenerated-image width           |
+| `height`                  | integer   | Positive regenerated-image height          |
+| `uploaded_at`             | timestamp | Required                                   |
+| `deleted_at`              | timestamp | Nullable; supports the retention lifecycle |
 
 #### 5. Explicitly not in MVP
 

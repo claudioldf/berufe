@@ -781,6 +781,69 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/professional/verification-requests:
+    post:
+      operationId: createProfessionalVerificationRequest
+      summary: Submit one regenerated private identity image for review
+      tags:
+        - Professional supply
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfessionalVerificationRequestCreateRequest"
+      responses:
+        "201":
+          description: The identity request and its one private regenerated image were persisted.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Location:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfessionalWorkspaceResponse"
+        "401":
+          description: An active Rails application session is required.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: The exact browser origin or profile owner is invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Professional registration or the owned upload was not found.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: The type, processed upload, or one-pending-request rule is invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/professional/media-uploads:
     post:
       operationId: authorizeProfessionalMediaUpload
@@ -1478,6 +1541,7 @@ components:
         - has_published_revision
         - photo
         - portfolio_items
+        - verification
         - identity
         - services
         - coverage
@@ -1513,6 +1577,8 @@ components:
           maxItems: 12
           items:
             $ref: "#/components/schemas/ProfessionalPortfolioItem"
+        verification:
+          $ref: "#/components/schemas/ProfessionalVerificationState"
         identity:
           $ref: "#/components/schemas/ProfessionalIdentity"
         services:
@@ -1664,6 +1730,66 @@ components:
           type:
             - string
             - "null"
+    ProfessionalVerificationRequestCreateRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - verification_request
+      properties:
+        verification_request:
+          type: object
+          additionalProperties: false
+          required:
+            - media_upload_id
+            - verification_type
+          properties:
+            media_upload_id:
+              type: string
+              format: uuid
+            verification_type:
+              type: string
+              const: identity
+    ProfessionalVerificationState:
+      type: object
+      additionalProperties: false
+      required:
+        - current
+      properties:
+        current:
+          oneOf:
+            - $ref: "#/components/schemas/ProfessionalVerificationRequest"
+            - type: "null"
+    ProfessionalVerificationRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - verification_type
+        - status
+        - rejection_reason
+        - submitted_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        verification_type:
+          type: string
+          const: identity
+        status:
+          type: string
+          enum:
+            - pending_review
+            - approved
+            - rejected
+            - expired
+        rejection_reason:
+          type:
+            - string
+            - "null"
+          maxLength: 500
+        submitted_at:
+          type: string
+          format: date-time
     ProfessionalIdentity:
       type: object
       additionalProperties: false

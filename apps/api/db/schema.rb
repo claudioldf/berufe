@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_17_103000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_17_104000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -471,6 +471,45 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_103000) do
     t.check_constraint "terms_accepted_at IS NULL AND terms_version IS NULL AND privacy_notice_version IS NULL OR terms_accepted_at IS NOT NULL AND terms_version IS NOT NULL AND privacy_notice_version IS NOT NULL AND btrim(terms_version) <> ''::text AND btrim(privacy_notice_version) <> ''::text", name: "user_accounts_complete_legal_acceptance"
   end
 
+  create_table "verification_files", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.bigint "byte_size", null: false
+    t.text "content_type", null: false
+    t.datetime "created_at", null: false
+    t.datetime "deleted_at"
+    t.integer "height", null: false
+    t.uuid "media_upload_id", null: false
+    t.text "private_key", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "uploaded_at", null: false
+    t.uuid "verification_request_id", null: false
+    t.integer "width", null: false
+    t.index ["media_upload_id"], name: "index_verification_files_on_media_upload_id", unique: true
+    t.index ["private_key"], name: "index_verification_files_on_private_key", unique: true
+    t.index ["verification_request_id"], name: "index_verification_files_on_verification_request_id", unique: true
+    t.check_constraint "byte_size > 0 AND width > 0 AND height > 0", name: "verification_files_valid_image"
+    t.check_constraint "content_type = ANY (ARRAY['image/jpeg'::text, 'image/png'::text])", name: "verification_files_supported_content_type"
+  end
+
+  create_table "verification_requests", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.uuid "professional_profile_id", null: false
+    t.text "public_label"
+    t.text "review_note"
+    t.datetime "reviewed_at"
+    t.uuid "reviewed_by_user_account_id"
+    t.text "status", default: "pending_review", null: false
+    t.datetime "submitted_at", null: false
+    t.datetime "updated_at", null: false
+    t.text "verification_type", default: "identity", null: false
+    t.datetime "verified_at"
+    t.index ["professional_profile_id", "submitted_at", "id"], name: "idx_verification_requests_owner_newest", order: { submitted_at: :desc, id: :desc }
+    t.index ["professional_profile_id", "verification_type"], name: "idx_verification_requests_one_pending_type", unique: true, where: "(status = 'pending_review'::text)"
+    t.index ["professional_profile_id"], name: "index_verification_requests_on_professional_profile_id"
+    t.index ["reviewed_by_user_account_id"], name: "index_verification_requests_on_reviewed_by_user_account_id"
+    t.check_constraint "status = ANY (ARRAY['pending_review'::text, 'approved'::text, 'rejected'::text, 'expired'::text])", name: "verification_requests_known_status"
+    t.check_constraint "verification_type = 'identity'::text", name: "verification_requests_identity_only"
+  end
+
   add_foreign_key "admin_access_events", "user_accounts", column: "admin_user_id"
   add_foreign_key "application_sessions", "user_accounts"
   add_foreign_key "catalog_change_events", "user_accounts", column: "admin_user_id"
@@ -491,4 +530,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_103000) do
   add_foreign_key "professional_profiles", "professional_profile_revisions", column: "working_revision_id"
   add_foreign_key "professional_profiles", "user_accounts"
   add_foreign_key "services", "service_categories", column: "category_id"
+  add_foreign_key "verification_files", "media_uploads"
+  add_foreign_key "verification_files", "verification_requests"
+  add_foreign_key "verification_requests", "professional_profiles"
+  add_foreign_key "verification_requests", "user_accounts", column: "reviewed_by_user_account_id"
 end
