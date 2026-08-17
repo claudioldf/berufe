@@ -695,6 +695,125 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/public/professionals/{slug}:
+    parameters:
+      - name: slug
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+      - name: interactionToken
+        in: query
+        required: false
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 2048
+    get:
+      operationId: getPublicProfessionalProfile
+      summary: Read one complete approved public professional profile
+      tags:
+        - Public discovery
+      security: []
+      responses:
+        "200":
+          description: The approved public snapshot and a short-lived profile interaction.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicProfessionalProfileResponse"
+        "404":
+          description: The slug is unknown or its professional is not currently public.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: The public profile query is temporarily unavailable.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/public/professionals/{id}/views:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      operationId: recordPublicProfessionalProfileView
+      summary: Record one retry-idempotent privacy-safe public profile view
+      tags:
+        - Public discovery
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublicProfessionalViewRequest"
+      responses:
+        "204":
+          description: The view was accepted or safely ignored as a retry.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+        "403":
+          description: The exact browser origin is invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: The professional is not currently public.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: The interaction is missing, invalid, expired, or belongs to another profile.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: Public profile eligibility is temporarily unavailable.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/public/profile-photos/{id}/image:
     parameters:
       - name: id
@@ -3403,6 +3522,242 @@ components:
             - string
             - "null"
           format: date-time
+    PublicProfessionalProfileResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required:
+            - professional
+            - interaction
+          properties:
+            professional:
+              $ref: "#/components/schemas/PublicProfessionalProfile"
+            interaction:
+              $ref: "#/components/schemas/PublicProfileInteraction"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    PublicProfessionalProfile:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - publicSlug
+        - displayName
+        - headline
+        - bio
+        - yearsExperience
+        - photoUrl
+        - services
+        - coverage
+        - verificationLabels
+        - portfolio
+        - relationships
+        - socialLinks
+        - publicSnapshotUpdatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        publicSlug:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        displayName:
+          type: string
+          minLength: 3
+          maxLength: 70
+        headline:
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 120
+        bio:
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 500
+        yearsExperience:
+          type:
+            - integer
+            - "null"
+          minimum: 0
+          maximum: 70
+        photoUrl:
+          type:
+            - string
+            - "null"
+          format: uri
+        services:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/PublicProfessionalProfileService"
+        coverage:
+          $ref: "#/components/schemas/PublicProfessionalCoverage"
+        verificationLabels:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/PublicVerificationLabel"
+        portfolio:
+          type: array
+          maxItems: 12
+          items:
+            $ref: "#/components/schemas/PublicProfessionalPortfolioItem"
+        relationships:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicProfessionalRelationship"
+        socialLinks:
+          $ref: "#/components/schemas/PublicProfessionalSocialLinks"
+        publicSnapshotUpdatedAt:
+          type:
+            - string
+            - "null"
+          format: date-time
+    PublicProfessionalProfileService:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - name
+        - slug
+        - isPrimary
+        - note
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+        slug:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        isPrimary:
+          type: boolean
+        note:
+          type:
+            - string
+            - "null"
+          maxLength: 160
+    PublicProfessionalPortfolioItem:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - title
+        - description
+        - service
+        - imageUrl
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          minLength: 1
+          maxLength: 80
+        description:
+          type:
+            - string
+            - "null"
+          maxLength: 300
+        service:
+          $ref: "#/components/schemas/PublicProfessionalServiceSummary"
+        imageUrl:
+          type: string
+          format: uri
+    PublicProfessionalRelationship:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - type
+        - note
+        - professional
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum:
+            - recommendation
+            - worked_together
+        note:
+          type:
+            - string
+            - "null"
+          maxLength: 300
+        professional:
+          type: object
+          additionalProperties: false
+          required:
+            - id
+            - publicSlug
+            - displayName
+            - photoUrl
+          properties:
+            id:
+              type: string
+              format: uuid
+            publicSlug:
+              type: string
+              pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+            displayName:
+              type: string
+              minLength: 3
+              maxLength: 70
+            photoUrl:
+              type:
+                - string
+                - "null"
+              format: uri
+    PublicProfessionalSocialLinks:
+      type: object
+      additionalProperties: false
+      required:
+        - instagram
+        - youtube
+      properties:
+        instagram:
+          type:
+            - string
+            - "null"
+          format: uri
+        youtube:
+          type:
+            - string
+            - "null"
+          format: uri
+    PublicProfileInteraction:
+      type: object
+      additionalProperties: false
+      required:
+        - token
+      properties:
+        token:
+          type: string
+          minLength: 1
+          maxLength: 2048
+    PublicProfessionalViewRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - interactionToken
+      properties:
+        interactionToken:
+          type: string
+          minLength: 1
+          maxLength: 2048
     RequestId:
       type: string
       pattern: "^[A-Za-z0-9._-]{1,100}$"

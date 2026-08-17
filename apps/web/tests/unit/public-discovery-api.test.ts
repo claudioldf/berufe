@@ -1,13 +1,18 @@
 import type { BerufeApiClient } from "@app/services/api/client";
 import {
   fetchFeaturedProfessionals,
+  fetchPublicProfessionalProfile,
   mapPublicProfessionalCard,
+  mapPublicProfessionalProfile,
+  recordPublicProfessionalProfileView,
   searchPublicProfessionals,
 } from "@app/services/api/public-discovery";
 import type { ApiRequestError } from "@app/services/api/errors";
 import type { components } from "@app/services/api/schema";
 
 type ContractProfessionalCard = components["schemas"]["PublicProfessionalCard"];
+type ContractProfessionalProfile =
+  components["schemas"]["PublicProfessionalProfile"];
 
 const contractCard: ContractProfessionalCard = {
   id: "ad59e74a-a1aa-47d5-b725-26350f0f2376",
@@ -39,6 +44,61 @@ const contractCard: ContractProfessionalCard = {
   ],
   portfolioCount: 3,
   relationshipCount: 2,
+  publicSnapshotUpdatedAt: "2026-08-17T12:00:00Z",
+};
+
+const contractProfile: ContractProfessionalProfile = {
+  id: contractCard.id,
+  publicSlug: "ana-souza",
+  displayName: "Ana Souza",
+  headline: "Elétrica residencial.",
+  bio: "Instalações e reparos em Joinville.",
+  yearsExperience: 11,
+  photoUrl: contractCard.photoUrl,
+  services: [
+    {
+      id: contractCard.primaryService!.id,
+      name: "Eletricista",
+      slug: "eletricista",
+      isPrimary: true,
+      note: "Quadros elétricos",
+    },
+    {
+      id: "894a140b-219f-4fab-a01e-6f0dc02f6764",
+      name: "Marido de aluguel",
+      slug: "marido-de-aluguel",
+      isPrimary: false,
+      note: null,
+    },
+  ],
+  coverage: contractCard.coverage,
+  verificationLabels: contractCard.verificationLabels,
+  portfolio: [
+    {
+      id: "b9029f26-f2c1-4001-9696-cf34d7259999",
+      title: "Quadro organizado",
+      description: null,
+      service: contractCard.primaryService!,
+      imageUrl: "https://api.berufe.test/portfolio.png",
+    },
+  ],
+  relationships: [
+    {
+      id: "de381ccd-d0e5-4d50-8322-a4daff09a486",
+      type: "recommendation",
+      note: "Indicação profissional.",
+      professional: {
+        id: "9c315329-e728-4d48-96bc-7be4bc70d147",
+        publicSlug: "beto-lima",
+        displayName: "Beto Lima",
+        photoUrl: null,
+      },
+    },
+  ],
+  socialLinks: {
+    instagram: "https://www.instagram.com/berufe.ana/",
+    youtube: null,
+  },
   publicSnapshotUpdatedAt: "2026-08-17T12:00:00Z",
 };
 
@@ -188,5 +248,126 @@ describe("public discovery API", () => {
         requestId: "client",
       } satisfies Partial<ApiRequestError>,
     );
+  });
+
+  it("maps and loads the complete safe public profile with its signed interaction", async () => {
+    expect(mapPublicProfessionalProfile(contractProfile)).toEqual({
+      id: contractProfile.id,
+      slug: "ana-souza",
+      name: "Ana Souza",
+      headline: "Elétrica residencial.",
+      bio: "Instalações e reparos em Joinville.",
+      avatar: contractProfile.photoUrl,
+      primaryService: "Eletricista",
+      primaryServiceSlug: "eletricista",
+      services: ["Eletricista", "Marido de aluguel"],
+      serviceNotes: ["Quadros elétricos", null],
+      neighborhoods: ["América"],
+      allJoinville: false,
+      yearsExperience: 11,
+      evidence: contractProfile.verificationLabels.map((label) => ({
+        id: label.type,
+        type: label.type,
+        label: label.label,
+        verifiedAt: label.verifiedAt,
+      })),
+      portfolio: [
+        {
+          id: "b9029f26-f2c1-4001-9696-cf34d7259999",
+          title: "Quadro organizado",
+          description: null,
+          service: "Eletricista",
+          image: "https://api.berufe.test/portfolio.png",
+        },
+      ],
+      relationships: [
+        {
+          id: "de381ccd-d0e5-4d50-8322-a4daff09a486",
+          professionalName: "Beto Lima",
+          professionalSlug: "beto-lima",
+          avatar: null,
+          type: "recommendation",
+          note: "Indicação profissional.",
+        },
+      ],
+      updatedAt: "2026-08-17T12:00:00Z",
+      instagram: "https://www.instagram.com/berufe.ana/",
+    });
+
+    const client = apiClientReturning({
+      data: {
+        data: {
+          professional: contractProfile,
+          interaction: { token: "signed-profile-interaction" },
+        },
+        request_id: "profile-200",
+      },
+      error: undefined,
+      response: new Response(null),
+    });
+    const result = await fetchPublicProfessionalProfile(
+      client,
+      "ana-souza",
+      "signed-search-context",
+    );
+
+    expect(result.professional.name).toBe("Ana Souza");
+    expect(result.interactionToken).toBe("signed-profile-interaction");
+    expect(client.GET).toHaveBeenCalledWith(
+      "/api/v1/public/professionals/{slug}",
+      {
+        params: {
+          path: { slug: "ana-souza" },
+          query: { interactionToken: "signed-search-context" },
+        },
+      },
+    );
+  });
+
+  it("records a profile view through the typed mutation and normalizes failures", async () => {
+    const success = apiClientReturning({
+      data: undefined,
+      error: undefined,
+      response: new Response(null, { status: 204 }),
+    });
+    await expect(
+      recordPublicProfessionalProfileView(
+        success,
+        contractProfile.id,
+        "signed-profile-interaction",
+      ),
+    ).resolves.toBeUndefined();
+    expect(success.POST).toHaveBeenCalledWith(
+      "/api/v1/public/professionals/{id}/views",
+      {
+        params: { path: { id: contractProfile.id } },
+        body: { interactionToken: "signed-profile-interaction" },
+      },
+    );
+
+    const failure = apiClientReturning({
+      data: undefined,
+      error: {
+        error: {
+          code: "validation_failed",
+          message: "Interação inválida ou expirada.",
+          request_id: "profile-view-422",
+        },
+      },
+      response: new Response(null, {
+        status: 422,
+        headers: { "X-Request-Id": "profile-view-422" },
+      }),
+    });
+    await expect(
+      recordPublicProfessionalProfileView(
+        failure,
+        contractProfile.id,
+        "expired",
+      ),
+    ).rejects.toMatchObject({
+      code: "validation_failed",
+      requestId: "profile-view-422",
+    });
   });
 });

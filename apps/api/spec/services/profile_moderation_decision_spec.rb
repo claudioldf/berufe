@@ -38,9 +38,9 @@ RSpec.describe "Professional profile moderation" do
       working_revision: revision
     )
     expect(PublicProfessionalProfileSerializer.new(profile).as_json).to include(
-      display_name: "Ana Souza",
-      services: [{id: service.id, name: service.name, is_primary: true, note: nil}],
-      coverage: {all_joinville: true, neighborhood_codes: []}
+      displayName: "Ana Souza",
+      services: [{id: service.id, name: service.name, slug: service.slug, isPrimary: true, note: nil}],
+      coverage: {allJoinville: true, neighborhoods: []}
     )
   end
 
@@ -68,7 +68,7 @@ RSpec.describe "Professional profile moderation" do
     expect(original.reload.status).to eq("superseded")
     expect(profile.reload.published_revision).to eq(pending)
     expect(PublicProfessionalProfileSerializer.new(profile).as_json).to include(
-      display_name: "Ana Obras",
+      displayName: "Ana Obras",
       headline: "Projetos elétricos residenciais."
     )
   end
@@ -114,7 +114,7 @@ RSpec.describe "Professional profile moderation" do
     decide(revision, "restored")
     expect(profile.reload.profile_status).to eq("published")
     expect(profile.published_revision).to eq(revision)
-    expect(PublicProfessionalProfileSerializer.new(profile).as_json).to include(display_name: "Ana Souza")
+    expect(PublicProfessionalProfileSerializer.new(profile).as_json).to include(displayName: "Ana Souza")
     expect(ModerationAction.order(:created_at).pluck(:action)).to eq(%w[approved hidden restored])
   end
 

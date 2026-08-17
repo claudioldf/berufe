@@ -65,10 +65,10 @@ RSpec.describe PublicProfessionalProfileSerializer do
     expect(profile.working_revision.professional_profile_service_areas.sole.neighborhood_code).to be_nil
     expect(described_class.new(profile).as_json).to eq(before_edit)
     expect(before_edit).to include(
-      public_slug: "ana-souza",
-      display_name: "Ana Souza",
+      publicSlug: "ana-souza",
+      displayName: "Ana Souza",
       headline: "Elétrica residencial.",
-      verification: {phone_confirmed: true, identity: nil}
+      verificationLabels: [{type: "phone", label: "Telefone confirmado", verifiedAt: nil}]
     )
   end
 

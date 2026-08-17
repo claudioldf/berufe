@@ -3,6 +3,7 @@ import { defineComponent } from "vue";
 import ProfessionalCard from "@app/components/public/ProfessionalCard.vue";
 import type { PublicProfessionalCard } from "@app/types";
 import {
+  buildPublicProfileWhatsAppUrl,
   buildPublicProfileResultUrl,
   buildSearchResultWhatsAppUrl,
 } from "@app/utils/publicProfiles";
@@ -157,5 +158,18 @@ describe("public professional result card", () => {
     expect(wrapper.text()).not.toContain("Atualizado recentemente");
     expect(wrapper.text()).not.toContain("Verificada");
     expect(wrapper.text()).toContain("Telefone confirmado");
+  });
+
+  it("builds the profile handoff without exposing a phone number", () => {
+    const url = buildPublicProfileWhatsAppUrl({
+      apiBaseUrl: "https://api.berufe.test/",
+      professionalId: "ad59e74a-a1aa-47d5-b725-26350f0f2376",
+      interactionToken: "signed profile context",
+    });
+
+    expect(url).toBe(
+      "https://api.berufe.test/api/v1/public/professionals/ad59e74a-a1aa-47d5-b725-26350f0f2376/whatsapp?source=public_profile&interactionToken=signed+profile+context",
+    );
+    expect(url).not.toContain("wa.me");
   });
 });

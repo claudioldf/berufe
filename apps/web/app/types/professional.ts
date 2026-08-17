@@ -133,6 +133,51 @@ export interface PublicProfessionalSearchResult {
   } | null;
 }
 
+export interface PublicProfessionalProfile {
+  id: string;
+  slug: string;
+  name: string;
+  headline: string | null;
+  bio: string | null;
+  avatar: string | null;
+  primaryService: string;
+  primaryServiceSlug: string;
+  services: string[];
+  serviceNotes: Array<string | null>;
+  neighborhoods: string[];
+  allJoinville: boolean;
+  yearsExperience: number | null;
+  evidence: Array<
+    Evidence & {
+      type: "phone" | "identity";
+      verifiedAt: string | null;
+    }
+  >;
+  portfolio: Array<{
+    id: string;
+    title: string;
+    service: string;
+    description: string | null;
+    image: string;
+  }>;
+  relationships: Array<{
+    id: string;
+    professionalName: string;
+    professionalSlug: string;
+    avatar: string | null;
+    type: "recommendation" | "worked_together";
+    note: string | null;
+  }>;
+  updatedAt: string | null;
+  instagram?: string;
+  youtube?: string;
+}
+
+export interface PublicProfessionalProfileResult {
+  professional: PublicProfessionalProfile;
+  interactionToken: string;
+}
+
 export interface ProfessionalProfileDraft {
   name: string;
   headline: string;

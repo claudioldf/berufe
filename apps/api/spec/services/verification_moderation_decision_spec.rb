@@ -34,13 +34,14 @@ RSpec.describe "Identity-verification moderation" do
     expect(request_record.verified_at).to be_present
 
     public_projection = PublicProfessionalProfileSerializer.new(profile.reload).as_json
-    expect(public_projection.fetch(:verification)).to eq(
-      phone_confirmed: true,
-      identity: {
+    expect(public_projection.fetch(:verificationLabels)).to eq([
+      {type: "phone", label: "Telefone confirmado", verifiedAt: nil},
+      {
+        type: "identity",
         label: "Identidade verificada",
-        verified_at: request_record.verified_at.iso8601
+        verifiedAt: request_record.verified_at.iso8601
       }
-    )
+    ])
     expect(public_projection.to_json).not_to include(
       request_record.id,
       request_record.verification_file.id,
@@ -65,7 +66,9 @@ RSpec.describe "Identity-verification moderation" do
       rejection_reason: "A imagem enviada não permite conferir a identidade."
     )
     public_projection = PublicProfessionalProfileSerializer.new(profile).as_json
-    expect(public_projection.fetch(:verification)).to eq(phone_confirmed: true, identity: nil)
+    expect(public_projection.fetch(:verificationLabels)).to eq([
+      {type: "phone", label: "Telefone confirmado", verifiedAt: nil}
+    ])
     expect(public_projection.to_json).not_to include("A imagem enviada não permite conferir a identidade.")
   end
 

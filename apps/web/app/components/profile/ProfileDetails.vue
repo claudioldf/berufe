@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { Professional } from "~/types";
+import type { PublicProfessionalProfile } from "~/types";
 
 defineProps<{
-  professional: Professional;
+  professional: PublicProfessionalProfile;
   canRequestRelationship: boolean;
   supportEmailUrl: string;
 }>();
@@ -25,9 +25,9 @@ defineEmits<{
           </span>
           <div>
             <strong>{{ service }}</strong>
-            <small>{{
-              professional.serviceNotes[index] ?? "Serviço residencial"
-            }}</small>
+            <small v-if="professional.serviceNotes[index]">
+              {{ professional.serviceNotes[index] }}
+            </small>
           </div>
           <em v-if="index === 0">Principal</em>
         </div>
@@ -87,7 +87,7 @@ defineEmits<{
         >
           <DesignSystemAvatar
             :name="relationship.professionalName"
-            :src="relationship.avatar"
+            :src="relationship.avatar ?? undefined"
             size="lg"
             shape="rounded"
           />
@@ -106,7 +106,7 @@ defineEmits<{
                   : "Recomendação profissional"
               }}
             </span>
-            <p>“{{ relationship.note }}”</p>
+            <p v-if="relationship.note">“{{ relationship.note }}”</p>
             <NuxtLink :to="`/profissionais/${relationship.professionalSlug}`">
               {{ relationship.professionalName }}
               <UIcon name="i-lucide-arrow-up-right" />
