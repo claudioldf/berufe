@@ -10,6 +10,7 @@ Rails.application.routes.draw do
         resource :workspace, only: :show, controller: :workspaces
         resource :profile, only: :update, controller: :profiles
         put "profile/photo", to: "profile_photos#update"
+        resources :portfolio_items, only: %i[create destroy], path: "portfolio-items"
         resources :media_uploads, only: %i[create show], path: "media-uploads" do
           member do
             put :content

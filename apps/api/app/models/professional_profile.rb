@@ -14,6 +14,7 @@ class ProfessionalProfile < ApplicationRecord
     inverse_of: :professional_profile,
     dependent: :destroy
   has_many :media_uploads, dependent: :destroy
+  has_many :portfolio_items, dependent: :destroy
   has_many :profile_photos,
     class_name: "ProfessionalProfilePhoto",
     dependent: :destroy

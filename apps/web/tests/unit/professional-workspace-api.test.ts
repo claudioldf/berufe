@@ -2,6 +2,8 @@ import type { BerufeApiClient } from "@app/services/api/client";
 import {
   fetchProfessionalWorkspace,
   attachProfessionalProfilePhoto,
+  attachProfessionalPortfolioItem,
+  deleteProfessionalPortfolioItem,
   mapProfessionalWorkspace,
   updateProfessionalIdentity,
   updateProfessionalSupply,
@@ -23,6 +25,7 @@ const workspaceData: WorkspaceData = {
       has_published_photo: false,
       latest_upload: null,
     },
+    portfolio_items: [],
     identity: {
       display_name: "Ana Souza",
       headline: "Elétrica residencial.",
@@ -47,7 +50,10 @@ const workspaceData: WorkspaceData = {
   },
 };
 
-function apiClientReturning(method: "GET" | "PATCH" | "PUT", result: object) {
+function apiClientReturning(
+  method: "GET" | "PATCH" | "PUT" | "POST" | "DELETE",
+  result: object,
+) {
   return {
     [method]: vi.fn().mockResolvedValue(result),
   } as unknown as BerufeApiClient;
@@ -67,6 +73,7 @@ describe("professional workspace API", () => {
           hasPublishedPhoto: false,
           latestUpload: null,
         },
+        portfolioItems: [],
         identity: {
           name: "Ana Souza",
           headline: "Elétrica residencial.",
@@ -122,6 +129,52 @@ describe("professional workspace API", () => {
       {
         body: {
           media_upload_id: "12d12a91-582e-4f1b-aa6b-49b5fd7ce1eb",
+        },
+      },
+    );
+  });
+
+  it("creates and soft-deletes portfolio items through stable identifiers", async () => {
+    const createClient = apiClientReturning("POST", {
+      data: { data: workspaceData, request_id: "portfolio-create" },
+      error: undefined,
+      response: new Response(null),
+    });
+    const deleteClient = apiClientReturning("DELETE", {
+      data: { data: workspaceData, request_id: "portfolio-delete" },
+      error: undefined,
+      response: new Response(null),
+    });
+
+    await attachProfessionalPortfolioItem(createClient, {
+      mediaUploadId: "12d12a91-582e-4f1b-aa6b-49b5fd7ce1eb",
+      serviceId: "de83e041-286f-4b50-91fa-61a0ee8c1801",
+      title: "Cozinha iluminada",
+      description: "Instalação completa.",
+    });
+    await deleteProfessionalPortfolioItem(
+      deleteClient,
+      "22d12a91-582e-4f1b-aa6b-49b5fd7ce1eb",
+    );
+
+    expect(createClient.POST).toHaveBeenCalledWith(
+      "/api/v1/professional/portfolio-items",
+      {
+        body: {
+          portfolio_item: {
+            media_upload_id: "12d12a91-582e-4f1b-aa6b-49b5fd7ce1eb",
+            service_id: "de83e041-286f-4b50-91fa-61a0ee8c1801",
+            title: "Cozinha iluminada",
+            description: "Instalação completa.",
+          },
+        },
+      },
+    );
+    expect(deleteClient.DELETE).toHaveBeenCalledWith(
+      "/api/v1/professional/portfolio-items/{id}",
+      {
+        params: {
+          path: { id: "22d12a91-582e-4f1b-aa6b-49b5fd7ce1eb" },
         },
       },
     );

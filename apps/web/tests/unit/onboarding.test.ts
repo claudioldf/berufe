@@ -107,6 +107,12 @@ describe("professional onboarding rules", () => {
         onboarding.value = useProfessionalOnboarding({
           saveIdentity: async (draft) => draft,
           saveSupply: async (draft) => draft,
+          savePortfolio: async (draft) => ({
+            title: draft.title,
+            service: draft.service,
+            description: draft.description,
+            submittedAt: "2026-08-15T12:02:00.000Z",
+          }),
         });
         return () => h("div");
       },
@@ -126,14 +132,14 @@ describe("professional onboarding rules", () => {
     const file = new File(["private-image-bytes"], "private.jpg", {
       type: "image/jpeg",
     });
-    expect(
+    await expect(
       workflow.completePortfolio({
         file,
         title: "Iluminação da cozinha",
         service: "Eletricista",
         description: "",
       }),
-    ).toBe(true);
+    ).resolves.toBe(true);
     expect(workflow.completeVerification(file)).toBe(true);
 
     const stored = window.localStorage.getItem(

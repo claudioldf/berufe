@@ -519,7 +519,7 @@ Apply these rules whenever they are relevant to the story:
 
 ### S027 — Create and manage portfolio items
 
-**Status:** PENDING
+**Status:** DONE
 
 **Story:** As a professional, I want to add and manage examples of completed work so that customers can see relevant evidence.
 

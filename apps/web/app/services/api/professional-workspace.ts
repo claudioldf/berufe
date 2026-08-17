@@ -44,6 +44,16 @@ export function mapProfessionalWorkspace(
             }
           : null,
       },
+      portfolioItems: data.profile.portfolio_items.map((item) => ({
+        id: item.id,
+        title: item.title,
+        service: item.service.name,
+        description: item.description ?? "",
+        image: item.image_url,
+        status: item.status,
+        rejectionReason: item.rejection_reason,
+        submittedAt: item.submitted_at,
+      })),
       identity: {
         name: identity.display_name,
         headline: identity.headline,
@@ -194,6 +204,46 @@ export async function attachProfessionalProfilePhoto(
   const { data, error, response } = await client.PUT(
     "/api/v1/professional/profile/photo",
     { body: { media_upload_id: mediaUploadId } },
+  );
+  if (error || !data) throw requestError(error, response);
+
+  return mapProfessionalWorkspace(data.data);
+}
+
+export async function attachProfessionalPortfolioItem(
+  client: BerufeApiClient,
+  input: {
+    mediaUploadId: string;
+    serviceId: string;
+    title: string;
+    description: string;
+  },
+): Promise<ProfessionalWorkspace> {
+  const { data, error, response } = await client.POST(
+    "/api/v1/professional/portfolio-items",
+    {
+      body: {
+        portfolio_item: {
+          media_upload_id: input.mediaUploadId,
+          service_id: input.serviceId,
+          title: input.title,
+          description: input.description || null,
+        },
+      },
+    },
+  );
+  if (error || !data) throw requestError(error, response);
+
+  return mapProfessionalWorkspace(data.data);
+}
+
+export async function deleteProfessionalPortfolioItem(
+  client: BerufeApiClient,
+  id: string,
+): Promise<ProfessionalWorkspace> {
+  const { data, error, response } = await client.DELETE(
+    "/api/v1/professional/portfolio-items/{id}",
+    { params: { path: { id } } },
   );
   if (error || !data) throw requestError(error, response);
 

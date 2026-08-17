@@ -665,6 +665,122 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/professional/portfolio-items:
+    post:
+      operationId: createProfessionalPortfolioItem
+      summary: Attach one processed image and submit a portfolio item for review
+      tags:
+        - Professional supply
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfessionalPortfolioItemCreateRequest"
+      responses:
+        "201":
+          description: The portfolio item was persisted privately for review.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Location:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfessionalWorkspaceResponse"
+        "401":
+          description: An active Rails application session is required.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: The exact browser origin or profile owner is invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Professional registration or the owned upload was not found.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: The image, selected service, item fields, or portfolio limit is invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/professional/portfolio-items/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Opaque server-generated portfolio item identifier.
+        schema:
+          type: string
+          format: uuid
+    delete:
+      operationId: deleteProfessionalPortfolioItem
+      summary: Soft-delete one owned portfolio item
+      tags:
+        - Professional supply
+      security:
+        - applicationSession: []
+      responses:
+        "200":
+          description: The item was removed from owner and public portfolio projections.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfessionalWorkspaceResponse"
+        "401":
+          description: An active Rails application session is required.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: The exact browser origin or profile owner is invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Professional registration or the active owned item was not found.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/professional/media-uploads:
     post:
       operationId: authorizeProfessionalMediaUpload
@@ -1361,6 +1477,7 @@ components:
         - revision_status
         - has_published_revision
         - photo
+        - portfolio_items
         - identity
         - services
         - coverage
@@ -1391,6 +1508,11 @@ components:
           type: boolean
         photo:
           $ref: "#/components/schemas/ProfessionalWorkspacePhoto"
+        portfolio_items:
+          type: array
+          maxItems: 12
+          items:
+            $ref: "#/components/schemas/ProfessionalPortfolioItem"
         identity:
           $ref: "#/components/schemas/ProfessionalIdentity"
         services:
@@ -1454,6 +1576,94 @@ components:
         media_upload_id:
           type: string
           format: uuid
+    ProfessionalPortfolioItemCreateRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - portfolio_item
+      properties:
+        portfolio_item:
+          type: object
+          additionalProperties: false
+          required:
+            - media_upload_id
+            - service_id
+            - title
+            - description
+          properties:
+            media_upload_id:
+              type: string
+              format: uuid
+            service_id:
+              type: string
+              format: uuid
+            title:
+              type: string
+              minLength: 1
+              maxLength: 80
+            description:
+              type:
+                - string
+                - "null"
+              maxLength: 300
+    ProfessionalPortfolioItem:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - title
+        - description
+        - service
+        - status
+        - rejection_reason
+        - submitted_at
+        - image_url
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          minLength: 1
+          maxLength: 80
+        description:
+          type:
+            - string
+            - "null"
+          maxLength: 300
+        service:
+          type: object
+          additionalProperties: false
+          required:
+            - id
+            - name
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type: string
+              minLength: 1
+              maxLength: 80
+        status:
+          type: string
+          enum:
+            - pending_review
+            - approved
+            - rejected
+            - hidden
+        rejection_reason:
+          type:
+            - string
+            - "null"
+          maxLength: 500
+        submitted_at:
+          type: string
+          format: date-time
+        image_url:
+          type:
+            - string
+            - "null"
     ProfessionalIdentity:
       type: object
       additionalProperties: false

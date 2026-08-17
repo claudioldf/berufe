@@ -263,6 +263,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/professional/portfolio-items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Attach one processed image and submit a portfolio item for review */
+        post: operations["createProfessionalPortfolioItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/professional/portfolio-items/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Opaque server-generated portfolio item identifier. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Soft-delete one owned portfolio item */
+        delete: operations["deleteProfessionalPortfolioItem"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/professional/media-uploads": {
         parameters: {
             query?: never;
@@ -488,6 +525,7 @@ export interface components {
             revision_status: "draft" | "pending_review" | "approved" | "rejected" | "superseded";
             has_published_revision: boolean;
             photo: components["schemas"]["ProfessionalWorkspacePhoto"];
+            portfolio_items: components["schemas"]["ProfessionalPortfolioItem"][];
             identity: components["schemas"]["ProfessionalIdentity"];
             services: components["schemas"]["ProfessionalServiceSelection"][];
             coverage: components["schemas"]["ProfessionalCoverage"];
@@ -509,6 +547,33 @@ export interface components {
         ProfessionalProfilePhotoUpdateRequest: {
             /** Format: uuid */
             media_upload_id: string;
+        };
+        ProfessionalPortfolioItemCreateRequest: {
+            portfolio_item: {
+                /** Format: uuid */
+                media_upload_id: string;
+                /** Format: uuid */
+                service_id: string;
+                title: string;
+                description: string | null;
+            };
+        };
+        ProfessionalPortfolioItem: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            description: string | null;
+            service: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+            };
+            /** @enum {string} */
+            status: "pending_review" | "approved" | "rejected" | "hidden";
+            rejection_reason: string | null;
+            /** Format: date-time */
+            submitted_at: string;
+            image_url: string | null;
         };
         ProfessionalIdentity: {
             display_name: string;
@@ -1554,6 +1619,126 @@ export interface operations {
             };
             /** @description The upload is not a processed, bounded profile-photo JPEG. */
             422: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    createProfessionalPortfolioItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfessionalPortfolioItemCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description The portfolio item was persisted privately for review. */
+            201: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalWorkspaceResponse"];
+                };
+            };
+            /** @description An active Rails application session is required. */
+            401: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The exact browser origin or profile owner is invalid. */
+            403: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Professional registration or the owned upload was not found. */
+            404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The image, selected service, item fields, or portfolio limit is invalid. */
+            422: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    deleteProfessionalPortfolioItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Opaque server-generated portfolio item identifier. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The item was removed from owner and public portfolio projections. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalWorkspaceResponse"];
+                };
+            };
+            /** @description An active Rails application session is required. */
+            401: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The exact browser origin or profile owner is invalid. */
+            403: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Professional registration or the active owned item was not found. */
+            404: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;

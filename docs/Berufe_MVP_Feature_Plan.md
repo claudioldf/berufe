@@ -268,16 +268,20 @@ For profile identity, services, and coverage, the launch retains the last approv
 
 **`portfolio_item`**
 
-| Field               | Type      | Rules                                       |
-| ------------------- | --------- | ------------------------------------------- |
-| `id`                | UUID      | Primary key                                 |
-| `professional_id`   | UUID      | Foreign reference to profile                |
-| `service_id`        | UUID      | Required; selected from catalog             |
-| `image_url`         | text      | Optimized public asset after approval       |
-| `title`             | text      | Required, short                             |
-| `description`       | text      | Nullable, length-limited                    |
-| `moderation_status` | enum      | `pending`, `approved`, `rejected`, `hidden` |
-| `created_at`        | timestamp | Required                                    |
+| Field                     | Type      | Rules                                                   |
+| ------------------------- | --------- | ------------------------------------------------------- |
+| `id`                      | UUID      | Primary key                                             |
+| `professional_profile_id` | UUID      | Foreign reference to profile                            |
+| `media_upload_id`         | UUID      | Unique processed `portfolio_image` upload               |
+| `service_id`              | UUID      | Active service selected on the working profile revision |
+| `private_key`             | text      | Required sanitized private JPEG or PNG                  |
+| `public_key`              | text      | Nullable until approval                                 |
+| `title`                   | text      | Required; 1–80 characters                               |
+| `description`             | text      | Nullable; at most 300 characters                        |
+| `status`                  | enum      | `pending_review`, `approved`, `rejected`, or `hidden`   |
+| `submitted_at`            | timestamp | Required                                                |
+| `deleted_at`              | timestamp | Nullable soft-deletion marker                           |
+| `created_at`              | timestamp | Required                                                |
 
 #### 5. Explicitly not in MVP
 

@@ -28,6 +28,17 @@ export interface PortfolioItem {
   image: string;
 }
 
+export interface ProfessionalPortfolioItem {
+  id: string;
+  title: string;
+  service: string;
+  description: string;
+  image: string | null;
+  status: "pending_review" | "approved" | "rejected" | "hidden";
+  rejectionReason: string | null;
+  submittedAt: string;
+}
+
 export interface PortfolioItemDraft {
   file: File;
   title: string;
@@ -127,6 +138,7 @@ export interface ProfessionalWorkspace {
       "draft" | "pending_review" | "approved" | "rejected" | "superseded";
     hasPublishedRevision: boolean;
     photo: ProfessionalProfilePhotoState;
+    portfolioItems: ProfessionalPortfolioItem[];
     identity: Pick<
       ProfessionalProfileDraft,
       | "name"

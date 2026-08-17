@@ -31,6 +31,7 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
             "has_published_photo" => false,
             "latest_upload" => nil
           },
+          "portfolio_items" => [],
           "identity" => {
             "display_name" => "Ana Souza",
             "headline" => "",

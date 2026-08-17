@@ -1,6 +1,8 @@
 import {
   fetchProfessionalWorkspace,
   attachProfessionalProfilePhoto,
+  attachProfessionalPortfolioItem,
+  deleteProfessionalPortfolioItem,
   updateProfessionalIdentity,
   updateProfessionalProfile,
   updateProfessionalSupply,
@@ -11,7 +13,12 @@ import {
   waitForMediaUpload,
   type MediaUpload,
 } from "~/services/api/media-upload";
-import type { Neighborhood, ProfessionalProfileDraft, Service } from "~/types";
+import type {
+  Neighborhood,
+  PortfolioItemDraft,
+  ProfessionalProfileDraft,
+  Service,
+} from "~/types";
 import { useApiClient } from "~/services/api/client";
 import { ApiRequestError } from "~/services/api/errors";
 
@@ -22,6 +29,8 @@ export async function useProfessionalWorkspace() {
   );
   const photoUploading = shallowRef(false);
   const photoError = shallowRef("");
+  const portfolioSaving = shallowRef(false);
+  const portfolioError = shallowRef("");
 
   function reflectPhotoUpload(upload: MediaUpload) {
     if (!workspace.data.value) return;
@@ -42,6 +51,24 @@ export async function useProfessionalWorkspace() {
       fieldErrors: {},
       requestId: "profile-photo",
     });
+  }
+
+  function failedMediaError(upload: MediaUpload, noun: string) {
+    return new ApiRequestError({
+      code: upload.failure_code ?? "media_processing_failed",
+      message: upload.retryable
+        ? `Não foi possível processar ${noun}. Tente novamente.`
+        : `${noun} não pôde ser processada. Selecione outra imagem.`,
+      fieldErrors: {},
+      requestId: "professional-media",
+    });
+  }
+
+  async function processedMedia(initial: MediaUpload, noun: string) {
+    const processed = await waitForMediaUpload(client, initial);
+    if (processed.state !== "processed")
+      throw failedMediaError(processed, noun);
+    return processed;
   }
 
   async function finishPhotoUpload(initial: MediaUpload) {
@@ -80,6 +107,59 @@ export async function useProfessionalWorkspace() {
     const upload = workspace.data.value?.profile.photo.latestUpload;
     if (!upload?.retryable) return workspace.data.value;
     return runPhotoAction(() => retryMediaUpload(client, upload.id));
+  }
+
+  async function createPortfolioItem(draft: PortfolioItemDraft) {
+    if (portfolioSaving.value) return workspace.data.value;
+    const service = workspace.data.value?.profile.services.find(
+      (selection) => selection.name === draft.service,
+    );
+    if (!service) {
+      throw new ApiRequestError({
+        code: "service_not_selected",
+        message: "Selecione um serviço ativo do seu perfil.",
+        fieldErrors: {},
+        requestId: "portfolio-item",
+      });
+    }
+
+    portfolioSaving.value = true;
+    portfolioError.value = "";
+    try {
+      const upload = await uploadMedia(client, draft.file, "portfolio_image");
+      const processed = await processedMedia(upload, "a imagem");
+      const updated = await attachProfessionalPortfolioItem(client, {
+        mediaUploadId: processed.id,
+        serviceId: service.id,
+        title: draft.title,
+        description: draft.description,
+      });
+      workspace.data.value = updated;
+      return updated;
+    } catch (error) {
+      portfolioError.value =
+        error instanceof ApiRequestError
+          ? error.message
+          : "Não foi possível enviar o trabalho. Tente novamente.";
+      throw error;
+    } finally {
+      portfolioSaving.value = false;
+    }
+  }
+
+  async function deletePortfolioItem(id: string) {
+    portfolioError.value = "";
+    try {
+      const updated = await deleteProfessionalPortfolioItem(client, id);
+      workspace.data.value = updated;
+      return updated;
+    } catch (error) {
+      portfolioError.value =
+        error instanceof ApiRequestError
+          ? error.message
+          : "Não foi possível excluir o trabalho. Tente novamente.";
+      throw error;
+    }
   }
 
   async function saveIdentity(draft: ProfessionalProfileDraft) {
@@ -127,5 +207,9 @@ export async function useProfessionalWorkspace() {
     photoError,
     uploadPhoto,
     retryPhoto,
+    portfolioSaving,
+    portfolioError,
+    createPortfolioItem,
+    deletePortfolioItem,
   };
 }

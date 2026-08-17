@@ -23,6 +23,12 @@ const props = defineProps<{
   saveSupply: (
     draft: ProfessionalProfileDraft,
   ) => Promise<ProfessionalProfileDraft>;
+  savePortfolio: (draft: PortfolioItemDraft) => Promise<{
+    title: string;
+    service: string;
+    description: string;
+    submittedAt: string;
+  }>;
   uploadPhoto: (file: File) => Promise<unknown>;
   retryPhoto: () => Promise<unknown>;
   photoUploading?: boolean;
@@ -47,9 +53,12 @@ const {
   profileError,
   supplySaving,
   supplyError,
+  portfolioSaving,
+  portfolioError,
 } = useProfessionalOnboarding({
   saveIdentity: props.saveIdentity,
   saveSupply: props.saveSupply,
+  savePortfolio: props.savePortfolio,
 });
 
 const activeStep = shallowRef<OnboardingStepId>("profile");
@@ -133,8 +142,8 @@ async function handlePhotoRetry() {
   }
 }
 
-function handlePortfolio(draft: PortfolioItemDraft) {
-  if (completePortfolio(draft)) void goToStep("verification");
+async function handlePortfolio(draft: PortfolioItemDraft) {
+  if (await completePortfolio(draft)) void goToStep("verification");
 }
 
 function handleVerification(file: File) {
@@ -168,23 +177,35 @@ watch(
 );
 
 watch(
-  () => props.workspace.profile.identity,
-  (identity) => {
-    const selections = props.workspace.profile.services;
-    initializeFromWorkspace({
-      ...editableProfile.value,
-      ...identity,
-      selectedServices: selections.map((selection) => selection.name),
-      primaryService:
-        selections.find((selection) => selection.isPrimary)?.name ?? "",
-      serviceNotes: Object.fromEntries(
-        selections.map((selection) => [selection.name, selection.note]),
-      ),
-      allJoinville: props.workspace.profile.coverage.allJoinville,
-      selectedNeighborhoods: props.workspace.profile.coverage.neighborhoods.map(
-        (neighborhood) => neighborhood.name,
-      ),
-    });
+  () => props.workspace,
+  (workspace) => {
+    const identity = workspace.profile.identity;
+    const selections = workspace.profile.services;
+    const firstPortfolioItem = workspace.profile.portfolioItems[0];
+    initializeFromWorkspace(
+      {
+        ...editableProfile.value,
+        ...identity,
+        selectedServices: selections.map((selection) => selection.name),
+        primaryService:
+          selections.find((selection) => selection.isPrimary)?.name ?? "",
+        serviceNotes: Object.fromEntries(
+          selections.map((selection) => [selection.name, selection.note]),
+        ),
+        allJoinville: workspace.profile.coverage.allJoinville,
+        selectedNeighborhoods: workspace.profile.coverage.neighborhoods.map(
+          (neighborhood) => neighborhood.name,
+        ),
+      },
+      firstPortfolioItem
+        ? {
+            title: firstPortfolioItem.title,
+            service: firstPortfolioItem.service,
+            description: firstPortfolioItem.description,
+            submittedAt: firstPortfolioItem.submittedAt,
+          }
+        : null,
+    );
   },
   { immediate: true },
 );
@@ -267,6 +288,8 @@ watch(
             v-else-if="activeStep === 'portfolio'"
             :portfolio="state.portfolio"
             :service-options="selectedServices"
+            :saving="portfolioSaving"
+            :server-error="portfolioError"
             @back="previousStep"
             @complete="handlePortfolio"
             @continue="goToStep('verification')"

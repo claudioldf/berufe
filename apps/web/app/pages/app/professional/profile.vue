@@ -29,6 +29,9 @@ const {
   photoError,
   uploadPhoto,
   retryPhoto,
+  portfolioSaving,
+  createPortfolioItem,
+  deletePortfolioItem,
 } = await useProfessionalWorkspace();
 if (workspaceError.value || !workspace.value) {
   throw createError({
@@ -60,6 +63,7 @@ const professional = computed<Professional>(() => ({
   neighborhoods: workspace.value!.profile.coverage.neighborhoods.map(
     (neighborhood) => neighborhood.name,
   ),
+  portfolio: [],
 }));
 const statusLabels = {
   draft: "Rascunho",
@@ -157,6 +161,44 @@ async function handlePhotoRetry() {
     });
   }
 }
+
+async function handlePortfolioAdd(
+  draft: Parameters<typeof createPortfolioItem>[0],
+) {
+  try {
+    await createPortfolioItem(draft);
+    showToast({
+      title: "Trabalho enviado",
+      description: "Ele aparecerá no perfil depois da análise.",
+    });
+  } catch (error) {
+    showToast({
+      title: "Não foi possível enviar o trabalho",
+      description:
+        error instanceof ApiRequestError
+          ? error.message
+          : "Tente novamente em instantes.",
+    });
+  }
+}
+
+async function handlePortfolioRemove(id: string) {
+  try {
+    await deletePortfolioItem(id);
+    showToast({
+      title: "Trabalho excluído",
+      description: "Ele foi removido do seu portfólio.",
+    });
+  } catch (error) {
+    showToast({
+      title: "Não foi possível excluir o trabalho",
+      description:
+        error instanceof ApiRequestError
+          ? error.message
+          : "Tente novamente em instantes.",
+    });
+  }
+}
 </script>
 
 <template>
@@ -184,7 +226,7 @@ async function handlePhotoRetry() {
         >
           <UIcon :name="tab.icon" />{{ tab.label
           }}<span v-if="tab.id === 'portfolio'" class="workspace-tabs__count">{{
-            professional.portfolio.length
+            workspace?.profile.portfolioItems.length ?? 0
           }}</span>
         </button>
       </nav>
@@ -203,13 +245,11 @@ async function handlePhotoRetry() {
       />
       <DashboardPortfolioManager
         v-else-if="activeTab === 'portfolio'"
-        :items="professional.portfolio"
-        @added="
-          showToast({
-            title: 'Trabalho enviado',
-            description: 'Ele aparecerá no perfil depois da análise.',
-          })
-        "
+        :items="workspace?.profile.portfolioItems ?? []"
+        :service-options="professional.services"
+        :submitting="portfolioSaving"
+        @added="handlePortfolioAdd"
+        @removed="handlePortfolioRemove"
       />
       <DashboardVerificationPanel
         v-else

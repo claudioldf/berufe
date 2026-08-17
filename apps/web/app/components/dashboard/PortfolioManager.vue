@@ -1,15 +1,29 @@
 <script setup lang="ts">
 import { shallowRef } from "vue";
-import type { PortfolioItem, PortfolioItemDraft } from "~/types";
+import type { ProfessionalPortfolioItem, PortfolioItemDraft } from "~/types";
 
 withDefaults(
-  defineProps<{ items: PortfolioItem[]; serviceOptions?: string[] }>(),
+  defineProps<{
+    items: ProfessionalPortfolioItem[];
+    serviceOptions?: string[];
+    submitting?: boolean;
+  }>(),
   {
     serviceOptions: () => ["Eletricista", "Marido de aluguel"],
+    submitting: false,
   },
 );
-const emit = defineEmits<{ added: [draft: PortfolioItemDraft] }>();
+const emit = defineEmits<{
+  added: [draft: PortfolioItemDraft];
+  removed: [id: string];
+}>();
 const uploadOpen = shallowRef(false);
+const statusLabels = {
+  pending_review: "Em análise",
+  approved: "Aprovado",
+  rejected: "Recusado",
+  hidden: "Oculto",
+} as const;
 
 function submitUpload(draft: PortfolioItemDraft) {
   emit("added", draft);
@@ -31,6 +45,7 @@ function submitUpload(draft: PortfolioItemDraft) {
       <UButton
         color="primary"
         icon="i-lucide-image-plus"
+        :disabled="items.length >= 12"
         @click="uploadOpen = true"
         >Adicionar trabalho</UButton
       >
@@ -38,20 +53,33 @@ function submitUpload(draft: PortfolioItemDraft) {
     <div class="portfolio-manager__grid">
       <article v-for="item in items" :key="item.id">
         <img
+          v-if="item.image"
           :src="item.image"
           :alt="item.title"
           width="640"
           height="380"
           loading="lazy"
         />
+        <div v-else class="portfolio-manager__placeholder" aria-hidden="true">
+          <UIcon name="i-lucide-image" />
+        </div>
         <div>
           <span
             ><strong>{{ item.title }}</strong
             ><small>{{ item.service }}</small></span
-          ><em>Aprovado</em>
+          ><em :class="`status--${item.status}`">{{
+            statusLabels[item.status]
+          }}</em>
         </div>
-        <button type="button" :aria-label="`Gerenciar ${item.title}`">
-          <UIcon name="i-lucide-ellipsis" />
+        <p v-if="item.rejectionReason" class="portfolio-manager__reason">
+          {{ item.rejectionReason }}
+        </p>
+        <button
+          type="button"
+          :aria-label="`Excluir ${item.title}`"
+          @click="emit('removed', item.id)"
+        >
+          <UIcon name="i-lucide-trash-2" />
         </button>
       </article>
       <button
@@ -61,7 +89,7 @@ function submitUpload(draft: PortfolioItemDraft) {
         @click="uploadOpen = true"
       >
         <UIcon name="i-lucide-plus" /><strong>Adicionar trabalho</strong
-        ><small>{{ items.length }} de 12 publicados</small>
+        ><small>{{ items.length }} de 12 trabalhos</small>
       </button>
     </div>
     <UModal
@@ -73,6 +101,7 @@ function submitUpload(draft: PortfolioItemDraft) {
         <DashboardPortfolioUploadForm
           :service-options="serviceOptions"
           show-cancel
+          :submitting="submitting"
           @cancel="uploadOpen = false"
           @submitted="submitUpload"
         />
@@ -121,6 +150,16 @@ function submitUpload(draft: PortfolioItemDraft) {
     height: 190px;
     object-fit: cover;
   }
+  &__placeholder {
+    display: grid !important;
+    place-items: center;
+    width: 100%;
+    height: 190px;
+    padding: 0 !important;
+    background: var(--paper-soft);
+    color: var(--ink-soft);
+    font-size: 2rem;
+  }
   &__grid article > div {
     display: flex;
     justify-content: space-between;
@@ -148,6 +187,21 @@ function submitUpload(draft: PortfolioItemDraft) {
     font-size: 0.82rem;
     font-style: normal;
     font-weight: 900;
+  }
+  &__grid em.status--pending_review {
+    background: var(--color-warning-tint);
+    color: var(--color-warning);
+  }
+  &__grid em.status--rejected,
+  &__grid em.status--hidden {
+    background: var(--color-danger-tint);
+    color: var(--color-danger);
+  }
+  &__reason {
+    margin: -4px 13px 13px;
+    color: var(--color-danger);
+    font-size: 0.76rem;
+    line-height: 1.45;
   }
   &__grid article > button {
     position: absolute;

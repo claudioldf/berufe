@@ -14,6 +14,7 @@ class ProfessionalWorkspaceSerializer
         revision_status: profile.working_revision.status,
         has_published_revision: profile.published_revision.present?,
         photo: serialized_photo,
+        portfolio_items: serialized_portfolio_items,
         identity: {
           display_name: profile.display_name,
           headline: profile.headline.to_s,
@@ -58,6 +59,21 @@ class ProfessionalWorkspaceSerializer
       has_published_photo: profile.published_photo.present?,
       latest_upload: latest_upload && MediaUploadSerializer.new(latest_upload).as_json
     }
+  end
+
+  def serialized_portfolio_items
+    profile.portfolio_items.active.newest_first.includes(:service).map do |item|
+      {
+        id: item.id,
+        title: item.title,
+        description: item.description,
+        service: {id: item.service_id, name: item.service.name},
+        status: item.status,
+        rejection_reason: item.rejection_reason,
+        submitted_at: item.submitted_at.iso8601,
+        image_url: item.approved? ? item.public_key : nil
+      }
+    end
   end
 
   def serialized_coverage

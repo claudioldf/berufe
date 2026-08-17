@@ -8,10 +8,12 @@ const props = withDefaults(
     serviceOptions: string[];
     submitLabel?: string;
     showCancel?: boolean;
+    submitting?: boolean;
   }>(),
   {
     submitLabel: "Enviar para análise",
     showCancel: false,
+    submitting: false,
   },
 );
 const emit = defineEmits<{
@@ -153,6 +155,7 @@ function submit() {
         type="button"
         color="neutral"
         variant="ghost"
+        :disabled="props.submitting"
         @click="$emit('cancel')"
       >
         Cancelar
@@ -160,7 +163,8 @@ function submit() {
       <UButton
         type="submit"
         color="primary"
-        :disabled="!file || !title.trim() || !service"
+        :loading="props.submitting"
+        :disabled="props.submitting || !file || !title.trim() || !service"
       >
         {{ submitLabel }}
       </UButton>

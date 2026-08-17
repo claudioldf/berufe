@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_17_102000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_17_103000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -277,6 +277,37 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_102000) do
     t.check_constraint "subject_digest ~ '^[0-9a-f]{64}$'::text", name: "otp_request_counters_digest_format"
   end
 
+  create_table "portfolio_items", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.bigint "byte_size", null: false
+    t.text "content_type", null: false
+    t.datetime "created_at", null: false
+    t.datetime "deleted_at"
+    t.text "description"
+    t.integer "height", null: false
+    t.datetime "hidden_at"
+    t.uuid "media_upload_id", null: false
+    t.text "private_key", null: false
+    t.uuid "professional_profile_id", null: false
+    t.text "public_key"
+    t.text "rejection_reason"
+    t.datetime "reviewed_at"
+    t.uuid "service_id", null: false
+    t.text "status", default: "pending_review", null: false
+    t.datetime "submitted_at", null: false
+    t.text "title", null: false
+    t.datetime "updated_at", null: false
+    t.integer "width", null: false
+    t.index ["media_upload_id"], name: "index_portfolio_items_on_media_upload_id", unique: true
+    t.index ["private_key"], name: "index_portfolio_items_on_private_key", unique: true
+    t.index ["professional_profile_id", "submitted_at", "id"], name: "idx_portfolio_items_owner_newest", order: { submitted_at: :desc, id: :desc }, where: "(deleted_at IS NULL)"
+    t.index ["professional_profile_id"], name: "index_portfolio_items_on_professional_profile_id"
+    t.index ["public_key"], name: "index_portfolio_items_on_public_key", unique: true, where: "(public_key IS NOT NULL)"
+    t.index ["service_id"], name: "index_portfolio_items_on_service_id"
+    t.check_constraint "byte_size > 0 AND width > 0 AND height > 0", name: "portfolio_items_valid_image"
+    t.check_constraint "content_type = ANY (ARRAY['image/jpeg'::text, 'image/png'::text])", name: "portfolio_items_supported_content_type"
+    t.check_constraint "status = ANY (ARRAY['pending_review'::text, 'approved'::text, 'rejected'::text, 'hidden'::text])", name: "portfolio_items_known_status"
+  end
+
   create_table "professional_profile_photos", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.bigint "byte_size", null: false
     t.text "content_type", default: "image/jpeg", null: false
@@ -444,6 +475,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_102000) do
   add_foreign_key "application_sessions", "user_accounts"
   add_foreign_key "catalog_change_events", "user_accounts", column: "admin_user_id"
   add_foreign_key "media_uploads", "professional_profiles"
+  add_foreign_key "portfolio_items", "media_uploads"
+  add_foreign_key "portfolio_items", "professional_profiles"
+  add_foreign_key "portfolio_items", "services"
   add_foreign_key "professional_profile_photos", "media_uploads"
   add_foreign_key "professional_profile_photos", "professional_profiles"
   add_foreign_key "professional_profile_revisions", "professional_profiles"

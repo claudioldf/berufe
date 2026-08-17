@@ -4,6 +4,7 @@ import type {
   OnboardingCompletionState,
   OnboardingFileValidation,
   OnboardingPortfolioSubmission,
+  OnboardingPortfolioItem,
   OnboardingProfileErrors,
   OnboardingServicesErrors,
   OnboardingStepDefinition,
@@ -22,6 +23,9 @@ interface ProfessionalOnboardingDependencies {
   saveSupply?: (
     draft: ProfessionalProfileDraft,
   ) => Promise<ProfessionalProfileDraft>;
+  savePortfolio?: (
+    draft: OnboardingPortfolioSubmission,
+  ) => Promise<OnboardingPortfolioItem>;
 }
 
 export const professionalOnboardingStorageKey =
@@ -316,6 +320,8 @@ export function useProfessionalOnboarding(
   const profileError = shallowRef("");
   const supplySaving = shallowRef(false);
   const supplyError = shallowRef("");
+  const portfolioSaving = shallowRef(false);
+  const portfolioError = shallowRef("");
   const apiClient = dependencies.saveIdentity ? undefined : useApiClient();
   const saveIdentity =
     dependencies.saveIdentity ??
@@ -330,6 +336,11 @@ export function useProfessionalOnboarding(
     dependencies.saveSupply ??
     (async () => {
       throw new Error("Professional supply persistence is unavailable");
+    });
+  const savePortfolio =
+    dependencies.savePortfolio ??
+    (async () => {
+      throw new Error("Professional portfolio persistence is unavailable");
     });
 
   function persist() {
@@ -394,20 +405,32 @@ export function useProfessionalOnboarding(
 
   function initializeFromWorkspace(
     identity: ProfessionalOnboardingState["profile"],
+    portfolio?: OnboardingPortfolioItem | null,
   ) {
     hydrate();
     const complete = Object.values(validateOnboardingProfile(identity)).every(
       (error) => !error,
     );
+    const servicesComplete = Object.values(
+      validateOnboardingServices(identity),
+    ).every((error) => !error);
     state.value = {
       ...state.value,
       initialized: true,
       profile: cloneProfileDraft(identity),
+      portfolio: portfolio === undefined ? state.value.portfolio : portfolio,
       completion: {
         ...state.value.completion,
         profile: complete
           ? (state.value.completion.profile ?? new Date().toISOString())
           : null,
+        services: servicesComplete
+          ? (state.value.completion.services ?? new Date().toISOString())
+          : null,
+        portfolio:
+          portfolio === undefined
+            ? state.value.completion.portfolio
+            : (portfolio?.submittedAt ?? null),
       },
     };
     persist();
@@ -481,25 +504,34 @@ export function useProfessionalOnboarding(
     }
   }
 
-  function completePortfolio(submission: OnboardingPortfolioSubmission) {
+  async function completePortfolio(submission: OnboardingPortfolioSubmission) {
     const validation = validateOnboardingImage(submission.file);
     if (!validation.valid) return false;
-    const completedAt = new Date().toISOString();
-    state.value = {
-      ...state.value,
-      portfolio: {
-        title: submission.title.trim(),
-        service: submission.service,
-        description: submission.description.trim(),
-        submittedAt: completedAt,
-      },
-      completion: {
-        ...state.value.completion,
-        portfolio: completedAt,
-      },
-    };
-    persist();
-    return true;
+    if (portfolioSaving.value) return false;
+
+    portfolioSaving.value = true;
+    portfolioError.value = "";
+    try {
+      const saved = await savePortfolio(submission);
+      state.value = {
+        ...state.value,
+        portfolio: saved,
+        completion: {
+          ...state.value.completion,
+          portfolio: saved.submittedAt,
+        },
+      };
+      persist();
+      return true;
+    } catch (error) {
+      portfolioError.value =
+        error instanceof ApiRequestError
+          ? error.message
+          : "Não foi possível enviar o trabalho agora. Tente novamente.";
+      return false;
+    } finally {
+      portfolioSaving.value = false;
+    }
   }
 
   function completeVerification(file: File) {
@@ -545,6 +577,8 @@ export function useProfessionalOnboarding(
     profileError: readonly(profileError),
     supplySaving: readonly(supplySaving),
     supplyError: readonly(supplyError),
+    portfolioSaving: readonly(portfolioSaving),
+    portfolioError: readonly(portfolioError),
     reset,
   };
 }
