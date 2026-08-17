@@ -1,11 +1,15 @@
 <script setup lang="ts">
-import { computed, shallowRef } from "vue";
-import professionalsData from "@data/professionals.json";
-import type { Professional } from "~/types";
+import { computed, onMounted, shallowRef } from "vue";
 import { useAppRole } from "~/composables/useAppRole";
 import { useShare } from "~/composables/useShare";
 import { useToast } from "~/composables/useToast";
-import { buildWhatsAppUrl } from "~/utils/contact";
+import { useApiClient } from "~/services/api/client";
+import { ApiRequestError } from "~/services/api/errors";
+import {
+  fetchPublicProfessionalProfile,
+  recordPublicProfessionalProfileView,
+} from "~/services/api/public-discovery";
+import { buildPublicProfileWhatsAppUrl } from "~/utils/publicProfiles";
 
 interface SocialLink {
   platform: "instagram" | "youtube";
@@ -15,55 +19,75 @@ interface SocialLink {
 }
 
 const route = useRoute();
+const client = useApiClient();
+const runtimeConfig = useRuntimeConfig();
 const { role: activeRole } = useAppRole();
 const { share } = useShare();
 const { showToast } = useToast();
-const professionals = professionalsData as Professional[];
 const requestedSlug = computed(() =>
-  Array.isArray(route.params.slug) ? route.params.slug[0] : route.params.slug,
+  String(
+    Array.isArray(route.params.slug) ? route.params.slug[0] : route.params.slug,
+  ),
 );
-const resolvedSlug = computed(() =>
-  requestedSlug.value === "marina-alves" ? "marcos-alves" : requestedSlug.value,
+const incomingInteractionToken = computed(() => {
+  const value = route.query.contexto;
+  return Array.isArray(value) ? value[0] : value;
+});
+const { data: profileResult, error: profileError } = await useAsyncData(
+  `public-professional-profile-${requestedSlug.value}`,
+  () =>
+    fetchPublicProfessionalProfile(
+      client,
+      requestedSlug.value,
+      incomingInteractionToken.value || undefined,
+    ),
 );
-
-if (requestedSlug.value === "marina-alves") {
-  await navigateTo("/profissionais/marcos-alves", {
-    redirectCode: 301,
-    replace: true,
+if (profileError.value || !profileResult.value) {
+  const failure = profileError.value;
+  const notFound =
+    failure instanceof ApiRequestError && failure.code === "not_found";
+  throw createError({
+    statusCode: notFound ? 404 : 503,
+    statusMessage: notFound
+      ? "Profissional não encontrado"
+      : "Perfil temporariamente indisponível.",
   });
 }
 
-const professional = computed(() =>
-  professionals.find((item) => item.slug === resolvedSlug.value),
-);
+const professional = computed(() => profileResult.value!.professional);
 const activePortfolio = shallowRef(0);
 const portfolioOpen = shallowRef(false);
 const selectedPortfolio = computed(
   () => professional.value?.portfolio[activePortfolio.value],
 );
 const canRequestRelationship = computed(
-  () =>
-    activeRole.value === "professional" &&
-    professional.value?.id !== "pro-marcos",
+  () => activeRole.value === "professional",
 );
 const supportEmailUrl = computed(() => {
   const subject = encodeURIComponent(
-    `Informação sobre o perfil ${professional.value?.name ?? ""}`,
+    `Informação sobre o perfil ${professional.value.name}`,
   );
   return `mailto:suporte@berufe.com.br?subject=${subject}`;
 });
 const contactUrl = computed(() => {
   const profile = professional.value;
-  if (!profile) return "";
-  return buildWhatsAppUrl(
-    profile.whatsapp,
-    `Olá, ${profile.name}! Encontrei seu perfil na Berufe e gostaria de conversar sobre ${profile.primaryService}.`,
-  );
+  return buildPublicProfileWhatsAppUrl({
+    apiBaseUrl: runtimeConfig.public.apiBaseUrl,
+    professionalId: profile.id,
+    interactionToken: profileResult.value!.interactionToken,
+  });
+});
+const resultsUrl = computed(() => {
+  const query = new URLSearchParams({
+    servico: String(
+      route.query.servico ?? professional.value.primaryServiceSlug,
+    ),
+    bairro: String(route.query.bairro ?? "all"),
+  });
+  return `/encontrar?${query.toString()}`;
 });
 const socialLinks = computed<SocialLink[]>(() => {
   const profile = professional.value;
-  if (!profile) return [];
-
   const links: SocialLink[] = [];
   if (profile.instagram) {
     links.push({
@@ -84,17 +108,36 @@ const socialLinks = computed<SocialLink[]>(() => {
   return links;
 });
 
-if (!professional.value) {
-  throw createError({
-    statusCode: 404,
-    statusMessage: "Profissional não encontrado",
-  });
-}
-
+const siteUrl = String(
+  runtimeConfig.public.siteUrl || "http://localhost:3000",
+).replace(/\/$/, "");
+const canonicalUrl = computed(
+  () => `${siteUrl}/profissionais/${professional.value.slug}`,
+);
 useSeoMeta({
   title: () =>
-    `${professional.value?.name} — ${professional.value?.primaryService}`,
-  description: () => professional.value?.headline,
+    `${professional.value.name} — ${professional.value.primaryService}`,
+  description: () =>
+    professional.value.headline ?? professional.value.bio ?? undefined,
+  ogTitle: () =>
+    `${professional.value.name} — ${professional.value.primaryService}`,
+  ogDescription: () =>
+    professional.value.headline ?? professional.value.bio ?? undefined,
+  ogImage: () => professional.value.avatar ?? undefined,
+  ogUrl: () => canonicalUrl.value,
+  ogType: "profile",
+  twitterCard: "summary_large_image",
+});
+useHead(() => ({
+  link: [{ rel: "canonical", href: canonicalUrl.value }],
+}));
+
+onMounted(() => {
+  void recordPublicProfessionalProfileView(
+    client,
+    professional.value.id,
+    profileResult.value!.interactionToken,
+  ).catch(() => undefined);
 });
 
 function announceContact() {
@@ -110,11 +153,10 @@ function openPortfolio(index: number) {
 }
 
 async function shareProfile() {
-  if (!professional.value) return;
   await share({
     title: `${professional.value.name} na Berufe`,
     text: `Veja o perfil de ${professional.value.name}, ${professional.value.primaryService.toLocaleLowerCase("pt-BR")} em Joinville.`,
-    url: `https://berufe.com.br/profissionais/${professional.value.slug}`,
+    url: canonicalUrl.value,
   });
 }
 
@@ -133,6 +175,7 @@ function requestRelationship() {
       :professional="professional"
       :social-links="socialLinks"
       :contact-url="contactUrl"
+      :results-url="resultsUrl"
       @contact="announceContact"
       @share="shareProfile"
     />
@@ -173,7 +216,9 @@ function requestRelationship() {
             width="1280"
             height="853"
           />
-          <p>{{ selectedPortfolio.description }}</p>
+          <p v-if="selectedPortfolio.description">
+            {{ selectedPortfolio.description }}
+          </p>
         </div>
       </template>
     </UModal>

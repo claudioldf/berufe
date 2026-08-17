@@ -305,6 +305,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/professionals/{slug}": {
+        parameters: {
+            query?: {
+                interactionToken?: string;
+            };
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        /** Read one complete approved public professional profile */
+        get: operations["getPublicProfessionalProfile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/professionals/{id}/views": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record one retry-idempotent privacy-safe public profile view */
+        post: operations["recordPublicProfessionalProfileView"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/profile-photos/{id}/image": {
         parameters: {
             query?: never;
@@ -1120,6 +1160,76 @@ export interface components {
             label: "Telefone confirmado" | "Identidade verificada";
             /** Format: date-time */
             verifiedAt: string | null;
+        };
+        PublicProfessionalProfileResponse: {
+            data: {
+                professional: components["schemas"]["PublicProfessionalProfile"];
+                interaction: components["schemas"]["PublicProfileInteraction"];
+            };
+            request_id: components["schemas"]["RequestId"];
+        };
+        PublicProfessionalProfile: {
+            /** Format: uuid */
+            id: string;
+            publicSlug: string;
+            displayName: string;
+            headline: string | null;
+            bio: string | null;
+            yearsExperience: number | null;
+            /** Format: uri */
+            photoUrl: string | null;
+            services: components["schemas"]["PublicProfessionalProfileService"][];
+            coverage: components["schemas"]["PublicProfessionalCoverage"];
+            verificationLabels: components["schemas"]["PublicVerificationLabel"][];
+            portfolio: components["schemas"]["PublicProfessionalPortfolioItem"][];
+            relationships: components["schemas"]["PublicProfessionalRelationship"][];
+            socialLinks: components["schemas"]["PublicProfessionalSocialLinks"];
+            /** Format: date-time */
+            publicSnapshotUpdatedAt: string | null;
+        };
+        PublicProfessionalProfileService: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            slug: string;
+            isPrimary: boolean;
+            note: string | null;
+        };
+        PublicProfessionalPortfolioItem: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            description: string | null;
+            service: components["schemas"]["PublicProfessionalServiceSummary"];
+            /** Format: uri */
+            imageUrl: string;
+        };
+        PublicProfessionalRelationship: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            type: "recommendation" | "worked_together";
+            note: string | null;
+            professional: {
+                /** Format: uuid */
+                id: string;
+                publicSlug: string;
+                displayName: string;
+                /** Format: uri */
+                photoUrl: string | null;
+            };
+        };
+        PublicProfessionalSocialLinks: {
+            /** Format: uri */
+            instagram: string | null;
+            /** Format: uri */
+            youtube: string | null;
+        };
+        PublicProfileInteraction: {
+            token: string;
+        };
+        PublicProfessionalViewRequest: {
+            interactionToken: string;
         };
         RequestId: string;
         StatusResponse: {
@@ -2004,6 +2114,118 @@ export interface operations {
                 };
             };
             /** @description The public professional query is temporarily unavailable. */
+            503: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getPublicProfessionalProfile: {
+        parameters: {
+            query?: {
+                interactionToken?: string;
+            };
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The approved public snapshot and a short-lived profile interaction. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicProfessionalProfileResponse"];
+                };
+            };
+            /** @description The slug is unknown or its professional is not currently public. */
+            404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The public profile query is temporarily unavailable. */
+            503: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    recordPublicProfessionalProfileView: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublicProfessionalViewRequest"];
+            };
+        };
+        responses: {
+            /** @description The view was accepted or safely ignored as a retry. */
+            204: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The exact browser origin is invalid. */
+            403: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The professional is not currently public. */
+            404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The interaction is missing, invalid, expired, or belongs to another profile. */
+            422: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Public profile eligibility is temporarily unavailable. */
             503: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];

@@ -683,6 +683,8 @@ Apply these rules whenever they are relevant to the story:
 
 ### S036 — Render the public professional profile
 
+**Status:** DONE
+
 **Story:** As a customer, I want one mobile-first page containing all approved evidence so that I can decide whether to contact a professional.
 
 **Acceptance criteria:**

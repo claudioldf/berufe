@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { Professional } from "~/types";
+import { computed } from "vue";
+import type { PublicProfessionalProfile } from "~/types";
 
 export interface ProfileSocialLink {
   platform: "instagram" | "youtube";
@@ -8,21 +9,24 @@ export interface ProfileSocialLink {
   url: string;
 }
 
-defineProps<{
-  professional: Professional;
+const props = defineProps<{
+  professional: PublicProfessionalProfile;
   socialLinks: ProfileSocialLink[];
   contactUrl: string;
+  resultsUrl: string;
 }>();
 defineEmits<{ contact: []; share: [] }>();
+
+const identityVerified = computed(() =>
+  props.professional.evidence.some((evidence) => evidence.type === "identity"),
+);
 </script>
 
 <template>
   <section class="profile-hero">
     <DesignSystemContainer>
       <div class="profile-hero__crumbs">
-        <NuxtLink
-          :to="`/encontrar?servico=${professional.primaryServiceSlug}&bairro=all`"
-        >
+        <NuxtLink :to="resultsUrl">
           <UIcon name="i-lucide-arrow-left" /> Voltar aos resultados
         </NuxtLink>
         <button type="button" @click="$emit('share')">
@@ -33,10 +37,10 @@ defineEmits<{ contact: []; share: [] }>();
         <div class="profile-hero__identity">
           <DesignSystemAvatar
             :name="professional.name"
-            :src="professional.avatar"
+            :src="professional.avatar ?? undefined"
             size="profile"
             shape="rounded"
-            verified
+            :verified="identityVerified"
           />
           <div>
             <p class="profile-hero__service">
@@ -53,7 +57,7 @@ defineEmits<{ contact: []; share: [] }>();
                     : professional.neighborhoods.slice(0, 4).join(", ")
                 }}
               </span>
-              <span>
+              <span v-if="professional.yearsExperience !== null">
                 <UIcon name="i-lucide-briefcase-business" />
                 {{ professional.yearsExperience }} anos de experiência declarada
               </span>

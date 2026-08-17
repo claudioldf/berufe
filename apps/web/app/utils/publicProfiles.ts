@@ -55,3 +55,22 @@ export function buildSearchResultWhatsAppUrl(
 
   return url.toString();
 }
+
+interface PublicProfileWhatsAppUrlOptions {
+  apiBaseUrl: string;
+  professionalId: string;
+  interactionToken: string;
+}
+
+export function buildPublicProfileWhatsAppUrl(
+  options: PublicProfileWhatsAppUrlOptions,
+) {
+  const url = new URL(
+    `/api/v1/public/professionals/${options.professionalId}/whatsapp`,
+    `${options.apiBaseUrl.replace(/\/$/, "")}/`,
+  );
+  url.searchParams.set("source", "public_profile");
+  url.searchParams.set("interactionToken", options.interactionToken);
+
+  return url.toString();
+}

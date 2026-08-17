@@ -1,5 +1,7 @@
 import type {
   PublicProfessionalCard,
+  PublicProfessionalProfile,
+  PublicProfessionalProfileResult,
   PublicProfessionalSearchResult,
 } from "~/types";
 import { ApiRequestError, normalizeApiError } from "~/services/api/errors";
@@ -7,6 +9,8 @@ import type { BerufeApiClient } from "~/services/api/client";
 import type { components } from "~/services/api/schema";
 
 type ContractProfessionalCard = components["schemas"]["PublicProfessionalCard"];
+type ContractProfessionalProfile =
+  components["schemas"]["PublicProfessionalProfile"];
 
 export function mapPublicProfessionalCard(
   card: ContractProfessionalCard,
@@ -80,4 +84,109 @@ export async function fetchFeaturedProfessionals(
   }
 
   return data.data.professionals.map(mapPublicProfessionalCard);
+}
+
+export function mapPublicProfessionalProfile(
+  profile: ContractProfessionalProfile,
+): PublicProfessionalProfile {
+  const primaryService =
+    profile.services.find((service) => service.isPrimary) ??
+    profile.services[0]!;
+
+  return {
+    id: profile.id,
+    slug: profile.publicSlug,
+    name: profile.displayName,
+    headline: profile.headline,
+    bio: profile.bio,
+    avatar: profile.photoUrl,
+    primaryService: primaryService.name,
+    primaryServiceSlug: primaryService.slug,
+    services: profile.services.map((service) => service.name),
+    serviceNotes: profile.services.map((service) => service.note),
+    neighborhoods: profile.coverage.neighborhoods.map(
+      (neighborhood) => neighborhood.name,
+    ),
+    allJoinville: profile.coverage.allJoinville,
+    yearsExperience: profile.yearsExperience,
+    evidence: profile.verificationLabels.map((label) => ({
+      id: label.type,
+      type: label.type,
+      label: label.label,
+      verifiedAt: label.verifiedAt,
+    })),
+    portfolio: profile.portfolio.map((item) => ({
+      id: item.id,
+      title: item.title,
+      service: item.service.name,
+      description: item.description,
+      image: item.imageUrl,
+    })),
+    relationships: profile.relationships.map((relationship) => ({
+      id: relationship.id,
+      professionalName: relationship.professional.displayName,
+      professionalSlug: relationship.professional.publicSlug,
+      avatar: relationship.professional.photoUrl,
+      type: relationship.type,
+      note: relationship.note,
+    })),
+    updatedAt: profile.publicSnapshotUpdatedAt,
+    ...(profile.socialLinks.instagram
+      ? { instagram: profile.socialLinks.instagram }
+      : {}),
+    ...(profile.socialLinks.youtube
+      ? { youtube: profile.socialLinks.youtube }
+      : {}),
+  };
+}
+
+export async function fetchPublicProfessionalProfile(
+  client: BerufeApiClient,
+  slug: string,
+  interactionToken?: string,
+): Promise<PublicProfessionalProfileResult> {
+  const { data, error, response } = await client.GET(
+    "/api/v1/public/professionals/{slug}",
+    {
+      params: {
+        path: { slug },
+        query: interactionToken ? { interactionToken } : {},
+      },
+    },
+  );
+  if (error || !data) {
+    throw new ApiRequestError(
+      normalizeApiError(
+        error,
+        response.headers.get("X-Request-Id") ?? "client",
+      ),
+    );
+  }
+
+  return {
+    professional: mapPublicProfessionalProfile(data.data.professional),
+    interactionToken: data.data.interaction.token,
+  };
+}
+
+export async function recordPublicProfessionalProfileView(
+  client: BerufeApiClient,
+  professionalId: string,
+  interactionToken: string,
+): Promise<void> {
+  const { error, response } = await client.POST(
+    "/api/v1/public/professionals/{id}/views",
+    {
+      params: { path: { id: professionalId } },
+      body: { interactionToken },
+    },
+  );
+  if (error || !response.ok) {
+    throw new ApiRequestError(
+      normalizeApiError(
+        error,
+        response.headers.get("X-Request-Id") ?? "client",
+      ),
+    );
+  }
 }

@@ -4,7 +4,12 @@ module Api
   module V1
     class PublicPortfolioImagesController < BaseController
       def show
-        item = PortfolioItem.publicly_visible.find(params[:id])
+        item = PortfolioItem
+          .publicly_visible
+          .joins(:professional_profile)
+          .merge(ProfessionalProfile.publicly_eligible)
+          .where.not(portfolio_items: {public_key: nil})
+          .find(params[:id])
         body = MediaStorage.build.read(scope: :public, key: item.public_key)
         extension = (item.content_type == "image/png") ? "png" : "jpg"
         send_data(

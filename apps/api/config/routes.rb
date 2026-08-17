@@ -7,6 +7,8 @@ Rails.application.routes.draw do
       resource :catalog, only: :show, controller: :catalogs
       get "public/professionals/featured", to: "public_featured_professionals#index"
       post "public/professional-searches", to: "public_professional_searches#create"
+      get "public/professionals/:slug", to: "public_professionals#show"
+      post "public/professionals/:id/views", to: "public_professional_views#create"
       get "public/profile-photos/:id/image", to: "public_profile_photos#show"
       get "public/portfolio-items/:id/image", to: "public_portfolio_images#show"
       put "professional-registration", to: "professional_registrations#update"

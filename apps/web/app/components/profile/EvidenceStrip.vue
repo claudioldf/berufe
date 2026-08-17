@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { Evidence } from "~/types";
+import type { PublicProfessionalProfile } from "~/types";
 
-defineProps<{ evidence: Evidence[] }>();
+defineProps<{ evidence: PublicProfessionalProfile["evidence"] }>();
 </script>
 
 <template>

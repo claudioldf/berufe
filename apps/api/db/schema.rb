@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_17_132000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_17_133000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -341,6 +341,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_132000) do
     t.check_constraint "status = ANY (ARRAY['pending_review'::text, 'approved'::text, 'rejected'::text, 'hidden'::text])", name: "portfolio_items_known_status"
   end
 
+  create_table "professional_daily_metrics", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.date "metric_date", null: false
+    t.uuid "professional_id", null: false
+    t.integer "profile_views", default: 0, null: false
+    t.integer "quotes_shared", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.integer "whatsapp_clicks", default: 0, null: false
+    t.integer "whatsapp_clicks_public_profile", default: 0, null: false
+    t.integer "whatsapp_clicks_search_result", default: 0, null: false
+    t.index ["professional_id", "metric_date"], name: "index_professional_daily_metrics_on_professional_and_date", unique: true
+    t.index ["professional_id"], name: "index_professional_daily_metrics_on_professional_id"
+    t.check_constraint "profile_views >= 0 AND whatsapp_clicks >= 0 AND whatsapp_clicks_public_profile >= 0 AND whatsapp_clicks_search_result >= 0 AND quotes_shared >= 0", name: "professional_daily_metrics_nonnegative_counters"
+    t.check_constraint "whatsapp_clicks = (whatsapp_clicks_public_profile + whatsapp_clicks_search_result)", name: "professional_daily_metrics_whatsapp_source_total"
+  end
+
   create_table "professional_profile_photos", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.bigint "byte_size", null: false
     t.text "content_type", default: "image/jpeg", null: false
@@ -606,6 +622,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_132000) do
   add_foreign_key "portfolio_items", "media_uploads"
   add_foreign_key "portfolio_items", "professional_profiles"
   add_foreign_key "portfolio_items", "services"
+  add_foreign_key "professional_daily_metrics", "professional_profiles", column: "professional_id"
   add_foreign_key "professional_profile_photos", "media_uploads"
   add_foreign_key "professional_profile_photos", "professional_profiles"
   add_foreign_key "professional_profile_revisions", "professional_profiles"

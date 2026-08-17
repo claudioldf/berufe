@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import type { Professional } from "~/types";
+import type { PublicProfessionalProfile } from "~/types";
 
-defineProps<{ professional: Professional; contactUrl: string }>();
+defineProps<{
+  professional: PublicProfessionalProfile;
+  contactUrl: string;
+}>();
 defineEmits<{ contact: [] }>();
 </script>
 
