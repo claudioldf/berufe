@@ -246,6 +246,103 @@ export interface paths {
         patch: operations["updateProfessionalProfile"];
         trace?: never;
     };
+    "/api/v1/professional/media-uploads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Authorize a short-lived private professional image upload */
+        post: operations["authorizeProfessionalMediaUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/professional/media-uploads/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Opaque server-generated media upload identifier. */
+                id: components["parameters"]["MediaUploadId"];
+            };
+            cookie?: never;
+        };
+        /** Read private media processing state owned by the authenticated professional */
+        get: operations["getProfessionalMediaUpload"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/professional/media-uploads/{id}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Opaque server-generated media upload identifier. */
+                id: components["parameters"]["MediaUploadId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** Upload authorized image bytes through Rails in local and preview environments */
+        put: operations["uploadProfessionalMediaContent"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/professional/media-uploads/{id}/completion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Opaque server-generated media upload identifier. */
+                id: components["parameters"]["MediaUploadId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm a private upload and enqueue safe image processing */
+        post: operations["completeProfessionalMediaUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/professional/media-uploads/{id}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Opaque server-generated media upload identifier. */
+                id: components["parameters"]["MediaUploadId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Retry transient private image processing without accepting invalid content */
+        post: operations["retryProfessionalMediaUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/session": {
         parameters: {
             query?: never;
@@ -413,6 +510,56 @@ export interface components {
             code: string;
             name: string;
         };
+        MediaUploadAuthorizationRequest: {
+            /** @enum {string} */
+            purpose: "profile_photo" | "portfolio_image" | "verification_identity";
+            /** @enum {string} */
+            content_type: "image/jpeg" | "image/png";
+            byte_size: number;
+        };
+        MediaUploadAuthorizationResponse: {
+            data: {
+                media_upload: components["schemas"]["MediaUpload"];
+                upload: components["schemas"]["MediaUploadInstruction"];
+            };
+            request_id: components["schemas"]["RequestId"];
+        };
+        MediaUploadResponse: {
+            data: {
+                media_upload: components["schemas"]["MediaUpload"];
+            };
+            request_id: components["schemas"]["RequestId"];
+        };
+        MediaUploadInstruction: {
+            /** @enum {string} */
+            strategy: "rails" | "direct";
+            /** @constant */
+            method: "PUT";
+            url: string;
+            headers: {
+                [key: string]: string;
+            };
+        };
+        MediaUpload: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            purpose: "profile_photo" | "portfolio_image" | "verification_identity";
+            /** @enum {string} */
+            state: "authorized" | "uploaded" | "processing" | "processed" | "failed" | "attached" | "expired";
+            /** @enum {string} */
+            declared_content_type: "image/jpeg" | "image/png";
+            declared_byte_size: number;
+            /** @enum {string|null} */
+            actual_content_type: "image/jpeg" | "image/png" | null;
+            actual_byte_size: number | null;
+            width: number | null;
+            height: number | null;
+            failure_code: string | null;
+            retryable: boolean;
+            /** Format: date-time */
+            authorization_expires_at: string;
+        };
         CurrentSessionResponse: {
             data: components["schemas"]["CurrentSessionData"];
             request_id: components["schemas"]["RequestId"];
@@ -572,6 +719,66 @@ export interface components {
         };
     };
     responses: {
+        /** @description An active Rails application session is required. */
+        ProfessionalMediaUnauthorized: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description The exact browser origin or professional ownership check failed. */
+        ProfessionalMediaForbidden: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description The professional profile or owned media upload does not exist. */
+        ProfessionalMediaNotFound: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description The media upload is not in a state that permits this transition. */
+        ProfessionalMediaConflict: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description The declaration, authorization, or uploaded object is invalid. */
+        ProfessionalMediaInvalid: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description Private media storage or asynchronous processing is temporarily unavailable. */
+        ProfessionalMediaUnavailable: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
         /** @description An active password-authenticated administrator session is required. */
         AdminCatalogUnauthorized: {
             headers: {
@@ -640,6 +847,8 @@ export interface components {
         PageSize: number;
         /** @description Endpoint-specific deterministic ordering key. */
         Order: string;
+        /** @description Opaque server-generated media upload identifier. */
+        MediaUploadId: string;
     };
     requestBodies: never;
     headers: {
@@ -1250,6 +1459,156 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
+        };
+    };
+    authorizeProfessionalMediaUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MediaUploadAuthorizationRequest"];
+            };
+        };
+        responses: {
+            /** @description A ten-minute private upload authorization and opaque quarantine key were created. */
+            201: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaUploadAuthorizationResponse"];
+                };
+            };
+            401: components["responses"]["ProfessionalMediaUnauthorized"];
+            403: components["responses"]["ProfessionalMediaForbidden"];
+            404: components["responses"]["ProfessionalMediaNotFound"];
+            422: components["responses"]["ProfessionalMediaInvalid"];
+            503: components["responses"]["ProfessionalMediaUnavailable"];
+        };
+    };
+    getProfessionalMediaUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Opaque server-generated media upload identifier. */
+                id: components["parameters"]["MediaUploadId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current authorization and asynchronous processing state. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaUploadResponse"];
+                };
+            };
+            401: components["responses"]["ProfessionalMediaUnauthorized"];
+            404: components["responses"]["ProfessionalMediaNotFound"];
+        };
+    };
+    uploadProfessionalMediaContent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Opaque server-generated media upload identifier. */
+                id: components["parameters"]["MediaUploadId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "image/jpeg": string;
+                "image/png": string;
+            };
+        };
+        responses: {
+            /** @description Exact declared bytes were written to the private quarantine scope. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaUploadResponse"];
+                };
+            };
+            401: components["responses"]["ProfessionalMediaUnauthorized"];
+            403: components["responses"]["ProfessionalMediaForbidden"];
+            404: components["responses"]["ProfessionalMediaNotFound"];
+            409: components["responses"]["ProfessionalMediaConflict"];
+            422: components["responses"]["ProfessionalMediaInvalid"];
+            503: components["responses"]["ProfessionalMediaUnavailable"];
+        };
+    };
+    completeProfessionalMediaUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Opaque server-generated media upload identifier. */
+                id: components["parameters"]["MediaUploadId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The quarantined object was verified and processing was queued. */
+            202: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaUploadResponse"];
+                };
+            };
+            401: components["responses"]["ProfessionalMediaUnauthorized"];
+            403: components["responses"]["ProfessionalMediaForbidden"];
+            404: components["responses"]["ProfessionalMediaNotFound"];
+            409: components["responses"]["ProfessionalMediaConflict"];
+            422: components["responses"]["ProfessionalMediaInvalid"];
+            503: components["responses"]["ProfessionalMediaUnavailable"];
+        };
+    };
+    retryProfessionalMediaUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Opaque server-generated media upload identifier. */
+                id: components["parameters"]["MediaUploadId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A transiently failed quarantined upload was queued again. */
+            202: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaUploadResponse"];
+                };
+            };
+            401: components["responses"]["ProfessionalMediaUnauthorized"];
+            403: components["responses"]["ProfessionalMediaForbidden"];
+            404: components["responses"]["ProfessionalMediaNotFound"];
+            409: components["responses"]["ProfessionalMediaConflict"];
+            503: components["responses"]["ProfessionalMediaUnavailable"];
         };
     };
     getCurrentSession: {

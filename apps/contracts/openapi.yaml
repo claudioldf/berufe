@@ -605,6 +605,169 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/professional/media-uploads:
+    post:
+      operationId: authorizeProfessionalMediaUpload
+      summary: Authorize a short-lived private professional image upload
+      tags:
+        - Professional supply
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MediaUploadAuthorizationRequest"
+      responses:
+        "201":
+          description: A ten-minute private upload authorization and opaque quarantine key were created.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MediaUploadAuthorizationResponse"
+        "401":
+          $ref: "#/components/responses/ProfessionalMediaUnauthorized"
+        "403":
+          $ref: "#/components/responses/ProfessionalMediaForbidden"
+        "404":
+          $ref: "#/components/responses/ProfessionalMediaNotFound"
+        "422":
+          $ref: "#/components/responses/ProfessionalMediaInvalid"
+        "503":
+          $ref: "#/components/responses/ProfessionalMediaUnavailable"
+  /api/v1/professional/media-uploads/{id}:
+    parameters:
+      - $ref: "#/components/parameters/MediaUploadId"
+    get:
+      operationId: getProfessionalMediaUpload
+      summary: Read private media processing state owned by the authenticated professional
+      tags:
+        - Professional supply
+      security:
+        - applicationSession: []
+      responses:
+        "200":
+          description: Current authorization and asynchronous processing state.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MediaUploadResponse"
+        "401":
+          $ref: "#/components/responses/ProfessionalMediaUnauthorized"
+        "404":
+          $ref: "#/components/responses/ProfessionalMediaNotFound"
+  /api/v1/professional/media-uploads/{id}/content:
+    parameters:
+      - $ref: "#/components/parameters/MediaUploadId"
+    put:
+      operationId: uploadProfessionalMediaContent
+      summary: Upload authorized image bytes through Rails in local and preview environments
+      tags:
+        - Professional supply
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          image/jpeg:
+            schema:
+              type: string
+              format: binary
+          image/png:
+            schema:
+              type: string
+              format: binary
+      responses:
+        "200":
+          description: Exact declared bytes were written to the private quarantine scope.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MediaUploadResponse"
+        "401":
+          $ref: "#/components/responses/ProfessionalMediaUnauthorized"
+        "403":
+          $ref: "#/components/responses/ProfessionalMediaForbidden"
+        "404":
+          $ref: "#/components/responses/ProfessionalMediaNotFound"
+        "409":
+          $ref: "#/components/responses/ProfessionalMediaConflict"
+        "422":
+          $ref: "#/components/responses/ProfessionalMediaInvalid"
+        "503":
+          $ref: "#/components/responses/ProfessionalMediaUnavailable"
+  /api/v1/professional/media-uploads/{id}/completion:
+    parameters:
+      - $ref: "#/components/parameters/MediaUploadId"
+    post:
+      operationId: completeProfessionalMediaUpload
+      summary: Confirm a private upload and enqueue safe image processing
+      tags:
+        - Professional supply
+      security:
+        - applicationSession: []
+      responses:
+        "202":
+          description: The quarantined object was verified and processing was queued.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MediaUploadResponse"
+        "401":
+          $ref: "#/components/responses/ProfessionalMediaUnauthorized"
+        "403":
+          $ref: "#/components/responses/ProfessionalMediaForbidden"
+        "404":
+          $ref: "#/components/responses/ProfessionalMediaNotFound"
+        "409":
+          $ref: "#/components/responses/ProfessionalMediaConflict"
+        "422":
+          $ref: "#/components/responses/ProfessionalMediaInvalid"
+        "503":
+          $ref: "#/components/responses/ProfessionalMediaUnavailable"
+  /api/v1/professional/media-uploads/{id}/retry:
+    parameters:
+      - $ref: "#/components/parameters/MediaUploadId"
+    post:
+      operationId: retryProfessionalMediaUpload
+      summary: Retry transient private image processing without accepting invalid content
+      tags:
+        - Professional supply
+      security:
+        - applicationSession: []
+      responses:
+        "202":
+          description: A transiently failed quarantined upload was queued again.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MediaUploadResponse"
+        "401":
+          $ref: "#/components/responses/ProfessionalMediaUnauthorized"
+        "403":
+          $ref: "#/components/responses/ProfessionalMediaForbidden"
+        "404":
+          $ref: "#/components/responses/ProfessionalMediaNotFound"
+        "409":
+          $ref: "#/components/responses/ProfessionalMediaConflict"
+        "503":
+          $ref: "#/components/responses/ProfessionalMediaUnavailable"
   /api/v1/session:
     get:
       operationId: getCurrentSession
@@ -766,7 +929,69 @@ components:
       schema:
         type: string
         minLength: 1
+    MediaUploadId:
+      name: id
+      in: path
+      required: true
+      description: Opaque server-generated media upload identifier.
+      schema:
+        type: string
+        format: uuid
   responses:
+    ProfessionalMediaUnauthorized:
+      description: An active Rails application session is required.
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    ProfessionalMediaForbidden:
+      description: The exact browser origin or professional ownership check failed.
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    ProfessionalMediaNotFound:
+      description: The professional profile or owned media upload does not exist.
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    ProfessionalMediaConflict:
+      description: The media upload is not in a state that permits this transition.
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    ProfessionalMediaInvalid:
+      description: The declaration, authorization, or uploaded object is invalid.
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    ProfessionalMediaUnavailable:
+      description: Private media storage or asynchronous processing is temporarily unavailable.
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
     AdminCatalogUnauthorized:
       description: An active password-authenticated administrator session is required.
       headers:
@@ -1236,6 +1461,171 @@ components:
           type: string
           minLength: 1
           maxLength: 80
+    MediaUploadAuthorizationRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - purpose
+        - content_type
+        - byte_size
+      properties:
+        purpose:
+          type: string
+          enum:
+            - profile_photo
+            - portfolio_image
+            - verification_identity
+        content_type:
+          type: string
+          enum:
+            - image/jpeg
+            - image/png
+        byte_size:
+          type: integer
+          minimum: 1
+          maximum: 10485760
+    MediaUploadAuthorizationResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required:
+            - media_upload
+            - upload
+          properties:
+            media_upload:
+              $ref: "#/components/schemas/MediaUpload"
+            upload:
+              $ref: "#/components/schemas/MediaUploadInstruction"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    MediaUploadResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required:
+            - media_upload
+          properties:
+            media_upload:
+              $ref: "#/components/schemas/MediaUpload"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    MediaUploadInstruction:
+      type: object
+      additionalProperties: false
+      required:
+        - strategy
+        - method
+        - url
+        - headers
+      properties:
+        strategy:
+          type: string
+          enum:
+            - rails
+            - direct
+        method:
+          type: string
+          const: PUT
+        url:
+          type: string
+          minLength: 1
+        headers:
+          type: object
+          additionalProperties:
+            type: string
+          required:
+            - Content-Type
+    MediaUpload:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - purpose
+        - state
+        - declared_content_type
+        - declared_byte_size
+        - actual_content_type
+        - actual_byte_size
+        - width
+        - height
+        - failure_code
+        - retryable
+        - authorization_expires_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        purpose:
+          type: string
+          enum:
+            - profile_photo
+            - portfolio_image
+            - verification_identity
+        state:
+          type: string
+          enum:
+            - authorized
+            - uploaded
+            - processing
+            - processed
+            - failed
+            - attached
+            - expired
+        declared_content_type:
+          type: string
+          enum:
+            - image/jpeg
+            - image/png
+        declared_byte_size:
+          type: integer
+          minimum: 1
+          maximum: 10485760
+        actual_content_type:
+          type:
+            - string
+            - "null"
+          enum:
+            - image/jpeg
+            - image/png
+            - null
+        actual_byte_size:
+          type:
+            - integer
+            - "null"
+          minimum: 1
+          maximum: 10485760
+        width:
+          type:
+            - integer
+            - "null"
+          minimum: 1
+        height:
+          type:
+            - integer
+            - "null"
+          minimum: 1
+        failure_code:
+          type:
+            - string
+            - "null"
+          pattern: "^[a-z0-9_]+$"
+        retryable:
+          type: boolean
+        authorization_expires_at:
+          type: string
+          format: date-time
     CurrentSessionResponse:
       type: object
       additionalProperties: false

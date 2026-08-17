@@ -57,7 +57,10 @@ This order lets media, portfolio, and identity evidence exist before the initial
 - Upload authorization expires after 10 minutes.
 - Production uses a private R2 quarantine upload; local development uses an authenticated Rails upload endpoint backed by the local storage adapter.
 - Actual bytes and signature are inspected. libvips safely decodes, auto-orients, strips metadata, and re-encodes a new image. Quarantine originals are deleted immediately after successful processing and immediately on invalid input or terminal processing failure.
+- The generic sanitized object preserves the verified JPEG/PNG codec; purpose-specific stories may create stricter derived variants, including the JPEG-only profile-photo display image. Client filenames are never retained or used in storage keys.
+- Local Rails uploads include the application session and exact browser origin. Direct R2 uploads omit application credentials and bind the signed request to the declared content type. R2 CORS permits only the configured web origin and upload method.
 - A transient processing failure can retry the same upload record. Invalid content requires a new upload.
+- A GoodJob task runs every 10 minutes to expire abandoned authorizations and delete any corresponding quarantine object.
 - A processed upload can be attached only once and only to the authorized owner and purpose.
 - The optional profile photo produces one JPEG display image fitted inside 1024 × 1536 pixels. A replacement remains private until approval while the existing approved photo remains public.
 - Portfolio management uses the existing form and list, permits at most 12 non-deleted items, uses soft deletion, and publishes approved items newest first with ID as the deterministic tie-breaker. Manual ordering remains out of scope.

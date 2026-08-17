@@ -9,6 +9,13 @@ Rails.application.routes.draw do
       namespace :professional do
         resource :workspace, only: :show, controller: :workspaces
         resource :profile, only: :update, controller: :profiles
+        resources :media_uploads, only: %i[create show], path: "media-uploads" do
+          member do
+            put :content
+            post :completion
+            post :retry
+          end
+        end
       end
       resource :session, only: %i[show destroy]
       namespace :admin do

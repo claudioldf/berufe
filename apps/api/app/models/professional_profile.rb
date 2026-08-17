@@ -13,6 +13,7 @@ class ProfessionalProfile < ApplicationRecord
     class_name: "ProfessionalProfileRevision",
     inverse_of: :professional_profile,
     dependent: :destroy
+  has_many :media_uploads, dependent: :destroy
 
   attr_writer(*INITIAL_REVISION_FIELDS)
 

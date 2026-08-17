@@ -23,6 +23,11 @@ Rails.application.configure do
       cron: "17 * * * *",
       class: "AuthenticationRecordsCleanupJob",
       description: "Purge expired OTP and application-session records"
+    },
+    media_upload_authorization_cleanup: {
+      cron: "*/10 * * * *",
+      class: "MediaUploadAuthorizationCleanupJob",
+      description: "Expire abandoned private media upload authorizations"
     }
   }
 end

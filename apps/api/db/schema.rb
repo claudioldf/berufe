@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_17_094000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_17_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -182,6 +182,42 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_094000) do
     t.index ["queue_name"], name: "index_good_jobs_on_queue_name"
     t.index ["scheduled_at", "queue_name"], name: "index_good_jobs_on_scheduled_at_and_queue_name"
     t.index ["scheduled_at"], name: "index_good_jobs_on_scheduled_at", where: "(finished_at IS NULL)"
+  end
+
+  create_table "media_uploads", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.bigint "actual_byte_size"
+    t.text "actual_content_type"
+    t.datetime "attached_at"
+    t.datetime "authorization_expires_at", null: false
+    t.datetime "created_at", null: false
+    t.bigint "declared_byte_size", null: false
+    t.text "declared_content_type", null: false
+    t.text "failure_code"
+    t.integer "height"
+    t.datetime "processed_at"
+    t.integer "processing_attempts", default: 0, null: false
+    t.datetime "processing_started_at"
+    t.uuid "professional_profile_id", null: false
+    t.text "purpose", null: false
+    t.text "quarantine_key", null: false
+    t.bigint "sanitized_byte_size"
+    t.text "sanitized_key"
+    t.text "state", default: "authorized", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "uploaded_at"
+    t.integer "width"
+    t.index ["authorization_expires_at"], name: "idx_media_uploads_expiring_authorizations", where: "(state = 'authorized'::text)"
+    t.index ["professional_profile_id", "purpose", "created_at"], name: "idx_on_professional_profile_id_purpose_created_at_8d91ce7f11"
+    t.index ["professional_profile_id"], name: "index_media_uploads_on_professional_profile_id"
+    t.index ["quarantine_key"], name: "index_media_uploads_on_quarantine_key", unique: true
+    t.index ["sanitized_key"], name: "index_media_uploads_on_sanitized_key", unique: true, where: "(sanitized_key IS NOT NULL)"
+    t.check_constraint "actual_byte_size IS NULL OR actual_byte_size >= 1 AND actual_byte_size <= 10485760", name: "media_uploads_actual_size_range"
+    t.check_constraint "declared_byte_size >= 1 AND declared_byte_size <= 10485760", name: "media_uploads_declared_size_range"
+    t.check_constraint "declared_content_type = ANY (ARRAY['image/jpeg'::text, 'image/png'::text])", name: "media_uploads_supported_declared_type"
+    t.check_constraint "processing_attempts >= 0", name: "media_uploads_nonnegative_attempts"
+    t.check_constraint "purpose = ANY (ARRAY['profile_photo'::text, 'portfolio_image'::text, 'verification_identity'::text])", name: "media_uploads_known_purpose"
+    t.check_constraint "state = ANY (ARRAY['authorized'::text, 'uploaded'::text, 'processing'::text, 'processed'::text, 'failed'::text, 'attached'::text, 'expired'::text])", name: "media_uploads_known_state"
+    t.check_constraint "width IS NULL AND height IS NULL OR width > 0 AND height > 0", name: "media_uploads_valid_dimensions"
   end
 
   create_table "neighborhoods", primary_key: "code", id: :text, force: :cascade do |t|
@@ -374,6 +410,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_094000) do
   add_foreign_key "admin_access_events", "user_accounts", column: "admin_user_id"
   add_foreign_key "application_sessions", "user_accounts"
   add_foreign_key "catalog_change_events", "user_accounts", column: "admin_user_id"
+  add_foreign_key "media_uploads", "professional_profiles"
   add_foreign_key "professional_profile_revisions", "professional_profiles"
   add_foreign_key "professional_profile_service_areas", "neighborhoods", column: "neighborhood_code", primary_key: "code"
   add_foreign_key "professional_profile_service_areas", "professional_profile_revisions"

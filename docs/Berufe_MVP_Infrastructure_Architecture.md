@@ -334,14 +334,16 @@ Flow:
 
 1. Vue requests an upload authorization from Rails.
 2. Rails checks the session, ownership, purpose, declared type, and declared size, then returns a 10-minute upload authorization for a quarantine key.
-3. In deployed environments the browser uploads directly to the private R2 bucket. In local development it sends the same authorized body through the authenticated Rails local-upload endpoint. The browser then confirms completion to Rails.
-4. A retry-safe job reads the object, verifies its actual byte count and file signature, safely decodes it with libvips, normalizes orientation, strips metadata, and re-encodes it into a new object. The original quarantine object is deleted after processing; mismatched, oversized, or undecodable uploads are rejected and deleted without becoming reviewable.
+3. In deployed environments the browser uploads directly to the private R2 bucket without application cookies; the signed request is content-type-bound and R2 CORS permits only the configured web origin and upload method. In local development it sends the same authorized body through the authenticated Rails local-upload endpoint using `API_PUBLIC_URL`. The browser then confirms completion to Rails.
+4. A retry-safe job reads the object, verifies its actual byte count and file signature, safely decodes it with libvips, normalizes orientation, strips metadata, and re-encodes it into a new object using the verified JPEG/PNG codec. Client filenames are not persisted or used in storage keys. The original quarantine object is deleted after processing; mismatched, oversized, or undecodable uploads are rejected and deleted without becoming reviewable.
 5. Rails records only the sanitized private key on the owning feature record. The file remains private while pending review; processing failures are rejected and cannot be viewed.
 6. Approval creates the optimized public object for profile/portfolio media and records its public URL/key on the approved projection; rejected files are deleted according to the retention rule.
 
 Verification evidence is restricted to JPEG and PNG images no larger than 10 MiB or 25 megapixels. Do not trust extensions or browser MIME types. Admins may access only successfully regenerated evidence through a short-lived authorized response with an exact `image/jpeg` or `image/png` content type, `X-Content-Type-Options: nosniff`, `Cache-Control: no-store`, and `Content-Disposition: inline` using a server-generated filename. Never reflect the uploaded filename or expose R2 credentials or permanent URLs for verification evidence.
 
 Quarantine originals are deleted immediately after successful processing and immediately when validation or terminal processing fails. Identity evidence remains private while pending and is deleted 30 days after approval or rejection by a retry-safe daily job; decision, label, moderation, and access-audit metadata remain. This launch default requires qualified Brazilian privacy/legal approval before real-user intake.
+
+Abandoned upload authorizations are expired every 10 minutes by GoodJob, which also retries deletion of any corresponding private quarantine object on a later run after transient storage failure.
 
 PDFs and other retained document formats are not accepted in the MVP. Malware scanning is therefore deferred; adding PDFs later requires signature validation, quarantine, and malware scanning before admin access.
 

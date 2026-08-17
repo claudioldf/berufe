@@ -482,7 +482,7 @@ Apply these rules whenever they are relevant to the story:
 
 ### S025 — Configure local and R2 object storage
 
-**Status:** PENDING
+**Status:** DONE
 
 **Story:** As a professional, I want to upload permitted files without sending large file bodies through Rails so that media workflows are reliable.
 
@@ -495,6 +495,7 @@ Apply these rules whenever they are relevant to the story:
 - Approved feature records persist public URLs/keys as defined by Features A2–A4. A narrowly scoped pending-upload record holds temporary private keys for profile/portfolio media until approval; verification evidence uses `verification_file`.
 - R2 credentials and permanent verification-file URLs never reach Nuxt.
 - Provider adapter tests use fakes and do not contact R2.
+- The generic sanitizer preserves the verified JPEG/PNG codec, never retains the client filename, and expires abandoned authorizations through GoodJob every 10 minutes. Purpose-specific stories create any stricter derived variants.
 
 **Depends on:** S003, S015.
 **Covers:** Features A2–A4; Infrastructure §§4 and 10.
