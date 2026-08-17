@@ -1064,6 +1064,12 @@ export interface components {
             };
             professionals: components["schemas"]["PublicProfessionalCard"][];
             relatedServices: components["schemas"]["PublicServiceSuggestion"][];
+            interaction: components["schemas"]["PublicSearchInteraction"] | null;
+        };
+        PublicSearchInteraction: {
+            /** Format: uuid */
+            searchEventId: string;
+            token: string;
         };
         PublicServiceSuggestion: {
             /** Format: uuid */
@@ -1970,6 +1976,7 @@ export interface operations {
             200: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
+                    "Cache-Control"?: "no-store";
                     [name: string]: unknown;
                 };
                 content: {

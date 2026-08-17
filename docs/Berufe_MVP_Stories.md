@@ -646,6 +646,8 @@ Apply these rules whenever they are relevant to the story:
 
 ### S034 — Record privacy-friendly search aggregates
 
+**Status:** DONE
+
 **Story:** As Berufe product operations, I want aggregate search demand data so that I can identify missing supply without tracking customers.
 
 **Acceptance criteria:**

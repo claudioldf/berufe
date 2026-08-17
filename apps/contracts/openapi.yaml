@@ -660,6 +660,10 @@ paths:
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
           content:
             application/json:
               schema:
@@ -3185,6 +3189,7 @@ components:
         - query
         - professionals
         - relatedServices
+        - interaction
       properties:
         query:
           type: object
@@ -3215,6 +3220,23 @@ components:
           maxItems: 3
           items:
             $ref: "#/components/schemas/PublicServiceSuggestion"
+        interaction:
+          oneOf:
+            - $ref: "#/components/schemas/PublicSearchInteraction"
+            - type: "null"
+    PublicSearchInteraction:
+      type: object
+      additionalProperties: false
+      required:
+        - searchEventId
+        - token
+      properties:
+        searchEventId:
+          type: string
+          format: uuid
+        token:
+          type: string
+          minLength: 1
     PublicServiceSuggestion:
       type: object
       additionalProperties: false
