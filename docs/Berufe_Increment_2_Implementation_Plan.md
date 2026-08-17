@@ -68,7 +68,7 @@ This order lets media, portfolio, and identity evidence exist before the initial
 - The optional profile photo produces one JPEG display image fitted inside 1024 × 1536 pixels. A replacement remains private until approval while the existing approved photo remains public.
 - A processed profile-photo upload attaches to one review record and advances only the private working-photo pointer. Replacing a pending photo supersedes that pending record; it never changes the approved public-photo pointer.
 - The authenticated workspace exposes profile-photo workflow status but no private media URL. The existing identity section shows upload, processing, pending, rejection, replacement, and retry guidance without rendering an unapproved image. The browser polls background processing for up to 30 seconds; a timeout leaves the server-owned processing state intact and asks the owner to return shortly.
-- Portfolio management uses the existing form and list, permits at most 12 non-deleted items, uses soft deletion, and publishes approved items newest first with ID as the deterministic tie-breaker. Manual ordering remains out of scope.
+- Portfolio management uses the existing form and list, permits at most 12 non-deleted items, uses soft deletion, and publishes approved items newest first with ID as the deterministic tie-breaker. Manual ordering remains out of scope. Approved owner/public projections use a Rails public-image URL keyed by the portfolio record rather than exposing an object-storage key; every read revalidates current approval eligibility so hide and deletion take effect immediately.
 - A portfolio item may reference only an active service already selected on the profile's working revision. It attaches one processed `portfolio_image` upload, stores the sanitized JPEG or PNG privately, and enters `pending_review`; creation never exposes the private key or a private media URL to Nuxt.
 - The authenticated workspace lists non-deleted pending, approved, rejected, and hidden portfolio records newest first. The existing card surface uses a neutral image placeholder until an approved public URL exists and shows private rejection guidance to the owner. Soft deletion immediately removes the record from owner/public projections, frees one of the 12 slots, and retains the row for audit and later storage cleanup.
 - The launch identity-verification request accepts exactly one regenerated image. It does not collect document numbers or accept PDF, company, or certificate evidence.
@@ -103,6 +103,7 @@ The shared OpenAPI contract exposes these authenticated operations without addin
 - `POST /api/v1/professional/portfolio-items`
 - `DELETE /api/v1/professional/portfolio-items/{id}`
 - `POST /api/v1/professional/verification-requests`
+- `GET /api/v1/public/portfolio-items/{id}/image` for currently approved portfolio images
 - `GET /api/v1/admin/moderation`
 - `POST /api/v1/admin/moderation/{target_type}/{target_id}/decisions`
 - `GET /api/v1/admin/moderation/{target_type}/{target_id}/media` for profile-photo and portfolio-image previews

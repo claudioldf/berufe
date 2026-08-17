@@ -73,7 +73,7 @@ class ProfessionalWorkspaceSerializer
         status: item.status,
         rejection_reason: item.rejection_reason,
         submitted_at: item.submitted_at.iso8601,
-        image_url: item.approved? ? item.public_key : nil
+        image_url: item.approved? ? PublicPortfolioImageUrl.call(item) : nil
       }
     end
   end

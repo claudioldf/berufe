@@ -562,6 +562,56 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/public/portfolio-items/{id}/image:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getPublicPortfolioItemImage
+      summary: Read the approved regenerated portfolio image
+      tags:
+        - Professional supply
+      security: []
+      responses:
+        "200":
+          description: An approved portfolio image that remains eligible for public display.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              schema:
+                type: string
+                const: max-age=0, public, must-revalidate
+            Content-Disposition:
+              schema:
+                type: string
+                pattern: '^inline; filename="berufe-portfolio-[a-f0-9-]+\.(jpg|png)"'
+            X-Content-Type-Options:
+              schema:
+                type: string
+                const: nosniff
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: The portfolio item is not approved, was hidden/deleted, or its public object is unavailable.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/professional-registration:
     put:
       operationId: completeProfessionalRegistration

@@ -538,7 +538,7 @@ Apply these rules whenever they are relevant to the story:
 
 ### S028 — Moderate portfolio items
 
-**Status:** PENDING
+**Status:** DONE
 
 **Story:** As an admin, I want to approve, reject, hide, and restore portfolio items so that public portfolios contain reviewed evidence only.
 

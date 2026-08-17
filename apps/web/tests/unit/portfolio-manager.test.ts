@@ -14,6 +14,25 @@ const rejectedItem: ProfessionalPortfolioItem = {
 };
 
 describe("professional portfolio manager", () => {
+  it("renders the approved Rails public-image URL in the existing card", () => {
+    const approvedItem: ProfessionalPortfolioItem = {
+      ...rejectedItem,
+      id: "portfolio-approved",
+      image:
+        "http://localhost:3001/api/v1/public/portfolio-items/portfolio-approved/image",
+      status: "approved",
+      rejectionReason: null,
+    };
+    const wrapper = mount(PortfolioManager, {
+      props: { items: [approvedItem], serviceOptions: ["Eletricista"] },
+    });
+
+    expect(wrapper.get("article img").attributes("src")).toBe(
+      approvedItem.image,
+    );
+    expect(wrapper.text()).toContain("Aprovado");
+  });
+
   it("shows private owner status and uses the existing card action for soft deletion", async () => {
     const wrapper = mount(PortfolioManager, {
       props: { items: [rejectedItem], serviceOptions: ["Eletricista"] },

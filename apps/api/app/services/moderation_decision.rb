@@ -23,10 +23,11 @@ class ModerationDecision
     normalized = normalize(action:, reason:, note:)
     target = ModerationTargetResolver.new.call(target_type:, target_id:)
     public_keys_to_delete = []
+    created_public_keys = []
 
     ApplicationRecord.transaction do
       target.lock!
-      transition!(target:, target_type:, attributes: normalized, public_keys_to_delete:)
+      transition!(target:, target_type:, attributes: normalized, public_keys_to_delete:, created_public_keys:)
       ModerationAction.create!(
         admin_user_id: context.admin_user_id,
         target_type:,
@@ -41,7 +42,11 @@ class ModerationDecision
     public_keys_to_delete.each { |public_key| publisher.delete(public_key) }
     target.reload
   rescue ActiveRecord::RecordInvalid => error
+    cleanup_created_public_keys(created_public_keys)
     raise Invalid.new(error.record.errors.to_hash(true))
+  rescue
+    cleanup_created_public_keys(created_public_keys)
+    raise
   end
 
   private
@@ -63,14 +68,14 @@ class ModerationDecision
     {action: normalized_action, reason: normalized_reason, note: normalized_note}
   end
 
-  def transition!(target:, target_type:, attributes:, public_keys_to_delete:)
+  def transition!(target:, target_type:, attributes:, public_keys_to_delete:, created_public_keys:)
     case target_type
     when "profile_revision"
       transition_revision!(target, attributes)
     when "profile_photo"
-      transition_photo!(target, attributes, public_keys_to_delete)
+      transition_photo!(target, attributes, public_keys_to_delete, created_public_keys)
     when "portfolio_item"
-      transition_portfolio!(target, attributes, public_keys_to_delete)
+      transition_portfolio!(target, attributes, public_keys_to_delete, created_public_keys)
     when "verification_request"
       transition_verification!(target, attributes)
     else
@@ -108,12 +113,13 @@ class ModerationDecision
     end
   end
 
-  def transition_photo!(photo, attributes, public_keys_to_delete)
+  def transition_photo!(photo, attributes, public_keys_to_delete, created_public_keys)
     profile = photo.professional_profile.lock!
     case attributes[:action]
     when "approved"
       require_status!(photo.status, "pending_review")
       public_key = publisher.publish(target: photo, target_type: "profile_photo")
+      created_public_keys << public_key
       previous = profile.published_photo
       if previous && previous != photo
         public_keys_to_delete << previous.public_key
@@ -132,18 +138,20 @@ class ModerationDecision
     when "restored"
       require_status!(photo.status, "hidden")
       public_key = publisher.publish(target: photo, target_type: "profile_photo")
+      created_public_keys << public_key
       photo.update!(status: "approved", public_key:, hidden_at: nil)
       profile.update!(published_photo: photo)
     end
   end
 
-  def transition_portfolio!(item, attributes, public_keys_to_delete)
+  def transition_portfolio!(item, attributes, public_keys_to_delete, created_public_keys)
     raise ActiveRecord::RecordNotFound if item.deleted_at
 
     case attributes[:action]
     when "approved"
       require_status!(item.status, "pending_review")
       public_key = publisher.publish(target: item, target_type: "portfolio_item")
+      created_public_keys << public_key
       item.update!(status: "approved", public_key:, reviewed_at: Time.current, rejection_reason: nil)
     when "rejected"
       require_status!(item.status, "pending_review")
@@ -155,6 +163,7 @@ class ModerationDecision
     when "restored"
       require_status!(item.status, "hidden")
       public_key = publisher.publish(target: item, target_type: "portfolio_item")
+      created_public_keys << public_key
       item.update!(status: "approved", public_key:, hidden_at: nil)
     end
   end
@@ -187,5 +196,11 @@ class ModerationDecision
 
   def require_status!(actual, expected)
     raise Conflict, "moderation target changed" unless actual == expected
+  end
+
+  def cleanup_created_public_keys(public_keys)
+    public_keys.each { |public_key| publisher.delete(public_key) }
+  rescue => error
+    Rails.logger.error("moderation_public_media_cleanup_failed class=#{error.class}")
   end
 end
