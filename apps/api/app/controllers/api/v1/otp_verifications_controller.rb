@@ -4,7 +4,6 @@ module Api
   module V1
     class OtpVerificationsController < BaseController
       before_action :prevent_caching
-
       def create
         result = PhoneOtpVerifier.new.call(
           challenge_token: params[:challenge_token],

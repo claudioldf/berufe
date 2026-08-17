@@ -7,10 +7,12 @@ class UserAccount < ApplicationRecord
   ADMIN_PASSWORD_MINIMUM_LENGTH = 8
   ADMIN_PASSWORD_MAXIMUM_BYTES = 72
 
-  has_many :application_sessions, dependent: :restrict_with_exception
+  has_many :application_sessions, dependent: :destroy
   has_many :admin_access_events, foreign_key: :admin_user_id, dependent: :restrict_with_exception,
     inverse_of: :admin_user
-  has_one :professional_profile, dependent: :restrict_with_exception
+  has_many :catalog_change_events, foreign_key: :admin_user_id, dependent: :restrict_with_exception,
+    inverse_of: :admin_user
+  has_one :professional_profile, dependent: :destroy
   has_secure_password validations: false
 
   before_validation :normalize_email

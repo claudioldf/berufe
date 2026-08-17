@@ -7,12 +7,11 @@ RSpec.describe "Application sessions", type: :request, openapi: true do
 
   after { travel_back }
 
-  it "restores a local session and rotates its memory-only CSRF token" do
+  it "restores a local session without exposing stored session material" do
     now = Time.zone.parse("2026-08-15 12:00:00 UTC")
     travel_to(now)
     account = create_account
     application_session, session_token = ApplicationSession.issue!(user_account: account, now:)
-    previous_csrf_digest = application_session.csrf_token_digest
 
     get_current_session(session_token:, request_id: "session-current-1")
 
@@ -31,21 +30,16 @@ RSpec.describe "Application sessions", type: :request, openapi: true do
           "authenticated_at" => now.iso8601(3),
           "idle_expires_at" => (now + 7.days).iso8601(3),
           "absolute_expires_at" => (now + 30.days).iso8601(3)
-        },
-        "csrf_token" => a_string_matching(/\A[A-Za-z0-9_-]{43}\z/)
+        }
       },
       "request_id" => "session-current-1"
     )
-    csrf_token = response.parsed_body.dig("data", "csrf_token")
-    expect(application_session.reload.csrf_token_digest).to eq(
-      SessionSecurityDigest.call(purpose: "csrf_token", value: csrf_token)
+    expect(response.body).not_to include(
+      session_token,
+      account.phone_e164,
+      application_session.token_digest
     )
-    expect(application_session.csrf_token_digest).not_to eq(previous_csrf_digest)
-    expect(response.body).not_to include(session_token, account.phone_e164)
     assert_api_conform(status: 200)
-
-    get_current_session(session_token:, request_id: "session-current-2")
-    expect(response.parsed_body.dig("data", "csrf_token")).not_to eq(csrf_token)
   end
 
   it "restores an authorized admin session without exposing private account fields" do
@@ -76,8 +70,7 @@ RSpec.describe "Application sessions", type: :request, openapi: true do
 
   it "returns a generic forbidden response when record authorization denies access" do
     account = create_account
-    application_session, session_token = ApplicationSession.issue!(user_account: account)
-    previous_csrf_digest = application_session.csrf_token_digest
+    _application_session, session_token = ApplicationSession.issue!(user_account: account)
     allow_any_instance_of(ApplicationSessionPolicy).to receive(:show?).and_return(false)
 
     get_current_session(session_token:, request_id: "session-policy-denied")
@@ -91,7 +84,6 @@ RSpec.describe "Application sessions", type: :request, openapi: true do
       }
     )
     expect(response.body).not_to include(account.phone_e164)
-    expect(application_session.reload.csrf_token_digest).to eq(previous_csrf_digest)
     assert_api_conform(status: 403)
   end
 
@@ -132,10 +124,8 @@ RSpec.describe "Application sessions", type: :request, openapi: true do
     second_session, second_token = ApplicationSession.issue!(user_account: account, now: now + 1.minute)
 
     get_current_session(session_token: first_token, request_id: "session-before-logout")
-    csrf_token = response.parsed_body.dig("data", "csrf_token")
     delete_current_session(
       session_token: first_token,
-      csrf_token:,
       origin: ENV.fetch("WEB_ORIGIN"),
       request_id: "session-logout"
     )
@@ -154,22 +144,18 @@ RSpec.describe "Application sessions", type: :request, openapi: true do
     expect(response).to have_http_status(:ok)
   end
 
-  it "rejects missing, invalid, malformed, preview, and cross-site mutation credentials" do
+  it "rejects missing, malformed, preview, and cross-site mutation origins" do
     now = Time.zone.parse("2026-08-15 12:00:00 UTC")
     account = create_account
     application_session, session_token = ApplicationSession.issue!(user_account: account, now:)
-    get_current_session(session_token:, request_id: "session-before-rejected-logout")
-    csrf_token = response.parsed_body.dig("data", "csrf_token")
     allowed_origin = ENV.fetch("WEB_ORIGIN")
     attempts = [
-      {origin: allowed_origin, csrf_token: nil},
-      {origin: allowed_origin, csrf_token: "invalid-csrf-token"},
-      {origin: nil, csrf_token:},
-      {origin: "#{allowed_origin}/", csrf_token:},
-      {origin: "#{allowed_origin}, https://untrusted.example", csrf_token:},
-      {origin: "null", csrf_token:},
-      {origin: "https://berufe-git-feature-preview.vercel.app", csrf_token:},
-      {origin: "https://untrusted.example", csrf_token:}
+      {origin: nil},
+      {origin: "#{allowed_origin}/"},
+      {origin: "#{allowed_origin}, https://untrusted.example"},
+      {origin: "null"},
+      {origin: "https://berufe-git-feature-preview.vercel.app"},
+      {origin: "https://untrusted.example"}
     ]
 
     attempts.each_with_index do |attempt, index|
@@ -190,7 +176,11 @@ RSpec.describe "Application sessions", type: :request, openapi: true do
   end
 
   it "clears stale cookies when logout no longer has an active session" do
-    delete_current_session(session_token: "unknown-session-token", request_id: "session-logout-stale")
+    delete_current_session(
+      session_token: "unknown-session-token",
+      request_id: "session-logout-stale",
+      origin: ENV.fetch("WEB_ORIGIN")
+    )
 
     expect(response).to have_http_status(:unauthorized)
     expect(response.parsed_body.dig("error", "code")).to eq("authentication_required")
@@ -258,7 +248,11 @@ RSpec.describe "Application sessions", type: :request, openapi: true do
   it "returns the same safe unavailable response when logout persistence fails" do
     allow(ApplicationSessionAuthenticator).to receive(:new).and_raise(ActiveRecord::ConnectionNotEstablished)
 
-    delete_current_session(session_token: "opaque-session-token", request_id: "session-logout-db-down")
+    delete_current_session(
+      session_token: "opaque-session-token",
+      request_id: "session-logout-db-down",
+      origin: ENV.fetch("WEB_ORIGIN")
+    )
 
     expect(response).to have_http_status(:service_unavailable)
     expect(response.parsed_body.dig("error", "code")).to eq("session_unavailable")
@@ -282,9 +276,8 @@ RSpec.describe "Application sessions", type: :request, openapi: true do
     get "/api/v1/session", headers: session_headers(session_token:, request_id:)
   end
 
-  def delete_current_session(session_token:, request_id:, csrf_token: nil, origin: nil)
+  def delete_current_session(session_token:, request_id:, origin: nil)
     headers = session_headers(session_token:, request_id:)
-    headers["X-CSRF-Token"] = csrf_token if csrf_token
     headers["Origin"] = origin if origin
     delete "/api/v1/session", headers:
   end

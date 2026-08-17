@@ -12,11 +12,9 @@ RSpec.describe "Professional registration", type: :request, openapi: true do
     travel_to(now)
     account = create_account(phone: "+5547999999001")
     _application_session, session_token = ApplicationSession.issue!(user_account: account, now:)
-    csrf_token = restore_csrf_token(session_token:, request_id: "registration-session-before")
 
     complete_registration(
       session_token:,
-      csrf_token:,
       display_name: "  Ana   Souza  ",
       accepted: true,
       request_id: "registration-complete"
@@ -42,11 +40,10 @@ RSpec.describe "Professional registration", type: :request, openapi: true do
     expect(account).to be_registration_completed
     assert_api_conform(status: 200)
 
-    csrf_token = restore_csrf_token(session_token:, request_id: "registration-session-after")
+    restore_session(session_token:, request_id: "registration-session-after")
     expect(response.parsed_body.dig("data", "account", "registration_completed")).to be(true)
     complete_registration(
       session_token:,
-      csrf_token:,
       display_name: "Nome Diferente",
       accepted: true,
       request_id: "registration-retry"
@@ -60,11 +57,9 @@ RSpec.describe "Professional registration", type: :request, openapi: true do
   it "rejects an unaccepted legal notice with field-safe validation" do
     account = create_account(phone: "+5547999999002")
     _application_session, session_token = ApplicationSession.issue!(user_account: account)
-    csrf_token = restore_csrf_token(session_token:, request_id: "registration-invalid-session")
 
     complete_registration(
       session_token:,
-      csrf_token:,
       display_name: "Ana Souza",
       accepted: false,
       request_id: "registration-invalid"
@@ -87,7 +82,6 @@ RSpec.describe "Professional registration", type: :request, openapi: true do
   it "rejects anonymous and suspended sessions generically" do
     complete_registration(
       session_token: nil,
-      csrf_token: "unused-csrf-token",
       display_name: "Ana Souza",
       accepted: true,
       request_id: "registration-anonymous"
@@ -102,7 +96,6 @@ RSpec.describe "Professional registration", type: :request, openapi: true do
     account.update!(status: "suspended")
     complete_registration(
       session_token:,
-      csrf_token: "unused-csrf-token",
       display_name: "Ana Souza",
       accepted: true,
       request_id: "registration-suspended"
@@ -113,13 +106,8 @@ RSpec.describe "Professional registration", type: :request, openapi: true do
   it "rejects invalid origins and active admin accounts without creating a professional profile" do
     professional = create_account(phone: "+5547999999004")
     _professional_session, professional_token = ApplicationSession.issue!(user_account: professional)
-    professional_csrf = restore_csrf_token(
-      session_token: professional_token,
-      request_id: "registration-origin-session"
-    )
     complete_registration(
       session_token: professional_token,
-      csrf_token: professional_csrf,
       origin: "https://untrusted.example",
       display_name: "Ana Souza",
       accepted: true,
@@ -132,10 +120,8 @@ RSpec.describe "Professional registration", type: :request, openapi: true do
     now = Time.current
     admin = create_account(phone: "+5547999999005", role: "admin")
     _admin_session, admin_token = ApplicationSession.issue!(user_account: admin, now:)
-    admin_csrf = restore_csrf_token(session_token: admin_token, request_id: "registration-admin-session")
     complete_registration(
       session_token: admin_token,
-      csrf_token: admin_csrf,
       display_name: "Admin Berufe",
       accepted: true,
       request_id: "registration-admin-denied"
@@ -150,12 +136,10 @@ RSpec.describe "Professional registration", type: :request, openapi: true do
   it "returns a safe unavailable response when registration persistence fails" do
     account = create_account(phone: "+5547999999006")
     _application_session, session_token = ApplicationSession.issue!(user_account: account)
-    csrf_token = restore_csrf_token(session_token:, request_id: "registration-unavailable-session")
     allow(ProfessionalRegistration).to receive(:new).and_raise(ActiveRecord::ConnectionNotEstablished)
 
     complete_registration(
       session_token:,
-      csrf_token:,
       display_name: "Ana Souza",
       accepted: true,
       request_id: "registration-unavailable"
@@ -188,22 +172,19 @@ RSpec.describe "Professional registration", type: :request, openapi: true do
     end
   end
 
-  def restore_csrf_token(session_token:, request_id:)
+  def restore_session(session_token:, request_id:)
     get "/api/v1/session", headers: session_headers(session_token:, request_id:)
-    response.parsed_body.dig("data", "csrf_token")
   end
 
   def complete_registration(
     session_token:,
-    csrf_token:,
     display_name:,
     accepted:,
     request_id:,
     origin: ENV.fetch("WEB_ORIGIN")
   )
     headers = session_headers(session_token:, request_id:)
-    headers["X-CSRF-Token"] = csrf_token
-    headers["Origin"] = origin
+    headers["Origin"] = origin if origin
     put "/api/v1/professional-registration", params: {display_name:, accepted:}, headers:, as: :json
   end
 

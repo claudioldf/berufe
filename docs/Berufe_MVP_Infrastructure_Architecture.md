@@ -105,7 +105,7 @@ Launch with fresh SSR and no Redis or separate cache for 30–50 profiles. Befor
 
 ### Authenticated change
 
-1. Vue sends a JSON request with the session cookie and CSRF header.
+1. Vue sends a credentialed JSON request; the browser attaches the session cookie and the `Origin` header.
 2. Rails authenticates the session.
 3. Rails checks the role, record ownership, and current workflow state.
 4. Rails validates the request and applies the change in a database transaction.
@@ -114,7 +114,7 @@ Launch with fresh SSR and no Redis or separate cache for 30–50 profiles. Befor
 ### API contract
 
 - OpenAPI 3.1.0 in `apps/contracts/openapi.yaml` is the source of truth for the HTTP boundary. Prefix every product endpoint with `/api/v1`; health and worker probes may remain outside that namespace.
-- Use JSON request and response bodies. Document cookie authentication and the required CSRF header in the contract.
+- Use JSON request and response bodies. Document cookie authentication and the exact-origin requirement for state-changing operations in the contract.
 - Return one stable error envelope containing `code`, a safe `message`, `field_errors` as a map of field names to arrays of safe messages when applicable, and `request_id` as a string.
 - Use pagination and deterministic ordering for lists.
 - Keep private/internal fields out of serializers by default.
@@ -227,7 +227,7 @@ The four-service source-mounted setup was validated on 2026-08-15 on macOS 26 ar
 
 Keep Dockerfiles inside `apps/web/` and `apps/api/`, but keep orchestration at the repository root. There is one Node application, so use pnpm without a workspace and keep generated API types inside the frontend. Commit `.env.example` with names and safe defaults only; never commit real credentials.
 
-Local development uses a local-disk storage adapter and a dedicated non-production Infobip profile with an explicit recipient allowlist. Automated tests alone use the fake SMS-OTP adapter. R2 remains unnecessary for the local stack. Do not add Redis, MinIO, a mail catcher, or other support containers until an implemented feature needs them.
+Local development uses local-disk storage and selects the fake SMS-OTP adapter by default. A developer may explicitly select a dedicated non-production Infobip profile with an explicit recipient allowlist through `.env`; selection never falls back at runtime. Automated tests and pull-request previews use fake delivery. R2 remains unnecessary for the local stack. Do not add Redis, MinIO, a mail catcher, or other support containers until an implemented feature needs them.
 
 Docker Compose standardizes local development and CI integration runs; it is not the MVP production orchestrator. Production keeps the Nuxt and Rails deployments separate on Vercel and Render.
 
@@ -252,10 +252,9 @@ Store each application session in `application_sessions` with:
 - a random session token digest, never the raw token;
 - `user_account_id` and the `sms_otp` or `password` authentication method;
 - authentication time;
-- last activity, idle expiry, absolute expiry, and revocation time;
-- a digest binding the session to its rotating CSRF token.
+- last activity, idle expiry, absolute expiry, and revocation time.
 
-Use a host-only `__Host-berufe_session` cookie set by the API domain with `Secure`, `HttpOnly`, `SameSite=Lax`, and `Path=/`; omit `Domain`. The browser never receives an Infobip credential. The current-session endpoint returns a rotating CSRF token that Nuxt keeps only in memory and sends in a header for mutations; Rails validates its digest against the application session and also checks the exact request origin.
+Use a host-only `__Host-berufe_session` cookie set by the API domain with `Secure`, `HttpOnly`, `SameSite=Lax`, and `Path=/`; omit `Domain`. The browser never receives an Infobip credential. `SameSite=Lax` keeps the browser from attaching the cookie to any cross-site mutation, and Rails additionally refuses every state-changing request whose `Origin` is absent or does not exactly match the configured Nuxt origin. That origin check is what covers same-site-but-different-origin callers, which `SameSite` alone permits.
 
 Professional sessions have a 7-day idle expiry and 30-day absolute expiry. Admin sessions have a 30-minute idle expiry and 12-hour absolute expiry. Admins authenticate only through the dedicated email/password endpoint; Rails stores a BCrypt password digest and never serializes or logs the password. Throttle last-activity writes so normal requests do not update the session row continuously.
 
@@ -263,9 +262,9 @@ Logout revokes the current application session and clears the cookie. Suspending
 
 To control SMS abuse without Rack::Attack or Turnstile, Rails enforces a short resend cooldown and conservative daily limits by phone and IP, stored as short-lived digests/counters in PostgreSQL. Provider limits remain a second layer. Return the same generic response whether or not an account exists, and purge expired counters with GoodJob.
 
-Use `www.berufe...` and `api.berufe...` under the same parent domain. Requests include credentials, CORS uses an exact origin allowlist, and state-changing requests require the session-bound CSRF token plus origin validation. Never store auth or CSRF tokens in `localStorage`.
+Use `www.berufe...` and `api.berufe...` under the same parent domain. Requests include credentials, CORS uses an exact origin allowlist, and state-changing requests require an exactly matching `Origin`. Never store authentication material in `localStorage`.
 
-Production uses a dedicated Infobip API key, 2FA application, and message template. Stable staging, local development, Vercel pull-request previews, and the integration environment use a separate restricted Infobip configuration and may send only to allowlisted test numbers. Automated tests alone select the fake adapter.
+Production always uses a dedicated Infobip API key, 2FA application, and message template. Stable staging and integration use a separate restricted Infobip configuration and may send only to allowlisted test numbers. Local development selects fake delivery by default or the restricted Infobip configuration through `.env`; Vercel pull-request previews and automated tests use fake delivery and receive no provider credentials.
 
 ### Admin access
 
@@ -305,7 +304,7 @@ PostgreSQL is the single application database. Rails/Active Record is the only a
 - Keep production database credentials server-only; Nuxt never connects to PostgreSQL.
 - Record the accepted terms and privacy-notice version with each acceptance timestamp; a timestamp alone is not sufficient audit evidence.
 - Enforce exactly one primary service per professional. The primary service is the singular main service shown on the public profile.
-- Represent “All Joinville” without duplicate nullable-area rows, using a partial unique index or a PostgreSQL `NULLS NOT DISTINCT` constraint.
+- Represent “All Joinville” as a derived selector backed by a nullable professional service-area reference, never as a managed neighborhood, and prevent duplicate nullable-area rows using a partial unique index or a PostgreSQL `NULLS NOT DISTINCT` constraint.
 - Material edits return a published profile to moderation. Public serializers exclude it until reapproval; urgent founding-cohort corrections use the documented manual operations path.
 - Treat professional acceptance as necessary but not sufficient for a public professional relationship. An accepted relationship enters the shared moderation queue; public serializers require both recipient acceptance and an admin approval action, and hiding removes it immediately.
 - Keep product analytics privacy-friendly but source-aware enough to calculate the approved success signals. An anonymous search event may record whether at least one result profile was opened, while professional daily metrics distinguish WhatsApp handoffs originating on profiles from those originating on result cards. Do not create visitor identities to do so.
@@ -363,9 +362,9 @@ Never use unofficial WhatsApp Web automation or shared personal accounts.
 - Opaque Rails-owned sessions stored only as token digests, with idle/absolute expiry and immediate revocation.
 - Server-side validation and authorization for every mutation.
 - Infobip limits plus Rails-enforced OTP cooldowns and daily allowances.
-- Exact CORS origins, CSRF protection, and origin checks for authenticated mutations.
+- Exact CORS origins and exact-origin checks on every state-changing request.
 - Separate production and non-production credentials in platform secret stores.
-- No phone numbers, OTPs, raw session/share tokens, quote customer details, session cookies, CSRF tokens, verification files, signed URLs, job arguments, or request bodies in application/platform logs or error reports.
+- No phone numbers, OTPs, raw session/share tokens, quote customer details, session cookies, verification files, signed URLs, job arguments, or request bodies in application/platform logs or error reports.
 - Security headers on Nuxt and Rails, including content type, framing, and referrer controls.
 - Token-authorized quote responses use `private, no-store`, `noindex`, `nofollow`, and a no-referrer policy and are excluded from static generation.
 - Parameterized Active Record queries and allowlisted redirect destinations.
@@ -457,7 +456,7 @@ Use local, pull-request preview, stable staging, and production environments. Lo
 - Render monitors Rails health, PostgreSQL connections, GoodJob processing, and database status; Vercel monitors frontend deployment health.
 - Use structured Rails/Nuxt platform logs with request IDs. Accept an inbound request ID only when it matches ASCII `[A-Za-z0-9._-]{1,100}`; otherwise generate a UUID. Nuxt forwards it to Rails, and Rails propagates it into GoodJob jobs and Bugsnag reports.
 - Use Bugsnag for error tracking in Rails, Active Job/GoodJob, Nuxt browser code, and Nuxt SSR. Keep it error-only: do not enable performance monitoring, distributed tracing, automatic session tracking, anonymous/user identification, or IP collection.
-- Configure Bugsnag callbacks and redaction to remove cookies, authorization and CSRF headers, request parameters/bodies, phone numbers, OTPs, raw Infobip/session/share tokens or challenge secrets, quote customer details, signed URLs, verification-file data, and job arguments. Send only the release, environment, normalized route or job class, request ID, exception, and stack trace needed for diagnosis.
+- Configure Bugsnag callbacks and redaction to remove cookies, authorization headers, request parameters/bodies, phone numbers, OTPs, raw Infobip/session/share tokens or challenge secrets, quote customer details, signed URLs, verification-file data, and job arguments. Send only the release, environment, normalized route or job class, request ID, exception, and stack trace needed for diagnosis.
 - Use separate Bugsnag projects for the web application and Rails API/worker. Upload production source maps without publishing them publicly. Production unhandled exceptions, terminal Active Job failures, and GoodJob executor/thread failures notify the named operations owner immediately.
 - Preserve successful GoodJob records for 14 days and reviewed discarded failures for 30 days. Never automatically delete an unresolved failure. Run cleanup daily; document inspection, retry, discard review, and escalation procedures.
 - Protect the GoodJob dashboard with an active password-authenticated admin application session. Enable its dedicated HTTP worker probe and check process running, executor started, and database connected states.
@@ -475,7 +474,7 @@ If production breaks: disable the affected flow or credential, assess scope, rec
 ## 16. Implementation order
 
 1. **Foundation:** monorepo, Dockerfiles and root Compose stack, Nuxt with Nuxt UI, Rails API-only, PostgreSQL, GoodJob, Vercel/Render environments, CI, and security headers.
-2. **Access:** professional Infobip SMS OTP, dedicated admin email/password login, Rails-owned application sessions, abuse controls, roles/policies, and CSRF/CORS.
+2. **Access:** professional Infobip SMS OTP, dedicated admin email/password login, Rails-owned application sessions, abuse controls, roles/policies, and CORS/origin controls.
 3. **Profiles and evidence:** seeded and administrator-maintained service/location catalog, direct R2 uploads, background image processing, profile/portfolio/identity moderation, public serializers, and Nuxt public pages.
 4. **Discovery and trust graph:** Finder and WhatsApp handoff followed by moderated relationships between existing members.
 5. **Dashboard, quotes, and reporting:** profile readiness/sharing, simple quote creation and secure customer sharing, and the aggregate-only administrator growth report.
@@ -515,7 +514,7 @@ Accept real users only when:
 - OpenAPI generation is clean, Rails contract tests pass, and the frontend typecheck uses the generated schema;
 - ownership/admin policy tests pass;
 - private R2 verification objects cannot be read publicly;
-- professional OTP and admin password abuse controls, provider failure handling, application-session expiry/revocation/logout, account suspension, and CSRF/CORS work;
+- professional OTP and admin password abuse controls, provider failure handling, application-session expiry/revocation/logout, account suspension, and CORS/origin controls work;
 - platform logs and Bugsnag reports redact personal and restricted data;
 - failed GoodJob jobs are visible and retryable, the protected dashboard and worker probe work, and queue-age alerts have been exercised;
 - verification evidence accepts only safely regenerated JPEG/PNG images and rejected/quarantined originals cannot be viewed;

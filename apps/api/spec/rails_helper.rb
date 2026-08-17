@@ -5,6 +5,10 @@ ENV["BERUFE_ENV"] = "test"
 ENV["SMS_OTP_ADAPTER"] = "fake"
 ENV["MEDIA_STORAGE_ADAPTER"] = "local"
 ENV["DATABASE_URL"] = ENV.fetch("TEST_DATABASE_URL")
+ENV["OTP_RESEND_COOLDOWN_SECONDS"] = "30"
+ENV["OTP_DAILY_PHONE_LIMIT"] = "5"
+ENV["OTP_DAILY_IP_LIMIT"] = "20"
+ENV["OTP_CHALLENGE_TTL_SECONDS"] = "600"
 
 require_relative "../config/environment"
 abort("The Rails environment is running in production mode!") if Rails.env.production?

@@ -12,7 +12,7 @@ function apiClientReturning(result: object) {
 }
 
 describe("application-session API", () => {
-  it("maps the contracted account/session summary and rotating CSRF token", async () => {
+  it("maps the contracted account and session summary", async () => {
     const client = apiClientReturning({
       data: {
         data: {
@@ -28,7 +28,6 @@ describe("application-session API", () => {
             idle_expires_at: "2026-08-22T12:00:00.000Z",
             absolute_expires_at: "2026-09-14T12:00:00.000Z",
           },
-          csrf_token: "rotating-memory-only-csrf-token-value-123456",
         },
         request_id: "session-current",
       },
@@ -49,7 +48,6 @@ describe("application-session API", () => {
         idleExpiresAt: "2026-08-22T12:00:00.000Z",
         absoluteExpiresAt: "2026-09-14T12:00:00.000Z",
       },
-      csrfToken: "rotating-memory-only-csrf-token-value-123456",
     });
     expect(client.GET).toHaveBeenCalledWith("/api/v1/session");
   });

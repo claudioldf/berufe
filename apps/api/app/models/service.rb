@@ -8,6 +8,8 @@ class Service < ApplicationRecord
   scope :publicly_active, -> { active.joins(:category).merge(ServiceCategory.active) }
 
   validates :name, :slug, :icon, :description, presence: true
+  validates :name, :slug, length: {maximum: 80}
+  validates :description, length: {maximum: 240}
   validates :slug, uniqueness: true, format: {with: /\A[a-z0-9]+(?:-[a-z0-9]+)*\z/}
   validates :sort_order, numericality: {only_integer: true, greater_than_or_equal_to: 0}
   validates :is_active, inclusion: {in: [true, false]}

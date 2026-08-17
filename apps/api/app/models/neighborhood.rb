@@ -7,6 +7,7 @@ class Neighborhood < ApplicationRecord
   scope :ordered, -> { order(:sort_order, :code) }
 
   validates :code, :state_code, :city_code, :name, presence: true
+  validates :code, :city_code, :name, length: {maximum: 80}
   validates :code, uniqueness: true, format: {with: /\A[a-z0-9]+(?:-[a-z0-9]+)*\z/}
   validates :state_code, inclusion: {in: ["SC"]}
   validates :city_code, inclusion: {in: ["Joinville"]}

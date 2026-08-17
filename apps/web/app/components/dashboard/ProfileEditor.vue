@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import catalogsData from "@data/catalogs.json";
 import type {
   Neighborhood,
   Professional,
@@ -8,12 +7,12 @@ import type {
 } from "~/types";
 import { useProfessionalProfileDraft } from "~/composables/useProfessionalProfileDraft";
 
-const props = defineProps<{ professional: Professional }>();
+const props = defineProps<{
+  professional: Professional;
+  services: Service[];
+  neighborhoods: Neighborhood[];
+}>();
 const emit = defineEmits<{ save: [draft: ProfessionalProfileDraft] }>();
-const services = catalogsData.services as Service[];
-const neighborhoods = catalogsData.neighborhoods.filter(
-  (item) => item.code !== "all",
-) as Neighborhood[];
 
 const {
   form,
@@ -45,12 +44,12 @@ function save() {
       />
       <DashboardProfileServicesSection
         v-model="form"
-        :services="services"
+        :services="props.services"
         @toggle="toggleService"
       />
       <DashboardProfileCoverageSection
         v-model="form"
-        :neighborhoods="neighborhoods"
+        :neighborhoods="props.neighborhoods"
         @dirty="markDirty"
         @toggle="toggleNeighborhood"
       />

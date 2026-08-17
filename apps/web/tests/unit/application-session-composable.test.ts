@@ -16,7 +16,6 @@ const restoredSession: RestoredApplicationSession = {
     idleExpiresAt: "2026-08-22T12:00:00.000Z",
     absoluteExpiresAt: "2026-09-14T12:00:00.000Z",
   },
-  csrfToken: "rotating-memory-only-csrf-token-value-123456",
 };
 
 beforeEach(() => {
@@ -24,7 +23,7 @@ beforeEach(() => {
 });
 
 describe("application-session state", () => {
-  it("deduplicates restoration and keeps the CSRF token outside reactive state", async () => {
+  it("deduplicates concurrent restorations and caches the authenticated result", async () => {
     const { role } = useAppRole();
     let resolveRead:
       ((value: RestoredApplicationSession | null) => void) | undefined;
@@ -34,8 +33,7 @@ describe("application-session state", () => {
           resolveRead = resolve;
         }),
     );
-    const setCsrfToken = vi.fn();
-    const workflow = useApplicationSession({ read, setCsrfToken });
+    const workflow = useApplicationSession({ read });
 
     const firstRestore = workflow.restoreSession();
     const secondRestore = workflow.restoreSession();
@@ -49,10 +47,6 @@ describe("application-session state", () => {
     expect(workflow.account.value).toEqual(restoredSession.account);
     expect(workflow.session.value).toEqual(restoredSession.session);
     expect(role.value).toBe("professional");
-    expect(setCsrfToken).toHaveBeenCalledWith(restoredSession.csrfToken);
-    expect(JSON.stringify(workflow.account.value)).not.toContain(
-      restoredSession.csrfToken,
-    );
 
     await expect(workflow.restoreSession()).resolves.toBe(true);
     expect(read).toHaveBeenCalledOnce();
@@ -62,8 +56,7 @@ describe("application-session state", () => {
     const { role, setRole } = useAppRole();
     setRole("admin");
     const read = vi.fn().mockResolvedValue(null);
-    const setCsrfToken = vi.fn();
-    const workflow = useApplicationSession({ read, setCsrfToken });
+    const workflow = useApplicationSession({ read });
 
     await expect(workflow.restoreSession()).resolves.toBe(false);
     await expect(workflow.restoreSession()).resolves.toBe(false);
@@ -73,7 +66,6 @@ describe("application-session state", () => {
     expect(workflow.account.value).toBeNull();
     expect(workflow.session.value).toBeNull();
     expect(role.value).toBe("visitor");
-    expect(setCsrfToken).toHaveBeenCalledWith(undefined);
   });
 
   it("forces a fresh read after authentication changes", async () => {
@@ -81,7 +73,7 @@ describe("application-session state", () => {
       .fn()
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce(restoredSession);
-    const workflow = useApplicationSession({ read, setCsrfToken: vi.fn() });
+    const workflow = useApplicationSession({ read });
 
     await expect(workflow.restoreSession()).resolves.toBe(false);
     await expect(workflow.refreshSession()).resolves.toBe(true);
@@ -102,7 +94,7 @@ describe("application-session state", () => {
           }),
       )
       .mockResolvedValueOnce(restoredSession);
-    const workflow = useApplicationSession({ read, setCsrfToken: vi.fn() });
+    const workflow = useApplicationSession({ read });
 
     const restoration = workflow.restoreSession();
     const refresh = workflow.refreshSession();
@@ -124,7 +116,7 @@ describe("application-session state", () => {
           }),
       )
       .mockResolvedValueOnce(restoredSession);
-    const workflow = useApplicationSession({ read, setCsrfToken: vi.fn() });
+    const workflow = useApplicationSession({ read });
 
     const restoration = workflow.restoreSession();
     const refresh = workflow.refreshSession();
@@ -135,25 +127,23 @@ describe("application-session state", () => {
     expect(read).toHaveBeenCalledTimes(2);
   });
 
-  it("allows a failed restoration to be retried without retaining CSRF state", async () => {
+  it("allows a failed restoration to be retried", async () => {
     const read = vi
       .fn()
       .mockRejectedValueOnce(new Error("temporary API failure"))
       .mockResolvedValueOnce(restoredSession);
-    const setCsrfToken = vi.fn();
-    const workflow = useApplicationSession({ read, setCsrfToken });
+    const workflow = useApplicationSession({ read });
 
     await expect(workflow.restoreSession()).rejects.toThrow(
       "temporary API failure",
     );
     expect(workflow.status.value).toBe("unknown");
-    expect(setCsrfToken).toHaveBeenCalledWith(undefined);
 
     await expect(workflow.restoreSession()).resolves.toBe(true);
     expect(read).toHaveBeenCalledTimes(2);
   });
 
-  it("ends one session once, then clears account, session, and CSRF state", async () => {
+  it("ends one session once, then clears account and session state", async () => {
     const { role } = useAppRole();
     let resolveEnd: (() => void) | undefined;
     const end = vi.fn(
@@ -162,11 +152,9 @@ describe("application-session state", () => {
           resolveEnd = resolve;
         }),
     );
-    const setCsrfToken = vi.fn();
     const workflow = useApplicationSession({
       read: vi.fn().mockResolvedValue(restoredSession),
       end,
-      setCsrfToken,
     });
     await workflow.restoreSession();
 
@@ -182,14 +170,12 @@ describe("application-session state", () => {
     expect(workflow.account.value).toBeNull();
     expect(workflow.session.value).toBeNull();
     expect(role.value).toBe("visitor");
-    expect(setCsrfToken).toHaveBeenLastCalledWith(undefined);
   });
 
   it("retains a restored session when logout fails and resets its pending state", async () => {
     const workflow = useApplicationSession({
       read: vi.fn().mockResolvedValue(restoredSession),
       end: vi.fn().mockRejectedValue(new Error("logout failed")),
-      setCsrfToken: vi.fn(),
     });
     await workflow.restoreSession();
 

@@ -5,6 +5,8 @@ module Api
     class BaseController < ApplicationController
       include Pundit::Authorization
 
+      before_action :verify_request_origin!, if: :state_changing_request?
+
       rescue_from ActiveRecord::RecordNotFound do
         render_api_error(code: "not_found", message: "Recurso não encontrado.", status: :not_found)
       end
@@ -62,12 +64,6 @@ module Api
         render_request_not_allowed
       end
 
-      def verify_csrf_and_origin!
-        return if valid_request_origin? && valid_csrf_token?
-
-        render_request_not_allowed
-      end
-
       def render_authentication_required
         clear_application_session_cookie
         render_api_error(
@@ -102,15 +98,8 @@ module Api
         request.headers["Origin"] == ENV.fetch("WEB_ORIGIN")
       end
 
-      def valid_csrf_token?
-        supplied_token = request.headers["X-CSRF-Token"].to_s
-        return false if supplied_token.empty?
-
-        supplied_digest = SessionSecurityDigest.call(purpose: "csrf_token", value: supplied_token)
-        ActiveSupport::SecurityUtils.secure_compare(
-          supplied_digest,
-          Current.application_session.csrf_token_digest
-        )
+      def state_changing_request?
+        request.post? || request.put? || request.patch? || request.delete?
       end
 
       def prevent_caching

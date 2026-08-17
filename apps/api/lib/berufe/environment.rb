@@ -7,15 +7,23 @@ module Berufe
     Config = Data.define(:name, :sms_otp_adapter, :media_storage_adapter)
 
     ENVIRONMENTS = %w[local preview staging integration production test].freeze
-    ADAPTERS = {
-      "local" => ["infobip", "local"],
-      "preview" => ["infobip", "local"],
-      "staging" => ["infobip", "r2"],
-      "integration" => ["infobip", "r2"],
-      "production" => ["infobip", "r2"],
-      "test" => ["fake", "local"]
+    SMS_OTP_ADAPTERS = {
+      "local" => %w[fake infobip],
+      "preview" => %w[fake],
+      "staging" => %w[infobip],
+      "integration" => %w[infobip],
+      "production" => %w[infobip],
+      "test" => %w[fake]
     }.freeze
-    NON_PRODUCTION_INFOBIP_ENVIRONMENTS = %w[local preview staging integration].freeze
+    MEDIA_STORAGE_ADAPTERS = {
+      "local" => %w[local],
+      "preview" => %w[local],
+      "staging" => %w[r2],
+      "integration" => %w[r2],
+      "production" => %w[r2],
+      "test" => %w[local]
+    }.freeze
+    NON_PRODUCTION_INFOBIP_ENVIRONMENTS = %w[local staging integration].freeze
     INFOBIP_TEST_PHONE_PATTERN = /\A\+55\d{2}9\d{8}\z/
 
     COMMON_REQUIRED = %w[
@@ -50,7 +58,7 @@ module Berufe
     DEFAULTS = {
       "development" => {
         "BERUFE_ENV" => "local",
-        "SMS_OTP_ADAPTER" => "infobip",
+        "SMS_OTP_ADAPTER" => "fake",
         "MEDIA_STORAGE_ADAPTER" => "local"
       },
       "test" => {
@@ -69,11 +77,15 @@ module Berufe
       errors = []
       errors << "BERUFE_ENV must be one of: #{ENVIRONMENTS.join(", ")}" unless ENVIRONMENTS.include?(name)
 
-      expected_adapters = ADAPTERS[name]
-      if expected_adapters
-        expected_sms_otp, expected_media_storage = expected_adapters
-        errors << "SMS_OTP_ADAPTER must be #{expected_sms_otp} for #{name}" unless sms_otp_adapter == expected_sms_otp
-        errors << "MEDIA_STORAGE_ADAPTER must be #{expected_media_storage} for #{name}" unless media_storage_adapter == expected_media_storage
+      if ENVIRONMENTS.include?(name)
+        allowed_sms_otp_adapters = SMS_OTP_ADAPTERS.fetch(name)
+        allowed_media_storage_adapters = MEDIA_STORAGE_ADAPTERS.fetch(name)
+        unless allowed_sms_otp_adapters.include?(sms_otp_adapter)
+          errors << "SMS_OTP_ADAPTER must be one of: #{allowed_sms_otp_adapters.join(", ")} for #{name}"
+        end
+        unless allowed_media_storage_adapters.include?(media_storage_adapter)
+          errors << "MEDIA_STORAGE_ADAPTER must be one of: #{allowed_media_storage_adapters.join(", ")} for #{name}"
+        end
       end
 
       required = required_variables(name, sms_otp_adapter, media_storage_adapter)

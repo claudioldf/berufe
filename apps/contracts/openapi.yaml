@@ -29,6 +29,15 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PhoneOtpChallengeResponse"
+        "403":
+          description: The exact browser origin is invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "422":
           description: The phone is invalid or SMS delivery was rejected.
           headers:
@@ -83,6 +92,15 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PhoneOtpVerificationResponse"
+        "403":
+          description: The exact browser origin is invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "422":
           description: The code or browser challenge is invalid, expired, or consumed.
           headers:
@@ -164,6 +182,247 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/admin/catalog:
+    get:
+      operationId: getAdminCatalog
+      summary: Read the complete administrator-managed catalog
+      tags:
+        - Catalog
+      security:
+        - applicationSession: []
+      responses:
+        "200":
+          description: Active and inactive catalog entries in their configured order.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminCatalogResponse"
+        "401":
+          $ref: "#/components/responses/AdminCatalogUnauthorized"
+        "503":
+          $ref: "#/components/responses/AdminCatalogUnavailable"
+  /api/v1/admin/catalog/services:
+    post:
+      operationId: createAdminCatalogService
+      summary: Add a service to the controlled catalog
+      tags:
+        - Catalog
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminCatalogServiceCreateRequest"
+      responses:
+        "201":
+          description: The service was appended to the controlled catalog.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminCatalogResponse"
+        "401":
+          $ref: "#/components/responses/AdminCatalogUnauthorized"
+        "403":
+          $ref: "#/components/responses/AdminCatalogForbidden"
+        "404":
+          $ref: "#/components/responses/AdminCatalogNotFound"
+        "409":
+          $ref: "#/components/responses/AdminCatalogConflict"
+        "422":
+          $ref: "#/components/responses/AdminCatalogInvalid"
+        "503":
+          $ref: "#/components/responses/AdminCatalogUnavailable"
+  /api/v1/admin/catalog/services/order:
+    put:
+      operationId: reorderAdminCatalogServices
+      summary: Persist the complete deterministic service order
+      tags:
+        - Catalog
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminCatalogServiceOrderRequest"
+      responses:
+        "200":
+          description: The complete service order was persisted.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminCatalogResponse"
+        "401":
+          $ref: "#/components/responses/AdminCatalogUnauthorized"
+        "403":
+          $ref: "#/components/responses/AdminCatalogForbidden"
+        "409":
+          $ref: "#/components/responses/AdminCatalogConflict"
+        "503":
+          $ref: "#/components/responses/AdminCatalogUnavailable"
+  /api/v1/admin/catalog/services/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    patch:
+      operationId: updateAdminCatalogService
+      summary: Update mutable fields of a controlled service
+      tags:
+        - Catalog
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminCatalogServiceUpdateRequest"
+      responses:
+        "200":
+          description: The service was updated without changing its stable slug.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminCatalogResponse"
+        "401":
+          $ref: "#/components/responses/AdminCatalogUnauthorized"
+        "403":
+          $ref: "#/components/responses/AdminCatalogForbidden"
+        "404":
+          $ref: "#/components/responses/AdminCatalogNotFound"
+        "422":
+          $ref: "#/components/responses/AdminCatalogInvalid"
+        "503":
+          $ref: "#/components/responses/AdminCatalogUnavailable"
+  /api/v1/admin/catalog/neighborhoods:
+    post:
+      operationId: createAdminCatalogNeighborhood
+      summary: Add a Joinville neighborhood to the controlled catalog
+      tags:
+        - Catalog
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminCatalogNeighborhoodCreateRequest"
+      responses:
+        "201":
+          description: The neighborhood was appended to the controlled catalog.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminCatalogResponse"
+        "401":
+          $ref: "#/components/responses/AdminCatalogUnauthorized"
+        "403":
+          $ref: "#/components/responses/AdminCatalogForbidden"
+        "409":
+          $ref: "#/components/responses/AdminCatalogConflict"
+        "422":
+          $ref: "#/components/responses/AdminCatalogInvalid"
+        "503":
+          $ref: "#/components/responses/AdminCatalogUnavailable"
+  /api/v1/admin/catalog/neighborhoods/order:
+    put:
+      operationId: reorderAdminCatalogNeighborhoods
+      summary: Persist the complete deterministic neighborhood order
+      tags:
+        - Catalog
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminCatalogNeighborhoodOrderRequest"
+      responses:
+        "200":
+          description: The complete neighborhood order was persisted.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminCatalogResponse"
+        "401":
+          $ref: "#/components/responses/AdminCatalogUnauthorized"
+        "403":
+          $ref: "#/components/responses/AdminCatalogForbidden"
+        "409":
+          $ref: "#/components/responses/AdminCatalogConflict"
+        "503":
+          $ref: "#/components/responses/AdminCatalogUnavailable"
+  /api/v1/admin/catalog/neighborhoods/{code}:
+    parameters:
+      - name: code
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          maxLength: 80
+    patch:
+      operationId: updateAdminCatalogNeighborhood
+      summary: Update mutable fields of a controlled Joinville neighborhood
+      tags:
+        - Catalog
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminCatalogNeighborhoodUpdateRequest"
+      responses:
+        "200":
+          description: The neighborhood was updated without changing its stable code.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminCatalogResponse"
+        "401":
+          $ref: "#/components/responses/AdminCatalogUnauthorized"
+        "403":
+          $ref: "#/components/responses/AdminCatalogForbidden"
+        "404":
+          $ref: "#/components/responses/AdminCatalogNotFound"
+        "409":
+          $ref: "#/components/responses/AdminCatalogConflict"
+        "422":
+          $ref: "#/components/responses/AdminCatalogInvalid"
+        "503":
+          $ref: "#/components/responses/AdminCatalogUnavailable"
   /api/v1/catalog:
     get:
       operationId: getPublicCatalog
@@ -198,7 +457,6 @@ paths:
         - Authentication
       security:
         - applicationSession: []
-          csrfToken: []
       requestBody:
         required: true
         content:
@@ -225,7 +483,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "403":
-          description: The account role, CSRF token, or exact request origin is not permitted.
+          description: The account role or exact request origin is not permitted.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
@@ -261,7 +519,7 @@ paths:
         - applicationSession: []
       responses:
         "200":
-          description: The active account/session summary and a newly rotated CSRF token.
+          description: The active account and session summary.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
@@ -303,7 +561,6 @@ paths:
         - Authentication
       security:
         - applicationSession: []
-          csrfToken: []
       responses:
         "204":
           description: The current session was revoked and its cookie was cleared.
@@ -322,7 +579,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "403":
-          description: The CSRF token or exact request origin is invalid.
+          description: The exact request origin is invalid.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
@@ -372,11 +629,6 @@ components:
       in: cookie
       name: __Host-berufe_session
       description: Opaque Rails-owned application-session cookie.
-    csrfToken:
-      type: apiKey
-      in: header
-      name: X-CSRF-Token
-      description: Rotating session-bound token required for authenticated mutations.
   headers:
     ApplicationSessionCookie:
       description: Host-only opaque Rails application-session cookie.
@@ -418,6 +670,61 @@ components:
       schema:
         type: string
         minLength: 1
+  responses:
+    AdminCatalogUnauthorized:
+      description: An active password-authenticated administrator session is required.
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    AdminCatalogForbidden:
+      description: The account or exact request origin is not permitted.
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    AdminCatalogNotFound:
+      description: The requested entry or controlled category does not exist.
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    AdminCatalogConflict:
+      description: A stable identifier conflicts or the submitted order is stale or incomplete.
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    AdminCatalogInvalid:
+      description: One or more catalog fields are invalid.
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    AdminCatalogUnavailable:
+      description: Catalog persistence is temporarily unavailable.
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
   schemas:
     AdminSessionRequest:
       type: object
@@ -600,16 +907,11 @@ components:
       required:
         - account
         - session
-        - csrf_token
       properties:
         account:
           $ref: "#/components/schemas/CurrentAccountSummary"
         session:
           $ref: "#/components/schemas/ApplicationSessionSummary"
-        csrf_token:
-          type: string
-          minLength: 40
-          maxLength: 100
     CurrentAccountSummary:
       type: object
       additionalProperties: false
@@ -666,6 +968,233 @@ components:
           $ref: "#/components/schemas/CatalogData"
         request_id:
           $ref: "#/components/schemas/RequestId"
+    AdminCatalogResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          $ref: "#/components/schemas/AdminCatalogData"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    AdminCatalogData:
+      type: object
+      additionalProperties: false
+      required:
+        - categories
+        - services
+        - neighborhoods
+      properties:
+        categories:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminCatalogCategory"
+        services:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminCatalogService"
+        neighborhoods:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminCatalogNeighborhood"
+    AdminCatalogCategory:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - slug
+        - name
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          maxLength: 80
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+    AdminCatalogService:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - name
+        - slug
+        - categorySlug
+        - description
+        - isActive
+        - sortOrder
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        slug:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          maxLength: 80
+        categorySlug:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          maxLength: 80
+        description:
+          type: string
+          minLength: 1
+          maxLength: 240
+        isActive:
+          type: boolean
+        sortOrder:
+          type: integer
+          minimum: 0
+    AdminCatalogNeighborhood:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - name
+        - stateCode
+        - city
+        - isActive
+        - sortOrder
+      properties:
+        code:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          maxLength: 80
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        stateCode:
+          type: string
+          const: SC
+        city:
+          type: string
+          const: Joinville
+        isActive:
+          type: boolean
+        sortOrder:
+          type: integer
+          minimum: 0
+    AdminCatalogServiceCreateRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - name
+        - slug
+        - categorySlug
+        - description
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        slug:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          maxLength: 80
+        categorySlug:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          maxLength: 80
+        description:
+          type: string
+          minLength: 1
+          maxLength: 240
+    AdminCatalogServiceUpdateRequest:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        categorySlug:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          maxLength: 80
+        description:
+          type: string
+          minLength: 1
+          maxLength: 240
+        isActive:
+          type: boolean
+    AdminCatalogServiceOrderRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - ids
+      properties:
+        ids:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            type: string
+            format: uuid
+    AdminCatalogNeighborhoodCreateRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - name
+        - code
+        - stateCode
+        - city
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        code:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          maxLength: 80
+        stateCode:
+          type: string
+          const: SC
+        city:
+          type: string
+          const: Joinville
+    AdminCatalogNeighborhoodUpdateRequest:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        stateCode:
+          type: string
+          const: SC
+        city:
+          type: string
+          const: Joinville
+        isActive:
+          type: boolean
+    AdminCatalogNeighborhoodOrderRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - codes
+      properties:
+        codes:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            type: string
+            pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+            maxLength: 80
     CatalogData:
       type: object
       additionalProperties: false
@@ -844,7 +1373,6 @@ components:
           minimum: 0
 security:
   - applicationSession: []
-    csrfToken: []
 tags:
   - name: Authentication
   - name: Catalog

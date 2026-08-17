@@ -36,3 +36,9 @@ export interface CatalogEntryDraft {
   stateCode?: string;
   city?: string;
 }
+
+export interface AdminCatalog {
+  categories: CatalogCategoryOption[];
+  services: CatalogEntry[];
+  neighborhoods: CatalogEntry[];
+}

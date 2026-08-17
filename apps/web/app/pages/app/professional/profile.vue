@@ -2,12 +2,24 @@
 import { computed } from "vue";
 import professionalsData from "@data/professionals.json";
 import type { Professional } from "~/types";
+import { useCatalogs } from "~/composables/useCatalogs";
 import { useToast } from "~/composables/useToast";
 
 const route = useRoute();
 const router = useRouter();
 const { showToast } = useToast();
 const professional = (professionalsData as Professional[])[0]!;
+const { data: catalog, error: catalogError } = await useCatalogs();
+if (catalogError.value || !catalog.value) {
+  throw createError({
+    statusCode: 503,
+    statusMessage: "Catálogo temporariamente indisponível.",
+  });
+}
+const services = computed(() => catalog.value?.services ?? []);
+const neighborhoods = computed(() =>
+  (catalog.value?.neighborhoods ?? []).filter((item) => item.code !== "all"),
+);
 const tabs = [
   { id: "dados", label: "Dados do perfil", icon: "i-lucide-user-round" },
   { id: "portfolio", label: "Portfólio", icon: "i-lucide-images" },
@@ -63,6 +75,8 @@ async function selectTab(id: string) {
       <DashboardProfileEditor
         v-if="activeTab === 'dados'"
         :professional="professional"
+        :services="services"
+        :neighborhoods="neighborhoods"
         @save="
           showToast({
             title: 'Perfil atualizado',

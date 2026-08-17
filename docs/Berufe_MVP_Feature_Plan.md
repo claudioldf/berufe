@@ -106,7 +106,6 @@ Use Infobip's 2FA API only to start and verify professional SMS OTP challenges. 
 | `user_account_id`       | UUID      | Required foreign reference                                        |
 | `authentication_method` | enum      | `sms_otp` for professionals or `password` for admins              |
 | `token_digest`          | text      | Unique; raw token is never stored                                 |
-| `csrf_token_digest`     | text      | Binds the rotating CSRF token to the session                      |
 | `authenticated_at`      | timestamp | Required                                                          |
 | `last_active_at`        | timestamp | Required; writes may be throttled                                 |
 | `idle_expires_at`       | timestamp | Required                                                          |
@@ -160,7 +159,7 @@ This is the base of both trust and discovery. Without structured services and co
 
 1. The professional completes a guided form.
 2. They select services from Berufe’s approved residential renovation catalog.
-3. They select Joinville and the neighborhoods they serve. “All Joinville” is allowed.
+3. They select Joinville and the neighborhoods they serve. “All Joinville” is a derived selector represented by the all-city service-area record, not a managed neighborhood.
 4. They add a short introduction and declared years of experience.
 5. They may add Instagram and YouTube profile identifiers or profile URLs. Berufe validates the platform and profile shape, then stores canonical HTTPS URLs.
 6. The editor shows an inline representation of the public fields, and the professional submits the profile for approval.
@@ -723,6 +722,7 @@ The same vocabulary must power onboarding and Finder. A controlled catalog preve
 3. Stable codes/slugs become immutable after creation, referenced entries cannot be hard-deleted, and historical records keep their original references.
 4. Inactive entries disappear from new professional and public-search selections without changing existing historical records.
 5. New entries remain an explicit Berufe operations decision; professionals cannot create categories, services, or neighborhoods.
+6. “All Joinville” is derived in professional and public selectors and is not stored or managed as a neighborhood.
 
 #### 4. Suggested feature-scoped data schema
 
@@ -738,14 +738,17 @@ The same vocabulary must power onboarding and Finder. A controlled catalog preve
 
 **`service`**
 
-| Field         | Type     | Rules                         |
-| ------------- | -------- | ----------------------------- |
-| `id`          | UUID     | Primary key                   |
-| `category_id` | UUID     | Foreign reference to category |
-| `name`        | text     | Required                      |
-| `slug`        | text     | Unique                        |
-| `is_active`   | boolean  | Defaults to true              |
-| `sort_order`  | smallint | Required                      |
+| Field         | Type     | Rules                                                          |
+| ------------- | -------- | -------------------------------------------------------------- |
+| `id`          | UUID     | Primary key                                                    |
+| `category_id` | UUID     | Foreign reference to category                                  |
+| `name`        | text     | Required                                                       |
+| `slug`        | text     | Unique                                                         |
+| `icon`        | text     | Required; inherited from the selected category for new entries |
+| `description` | text     | Required                                                       |
+| `aliases`     | text[]   | Defaults to empty; no MVP administration UI                    |
+| `is_active`   | boolean  | Defaults to true                                               |
+| `sort_order`  | smallint | Required                                                       |
 
 **`neighborhood`**
 

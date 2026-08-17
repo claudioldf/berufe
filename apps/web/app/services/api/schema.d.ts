@@ -55,6 +55,129 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read the complete administrator-managed catalog */
+        get: operations["getAdminCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/catalog/services": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add a service to the controlled catalog */
+        post: operations["createAdminCatalogService"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/catalog/services/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Persist the complete deterministic service order */
+        put: operations["reorderAdminCatalogServices"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/catalog/services/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update mutable fields of a controlled service */
+        patch: operations["updateAdminCatalogService"];
+        trace?: never;
+    };
+    "/api/v1/admin/catalog/neighborhoods": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add a Joinville neighborhood to the controlled catalog */
+        post: operations["createAdminCatalogNeighborhood"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/catalog/neighborhoods/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Persist the complete deterministic neighborhood order */
+        put: operations["reorderAdminCatalogNeighborhoods"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/catalog/neighborhoods/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update mutable fields of a controlled Joinville neighborhood */
+        patch: operations["updateAdminCatalogNeighborhood"];
+        trace?: never;
+    };
     "/api/v1/catalog": {
         parameters: {
             query?: never;
@@ -193,7 +316,6 @@ export interface components {
         CurrentSessionData: {
             account: components["schemas"]["CurrentAccountSummary"];
             session: components["schemas"]["ApplicationSessionSummary"];
-            csrf_token: string;
         };
         CurrentAccountSummary: {
             /** Format: uuid */
@@ -217,6 +339,75 @@ export interface components {
         CatalogResponse: {
             data: components["schemas"]["CatalogData"];
             request_id: components["schemas"]["RequestId"];
+        };
+        AdminCatalogResponse: {
+            data: components["schemas"]["AdminCatalogData"];
+            request_id: components["schemas"]["RequestId"];
+        };
+        AdminCatalogData: {
+            categories: components["schemas"]["AdminCatalogCategory"][];
+            services: components["schemas"]["AdminCatalogService"][];
+            neighborhoods: components["schemas"]["AdminCatalogNeighborhood"][];
+        };
+        AdminCatalogCategory: {
+            /** Format: uuid */
+            id: string;
+            slug: string;
+            name: string;
+        };
+        AdminCatalogService: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            slug: string;
+            categorySlug: string;
+            description: string;
+            isActive: boolean;
+            sortOrder: number;
+        };
+        AdminCatalogNeighborhood: {
+            code: string;
+            name: string;
+            /** @constant */
+            stateCode: "SC";
+            /** @constant */
+            city: "Joinville";
+            isActive: boolean;
+            sortOrder: number;
+        };
+        AdminCatalogServiceCreateRequest: {
+            name: string;
+            slug: string;
+            categorySlug: string;
+            description: string;
+        };
+        AdminCatalogServiceUpdateRequest: {
+            name?: string;
+            categorySlug?: string;
+            description?: string;
+            isActive?: boolean;
+        };
+        AdminCatalogServiceOrderRequest: {
+            ids: string[];
+        };
+        AdminCatalogNeighborhoodCreateRequest: {
+            name: string;
+            code: string;
+            /** @constant */
+            stateCode: "SC";
+            /** @constant */
+            city: "Joinville";
+        };
+        AdminCatalogNeighborhoodUpdateRequest: {
+            name?: string;
+            /** @constant */
+            stateCode?: "SC";
+            /** @constant */
+            city?: "Joinville";
+            isActive?: boolean;
+        };
+        AdminCatalogNeighborhoodOrderRequest: {
+            codes: string[];
         };
         CatalogData: {
             categories: components["schemas"]["PublicServiceCategory"][];
@@ -276,7 +467,68 @@ export interface components {
             total_pages: number;
         };
     };
-    responses: never;
+    responses: {
+        /** @description An active password-authenticated administrator session is required. */
+        AdminCatalogUnauthorized: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description The account or exact request origin is not permitted. */
+        AdminCatalogForbidden: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description The requested entry or controlled category does not exist. */
+        AdminCatalogNotFound: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description A stable identifier conflicts or the submitted order is stale or incomplete. */
+        AdminCatalogConflict: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description One or more catalog fields are invalid. */
+        AdminCatalogInvalid: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description Catalog persistence is temporarily unavailable. */
+        AdminCatalogUnavailable: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+    };
     parameters: {
         /** @description One-based result page. */
         Page: number;
@@ -319,6 +571,16 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PhoneOtpChallengeResponse"];
+                };
+            };
+            /** @description The exact browser origin is invalid. */
+            403: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
             /** @description The phone is invalid or SMS delivery was rejected. */
@@ -376,6 +638,16 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PhoneOtpVerificationResponse"];
+                };
+            };
+            /** @description The exact browser origin is invalid. */
+            403: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
             /** @description The code or browser challenge is invalid, expired, or consumed. */
@@ -467,6 +739,213 @@ export interface operations {
             };
         };
     };
+    getAdminCatalog: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Active and inactive catalog entries in their configured order. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminCatalogResponse"];
+                };
+            };
+            401: components["responses"]["AdminCatalogUnauthorized"];
+            503: components["responses"]["AdminCatalogUnavailable"];
+        };
+    };
+    createAdminCatalogService: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminCatalogServiceCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description The service was appended to the controlled catalog. */
+            201: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminCatalogResponse"];
+                };
+            };
+            401: components["responses"]["AdminCatalogUnauthorized"];
+            403: components["responses"]["AdminCatalogForbidden"];
+            404: components["responses"]["AdminCatalogNotFound"];
+            409: components["responses"]["AdminCatalogConflict"];
+            422: components["responses"]["AdminCatalogInvalid"];
+            503: components["responses"]["AdminCatalogUnavailable"];
+        };
+    };
+    reorderAdminCatalogServices: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminCatalogServiceOrderRequest"];
+            };
+        };
+        responses: {
+            /** @description The complete service order was persisted. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminCatalogResponse"];
+                };
+            };
+            401: components["responses"]["AdminCatalogUnauthorized"];
+            403: components["responses"]["AdminCatalogForbidden"];
+            409: components["responses"]["AdminCatalogConflict"];
+            503: components["responses"]["AdminCatalogUnavailable"];
+        };
+    };
+    updateAdminCatalogService: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminCatalogServiceUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description The service was updated without changing its stable slug. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminCatalogResponse"];
+                };
+            };
+            401: components["responses"]["AdminCatalogUnauthorized"];
+            403: components["responses"]["AdminCatalogForbidden"];
+            404: components["responses"]["AdminCatalogNotFound"];
+            422: components["responses"]["AdminCatalogInvalid"];
+            503: components["responses"]["AdminCatalogUnavailable"];
+        };
+    };
+    createAdminCatalogNeighborhood: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminCatalogNeighborhoodCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description The neighborhood was appended to the controlled catalog. */
+            201: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminCatalogResponse"];
+                };
+            };
+            401: components["responses"]["AdminCatalogUnauthorized"];
+            403: components["responses"]["AdminCatalogForbidden"];
+            409: components["responses"]["AdminCatalogConflict"];
+            422: components["responses"]["AdminCatalogInvalid"];
+            503: components["responses"]["AdminCatalogUnavailable"];
+        };
+    };
+    reorderAdminCatalogNeighborhoods: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminCatalogNeighborhoodOrderRequest"];
+            };
+        };
+        responses: {
+            /** @description The complete neighborhood order was persisted. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminCatalogResponse"];
+                };
+            };
+            401: components["responses"]["AdminCatalogUnauthorized"];
+            403: components["responses"]["AdminCatalogForbidden"];
+            409: components["responses"]["AdminCatalogConflict"];
+            503: components["responses"]["AdminCatalogUnavailable"];
+        };
+    };
+    updateAdminCatalogNeighborhood: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminCatalogNeighborhoodUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description The neighborhood was updated without changing its stable code. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminCatalogResponse"];
+                };
+            };
+            401: components["responses"]["AdminCatalogUnauthorized"];
+            403: components["responses"]["AdminCatalogForbidden"];
+            404: components["responses"]["AdminCatalogNotFound"];
+            409: components["responses"]["AdminCatalogConflict"];
+            422: components["responses"]["AdminCatalogInvalid"];
+            503: components["responses"]["AdminCatalogUnavailable"];
+        };
+    };
     getPublicCatalog: {
         parameters: {
             query?: never;
@@ -531,7 +1010,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description The account role, CSRF token, or exact request origin is not permitted. */
+            /** @description The account role or exact request origin is not permitted. */
             403: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
@@ -572,7 +1051,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The active account/session summary and a newly rotated CSRF token. */
+            /** @description The active account and session summary. */
             200: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
@@ -642,7 +1121,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description The CSRF token or exact request origin is invalid. */
+            /** @description The exact request origin is invalid. */
             403: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];

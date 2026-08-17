@@ -18,7 +18,6 @@ export interface CurrentSession {
 export interface RestoredApplicationSession {
   account: CurrentAccount;
   session: CurrentSession;
-  csrfToken: string;
 }
 
 export async function getCurrentApplicationSession(
@@ -48,7 +47,6 @@ export async function getCurrentApplicationSession(
       idleExpiresAt: data.data.session.idle_expires_at,
       absoluteExpiresAt: data.data.session.absolute_expires_at,
     },
-    csrfToken: data.data.csrf_token,
   };
 }
 

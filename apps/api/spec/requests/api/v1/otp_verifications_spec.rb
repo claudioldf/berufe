@@ -13,6 +13,22 @@ RSpec.describe "Phone OTP verification", type: :request, openapi: true do
 
   after { travel_back }
 
+  it "refuses to create a session for a missing or cross-site browser origin" do
+    _challenge, challenge_token = issue_challenge
+    invalid_origins = [nil, "https://untrusted.example", "#{ENV.fetch("WEB_ORIGIN")}/", "null"]
+
+    invalid_origins.each_with_index do |origin, index|
+      expect do
+        verify_json(challenge_token:, code: "123456", request_id: "otp-verify-origin-#{index}", origin:)
+      end.not_to change(ApplicationSession, :count)
+
+      expect(response).to have_http_status(:forbidden)
+      expect(response.parsed_body.dig("error", "code")).to eq("request_not_allowed")
+      expect(response.headers["Set-Cookie"]).to be_nil
+    end
+    assert_api_conform(status: 403)
+  end
+
   it "verifies through the provider, consumes the challenge, and creates an opaque professional session" do
     now = Time.zone.parse("2026-08-15 12:00:00 UTC")
     travel_to(now)
@@ -182,12 +198,12 @@ RSpec.describe "Phone OTP verification", type: :request, openapi: true do
     token
   end
 
-  def verify_json(challenge_token:, code:, request_id:)
-    post "/api/v1/auth/otp/verifications",
-      params: {challenge_token:, code:}.to_json,
-      headers: {
-        "CONTENT_TYPE" => "application/json",
-        "X-Request-Id" => request_id
-      }
+  def verify_json(challenge_token:, code:, request_id:, origin: ENV.fetch("WEB_ORIGIN"))
+    headers = {
+      "CONTENT_TYPE" => "application/json",
+      "X-Request-Id" => request_id
+    }
+    headers["Origin"] = origin if origin
+    post "/api/v1/auth/otp/verifications", params: {challenge_token:, code:}.to_json, headers:
   end
 end

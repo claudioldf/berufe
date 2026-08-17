@@ -1,12 +1,11 @@
-import { createApiClient, setApiCsrfToken } from "@app/services/api/client";
+import { createApiClient } from "@app/services/api/client";
 
 afterEach(() => {
-  setApiCsrfToken(undefined);
   window.localStorage.clear();
 });
 
 describe("API client", () => {
-  it("includes credentials and a validated request ID without CSRF on safe reads", async () => {
+  it("includes credentials and a validated request ID on safe reads", async () => {
     const fetch = vi.fn(async (_request: Request) =>
       Promise.resolve(
         new Response(
@@ -21,7 +20,6 @@ describe("API client", () => {
     const client = createApiClient({
       baseUrl: "http://localhost:3001/",
       fetch,
-      csrfToken: () => "csrf-token",
       requestId: () => "browser-request-123",
     });
 
@@ -30,7 +28,6 @@ describe("API client", () => {
 
     expect(result.data?.data.status).toBe("ok");
     expect(request?.credentials).toBe("include");
-    expect(request?.headers.get("X-CSRF-Token")).toBeNull();
     expect(request?.headers.get("X-Request-Id")).toBe("browser-request-123");
     expect(request?.url).toBe("http://localhost:3001/api/v1/status");
   });
@@ -60,11 +57,10 @@ describe("API client", () => {
     expect(requestId).not.toContain("5547");
   });
 
-  it("sends the restored CSRF token from memory without browser storage", async () => {
+  it("authorizes mutations with the session cookie alone and stores nothing in the browser", async () => {
     const fetch = vi.fn(async () =>
       Promise.resolve(new Response(null, { status: 204 })),
     );
-    setApiCsrfToken("rotated-memory-only-csrf-token");
     const client = createApiClient({
       baseUrl: "http://localhost:3001",
       fetch,
@@ -73,9 +69,8 @@ describe("API client", () => {
     await client.DELETE("/api/v1/session");
 
     const request = fetch.mock.calls[0]?.[0];
-    expect(request?.headers.get("X-CSRF-Token")).toBe(
-      "rotated-memory-only-csrf-token",
-    );
+    expect(request?.credentials).toBe("include");
+    expect(request?.headers.get("X-Request-Id")).toMatch(/^[0-9a-f-]{36}$/);
     expect(window.localStorage.length).toBe(0);
   });
 });

@@ -11,10 +11,10 @@ cd ../..
 cp .env.example .env
 ```
 
-Populate the server-only Infobip values and an E.164 `INFOBIP_TEST_NUMBERS`
-allowlist in `.env` before starting the development stack. Automated tests
-override the adapter and use `FAKE_SMS_OTP_CODE`; normal runtime traffic never
-falls back to fake delivery.
+Local development uses the fake SMS adapter and local storage by default. To
+exercise Infobip locally, set `SMS_OTP_ADAPTER=infobip` and populate the
+server-only Infobip values plus an E.164 `INFOBIP_TEST_NUMBERS` allowlist in
+`.env`. Adapter selection is explicit and never falls back at runtime.
 
 ## Start
 

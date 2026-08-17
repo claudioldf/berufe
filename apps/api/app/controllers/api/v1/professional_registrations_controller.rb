@@ -5,8 +5,6 @@ module Api
     class ProfessionalRegistrationsController < BaseController
       before_action :prevent_caching
       before_action :authenticate_application_session!
-      before_action :verify_csrf_and_origin!
-
       def update
         authorize Current.user_account, :complete_registration?
         profile = ProfessionalRegistration.new.call(

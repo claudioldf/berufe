@@ -11,7 +11,8 @@ import { toIdentifier } from "~/utils/text";
 const props = defineProps<{
   tab: CatalogTab;
   entry: CatalogEntry | null;
-  categories: CatalogCategoryOption[];
+  categories: readonly CatalogCategoryOption[];
+  disabled?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -76,12 +77,18 @@ function submit() {
         autocomplete="off"
         maxlength="80"
         required
+        :disabled="props.disabled"
       />
     </label>
 
     <label v-if="props.tab === 'services'" class="catalog-form__field">
       <span>Categoria</span>
-      <select v-model="form.category" name="catalog-category" required>
+      <select
+        v-model="form.category"
+        name="catalog-category"
+        required
+        :disabled="props.disabled"
+      >
         <option
           v-for="category in props.categories"
           :key="category.id"
@@ -102,6 +109,7 @@ function submit() {
         maxlength="2"
         pattern="[A-Za-z]{2}"
         required
+        :disabled="props.disabled"
       />
     </label>
 
@@ -114,6 +122,7 @@ function submit() {
         autocomplete="address-level2"
         maxlength="80"
         required
+        :disabled="props.disabled"
       />
     </label>
 
@@ -127,7 +136,7 @@ function submit() {
         maxlength="80"
         pattern="[a-z0-9-]+"
         required
-        :disabled="Boolean(props.entry)"
+        :disabled="Boolean(props.entry) || props.disabled"
         @input="trackIdentifierEdit"
       />
       <small v-if="props.entry">
@@ -146,6 +155,8 @@ function submit() {
         name="catalog-description"
         rows="3"
         maxlength="240"
+        required
+        :disabled="props.disabled"
       />
     </label>
 
@@ -153,11 +164,16 @@ function submit() {
       <button
         type="button"
         class="catalog-form__cancel"
+        :disabled="props.disabled"
         @click="emit('cancel')"
       >
         Cancelar
       </button>
-      <button type="submit" class="catalog-form__save">
+      <button
+        type="submit"
+        class="catalog-form__save"
+        :disabled="props.disabled"
+      >
         {{ props.entry ? "Salvar alterações" : "Adicionar entrada" }}
       </button>
     </div>

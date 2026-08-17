@@ -1,14 +1,21 @@
 <script setup lang="ts">
-import catalogsData from "@data/catalogs.json";
 import professionalsData from "@data/professionals.json";
-import type { Neighborhood, Professional, Service } from "~/types";
+import type { Professional } from "~/types";
+import { useCatalogs } from "~/composables/useCatalogs";
 import { useProfessionalSearch } from "~/composables/useProfessionalSearch";
 import { useToast } from "~/composables/useToast";
 import { buildWhatsAppUrl } from "~/utils/contact";
 
 const { showToast } = useToast();
-const services = catalogsData.services as Service[];
-const neighborhoods = catalogsData.neighborhoods as Neighborhood[];
+const { data: catalog, error: catalogError } = await useCatalogs();
+if (catalogError.value || !catalog.value) {
+  throw createError({
+    statusCode: 503,
+    statusMessage: "Catálogo temporariamente indisponível.",
+  });
+}
+const services = catalog.value.services;
+const neighborhoods = catalog.value.neighborhoods;
 const professionals = professionalsData as Professional[];
 const {
   serviceInput,
@@ -69,6 +76,8 @@ function announceContact() {
         <PublicServiceSearch
           v-model:service="serviceInput"
           v-model:neighborhood="neighborhoodInput"
+          :services="services"
+          :neighborhoods="neighborhoods"
           compact
           @submit="submitSearch"
         />

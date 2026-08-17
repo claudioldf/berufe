@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import catalogsData from "@data/catalogs.json";
 import type { Neighborhood, Service } from "~/types";
 
 withDefaults(
   defineProps<{
+    services: Service[];
+    neighborhoods: Neighborhood[];
     compact?: boolean;
   }>(),
   {
@@ -17,8 +18,6 @@ const emit = defineEmits<{
 
 const service = defineModel<string>("service", { default: "" });
 const neighborhood = defineModel<string>("neighborhood", { default: "all" });
-const services = catalogsData.services as Service[];
-const neighborhoods = catalogsData.neighborhoods as Neighborhood[];
 
 function submit() {
   const normalizedService = service.value.trim();

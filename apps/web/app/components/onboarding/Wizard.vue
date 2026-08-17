@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, nextTick, shallowRef, useTemplateRef, watch } from "vue";
-import catalogsData from "@data/catalogs.json";
 import type {
   Neighborhood,
   OnboardingStepId,
@@ -13,12 +12,13 @@ import {
   useProfessionalOnboarding,
 } from "~/composables/useProfessionalOnboarding";
 
+defineProps<{
+  services: Service[];
+  neighborhoods: Neighborhood[];
+}>();
+
 const route = useRoute();
 const router = useRouter();
-const services = catalogsData.services as Service[];
-const neighborhoods = catalogsData.neighborhoods.filter(
-  (item) => item.code !== "all",
-) as Neighborhood[];
 const {
   state,
   hydrated,

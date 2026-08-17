@@ -45,6 +45,16 @@ RSpec.describe Berufe::Environment do
     environment
   end
 
+  def fake_environment(name: "local")
+    common_environment.merge(
+      "BERUFE_ENV" => name,
+      "SMS_OTP_ADAPTER" => "fake",
+      "MEDIA_STORAGE_ADAPTER" => "local",
+      "FAKE_SMS_OTP_CODE" => "123456",
+      "LOCAL_STORAGE_ROOT" => "/tmp/berufe-#{name}"
+    )
+  end
+
   def local_environment
     infobip_environment(name: "local", media_storage: "local")
   end
@@ -53,10 +63,34 @@ RSpec.describe Berufe::Environment do
     infobip_environment(name: "production", media_storage: "r2")
   end
 
-  it "selects Infobip for every non-test environment" do
+  it "supports explicit fake and restricted Infobip adapters in local development" do
+    fake_config = described_class.load!(environment: fake_environment)
+    infobip_config = described_class.load!(environment: local_environment)
+
+    expect(fake_config).to have_attributes(
+      name: "local",
+      sms_otp_adapter: "fake",
+      media_storage_adapter: "local"
+    )
+    expect(infobip_config).to have_attributes(
+      name: "local",
+      sms_otp_adapter: "infobip",
+      media_storage_adapter: "local"
+    )
+  end
+
+  it "uses fake delivery and local storage for previews" do
+    config = described_class.load!(environment: fake_environment(name: "preview"))
+
+    expect(config).to have_attributes(
+      name: "preview",
+      sms_otp_adapter: "fake",
+      media_storage_adapter: "local"
+    )
+  end
+
+  it "selects restricted Infobip for staging and integration and production Infobip for production" do
     {
-      "local" => "local",
-      "preview" => "local",
       "staging" => "r2",
       "integration" => "r2",
       "production" => "r2"
@@ -68,6 +102,21 @@ RSpec.describe Berufe::Environment do
       expect(config.sms_otp_adapter).to eq("infobip")
       expect(config.media_storage_adapter).to eq(media_storage)
     end
+  end
+
+  it "defaults Rails development processes to fake delivery and local storage" do
+    environment = common_environment.merge(
+      "FAKE_SMS_OTP_CODE" => "123456",
+      "LOCAL_STORAGE_ROOT" => "/tmp/berufe-local"
+    )
+
+    config = described_class.load!(environment:)
+
+    expect(config).to have_attributes(
+      name: "local",
+      sms_otp_adapter: "fake",
+      media_storage_adapter: "local"
+    )
   end
 
   it "defaults Rails test processes to fake and local adapters" do
@@ -83,13 +132,6 @@ RSpec.describe Berufe::Environment do
     expect(config.name).to eq("test")
     expect(config.sms_otp_adapter).to eq("fake")
     expect(config.media_storage_adapter).to eq("local")
-  end
-
-  it "rejects fake delivery outside automated tests" do
-    environment = local_environment.merge("SMS_OTP_ADAPTER" => "fake", "FAKE_SMS_OTP_CODE" => "123456")
-
-    expect { described_class.load!(environment:) }
-      .to raise_error(described_class::InvalidConfiguration, /SMS_OTP_ADAPTER must be infobip for local/)
   end
 
   it "requires integration-scoped credentials and an allowlist outside production" do

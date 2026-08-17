@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_15_220000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_16_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -46,7 +46,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_15_220000) do
     t.datetime "authenticated_at", null: false
     t.text "authentication_method", null: false
     t.datetime "created_at", null: false
-    t.text "csrf_token_digest", null: false
     t.datetime "idle_expires_at", null: false
     t.datetime "last_active_at", null: false
     t.datetime "revoked_at"
@@ -60,12 +59,29 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_15_220000) do
     t.index ["user_account_id"], name: "index_application_sessions_on_user_account_id"
     t.check_constraint "absolute_expires_at > authenticated_at", name: "application_sessions_absolute_after_authentication"
     t.check_constraint "authentication_method = ANY (ARRAY['sms_otp'::text, 'password'::text])", name: "application_sessions_known_authentication_method"
-    t.check_constraint "csrf_token_digest ~ '^[0-9a-f]{64}$'::text", name: "application_sessions_csrf_digest_format"
     t.check_constraint "idle_expires_at <= absolute_expires_at", name: "application_sessions_idle_within_absolute"
     t.check_constraint "idle_expires_at > last_active_at", name: "application_sessions_idle_after_activity"
     t.check_constraint "last_active_at >= authenticated_at", name: "application_sessions_activity_after_authentication"
     t.check_constraint "revoked_at IS NULL OR revoked_at >= authenticated_at", name: "application_sessions_revoked_after_authentication"
     t.check_constraint "token_digest ~ '^[0-9a-f]{64}$'::text", name: "application_sessions_token_digest_format"
+  end
+
+  create_table "catalog_change_events", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.text "action", null: false
+    t.uuid "admin_user_id", null: false
+    t.text "catalog_type", null: false
+    t.jsonb "change_data", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.text "request_id", null: false
+    t.text "target_identifier", null: false
+    t.index ["admin_user_id", "created_at"], name: "index_catalog_change_events_on_admin_user_id_and_created_at"
+    t.index ["admin_user_id"], name: "index_catalog_change_events_on_admin_user_id"
+    t.index ["catalog_type", "target_identifier", "created_at"], name: "index_catalog_changes_on_target_and_created_at"
+    t.check_constraint "action = ANY (ARRAY['created'::text, 'updated'::text, 'activated'::text, 'deactivated'::text, 'reordered'::text])", name: "catalog_change_events_known_action"
+    t.check_constraint "catalog_type = ANY (ARRAY['service'::text, 'neighborhood'::text])", name: "catalog_change_events_known_catalog_type"
+    t.check_constraint "jsonb_typeof(change_data) = 'object'::text", name: "catalog_change_events_change_data_object"
+    t.check_constraint "request_id ~ '^[A-Za-z0-9._-]{1,100}$'::text", name: "catalog_change_events_request_id_format"
+    t.check_constraint "target_identifier <> ''::text", name: "catalog_change_events_target_present"
   end
 
   create_table "good_job_batches", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -179,6 +195,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_15_220000) do
     t.index "state_code, city_code, lower(name)", name: "index_active_neighborhoods_on_location_and_name", unique: true, where: "is_active"
     t.index ["sort_order", "code"], name: "index_neighborhoods_on_sort_order_and_code"
     t.check_constraint "btrim(name) <> ''::text", name: "neighborhoods_name_present"
+    t.check_constraint "char_length(city_code) <= 80", name: "neighborhoods_city_length"
+    t.check_constraint "char_length(code) <= 80", name: "neighborhoods_code_length"
+    t.check_constraint "char_length(name) <= 80", name: "neighborhoods_name_length"
     t.check_constraint "city_code = 'Joinville'::text", name: "neighborhoods_launch_city"
     t.check_constraint "code ~ '^[a-z0-9]+(-[a-z0-9]+)*$'::text", name: "neighborhoods_code_format"
     t.check_constraint "sort_order >= 0", name: "neighborhoods_sort_order_nonnegative"
@@ -265,6 +284,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_15_220000) do
     t.index ["sort_order", "slug"], name: "index_services_on_sort_order_and_slug"
     t.check_constraint "btrim(description) <> ''::text", name: "services_description_present"
     t.check_constraint "btrim(name) <> ''::text", name: "services_name_present"
+    t.check_constraint "char_length(description) <= 240", name: "services_description_length"
+    t.check_constraint "char_length(name) <= 80", name: "services_name_length"
+    t.check_constraint "char_length(slug) <= 80", name: "services_slug_length"
     t.check_constraint "slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'::text", name: "services_slug_format"
     t.check_constraint "sort_order >= 0", name: "services_sort_order_nonnegative"
   end
@@ -294,6 +316,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_15_220000) do
 
   add_foreign_key "admin_access_events", "user_accounts", column: "admin_user_id"
   add_foreign_key "application_sessions", "user_accounts"
+  add_foreign_key "catalog_change_events", "user_accounts", column: "admin_user_id"
   add_foreign_key "professional_profiles", "user_accounts"
   add_foreign_key "services", "service_categories", column: "category_id"
 end

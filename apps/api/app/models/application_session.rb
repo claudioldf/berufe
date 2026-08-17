@@ -15,19 +15,17 @@ class ApplicationSession < ApplicationRecord
   belongs_to :user_account
 
   validates :authentication_method, inclusion: {in: AUTHENTICATION_METHODS.values}
-  validates :token_digest, :csrf_token_digest, format: {with: /\A[0-9a-f]{64}\z/}
+  validates :token_digest, format: {with: /\A[0-9a-f]{64}\z/}
   validates :authenticated_at, :last_active_at, :idle_expires_at, :absolute_expires_at, presence: true
   validate :authentication_method_matches_role
 
   def self.issue!(user_account:, now: Time.current)
     session_token = generate_token
-    csrf_token = generate_token
     durations = SESSION_DURATIONS.fetch(user_account.role)
     session = create!(
       user_account:,
       authentication_method: AUTHENTICATION_METHODS.fetch(user_account.role),
       token_digest: digest_token(session_token),
-      csrf_token_digest: SessionSecurityDigest.call(purpose: "csrf_token", value: csrf_token),
       authenticated_at: now,
       last_active_at: now,
       idle_expires_at: now + durations.fetch(:idle),
@@ -59,16 +57,6 @@ class ApplicationSession < ApplicationRecord
       idle_expires_at: [now + durations.fetch(:idle), absolute_expires_at].min
     )
     true
-  end
-
-  def rotate_csrf_token!(now: Time.current)
-    with_lock do
-      next unless active?(now:) && user_account.active?
-
-      csrf_token = self.class.generate_token
-      update!(csrf_token_digest: SessionSecurityDigest.call(purpose: "csrf_token", value: csrf_token))
-      csrf_token
-    end
   end
 
   def revoke!(now: Time.current)

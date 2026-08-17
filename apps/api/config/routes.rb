@@ -9,6 +9,13 @@ Rails.application.routes.draw do
       resource :session, only: %i[show destroy]
       namespace :admin do
         resource :session, only: :create
+        resource :catalog, only: :show
+        post "catalog/services", to: "catalog_services#create"
+        patch "catalog/services/:id", to: "catalog_services#update"
+        put "catalog/services/order", to: "catalog_services#reorder"
+        post "catalog/neighborhoods", to: "catalog_neighborhoods#create"
+        patch "catalog/neighborhoods/:code", to: "catalog_neighborhoods#update"
+        put "catalog/neighborhoods/order", to: "catalog_neighborhoods#reorder"
       end
       resources :otp_challenges, only: :create, path: "auth/otp/challenges"
       resources :otp_verifications, only: :create, path: "auth/otp/verifications"

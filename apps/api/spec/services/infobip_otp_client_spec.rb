@@ -101,6 +101,32 @@ RSpec.describe InfobipOtpClient do
     end
   end
 
+  it "never logs provider response bodies, challenge references, or OTP values" do
+    messages = []
+    logger = double("logger")
+    allow(logger).to receive(:info) { |payload| messages << payload }
+    allow(Rails).to receive(:logger).and_return(logger)
+    start_client, = build_client(
+      InfobipOtpClientSpecSupport::Response.new("200", '{"pinId":"private-reference"}', {}),
+      logger:
+    )
+    verify_client, = build_client(
+      InfobipOtpClientSpecSupport::Response.new("200", '{"verified":true,"private":"provider-body"}', {}),
+      logger:
+    )
+
+    start_client.start_challenge(phone: "+5547999999999")
+    verify_client.verify_challenge(reference: "private-reference", code: "123456")
+
+    expect(messages.size).to eq(2)
+    expect(messages.to_json).not_to include(
+      "+5547999999999",
+      "private-reference",
+      "123456",
+      "provider-body"
+    )
+  end
+
   it "verifies the provider challenge without exposing a provider session" do
     client, http = build_client(InfobipOtpClientSpecSupport::Response.new("200", '{"verified":true}', {}))
 

@@ -5,8 +5,6 @@ module Api
     class SessionsController < BaseController
       before_action :prevent_caching
       before_action :authenticate_application_session!
-      before_action :verify_csrf_and_origin!, only: :destroy
-
       rescue_from ActiveRecord::ActiveRecordError do
         render_api_error(
           code: "session_unavailable",
@@ -17,14 +15,9 @@ module Api
 
       def show
         authorize Current.application_session
-        csrf_token = Current.application_session.rotate_csrf_token!
-        return render_authentication_required unless csrf_token
 
         render json: {
-          data: CurrentSessionSerializer.new(
-            application_session: Current.application_session,
-            csrf_token:
-          ),
+          data: CurrentSessionSerializer.new(application_session: Current.application_session),
           request_id: Current.request_id
         }
       end

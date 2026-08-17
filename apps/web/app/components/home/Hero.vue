@@ -1,8 +1,17 @@
 <script setup lang="ts">
 import { onMounted, shallowRef } from "vue";
-import type { Professional, ServiceSearchPayload } from "~/types";
+import type {
+  Neighborhood,
+  Professional,
+  Service,
+  ServiceSearchPayload,
+} from "~/types";
 
-defineProps<{ featuredProfessional?: Professional }>();
+defineProps<{
+  featuredProfessional?: Professional;
+  services: Service[];
+  neighborhoods: Neighborhood[];
+}>();
 defineEmits<{ search: [payload: ServiceSearchPayload] }>();
 
 const heroImages = [
@@ -58,7 +67,11 @@ onMounted(() => {
           Encontre profissionais de reforma e manutenção com evidências claras,
           trabalhos reais e relações profissionais confirmadas.
         </p>
-        <PublicServiceSearch @submit="$emit('search', $event)" />
+        <PublicServiceSearch
+          :services="services"
+          :neighborhoods="neighborhoods"
+          @submit="$emit('search', $event)"
+        />
       </div>
 
       <div class="hero__visual" aria-label="Exemplo de profissional da Berufe">

@@ -1,11 +1,20 @@
 <script setup lang="ts">
-import catalogsData from "@data/catalogs.json";
+import { computed } from "vue";
 import professionalsData from "@data/professionals.json";
-import type { Professional, Service } from "~/types";
+import type { Professional } from "~/types";
+import { useCatalogs } from "~/composables/useCatalogs";
 import { findService } from "~/utils/services";
 
 const router = useRouter();
-const services = catalogsData.services as Service[];
+const { data: catalog, error: catalogError } = await useCatalogs();
+if (catalogError.value || !catalog.value) {
+  throw createError({
+    statusCode: 503,
+    statusMessage: "Catálogo temporariamente indisponível.",
+  });
+}
+const services = computed(() => catalog.value?.services ?? []);
+const neighborhoods = computed(() => catalog.value?.neighborhoods ?? []);
 const featured = (professionalsData as Professional[]).slice(0, 3);
 
 useSeoMeta({
@@ -15,7 +24,7 @@ useSeoMeta({
 });
 
 async function search(payload: { service: string; neighborhood: string }) {
-  const service = findService(services, payload.service);
+  const service = findService(services.value, payload.service);
   await router.push({
     path: "/encontrar",
     query: {
@@ -28,7 +37,12 @@ async function search(payload: { service: string; neighborhood: string }) {
 
 <template>
   <div>
-    <HomeHero :featured-professional="featured[0]" @search="search" />
+    <HomeHero
+      :featured-professional="featured[0]"
+      :services="services"
+      :neighborhoods="neighborhoods"
+      @search="search"
+    />
 
     <HomeCategories :services="services" />
 

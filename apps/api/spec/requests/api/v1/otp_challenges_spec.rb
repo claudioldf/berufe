@@ -17,6 +17,20 @@ RSpec.describe "Phone OTP challenge requests", type: :request, openapi: true do
     travel_back
   end
 
+  it "refuses to start a challenge for a missing or cross-site browser origin" do
+    invalid_origins = [nil, "https://untrusted.example", "#{ENV.fetch("WEB_ORIGIN")}/", "null"]
+
+    invalid_origins.each_with_index do |origin, index|
+      expect do
+        post_json(phone: "(47) 99999-1111", request_id: "otp-challenge-origin-#{index}", origin:)
+      end.not_to change(OtpChallenge, :count)
+
+      expect(response).to have_http_status(:forbidden)
+      expect(response.parsed_body.dig("error", "code")).to eq("request_not_allowed")
+    end
+    assert_api_conform(status: 403)
+  end
+
   it "normalizes the phone, starts synchronously, and returns only the browser challenge token" do
     allow(otp_client).to receive(:start_challenge)
       .with(phone: "+5547999991111")
@@ -173,14 +187,14 @@ RSpec.describe "Phone OTP challenge requests", type: :request, openapi: true do
 
   private
 
-  def post_json(phone:, request_id:, remote_ip: "203.0.113.5")
-    post "/api/v1/auth/otp/challenges",
-      params: {phone:}.to_json,
-      headers: {
-        "CONTENT_TYPE" => "application/json",
-        "REMOTE_ADDR" => remote_ip,
-        "X-Request-Id" => request_id
-      }
+  def post_json(phone:, request_id:, remote_ip: "203.0.113.5", origin: ENV.fetch("WEB_ORIGIN"))
+    headers = {
+      "CONTENT_TYPE" => "application/json",
+      "REMOTE_ADDR" => remote_ip,
+      "X-Request-Id" => request_id
+    }
+    headers["Origin"] = origin if origin
+    post "/api/v1/auth/otp/challenges", params: {phone:}.to_json, headers:
   end
 
   def allow_accepted_challenges

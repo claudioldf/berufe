@@ -85,9 +85,9 @@ Apply these rules whenever they are relevant to the story:
 
 - `.env.example` lists required variable names and safe development defaults without secrets.
 - Rails validates required environment variables at boot for the selected environment.
-- Development uses a local-disk storage adapter and a restricted Infobip profile with allowlisted test numbers; automated tests alone use the fake SMS-OTP adapter.
+- Development uses local-disk storage and selects the fake SMS-OTP adapter by default. A developer may explicitly select a restricted Infobip profile with allowlisted test numbers through `.env`; adapter selection never falls back at runtime.
 - Production SMS OTP uses Infobip's 2FA API through a purpose-specific adapter. The integration documents application/message-template identifiers, Brazilian sender-registration prerequisites, API-key ownership, delivery limits, challenge verification, and provider-failure behavior.
-- Production credentials are dedicated to Berufe. Stable staging, local development, pull-request previews, and integration use a separate restricted Infobip application/profile and allowlisted test numbers, never production credentials or real-user data.
+- Production credentials are dedicated to Berufe. Stable staging and integration use a separate restricted Infobip application/profile and allowlisted test numbers. Local development uses that restricted profile only when explicitly selected; pull-request previews use the fake adapter and receive no provider credentials.
 - Infobip is not Berufe's account, session, authorization, or administrator-password provider.
 - Production-only credentials remain server-side and cannot enter the Nuxt client bundle.
 - Local, pull-request preview, stable staging, and production configuration are clearly separated.
@@ -136,9 +136,9 @@ Apply these rules whenever they are relevant to the story:
 - `apps/contracts/openapi.yaml` is a valid OpenAPI 3.1.0 document and the source of truth for all `/api/v1` product operations.
 - Successful and failed JSON responses follow the contract; the shared error envelope contains `code`, safe `message`, optional `field_errors` as field-name-to-message-array entries, and string `request_id`.
 - Lists support deterministic ordering and pagination when needed.
-- The contract declares the Rails application-session cookie and CSRF header security requirements.
+- The contract declares the Rails application-session cookie security requirement and the exact-origin rule for authenticated mutations.
 - `apps/web` provides `api:generate` using `openapi-typescript ../contracts/openapi.yaml -o app/services/api/schema.d.ts`; the generated file is committed.
-- `app/services/api/client.ts` uses `openapi-fetch` to handle the API base URL, credentials, CSRF header, and typed operations; `errors.ts` normalizes the shared error envelope.
+- `app/services/api/client.ts` uses `openapi-fetch` to handle the API base URL, credentials, and typed operations; `errors.ts` normalizes the shared error envelope.
 - Rails request specs use `openapi_first` against the same file to validate important requests/responses and report operation/status coverage.
 - A sample endpoint proves browser-to-Nuxt-to-Rails communication and contract validation in Compose.
 
@@ -202,7 +202,7 @@ Apply these rules whenever they are relevant to the story:
 **Acceptance criteria:**
 
 - Migrations create `service_categories`, `services`, and `neighborhoods` with the constraints defined in Feature E2.
-- Seed data using ./apps/web/data/catalogs.json.
+- Seed data using ./apps/web/data/catalogs.json. The `all` entry is a derived “Toda Joinville” selector and is not persisted as a neighborhood.
 - Seeds are idempotent and use stable slugs/codes plus deterministic `sort_order` values for every reorderable catalog, including neighborhoods.
 - Public read endpoints return active entries in configured order.
 
@@ -217,7 +217,7 @@ Apply these rules whenever they are relevant to the story:
 
 - The login page accepts and normalizes Brazilian numbers to E.164.
 - Rails applies a resend cooldown and conservative daily allowances by phone and IP using short-lived PostgreSQL digests/counters.
-- Rails synchronously starts the challenge through a small Infobip 2FA adapter in every runtime environment; automated tests use a fake implementation. Non-production runtime environments restrict delivery to an explicit allowlist. No OTP-delivery job is enqueued.
+- Rails synchronously starts the challenge through a small SMS-OTP adapter. Production uses Infobip; stable staging and integration use restricted Infobip with an explicit allowlist; local development selects fake or restricted Infobip through `.env`; automated tests and pull-request previews use fake delivery. No OTP-delivery job is enqueued.
 - Infobip owns the OTP value and delivery result. Rails stores a short-lived `otp_challenge` that binds an encrypted normalized phone and encrypted Infobip challenge ID to a separate high-entropy browser token stored only as a digest; it also stores short-lived abuse-control digests/counters.
 - The API contract defines accepted, invalid-phone, rate-limited, provider-unavailable, and delivery-rejected outcomes. Rate-limit responses include `Retry-After` and every failure uses the shared safe error envelope.
 - Responses do not reveal whether an account exists and do not log phone numbers, OTPs, or request bodies.
@@ -236,12 +236,12 @@ Apply these rules whenever they are relevant to the story:
 - Rails verifies the code through the Infobip adapter and never stores the OTP.
 - Verification requires the unexpired, unconsumed Rails challenge token, decrypts the bound Infobip reference/phone only server-side, and consumes the challenge atomically on success.
 - A successful check validates the challenge result and creates or finds the Rails-owned professional account by its unique verified E.164 phone. SMS verification never creates or authenticates an admin account. The Rails UUID is the stable Berufe identity; an Infobip challenge ID is not an account identifier.
-- Rails creates an `application_session` containing a unique token digest, account ID, `sms_otp` authentication method, authentication time, last activity, idle/absolute expiries, CSRF digest, and nullable revocation time.
+- Rails creates an `application_session` containing a unique token digest, account ID, `sms_otp` authentication method, authentication time, last activity, idle/absolute expiries, and nullable revocation time.
 - The browser receives only the random application-session token in the host-only `__Host-berufe_session` cookie with `Secure`, `HttpOnly`, `SameSite=Lax`, and `Path=/`; no `Domain` is set.
-- Infobip credentials and raw Rails challenge/session tokens never enter browser storage or application logs; neither authentication nor CSRF tokens are stored in `localStorage`.
+- Infobip credentials and raw Rails challenge/session tokens never enter browser storage or application logs; no authentication material is stored in `localStorage`.
 - Professional sessions use 7-day idle and 30-day absolute expiry; admin sessions use 30-minute idle and 12-hour absolute expiry. Last-activity persistence is throttled.
 - Invalid, expired, and provider-unavailable results use generic safe messages.
-- The Infobip 2FA implementation is enabled only where explicitly configured behind the same small adapter.
+- The Infobip 2FA implementation remains behind the same small adapter. Production always uses it, stable staging and integration use a restricted allowlisted configuration, local development may explicitly select it, and automated tests and pull-request previews use the fake implementation.
 - Model/request tests cover token hashing, professional idle and absolute boundaries, throttled activity writes, refusal to authenticate admins by SMS, invalid/expired verification, and safe provider-unavailable behavior.
 
 **Depends on:** S011.
@@ -253,28 +253,28 @@ Apply these rules whenever they are relevant to the story:
 
 **Acceptance criteria:**
 
-- Nuxt can request the current account/session summary plus a rotating CSRF token without receiving the raw stored session token or any provider token; Nuxt keeps the CSRF token in memory only.
+- Nuxt can request the current account/session summary without receiving the raw stored session token or any provider token; the browser holds no authentication material of its own, since the host-only session cookie is `HttpOnly`.
 - Rails authenticates each request locally from the application-session token digest, enforces idle/absolute expiry, and then applies account status, role, and authorization policies without contacting the provider.
 - Logout revokes the current application session and clears the browser cookie. Suspension and the admin revoke-all action invalidate every application session for the account immediately.
 - Existing Rails sessions continue through a provider outage until their own expiry or revocation; new challenge initiation/verification returns a safe `503`.
 - Expired OTP counters, provider challenge references, and application sessions are purged by retry-safe GoodJob jobs according to the retention matrix.
 - Authenticated routes redirect cleanly to login while Rails remains the authorization authority.
-- Request tests cover current-session CSRF rotation, idle/absolute expiry, logout of one session, revoke-all/suspension, and continued local authentication during provider outage.
+- Request tests cover current-session reads, idle/absolute expiry, logout of one session, revoke-all/suspension, and continued local authentication during provider outage.
 
 **Depends on:** S012, S005.
 **Covers:** Feature A1; Infrastructure §§6 and 8.
 
-### S014 — Protect browser sessions with CORS and CSRF controls
+### S014 — Protect browser sessions with CORS and origin controls
 
 **Story:** As a user, I want authenticated changes protected against cross-site requests so that another site cannot act as me.
 
 **Acceptance criteria:**
 
 - Credentialed CORS uses only exact local, stable-staging, and production Nuxt origins; pull-request previews are absent and no Vercel wildcard is allowed.
-- State-changing cookie-authenticated requests require the rotating CSRF token bound by digest to the current application session plus an exact valid origin.
-- Nuxt obtains the CSRF token from the current-session response, keeps it in memory, and sends it through the shared API client.
+- Every state-changing request, authenticated or not, requires an exact valid origin; a missing or non-matching `Origin` is refused before the action runs. `SameSite=Lax` on the session cookie is the complementary control, since the browser never attaches it to a cross-site mutation.
+- Nuxt sends credentialed requests through the shared API client and holds no token of its own; the browser supplies the `Origin` header, which page scripts cannot forge.
 - Security headers cover content type, framing, and referrer behavior.
-- Request tests prove exact allowed-origin success; missing/invalid CSRF, malformed origins, Vercel preview origins, and all other cross-origin mutations are rejected.
+- Request tests prove exact allowed-origin success; missing origins, malformed origins, Vercel preview origins, and all other cross-origin mutations are rejected on every mutating route, including OTP challenge and verification.
 
 **Depends on:** S012.
 **Covers:** Infrastructure §§8 and 12.
@@ -286,7 +286,7 @@ Apply these rules whenever they are relevant to the story:
 **Acceptance criteria:**
 
 - Accounts support `professional` and `admin` roles plus `active` and `suspended` states.
-- Each account has a Rails UUID and unique verified E.164 phone. Infobip challenge IDs remain short-lived authentication metadata and are never treated as Berufe account identities.
+- Each account has a Rails UUID. Professional accounts have a unique verified E.164 phone, while administrator accounts use their unique normalized email; Infobip challenge IDs remain short-lived authentication metadata and are never treated as Berufe account identities.
 - Pundit policies and scopes protect authenticated endpoints, owned records, admin actions, and approved public data.
 - Public serializers exclude private and restricted fields by default.
 - Policy/request tests prove anonymous, owner, non-owner, admin, and suspended-user behavior.
@@ -335,8 +335,10 @@ Apply these rules whenever they are relevant to the story:
 
 - An active administrator with a password-authenticated session can list, add, rename, reorder, activate, and deactivate services and Joinville neighborhoods through typed OpenAPI operations and Nuxt forms.
 - The neighborhood list exposes UF, city, and neighborhood columns and supports independent accent-insensitive free-text filters for all three fields; launch data remains limited to Joinville, SC.
+- “Toda Joinville” is derived by Nuxt for professional/public selection and is not persisted or exposed through the private neighborhood-management endpoint.
 - When creating a neighborhood, Nuxt suggests its stable code from the typed name using lowercase ASCII kebab case (`Santo Antônio` → `santo-antonio`); the administrator may adjust it before saving, after which it is immutable.
-- A service retains its controlled category assignment; service-category hierarchy changes and search-alias administration remain post-MVP.
+- A service always retains one controlled category assignment and an administrator may reassign it among the existing categories; service-category hierarchy changes and search-alias administration remain post-MVP.
+- A new service inherits the selected category icon and starts with no search aliases; neither field is added to the administrator form.
 - Stable service slugs and neighborhood codes cannot change after creation, and entries referenced by profiles, searches, evidence, or historical aggregates cannot be hard-deleted.
 - Every mutation persists deterministic `sort_order`, records the acting administrator and request ID, and returns the shared error envelope for validation or conflict failures.
 - Inactive entries remain available to historical serializers but cannot be selected for new professional records or public searches.
@@ -796,7 +798,7 @@ The MVP report includes only implemented launch domains: professional supply and
 **Acceptance criteria:**
 
 - Rails and Nuxt accept inbound request IDs only when they match ASCII `[A-Za-z0-9._-]{1,100}` and otherwise generate a UUID; Nuxt forwards the accepted/generated value to Rails and Rails propagates it into GoodJob jobs and Bugsnag events.
-- Logs and Bugsnag exclude cookies, authorization/CSRF headers, request parameters/bodies, phone numbers, OTPs, raw Infobip/application-session/share tokens or challenge secrets, signed URLs, verification files, quote customer details, and job arguments.
+- Logs and Bugsnag exclude cookies, authorization headers, request parameters/bodies, phone numbers, OTPs, raw Infobip/application-session/share tokens or challenge secrets, signed URLs, verification files, quote customer details, and job arguments.
 - Separate Bugsnag projects capture Rails/Active Job/GoodJob exceptions and Nuxt browser/SSR exceptions. Production source maps are uploaded privately.
 - Bugsnag is error-only: performance monitoring, distributed tracing, automatic session tracking, user/anonymous identification, and IP collection are disabled. Events include only release, environment, normalized route or job class, request ID, exception, and stack trace.
 - Production unhandled exceptions, terminal job failures, and GoodJob executor/thread failures immediately notify the named operations owner.

@@ -6,14 +6,13 @@ import {
   type CurrentSession,
   type RestoredApplicationSession,
 } from "~/services/api/application-session";
-import { setApiCsrfToken, useApiClient } from "~/services/api/client";
+import { useApiClient } from "~/services/api/client";
 
 type SessionStatus = "unknown" | "restoring" | "authenticated" | "anonymous";
 
 interface ApplicationSessionDependencies {
   read?: () => Promise<RestoredApplicationSession | null>;
   end?: () => Promise<void>;
-  setCsrfToken?: (token: string | undefined) => void;
 }
 
 let restoration: Promise<boolean> | undefined;
@@ -42,14 +41,12 @@ export function useApplicationSession(
     dependencies.read ?? (() => getCurrentApplicationSession(useApiClient()));
   const end =
     dependencies.end ?? (() => endCurrentApplicationSession(useApiClient()));
-  const updateCsrfToken = dependencies.setCsrfToken ?? setApiCsrfToken;
 
   function resetSession(nextStatus: SessionStatus) {
     account.value = null;
     session.value = null;
     status.value = nextStatus;
     setRole("visitor");
-    updateCsrfToken(undefined);
   }
 
   function clearSession() {
@@ -74,7 +71,6 @@ export function useApplicationSession(
         session.value = restored.session;
         status.value = "authenticated";
         setRole(restored.account.role);
-        updateCsrfToken(restored.csrfToken);
         return true;
       } catch (error) {
         resetSession("unknown");

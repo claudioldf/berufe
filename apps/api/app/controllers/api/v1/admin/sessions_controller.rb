@@ -5,8 +5,6 @@ module Api
     module Admin
       class SessionsController < BaseController
         before_action :prevent_caching
-        before_action :verify_request_origin!
-
         def create
           result = AdminPasswordAuthenticator.new.call(
             email: params[:email],

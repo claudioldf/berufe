@@ -8,10 +8,7 @@ RSpec.describe CurrentSessionSerializer do
     account = UserAccount.create!(phone_e164: "+5547999994001", role: "professional", status: "active")
     application_session = ApplicationSession.issue!(user_account: account, now:).first
 
-    serialized = described_class.new(
-      application_session:,
-      csrf_token: "rotated-csrf-token"
-    ).as_json
+    serialized = described_class.new(application_session:).as_json
 
     expect(serialized).to eq(
       account: {
@@ -25,13 +22,11 @@ RSpec.describe CurrentSessionSerializer do
         authenticated_at: now,
         idle_expires_at: now + 7.days,
         absolute_expires_at: now + 30.days
-      },
-      csrf_token: "rotated-csrf-token"
+      }
     )
     expect(serialized.to_json).not_to include(
       account.phone_e164,
       application_session.token_digest,
-      application_session.csrf_token_digest,
       "last_active_at",
       "created_at",
       "updated_at"

@@ -213,7 +213,7 @@ Until option 2 is approved, the API must return the `invited` stage as unavailab
 ### API and implementation
 
 - Endpoint: `GET /api/v1/admin/reports/growth?period=since_launch|last_30_days|last_7_days`.
-- OpenAPI operation ID: `getAdminGrowthReport`. The contract defines the period enum, application-session security, aggregate response sections, shared error envelope, and `200`, `401`, `403`, and `422` responses. The shared CSRF header scheme applies to mutations, not this `GET` operation.
+- OpenAPI operation ID: `getAdminGrowthReport`. The contract defines the period enum, application-session security, aggregate response sections, shared error envelope, and `200`, `401`, `403`, and `422` responses. The exact-origin rule applies to mutations, not this `GET` operation.
 - Rails owns all calculations and authorization. Nuxt only formats returned values.
 - Require an authenticated `user_accounts.role = 'admin'`, `status = 'active'`, and the stronger admin authentication policy from the Infrastructure document.
 - Return aggregates only. Never serialize individual `search_events`, phone numbers, client fingerprints, token hashes, moderation private notes, quote customer names, or WhatsApp content.

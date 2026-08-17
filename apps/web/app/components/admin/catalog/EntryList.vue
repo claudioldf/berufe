@@ -2,8 +2,9 @@
 import type { CatalogEntry, CatalogTab } from "~/types/catalog";
 
 const props = defineProps<{
-  entries: CatalogEntry[];
+  entries: readonly CatalogEntry[];
   tab: CatalogTab;
+  disabled?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -42,7 +43,7 @@ const emit = defineEmits<{
         <button
           type="button"
           :aria-label="`Mover ${entry.name} para cima`"
-          :disabled="index === 0"
+          :disabled="props.disabled || index === 0"
           @click="emit('move', entry.id, -1)"
         >
           <UIcon name="i-lucide-chevron-up" />
@@ -50,7 +51,7 @@ const emit = defineEmits<{
         <button
           type="button"
           :aria-label="`Mover ${entry.name} para baixo`"
-          :disabled="index === props.entries.length - 1"
+          :disabled="props.disabled || index === props.entries.length - 1"
           @click="emit('move', entry.id, 1)"
         >
           <UIcon name="i-lucide-chevron-down" />
@@ -70,6 +71,7 @@ const emit = defineEmits<{
         type="button"
         class="catalog-table__status"
         :class="{ 'catalog-table__status--inactive': !entry.active }"
+        :disabled="props.disabled"
         @click="emit('toggle', entry.id)"
       >
         <i />{{ entry.active ? "Ativo" : "Inativo" }}
@@ -77,6 +79,7 @@ const emit = defineEmits<{
       <button
         type="button"
         class="catalog-table__edit"
+        :disabled="props.disabled"
         @click="emit('edit', entry)"
       >
         <UIcon name="i-lucide-pencil" /> Editar
