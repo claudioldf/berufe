@@ -64,9 +64,9 @@ jobs:
       - name: Scan Rails security
         run: bundle exec brakeman --quiet --no-pager --exit-on-warn --exit-on-error
 
-      - name: Prepare and verify the test database
+      - name: Recreate and migrate the test database
         run: |
-          bin/rails db:prepare
+          bin/rails db:drop db:create db:migrate
           bin/rails db:abort_if_pending_migrations
 
       - name: Verify Rails boot and eager loading
@@ -74,6 +74,9 @@ jobs:
 
       - name: Run RSpec and OpenAPI contract coverage
         run: bundle exec rspec
+
+      - name: Verify test database seeds
+        run: bin/rails db:seed
 
   frontend:
     name: Frontend checks
