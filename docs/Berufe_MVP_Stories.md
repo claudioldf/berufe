@@ -574,7 +574,7 @@ Apply these rules whenever they are relevant to the story:
 
 ### S030 — Review verification and publish precise labels
 
-**Status:** PENDING
+**Status:** DONE
 
 **Story:** As an admin, I want to approve or reject verification evidence so that customers can distinguish checked facts from declarations.
 

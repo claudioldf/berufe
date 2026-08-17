@@ -67,7 +67,8 @@ RSpec.describe PublicProfessionalProfileSerializer do
     expect(before_edit).to include(
       public_slug: "ana-souza",
       display_name: "Ana Souza",
-      headline: "Elétrica residencial."
+      headline: "Elétrica residencial.",
+      verification: {phone_confirmed: true, identity: nil}
     )
   end
 

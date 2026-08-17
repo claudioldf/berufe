@@ -21,6 +21,7 @@ class PublicProfessionalProfileSerializer
       whatsapp: revision.whatsapp_e164,
       instagram: revision.instagram_url,
       youtube: revision.youtube_url,
+      verification: PublicVerificationSerializer.new(profile).as_json,
       services: revision.professional_profile_services.includes(:service).map do |selection|
         {
           id: selection.service_id,
