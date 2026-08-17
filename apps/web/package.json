@@ -19,6 +19,7 @@
     "build": "nuxt build",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
     "api:generate": "openapi-typescript ../contracts/openapi.yaml -o app/services/api/schema.d.ts",
     "typecheck": "nuxt typecheck",
     "format": "prettier --write \"app/**/*.{vue,ts,scss,css}\" \"tests/**/*.ts\" \"*.{ts,mjs,json,md}\"",
