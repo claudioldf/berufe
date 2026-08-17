@@ -218,7 +218,7 @@ Unique key: `professional_id + city_code + neighborhood_code`.
 - Team/company profiles.
 - A calculated trust score.
 - A dedicated draft-profile preview route.
-- Parallel pending revisions that preserve a separate last-approved snapshot.
+- More than one working or pending profile revision at a time.
 
 ---
 
@@ -241,6 +241,8 @@ For renovation services, customers need visual evidence of relevant experience. 
 5. Limit the MVP to 12 items per professional to keep storage and moderation manageable.
 
 Use direct-to-object-storage uploads with private temporary access before approval and public optimized versions after approval.
+
+For profile identity, services, and coverage, the launch retains the last approved profile revision as one complete public snapshot while one material edit revision is reviewed. Approval replaces the snapshot atomically; rejection leaves the approved snapshot public and makes the rejected revision privately editable. This prevents public serializers from mixing reviewed and unreviewed fields.
 
 #### 4. Suggested feature-scoped data schema
 
@@ -287,7 +289,7 @@ Verification is the foundation of the positioning. However, Berufe must not impl
 5. Only the label and verification date are public; private files and document identifiers are never public.
 6. The UI always distinguishes verified identity from declarations, professional recommendations, and confirmed collaboration.
 
-For the first 30–50 professionals, accept only JPEG/PNG evidence up to 10 MiB and 25 megapixels, use manual review, encrypt files at rest, restrict regenerated-file access to admins, keep an access log, and define a short retention rule before launch. Do not store full document numbers unless operationally essential. PDFs and malware-scanning infrastructure are deferred together; arbitrary documents are not accepted without that safety gate.
+For the first 30–50 professionals, accept only one JPEG/PNG identity-evidence image up to 10 MiB and 25 megapixels, use manual review, encrypt files at rest, restrict regenerated-file access to admins, keep an access log, retain the file while pending and for 30 days after approval or rejection, and then delete the file while retaining decision/audit metadata. This implementation default requires qualified Brazilian privacy/legal signoff before real-user intake. Do not store full document numbers unless operationally essential. PDFs and malware-scanning infrastructure are deferred together; arbitrary documents are not accepted without that safety gate.
 
 #### 4. Suggested feature-scoped data schema
 

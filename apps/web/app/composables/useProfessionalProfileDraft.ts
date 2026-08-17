@@ -87,12 +87,15 @@ export function useProfessionalProfileDraft(
 
     form.instagram = instagram.url;
     form.youtube = youtube.url;
-    saved.value = true;
     return {
       ...form,
       selectedServices: [...form.selectedServices],
       selectedNeighborhoods: [...form.selectedNeighborhoods],
     };
+  }
+
+  function confirmSaved() {
+    saved.value = true;
   }
 
   return {
@@ -105,6 +108,7 @@ export function useProfessionalProfileDraft(
     toggleService,
     toggleNeighborhood,
     commit,
+    confirmSaved,
     reset,
   };
 }

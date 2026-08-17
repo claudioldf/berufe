@@ -8,13 +8,13 @@
 
 This document turns the approved Berufe MVP scope and architecture into an incrementally ordered implementation backlog.
 
-The order is dependency-driven: establish a reproducible monorepo, enable secure access, build credible professional supply, expose it through public discovery, add existing-member trust relationships and a focused professional dashboard, and then complete the launch gate.
+The order is dependency-driven: establish a reproducible monorepo, enable secure access, build credible professional supply, expose it through public discovery, add existing-member trust relationships and a focused professional dashboard, and then complete the launch gate. Increment 2 uses the approved dependency order recorded in `Berufe_Increment_2_Implementation_Plan.md` while retaining stable story IDs.
 
 The backlog intentionally excludes V2 work. Story IDs removed during the August 2026 scope review are not reused; their original behavior and acceptance criteria are preserved in `Berufe_V2_Stories.md`.
 
 ## 2. How to use this backlog
 
-- Implement stories in numeric order unless a story explicitly has no unfinished dependency.
+- Implement stories in numeric order unless an approved increment plan records a dependency-driven order. Increment 2 uses `S019 → S020 → S021 → S025 → S026 → S027 → S029 → S022 → S023 → S024 → S028 → S030 → S031`.
 - A story is complete only when its backend, frontend, tests, authorization, and relevant documentation are complete.
 - Keep each story releasable. Do not leave public endpoints exposing pending, rejected, private, or restricted data.
 - The Feature Plan is the product source of truth. The architecture may add implementation detail, but it must not replace a Feature Plan behavior, scope boundary, data rule, or user experience. Conflicts are resolved in favor of the Feature Plan.
@@ -370,13 +370,15 @@ Apply these rules whenever they are relevant to the story:
 
 ## 6. Increment 2 — Credible professional supply
 
-**Status:** PENDING
+**Status:** WIP
 
 **Increment outcome:** founding professionals can create, submit, and receive approval for complete profiles, portfolio evidence, and verification labels. Approved profiles are safe to expose publicly.
 
+**Approved implementation detail:** `Berufe_Increment_2_Implementation_Plan.md` resolves the Increment 2 workflow, mockup, API, retention, and delivery-order decisions and is normative for S019–S031.
+
 ### S019 — Edit professional identity and contact information
 
-**Status:** PENDING
+**Status:** DONE
 
 **Story:** As a professional, I want to edit my public identity, WhatsApp contact, and optional social profile links so that customers understand who I am and where they can see more of my work.
 
@@ -438,7 +440,8 @@ Apply these rules whenever they are relevant to the story:
 - Submission changes the profile from `draft` to `pending_review` in one transaction.
 - Incomplete profiles cannot be submitted and receive field/actionable errors.
 - A professional can see the current status but cannot publish their own profile.
-- Editing material published content returns the profile to `pending_review`; it is not publicly served until reapproved. Operations has a documented manual correction path for urgent founding-cohort changes.
+- Submission validates the already-persisted four-step onboarding state, including one reviewable portfolio item and one reviewable identity request; the final action does not resend an accumulated browser payload.
+- Editing material published content creates or updates one private pending revision while the previous approved revision remains the complete public snapshot. Approval swaps the public revision atomically; rejection leaves the previous snapshot public and returns the rejected revision to an editable private state.
 
 **Depends on:** S021.
 **Covers:** Features A2 and A6.
@@ -451,7 +454,7 @@ Apply these rules whenever they are relevant to the story:
 
 **Acceptance criteria:**
 
-- The admin area lists pending profiles/photos, portfolio items, accepted professional relationships, and identity-verification requests oldest first, with simple type/status filters.
+- The admin area lists profile revisions/photos, portfolio items, and identity-verification requests oldest first, with pagination plus type/status/search filters. Accepted professional relationships join this queue in Increment 4.
 - The reviewer sees only fields and files required for the selected decision.
 - Approve, reject, hide, and restore actions create immutable `moderation_actions` with actor, target, action, private reason, time, and request ID.
 - Rejection and hide require a private reason.
@@ -468,7 +471,7 @@ Apply these rules whenever they are relevant to the story:
 
 **Acceptance criteria:**
 
-- Approval publishes or republishes the profile atomically. Rejection returns it to an editable private state with a reason visible to its owner.
+- Approval publishes the first revision or atomically replaces the public revision pointer. Rejection returns the reviewed revision to an editable private state with a reason visible to its owner while any previous approved revision remains public.
 - Public serializers expose only approved profile, service, and coverage fields.
 - Hide, suspend, and restore operations update public availability immediately.
 - Professionals can see moderation status and rejection guidance in the authenticated UI.
@@ -485,8 +488,8 @@ Apply these rules whenever they are relevant to the story:
 
 **Acceptance criteria:**
 
-- A small Rails-owned storage adapter uses local disk in development and separate public/private Cloudflare R2 buckets in deployed environments.
-- Rails authorizes upload purpose, ownership, declared content type, and declared size before issuing a short-lived presigned upload to a private quarantine key.
+- A small Rails-owned storage adapter uses an authenticated Rails upload endpoint backed by local disk in development and separate public/private Cloudflare R2 buckets in deployed environments.
+- Rails authorizes upload purpose, ownership, declared content type, and declared size before issuing a 10-minute upload authorization to a private quarantine key.
 - After upload confirmation, a retry-safe job checks actual bytes and file signature, safely decodes with libvips, normalizes orientation, strips metadata, and re-encodes into a new private object. It deletes the quarantine original after processing; mismatched, oversized, or undecodable uploads are rejected and deleted without becoming reviewable.
 - Pending media and verification evidence remain private, and a processing failure is rejected without exposing the object to an admin or the public.
 - Approved feature records persist public URLs/keys as defined by Features A2–A4. A narrowly scoped pending-upload record holds temporary private keys for profile/portfolio media until approval; verification evidence uses `verification_file`.
@@ -504,7 +507,7 @@ Apply these rules whenever they are relevant to the story:
 
 **Acceptance criteria:**
 
-- The profile accepts one supported image within the configured size limit.
+- The profile accepts one optional JPEG/PNG image no larger than 10 MiB or 25 megapixels and produces one metadata-free JPEG fitted within 1024 × 1536 pixels.
 - The sanitized image remains private until approved and replaces the public photo only after moderation.
 - libvips safely decodes, normalizes orientation, re-encodes, removes metadata, and creates the required display variant through a retry-safe job.
 - Upload, processing, rejection, and replacement states are visible to the owner.
@@ -517,7 +520,7 @@ Apply these rules whenever they are relevant to the story:
 
 **Status:** PENDING
 
-**Story:** As a professional, I want to add and order examples of completed work so that customers can see relevant evidence.
+**Story:** As a professional, I want to add and manage examples of completed work so that customers can see relevant evidence.
 
 **Acceptance criteria:**
 
@@ -526,6 +529,7 @@ Apply these rules whenever they are relevant to the story:
 - Approved items appear newest first, with ID as the deterministic tie-breaker.
 - Images use the same private-upload, libvips-processing, and public-variant rules as profile photos.
 - Pending or rejected items are visible to the owner but not anonymous users.
+- Deletion is soft deletion through the existing management action. Manual ordering is not exposed; public ordering remains newest first.
 
 **Depends on:** S020, S025, S026.
 **Covers:** Feature A3.
@@ -556,11 +560,11 @@ Apply these rules whenever they are relevant to the story:
 **Acceptance criteria:**
 
 - The professional requests the launch `identity` verification type and uploads only JPEG or PNG evidence no larger than 10 MiB or 25 megapixels.
-- Rails creates a pending `verification_request` and associated private file records.
+- Rails creates at most one pending `identity` `verification_request` for the professional and associates exactly one private regenerated image.
 - The evidence becomes reviewable only after signature inspection, byte/dimension limits, safe decoding, orientation normalization, metadata stripping, and re-encoding into a new private object succeed. Extensions and browser MIME types are never trusted.
 - PDFs and other retained documents are rejected; malware scanning is deferred while those formats remain out of scope.
 - Document numbers are not collected unless a later approved operational requirement makes them essential.
-- Only the owner can see request status; only admins can access the evidence through short-lived authorized access.
+- Only the owner can see request status; only admins can retrieve the regenerated evidence through authenticated, audited access without a permanent URL.
 - The UI explains that verification is evidence checking, not a work guarantee.
 
 **Depends on:** S025, S024.
@@ -593,9 +597,9 @@ Apply these rules whenever they are relevant to the story:
 
 - Every admin access to verification evidence records actor, request, target, time, and action without logging the file contents or signed URL.
 - Admins can access only regenerated evidence through short-lived authorization with the exact image content type, `X-Content-Type-Options: nosniff`, `Cache-Control: no-store`, and `Content-Disposition: inline` using a server-generated filename; the uploaded filename is never reflected.
-- A documented retention rule maps request states to deletion dates.
+- Identity evidence is retained while pending and for 30 days after approval or rejection; decision, label, moderation, and access-audit metadata remain after file deletion. Qualified Brazilian privacy/legal signoff is required before real-user intake.
 - A retry-safe cleanup job deletes eligible private objects and records `deleted_at`.
-- Deleted evidence cannot be regenerated through an old URL.
+- Deleted evidence cannot be regenerated through an old URL. The browser revokes the temporary object URL used by the existing admin document action after 60 seconds.
 - Tests prove anonymous, professional, non-reviewing path, quarantined/failed object, content-signature mismatch, oversized/dimension-limit, and expired-link denial.
 
 **Depends on:** S030, S005.

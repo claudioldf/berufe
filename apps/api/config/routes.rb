@@ -6,6 +6,10 @@ Rails.application.routes.draw do
       resource :status, only: :show, controller: :status
       resource :catalog, only: :show, controller: :catalogs
       put "professional-registration", to: "professional_registrations#update"
+      namespace :professional do
+        resource :workspace, only: :show, controller: :workspaces
+        resource :profile, only: :update, controller: :profiles
+      end
       resource :session, only: %i[show destroy]
       namespace :admin do
         resource :session, only: :create

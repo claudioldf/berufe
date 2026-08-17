@@ -11,8 +11,11 @@ const props = defineProps<{
   professional: Professional;
   services: Service[];
   neighborhoods: Neighborhood[];
+  saving?: boolean;
 }>();
-const emit = defineEmits<{ save: [draft: ProfessionalProfileDraft] }>();
+const emit = defineEmits<{
+  save: [draft: ProfessionalProfileDraft, confirm: () => void];
+}>();
 
 const {
   form,
@@ -24,11 +27,12 @@ const {
   toggleService,
   toggleNeighborhood,
   commit,
+  confirmSaved,
 } = useProfessionalProfileDraft(() => props.professional);
 
 function save() {
   const draft = commit();
-  if (draft) emit("save", draft);
+  if (draft) emit("save", draft, confirmSaved);
 }
 </script>
 
@@ -54,7 +58,7 @@ function save() {
         @toggle="toggleNeighborhood"
       />
     </DashboardProfileFormLayout>
-    <DashboardProfileSaveBar :saved="saved" />
+    <DashboardProfileSaveBar :saved="saved" :saving="props.saving" />
   </form>
 </template>
 

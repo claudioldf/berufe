@@ -5,6 +5,7 @@ import type {
   OnboardingStepId,
   PortfolioItemDraft,
   ProfessionalProfileDraft,
+  ProfessionalWorkspace,
   Service,
 } from "~/types";
 import {
@@ -12,9 +13,13 @@ import {
   useProfessionalOnboarding,
 } from "~/composables/useProfessionalOnboarding";
 
-defineProps<{
+const props = defineProps<{
   services: Service[];
   neighborhoods: Neighborhood[];
+  workspace: ProfessionalWorkspace;
+  saveIdentity: (
+    draft: ProfessionalProfileDraft,
+  ) => Promise<ProfessionalProfileDraft>;
 }>();
 
 const route = useRoute();
@@ -30,7 +35,10 @@ const {
   completeServices,
   completePortfolio,
   completeVerification,
-} = useProfessionalOnboarding();
+  initializeFromWorkspace,
+  profileSaving,
+  profileError,
+} = useProfessionalOnboarding({ saveIdentity: props.saveIdentity });
 
 const activeStep = shallowRef<OnboardingStepId>("profile");
 const reviewing = shallowRef(false);
@@ -89,8 +97,8 @@ function previousStep() {
   if (previous) void goToStep(previous.id);
 }
 
-function handleProfile(draft: ProfessionalProfileDraft) {
-  if (completeProfile(draft)) void goToStep("services");
+async function handleProfile(draft: ProfessionalProfileDraft) {
+  if (await completeProfile(draft)) void goToStep("services");
 }
 
 function handleServices(draft: ProfessionalProfileDraft) {
@@ -127,6 +135,17 @@ watch(
     activeStep.value = canVisitStep(stepId)
       ? stepId
       : firstIncompleteStep.value;
+  },
+  { immediate: true },
+);
+
+watch(
+  () => props.workspace.profile.identity,
+  (identity) => {
+    initializeFromWorkspace({
+      ...editableProfile.value,
+      ...identity,
+    });
   },
   { immediate: true },
 );
@@ -185,6 +204,8 @@ watch(
             v-if="activeStep === 'profile'"
             :key="`profile-${state.completion.profile ?? 'new'}`"
             :draft="editableProfile"
+            :saving="profileSaving"
+            :server-error="profileError"
             @complete="handleProfile"
           />
           <OnboardingServicesStep

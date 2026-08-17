@@ -1,4 +1,4 @@
-import { computed, onMounted, readonly } from "vue";
+import { computed, onMounted, readonly, shallowRef } from "vue";
 import type {
   OnboardingChecklistItem,
   OnboardingCompletionState,
@@ -11,6 +11,15 @@ import type {
   ProfessionalOnboardingState,
   ProfessionalProfileDraft,
 } from "~/types";
+import { updateProfessionalIdentity } from "~/services/api/professional-workspace";
+import { ApiRequestError } from "~/services/api/errors";
+import { useApiClient } from "~/services/api/client";
+
+interface ProfessionalOnboardingDependencies {
+  saveIdentity?: (
+    draft: ProfessionalProfileDraft,
+  ) => Promise<ProfessionalProfileDraft>;
+}
 
 export const professionalOnboardingStorageKey =
   "berufe:professional-onboarding:v1";
@@ -283,12 +292,26 @@ function cloneProfileDraft(
   };
 }
 
-export function useProfessionalOnboarding() {
+export function useProfessionalOnboarding(
+  dependencies: ProfessionalOnboardingDependencies = {},
+) {
   const state = useState<ProfessionalOnboardingState>(
     "professional-onboarding",
     createInitialProfessionalOnboardingState,
   );
   const hydrated = useState("professional-onboarding-hydrated", () => false);
+  const profileSaving = shallowRef(false);
+  const profileError = shallowRef("");
+  const apiClient = dependencies.saveIdentity ? undefined : useApiClient();
+  const saveIdentity =
+    dependencies.saveIdentity ??
+    (async (draft: ProfessionalProfileDraft) => {
+      const workspace = await updateProfessionalIdentity(apiClient!, draft);
+      return {
+        ...draft,
+        ...workspace.profile.identity,
+      };
+    });
 
   function persist() {
     if (!import.meta.client) return;
@@ -350,26 +373,62 @@ export function useProfessionalOnboarding() {
     persist();
   }
 
-  function completeProfile(draft: ProfessionalProfileDraft) {
-    const errors = validateOnboardingProfile(draft);
-    if (Object.values(errors).some(Boolean)) return false;
-    const completedAt = new Date().toISOString();
+  function initializeFromWorkspace(
+    identity: ProfessionalOnboardingState["profile"],
+  ) {
+    hydrate();
+    const complete = Object.values(validateOnboardingProfile(identity)).every(
+      (error) => !error,
+    );
     state.value = {
       ...state.value,
-      profile: {
-        ...cloneProfileDraft(draft),
-        name: draft.name.trim(),
-        whatsapp: normalizeBrazilianPhone(draft.whatsapp),
-        headline: draft.headline.trim(),
-        bio: draft.bio.trim(),
-      },
+      initialized: true,
+      profile: cloneProfileDraft(identity),
       completion: {
         ...state.value.completion,
-        profile: completedAt,
+        profile: complete
+          ? (state.value.completion.profile ?? new Date().toISOString())
+          : null,
       },
     };
     persist();
-    return true;
+  }
+
+  async function completeProfile(draft: ProfessionalProfileDraft) {
+    const errors = validateOnboardingProfile(draft);
+    if (Object.values(errors).some(Boolean)) return false;
+    if (profileSaving.value) return false;
+
+    profileSaving.value = true;
+    profileError.value = "";
+    try {
+      const savedProfile = await saveIdentity(draft);
+      const completedAt = new Date().toISOString();
+      state.value = {
+        ...state.value,
+        profile: {
+          ...cloneProfileDraft(savedProfile),
+          name: savedProfile.name.trim(),
+          whatsapp: normalizeBrazilianPhone(savedProfile.whatsapp),
+          headline: savedProfile.headline.trim(),
+          bio: savedProfile.bio.trim(),
+        },
+        completion: {
+          ...state.value.completion,
+          profile: completedAt,
+        },
+      };
+      persist();
+      return true;
+    } catch (error) {
+      profileError.value =
+        error instanceof ApiRequestError
+          ? error.message
+          : "Não foi possível salvar seu perfil agora. Tente novamente.";
+      return false;
+    } finally {
+      profileSaving.value = false;
+    }
   }
 
   function completeServices(draft: ProfessionalProfileDraft) {
@@ -443,10 +502,13 @@ export function useProfessionalOnboarding() {
     firstIncompleteStep,
     hydrate,
     initializeFromAuth,
+    initializeFromWorkspace,
     completeProfile,
     completeServices,
     completePortfolio,
     completeVerification,
+    profileSaving: readonly(profileSaving),
+    profileError: readonly(profileError),
     reset,
   };
 }

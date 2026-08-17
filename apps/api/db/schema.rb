@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_16_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_17_090000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -240,15 +240,27 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_16_120000) do
   end
 
   create_table "professional_profiles", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.text "bio"
     t.datetime "created_at", null: false
     t.text "display_name", null: false
+    t.text "headline"
+    t.text "instagram_url"
     t.text "profile_status", default: "draft", null: false
     t.datetime "updated_at", null: false
     t.uuid "user_account_id", null: false
+    t.text "whatsapp_e164"
+    t.integer "years_experience"
+    t.text "youtube_url"
     t.index ["profile_status"], name: "index_professional_profiles_on_profile_status"
     t.index ["user_account_id"], name: "index_professional_profiles_on_user_account_id", unique: true
+    t.check_constraint "bio IS NULL OR char_length(btrim(bio)) >= 1 AND char_length(btrim(bio)) <= 500", name: "professional_profiles_bio_length"
     t.check_constraint "char_length(btrim(display_name)) >= 3 AND char_length(btrim(display_name)) <= 70", name: "professional_profiles_display_name_length"
+    t.check_constraint "headline IS NULL OR char_length(btrim(headline)) >= 1 AND char_length(btrim(headline)) <= 120", name: "professional_profiles_headline_length"
+    t.check_constraint "instagram_url IS NULL OR char_length(instagram_url) <= 200", name: "professional_profiles_instagram_length"
     t.check_constraint "profile_status = ANY (ARRAY['draft'::text, 'pending_review'::text, 'published'::text, 'suspended'::text])", name: "professional_profiles_known_status"
+    t.check_constraint "whatsapp_e164 IS NULL OR whatsapp_e164 ~ '^\\+55[1-9][1-9]9[0-9]{8}$'::text", name: "professional_profiles_whatsapp_format"
+    t.check_constraint "years_experience IS NULL OR years_experience >= 0 AND years_experience <= 70", name: "professional_profiles_experience_range"
+    t.check_constraint "youtube_url IS NULL OR char_length(youtube_url) <= 200", name: "professional_profiles_youtube_length"
   end
 
   create_table "service_categories", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|

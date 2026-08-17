@@ -212,6 +212,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/professional/workspace": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read the authenticated professional's server-owned workspace */
+        get: operations["getProfessionalWorkspace"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/professional/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Persist the authenticated professional's identity and contact step */
+        patch: operations["updateProfessionalProfile"];
+        trace?: never;
+    };
     "/api/v1/session": {
         parameters: {
             query?: never;
@@ -308,6 +342,43 @@ export interface components {
             display_name: string;
             /** @constant */
             profile_status: "draft";
+        };
+        ProfessionalProfileUpdateRequest: {
+            identity: components["schemas"]["ProfessionalIdentityUpdate"];
+        };
+        ProfessionalIdentityUpdate: {
+            display_name: string;
+            headline: string;
+            bio: string;
+            years_experience?: number | null;
+            whatsapp: string;
+            instagram?: string | null;
+            youtube?: string | null;
+        };
+        ProfessionalWorkspaceResponse: {
+            data: components["schemas"]["ProfessionalWorkspaceData"];
+            request_id: components["schemas"]["RequestId"];
+        };
+        ProfessionalWorkspaceData: {
+            profile: components["schemas"]["ProfessionalWorkspaceProfile"];
+        };
+        ProfessionalWorkspaceProfile: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            profile_status: "draft" | "pending_review" | "published" | "suspended";
+            identity: components["schemas"]["ProfessionalIdentity"];
+        };
+        ProfessionalIdentity: {
+            display_name: string;
+            headline: string;
+            bio: string;
+            years_experience: number | null;
+            whatsapp: string;
+            /** Format: uri */
+            instagram: string | null;
+            /** Format: uri */
+            youtube: string | null;
         };
         CurrentSessionResponse: {
             data: components["schemas"]["CurrentSessionData"];
@@ -1032,6 +1103,112 @@ export interface operations {
             };
             /** @description Registration persistence is temporarily unavailable. */
             503: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getProfessionalWorkspace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The owned professional profile and its current editable identity. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalWorkspaceResponse"];
+                };
+            };
+            /** @description An active Rails application session is required. */
+            401: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Professional registration has not created a profile yet. */
+            404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    updateProfessionalProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfessionalProfileUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Identity and contact data were validated, normalized, and persisted. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalWorkspaceResponse"];
+                };
+            };
+            /** @description An active Rails application session is required. */
+            401: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The exact browser origin or profile owner is invalid. */
+            403: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Professional registration has not created a profile yet. */
+            404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description One or more identity/contact fields are invalid. */
+            422: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;

@@ -85,3 +85,23 @@ export interface ProfessionalProfileDraft {
   instagram: string;
   youtube: string;
 }
+
+export type ProfessionalProfileStatus =
+  "draft" | "pending_review" | "published" | "suspended";
+
+export interface ProfessionalWorkspace {
+  profile: {
+    id: string;
+    status: ProfessionalProfileStatus;
+    identity: Pick<
+      ProfessionalProfileDraft,
+      | "name"
+      | "headline"
+      | "bio"
+      | "yearsExperience"
+      | "whatsapp"
+      | "instagram"
+      | "youtube"
+    >;
+  };
+}

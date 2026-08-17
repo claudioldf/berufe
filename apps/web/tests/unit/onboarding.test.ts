@@ -103,7 +103,9 @@ describe("professional onboarding rules", () => {
     >();
     const Host = defineComponent({
       setup() {
-        onboarding.value = useProfessionalOnboarding();
+        onboarding.value = useProfessionalOnboarding({
+          saveIdentity: async (draft) => draft,
+        });
         return () => h("div");
       },
     });
@@ -117,7 +119,7 @@ describe("professional onboarding rules", () => {
     });
 
     const draft = validDraft();
-    expect(workflow.completeProfile(draft)).toBe(true);
+    await expect(workflow.completeProfile(draft)).resolves.toBe(true);
     expect(workflow.completeServices(draft)).toBe(true);
     const file = new File(["private-image-bytes"], "private.jpg", {
       type: "image/jpeg",

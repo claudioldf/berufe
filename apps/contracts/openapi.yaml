@@ -509,6 +509,102 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/professional/workspace:
+    get:
+      operationId: getProfessionalWorkspace
+      summary: Read the authenticated professional's server-owned workspace
+      tags:
+        - Professional supply
+      security:
+        - applicationSession: []
+      responses:
+        "200":
+          description: The owned professional profile and its current editable identity.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfessionalWorkspaceResponse"
+        "401":
+          description: An active Rails application session is required.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Professional registration has not created a profile yet.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/professional/profile:
+    patch:
+      operationId: updateProfessionalProfile
+      summary: Persist the authenticated professional's identity and contact step
+      tags:
+        - Professional supply
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfessionalProfileUpdateRequest"
+      responses:
+        "200":
+          description: Identity and contact data were validated, normalized, and persisted.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfessionalWorkspaceResponse"
+        "401":
+          description: An active Rails application session is required.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: The exact browser origin or profile owner is invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Professional registration has not created a profile yet.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: One or more identity/contact fields are invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/session:
     get:
       operationId: getCurrentSession
@@ -890,6 +986,137 @@ components:
         profile_status:
           type: string
           const: draft
+    ProfessionalProfileUpdateRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - identity
+      properties:
+        identity:
+          $ref: "#/components/schemas/ProfessionalIdentityUpdate"
+    ProfessionalIdentityUpdate:
+      type: object
+      additionalProperties: false
+      required:
+        - display_name
+        - headline
+        - bio
+        - whatsapp
+      properties:
+        display_name:
+          type: string
+          minLength: 3
+          maxLength: 70
+        headline:
+          type: string
+          minLength: 1
+          maxLength: 120
+        bio:
+          type: string
+          minLength: 1
+          maxLength: 500
+        years_experience:
+          type:
+            - integer
+            - "null"
+          minimum: 0
+          maximum: 70
+        whatsapp:
+          type: string
+          minLength: 10
+          maxLength: 40
+        instagram:
+          type:
+            - string
+            - "null"
+          maxLength: 200
+        youtube:
+          type:
+            - string
+            - "null"
+          maxLength: 200
+    ProfessionalWorkspaceResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          $ref: "#/components/schemas/ProfessionalWorkspaceData"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    ProfessionalWorkspaceData:
+      type: object
+      additionalProperties: false
+      required:
+        - profile
+      properties:
+        profile:
+          $ref: "#/components/schemas/ProfessionalWorkspaceProfile"
+    ProfessionalWorkspaceProfile:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - profile_status
+        - identity
+      properties:
+        id:
+          type: string
+          format: uuid
+        profile_status:
+          type: string
+          enum:
+            - draft
+            - pending_review
+            - published
+            - suspended
+        identity:
+          $ref: "#/components/schemas/ProfessionalIdentity"
+    ProfessionalIdentity:
+      type: object
+      additionalProperties: false
+      required:
+        - display_name
+        - headline
+        - bio
+        - years_experience
+        - whatsapp
+        - instagram
+        - youtube
+      properties:
+        display_name:
+          type: string
+          minLength: 3
+          maxLength: 70
+        headline:
+          type: string
+          maxLength: 120
+        bio:
+          type: string
+          maxLength: 500
+        years_experience:
+          type:
+            - integer
+            - "null"
+          minimum: 0
+          maximum: 70
+        whatsapp:
+          type: string
+          pattern: "^\\+55[1-9][1-9]9[0-9]{8}$"
+        instagram:
+          type:
+            - string
+            - "null"
+          format: uri
+          maxLength: 200
+        youtube:
+          type:
+            - string
+            - "null"
+          format: uri
+          maxLength: 200
     CurrentSessionResponse:
       type: object
       additionalProperties: false
@@ -1377,3 +1604,4 @@ tags:
   - name: Authentication
   - name: Catalog
   - name: Foundation
+  - name: Professional supply

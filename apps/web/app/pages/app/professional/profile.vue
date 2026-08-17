@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import professionalsData from "@data/professionals.json";
-import type { Professional } from "~/types";
+import type { Professional, ProfessionalProfileDraft } from "~/types";
 import { useCatalogs } from "~/composables/useCatalogs";
 import { useToast } from "~/composables/useToast";
+import { ApiRequestError } from "~/services/api/errors";
 
 const route = useRoute();
 const router = useRouter();
 const { showToast } = useToast();
-const professional = (professionalsData as Professional[])[0]!;
+const mockProfessional = (professionalsData as Professional[])[0]!;
 const { data: catalog, error: catalogError } = await useCatalogs();
 if (catalogError.value || !catalog.value) {
   throw createError({
@@ -19,6 +20,38 @@ if (catalogError.value || !catalog.value) {
 const services = computed(() => catalog.value?.services ?? []);
 const neighborhoods = computed(() =>
   (catalog.value?.neighborhoods ?? []).filter((item) => item.code !== "all"),
+);
+const {
+  data: workspace,
+  error: workspaceError,
+  saveIdentity,
+} = await useProfessionalWorkspace();
+if (workspaceError.value || !workspace.value) {
+  throw createError({
+    statusCode: 503,
+    statusMessage: "Seu perfil está temporariamente indisponível.",
+  });
+}
+const saving = shallowRef(false);
+const professional = computed<Professional>(() => ({
+  ...mockProfessional,
+  id: workspace.value!.profile.id,
+  name: workspace.value!.profile.identity.name,
+  headline: workspace.value!.profile.identity.headline,
+  bio: workspace.value!.profile.identity.bio,
+  yearsExperience: workspace.value!.profile.identity.yearsExperience,
+  whatsapp: workspace.value!.profile.identity.whatsapp,
+  instagram: workspace.value!.profile.identity.instagram || undefined,
+  youtube: workspace.value!.profile.identity.youtube || undefined,
+}));
+const statusLabels = {
+  draft: "Rascunho",
+  pending_review: "Em análise",
+  published: "Publicado",
+  suspended: "Suspenso",
+} as const;
+const statusLabel = computed(
+  () => statusLabels[workspace.value!.profile.status],
 );
 const tabs = [
   { id: "dados", label: "Dados do perfil", icon: "i-lucide-user-round" },
@@ -41,6 +74,33 @@ useSeoMeta({
 async function selectTab(id: string) {
   await router.replace({ query: id === "dados" ? {} : { tab: id } });
 }
+
+async function saveProfile(
+  draft: ProfessionalProfileDraft,
+  confirm: () => void,
+) {
+  if (saving.value) return;
+
+  saving.value = true;
+  try {
+    await saveIdentity(draft);
+    confirm();
+    showToast({
+      title: "Perfil atualizado",
+      description: "As alterações foram salvas.",
+    });
+  } catch (error) {
+    showToast({
+      title: "Não foi possível salvar",
+      description:
+        error instanceof ApiRequestError
+          ? error.message
+          : "Tente novamente em instantes.",
+    });
+  } finally {
+    saving.value = false;
+  }
+}
 </script>
 
 <template>
@@ -54,7 +114,7 @@ async function selectTab(id: string) {
           <h1>Meu perfil</h1>
           <p>Organize as informações e evidências que clientes verão.</p>
         </div>
-        <span><DesignSystemStatusDot tone="success" /> Publicado</span>
+        <span><DesignSystemStatusDot tone="success" /> {{ statusLabel }}</span>
       </DesignSystemContainer>
     </section>
     <DesignSystemContainer class="profile-workspace__content">
@@ -77,12 +137,8 @@ async function selectTab(id: string) {
         :professional="professional"
         :services="services"
         :neighborhoods="neighborhoods"
-        @save="
-          showToast({
-            title: 'Perfil atualizado',
-            description: 'As alterações foram salvas neste protótipo.',
-          })
-        "
+        :saving="saving"
+        @save="saveProfile"
       />
       <DashboardPortfolioManager
         v-else-if="activeTab === 'portfolio'"

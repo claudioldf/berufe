@@ -3,7 +3,14 @@ import { ref, shallowRef } from "vue";
 import type { ProfessionalProfileDraft } from "~/types";
 import { validateOnboardingProfile } from "~/composables/useProfessionalOnboarding";
 
-const props = defineProps<{ draft: ProfessionalProfileDraft }>();
+const props = withDefaults(
+  defineProps<{
+    draft: ProfessionalProfileDraft;
+    saving?: boolean;
+    serverError?: string;
+  }>(),
+  { saving: false, serverError: "" },
+);
 const emit = defineEmits<{
   complete: [draft: ProfessionalProfileDraft];
 }>();
@@ -39,8 +46,12 @@ function submit() {
     </header>
 
     <form class="onboarding-step-form" @submit.prevent="submit">
-      <p v-if="error" class="onboarding-step-error" role="alert">
-        <UIcon name="i-lucide-circle-alert" /> {{ error }}
+      <p
+        v-if="error || props.serverError"
+        class="onboarding-step-error"
+        role="alert"
+      >
+        <UIcon name="i-lucide-circle-alert" /> {{ error || props.serverError }}
       </p>
       <DashboardProfileFormLayout>
         <DashboardProfileIdentitySection v-model="form" />
@@ -50,6 +61,8 @@ function submit() {
           type="submit"
           color="primary"
           trailing-icon="i-lucide-arrow-right"
+          :loading="props.saving"
+          :disabled="props.saving"
         >
           Salvar e continuar
         </UButton>
