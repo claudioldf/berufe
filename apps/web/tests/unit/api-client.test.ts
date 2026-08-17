@@ -20,6 +20,7 @@ describe("API client", () => {
     const client = createApiClient({
       baseUrl: "http://localhost:3001/",
       fetch,
+      origin: "http://localhost:3000",
       requestId: () => "browser-request-123",
     });
 
@@ -29,6 +30,7 @@ describe("API client", () => {
     expect(result.data?.data.status).toBe("ok");
     expect(request?.credentials).toBe("include");
     expect(request?.headers.get("X-Request-Id")).toBe("browser-request-123");
+    expect(request?.headers.get("Origin")).toBeNull();
     expect(request?.url).toBe("http://localhost:3001/api/v1/status");
   });
 
@@ -57,13 +59,14 @@ describe("API client", () => {
     expect(requestId).not.toContain("5547");
   });
 
-  it("authorizes mutations with the session cookie alone and stores nothing in the browser", async () => {
+  it("adds the configured exact origin to SSR mutations and stores nothing in the browser", async () => {
     const fetch = vi.fn(async () =>
       Promise.resolve(new Response(null, { status: 204 })),
     );
     const client = createApiClient({
       baseUrl: "http://localhost:3001",
       fetch,
+      origin: "http://localhost:3000",
     });
 
     await client.DELETE("/api/v1/session");
@@ -71,6 +74,7 @@ describe("API client", () => {
     const request = fetch.mock.calls[0]?.[0];
     expect(request?.credentials).toBe("include");
     expect(request?.headers.get("X-Request-Id")).toMatch(/^[0-9a-f-]{36}$/);
+    expect(request?.headers.get("Origin")).toBe("http://localhost:3000");
     expect(window.localStorage.length).toBe(0);
   });
 });

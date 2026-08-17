@@ -629,6 +629,8 @@ Apply these rules whenever they are relevant to the story:
 
 ### S033 — Search published professionals
 
+**Status:** DONE
+
 **Story:** As a customer, I want to filter professionals by service and neighborhood so that results match what I need and where I live.
 
 **Acceptance criteria:**

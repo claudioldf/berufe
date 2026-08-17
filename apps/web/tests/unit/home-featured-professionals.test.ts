@@ -30,6 +30,11 @@ function professional(
       name: "Eletricista",
       slug: "eletricista",
     },
+    matchingService: {
+      id: "c43071a5-4c47-4324-99ef-41846ee35538",
+      name: "Eletricista",
+      slug: "eletricista",
+    },
     coverage: {
       allJoinville: false,
       neighborhoods: [

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_17_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_17_131000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -401,6 +401,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_130000) do
     t.text "neighborhood_code"
     t.uuid "professional_profile_revision_id", null: false
     t.datetime "updated_at", null: false
+    t.index ["neighborhood_code", "professional_profile_revision_id"], name: "idx_revision_service_areas_neighborhood_revision", where: "(neighborhood_code IS NOT NULL)"
     t.index ["professional_profile_revision_id", "city_code", "neighborhood_code"], name: "idx_revision_service_areas_unique_neighborhood", unique: true, where: "(neighborhood_code IS NOT NULL)"
     t.index ["professional_profile_revision_id", "city_code"], name: "idx_revision_service_areas_unique_all_city", unique: true, where: "(neighborhood_code IS NULL)"
     t.index ["professional_profile_revision_id"], name: "idx_revision_service_areas_revision"
@@ -416,6 +417,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_130000) do
     t.datetime "updated_at", null: false
     t.index ["professional_profile_revision_id", "service_id"], name: "idx_revision_services_unique_service", unique: true
     t.index ["professional_profile_revision_id"], name: "idx_revision_services_one_primary", unique: true, where: "is_primary"
+    t.index ["service_id", "professional_profile_revision_id"], name: "idx_revision_services_service_revision"
     t.index ["service_id"], name: "index_professional_profile_services_on_service_id"
     t.check_constraint "note IS NULL OR char_length(btrim(note)) >= 1 AND char_length(btrim(note)) <= 120", name: "professional_profile_services_note_length"
   end

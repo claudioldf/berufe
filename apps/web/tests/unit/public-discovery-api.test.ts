@@ -2,6 +2,7 @@ import type { BerufeApiClient } from "@app/services/api/client";
 import {
   fetchFeaturedProfessionals,
   mapPublicProfessionalCard,
+  searchPublicProfessionals,
 } from "@app/services/api/public-discovery";
 import type { ApiRequestError } from "@app/services/api/errors";
 import type { components } from "@app/services/api/schema";
@@ -16,6 +17,11 @@ const contractCard: ContractProfessionalCard = {
   photoUrl:
     "https://api.berufe.test/api/v1/public/profile-photos/4efae63b-b17c-4d4d-a3de-49bebdcba821/image",
   primaryService: {
+    id: "c43071a5-4c47-4324-99ef-41846ee35538",
+    name: "Eletricista",
+    slug: "eletricista",
+  },
+  matchingService: {
     id: "c43071a5-4c47-4324-99ef-41846ee35538",
     name: "Eletricista",
     slug: "eletricista",
@@ -39,6 +45,7 @@ const contractCard: ContractProfessionalCard = {
 function apiClientReturning(result: object) {
   return {
     GET: vi.fn().mockResolvedValue(result),
+    POST: vi.fn().mockResolvedValue(result),
   } as unknown as BerufeApiClient;
 }
 
@@ -53,6 +60,7 @@ describe("public discovery API", () => {
       headline: "Elétrica residencial.",
       photoUrl: contractCard.photoUrl,
       primaryService: contractCard.primaryService,
+      matchingService: contractCard.matchingService,
       coverage: contractCard.coverage,
       verificationLabels: contractCard.verificationLabels,
       portfolioCount: 3,
@@ -60,6 +68,63 @@ describe("public discovery API", () => {
       publicSnapshotUpdatedAt: "2026-08-17T12:00:00Z",
     });
     expect(card).not.toHaveProperty("whatsapp");
+  });
+
+  it("submits a service and optional neighborhood through the typed search operation", async () => {
+    const client = apiClientReturning({
+      data: {
+        data: {
+          query: {
+            normalizedTerm: "eletrica",
+            service: {
+              id: contractCard.matchingService!.id,
+              name: "Eletricista",
+              slug: "eletricista",
+              icon: "i-lucide-zap",
+              description: "Instalações elétricas residenciais.",
+            },
+            neighborhood: { code: "america", name: "América" },
+          },
+          professionals: [contractCard],
+          relatedServices: [],
+        },
+        request_id: "search-200",
+      },
+      error: undefined,
+      response: new Response(null),
+    });
+
+    const result = await searchPublicProfessionals(client, {
+      service: "Elétrica",
+      neighborhoodCode: "america",
+    });
+
+    expect(result.normalizedTerm).toBe("eletrica");
+    expect(result.professionals[0]?.matchingService?.name).toBe("Eletricista");
+    expect(client.POST).toHaveBeenCalledWith(
+      "/api/v1/public/professional-searches",
+      { body: { service: "Elétrica", neighborhoodCode: "america" } },
+    );
+  });
+
+  it("normalizes a search transport failure", async () => {
+    const client = apiClientReturning({
+      data: undefined,
+      error: undefined,
+      response: new Response(null),
+    });
+
+    await expect(
+      searchPublicProfessionals(client, { service: "Elétrica" }),
+    ).rejects.toMatchObject({
+      name: "ApiRequestError",
+      code: "unexpected_error",
+      requestId: "client",
+    } satisfies Partial<ApiRequestError>);
+    expect(client.POST).toHaveBeenCalledWith(
+      "/api/v1/public/professional-searches",
+      { body: { service: "Elétrica", neighborhoodCode: null } },
+    );
   });
 
   it("loads featured professionals through the generated operation", async () => {
