@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_17_131000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_17_132000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -464,6 +464,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_131000) do
     t.check_constraint "status = ANY (ARRAY['pending'::text, 'accepted'::text, 'declined'::text])", name: "professional_relationships_known_status"
   end
 
+  create_table "search_events", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.text "city_code", null: false
+    t.datetime "created_at", null: false
+    t.text "neighborhood_code"
+    t.boolean "profile_opened", default: false, null: false
+    t.text "query_text_normalized"
+    t.integer "result_count", null: false
+    t.uuid "service_id"
+    t.datetime "updated_at", null: false
+    t.boolean "whatsapp_handoff_occurred", default: false, null: false
+    t.index ["created_at", "service_id", "neighborhood_code"], name: "index_search_events_on_time_service_and_neighborhood"
+    t.index ["service_id"], name: "index_search_events_on_service_id"
+    t.check_constraint "city_code = 'Joinville'::text", name: "search_events_launch_city"
+    t.check_constraint "query_text_normalized IS NULL OR query_text_normalized ~ '^[a-z0-9]+( [a-z0-9]+)*$'::text AND char_length(query_text_normalized) <= 80", name: "search_events_normalized_query_format"
+    t.check_constraint "result_count >= 0", name: "search_events_result_count_nonnegative"
+  end
+
   create_table "service_categories", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "icon", null: false
@@ -603,6 +620,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_131000) do
   add_foreign_key "professional_profiles", "user_accounts"
   add_foreign_key "professional_relationships", "professional_profiles", column: "initiator_professional_id"
   add_foreign_key "professional_relationships", "professional_profiles", column: "recipient_professional_id"
+  add_foreign_key "search_events", "neighborhoods", column: "neighborhood_code", primary_key: "code"
+  add_foreign_key "search_events", "services"
   add_foreign_key "services", "service_categories", column: "category_id"
   add_foreign_key "verification_file_access_events", "user_accounts", column: "admin_user_id"
   add_foreign_key "verification_file_access_events", "verification_files"

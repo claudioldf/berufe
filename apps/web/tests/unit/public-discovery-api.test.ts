@@ -87,6 +87,10 @@ describe("public discovery API", () => {
           },
           professionals: [contractCard],
           relatedServices: [],
+          interaction: {
+            searchEventId: "8d09847f-14d8-4ef7-80ea-8be6e9eb6d81",
+            token: "signed-search-interaction",
+          },
         },
         request_id: "search-200",
       },
@@ -101,6 +105,10 @@ describe("public discovery API", () => {
 
     expect(result.normalizedTerm).toBe("eletrica");
     expect(result.professionals[0]?.matchingService?.name).toBe("Eletricista");
+    expect(result.interaction).toEqual({
+      searchEventId: "8d09847f-14d8-4ef7-80ea-8be6e9eb6d81",
+      token: "signed-search-interaction",
+    });
     expect(client.POST).toHaveBeenCalledWith(
       "/api/v1/public/professional-searches",
       { body: { service: "Elétrica", neighborhoodCode: "america" } },

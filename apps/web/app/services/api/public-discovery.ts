@@ -60,6 +60,7 @@ export async function searchPublicProfessionals(
     neighborhood: data.data.query.neighborhood,
     professionals: data.data.professionals.map(mapPublicProfessionalCard),
     relatedServices: data.data.relatedServices,
+    interaction: data.data.interaction,
   };
 }
 

@@ -3,13 +3,24 @@
 module Api
   module V1
     class PublicProfessionalSearchesController < BaseController
+      before_action :prevent_caching
+
       def create
+        term = params.require(:service)
         result = PublicProfessionalSearch.new.call(
-          term: params.require(:service),
+          term:,
           neighborhood_code: params[:neighborhoodCode]
         )
+        result.professionals.load
+        interaction = PublicSearchEventRecorder.new.call(
+          raw_term: term,
+          normalized_term: result.normalized_term,
+          service: result.service,
+          neighborhood: result.neighborhood,
+          result_count: result.professionals.length
+        )
         render json: {
-          data: PublicProfessionalSearchSerializer.new(result).as_json,
+          data: PublicProfessionalSearchSerializer.new(result, interaction:).as_json,
           request_id: Current.request_id
         }
       rescue PublicProfessionalSearch::InvalidInput => error

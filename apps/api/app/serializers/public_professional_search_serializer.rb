@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
 class PublicProfessionalSearchSerializer
-  def initialize(result)
+  def initialize(result, interaction: nil)
     @result = result
+    @interaction = interaction
   end
 
   def as_json(*)
@@ -20,11 +21,15 @@ class PublicProfessionalSearchSerializer
       end,
       relatedServices: result.related_services.map do |service|
         PublicServiceSuggestionSerializer.new(service).as_json
-      end
+      end,
+      interaction: interaction && {
+        searchEventId: interaction.search_event_id,
+        token: interaction.token
+      }
     }
   end
 
   private
 
-  attr_reader :result
+  attr_reader :interaction, :result
 end

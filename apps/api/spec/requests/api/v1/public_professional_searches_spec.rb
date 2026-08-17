@@ -53,6 +53,21 @@ RSpec.describe "Public professional searches", type: :request, openapi: true do
       "matchingService" => include("id" => electrician.id),
       "verificationLabels" => include(include("type" => "phone", "label" => "Telefone confirmado"))
     )
+    event = SearchEvent.find(data.dig("interaction", "searchEventId"))
+    expect(event).to have_attributes(
+      service_id: electrician.id,
+      query_text_normalized: "eletrica contratada",
+      city_code: "Joinville",
+      neighborhood_code: neighborhood.code,
+      result_count: 1,
+      profile_opened: false,
+      whatsapp_handoff_occurred: false
+    )
+    expect(PublicInteractionToken.new.verify(data.dig("interaction", "token"))).to have_attributes(
+      search_event_id: event.id,
+      service_id: electrician.id
+    )
+    expect(response.headers["Cache-Control"]).to eq("no-store")
     expect(response.body).not_to include("whatsapp", "+5547")
     assert_api_conform(status: 200)
   end
@@ -79,6 +94,44 @@ RSpec.describe "Public professional searches", type: :request, openapi: true do
     expect(data.dig("query", "service")).to be_nil
     expect(data.fetch("professionals")).to eq([])
     expect(data.fetch("relatedServices").pluck("id")).not_to include(inactive.id)
+    expect(SearchEvent.find(data.dig("interaction", "searchEventId"))).to have_attributes(
+      service_id: nil,
+      query_text_normalized: "dedetizacao",
+      result_count: 0
+    )
+    assert_api_conform(status: 200)
+  end
+
+  it "does not retain sensitive search text" do
+    post "/api/v1/public/professional-searches",
+      params: {service: "ana@example.com"},
+      headers: request_headers("search-sensitive"),
+      as: :json
+
+    expect(response).to have_http_status(:ok)
+    event = SearchEvent.find(response.parsed_body.dig("data", "interaction", "searchEventId"))
+    expect(event.query_text_normalized).to be_nil
+    expect(event.service_id).to be_nil
+    expect(response.body).not_to include("ana@example.com")
+    assert_api_conform(status: 200)
+  end
+
+  it "returns customer results when event persistence fails" do
+    create_published_profile
+    allow(SearchEvent).to receive(:create!).and_raise(ActiveRecord::ConnectionNotEstablished)
+    allow(Rails.logger).to receive(:error)
+
+    post "/api/v1/public/professional-searches",
+      params: {service: electrician.slug, neighborhoodCode: neighborhood.code},
+      headers: request_headers("search-event-failed"),
+      as: :json
+
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body.dig("data", "professionals").size).to eq(1)
+    expect(response.parsed_body.dig("data", "interaction")).to be_nil
+    expect(Rails.logger).to have_received(:error).with(
+      "public_search_event_recording_failed class=ActiveRecord::ConnectionNotEstablished request_id=search-event-failed"
+    )
     assert_api_conform(status: 200)
   end
 
