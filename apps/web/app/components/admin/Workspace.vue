@@ -20,9 +20,7 @@ const props = defineProps<{
           <span class="admin-heading__avatar">CD</span>
           <div>
             <strong class="admin-heading__user-name">Cláudio Dias</strong>
-            <small class="admin-heading__user-role">
-              Administrador · MFA ativo
-            </small>
+            <small class="admin-heading__user-role"> Administrador </small>
           </div>
           <UIcon class="admin-heading__shield" name="i-lucide-shield-check" />
         </div>

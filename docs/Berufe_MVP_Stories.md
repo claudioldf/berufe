@@ -1,7 +1,7 @@
 # Berufe — MVP Implementation Stories
 
 **Status:** implementation backlog
-**Updated:** August 13, 2026
+**Updated:** August 17, 2026
 **Sources:** _Berufe — MVP Feature Plan_ and _Berufe — Lean MVP Infrastructure and Architecture_
 
 ## 1. Purpose
@@ -22,6 +22,7 @@ The backlog intentionally excludes V2 work. Story IDs removed during the August 
 
 ### Story format
 
+- **Status:** `DONE`, `WIP`, or `PENDING`; change it only when the repository state changes.
 - **Story:** the user or operator outcome.
 - **Acceptance criteria:** observable conditions required for completion.
 - **Depends on:** prerequisite story IDs.
@@ -85,10 +86,10 @@ Apply these rules whenever they are relevant to the story:
 
 - `.env.example` lists required variable names and safe development defaults without secrets.
 - Rails validates required environment variables at boot for the selected environment.
-- Development uses a local-disk storage adapter and a fake SMS-OTP adapter by default.
+- Development uses local-disk storage and selects the fake SMS-OTP adapter by default. A developer may explicitly select a restricted Infobip profile with allowlisted test numbers through `.env`; adapter selection never falls back at runtime.
 - Production SMS OTP uses Infobip's 2FA API through a purpose-specific adapter. The integration documents application/message-template identifiers, Brazilian sender-registration prerequisites, API-key ownership, delivery limits, challenge verification, and provider-failure behavior.
-- Production credentials are dedicated to Berufe. Stable staging, local development, and pull-request previews use the fake adapter by default; any explicit integration check uses a separate restricted Infobip application/profile and allowlisted test numbers, never production credentials or real-user data.
-- Infobip is not Berufe's account, session, authorization, or admin-MFA provider.
+- Production credentials are dedicated to Berufe. Stable staging and integration use a separate restricted Infobip application/profile and allowlisted test numbers. Local development uses that restricted profile only when explicitly selected; pull-request previews use the fake adapter and receive no provider credentials.
+- Infobip is not Berufe's account, session, authorization, or administrator-password provider.
 - Production-only credentials remain server-side and cannot enter the Nuxt client bundle.
 - Local, pull-request preview, stable staging, and production configuration are clearly separated.
 
@@ -120,7 +121,7 @@ Apply these rules whenever they are relevant to the story:
 - The API uses `RAILS_MAX_THREADS=5` and `DB_POOL=5`; the worker uses `GOOD_JOB_MAX_THREADS=2` and `DB_POOL=5`. Deployment documentation uses `(API replicas × API pool) + (worker replicas × worker pool) + migration/admin allowance`, reserves 15 connections for one API/worker replica plus administration, selects a plan with at least 20 available connections, and recalculates before scaling.
 - GoodJob tables are created through committed Rails migrations in the existing PostgreSQL database.
 - A harmless probe job can be enqueued, processed, failed, retried, and inspected.
-- The worker exposes GoodJob's HTTP running/started/connected probes; the dashboard is mounted only behind an active admin session with current MFA.
+- The worker exposes GoodJob's HTTP running/started/connected probes; the dashboard is mounted only behind an active password-authenticated admin session.
 - Jobs receive a request or correlation ID when originating from a web request.
 - Job code is documented as retry-safe; no Redis or alternative queue is added.
 
@@ -136,9 +137,9 @@ Apply these rules whenever they are relevant to the story:
 - `apps/contracts/openapi.yaml` is a valid OpenAPI 3.1.0 document and the source of truth for all `/api/v1` product operations.
 - Successful and failed JSON responses follow the contract; the shared error envelope contains `code`, safe `message`, optional `field_errors` as field-name-to-message-array entries, and string `request_id`.
 - Lists support deterministic ordering and pagination when needed.
-- The contract declares the Rails application-session cookie and CSRF header security requirements.
+- The contract declares the Rails application-session cookie security requirement and the exact-origin rule for authenticated mutations.
 - `apps/web` provides `api:generate` using `openapi-typescript ../contracts/openapi.yaml -o app/services/api/schema.d.ts`; the generated file is committed.
-- `app/services/api/client.ts` uses `openapi-fetch` to handle the API base URL, credentials, CSRF header, and typed operations; `errors.ts` normalizes the shared error envelope.
+- `app/services/api/client.ts` uses `openapi-fetch` to handle the API base URL, credentials, and typed operations; `errors.ts` normalizes the shared error envelope.
 - Rails request specs use `openapi_first` against the same file to validate important requests/responses and report operation/status coverage.
 - A sample endpoint proves browser-to-Nuxt-to-Rails communication and contract validation in Compose.
 
@@ -193,16 +194,20 @@ Apply these rules whenever they are relevant to the story:
 
 ## 5. Increment 1 — Access, roles, and controlled catalogs
 
+**Status:** DONE
+
 **Increment outcome:** professionals and admins can securely access Berufe, and the product has the controlled service/location vocabulary needed by onboarding and Finder.
 
 ### S010 — Seed the service and Joinville catalogs
+
+**Status:** DONE
 
 **Story:** As Berufe operations, I want an approved service and neighborhood catalog so that profiles and search use the same vocabulary.
 
 **Acceptance criteria:**
 
 - Migrations create `service_categories`, `services`, and `neighborhoods` with the constraints defined in Feature E2.
-- Seed data using ./apps/web/data/catalogs.json.
+- Seed data using ./apps/web/data/catalogs.json. The `all` entry is a derived “Toda Joinville” selector and is not persisted as a neighborhood.
 - Seeds are idempotent and use stable slugs/codes plus deterministic `sort_order` values for every reorderable catalog, including neighborhoods.
 - Public read endpoints return active entries in configured order.
 
@@ -211,13 +216,15 @@ Apply these rules whenever they are relevant to the story:
 
 ### S011 — Request a phone OTP
 
+**Status:** DONE
+
 **Story:** As a professional, I want to request a code using my Brazilian phone number so that I can access Berufe without a password.
 
 **Acceptance criteria:**
 
 - The login page accepts and normalizes Brazilian numbers to E.164.
 - Rails applies a resend cooldown and conservative daily allowances by phone and IP using short-lived PostgreSQL digests/counters.
-- Rails synchronously starts the challenge through a small Infobip 2FA adapter; local, test, stable staging, and pull-request preview environments use a fake implementation by default. No OTP-delivery job is enqueued.
+- Rails synchronously starts the challenge through a small SMS-OTP adapter. Production uses Infobip; stable staging and integration use restricted Infobip with an explicit allowlist; local development selects fake or restricted Infobip through `.env`; automated tests and pull-request previews use fake delivery. No OTP-delivery job is enqueued.
 - Infobip owns the OTP value and delivery result. Rails stores a short-lived `otp_challenge` that binds an encrypted normalized phone and encrypted Infobip challenge ID to a separate high-entropy browser token stored only as a digest; it also stores short-lived abuse-control digests/counters.
 - The API contract defines accepted, invalid-phone, rate-limited, provider-unavailable, and delivery-rejected outcomes. Rate-limit responses include `Retry-After` and every failure uses the shared safe error envelope.
 - Responses do not reveal whether an account exists and do not log phone numbers, OTPs, or request bodies.
@@ -229,64 +236,72 @@ Apply these rules whenever they are relevant to the story:
 
 ### S012 — Verify the Infobip OTP and create a Rails application session
 
+**Status:** DONE
+
 **Story:** As a professional, I want to submit the received code so that Berufe can create an authenticated browser session.
 
 **Acceptance criteria:**
 
 - Rails verifies the code through the Infobip adapter and never stores the OTP.
 - Verification requires the unexpired, unconsumed Rails challenge token, decrypts the bound Infobip reference/phone only server-side, and consumes the challenge atomically on success.
-- A successful check validates the challenge result and creates or finds the Rails-owned account by its unique verified E.164 phone. The Rails UUID is the stable Berufe identity; an Infobip challenge ID is not an account identifier.
-- Rails creates an `application_session` containing a unique token digest, account ID, `sms_otp` authentication method, authentication time, last activity, idle/absolute expiries, CSRF digest, and nullable revocation time. Admin sessions also record MFA time.
+- A successful check validates the challenge result and creates or finds the Rails-owned professional account by its unique verified E.164 phone. SMS verification never creates or authenticates an admin account. The Rails UUID is the stable Berufe identity; an Infobip challenge ID is not an account identifier.
+- Rails creates an `application_session` containing a unique token digest, account ID, `sms_otp` authentication method, authentication time, last activity, idle/absolute expiries, and nullable revocation time.
 - The browser receives only the random application-session token in the host-only `__Host-berufe_session` cookie with `Secure`, `HttpOnly`, `SameSite=Lax`, and `Path=/`; no `Domain` is set.
-- Infobip credentials and raw Rails challenge/session tokens never enter browser storage or application logs; neither authentication nor CSRF tokens are stored in `localStorage`.
+- Infobip credentials and raw Rails challenge/session tokens never enter browser storage or application logs; no authentication material is stored in `localStorage`.
 - Professional sessions use 7-day idle and 30-day absolute expiry; admin sessions use 30-minute idle and 12-hour absolute expiry. Last-activity persistence is throttled.
 - Invalid, expired, and provider-unavailable results use generic safe messages.
-- The Infobip 2FA implementation is enabled only where explicitly configured behind the same small adapter.
-- Model/request tests cover token hashing, professional/admin idle and absolute boundaries, throttled activity writes, MFA time, invalid/expired verification, and safe provider-unavailable behavior.
+- The Infobip 2FA implementation remains behind the same small adapter. Production always uses it, stable staging and integration use a restricted allowlisted configuration, local development may explicitly select it, and automated tests and pull-request previews use the fake implementation.
+- Model/request tests cover token hashing, professional idle and absolute boundaries, throttled activity writes, refusal to authenticate admins by SMS, invalid/expired verification, and safe provider-unavailable behavior.
 
 **Depends on:** S011.
 **Covers:** Feature A1; Infrastructure §8.
 
 ### S013 — Restore, inspect, and end a session
 
+**Status:** DONE
+
 **Story:** As an authenticated user, I want my session restored safely and to be able to sign out so that access works across normal browser navigation.
 
 **Acceptance criteria:**
 
-- Nuxt can request the current account/session summary plus a rotating CSRF token without receiving the raw stored session token or any provider token; Nuxt keeps the CSRF token in memory only.
+- Nuxt can request the current account/session summary without receiving the raw stored session token or any provider token; the browser holds no authentication material of its own, since the host-only session cookie is `HttpOnly`.
 - Rails authenticates each request locally from the application-session token digest, enforces idle/absolute expiry, and then applies account status, role, and authorization policies without contacting the provider.
 - Logout revokes the current application session and clears the browser cookie. Suspension and the admin revoke-all action invalidate every application session for the account immediately.
 - Existing Rails sessions continue through a provider outage until their own expiry or revocation; new challenge initiation/verification returns a safe `503`.
 - Expired OTP counters, provider challenge references, and application sessions are purged by retry-safe GoodJob jobs according to the retention matrix.
 - Authenticated routes redirect cleanly to login while Rails remains the authorization authority.
-- Request tests cover current-session CSRF rotation, idle/absolute expiry, logout of one session, revoke-all/suspension, and continued local authentication during provider outage.
+- Request tests cover current-session reads, idle/absolute expiry, logout of one session, revoke-all/suspension, and continued local authentication during provider outage.
 
 **Depends on:** S012, S005.
 **Covers:** Feature A1; Infrastructure §§6 and 8.
 
-### S014 — Protect browser sessions with CORS and CSRF controls
+### S014 — Protect browser sessions with CORS and origin controls
+
+**Status:** DONE
 
 **Story:** As a user, I want authenticated changes protected against cross-site requests so that another site cannot act as me.
 
 **Acceptance criteria:**
 
 - Credentialed CORS uses only exact local, stable-staging, and production Nuxt origins; pull-request previews are absent and no Vercel wildcard is allowed.
-- State-changing cookie-authenticated requests require the rotating CSRF token bound by digest to the current application session plus an exact valid origin.
-- Nuxt obtains the CSRF token from the current-session response, keeps it in memory, and sends it through the shared API client.
+- Every state-changing request, authenticated or not, requires an exact valid origin; a missing or non-matching `Origin` is refused before the action runs. `SameSite=Lax` on the session cookie is the complementary control, since the browser never attaches it to a cross-site mutation.
+- Nuxt sends credentialed requests through the shared API client and holds no token of its own; the browser supplies the `Origin` header, which page scripts cannot forge.
 - Security headers cover content type, framing, and referrer behavior.
-- Request tests prove exact allowed-origin success; missing/invalid CSRF, malformed origins, Vercel preview origins, and all other cross-origin mutations are rejected.
+- Request tests prove exact allowed-origin success; missing origins, malformed origins, Vercel preview origins, and all other cross-origin mutations are rejected on every mutating route, including OTP challenge and verification.
 
 **Depends on:** S012.
 **Covers:** Infrastructure §§8 and 12.
 
 ### S015 — Add roles and record-level authorization
 
+**Status:** DONE
+
 **Story:** As Berufe, I want explicit professional and admin authorization so that users can access only permitted records and actions.
 
 **Acceptance criteria:**
 
 - Accounts support `professional` and `admin` roles plus `active` and `suspended` states.
-- Each account has a Rails UUID and unique verified E.164 phone. Infobip challenge IDs remain short-lived authentication metadata and are never treated as Berufe account identities.
+- Each account has a Rails UUID. Professional accounts have a unique verified E.164 phone, while administrator accounts use their unique normalized email; Infobip challenge IDs remain short-lived authentication metadata and are never treated as Berufe account identities.
 - Pundit policies and scopes protect authenticated endpoints, owned records, admin actions, and approved public data.
 - Public serializers exclude private and restricted fields by default.
 - Policy/request tests prove anonymous, owner, non-owner, admin, and suspended-user behavior.
@@ -296,6 +311,8 @@ Apply these rules whenever they are relevant to the story:
 **Covers:** Features A1 and E1; Infrastructure §§6, 8–9, and 12.
 
 ### S016 — Complete professional registration and create a draft profile
+
+**Status:** DONE
 
 **Story:** As a first-time professional, I want to provide my name and accept the terms so that I can begin building my profile.
 
@@ -309,16 +326,20 @@ Apply these rules whenever they are relevant to the story:
 **Depends on:** S013, S015.
 **Covers:** Feature A1 and the invited-professional entry path in Feature C1.
 
-### S017 — Secure admin access with MFA and audit context
+### S017 — Secure admin access with password authentication and audit context
+
+**Status:** DONE
 
 **Story:** As a Berufe admin, I want stronger access protection so that sensitive moderation and verification work is not protected by phone login alone.
 
 **Acceptance criteria:**
 
-- Admin accounts are provisioned deliberately and cannot be created through professional registration.
-- Every new admin application session requires a separately enrolled TOTP after successful SMS OTP and records `mfa_authenticated_at`.
-- TOTP secrets use Rails application-level encryption, recovery codes are stored only as hashes, enrollment/reset is an audited manual admin operation, and neither value is sent to Infobip.
-- Admin routes require the admin role, an unexpired 30-minute-idle/12-hour-absolute session, and current MFA context.
+- Admin accounts are provisioned deliberately with a unique normalized email and strong password and cannot be created through professional registration or SMS login.
+- `AdminSeed` is the only application service allowed to create an admin account; non-production `db:seed` calls it idempotently, while production execution is refused with a warning. There is no administrator-creation API or separate provisioning task.
+- Admins authenticate through a dedicated email/password API endpoint and Nuxt route; professional login remains SMS-only.
+- Rails stores only a BCrypt password digest, uses generic authentication failures and conservative database-backed throttling, and never logs or serializes credentials.
+- Seed provisioning and manual password resets are audited operations; each creates an append-only event with the target admin, operator identifier, request ID, action, and time.
+- Admin routes require the admin role, an unexpired 30-minute-idle/12-hour-absolute session, and the `password` authentication method.
 - Admin actions receive the acting admin ID and request ID for later audit records.
 - There is no multi-level moderator permission system in the MVP.
 
@@ -327,14 +348,18 @@ Apply these rules whenever they are relevant to the story:
 
 ### S018 — Manage services and Joinville neighborhoods
 
+**Status:** DONE
+
 **Story:** As a Berufe administrator, I want to maintain the controlled catalog so that onboarding and Finder use an accurate vocabulary without requiring a deployment for routine changes.
 
 **Acceptance criteria:**
 
-- An active administrator with current MFA can list, add, rename, reorder, activate, and deactivate services and Joinville neighborhoods through typed OpenAPI operations and Nuxt forms.
+- An active administrator with a password-authenticated session can list, add, rename, reorder, activate, and deactivate services and Joinville neighborhoods through typed OpenAPI operations and Nuxt forms.
 - The neighborhood list exposes UF, city, and neighborhood columns and supports independent accent-insensitive free-text filters for all three fields; launch data remains limited to Joinville, SC.
+- “Toda Joinville” is derived by Nuxt for professional/public selection and is not persisted or exposed through the private neighborhood-management endpoint.
 - When creating a neighborhood, Nuxt suggests its stable code from the typed name using lowercase ASCII kebab case (`Santo Antônio` → `santo-antonio`); the administrator may adjust it before saving, after which it is immutable.
-- A service retains its controlled category assignment; service-category hierarchy changes and search-alias administration remain post-MVP.
+- A service always retains one controlled category assignment and an administrator may reassign it among the existing categories; service-category hierarchy changes and search-alias administration remain post-MVP.
+- A new service inherits the selected category icon and starts with no search aliases; neither field is added to the administrator form.
 - Stable service slugs and neighborhood codes cannot change after creation, and entries referenced by profiles, searches, evidence, or historical aggregates cannot be hard-deleted.
 - Every mutation persists deterministic `sort_order`, records the acting administrator and request ID, and returns the shared error envelope for validation or conflict failures.
 - Inactive entries remain available to historical serializers but cannot be selected for new professional records or public searches.
@@ -345,9 +370,13 @@ Apply these rules whenever they are relevant to the story:
 
 ## 6. Increment 2 — Credible professional supply
 
+**Status:** PENDING
+
 **Increment outcome:** founding professionals can create, submit, and receive approval for complete profiles, portfolio evidence, and verification labels. Approved profiles are safe to expose publicly.
 
 ### S019 — Edit professional identity and contact information
+
+**Status:** PENDING
 
 **Story:** As a professional, I want to edit my public identity, WhatsApp contact, and optional social profile links so that customers understand who I am and where they can see more of my work.
 
@@ -366,6 +395,8 @@ Apply these rules whenever they are relevant to the story:
 
 ### S020 — Select services and service areas
 
+**Status:** PENDING
+
 **Story:** As a professional, I want to select what I do and where I work so that I can appear in relevant searches.
 
 **Acceptance criteria:**
@@ -381,6 +412,8 @@ Apply these rules whenever they are relevant to the story:
 
 ### S021 — Create a stable public slug and inline profile representation
 
+**Status:** PENDING
+
 **Story:** As a professional, I want a stable public profile URL and an inline representation of public fields so that I understand what customers will eventually see.
 
 **Acceptance criteria:**
@@ -394,6 +427,8 @@ Apply these rules whenever they are relevant to the story:
 **Covers:** Features A2 and B3.
 
 ### S022 — Submit a profile for moderation
+
+**Status:** PENDING
 
 **Story:** As a professional, I want to submit a sufficiently complete profile so that Berufe can review it for publication.
 
@@ -410,6 +445,8 @@ Apply these rules whenever they are relevant to the story:
 
 ### S023 — Build the shared moderation queue and audit trail
 
+**Status:** PENDING
+
 **Story:** As an admin, I want one oldest-first queue for pending content so that the founding cohort can be reviewed consistently.
 
 **Acceptance criteria:**
@@ -425,6 +462,8 @@ Apply these rules whenever they are relevant to the story:
 
 ### S024 — Approve and publish a professional profile
 
+**Status:** PENDING
+
 **Story:** As an admin, I want to approve or reject a submitted profile so that only suitable profiles become searchable.
 
 **Acceptance criteria:**
@@ -439,6 +478,8 @@ Apply these rules whenever they are relevant to the story:
 **Covers:** Features A2 and E1.
 
 ### S025 — Configure local and R2 object storage
+
+**Status:** PENDING
 
 **Story:** As a professional, I want to upload permitted files without sending large file bodies through Rails so that media workflows are reliable.
 
@@ -457,6 +498,8 @@ Apply these rules whenever they are relevant to the story:
 
 ### S026 — Upload and moderate the profile photo
 
+**Status:** PENDING
+
 **Story:** As a professional, I want to add a profile photo so that customers can recognize me while unsafe or unapproved images remain private.
 
 **Acceptance criteria:**
@@ -471,6 +514,8 @@ Apply these rules whenever they are relevant to the story:
 **Covers:** Features A2 and E1; Infrastructure §§6 and 10.
 
 ### S027 — Create and manage portfolio items
+
+**Status:** PENDING
 
 **Story:** As a professional, I want to add and order examples of completed work so that customers can see relevant evidence.
 
@@ -487,6 +532,8 @@ Apply these rules whenever they are relevant to the story:
 
 ### S028 — Moderate portfolio items
 
+**Status:** PENDING
+
 **Story:** As an admin, I want to approve, reject, hide, and restore portfolio items so that public portfolios contain reviewed evidence only.
 
 **Acceptance criteria:**
@@ -501,6 +548,8 @@ Apply these rules whenever they are relevant to the story:
 **Covers:** Features A3 and E1.
 
 ### S029 — Submit private verification evidence
+
+**Status:** PENDING
 
 **Story:** As a professional, I want to request identity verification so that Berufe can publish a precise evidence label.
 
@@ -519,6 +568,8 @@ Apply these rules whenever they are relevant to the story:
 
 ### S030 — Review verification and publish precise labels
 
+**Status:** PENDING
+
 **Story:** As an admin, I want to approve or reject verification evidence so that customers can distinguish checked facts from declarations.
 
 **Acceptance criteria:**
@@ -533,6 +584,8 @@ Apply these rules whenever they are relevant to the story:
 **Covers:** Features A4 and E1.
 
 ### S031 — Protect and retain restricted files
+
+**Status:** PENDING
 
 **Story:** As Berufe operations, I want verification-file access and retention controlled so that identity evidence is not kept or exposed unnecessarily.
 
@@ -794,13 +847,13 @@ The MVP report includes only implemented launch domains: professional supply and
 **Acceptance criteria:**
 
 - Rails and Nuxt accept inbound request IDs only when they match ASCII `[A-Za-z0-9._-]{1,100}` and otherwise generate a UUID; Nuxt forwards the accepted/generated value to Rails and Rails propagates it into GoodJob jobs and Bugsnag events.
-- Logs and Bugsnag exclude cookies, authorization/CSRF headers, request parameters/bodies, phone numbers, OTPs, raw Infobip/application-session/share tokens or challenge secrets, signed URLs, verification files, quote customer details, and job arguments.
+- Logs and Bugsnag exclude cookies, authorization headers, request parameters/bodies, phone numbers, OTPs, raw Infobip/application-session/share tokens or challenge secrets, signed URLs, verification files, quote customer details, and job arguments.
 - Separate Bugsnag projects capture Rails/Active Job/GoodJob exceptions and Nuxt browser/SSR exceptions. Production source maps are uploaded privately.
 - Bugsnag is error-only: performance monitoring, distributed tracing, automatic session tracking, user/anonymous identification, and IP collection are disabled. Events include only release, environment, normalized route or job class, request ID, exception, and stack trace.
 - Production unhandled exceptions, terminal job failures, and GoodJob executor/thread failures immediately notify the named operations owner.
 - Health endpoints distinguish Rails readiness and GoodJob running/started/database-connected states without leaking secrets.
 - Successful GoodJob records are retained for 14 days and reviewed discarded failures for 30 days; unresolved failures are not automatically deleted and cleanup runs daily.
-- The GoodJob dashboard requires an active admin application session with current MFA. The documented procedure covers inspection, retry, discard review, and escalation.
+- The GoodJob dashboard requires an active password-authenticated admin application session. The documented procedure covers inspection, retry, discard review, and escalation.
 - Queue monitoring warns when the oldest runnable job exceeds five minutes and alerts critically at fifteen minutes; operators can also identify failed logins/uploads and old moderation work.
 - Automated tests prove the redaction callbacks remove every prohibited field, and a production-like smoke event verifies delivery, project routing, release metadata, source-map resolution, and owner notification before launch.
 
@@ -831,7 +884,7 @@ The MVP report includes only implemented launch domains: professional supply and
 
 - Nuxt deploys to Vercel and Rails plus the GoodJob worker deploy from the same backend image to Render.
 - Render PostgreSQL is the only production application database; Nuxt cannot connect to it directly.
-- One stable staging Nuxt deployment connects to one stable staging Rails API/worker, PostgreSQL database, R2 configuration, and fake SMS-OTP adapter containing synthetic data only.
+- One stable staging Nuxt deployment connects to one stable staging Rails API/worker, PostgreSQL database, R2 configuration, and a restricted Infobip profile limited to allowlisted test numbers.
 - Vercel pull-request previews are mock-only and receive neither a staging API URL nor staging credentials. Credentialed CORS excludes preview origins and contains no wildcard.
 - Production Infobip credentials are absent from stable staging and previews. Any separately approved integration environment uses a restricted Infobip application/message profile and allowlisted test numbers.
 - The Nuxt SSR execution location and Rails/PostgreSQL region are recorded. Rails and PostgreSQL run together in the closest practical Render region.

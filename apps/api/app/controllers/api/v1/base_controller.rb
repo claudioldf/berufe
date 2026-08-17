@@ -3,8 +3,20 @@
 module Api
   module V1
     class BaseController < ApplicationController
+      include Pundit::Authorization
+
+      before_action :verify_request_origin!, if: :state_changing_request?
+
       rescue_from ActiveRecord::RecordNotFound do
         render_api_error(code: "not_found", message: "Recurso não encontrado.", status: :not_found)
+      end
+
+      rescue_from Pundit::NotAuthorizedError do
+        render_api_error(
+          code: "authorization_denied",
+          message: "Você não tem permissão para realizar esta ação.",
+          status: :forbidden
+        )
       end
 
       rescue_from ActionController::ParameterMissing do |exception|
@@ -17,6 +29,90 @@ module Api
       end
 
       private
+
+      def pundit_user
+        Current.user_account
+      end
+
+      def authenticate_application_session!
+        application_session = ApplicationSessionAuthenticator.new.call(
+          token: request.cookies[ApplicationSession::COOKIE_NAME]
+        )
+        return render_authentication_required unless application_session
+
+        Current.application_session = application_session
+        Current.user_account = application_session.user_account
+      end
+
+      def authenticate_password_admin_session!
+        authenticate_application_session!
+        return if performed?
+
+        session = Current.application_session
+        return render_authentication_required unless Current.user_account.admin? &&
+          session.authentication_method == "password"
+
+        Current.admin_action_context = AdminActionContext.new(
+          admin_user_id: Current.user_account.id,
+          request_id: Current.request_id
+        )
+      end
+
+      def verify_request_origin!
+        return if valid_request_origin?
+
+        render_request_not_allowed
+      end
+
+      def render_authentication_required
+        clear_application_session_cookie
+        render_api_error(
+          code: "authentication_required",
+          message: "Entre novamente para continuar.",
+          status: :unauthorized
+        )
+      end
+
+      def clear_application_session_cookie
+        response.delete_cookie(
+          ApplicationSession::COOKIE_NAME,
+          secure: true,
+          httponly: true,
+          same_site: :lax,
+          path: "/"
+        )
+      end
+
+      def set_application_session_cookie(session:, token:)
+        response.set_cookie(ApplicationSession::COOKIE_NAME, {
+          value: token,
+          expires: session.absolute_expires_at,
+          secure: true,
+          httponly: true,
+          same_site: :lax,
+          path: "/"
+        })
+      end
+
+      def valid_request_origin?
+        request.headers["Origin"] == ENV.fetch("WEB_ORIGIN")
+      end
+
+      def state_changing_request?
+        request.post? || request.put? || request.patch? || request.delete?
+      end
+
+      def prevent_caching
+        response.set_header("Cache-Control", "no-store")
+      end
+
+      def render_request_not_allowed
+        render_api_error(
+          code: "request_not_allowed",
+          message: "Não foi possível validar esta solicitação.",
+          status: :forbidden
+        )
+      end
 
       def render_api_error(code:, message:, status:, field_errors: nil)
         error = {code:, message:, request_id: Current.request_id}

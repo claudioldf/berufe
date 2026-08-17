@@ -1,0 +1,48 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+def fail_smoke_check!(message)
+  warn "Infobip OTP smoke test failed: #{message}"
+  exit 1
+end
+
+begin
+  require_relative "../config/environment"
+rescue => error
+  if defined?(Berufe::Environment::InvalidConfiguration) && error.is_a?(Berufe::Environment::InvalidConfiguration)
+    fail_smoke_check!(error.message)
+  end
+
+  fail_smoke_check!("Rails could not boot (#{error.class}). Check the API logs for details.")
+end
+
+begin
+  settings = Rails.configuration.x.berufe.environment
+  fail_smoke_check!("production execution is not allowed") if settings.name == "production"
+  fail_smoke_check!("the Infobip adapter is not active") unless settings.sms_otp_adapter == "infobip"
+
+  phone = ENV.fetch("INFOBIP_TEST_NUMBERS").split(",").first.to_s.strip
+  fail_smoke_check!("INFOBIP_TEST_NUMBERS has no recipient") if phone.empty?
+
+  client = SmsOtpClient.build
+  fail_smoke_check!("the Infobip adapter is not active") unless client.is_a?(InfobipOtpClient)
+
+  challenge = client.start_challenge(phone:)
+  unless challenge.status == "accepted" && !challenge.reference.to_s.empty?
+    fail_smoke_check!("Infobip returned an invalid acceptance response")
+  end
+
+  puts "Infobip OTP smoke test accepted. Confirm SMS receipt and the request in Infobip logs."
+rescue KeyError => error
+  fail_smoke_check!("missing required environment variable #{error.key}")
+rescue SmsOtp::RateLimited => error
+  retry_after = error.retry_after.to_s
+  retry_hint = retry_after.match?(/\A\d+\z/) ? " Retry after #{retry_after} seconds." : ""
+  fail_smoke_check!("Infobip rate limited the request.#{retry_hint}")
+rescue SmsOtp::DeliveryRejected
+  fail_smoke_check!("Infobip rejected the recipient, sender, or delivery configuration")
+rescue SmsOtp::ProviderUnavailable
+  fail_smoke_check!("Infobip is unavailable or rejected the credentials; check the API key, 2fa:pin:send scope, base URL, and 2FA application/template IDs")
+rescue => error
+  fail_smoke_check!("unexpected #{error.class}; check the API logs for details")
+end

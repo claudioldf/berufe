@@ -6,6 +6,596 @@ info:
 servers:
   - url: /
 paths:
+  /api/v1/auth/otp/challenges:
+    post:
+      operationId: requestPhoneOtp
+      summary: Request a Brazilian phone OTP challenge
+      tags:
+        - Authentication
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PhoneOtpRequest"
+      responses:
+        "201":
+          description: The SMS provider accepted the challenge synchronously.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PhoneOtpChallengeResponse"
+        "403":
+          description: The exact browser origin is invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: The phone is invalid or SMS delivery was rejected.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: A Rails or provider cooldown/daily allowance was reached.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Retry-After:
+              $ref: "#/components/headers/RetryAfter"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: The SMS provider or challenge persistence is unavailable.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/auth/otp/verifications:
+    post:
+      operationId: verifyPhoneOtp
+      summary: Verify a phone OTP and create an application session
+      tags:
+        - Authentication
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PhoneOtpVerificationRequest"
+      responses:
+        "200":
+          description: The provider verified the code and Rails created an application session.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Set-Cookie:
+              $ref: "#/components/headers/ApplicationSessionCookie"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PhoneOtpVerificationResponse"
+        "403":
+          description: The exact browser origin is invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: The code or browser challenge is invalid, expired, or consumed.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: The provider or session persistence is unavailable.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/admin/session:
+    post:
+      operationId: createAdminSession
+      summary: Authenticate a deliberately provisioned administrator with email and password
+      tags:
+        - Authentication
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminSessionRequest"
+      responses:
+        "200":
+          description: The credentials were accepted and Rails created an administrator session.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Set-Cookie:
+              $ref: "#/components/headers/ApplicationSessionCookie"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminSessionResponse"
+        "401":
+          description: The credentials are invalid or the administrator is unavailable.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: The exact browser origin is invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: The email or source address reached its login-attempt allowance.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Retry-After:
+              $ref: "#/components/headers/RetryAfter"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: Administrator authentication persistence is temporarily unavailable.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/admin/catalog:
+    get:
+      operationId: getAdminCatalog
+      summary: Read the complete administrator-managed catalog
+      tags:
+        - Catalog
+      security:
+        - applicationSession: []
+      responses:
+        "200":
+          description: Active and inactive catalog entries in their configured order.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminCatalogResponse"
+        "401":
+          $ref: "#/components/responses/AdminCatalogUnauthorized"
+        "503":
+          $ref: "#/components/responses/AdminCatalogUnavailable"
+  /api/v1/admin/catalog/services:
+    post:
+      operationId: createAdminCatalogService
+      summary: Add a service to the controlled catalog
+      tags:
+        - Catalog
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminCatalogServiceCreateRequest"
+      responses:
+        "201":
+          description: The service was appended to the controlled catalog.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminCatalogResponse"
+        "401":
+          $ref: "#/components/responses/AdminCatalogUnauthorized"
+        "403":
+          $ref: "#/components/responses/AdminCatalogForbidden"
+        "404":
+          $ref: "#/components/responses/AdminCatalogNotFound"
+        "409":
+          $ref: "#/components/responses/AdminCatalogConflict"
+        "422":
+          $ref: "#/components/responses/AdminCatalogInvalid"
+        "503":
+          $ref: "#/components/responses/AdminCatalogUnavailable"
+  /api/v1/admin/catalog/services/order:
+    put:
+      operationId: reorderAdminCatalogServices
+      summary: Persist the complete deterministic service order
+      tags:
+        - Catalog
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminCatalogServiceOrderRequest"
+      responses:
+        "200":
+          description: The complete service order was persisted.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminCatalogResponse"
+        "401":
+          $ref: "#/components/responses/AdminCatalogUnauthorized"
+        "403":
+          $ref: "#/components/responses/AdminCatalogForbidden"
+        "409":
+          $ref: "#/components/responses/AdminCatalogConflict"
+        "503":
+          $ref: "#/components/responses/AdminCatalogUnavailable"
+  /api/v1/admin/catalog/services/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    patch:
+      operationId: updateAdminCatalogService
+      summary: Update mutable fields of a controlled service
+      tags:
+        - Catalog
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminCatalogServiceUpdateRequest"
+      responses:
+        "200":
+          description: The service was updated without changing its stable slug.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminCatalogResponse"
+        "401":
+          $ref: "#/components/responses/AdminCatalogUnauthorized"
+        "403":
+          $ref: "#/components/responses/AdminCatalogForbidden"
+        "404":
+          $ref: "#/components/responses/AdminCatalogNotFound"
+        "422":
+          $ref: "#/components/responses/AdminCatalogInvalid"
+        "503":
+          $ref: "#/components/responses/AdminCatalogUnavailable"
+  /api/v1/admin/catalog/neighborhoods:
+    post:
+      operationId: createAdminCatalogNeighborhood
+      summary: Add a Joinville neighborhood to the controlled catalog
+      tags:
+        - Catalog
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminCatalogNeighborhoodCreateRequest"
+      responses:
+        "201":
+          description: The neighborhood was appended to the controlled catalog.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminCatalogResponse"
+        "401":
+          $ref: "#/components/responses/AdminCatalogUnauthorized"
+        "403":
+          $ref: "#/components/responses/AdminCatalogForbidden"
+        "409":
+          $ref: "#/components/responses/AdminCatalogConflict"
+        "422":
+          $ref: "#/components/responses/AdminCatalogInvalid"
+        "503":
+          $ref: "#/components/responses/AdminCatalogUnavailable"
+  /api/v1/admin/catalog/neighborhoods/order:
+    put:
+      operationId: reorderAdminCatalogNeighborhoods
+      summary: Persist the complete deterministic neighborhood order
+      tags:
+        - Catalog
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminCatalogNeighborhoodOrderRequest"
+      responses:
+        "200":
+          description: The complete neighborhood order was persisted.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminCatalogResponse"
+        "401":
+          $ref: "#/components/responses/AdminCatalogUnauthorized"
+        "403":
+          $ref: "#/components/responses/AdminCatalogForbidden"
+        "409":
+          $ref: "#/components/responses/AdminCatalogConflict"
+        "503":
+          $ref: "#/components/responses/AdminCatalogUnavailable"
+  /api/v1/admin/catalog/neighborhoods/{code}:
+    parameters:
+      - name: code
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          maxLength: 80
+    patch:
+      operationId: updateAdminCatalogNeighborhood
+      summary: Update mutable fields of a controlled Joinville neighborhood
+      tags:
+        - Catalog
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminCatalogNeighborhoodUpdateRequest"
+      responses:
+        "200":
+          description: The neighborhood was updated without changing its stable code.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminCatalogResponse"
+        "401":
+          $ref: "#/components/responses/AdminCatalogUnauthorized"
+        "403":
+          $ref: "#/components/responses/AdminCatalogForbidden"
+        "404":
+          $ref: "#/components/responses/AdminCatalogNotFound"
+        "409":
+          $ref: "#/components/responses/AdminCatalogConflict"
+        "422":
+          $ref: "#/components/responses/AdminCatalogInvalid"
+        "503":
+          $ref: "#/components/responses/AdminCatalogUnavailable"
+  /api/v1/catalog:
+    get:
+      operationId: getPublicCatalog
+      summary: Read the active service and Joinville neighborhood catalog
+      tags:
+        - Catalog
+      security: []
+      responses:
+        "200":
+          description: Active catalog entries in their configured order.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CatalogResponse"
+        "503":
+          description: The catalog database query is temporarily unavailable.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/professional-registration:
+    put:
+      operationId: completeProfessionalRegistration
+      summary: Accept the current legal documents and create one draft professional profile
+      tags:
+        - Authentication
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfessionalRegistrationRequest"
+      responses:
+        "200":
+          description: Registration is complete and the account owns exactly one draft profile.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfessionalRegistrationResponse"
+        "401":
+          description: An active Rails application session is required.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: The account role or exact request origin is not permitted.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: The display name or legal acceptance is invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: Registration persistence is temporarily unavailable.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/session:
+    get:
+      operationId: getCurrentSession
+      summary: Restore the current Rails application session
+      tags:
+        - Authentication
+      security:
+        - applicationSession: []
+      responses:
+        "200":
+          description: The active account and session summary.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentSessionResponse"
+        "401":
+          description: The cookie is missing, unknown, expired, revoked, or belongs to a suspended account.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: The authenticated account is not authorized to inspect this session.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: The application-session database operation is unavailable.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: endCurrentSession
+      summary: Revoke the current Rails application session
+      tags:
+        - Authentication
+      security:
+        - applicationSession: []
+      responses:
+        "204":
+          description: The current session was revoked and its cookie was cleared.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Set-Cookie:
+              $ref: "#/components/headers/ApplicationSessionCookie"
+        "401":
+          description: The cookie is missing, unknown, expired, revoked, or belongs to a suspended account.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: The exact request origin is invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: The application-session database operation is unavailable.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/status:
     get:
       operationId: getApiStatus
@@ -39,16 +629,21 @@ components:
       in: cookie
       name: __Host-berufe_session
       description: Opaque Rails-owned application-session cookie.
-    csrfToken:
-      type: apiKey
-      in: header
-      name: X-CSRF-Token
-      description: Rotating session-bound token required for authenticated mutations.
   headers:
+    ApplicationSessionCookie:
+      description: Host-only opaque Rails application-session cookie.
+      schema:
+        type: string
+        minLength: 1
     RequestId:
       description: Bounded request identifier used for safe cross-service correlation.
       schema:
         $ref: "#/components/schemas/RequestId"
+    RetryAfter:
+      description: Whole seconds before another rate-limited request may be attempted.
+      schema:
+        type: integer
+        minimum: 1
   parameters:
     Page:
       name: page
@@ -75,7 +670,628 @@ components:
       schema:
         type: string
         minLength: 1
+  responses:
+    AdminCatalogUnauthorized:
+      description: An active password-authenticated administrator session is required.
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    AdminCatalogForbidden:
+      description: The account or exact request origin is not permitted.
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    AdminCatalogNotFound:
+      description: The requested entry or controlled category does not exist.
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    AdminCatalogConflict:
+      description: A stable identifier conflicts or the submitted order is stale or incomplete.
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    AdminCatalogInvalid:
+      description: One or more catalog fields are invalid.
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    AdminCatalogUnavailable:
+      description: Catalog persistence is temporarily unavailable.
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
   schemas:
+    AdminSessionRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 3
+          maxLength: 254
+        password:
+          type: string
+          minLength: 1
+          maxLength: 72
+    AdminSessionResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required:
+            - status
+          properties:
+            status:
+              type: string
+              const: authenticated
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    PhoneOtpRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - phone
+      properties:
+        phone:
+          type: string
+          minLength: 1
+          maxLength: 40
+          description: Brazilian mobile number in national, formatted, or E.164 form.
+    PhoneOtpChallengeResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          $ref: "#/components/schemas/PhoneOtpChallenge"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    PhoneOtpChallenge:
+      type: object
+      additionalProperties: false
+      required:
+        - status
+        - challenge_token
+        - expires_in
+        - resend_available_in
+      properties:
+        status:
+          type: string
+          const: accepted
+        challenge_token:
+          type: string
+          minLength: 40
+          maxLength: 100
+        expires_in:
+          type: integer
+          minimum: 1
+        resend_available_in:
+          type: integer
+          minimum: 1
+    PhoneOtpVerificationRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - challenge_token
+        - code
+      properties:
+        challenge_token:
+          type: string
+          minLength: 40
+          maxLength: 100
+        code:
+          type: string
+          pattern: "^[0-9]{6}$"
+    PhoneOtpVerificationResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required:
+            - status
+          properties:
+            status:
+              type: string
+              const: verified
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    ProfessionalRegistrationRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - display_name
+        - accepted
+      properties:
+        display_name:
+          type: string
+          minLength: 3
+          maxLength: 70
+        accepted:
+          type: boolean
+    ProfessionalRegistrationResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          $ref: "#/components/schemas/ProfessionalRegistration"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    ProfessionalRegistration:
+      type: object
+      additionalProperties: false
+      required:
+        - status
+        - profile
+      properties:
+        status:
+          type: string
+          const: completed
+        profile:
+          $ref: "#/components/schemas/RegisteredProfessionalProfile"
+    RegisteredProfessionalProfile:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - display_name
+        - profile_status
+      properties:
+        id:
+          type: string
+          format: uuid
+        display_name:
+          type: string
+          minLength: 3
+          maxLength: 70
+        profile_status:
+          type: string
+          const: draft
+    CurrentSessionResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          $ref: "#/components/schemas/CurrentSessionData"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    CurrentSessionData:
+      type: object
+      additionalProperties: false
+      required:
+        - account
+        - session
+      properties:
+        account:
+          $ref: "#/components/schemas/CurrentAccountSummary"
+        session:
+          $ref: "#/components/schemas/ApplicationSessionSummary"
+    CurrentAccountSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - role
+        - status
+        - registration_completed
+      properties:
+        id:
+          type: string
+          format: uuid
+        role:
+          type: string
+          enum:
+            - professional
+            - admin
+        status:
+          type: string
+          const: active
+        registration_completed:
+          type: boolean
+    ApplicationSessionSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - authentication_method
+        - authenticated_at
+        - idle_expires_at
+        - absolute_expires_at
+      properties:
+        authentication_method:
+          type: string
+          enum:
+            - sms_otp
+            - password
+        authenticated_at:
+          type: string
+          format: date-time
+        idle_expires_at:
+          type: string
+          format: date-time
+        absolute_expires_at:
+          type: string
+          format: date-time
+    CatalogResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          $ref: "#/components/schemas/CatalogData"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    AdminCatalogResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          $ref: "#/components/schemas/AdminCatalogData"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    AdminCatalogData:
+      type: object
+      additionalProperties: false
+      required:
+        - categories
+        - services
+        - neighborhoods
+      properties:
+        categories:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminCatalogCategory"
+        services:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminCatalogService"
+        neighborhoods:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminCatalogNeighborhood"
+    AdminCatalogCategory:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - slug
+        - name
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          maxLength: 80
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+    AdminCatalogService:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - name
+        - slug
+        - categorySlug
+        - description
+        - isActive
+        - sortOrder
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        slug:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          maxLength: 80
+        categorySlug:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          maxLength: 80
+        description:
+          type: string
+          minLength: 1
+          maxLength: 240
+        isActive:
+          type: boolean
+        sortOrder:
+          type: integer
+          minimum: 0
+    AdminCatalogNeighborhood:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - name
+        - stateCode
+        - city
+        - isActive
+        - sortOrder
+      properties:
+        code:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          maxLength: 80
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        stateCode:
+          type: string
+          const: SC
+        city:
+          type: string
+          const: Joinville
+        isActive:
+          type: boolean
+        sortOrder:
+          type: integer
+          minimum: 0
+    AdminCatalogServiceCreateRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - name
+        - slug
+        - categorySlug
+        - description
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        slug:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          maxLength: 80
+        categorySlug:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          maxLength: 80
+        description:
+          type: string
+          minLength: 1
+          maxLength: 240
+    AdminCatalogServiceUpdateRequest:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        categorySlug:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          maxLength: 80
+        description:
+          type: string
+          minLength: 1
+          maxLength: 240
+        isActive:
+          type: boolean
+    AdminCatalogServiceOrderRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - ids
+      properties:
+        ids:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            type: string
+            format: uuid
+    AdminCatalogNeighborhoodCreateRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - name
+        - code
+        - stateCode
+        - city
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        code:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          maxLength: 80
+        stateCode:
+          type: string
+          const: SC
+        city:
+          type: string
+          const: Joinville
+    AdminCatalogNeighborhoodUpdateRequest:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        stateCode:
+          type: string
+          const: SC
+        city:
+          type: string
+          const: Joinville
+        isActive:
+          type: boolean
+    AdminCatalogNeighborhoodOrderRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - codes
+      properties:
+        codes:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            type: string
+            pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+            maxLength: 80
+    CatalogData:
+      type: object
+      additionalProperties: false
+      required:
+        - categories
+        - services
+        - neighborhoods
+      properties:
+        categories:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicServiceCategory"
+        services:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicService"
+        neighborhoods:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicNeighborhood"
+    PublicServiceCategory:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - slug
+        - name
+        - icon
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        name:
+          type: string
+          minLength: 1
+        icon:
+          type: string
+          minLength: 1
+    PublicService:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - name
+        - slug
+        - categorySlug
+        - icon
+        - description
+        - aliases
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+        slug:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        categorySlug:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        icon:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          minLength: 1
+        aliases:
+          type: array
+          items:
+            type: string
+            minLength: 1
+    PublicNeighborhood:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - name
+        - stateCode
+        - city
+      properties:
+        code:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        name:
+          type: string
+          minLength: 1
+        stateCode:
+          type: string
+          const: SC
+        city:
+          type: string
+          const: Joinville
     RequestId:
       type: string
       pattern: "^[A-Za-z0-9._-]{1,100}$"
@@ -157,6 +1373,7 @@ components:
           minimum: 0
 security:
   - applicationSession: []
-    csrfToken: []
 tags:
+  - name: Authentication
+  - name: Catalog
   - name: Foundation

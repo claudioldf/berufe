@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, ref, shallowRef } from "vue";
-import catalogsData from "@data/catalogs.json";
+import { computed, onMounted, shallowRef } from "vue";
+import { useAdminCatalog } from "~/composables/useAdminCatalog";
 import { useToast } from "~/composables/useToast";
+import { ApiRequestError } from "~/services/api/errors";
 import type {
   CatalogEntry,
   CatalogEntryDraft,
@@ -10,6 +11,19 @@ import type {
 import { normalizeSearchText } from "~/utils/text";
 
 const { showToast } = useToast();
+const {
+  catalog,
+  isLoading,
+  isMutating,
+  loadError,
+  load,
+  createService,
+  updateService,
+  reorderServices,
+  createNeighborhood,
+  updateNeighborhood,
+  reorderNeighborhoods,
+} = useAdminCatalog();
 const activeTab = shallowRef<CatalogTab>("services");
 const isFormOpen = shallowRef(false);
 const editingEntry = shallowRef<CatalogEntry | null>(null);
@@ -17,32 +31,9 @@ const stateCodeFilter = shallowRef("");
 const cityFilter = shallowRef("");
 const neighborhoodFilter = shallowRef("");
 
-const categories = catalogsData.categories.map(({ id, name }) => ({
-  id,
-  name,
-}));
-const services = ref<CatalogEntry[]>(
-  catalogsData.services.map((item, index) => ({
-    id: item.id,
-    name: item.name,
-    identifier: item.slug,
-    description: item.description,
-    category: item.category,
-    active: index !== 7,
-  })),
-);
-const neighborhoods = ref<CatalogEntry[]>(
-  catalogsData.neighborhoods.map((item) => ({
-    id: item.code,
-    name: item.name,
-    identifier: item.code,
-    description: "",
-    stateCode: item.stateCode,
-    city: item.city,
-    active: true,
-  })),
-);
-
+const categories = computed(() => catalog.value.categories);
+const services = computed(() => catalog.value.services);
+const neighborhoods = computed(() => catalog.value.neighborhoods);
 const entries = computed(() =>
   activeTab.value === "services" ? services.value : neighborhoods.value,
 );
@@ -101,15 +92,42 @@ function updateFormOpen(open: boolean) {
   }
 }
 
-function replaceEntries(nextEntries: CatalogEntry[]) {
-  if (activeTab.value === "services") {
-    services.value = nextEntries;
-  } else {
-    neighborhoods.value = nextEntries;
+async function initialize(showFailureToast = true) {
+  try {
+    await load();
+  } catch (error) {
+    if (showFailureToast) showOperationError(error);
   }
 }
 
-function saveEntry(draft: CatalogEntryDraft) {
+function showOperationError(error: unknown) {
+  const apiError = error instanceof ApiRequestError ? error : undefined;
+  const fieldMessage = apiError
+    ? Object.values(apiError.fieldErrors).flat()[0]
+    : undefined;
+  showToast({
+    title:
+      apiError?.code === "catalog_conflict"
+        ? "Catálogo desatualizado"
+        : "Não foi possível atualizar",
+    description:
+      fieldMessage ??
+      apiError?.message ??
+      "Tente novamente em alguns instantes.",
+  });
+}
+
+function validJoinvilleLocation(draft: CatalogEntryDraft) {
+  if (draft.stateCode === "SC" && draft.city === "Joinville") return true;
+
+  showToast({
+    title: "Localidade inválida",
+    description: "O catálogo desta etapa está limitado a Joinville, SC.",
+  });
+  return false;
+}
+
+async function saveEntry(draft: CatalogEntryDraft) {
   const duplicate = entries.value.some(
     (entry) =>
       entry.identifier === draft.identifier &&
@@ -124,52 +142,82 @@ function saveEntry(draft: CatalogEntryDraft) {
     return;
   }
 
-  if (editingEntry.value) {
-    replaceEntries(
-      entries.value.map((entry) =>
-        entry.id === editingEntry.value?.id
-          ? {
-              ...entry,
-              name: draft.name,
-              description: draft.description,
-              category: draft.category,
-              stateCode: draft.stateCode,
-              city: draft.city,
-            }
-          : entry,
-      ),
-    );
-  } else {
-    replaceEntries([
-      ...entries.value,
-      {
-        id: `${activeTab.value === "services" ? "svc" : "bairro"}-${draft.identifier}`,
-        ...draft,
-        active: true,
-      },
-    ]);
+  try {
+    if (activeTab.value === "services") {
+      if (!draft.category || !draft.description) {
+        showToast({
+          title: "Revise os campos informados",
+          description: "Categoria e descrição são obrigatórias.",
+        });
+        return;
+      }
+
+      if (editingEntry.value) {
+        await updateService(editingEntry.value.id, {
+          name: draft.name,
+          categorySlug: draft.category,
+          description: draft.description,
+        });
+      } else {
+        await createService({
+          name: draft.name,
+          slug: draft.identifier,
+          categorySlug: draft.category,
+          description: draft.description,
+        });
+      }
+    } else {
+      if (!validJoinvilleLocation(draft)) return;
+
+      if (editingEntry.value) {
+        await updateNeighborhood(editingEntry.value.id, {
+          name: draft.name,
+          stateCode: "SC",
+          city: "Joinville",
+        });
+      } else {
+        await createNeighborhood({
+          name: draft.name,
+          code: draft.identifier,
+          stateCode: "SC",
+          city: "Joinville",
+        });
+      }
+    }
+
+    showToast({
+      title: "Catálogo atualizado",
+      description: "As alterações já estão disponíveis para novas seleções.",
+    });
+    closeForm();
+  } catch (error) {
+    showOperationError(error);
+    if (error instanceof ApiRequestError && error.code === "catalog_conflict") {
+      await initialize(false);
+    }
   }
-
-  showToast({
-    title: "Catálogo atualizado",
-    description: "A lista local foi atualizada para esta demonstração.",
-  });
-  closeForm();
 }
 
-function toggleEntry(id: string) {
-  replaceEntries(
-    entries.value.map((entry) =>
-      entry.id === id ? { ...entry, active: !entry.active } : entry,
-    ),
-  );
-  showToast({
-    title: "Status atualizado",
-    description: "Referências históricas foram preservadas.",
-  });
+async function toggleEntry(id: string) {
+  const entry = entries.value.find((item) => item.id === id);
+  if (!entry) return;
+
+  try {
+    if (activeTab.value === "services") {
+      await updateService(id, { isActive: !entry.active });
+    } else {
+      await updateNeighborhood(id, { isActive: !entry.active });
+    }
+    showToast({
+      title: "Status atualizado",
+      description: "Referências históricas foram preservadas.",
+    });
+  } catch (error) {
+    showOperationError(error);
+  }
 }
 
-function moveEntry(id: string, direction: -1 | 1) {
+async function moveEntry(id: string, direction: -1 | 1) {
   const currentVisibleIndex = visibleEntries.value.findIndex(
     (entry) => entry.id === id,
   );
@@ -194,12 +242,25 @@ function moveEntry(id: string, direction: -1 | 1) {
 
   reordered[currentIndex] = targetEntry;
   reordered[targetIndex] = currentEntry;
-  replaceEntries(reordered);
-  showToast({
-    title: "Ordem atualizada",
-    description: "A listagem usa agora a nova ordem do catálogo.",
-  });
+  try {
+    if (activeTab.value === "services") {
+      await reorderServices(reordered.map((entry) => entry.id));
+    } else {
+      await reorderNeighborhoods(reordered.map((entry) => entry.id));
+    }
+    showToast({
+      title: "Ordem atualizada",
+      description: "A listagem usa agora a nova ordem do catálogo.",
+    });
+  } catch (error) {
+    showOperationError(error);
+    if (error instanceof ApiRequestError && error.code === "catalog_conflict") {
+      await initialize(false);
+    }
+  }
 }
+
+onMounted(() => void initialize());
 </script>
 
 <template>
@@ -215,6 +276,7 @@ function moveEntry(id: string, direction: -1 | 1) {
         color="primary"
         icon="i-lucide-plus"
         label="Adicionar entrada"
+        :disabled="isLoading || isMutating"
         @click="openCreate"
       />
     </header>
@@ -243,9 +305,23 @@ function moveEntry(id: string, direction: -1 | 1) {
       v-model:neighborhood="neighborhoodFilter"
     />
 
+    <p v-if="isLoading" class="catalog__state" role="status">
+      Carregando catálogo…
+    </p>
+    <div v-else-if="loadError" class="catalog__state" role="alert">
+      <span>{{ loadError }}</span>
+      <UButton
+        color="neutral"
+        variant="outline"
+        label="Tentar novamente"
+        @click="initialize()"
+      />
+    </div>
     <AdminCatalogEntryList
+      v-else
       :entries="visibleEntries"
       :tab="activeTab"
+      :disabled="isMutating"
       @edit="openEdit"
       @toggle="toggleEntry"
       @move="moveEntry"
@@ -265,6 +341,7 @@ function moveEntry(id: string, direction: -1 | 1) {
         :tab="activeTab"
         :entry="editingEntry"
         :categories="categories"
+        :disabled="isMutating"
         @save="saveEntry"
         @cancel="closeForm"
       />
@@ -321,6 +398,17 @@ function moveEntry(id: string, direction: -1 | 1) {
     border-radius: 5px;
     background: #eeece6;
     font-size: var(--font-size-min);
+  }
+  &__state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-height: 180px;
+    margin: 0;
+    padding: 24px;
+    color: var(--ink-soft);
+    font-size: 0.86rem;
   }
 }
 @media (width <= 700px) {

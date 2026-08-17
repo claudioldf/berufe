@@ -80,21 +80,23 @@ Every trust signal must belong to a real account. Phone confirmation also gives 
 4. Berufe creates a draft profile and opens a short setup checklist.
 5. Only professionals and admins have accounts in the MVP. Customers do not create general-purpose accounts.
 
-Use Infobip's 2FA API only to start and verify SMS OTP challenges. Keep one-time codes outside the business database. After Infobip confirms the challenge, Rails finds or creates its own account by the unique verified phone and creates an opaque application session. The browser never receives an Infobip credential. Rails owns the user UUID, roles, suspension, logout, session revocation, and admin MFA state.
+Use Infobip's 2FA API only to start and verify professional SMS OTP challenges. Keep one-time codes outside the business database. After Infobip confirms the challenge, Rails finds or creates its own professional account by the unique verified phone and creates an opaque application session. The browser never receives an Infobip credential. Rails owns the user UUID, roles, suspension, logout, session revocation, and separately provisioned administrator credentials.
 
 #### 4. Suggested feature-scoped data schema
 
 **`user_account`**
 
-| Field               | Type      | Rules                               |
-| ------------------- | --------- | ----------------------------------- |
-| `id`                | UUID      | Primary key                         |
-| `phone_e164`        | text      | Unique; confirmed before activation |
-| `role`              | enum      | `professional` or `admin`           |
-| `status`            | enum      | `active`, `suspended`               |
-| `terms_accepted_at` | timestamp | Required before profile setup       |
-| `created_at`        | timestamp | Required                            |
-| `last_login_at`     | timestamp | Nullable                            |
+| Field               | Type      | Rules                                                      |
+| ------------------- | --------- | ---------------------------------------------------------- |
+| `id`                | UUID      | Primary key                                                |
+| `phone_e164`        | text      | Unique and required for professionals; nullable for admins |
+| `email`             | text      | Unique normalized email required only for admins           |
+| `password_digest`   | text      | BCrypt digest required only for admins; never serialized   |
+| `role`              | enum      | `professional` or `admin`                                  |
+| `status`            | enum      | `active`, `suspended`                                      |
+| `terms_accepted_at` | timestamp | Required before professional profile setup                 |
+| `created_at`        | timestamp | Required                                                   |
+| `last_login_at`     | timestamp | Nullable                                                   |
 
 **`application_session`**
 
@@ -102,11 +104,9 @@ Use Infobip's 2FA API only to start and verify SMS OTP challenges. Keep one-time
 | ----------------------- | --------- | ----------------------------------------------------------------- |
 | `id`                    | UUID      | Primary key                                                       |
 | `user_account_id`       | UUID      | Required foreign reference                                        |
-| `authentication_method` | enum      | `sms_otp` at launch                                               |
+| `authentication_method` | enum      | `sms_otp` for professionals or `password` for admins              |
 | `token_digest`          | text      | Unique; raw token is never stored                                 |
-| `csrf_token_digest`     | text      | Binds the rotating CSRF token to the session                      |
 | `authenticated_at`      | timestamp | Required                                                          |
-| `mfa_authenticated_at`  | timestamp | Required for admin sessions; otherwise nullable                   |
 | `last_active_at`        | timestamp | Required; writes may be throttled                                 |
 | `idle_expires_at`       | timestamp | Required                                                          |
 | `absolute_expires_at`   | timestamp | Required                                                          |
@@ -124,19 +124,20 @@ Use Infobip's 2FA API only to start and verify SMS OTP challenges. Keep one-time
 | `consumed_at`                     | timestamp | Nullable; prevents reuse after success                             |
 | `created_at`                      | timestamp | Required                                                           |
 
-**`admin_totp_credential`**
+**`admin_access_event`**
 
-| Field                   | Type      | Rules                                                        |
-| ----------------------- | --------- | ------------------------------------------------------------ |
-| `user_account_id`       | UUID      | Primary/foreign key; admin accounts only                     |
-| `secret_ciphertext`     | text      | Encrypted with Rails application-level encryption            |
-| `recovery_code_digests` | jsonb     | Array of one-way digests; raw codes shown only at enrollment |
-| `enrolled_at`           | timestamp | Required before admin access                                 |
-| `reset_at`              | timestamp | Nullable; audited manual reset                               |
+| Field                 | Type      | Rules                                                      |
+| --------------------- | --------- | ---------------------------------------------------------- |
+| `id`                  | UUID      | Primary key                                                |
+| `admin_user_id`       | UUID      | Required target administrator account                      |
+| `action`              | enum      | `provisioned` or `password_reset`                          |
+| `operator_identifier` | text      | Required identifier for the person running the manual task |
+| `request_id`          | text      | Required correlation identifier generated by the task      |
+| `created_at`          | timestamp | Required; events are append-only                           |
 
 #### 5. Explicitly not in MVP
 
-- Password login.
+- Password login for professionals.
 - Social login.
 - Customer accounts.
 - Multiple users managing one profile.
@@ -158,7 +159,7 @@ This is the base of both trust and discovery. Without structured services and co
 
 1. The professional completes a guided form.
 2. They select services from Berufe’s approved residential renovation catalog.
-3. They select Joinville and the neighborhoods they serve. “All Joinville” is allowed.
+3. They select Joinville and the neighborhoods they serve. “All Joinville” is a derived selector represented by the all-city service-area record, not a managed neighborhood.
 4. They add a short introduction and declared years of experience.
 5. They may add Instagram and YouTube profile identifiers or profile URLs. Berufe validates the platform and profile shape, then stores canonical HTTPS URLs.
 6. The editor shows an inline representation of the public fields, and the professional submits the profile for approval.
@@ -717,10 +718,11 @@ The same vocabulary must power onboarding and Finder. A controlled catalog preve
 #### 3. How it works and implementation overview
 
 1. Seed the approved renovation categories, services, and Joinville neighborhoods before launch.
-2. An active administrator with current MFA can add, rename, reorder, activate, and deactivate services and Joinville neighborhoods through the admin catalog screen.
+2. An active administrator with a password-authenticated session can add, rename, reorder, activate, and deactivate services and Joinville neighborhoods through the admin catalog screen.
 3. Stable codes/slugs become immutable after creation, referenced entries cannot be hard-deleted, and historical records keep their original references.
 4. Inactive entries disappear from new professional and public-search selections without changing existing historical records.
 5. New entries remain an explicit Berufe operations decision; professionals cannot create categories, services, or neighborhoods.
+6. “All Joinville” is derived in professional and public selectors and is not stored or managed as a neighborhood.
 
 #### 4. Suggested feature-scoped data schema
 
@@ -736,14 +738,17 @@ The same vocabulary must power onboarding and Finder. A controlled catalog preve
 
 **`service`**
 
-| Field         | Type     | Rules                         |
-| ------------- | -------- | ----------------------------- |
-| `id`          | UUID     | Primary key                   |
-| `category_id` | UUID     | Foreign reference to category |
-| `name`        | text     | Required                      |
-| `slug`        | text     | Unique                        |
-| `is_active`   | boolean  | Defaults to true              |
-| `sort_order`  | smallint | Required                      |
+| Field         | Type     | Rules                                                          |
+| ------------- | -------- | -------------------------------------------------------------- |
+| `id`          | UUID     | Primary key                                                    |
+| `category_id` | UUID     | Foreign reference to category                                  |
+| `name`        | text     | Required                                                       |
+| `slug`        | text     | Unique                                                         |
+| `icon`        | text     | Required; inherited from the selected category for new entries |
+| `description` | text     | Required                                                       |
+| `aliases`     | text[]   | Defaults to empty; no MVP administration UI                    |
+| `is_active`   | boolean  | Defaults to true                                               |
+| `sort_order`  | smallint | Required                                                       |
 
 **`neighborhood`**
 
@@ -779,7 +784,7 @@ The MVP must learn whether it is building enough credible supply and whether dis
 
 #### 3. How it works and implementation overview
 
-1. An active administrator with current MFA selects since launch, 30 days, or 7 days.
+1. An active administrator with a password-authenticated session selects since launch, 30 days, or 7 days.
 2. Rails calculates every metric from PostgreSQL using one time-zone-aware report snapshot and returns aggregates only through one OpenAPI operation.
 3. Nuxt shows counts and `n/N` before percentages, renders zero denominators as unavailable, and explains every definition.
 4. The report covers only implemented MVP domains. Client recommendations, external professional invites, content-report records, and professional-facing analytics remain absent until their V2 stories are approved.
@@ -869,7 +874,7 @@ Keep the first implementation conventional:
 
 - Responsive web application.
 - Relational database such as PostgreSQL.
-- Infobip 2FA SMS verification followed by Rails-owned accounts and opaque application sessions; Rails-managed TOTP protects admins as a separate factor.
+- Infobip 2FA SMS verification for professionals and dedicated Rails-managed email/password authentication for admins, both issuing Rails-owned opaque application sessions.
 - OpenAPI 3.1 as the shared contract between the independently deployed Rails and Nuxt applications, with generated frontend types and Rails contract tests.
 - Object storage for profile and portfolio images and private verification files.
 - Server-side authorization for every professional/admin mutation.

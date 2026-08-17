@@ -4,6 +4,232 @@
  */
 
 export interface paths {
+    "/api/v1/auth/otp/challenges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Request a Brazilian phone OTP challenge */
+        post: operations["requestPhoneOtp"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/otp/verifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verify a phone OTP and create an application session */
+        post: operations["verifyPhoneOtp"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Authenticate a deliberately provisioned administrator with email and password */
+        post: operations["createAdminSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read the complete administrator-managed catalog */
+        get: operations["getAdminCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/catalog/services": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add a service to the controlled catalog */
+        post: operations["createAdminCatalogService"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/catalog/services/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Persist the complete deterministic service order */
+        put: operations["reorderAdminCatalogServices"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/catalog/services/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update mutable fields of a controlled service */
+        patch: operations["updateAdminCatalogService"];
+        trace?: never;
+    };
+    "/api/v1/admin/catalog/neighborhoods": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add a Joinville neighborhood to the controlled catalog */
+        post: operations["createAdminCatalogNeighborhood"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/catalog/neighborhoods/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Persist the complete deterministic neighborhood order */
+        put: operations["reorderAdminCatalogNeighborhoods"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/catalog/neighborhoods/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update mutable fields of a controlled Joinville neighborhood */
+        patch: operations["updateAdminCatalogNeighborhood"];
+        trace?: never;
+    };
+    "/api/v1/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read the active service and Joinville neighborhood catalog */
+        get: operations["getPublicCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/professional-registration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Accept the current legal documents and create one draft professional profile */
+        put: operations["completeProfessionalRegistration"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Restore the current Rails application session */
+        get: operations["getCurrentSession"];
+        put?: never;
+        post?: never;
+        /** Revoke the current Rails application session */
+        delete: operations["endCurrentSession"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/status": {
         parameters: {
             query?: never;
@@ -25,6 +251,194 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AdminSessionRequest: {
+            /** Format: email */
+            email: string;
+            password: string;
+        };
+        AdminSessionResponse: {
+            data: {
+                /** @constant */
+                status: "authenticated";
+            };
+            request_id: components["schemas"]["RequestId"];
+        };
+        PhoneOtpRequest: {
+            /** @description Brazilian mobile number in national, formatted, or E.164 form. */
+            phone: string;
+        };
+        PhoneOtpChallengeResponse: {
+            data: components["schemas"]["PhoneOtpChallenge"];
+            request_id: components["schemas"]["RequestId"];
+        };
+        PhoneOtpChallenge: {
+            /** @constant */
+            status: "accepted";
+            challenge_token: string;
+            expires_in: number;
+            resend_available_in: number;
+        };
+        PhoneOtpVerificationRequest: {
+            challenge_token: string;
+            code: string;
+        };
+        PhoneOtpVerificationResponse: {
+            data: {
+                /** @constant */
+                status: "verified";
+            };
+            request_id: components["schemas"]["RequestId"];
+        };
+        ProfessionalRegistrationRequest: {
+            display_name: string;
+            accepted: boolean;
+        };
+        ProfessionalRegistrationResponse: {
+            data: components["schemas"]["ProfessionalRegistration"];
+            request_id: components["schemas"]["RequestId"];
+        };
+        ProfessionalRegistration: {
+            /** @constant */
+            status: "completed";
+            profile: components["schemas"]["RegisteredProfessionalProfile"];
+        };
+        RegisteredProfessionalProfile: {
+            /** Format: uuid */
+            id: string;
+            display_name: string;
+            /** @constant */
+            profile_status: "draft";
+        };
+        CurrentSessionResponse: {
+            data: components["schemas"]["CurrentSessionData"];
+            request_id: components["schemas"]["RequestId"];
+        };
+        CurrentSessionData: {
+            account: components["schemas"]["CurrentAccountSummary"];
+            session: components["schemas"]["ApplicationSessionSummary"];
+        };
+        CurrentAccountSummary: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            role: "professional" | "admin";
+            /** @constant */
+            status: "active";
+            registration_completed: boolean;
+        };
+        ApplicationSessionSummary: {
+            /** @enum {string} */
+            authentication_method: "sms_otp" | "password";
+            /** Format: date-time */
+            authenticated_at: string;
+            /** Format: date-time */
+            idle_expires_at: string;
+            /** Format: date-time */
+            absolute_expires_at: string;
+        };
+        CatalogResponse: {
+            data: components["schemas"]["CatalogData"];
+            request_id: components["schemas"]["RequestId"];
+        };
+        AdminCatalogResponse: {
+            data: components["schemas"]["AdminCatalogData"];
+            request_id: components["schemas"]["RequestId"];
+        };
+        AdminCatalogData: {
+            categories: components["schemas"]["AdminCatalogCategory"][];
+            services: components["schemas"]["AdminCatalogService"][];
+            neighborhoods: components["schemas"]["AdminCatalogNeighborhood"][];
+        };
+        AdminCatalogCategory: {
+            /** Format: uuid */
+            id: string;
+            slug: string;
+            name: string;
+        };
+        AdminCatalogService: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            slug: string;
+            categorySlug: string;
+            description: string;
+            isActive: boolean;
+            sortOrder: number;
+        };
+        AdminCatalogNeighborhood: {
+            code: string;
+            name: string;
+            /** @constant */
+            stateCode: "SC";
+            /** @constant */
+            city: "Joinville";
+            isActive: boolean;
+            sortOrder: number;
+        };
+        AdminCatalogServiceCreateRequest: {
+            name: string;
+            slug: string;
+            categorySlug: string;
+            description: string;
+        };
+        AdminCatalogServiceUpdateRequest: {
+            name?: string;
+            categorySlug?: string;
+            description?: string;
+            isActive?: boolean;
+        };
+        AdminCatalogServiceOrderRequest: {
+            ids: string[];
+        };
+        AdminCatalogNeighborhoodCreateRequest: {
+            name: string;
+            code: string;
+            /** @constant */
+            stateCode: "SC";
+            /** @constant */
+            city: "Joinville";
+        };
+        AdminCatalogNeighborhoodUpdateRequest: {
+            name?: string;
+            /** @constant */
+            stateCode?: "SC";
+            /** @constant */
+            city?: "Joinville";
+            isActive?: boolean;
+        };
+        AdminCatalogNeighborhoodOrderRequest: {
+            codes: string[];
+        };
+        CatalogData: {
+            categories: components["schemas"]["PublicServiceCategory"][];
+            services: components["schemas"]["PublicService"][];
+            neighborhoods: components["schemas"]["PublicNeighborhood"][];
+        };
+        PublicServiceCategory: {
+            /** Format: uuid */
+            id: string;
+            slug: string;
+            name: string;
+            icon: string;
+        };
+        PublicService: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            slug: string;
+            categorySlug: string;
+            icon: string;
+            description: string;
+            aliases: string[];
+        };
+        PublicNeighborhood: {
+            code: string;
+            name: string;
+            /** @constant */
+            stateCode: "SC";
+            /** @constant */
+            city: "Joinville";
+        };
         RequestId: string;
         StatusResponse: {
             data: {
@@ -53,7 +467,68 @@ export interface components {
             total_pages: number;
         };
     };
-    responses: never;
+    responses: {
+        /** @description An active password-authenticated administrator session is required. */
+        AdminCatalogUnauthorized: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description The account or exact request origin is not permitted. */
+        AdminCatalogForbidden: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description The requested entry or controlled category does not exist. */
+        AdminCatalogNotFound: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description A stable identifier conflicts or the submitted order is stale or incomplete. */
+        AdminCatalogConflict: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description One or more catalog fields are invalid. */
+        AdminCatalogInvalid: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description Catalog persistence is temporarily unavailable. */
+        AdminCatalogUnavailable: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+    };
     parameters: {
         /** @description One-based result page. */
         Page: number;
@@ -64,13 +539,610 @@ export interface components {
     };
     requestBodies: never;
     headers: {
+        /** @description Host-only opaque Rails application-session cookie. */
+        ApplicationSessionCookie: string;
         /** @description Bounded request identifier used for safe cross-service correlation. */
         RequestId: components["schemas"]["RequestId"];
+        /** @description Whole seconds before another rate-limited request may be attempted. */
+        RetryAfter: number;
     };
     pathItems: never;
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    requestPhoneOtp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PhoneOtpRequest"];
+            };
+        };
+        responses: {
+            /** @description The SMS provider accepted the challenge synchronously. */
+            201: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PhoneOtpChallengeResponse"];
+                };
+            };
+            /** @description The exact browser origin is invalid. */
+            403: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The phone is invalid or SMS delivery was rejected. */
+            422: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description A Rails or provider cooldown/daily allowance was reached. */
+            429: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Retry-After": components["headers"]["RetryAfter"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The SMS provider or challenge persistence is unavailable. */
+            503: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    verifyPhoneOtp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PhoneOtpVerificationRequest"];
+            };
+        };
+        responses: {
+            /** @description The provider verified the code and Rails created an application session. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Set-Cookie": components["headers"]["ApplicationSessionCookie"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PhoneOtpVerificationResponse"];
+                };
+            };
+            /** @description The exact browser origin is invalid. */
+            403: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The code or browser challenge is invalid, expired, or consumed. */
+            422: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The provider or session persistence is unavailable. */
+            503: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    createAdminSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminSessionRequest"];
+            };
+        };
+        responses: {
+            /** @description The credentials were accepted and Rails created an administrator session. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Set-Cookie": components["headers"]["ApplicationSessionCookie"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminSessionResponse"];
+                };
+            };
+            /** @description The credentials are invalid or the administrator is unavailable. */
+            401: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The exact browser origin is invalid. */
+            403: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The email or source address reached its login-attempt allowance. */
+            429: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Retry-After": components["headers"]["RetryAfter"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Administrator authentication persistence is temporarily unavailable. */
+            503: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getAdminCatalog: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Active and inactive catalog entries in their configured order. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminCatalogResponse"];
+                };
+            };
+            401: components["responses"]["AdminCatalogUnauthorized"];
+            503: components["responses"]["AdminCatalogUnavailable"];
+        };
+    };
+    createAdminCatalogService: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminCatalogServiceCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description The service was appended to the controlled catalog. */
+            201: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminCatalogResponse"];
+                };
+            };
+            401: components["responses"]["AdminCatalogUnauthorized"];
+            403: components["responses"]["AdminCatalogForbidden"];
+            404: components["responses"]["AdminCatalogNotFound"];
+            409: components["responses"]["AdminCatalogConflict"];
+            422: components["responses"]["AdminCatalogInvalid"];
+            503: components["responses"]["AdminCatalogUnavailable"];
+        };
+    };
+    reorderAdminCatalogServices: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminCatalogServiceOrderRequest"];
+            };
+        };
+        responses: {
+            /** @description The complete service order was persisted. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminCatalogResponse"];
+                };
+            };
+            401: components["responses"]["AdminCatalogUnauthorized"];
+            403: components["responses"]["AdminCatalogForbidden"];
+            409: components["responses"]["AdminCatalogConflict"];
+            503: components["responses"]["AdminCatalogUnavailable"];
+        };
+    };
+    updateAdminCatalogService: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminCatalogServiceUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description The service was updated without changing its stable slug. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminCatalogResponse"];
+                };
+            };
+            401: components["responses"]["AdminCatalogUnauthorized"];
+            403: components["responses"]["AdminCatalogForbidden"];
+            404: components["responses"]["AdminCatalogNotFound"];
+            422: components["responses"]["AdminCatalogInvalid"];
+            503: components["responses"]["AdminCatalogUnavailable"];
+        };
+    };
+    createAdminCatalogNeighborhood: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminCatalogNeighborhoodCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description The neighborhood was appended to the controlled catalog. */
+            201: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminCatalogResponse"];
+                };
+            };
+            401: components["responses"]["AdminCatalogUnauthorized"];
+            403: components["responses"]["AdminCatalogForbidden"];
+            409: components["responses"]["AdminCatalogConflict"];
+            422: components["responses"]["AdminCatalogInvalid"];
+            503: components["responses"]["AdminCatalogUnavailable"];
+        };
+    };
+    reorderAdminCatalogNeighborhoods: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminCatalogNeighborhoodOrderRequest"];
+            };
+        };
+        responses: {
+            /** @description The complete neighborhood order was persisted. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminCatalogResponse"];
+                };
+            };
+            401: components["responses"]["AdminCatalogUnauthorized"];
+            403: components["responses"]["AdminCatalogForbidden"];
+            409: components["responses"]["AdminCatalogConflict"];
+            503: components["responses"]["AdminCatalogUnavailable"];
+        };
+    };
+    updateAdminCatalogNeighborhood: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminCatalogNeighborhoodUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description The neighborhood was updated without changing its stable code. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminCatalogResponse"];
+                };
+            };
+            401: components["responses"]["AdminCatalogUnauthorized"];
+            403: components["responses"]["AdminCatalogForbidden"];
+            404: components["responses"]["AdminCatalogNotFound"];
+            409: components["responses"]["AdminCatalogConflict"];
+            422: components["responses"]["AdminCatalogInvalid"];
+            503: components["responses"]["AdminCatalogUnavailable"];
+        };
+    };
+    getPublicCatalog: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Active catalog entries in their configured order. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogResponse"];
+                };
+            };
+            /** @description The catalog database query is temporarily unavailable. */
+            503: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    completeProfessionalRegistration: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfessionalRegistrationRequest"];
+            };
+        };
+        responses: {
+            /** @description Registration is complete and the account owns exactly one draft profile. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalRegistrationResponse"];
+                };
+            };
+            /** @description An active Rails application session is required. */
+            401: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The account role or exact request origin is not permitted. */
+            403: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The display name or legal acceptance is invalid. */
+            422: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Registration persistence is temporarily unavailable. */
+            503: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getCurrentSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The active account and session summary. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurrentSessionResponse"];
+                };
+            };
+            /** @description The cookie is missing, unknown, expired, revoked, or belongs to a suspended account. */
+            401: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The authenticated account is not authorized to inspect this session. */
+            403: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The application-session database operation is unavailable. */
+            503: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    endCurrentSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The current session was revoked and its cookie was cleared. */
+            204: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Set-Cookie": components["headers"]["ApplicationSessionCookie"];
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The cookie is missing, unknown, expired, revoked, or belongs to a suspended account. */
+            401: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The exact request origin is invalid. */
+            403: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The application-session database operation is unavailable. */
+            503: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     getApiStatus: {
         parameters: {
             query?: never;

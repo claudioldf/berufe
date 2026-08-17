@@ -1,9 +1,9 @@
 import { fileURLToPath } from "node:url";
-const prototypeMode = process.env.NUXT_PUBLIC_PROTOTYPE_MODE === "true";
-
-if (process.env.BERUFE_ENV === "production" && prototypeMode) {
-  throw new Error("NUXT_PUBLIC_PROTOTYPE_MODE must be disabled in production");
-}
+const browserSecurityHeaders = {
+  "x-content-type-options": "nosniff",
+  "x-frame-options": "DENY",
+  "referrer-policy": "strict-origin-when-cross-origin",
+};
 
 export default defineNuxtConfig({
   compatibilityDate: "2026-08-01",
@@ -12,7 +12,6 @@ export default defineNuxtConfig({
     apiInternalBaseUrl: process.env.NUXT_API_INTERNAL_BASE_URL,
     public: {
       apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL,
-      prototypeMode,
     },
   },
   alias: {
@@ -84,6 +83,7 @@ export default defineNuxtConfig({
         "lucide:link",
         "lucide:list-ordered",
         "lucide:lock-keyhole",
+        "lucide:log-out",
         "lucide:mail",
         "lucide:map",
         "lucide:map-pin",
@@ -138,14 +138,20 @@ export default defineNuxtConfig({
     },
   },
   routeRules: {
+    "/**": { headers: browserSecurityHeaders },
     "/foundation": { prerender: false },
     "/app/**": {
+      ssr: false,
       prerender: false,
-      headers: { "cache-control": "private, no-store" },
+      headers: {
+        ...browserSecurityHeaders,
+        "cache-control": "private, no-store",
+      },
     },
     "/orcamento/**": {
       prerender: false,
       headers: {
+        ...browserSecurityHeaders,
         "cache-control": "private, no-store",
         "referrer-policy": "no-referrer",
         "x-robots-tag": "noindex, nofollow",

@@ -7,14 +7,24 @@ module Berufe
     Config = Data.define(:name, :sms_otp_adapter, :media_storage_adapter)
 
     ENVIRONMENTS = %w[local preview staging integration production test].freeze
-    ADAPTERS = {
-      "local" => ["fake", "local"],
-      "preview" => ["fake", "local"],
-      "staging" => ["fake", "r2"],
-      "integration" => ["infobip", "r2"],
-      "production" => ["infobip", "r2"],
-      "test" => ["fake", "local"]
+    SMS_OTP_ADAPTERS = {
+      "local" => %w[fake infobip],
+      "preview" => %w[fake],
+      "staging" => %w[infobip],
+      "integration" => %w[infobip],
+      "production" => %w[infobip],
+      "test" => %w[fake]
     }.freeze
+    MEDIA_STORAGE_ADAPTERS = {
+      "local" => %w[local],
+      "preview" => %w[local],
+      "staging" => %w[r2],
+      "integration" => %w[r2],
+      "production" => %w[r2],
+      "test" => %w[local]
+    }.freeze
+    NON_PRODUCTION_INFOBIP_ENVIRONMENTS = %w[local staging integration].freeze
+    INFOBIP_TEST_PHONE_PATTERN = /\A\+55\d{2}9\d{8}\z/
 
     COMMON_REQUIRED = %w[
       DATABASE_URL
@@ -67,18 +77,22 @@ module Berufe
       errors = []
       errors << "BERUFE_ENV must be one of: #{ENVIRONMENTS.join(", ")}" unless ENVIRONMENTS.include?(name)
 
-      expected_adapters = ADAPTERS[name]
-      if expected_adapters
-        expected_sms_otp, expected_media_storage = expected_adapters
-        errors << "SMS_OTP_ADAPTER must be #{expected_sms_otp} for #{name}" unless sms_otp_adapter == expected_sms_otp
-        errors << "MEDIA_STORAGE_ADAPTER must be #{expected_media_storage} for #{name}" unless media_storage_adapter == expected_media_storage
+      if ENVIRONMENTS.include?(name)
+        allowed_sms_otp_adapters = SMS_OTP_ADAPTERS.fetch(name)
+        allowed_media_storage_adapters = MEDIA_STORAGE_ADAPTERS.fetch(name)
+        unless allowed_sms_otp_adapters.include?(sms_otp_adapter)
+          errors << "SMS_OTP_ADAPTER must be one of: #{allowed_sms_otp_adapters.join(", ")} for #{name}"
+        end
+        unless allowed_media_storage_adapters.include?(media_storage_adapter)
+          errors << "MEDIA_STORAGE_ADAPTER must be one of: #{allowed_media_storage_adapters.join(", ")} for #{name}"
+        end
       end
 
       required = required_variables(name, sms_otp_adapter, media_storage_adapter)
       missing = required.select { |key| values[key].to_s.strip.empty? }
       errors << "missing required variables: #{missing.sort.join(", ")}" if missing.any?
 
-      validate_credential_scope(name, values, errors)
+      validate_infobip_configuration(name, sms_otp_adapter, values, errors)
       validate_job_configuration(name, values, errors)
 
       raise InvalidConfiguration, "Invalid Berufe configuration: #{errors.join("; ")}" if errors.any?
@@ -98,17 +112,27 @@ module Berufe
     end
     private_class_method :required_variables
 
-    def self.validate_credential_scope(name, values, errors)
-      return unless %w[integration production].include?(name)
+    def self.validate_infobip_configuration(name, sms_otp_adapter, values, errors)
+      return unless sms_otp_adapter == "infobip" && ENVIRONMENTS.include?(name)
 
       scope = values["INFOBIP_CREDENTIAL_SCOPE"]
-      errors << "INFOBIP_CREDENTIAL_SCOPE must be #{name}" unless scope == name
+      expected_scope = (name == "production") ? "production" : "integration"
+      errors << "INFOBIP_CREDENTIAL_SCOPE must be #{expected_scope} for #{name}" unless scope == expected_scope
 
-      if name == "integration" && values["INFOBIP_TEST_NUMBERS"].to_s.strip.empty?
+      return unless NON_PRODUCTION_INFOBIP_ENVIRONMENTS.include?(name)
+
+      test_numbers = values["INFOBIP_TEST_NUMBERS"].to_s
+      if test_numbers.strip.empty?
         errors << "missing required variables: INFOBIP_TEST_NUMBERS"
+        return
       end
+
+      parsed_numbers = test_numbers.split(",", -1).map(&:strip)
+      return if parsed_numbers.all? { |phone| INFOBIP_TEST_PHONE_PATTERN.match?(phone) }
+
+      errors << "INFOBIP_TEST_NUMBERS must contain comma-separated Brazilian E.164 mobile numbers"
     end
-    private_class_method :validate_credential_scope
+    private_class_method :validate_infobip_configuration
 
     def self.validate_job_configuration(name, values, errors)
       return if name == "test"

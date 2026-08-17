@@ -21,9 +21,27 @@ RSpec.describe "Foundation probe jobs", type: :request do
     expect(correlation_id).not_to include("5547")
   end
 
-  it "does not expose the dashboard without an authenticated admin MFA session" do
+  it "does not expose the dashboard without an authenticated administrator password session" do
     get "/admin/jobs"
 
     expect(response).to have_http_status(:not_found)
+  end
+
+  it "exposes the dashboard only with an authenticated administrator password session" do
+    admin = UserAccount.create!(
+      email: "admin@example.com",
+      password: "a-secure-admin-password",
+      password_confirmation: "a-secure-admin-password",
+      role: "admin",
+      status: "active"
+    )
+    _session, token = ApplicationSession.issue!(user_account: admin)
+
+    get "/admin/jobs", headers: {
+      "Cookie" => "#{ApplicationSession::COOKIE_NAME}=#{token}"
+    }
+
+    expect(response).to have_http_status(:found)
+    expect(response.location).to end_with("/admin/jobs/jobs?locale=en")
   end
 end

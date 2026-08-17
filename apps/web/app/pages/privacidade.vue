@@ -76,7 +76,7 @@ useSeoMeta({
         tokens do Infobip não ficam no navegador.
       </p>
       <p>
-        Administradores usam credencial individual e segundo fator TOTP. Também
+        Administradores usam credenciais individuais de e-mail e senha. Também
         registramos aceite dos documentos legais, criação da conta, último
         acesso, revogação e dados técnicos mínimos de segurança.
       </p>

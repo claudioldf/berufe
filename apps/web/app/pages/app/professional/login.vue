@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { onMounted } from "vue";
+import { useApplicationSession } from "~/composables/useApplicationSession";
 import { useAppRole } from "~/composables/useAppRole";
 import { usePhoneAuthFlow } from "~/composables/usePhoneAuthFlow";
 import { useProfessionalOnboarding } from "~/composables/useProfessionalOnboarding";
@@ -7,7 +9,8 @@ import { useToast } from "~/composables/useToast";
 const router = useRouter();
 const { setRole } = useAppRole();
 const { showToast } = useToast();
-const { isComplete, initializeFromAuth } = useProfessionalOnboarding();
+const { isComplete, hydrate, initializeFromAuth } = useProfessionalOnboarding();
+const { account, restoreSession, refreshSession } = useApplicationSession();
 const {
   step,
   phone,
@@ -20,7 +23,8 @@ const {
   requestCode,
   verifyCode,
   changePhone,
-  validateRegistration,
+  resumeRegistration,
+  registerProfessional,
 } = usePhoneAuthFlow();
 
 useSeoMeta({
@@ -28,8 +32,52 @@ useSeoMeta({
   robots: "noindex, nofollow",
 });
 
+async function enterProfessionalWorkspace() {
+  await router.replace(
+    isComplete.value ? "/app/professional" : "/app/professional/onboarding",
+  );
+}
+
+async function continueAuthenticatedFlow() {
+  const currentAccount = account.value;
+  if (!currentAccount) return;
+
+  if (currentAccount.role !== "professional") return;
+
+  if (currentAccount.registrationCompleted) {
+    await enterProfessionalWorkspace();
+  } else {
+    resumeRegistration();
+  }
+}
+
+async function confirmCode() {
+  await verifyCode();
+  if (step.value !== 3) return;
+
+  try {
+    if (await refreshSession()) await continueAuthenticatedFlow();
+  } catch {
+    error.value =
+      "Não foi possível confirmar sua sessão agora. Tente novamente em instantes.";
+  }
+}
+
 async function register() {
-  if (!validateRegistration()) return;
+  if (!(await registerProfessional())) return;
+
+  try {
+    if (!(await refreshSession())) {
+      error.value =
+        "Não foi possível confirmar sua sessão agora. Tente novamente em instantes.";
+      return;
+    }
+  } catch {
+    error.value =
+      "Não foi possível confirmar sua sessão agora. Tente novamente em instantes.";
+    return;
+  }
+
   initializeFromAuth({ name: name.value, phone: phone.value });
   setRole("professional");
   showToast({
@@ -38,10 +86,17 @@ async function register() {
       ? "Que bom ter você de volta."
       : "Vamos completar sua presença na Berufe.",
   });
-  await router.push(
-    isComplete.value ? "/app/professional" : "/app/professional/onboarding",
-  );
+  await enterProfessionalWorkspace();
 }
+
+onMounted(async () => {
+  hydrate();
+  try {
+    if (await restoreSession()) await continueAuthenticatedFlow();
+  } catch {
+    // The OTP flow remains available when a prior session cannot be restored.
+  }
+});
 </script>
 
 <template>
@@ -106,13 +161,14 @@ async function register() {
           :cooldown="cooldown"
           @change-phone="changePhone"
           @resend="requestCode"
-          @submit="verifyCode"
+          @submit="confirmCode"
         />
         <AuthRegistrationStep
           v-else
           v-model:name="name"
           v-model:accepted="accepted"
           :error="error"
+          :loading="isLoading"
           @submit="register"
         />
       </div>

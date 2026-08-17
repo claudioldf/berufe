@@ -1,30 +1,18 @@
 <script setup lang="ts">
 import { computed, shallowRef } from "vue";
-import { useAppRole } from "~/composables/useAppRole";
-import type { AppRole } from "~/types";
 
 const route = useRoute();
-const router = useRouter();
-const runtimeConfig = useRuntimeConfig();
-const { role: activeRole, setRole } = useAppRole();
 const isMenuOpen = shallowRef(false);
-const isPrototypeMode = computed(
-  () => runtimeConfig.public.prototypeMode === true,
-);
 
 const professionalLoginPath = "/app/professional/login";
+const adminLoginPath = "/app/admin/login";
 const isProfessional = computed(
   () =>
     route.path.startsWith("/app/professional") &&
     route.path !== professionalLoginPath,
 );
-const isAdmin = computed(() => route.path.startsWith("/app/admin"));
-const currentRole = computed(() =>
-  isProfessional.value
-    ? "professional"
-    : isAdmin.value
-      ? "admin"
-      : activeRole.value,
+const isAdmin = computed(
+  () => route.path.startsWith("/app/admin") && route.path !== adminLoginPath,
 );
 
 const links = computed(() => {
@@ -48,19 +36,6 @@ const links = computed(() => {
     { label: "Para profissionais", to: professionalLoginPath },
   ];
 });
-
-async function changeRole(event: Event) {
-  const role = (event.target as HTMLSelectElement).value as AppRole;
-  setRole(role);
-  isMenuOpen.value = false;
-  await router.push(
-    role === "professional"
-      ? "/app/professional"
-      : role === "admin"
-        ? "/app/admin"
-        : "/",
-  );
-}
 
 function isLinkActive(to: string) {
   if (to === "/app/admin") {
@@ -99,21 +74,16 @@ function isLinkActive(to: string) {
       </nav>
 
       <div class="header__actions">
-        <label v-if="isPrototypeMode" class="role-switcher">
-          <span>Explorar como</span>
-          <select name="preview-role" :value="currentRole" @change="changeRole">
-            <option value="visitor">Visitante</option>
-            <option value="professional">Profissional</option>
-            <option value="admin">Administrador</option>
-          </select>
-          <UIcon name="i-lucide-chevron-down" />
-        </label>
         <UButton
           v-if="!isProfessional && !isAdmin"
           :to="professionalLoginPath"
           color="primary"
           label="Entrar"
           class="header__login"
+        />
+        <AuthSessionLogoutButton
+          v-if="isProfessional || isAdmin"
+          class="header__logout"
         />
         <button
           class="header__menu"
@@ -140,6 +110,10 @@ function isLinkActive(to: string) {
       >
         {{ link.label }}
       </NuxtLink>
+      <AuthSessionLogoutButton
+        v-if="isProfessional || isAdmin"
+        class="header__mobile-logout"
+      />
     </nav>
   </header>
 </template>
@@ -198,37 +172,6 @@ function isLinkActive(to: string) {
     gap: 12px;
   }
 }
-.role-switcher {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.82rem;
-  font-weight: 700;
-  opacity: 0.78;
-}
-.role-switcher span {
-  white-space: nowrap;
-}
-.role-switcher select {
-  appearance: none;
-  padding: 9px 28px 9px 10px;
-  border: 1px solid currentcolor;
-  border-radius: 10px;
-  background: transparent;
-  color: inherit;
-  font-size: 0.82rem;
-  font-weight: 800;
-  cursor: pointer;
-}
-.role-switcher select option {
-  color: var(--color-brand-strong);
-}
-.role-switcher svg {
-  position: absolute;
-  right: 8px;
-  pointer-events: none;
-}
 .header {
   &__menu {
     display: none;
@@ -244,6 +187,9 @@ function isLinkActive(to: string) {
   &__mobile-nav {
     display: none;
   }
+  &__mobile-logout {
+    display: none;
+  }
 }
 
 @media (width <= 900px) {
@@ -252,7 +198,8 @@ function isLinkActive(to: string) {
       grid-template-columns: 1fr auto;
     }
     &__nav,
-    &__login {
+    &__login,
+    &__logout {
       display: none;
     }
     &__menu {
@@ -271,9 +218,12 @@ function isLinkActive(to: string) {
       font-weight: 700;
       text-decoration: none;
     }
-  }
-  .role-switcher span {
-    display: none;
+    &__mobile-logout {
+      display: flex;
+      justify-content: flex-start;
+      margin-top: 8px;
+      border-color: currentcolor;
+    }
   }
 }
 
@@ -282,9 +232,6 @@ function isLinkActive(to: string) {
     &__inner {
       min-height: 68px;
     }
-  }
-  .role-switcher {
-    display: none;
   }
 }
 </style>
