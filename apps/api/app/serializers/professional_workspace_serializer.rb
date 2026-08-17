@@ -12,6 +12,7 @@ class ProfessionalWorkspaceSerializer
         public_slug: profile.public_slug,
         profile_status: profile.profile_status,
         revision_status: profile.working_revision.status,
+        revision_rejection_reason: profile.working_revision.rejection_reason,
         has_published_revision: profile.published_revision.present?,
         photo: serialized_photo,
         portfolio_items: serialized_portfolio_items,

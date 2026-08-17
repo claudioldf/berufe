@@ -245,7 +245,15 @@ async function handleVerificationSubmission(
           <h1>Meu perfil</h1>
           <p>Organize as informações e evidências que clientes verão.</p>
         </div>
-        <span><DesignSystemStatusDot tone="success" /> {{ statusLabel }}</span>
+        <span>
+          <DesignSystemStatusDot tone="success" />
+          <span>
+            {{ statusLabel }}
+            <small v-if="workspace?.profile.revisionRejectionReason">
+              {{ workspace?.profile.revisionRejectionReason }}
+            </small>
+          </span>
+        </span>
       </DesignSystemContainer>
     </section>
     <DesignSystemContainer class="profile-workspace__content">
@@ -343,6 +351,17 @@ async function handleVerificationSubmission(
     color: #b7dfd3;
     font-size: 0.84rem;
     font-weight: 850;
+  }
+  &__inner > span span,
+  &__inner > span small {
+    display: block;
+  }
+  &__inner > span small {
+    max-width: 320px;
+    margin-top: 2px;
+    color: rgb(255 255 255 / 72%);
+    font-size: 0.72rem;
+    font-weight: 600;
   }
 }
 .profile-workspace {

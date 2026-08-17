@@ -614,6 +614,7 @@ export interface components {
             profile_status: "draft" | "pending_review" | "published" | "suspended";
             /** @enum {string} */
             revision_status: "draft" | "pending_review" | "approved" | "rejected" | "superseded";
+            revision_rejection_reason: string | null;
             has_published_revision: boolean;
             photo: components["schemas"]["ProfessionalWorkspacePhoto"];
             portfolio_items: components["schemas"]["ProfessionalPortfolioItem"][];

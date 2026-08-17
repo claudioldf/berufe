@@ -25,6 +25,7 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
           "public_slug" => "ana-souza",
           "profile_status" => "draft",
           "revision_status" => "draft",
+          "revision_rejection_reason" => nil,
           "has_published_revision" => false,
           "photo" => {
             "current" => nil,

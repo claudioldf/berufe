@@ -146,6 +146,7 @@ export interface ProfessionalWorkspace {
     status: ProfessionalProfileStatus;
     revisionStatus:
       "draft" | "pending_review" | "approved" | "rejected" | "superseded";
+    revisionRejectionReason: string | null;
     hasPublishedRevision: boolean;
     photo: ProfessionalProfilePhotoState;
     portfolioItems: ProfessionalPortfolioItem[];

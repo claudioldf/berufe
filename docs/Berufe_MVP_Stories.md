@@ -466,7 +466,7 @@ Apply these rules whenever they are relevant to the story:
 
 ### S024 — Approve and publish a professional profile
 
-**Status:** PENDING
+**Status:** DONE
 
 **Story:** As an admin, I want to approve or reject a submitted profile so that only suitable profiles become searchable.
 

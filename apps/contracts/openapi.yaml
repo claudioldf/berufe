@@ -1814,6 +1814,7 @@ components:
         - public_slug
         - profile_status
         - revision_status
+        - revision_rejection_reason
         - has_published_revision
         - photo
         - portfolio_items
@@ -1844,6 +1845,11 @@ components:
             - approved
             - rejected
             - superseded
+        revision_rejection_reason:
+          type:
+            - string
+            - "null"
+          maxLength: 500
         has_published_revision:
           type: boolean
         photo:

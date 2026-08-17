@@ -10,6 +10,7 @@ function completeWorkspace(): ProfessionalWorkspace {
       publicSlug: "ana-souza",
       status: "draft",
       revisionStatus: "draft",
+      revisionRejectionReason: null,
       hasPublishedRevision: false,
       photo: {
         current: null,

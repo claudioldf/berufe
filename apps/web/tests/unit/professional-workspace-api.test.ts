@@ -21,6 +21,7 @@ const workspaceData: WorkspaceData = {
     public_slug: "ana-souza",
     profile_status: "draft",
     revision_status: "draft",
+    revision_rejection_reason: null,
     has_published_revision: false,
     photo: {
       current: null,
@@ -70,6 +71,7 @@ describe("professional workspace API", () => {
         publicSlug: "ana-souza",
         status: "draft",
         revisionStatus: "draft",
+        revisionRejectionReason: null,
         hasPublishedRevision: false,
         photo: {
           current: null,

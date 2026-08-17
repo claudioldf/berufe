@@ -24,6 +24,7 @@ export function mapProfessionalWorkspace(
       publicSlug: data.profile.public_slug,
       status: data.profile.profile_status,
       revisionStatus: data.profile.revision_status,
+      revisionRejectionReason: data.profile.revision_rejection_reason,
       hasPublishedRevision: data.profile.has_published_revision,
       photo: {
         current: data.profile.photo.current
