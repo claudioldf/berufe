@@ -27,6 +27,13 @@ end
 RSpec.configure do |config|
   config.fixture_paths = [Rails.root.join("spec/fixtures")]
   config.use_transactional_fixtures = true
+
+  config.before(:suite) do
+    ActiveRecord::Base.connection_pool.with_connection do |connection|
+      connection.truncate_tables(*connection.tables)
+    end
+  end
+
   config.infer_spec_type_from_file_location!
   config.filter_rails_from_backtrace!
   config.include OpenapiFirst::Test::Methods[Rails.application], openapi: true
