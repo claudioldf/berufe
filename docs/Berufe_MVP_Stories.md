@@ -613,6 +613,8 @@ Apply these rules whenever they are relevant to the story:
 
 ### S032 — Publish the public home and search entry
 
+**Status:** DONE
+
 **Story:** As a customer, I want to choose a residential service from the home page so that I can begin a relevant search without understanding Berufe’s internal taxonomy.
 
 **Acceptance criteria:**

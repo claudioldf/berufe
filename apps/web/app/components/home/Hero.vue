@@ -1,14 +1,8 @@
 <script setup lang="ts">
 import { onMounted, shallowRef } from "vue";
-import type {
-  Neighborhood,
-  Professional,
-  Service,
-  ServiceSearchPayload,
-} from "~/types";
+import type { Neighborhood, Service, ServiceSearchPayload } from "~/types";
 
 defineProps<{
-  featuredProfessional?: Professional;
   services: Service[];
   neighborhoods: Neighborhood[];
 }>();
@@ -87,7 +81,6 @@ onMounted(() => {
         <div class="hero__profile-chip">
           <DesignSystemAvatar
             name="Marcos Alves"
-            :src="featuredProfessional?.avatar"
             alt=""
             size="sm"
             shape="rounded"

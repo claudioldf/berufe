@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_17_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_17_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -239,7 +239,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_120000) do
     t.check_constraint "note IS NULL OR char_length(btrim(note)) >= 1 AND char_length(btrim(note)) <= 500", name: "moderation_actions_note_length"
     t.check_constraint "reason IS NULL OR char_length(btrim(reason)) >= 1 AND char_length(btrim(reason)) <= 500", name: "moderation_actions_reason_length"
     t.check_constraint "request_id ~ '^[A-Za-z0-9._-]{1,100}$'::text", name: "moderation_actions_request_id_format"
-    t.check_constraint "target_type = ANY (ARRAY['profile_revision'::text, 'profile_photo'::text, 'portfolio_item'::text, 'verification_request'::text])", name: "moderation_actions_known_target"
+    t.check_constraint "target_type = ANY (ARRAY['profile_revision'::text, 'profile_photo'::text, 'portfolio_item'::text, 'verification_request'::text, 'professional_relationship'::text])", name: "moderation_actions_known_target"
   end
 
   create_table "moderation_media_access_events", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -441,6 +441,27 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_120000) do
     t.check_constraint "public_slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'::text", name: "professional_profiles_public_slug_format"
   end
 
+  create_table "professional_relationships", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.text "context_note"
+    t.datetime "created_at", null: false
+    t.uuid "initiator_professional_id", null: false
+    t.uuid "recipient_professional_id", null: false
+    t.text "relationship_type", null: false
+    t.datetime "responded_at"
+    t.text "status", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.index ["initiator_professional_id", "recipient_professional_id", "relationship_type"], name: "idx_professional_relationships_unique_direction", unique: true
+    t.index ["initiator_professional_id", "status"], name: "idx_professional_relationships_initiator_status"
+    t.index ["initiator_professional_id"], name: "index_professional_relationships_on_initiator_professional_id"
+    t.index ["recipient_professional_id", "status"], name: "idx_professional_relationships_recipient_status"
+    t.index ["recipient_professional_id"], name: "index_professional_relationships_on_recipient_professional_id"
+    t.check_constraint "context_note IS NULL OR char_length(btrim(context_note)) >= 1 AND char_length(btrim(context_note)) <= 300", name: "professional_relationships_context_length"
+    t.check_constraint "initiator_professional_id <> recipient_professional_id", name: "professional_relationships_distinct_profiles"
+    t.check_constraint "relationship_type = ANY (ARRAY['recommendation'::text, 'worked_together'::text])", name: "professional_relationships_known_type"
+    t.check_constraint "status = 'pending'::text AND responded_at IS NULL OR (status = ANY (ARRAY['accepted'::text, 'declined'::text])) AND responded_at IS NOT NULL", name: "professional_relationships_response_state"
+    t.check_constraint "status = ANY (ARRAY['pending'::text, 'accepted'::text, 'declined'::text])", name: "professional_relationships_known_status"
+  end
+
   create_table "service_categories", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "icon", null: false
@@ -578,6 +599,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_120000) do
   add_foreign_key "professional_profiles", "professional_profile_revisions", column: "published_revision_id"
   add_foreign_key "professional_profiles", "professional_profile_revisions", column: "working_revision_id"
   add_foreign_key "professional_profiles", "user_accounts"
+  add_foreign_key "professional_relationships", "professional_profiles", column: "initiator_professional_id"
+  add_foreign_key "professional_relationships", "professional_profiles", column: "recipient_professional_id"
   add_foreign_key "services", "service_categories", column: "category_id"
   add_foreign_key "verification_file_access_events", "user_accounts", column: "admin_user_id"
   add_foreign_key "verification_file_access_events", "verification_files"

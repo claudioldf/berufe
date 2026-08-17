@@ -1,27 +1,50 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import professionalsData from "@data/professionals.json";
-import type { Professional } from "~/types";
 import { useCatalogs } from "~/composables/useCatalogs";
+import { useFeaturedProfessionals } from "~/composables/useFeaturedProfessionals";
 import { findService } from "~/utils/services";
 
 const router = useRouter();
-const { data: catalog, error: catalogError } = await useCatalogs();
-if (catalogError.value || !catalog.value) {
+const runtimeConfig = useRuntimeConfig();
+const [catalogResult, featuredResult] = await Promise.all([
+  useCatalogs(),
+  useFeaturedProfessionals(),
+]);
+if (
+  catalogResult.error.value ||
+  !catalogResult.data.value ||
+  featuredResult.error.value ||
+  !featuredResult.data.value
+) {
   throw createError({
     statusCode: 503,
-    statusMessage: "Catálogo temporariamente indisponível.",
+    statusMessage: "Descoberta temporariamente indisponível.",
   });
 }
-const services = computed(() => catalog.value?.services ?? []);
-const neighborhoods = computed(() => catalog.value?.neighborhoods ?? []);
-const featured = (professionalsData as Professional[]).slice(0, 3);
+const services = computed(() => catalogResult.data.value?.services ?? []);
+const neighborhoods = computed(
+  () => catalogResult.data.value?.neighborhoods ?? [],
+);
+const featured = computed(() => featuredResult.data.value ?? []);
+
+const title = "Profissionais de confiança em Joinville";
+const description =
+  "Encontre profissionais verificados para reformas e manutenção residencial em Joinville.";
+const siteUrl = String(
+  runtimeConfig.public.siteUrl || "http://localhost:3000",
+).replace(/\/$/, "");
+const canonicalUrl = `${siteUrl}/`;
 
 useSeoMeta({
-  title: "Profissionais de confiança em Joinville",
-  description:
-    "Encontre profissionais verificados para reformas e manutenção residencial em Joinville.",
+  title,
+  description,
+  ogTitle: title,
+  ogDescription: description,
+  ogUrl: canonicalUrl,
+  ogType: "website",
+  twitterCard: "summary_large_image",
 });
+useHead({ link: [{ rel: "canonical", href: canonicalUrl }] });
 
 async function search(payload: { service: string; neighborhood: string }) {
   const service = findService(services.value, payload.service);
@@ -38,7 +61,6 @@ async function search(payload: { service: string; neighborhood: string }) {
 <template>
   <div>
     <HomeHero
-      :featured-professional="featured[0]"
       :services="services"
       :neighborhoods="neighborhoods"
       @search="search"
@@ -48,7 +70,10 @@ async function search(payload: { service: string; neighborhood: string }) {
 
     <HomeTrust />
 
-    <HomeFeaturedProfessionals :professionals="featured" />
+    <HomeFeaturedProfessionals
+      v-if="featured.length > 0"
+      :professionals="featured"
+    />
     <HomeProfessionalCta />
   </div>
 </template>

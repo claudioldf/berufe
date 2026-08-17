@@ -271,6 +271,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/professionals/featured": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read the most recently approved publicly eligible professionals */
+        get: operations["getFeaturedPublicProfessionals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/profile-photos/{id}/image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** Read a currently published approved profile photo */
+        get: operations["getPublicProfilePhotoImage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/portfolio-items/{id}/image": {
         parameters: {
             query?: never;
@@ -988,6 +1024,49 @@ export interface components {
             stateCode: "SC";
             /** @constant */
             city: "Joinville";
+        };
+        FeaturedPublicProfessionalsResponse: {
+            data: {
+                professionals: components["schemas"]["PublicProfessionalCard"][];
+            };
+            request_id: components["schemas"]["RequestId"];
+        };
+        PublicProfessionalCard: {
+            /** Format: uuid */
+            id: string;
+            publicSlug: string;
+            displayName: string;
+            headline: string | null;
+            /** Format: uri */
+            photoUrl: string | null;
+            primaryService: components["schemas"]["PublicProfessionalServiceSummary"] | null;
+            coverage: components["schemas"]["PublicProfessionalCoverage"];
+            verificationLabels: components["schemas"]["PublicVerificationLabel"][];
+            portfolioCount: number;
+            relationshipCount: number;
+            /** Format: date-time */
+            publicSnapshotUpdatedAt: string | null;
+        };
+        PublicProfessionalServiceSummary: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            slug: string;
+        };
+        PublicProfessionalCoverage: {
+            allJoinville: boolean;
+            neighborhoods: {
+                code: string;
+                name: string;
+            }[];
+        };
+        PublicVerificationLabel: {
+            /** @constant */
+            type: "identity";
+            /** @constant */
+            label: "Identidade verificada";
+            /** Format: date-time */
+            verifiedAt: string;
         };
         RequestId: string;
         StatusResponse: {
@@ -1786,6 +1865,73 @@ export interface operations {
             };
             /** @description The catalog database query is temporarily unavailable. */
             503: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getFeaturedPublicProfessionals: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Up to three publicly eligible professional cards in deterministic order. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeaturedPublicProfessionalsResponse"];
+                };
+            };
+            /** @description The public professional query is temporarily unavailable. */
+            503: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getPublicProfilePhotoImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description An approved JPEG profile photo whose parent remains publicly eligible. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Cache-Control"?: "max-age=0, public, must-revalidate";
+                    "Content-Disposition"?: string;
+                    "X-Content-Type-Options"?: "nosniff";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                };
+            };
+            /** @description The photo is absent, not approved/published, has an ineligible parent, or its object is unavailable. */
+            404: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
