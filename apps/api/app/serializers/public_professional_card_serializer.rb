@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
 class PublicProfessionalCardSerializer
-  def initialize(profile)
+  def initialize(profile, matching_service: nil)
     @profile = profile
+    @matching_service = matching_service
   end
 
   def as_json(*)
@@ -22,6 +23,7 @@ class PublicProfessionalCardSerializer
         name: primary_service.service.name,
         slug: primary_service.service.slug
       },
+      matchingService: serialize_service(matching_service || primary_service&.service),
       coverage: {
         allJoinville: areas.any? { |area| area.neighborhood_code.nil? },
         neighborhoods: areas.filter_map do |area|
@@ -30,11 +32,7 @@ class PublicProfessionalCardSerializer
           {code: area.neighborhood.code, name: area.neighborhood.name}
         end
       },
-      verificationLabels: verification[:identity] ? [{
-        type: "identity",
-        label: verification[:identity][:label],
-        verifiedAt: verification[:identity][:verified_at]
-      }] : [],
+      verificationLabels: verification_labels(verification),
       portfolioCount: profile.portfolio_items.count { |item| item.status == "approved" && item.deleted_at.nil? },
       relationshipCount: PublicProfessionalRelationshipQuery.for_professional(profile.id).count,
       publicSnapshotUpdatedAt: revision.reviewed_at&.iso8601
@@ -43,7 +41,25 @@ class PublicProfessionalCardSerializer
 
   private
 
-  attr_reader :profile
+  attr_reader :profile, :matching_service
+
+  def serialize_service(service)
+    return unless service
+
+    {id: service.id, name: service.name, slug: service.slug}
+  end
+
+  def verification_labels(verification)
+    labels = [{type: "phone", label: "Telefone confirmado", verifiedAt: nil}]
+    if verification[:identity]
+      labels << {
+        type: "identity",
+        label: verification[:identity][:label],
+        verifiedAt: verification[:identity][:verified_at]
+      }
+    end
+    labels
+  end
 
   def public_photo_url
     photo = profile.published_photo

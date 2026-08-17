@@ -60,7 +60,13 @@ defineProps<{ professionals: PublicProfessionalCard[] }>();
             <UIcon name="i-lucide-arrow-up-right" />
           </div>
           <div class="featured-card__proof">
-            <span v-if="professional.verificationLabels.length > 0">
+            <span
+              v-if="
+                professional.verificationLabels.some(
+                  (label) => label.type === 'identity',
+                )
+              "
+            >
               <UIcon name="i-lucide-badge-check" /> Identidade verificada
             </span>
             <span>

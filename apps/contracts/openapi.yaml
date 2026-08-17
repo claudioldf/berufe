@@ -641,6 +641,56 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/public/professional-searches:
+    post:
+      operationId: searchPublicProfessionals
+      summary: Search publicly eligible professionals by service and optional Joinville neighborhood
+      tags:
+        - Public discovery
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublicProfessionalSearchRequest"
+      responses:
+        "200":
+          description: Matching public professional cards or safe related active-service suggestions.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicProfessionalSearchResponse"
+        "403":
+          description: The exact browser origin is invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: The service term or optional neighborhood is malformed or unavailable.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: The public professional query is temporarily unavailable.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/public/profile-photos/{id}/image:
     parameters:
       - name: id
@@ -3101,6 +3151,109 @@ components:
                 $ref: "#/components/schemas/PublicProfessionalCard"
         request_id:
           $ref: "#/components/schemas/RequestId"
+    PublicProfessionalSearchRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - service
+      properties:
+        service:
+          type: string
+          minLength: 1
+          maxLength: 80
+        neighborhoodCode:
+          type:
+            - string
+            - "null"
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          maxLength: 80
+    PublicProfessionalSearchResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          $ref: "#/components/schemas/PublicProfessionalSearchData"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    PublicProfessionalSearchData:
+      type: object
+      additionalProperties: false
+      required:
+        - query
+        - professionals
+        - relatedServices
+      properties:
+        query:
+          type: object
+          additionalProperties: false
+          required:
+            - normalizedTerm
+            - service
+            - neighborhood
+          properties:
+            normalizedTerm:
+              type: string
+              minLength: 1
+              maxLength: 80
+            service:
+              oneOf:
+                - $ref: "#/components/schemas/PublicServiceSuggestion"
+                - type: "null"
+            neighborhood:
+              oneOf:
+                - $ref: "#/components/schemas/PublicProfessionalNeighborhoodSummary"
+                - type: "null"
+        professionals:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicProfessionalCard"
+        relatedServices:
+          type: array
+          maxItems: 3
+          items:
+            $ref: "#/components/schemas/PublicServiceSuggestion"
+    PublicServiceSuggestion:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - name
+        - slug
+        - icon
+        - description
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+        slug:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        icon:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          minLength: 1
+          maxLength: 240
+    PublicProfessionalNeighborhoodSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - name
+      properties:
+        code:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        name:
+          type: string
+          minLength: 1
     PublicProfessionalCard:
       type: object
       additionalProperties: false
@@ -3111,6 +3264,7 @@ components:
         - headline
         - photoUrl
         - primaryService
+        - matchingService
         - coverage
         - verificationLabels
         - portfolioCount
@@ -3139,6 +3293,10 @@ components:
             - "null"
           format: uri
         primaryService:
+          oneOf:
+            - $ref: "#/components/schemas/PublicProfessionalServiceSummary"
+            - type: "null"
+        matchingService:
           oneOf:
             - $ref: "#/components/schemas/PublicProfessionalServiceSummary"
             - type: "null"
@@ -3210,12 +3368,18 @@ components:
       properties:
         type:
           type: string
-          const: identity
+          enum:
+            - phone
+            - identity
         label:
           type: string
-          const: Identidade verificada
+          enum:
+            - Telefone confirmado
+            - Identidade verificada
         verifiedAt:
-          type: string
+          type:
+            - string
+            - "null"
           format: date-time
     RequestId:
       type: string

@@ -12,6 +12,7 @@ export type BerufeApiClient = Client<paths>;
 interface ApiClientOptions {
   baseUrl: string;
   fetch?: ClientOptions["fetch"];
+  origin?: string;
   requestId?: () => string | undefined;
 }
 
@@ -34,6 +35,12 @@ export function createApiClient(options: ApiClientOptions): BerufeApiClient {
           ? suppliedRequestId
           : globalThis.crypto.randomUUID();
       request.headers.set("X-Request-Id", requestId);
+      if (
+        options.origin &&
+        !["GET", "HEAD", "OPTIONS"].includes(request.method)
+      ) {
+        request.headers.set("Origin", options.origin);
+      }
 
       return request;
     },
@@ -45,6 +52,7 @@ export function createApiClient(options: ApiClientOptions): BerufeApiClient {
 
 export function useApiClient(): BerufeApiClient {
   const runtimeConfig = useRuntimeConfig();
+  const configuredSiteUrl = String(runtimeConfig.public.siteUrl ?? "").trim();
   const inboundRequestId = import.meta.server
     ? useRequestHeader("x-request-id")
     : undefined;
@@ -53,6 +61,10 @@ export function useApiClient(): BerufeApiClient {
     baseUrl: import.meta.server
       ? runtimeConfig.apiInternalBaseUrl
       : runtimeConfig.public.apiBaseUrl,
+    origin:
+      import.meta.server && configuredSiteUrl
+        ? new URL(configuredSiteUrl).origin
+        : undefined,
     requestId: () => inboundRequestId ?? undefined,
   });
 }

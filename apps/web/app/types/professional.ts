@@ -94,18 +94,39 @@ export interface PublicProfessionalCard {
     name: string;
     slug: string;
   } | null;
+  matchingService: {
+    id: string;
+    name: string;
+    slug: string;
+  } | null;
   coverage: {
     allJoinville: boolean;
     neighborhoods: Array<{ code: string; name: string }>;
   };
   verificationLabels: Array<{
-    type: "identity";
-    label: "Identidade verificada";
-    verifiedAt: string;
+    type: "phone" | "identity";
+    label: "Telefone confirmado" | "Identidade verificada";
+    verifiedAt: string | null;
   }>;
   portfolioCount: number;
   relationshipCount: number;
   publicSnapshotUpdatedAt: string | null;
+}
+
+export interface PublicServiceSuggestion {
+  id: string;
+  name: string;
+  slug: string;
+  icon: string;
+  description: string;
+}
+
+export interface PublicProfessionalSearchResult {
+  normalizedTerm: string;
+  resolvedService: PublicServiceSuggestion | null;
+  neighborhood: { code: string; name: string } | null;
+  professionals: PublicProfessionalCard[];
+  relatedServices: PublicServiceSuggestion[];
 }
 
 export interface ProfessionalProfileDraft {

@@ -288,6 +288,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/professional-searches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Search publicly eligible professionals by service and optional Joinville neighborhood */
+        post: operations["searchPublicProfessionals"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/profile-photos/{id}/image": {
         parameters: {
             query?: never;
@@ -1031,6 +1048,35 @@ export interface components {
             };
             request_id: components["schemas"]["RequestId"];
         };
+        PublicProfessionalSearchRequest: {
+            service: string;
+            neighborhoodCode?: string | null;
+        };
+        PublicProfessionalSearchResponse: {
+            data: components["schemas"]["PublicProfessionalSearchData"];
+            request_id: components["schemas"]["RequestId"];
+        };
+        PublicProfessionalSearchData: {
+            query: {
+                normalizedTerm: string;
+                service: components["schemas"]["PublicServiceSuggestion"] | null;
+                neighborhood: components["schemas"]["PublicProfessionalNeighborhoodSummary"] | null;
+            };
+            professionals: components["schemas"]["PublicProfessionalCard"][];
+            relatedServices: components["schemas"]["PublicServiceSuggestion"][];
+        };
+        PublicServiceSuggestion: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            slug: string;
+            icon: string;
+            description: string;
+        };
+        PublicProfessionalNeighborhoodSummary: {
+            code: string;
+            name: string;
+        };
         PublicProfessionalCard: {
             /** Format: uuid */
             id: string;
@@ -1040,6 +1086,7 @@ export interface components {
             /** Format: uri */
             photoUrl: string | null;
             primaryService: components["schemas"]["PublicProfessionalServiceSummary"] | null;
+            matchingService: components["schemas"]["PublicProfessionalServiceSummary"] | null;
             coverage: components["schemas"]["PublicProfessionalCoverage"];
             verificationLabels: components["schemas"]["PublicVerificationLabel"][];
             portfolioCount: number;
@@ -1061,12 +1108,12 @@ export interface components {
             }[];
         };
         PublicVerificationLabel: {
-            /** @constant */
-            type: "identity";
-            /** @constant */
-            label: "Identidade verificada";
+            /** @enum {string} */
+            type: "phone" | "identity";
+            /** @enum {string} */
+            label: "Telefone confirmado" | "Identidade verificada";
             /** Format: date-time */
-            verifiedAt: string;
+            verifiedAt: string | null;
         };
         RequestId: string;
         StatusResponse: {
@@ -1892,6 +1939,61 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FeaturedPublicProfessionalsResponse"];
+                };
+            };
+            /** @description The public professional query is temporarily unavailable. */
+            503: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    searchPublicProfessionals: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublicProfessionalSearchRequest"];
+            };
+        };
+        responses: {
+            /** @description Matching public professional cards or safe related active-service suggestions. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicProfessionalSearchResponse"];
+                };
+            };
+            /** @description The exact browser origin is invalid. */
+            403: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The service term or optional neighborhood is malformed or unavailable. */
+            422: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
             /** @description The public professional query is temporarily unavailable. */
