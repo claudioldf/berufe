@@ -344,7 +344,9 @@ export interface components {
             profile_status: "draft";
         };
         ProfessionalProfileUpdateRequest: {
-            identity: components["schemas"]["ProfessionalIdentityUpdate"];
+            identity?: components["schemas"]["ProfessionalIdentityUpdate"];
+            services?: components["schemas"]["ProfessionalServiceUpdate"][];
+            coverage?: components["schemas"]["ProfessionalCoverageUpdate"];
         };
         ProfessionalIdentityUpdate: {
             display_name: string;
@@ -368,6 +370,8 @@ export interface components {
             /** @enum {string} */
             profile_status: "draft" | "pending_review" | "published" | "suspended";
             identity: components["schemas"]["ProfessionalIdentity"];
+            services: components["schemas"]["ProfessionalServiceSelection"][];
+            coverage: components["schemas"]["ProfessionalCoverage"];
         };
         ProfessionalIdentity: {
             display_name: string;
@@ -379,6 +383,31 @@ export interface components {
             instagram: string | null;
             /** Format: uri */
             youtube: string | null;
+        };
+        ProfessionalServiceUpdate: {
+            /** Format: uuid */
+            service_id: string;
+            is_primary: boolean;
+            note?: string | null;
+        };
+        ProfessionalCoverageUpdate: {
+            all_joinville: boolean;
+            neighborhood_codes: string[];
+        };
+        ProfessionalServiceSelection: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            is_primary: boolean;
+            note: string | null;
+        };
+        ProfessionalCoverage: {
+            all_joinville: boolean;
+            neighborhoods: components["schemas"]["ProfessionalCoverageNeighborhood"][];
+        };
+        ProfessionalCoverageNeighborhood: {
+            code: string;
+            name: string;
         };
         CurrentSessionResponse: {
             data: components["schemas"]["CurrentSessionData"];

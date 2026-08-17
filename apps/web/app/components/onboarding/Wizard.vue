@@ -20,6 +20,9 @@ const props = defineProps<{
   saveIdentity: (
     draft: ProfessionalProfileDraft,
   ) => Promise<ProfessionalProfileDraft>;
+  saveSupply: (
+    draft: ProfessionalProfileDraft,
+  ) => Promise<ProfessionalProfileDraft>;
 }>();
 
 const route = useRoute();
@@ -38,7 +41,12 @@ const {
   initializeFromWorkspace,
   profileSaving,
   profileError,
-} = useProfessionalOnboarding({ saveIdentity: props.saveIdentity });
+  supplySaving,
+  supplyError,
+} = useProfessionalOnboarding({
+  saveIdentity: props.saveIdentity,
+  saveSupply: props.saveSupply,
+});
 
 const activeStep = shallowRef<OnboardingStepId>("profile");
 const reviewing = shallowRef(false);
@@ -101,8 +109,8 @@ async function handleProfile(draft: ProfessionalProfileDraft) {
   if (await completeProfile(draft)) void goToStep("services");
 }
 
-function handleServices(draft: ProfessionalProfileDraft) {
-  if (completeServices(draft)) void goToStep("portfolio");
+async function handleServices(draft: ProfessionalProfileDraft) {
+  if (await completeServices(draft)) void goToStep("portfolio");
 }
 
 function handlePortfolio(draft: PortfolioItemDraft) {
@@ -142,9 +150,20 @@ watch(
 watch(
   () => props.workspace.profile.identity,
   (identity) => {
+    const selections = props.workspace.profile.services;
     initializeFromWorkspace({
       ...editableProfile.value,
       ...identity,
+      selectedServices: selections.map((selection) => selection.name),
+      primaryService:
+        selections.find((selection) => selection.isPrimary)?.name ?? "",
+      serviceNotes: Object.fromEntries(
+        selections.map((selection) => [selection.name, selection.note]),
+      ),
+      allJoinville: props.workspace.profile.coverage.allJoinville,
+      selectedNeighborhoods: props.workspace.profile.coverage.neighborhoods.map(
+        (neighborhood) => neighborhood.name,
+      ),
     });
   },
   { immediate: true },
@@ -214,6 +233,8 @@ watch(
             :draft="editableProfile"
             :services="services"
             :neighborhoods="neighborhoods"
+            :saving="supplySaving"
+            :server-error="supplyError"
             @back="previousStep"
             @complete="handleServices"
           />

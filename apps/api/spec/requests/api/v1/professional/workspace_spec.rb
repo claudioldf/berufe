@@ -31,12 +31,60 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
             "whatsapp" => account.phone_e164,
             "instagram" => nil,
             "youtube" => nil
-          }
+          },
+          "services" => [],
+          "coverage" => {"all_joinville" => false, "neighborhoods" => []}
         }
       },
       "request_id" => "workspace-show"
     )
     expect(response.headers["Cache-Control"]).to include("no-store")
+    assert_api_conform(status: 200)
+  end
+
+  it "persists active services, one primary, specialization notes, and Joinville coverage" do
+    category = ServiceCategory.create!(
+      name: "Instalações Workspace",
+      slug: "instalacoes-workspace",
+      icon: "i-lucide-wrench",
+      is_active: true,
+      sort_order: 0
+    )
+    service = Service.create!(
+      category:,
+      name: "Eletricista Workspace",
+      slug: "eletricista-workspace",
+      icon: "i-lucide-zap",
+      description: "Instalações elétricas.",
+      aliases: ["elétrica"],
+      is_active: true,
+      sort_order: 0
+    )
+    neighborhood = Neighborhood.create!(
+      code: "america-workspace",
+      state_code: "SC",
+      city_code: "Joinville",
+      name: "América Workspace",
+      is_active: true,
+      sort_order: 0
+    )
+
+    patch "/api/v1/professional/profile",
+      params: {
+        services: [{service_id: service.id, is_primary: true, note: "Quadros elétricos"}],
+        coverage: {all_joinville: false, neighborhood_codes: [neighborhood.code]}
+      },
+      headers: session_headers(request_id: "workspace-supply", origin: true),
+      as: :json
+
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body.dig("data", "profile", "services")).to eq(
+      [{"id" => service.id, "name" => service.name, "is_primary" => true, "note" => "Quadros elétricos"}]
+    )
+    expect(response.parsed_body.dig("data", "profile", "coverage")).to eq(
+      "all_joinville" => false,
+      "neighborhoods" => [{"code" => neighborhood.code, "name" => neighborhood.name}]
+    )
     assert_api_conform(status: 200)
   end
 

@@ -397,7 +397,7 @@ Apply these rules whenever they are relevant to the story:
 
 ### S020 — Select services and service areas
 
-**Status:** PENDING
+**Status:** DONE
 
 **Story:** As a professional, I want to select what I do and where I work so that I can appear in relevant searches.
 

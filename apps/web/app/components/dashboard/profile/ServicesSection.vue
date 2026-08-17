@@ -54,5 +54,40 @@ defineEmits<{ toggle: [name: string] }>();
         </option>
       </select>
     </DesignSystemFormField>
+    <div v-if="form.selectedServices.length" class="service-notes">
+      <DesignSystemFormField
+        v-for="(service, index) in form.selectedServices"
+        :id="`profile-service-note-${index}`"
+        :key="service"
+        :label="`Especialização em ${service}`"
+        hint="Opcional, até 120 caracteres."
+      >
+        <template #default="field">
+          <input
+            :id="field.controlId"
+            v-model="form.serviceNotes[service]"
+            :name="`service-note-${index}`"
+            maxlength="120"
+            autocomplete="off"
+            :aria-describedby="field.describedBy"
+          />
+        </template>
+      </DesignSystemFormField>
+    </div>
   </section>
 </template>
+
+<style scoped lang="scss">
+.service-notes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+
+@media (width <= 680px) {
+  .service-notes {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

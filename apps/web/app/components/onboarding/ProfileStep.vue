@@ -18,6 +18,7 @@ const emit = defineEmits<{
 const form = ref<ProfessionalProfileDraft>({
   ...props.draft,
   selectedServices: [...props.draft.selectedServices],
+  serviceNotes: { ...props.draft.serviceNotes },
   selectedNeighborhoods: [...props.draft.selectedNeighborhoods],
 });
 const error = shallowRef("");
@@ -29,6 +30,7 @@ function submit() {
   emit("complete", {
     ...form.value,
     selectedServices: [...form.value.selectedServices],
+    serviceNotes: { ...form.value.serviceNotes },
     selectedNeighborhoods: [...form.value.selectedNeighborhoods],
   });
 }

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_17_090000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_17_092000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -239,6 +239,32 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_090000) do
     t.check_constraint "subject_digest ~ '^[0-9a-f]{64}$'::text", name: "otp_request_counters_digest_format"
   end
 
+  create_table "professional_profile_service_areas", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.text "city_code", default: "Joinville", null: false
+    t.datetime "created_at", null: false
+    t.text "neighborhood_code"
+    t.uuid "professional_profile_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["professional_profile_id", "city_code", "neighborhood_code"], name: "idx_profile_service_areas_unique_neighborhood", unique: true, where: "(neighborhood_code IS NOT NULL)"
+    t.index ["professional_profile_id", "city_code"], name: "idx_profile_service_areas_unique_all_city", unique: true, where: "(neighborhood_code IS NULL)"
+    t.index ["professional_profile_id"], name: "idx_profile_service_areas_profile"
+    t.check_constraint "city_code = 'Joinville'::text", name: "professional_profile_service_areas_joinville_only"
+  end
+
+  create_table "professional_profile_services", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.boolean "is_primary", default: false, null: false
+    t.text "note"
+    t.uuid "professional_profile_id", null: false
+    t.uuid "service_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["professional_profile_id", "service_id"], name: "idx_profile_services_unique_service", unique: true
+    t.index ["professional_profile_id"], name: "idx_profile_services_one_primary", unique: true, where: "is_primary"
+    t.index ["professional_profile_id"], name: "index_professional_profile_services_on_professional_profile_id"
+    t.index ["service_id"], name: "index_professional_profile_services_on_service_id"
+    t.check_constraint "note IS NULL OR char_length(btrim(note)) >= 1 AND char_length(btrim(note)) <= 120", name: "professional_profile_services_note_length"
+  end
+
   create_table "professional_profiles", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.text "bio"
     t.datetime "created_at", null: false
@@ -329,6 +355,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_090000) do
   add_foreign_key "admin_access_events", "user_accounts", column: "admin_user_id"
   add_foreign_key "application_sessions", "user_accounts"
   add_foreign_key "catalog_change_events", "user_accounts", column: "admin_user_id"
+  add_foreign_key "professional_profile_service_areas", "neighborhoods", column: "neighborhood_code", primary_key: "code"
+  add_foreign_key "professional_profile_service_areas", "professional_profiles"
+  add_foreign_key "professional_profile_services", "professional_profiles"
+  add_foreign_key "professional_profile_services", "services"
   add_foreign_key "professional_profiles", "user_accounts"
   add_foreign_key "services", "service_categories", column: "category_id"
 end

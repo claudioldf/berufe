@@ -24,7 +24,7 @@ const neighborhoods = computed(() =>
 const {
   data: workspace,
   error: workspaceError,
-  saveIdentity,
+  saveProfile: saveWorkspaceProfile,
 } = await useProfessionalWorkspace();
 if (workspaceError.value || !workspace.value) {
   throw createError({
@@ -43,6 +43,17 @@ const professional = computed<Professional>(() => ({
   whatsapp: workspace.value!.profile.identity.whatsapp,
   instagram: workspace.value!.profile.identity.instagram || undefined,
   youtube: workspace.value!.profile.identity.youtube || undefined,
+  primaryService:
+    workspace.value!.profile.services.find((service) => service.isPrimary)
+      ?.name ?? "",
+  services: workspace.value!.profile.services.map((service) => service.name),
+  serviceNotes: workspace
+    .value!.profile.services.map((service) => service.note)
+    .filter(Boolean),
+  allJoinville: workspace.value!.profile.coverage.allJoinville,
+  neighborhoods: workspace.value!.profile.coverage.neighborhoods.map(
+    (neighborhood) => neighborhood.name,
+  ),
 }));
 const statusLabels = {
   draft: "Rascunho",
@@ -83,7 +94,7 @@ async function saveProfile(
 
   saving.value = true;
   try {
-    await saveIdentity(draft);
+    await saveWorkspaceProfile(draft, services.value, neighborhoods.value);
     confirm();
     showToast({
       title: "Perfil atualizado",

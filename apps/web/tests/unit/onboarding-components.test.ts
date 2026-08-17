@@ -16,6 +16,7 @@ function profileDraft(
     instagram: "",
     youtube: "",
     selectedServices: [],
+    serviceNotes: {},
     primaryService: "",
     allJoinville: false,
     selectedNeighborhoods: [],

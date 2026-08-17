@@ -79,6 +79,7 @@ export interface ProfessionalProfileDraft {
   yearsExperience: number;
   whatsapp: string;
   selectedServices: string[];
+  serviceNotes: Record<string, string>;
   primaryService: string;
   allJoinville: boolean;
   selectedNeighborhoods: string[];
@@ -103,5 +104,15 @@ export interface ProfessionalWorkspace {
       | "instagram"
       | "youtube"
     >;
+    services: Array<{
+      id: string;
+      name: string;
+      isPrimary: boolean;
+      note: string;
+    }>;
+    coverage: {
+      allJoinville: boolean;
+      neighborhoods: Array<{ code: string; name: string }>;
+    };
   };
 }

@@ -20,6 +20,7 @@ const {
   data: workspace,
   error: workspaceError,
   saveIdentity,
+  saveSupply,
 } = await useProfessionalWorkspace();
 if (workspaceError.value || !workspace.value) {
   throw createError({
@@ -37,6 +38,24 @@ async function saveOnboardingIdentity(draft: ProfessionalProfileDraft) {
   };
 }
 
+async function saveOnboardingSupply(draft: ProfessionalProfileDraft) {
+  const updated = await saveSupply(draft, services.value, neighborhoods.value);
+  const selections = updated.profile.services;
+  return {
+    ...draft,
+    selectedServices: selections.map((selection) => selection.name),
+    primaryService:
+      selections.find((selection) => selection.isPrimary)?.name ?? "",
+    serviceNotes: Object.fromEntries(
+      selections.map((selection) => [selection.name, selection.note]),
+    ),
+    allJoinville: updated.profile.coverage.allJoinville,
+    selectedNeighborhoods: updated.profile.coverage.neighborhoods.map(
+      (neighborhood) => neighborhood.name,
+    ),
+  };
+}
+
 useSeoMeta({
   title: "Complete seu perfil profissional",
   robots: "noindex, nofollow",
@@ -49,5 +68,6 @@ useSeoMeta({
     :neighborhoods="neighborhoods"
     :workspace="professionalWorkspace"
     :save-identity="saveOnboardingIdentity"
+    :save-supply="saveOnboardingSupply"
   />
 </template>

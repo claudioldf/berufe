@@ -19,6 +19,9 @@ interface ProfessionalOnboardingDependencies {
   saveIdentity?: (
     draft: ProfessionalProfileDraft,
   ) => Promise<ProfessionalProfileDraft>;
+  saveSupply?: (
+    draft: ProfessionalProfileDraft,
+  ) => Promise<ProfessionalProfileDraft>;
 }
 
 export const professionalOnboardingStorageKey =
@@ -62,6 +65,7 @@ export function createEmptyProfessionalProfileDraft(): ProfessionalProfileDraft 
     instagram: "",
     youtube: "",
     selectedServices: [],
+    serviceNotes: {},
     primaryService: "",
     allJoinville: false,
     selectedNeighborhoods: [],
@@ -128,6 +132,13 @@ function parseProfileDraft(value: unknown): ProfessionalProfileDraft | null {
     instagram: value.instagram as string,
     youtube: value.youtube as string,
     selectedServices: [...(value.selectedServices as string[])],
+    serviceNotes: isRecord(value.serviceNotes)
+      ? Object.fromEntries(
+          Object.entries(value.serviceNotes).filter(
+            (entry): entry is [string, string] => typeof entry[1] === "string",
+          ),
+        )
+      : {},
     primaryService: value.primaryService as string,
     allJoinville: value.allJoinville,
     selectedNeighborhoods: [...(value.selectedNeighborhoods as string[])],
@@ -288,6 +299,7 @@ function cloneProfileDraft(
   return {
     ...draft,
     selectedServices: [...draft.selectedServices],
+    serviceNotes: { ...draft.serviceNotes },
     selectedNeighborhoods: [...draft.selectedNeighborhoods],
   };
 }
@@ -302,6 +314,8 @@ export function useProfessionalOnboarding(
   const hydrated = useState("professional-onboarding-hydrated", () => false);
   const profileSaving = shallowRef(false);
   const profileError = shallowRef("");
+  const supplySaving = shallowRef(false);
+  const supplyError = shallowRef("");
   const apiClient = dependencies.saveIdentity ? undefined : useApiClient();
   const saveIdentity =
     dependencies.saveIdentity ??
@@ -311,6 +325,11 @@ export function useProfessionalOnboarding(
         ...draft,
         ...workspace.profile.identity,
       };
+    });
+  const saveSupply =
+    dependencies.saveSupply ??
+    (async () => {
+      throw new Error("Professional supply persistence is unavailable");
     });
 
   function persist() {
@@ -431,20 +450,35 @@ export function useProfessionalOnboarding(
     }
   }
 
-  function completeServices(draft: ProfessionalProfileDraft) {
+  async function completeServices(draft: ProfessionalProfileDraft) {
     const errors = validateOnboardingServices(draft);
     if (Object.values(errors).some(Boolean)) return false;
-    const completedAt = new Date().toISOString();
-    state.value = {
-      ...state.value,
-      profile: cloneProfileDraft(draft),
-      completion: {
-        ...state.value.completion,
-        services: completedAt,
-      },
-    };
-    persist();
-    return true;
+    if (supplySaving.value) return false;
+
+    supplySaving.value = true;
+    supplyError.value = "";
+    try {
+      const savedProfile = await saveSupply(draft);
+      const completedAt = new Date().toISOString();
+      state.value = {
+        ...state.value,
+        profile: cloneProfileDraft(savedProfile),
+        completion: {
+          ...state.value.completion,
+          services: completedAt,
+        },
+      };
+      persist();
+      return true;
+    } catch (error) {
+      supplyError.value =
+        error instanceof ApiRequestError
+          ? error.message
+          : "Não foi possível salvar os serviços agora. Tente novamente.";
+      return false;
+    } finally {
+      supplySaving.value = false;
+    }
   }
 
   function completePortfolio(submission: OnboardingPortfolioSubmission) {
@@ -509,6 +543,8 @@ export function useProfessionalOnboarding(
     completeVerification,
     profileSaving: readonly(profileSaving),
     profileError: readonly(profileError),
+    supplySaving: readonly(supplySaving),
+    supplyError: readonly(supplyError),
     reset,
   };
 }

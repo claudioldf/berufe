@@ -4,6 +4,9 @@ class ProfessionalProfile < ApplicationRecord
   STATUSES = %w[draft pending_review published suspended].freeze
 
   belongs_to :user_account
+  has_many :professional_profile_services, dependent: :destroy
+  has_many :services, through: :professional_profile_services
+  has_many :professional_profile_service_areas, dependent: :destroy
 
   validates :display_name, length: {in: 3..70}
   validates :headline, length: {in: 1..120}, allow_nil: true

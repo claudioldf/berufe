@@ -1,8 +1,10 @@
 import {
   fetchProfessionalWorkspace,
   updateProfessionalIdentity,
+  updateProfessionalProfile,
+  updateProfessionalSupply,
 } from "~/services/api/professional-workspace";
-import type { ProfessionalProfileDraft } from "~/types";
+import type { Neighborhood, ProfessionalProfileDraft, Service } from "~/types";
 import { useApiClient } from "~/services/api/client";
 
 export async function useProfessionalWorkspace() {
@@ -17,8 +19,40 @@ export async function useProfessionalWorkspace() {
     return updated;
   }
 
+  async function saveSupply(
+    draft: ProfessionalProfileDraft,
+    services: Service[],
+    neighborhoods: Neighborhood[],
+  ) {
+    const updated = await updateProfessionalSupply(
+      client,
+      draft,
+      services,
+      neighborhoods,
+    );
+    workspace.data.value = updated;
+    return updated;
+  }
+
+  async function saveProfile(
+    draft: ProfessionalProfileDraft,
+    services: Service[],
+    neighborhoods: Neighborhood[],
+  ) {
+    const updated = await updateProfessionalProfile(
+      client,
+      draft,
+      services,
+      neighborhoods,
+    );
+    workspace.data.value = updated;
+    return updated;
+  }
+
   return {
     ...workspace,
     saveIdentity,
+    saveSupply,
+    saveProfile,
   };
 }

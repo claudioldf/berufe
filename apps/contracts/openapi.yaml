@@ -989,11 +989,23 @@ components:
     ProfessionalProfileUpdateRequest:
       type: object
       additionalProperties: false
-      required:
-        - identity
+      minProperties: 1
+      dependentRequired:
+        services:
+          - coverage
+        coverage:
+          - services
       properties:
         identity:
           $ref: "#/components/schemas/ProfessionalIdentityUpdate"
+        services:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/ProfessionalServiceUpdate"
+        coverage:
+          $ref: "#/components/schemas/ProfessionalCoverageUpdate"
     ProfessionalIdentityUpdate:
       type: object
       additionalProperties: false
@@ -1061,6 +1073,8 @@ components:
         - id
         - profile_status
         - identity
+        - services
+        - coverage
       properties:
         id:
           type: string
@@ -1074,6 +1088,12 @@ components:
             - suspended
         identity:
           $ref: "#/components/schemas/ProfessionalIdentity"
+        services:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProfessionalServiceSelection"
+        coverage:
+          $ref: "#/components/schemas/ProfessionalCoverage"
     ProfessionalIdentity:
       type: object
       additionalProperties: false
@@ -1117,6 +1137,88 @@ components:
             - "null"
           format: uri
           maxLength: 200
+    ProfessionalServiceUpdate:
+      type: object
+      additionalProperties: false
+      required:
+        - service_id
+        - is_primary
+      properties:
+        service_id:
+          type: string
+          format: uuid
+        is_primary:
+          type: boolean
+        note:
+          type:
+            - string
+            - "null"
+          maxLength: 120
+    ProfessionalCoverageUpdate:
+      type: object
+      additionalProperties: false
+      required:
+        - all_joinville
+        - neighborhood_codes
+      properties:
+        all_joinville:
+          type: boolean
+        neighborhood_codes:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    ProfessionalServiceSelection:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - name
+        - is_primary
+        - note
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        is_primary:
+          type: boolean
+        note:
+          type:
+            - string
+            - "null"
+          maxLength: 120
+    ProfessionalCoverage:
+      type: object
+      additionalProperties: false
+      required:
+        - all_joinville
+        - neighborhoods
+      properties:
+        all_joinville:
+          type: boolean
+        neighborhoods:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProfessionalCoverageNeighborhood"
+    ProfessionalCoverageNeighborhood:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - name
+      properties:
+        code:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
     CurrentSessionResponse:
       type: object
       additionalProperties: false

@@ -7,6 +7,8 @@ const props = defineProps<{
   draft: ProfessionalProfileDraft;
   services: Service[];
   neighborhoods: Neighborhood[];
+  saving?: boolean;
+  serverError?: string;
 }>();
 const emit = defineEmits<{
   back: [];
@@ -16,6 +18,7 @@ const emit = defineEmits<{
 const form = ref<ProfessionalProfileDraft>({
   ...props.draft,
   selectedServices: [...props.draft.selectedServices],
+  serviceNotes: { ...props.draft.serviceNotes },
   selectedNeighborhoods: [...props.draft.selectedNeighborhoods],
 });
 const error = shallowRef("");
@@ -52,6 +55,7 @@ function submit() {
   emit("complete", {
     ...form.value,
     selectedServices: [...form.value.selectedServices],
+    serviceNotes: { ...form.value.serviceNotes },
     selectedNeighborhoods: [...form.value.selectedNeighborhoods],
   });
 }
@@ -69,8 +73,13 @@ function submit() {
     </header>
 
     <form class="onboarding-step-form" @submit.prevent="submit">
-      <p v-if="error" class="onboarding-step-error" role="alert">
-        <UIcon name="i-lucide-circle-alert" /> {{ error }}
+      <p
+        v-if="error || props.serverError"
+        class="onboarding-step-error"
+        role="alert"
+      >
+        <UIcon name="i-lucide-circle-alert" />
+        {{ error || props.serverError }}
       </p>
       <DashboardProfileFormLayout>
         <DashboardProfileServicesSection
@@ -99,6 +108,8 @@ function submit() {
           type="submit"
           color="primary"
           trailing-icon="i-lucide-arrow-right"
+          :loading="props.saving"
+          :disabled="props.saving"
         >
           Salvar e continuar
         </UButton>

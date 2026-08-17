@@ -16,6 +16,12 @@ function createDraft(professional: Professional): ProfessionalProfileDraft {
     instagram: professional.instagram ?? "",
     youtube: professional.youtube ?? "",
     selectedServices: [...professional.services],
+    serviceNotes: Object.fromEntries(
+      professional.services.map((service, index) => [
+        service,
+        professional.serviceNotes[index] ?? "",
+      ]),
+    ),
     primaryService: professional.primaryService,
     allJoinville: professional.allJoinville,
     selectedNeighborhoods: [...professional.neighborhoods],
@@ -64,11 +70,17 @@ export function useProfessionalProfileDraft(
       form.selectedServices = form.selectedServices.filter(
         (item) => item !== name,
       );
+      form.serviceNotes = Object.fromEntries(
+        Object.entries(form.serviceNotes).filter(
+          ([service]) => service !== name,
+        ),
+      );
       if (form.primaryService === name) {
         form.primaryService = form.selectedServices[0] ?? "";
       }
     } else {
       form.selectedServices.push(name);
+      if (!form.primaryService) form.primaryService = name;
     }
     markDirty();
   }

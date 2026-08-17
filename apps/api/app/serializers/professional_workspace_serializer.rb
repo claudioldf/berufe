@@ -18,7 +18,9 @@ class ProfessionalWorkspaceSerializer
           whatsapp: profile.whatsapp_e164 || profile.user_account.phone_e164,
           instagram: profile.instagram_url,
           youtube: profile.youtube_url
-        }
+        },
+        services: serialized_services,
+        coverage: serialized_coverage
       }
     }
   end
@@ -26,4 +28,27 @@ class ProfessionalWorkspaceSerializer
   private
 
   attr_reader :profile
+
+  def serialized_services
+    profile.professional_profile_services.includes(:service).map do |selection|
+      {
+        id: selection.service_id,
+        name: selection.service.name,
+        is_primary: selection.is_primary,
+        note: selection.note
+      }
+    end
+  end
+
+  def serialized_coverage
+    areas = profile.professional_profile_service_areas.includes(:neighborhood)
+    {
+      all_joinville: areas.any? { |area| area.neighborhood_code.nil? },
+      neighborhoods: areas.filter_map do |area|
+        next unless area.neighborhood
+
+        {code: area.neighborhood.code, name: area.neighborhood.name}
+      end
+    }
+  end
 end

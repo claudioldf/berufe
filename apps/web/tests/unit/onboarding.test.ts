@@ -26,6 +26,7 @@ function validDraft(): ProfessionalProfileDraft {
     instagram: "",
     youtube: "",
     selectedServices: ["Eletricista"],
+    serviceNotes: { Eletricista: "Quadros e circuitos" },
     primaryService: "Eletricista",
     allJoinville: true,
     selectedNeighborhoods: [],
@@ -105,6 +106,7 @@ describe("professional onboarding rules", () => {
       setup() {
         onboarding.value = useProfessionalOnboarding({
           saveIdentity: async (draft) => draft,
+          saveSupply: async (draft) => draft,
         });
         return () => h("div");
       },
@@ -120,7 +122,7 @@ describe("professional onboarding rules", () => {
 
     const draft = validDraft();
     await expect(workflow.completeProfile(draft)).resolves.toBe(true);
-    expect(workflow.completeServices(draft)).toBe(true);
+    await expect(workflow.completeServices(draft)).resolves.toBe(true);
     const file = new File(["private-image-bytes"], "private.jpg", {
       type: "image/jpeg",
     });
