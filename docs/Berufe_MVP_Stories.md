@@ -1,7 +1,7 @@
 # Berufe — MVP Implementation Stories
 
 **Status:** implementation backlog
-**Updated:** August 13, 2026
+**Updated:** August 17, 2026
 **Sources:** _Berufe — MVP Feature Plan_ and _Berufe — Lean MVP Infrastructure and Architecture_
 
 ## 1. Purpose
@@ -22,6 +22,7 @@ The backlog intentionally excludes V2 work. Story IDs removed during the August 
 
 ### Story format
 
+- **Status:** `DONE`, `WIP`, or `PENDING`; change it only when the repository state changes.
 - **Story:** the user or operator outcome.
 - **Acceptance criteria:** observable conditions required for completion.
 - **Depends on:** prerequisite story IDs.
@@ -193,9 +194,13 @@ Apply these rules whenever they are relevant to the story:
 
 ## 5. Increment 1 — Access, roles, and controlled catalogs
 
+**Status:** DONE
+
 **Increment outcome:** professionals and admins can securely access Berufe, and the product has the controlled service/location vocabulary needed by onboarding and Finder.
 
 ### S010 — Seed the service and Joinville catalogs
+
+**Status:** DONE
 
 **Story:** As Berufe operations, I want an approved service and neighborhood catalog so that profiles and search use the same vocabulary.
 
@@ -210,6 +215,8 @@ Apply these rules whenever they are relevant to the story:
 **Covers:** Feature E2.
 
 ### S011 — Request a phone OTP
+
+**Status:** DONE
 
 **Story:** As a professional, I want to request a code using my Brazilian phone number so that I can access Berufe without a password.
 
@@ -228,6 +235,8 @@ Apply these rules whenever they are relevant to the story:
 **Covers:** Feature A1; Infrastructure §§8 and 12.
 
 ### S012 — Verify the Infobip OTP and create a Rails application session
+
+**Status:** DONE
 
 **Story:** As a professional, I want to submit the received code so that Berufe can create an authenticated browser session.
 
@@ -249,6 +258,8 @@ Apply these rules whenever they are relevant to the story:
 
 ### S013 — Restore, inspect, and end a session
 
+**Status:** DONE
+
 **Story:** As an authenticated user, I want my session restored safely and to be able to sign out so that access works across normal browser navigation.
 
 **Acceptance criteria:**
@@ -266,6 +277,8 @@ Apply these rules whenever they are relevant to the story:
 
 ### S014 — Protect browser sessions with CORS and origin controls
 
+**Status:** DONE
+
 **Story:** As a user, I want authenticated changes protected against cross-site requests so that another site cannot act as me.
 
 **Acceptance criteria:**
@@ -280,6 +293,8 @@ Apply these rules whenever they are relevant to the story:
 **Covers:** Infrastructure §§8 and 12.
 
 ### S015 — Add roles and record-level authorization
+
+**Status:** DONE
 
 **Story:** As Berufe, I want explicit professional and admin authorization so that users can access only permitted records and actions.
 
@@ -297,6 +312,8 @@ Apply these rules whenever they are relevant to the story:
 
 ### S016 — Complete professional registration and create a draft profile
 
+**Status:** DONE
+
 **Story:** As a first-time professional, I want to provide my name and accept the terms so that I can begin building my profile.
 
 **Acceptance criteria:**
@@ -310,6 +327,8 @@ Apply these rules whenever they are relevant to the story:
 **Covers:** Feature A1 and the invited-professional entry path in Feature C1.
 
 ### S017 — Secure admin access with password authentication and audit context
+
+**Status:** DONE
 
 **Story:** As a Berufe admin, I want stronger access protection so that sensitive moderation and verification work is not protected by phone login alone.
 
@@ -328,6 +347,8 @@ Apply these rules whenever they are relevant to the story:
 **Covers:** Feature E1; Infrastructure §8.
 
 ### S018 — Manage services and Joinville neighborhoods
+
+**Status:** DONE
 
 **Story:** As a Berufe administrator, I want to maintain the controlled catalog so that onboarding and Finder use an accurate vocabulary without requiring a deployment for routine changes.
 
@@ -349,9 +370,13 @@ Apply these rules whenever they are relevant to the story:
 
 ## 6. Increment 2 — Credible professional supply
 
+**Status:** PENDING
+
 **Increment outcome:** founding professionals can create, submit, and receive approval for complete profiles, portfolio evidence, and verification labels. Approved profiles are safe to expose publicly.
 
 ### S019 — Edit professional identity and contact information
+
+**Status:** PENDING
 
 **Story:** As a professional, I want to edit my public identity, WhatsApp contact, and optional social profile links so that customers understand who I am and where they can see more of my work.
 
@@ -370,6 +395,8 @@ Apply these rules whenever they are relevant to the story:
 
 ### S020 — Select services and service areas
 
+**Status:** PENDING
+
 **Story:** As a professional, I want to select what I do and where I work so that I can appear in relevant searches.
 
 **Acceptance criteria:**
@@ -385,6 +412,8 @@ Apply these rules whenever they are relevant to the story:
 
 ### S021 — Create a stable public slug and inline profile representation
 
+**Status:** PENDING
+
 **Story:** As a professional, I want a stable public profile URL and an inline representation of public fields so that I understand what customers will eventually see.
 
 **Acceptance criteria:**
@@ -398,6 +427,8 @@ Apply these rules whenever they are relevant to the story:
 **Covers:** Features A2 and B3.
 
 ### S022 — Submit a profile for moderation
+
+**Status:** PENDING
 
 **Story:** As a professional, I want to submit a sufficiently complete profile so that Berufe can review it for publication.
 
@@ -414,6 +445,8 @@ Apply these rules whenever they are relevant to the story:
 
 ### S023 — Build the shared moderation queue and audit trail
 
+**Status:** PENDING
+
 **Story:** As an admin, I want one oldest-first queue for pending content so that the founding cohort can be reviewed consistently.
 
 **Acceptance criteria:**
@@ -429,6 +462,8 @@ Apply these rules whenever they are relevant to the story:
 
 ### S024 — Approve and publish a professional profile
 
+**Status:** PENDING
+
 **Story:** As an admin, I want to approve or reject a submitted profile so that only suitable profiles become searchable.
 
 **Acceptance criteria:**
@@ -443,6 +478,8 @@ Apply these rules whenever they are relevant to the story:
 **Covers:** Features A2 and E1.
 
 ### S025 — Configure local and R2 object storage
+
+**Status:** PENDING
 
 **Story:** As a professional, I want to upload permitted files without sending large file bodies through Rails so that media workflows are reliable.
 
@@ -461,6 +498,8 @@ Apply these rules whenever they are relevant to the story:
 
 ### S026 — Upload and moderate the profile photo
 
+**Status:** PENDING
+
 **Story:** As a professional, I want to add a profile photo so that customers can recognize me while unsafe or unapproved images remain private.
 
 **Acceptance criteria:**
@@ -475,6 +514,8 @@ Apply these rules whenever they are relevant to the story:
 **Covers:** Features A2 and E1; Infrastructure §§6 and 10.
 
 ### S027 — Create and manage portfolio items
+
+**Status:** PENDING
 
 **Story:** As a professional, I want to add and order examples of completed work so that customers can see relevant evidence.
 
@@ -491,6 +532,8 @@ Apply these rules whenever they are relevant to the story:
 
 ### S028 — Moderate portfolio items
 
+**Status:** PENDING
+
 **Story:** As an admin, I want to approve, reject, hide, and restore portfolio items so that public portfolios contain reviewed evidence only.
 
 **Acceptance criteria:**
@@ -505,6 +548,8 @@ Apply these rules whenever they are relevant to the story:
 **Covers:** Features A3 and E1.
 
 ### S029 — Submit private verification evidence
+
+**Status:** PENDING
 
 **Story:** As a professional, I want to request identity verification so that Berufe can publish a precise evidence label.
 
@@ -523,6 +568,8 @@ Apply these rules whenever they are relevant to the story:
 
 ### S030 — Review verification and publish precise labels
 
+**Status:** PENDING
+
 **Story:** As an admin, I want to approve or reject verification evidence so that customers can distinguish checked facts from declarations.
 
 **Acceptance criteria:**
@@ -537,6 +584,8 @@ Apply these rules whenever they are relevant to the story:
 **Covers:** Features A4 and E1.
 
 ### S031 — Protect and retain restricted files
+
+**Status:** PENDING
 
 **Story:** As Berufe operations, I want verification-file access and retention controlled so that identity evidence is not kept or exposed unnecessarily.
 
