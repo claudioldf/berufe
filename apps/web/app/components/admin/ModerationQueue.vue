@@ -18,6 +18,8 @@ const {
   mediaUrl,
   mediaLoading,
   mediaError,
+  evidenceLoading,
+  evidenceError,
   selected,
   load,
   select,
@@ -27,6 +29,7 @@ const {
   setPage,
   setNote,
   decide: recordDecision,
+  openEvidence: openSelectedEvidence,
 } = useModerationQueue();
 const reasonOpen = shallowRef(false);
 const reason = shallowRef("");
@@ -63,6 +66,17 @@ async function decide(action: ModerationDecision, privateReason?: string) {
         error instanceof Error
           ? error.message
           : "Atualize a fila e tente novamente.",
+    });
+  }
+}
+
+async function openEvidence() {
+  try {
+    await openSelectedEvidence();
+  } catch {
+    showToast({
+      title: "Não foi possível abrir o documento",
+      description: evidenceError.value || "Atualize a fila e tente novamente.",
     });
   }
 }
@@ -129,12 +143,14 @@ async function decide(action: ModerationDecision, privateReason?: string) {
         :media-url="mediaUrl"
         :media-loading="mediaLoading"
         :media-error="mediaError"
+        :evidence-loading="evidenceLoading"
         :mutating="isMutating"
         @note="setNote"
         @approve="decide('approved')"
         @reject="requestReason('rejected')"
         @hide="requestReason('hidden')"
         @restore="decide('restored')"
+        @open-evidence="openEvidence"
       />
     </div>
 
@@ -290,7 +306,7 @@ async function decide(action: ModerationDecision, privateReason?: string) {
     }
     &__list > button {
       display: grid;
-      grid-template-columns: auto 1fr auto;
+      grid-template-columns: auto minmax(0, 1fr) auto;
       gap: 10px;
       width: 100%;
       padding: 15px 13px;
@@ -513,7 +529,7 @@ async function decide(action: ModerationDecision, privateReason?: string) {
     }
     &__private-warning small {
       margin-top: 2px;
-      color: #8d7a50;
+      color: #725b28;
       font-size: 0.82rem;
     }
     &__note {
@@ -526,6 +542,14 @@ async function decide(action: ModerationDecision, privateReason?: string) {
       padding-top: 18px;
       margin-top: auto;
       border-top: 1px solid var(--line);
+    }
+    &__decision--reject {
+      border-color: #b4232c !important;
+      color: #b4232c !important;
+    }
+    &__decision--approve {
+      background: #007a52 !important;
+      color: white !important;
     }
     &__empty {
       padding: 70px 30px;

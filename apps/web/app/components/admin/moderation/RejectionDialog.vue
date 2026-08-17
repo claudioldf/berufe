@@ -22,8 +22,10 @@ defineEmits<{ confirm: [] }>();
         required
       >
         <textarea
+          id="rejection-reason"
           v-model="reason"
           name="rejection-reason"
+          autocomplete="off"
           required
           minlength="10"
           maxlength="500"

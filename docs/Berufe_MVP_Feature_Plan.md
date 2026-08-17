@@ -363,6 +363,17 @@ For the first 30–50 professionals, accept only one JPEG/PNG identity-evidence 
 | `uploaded_at`             | timestamp | Required                                   |
 | `deleted_at`              | timestamp | Nullable; supports the retention lifecycle |
 
+**`verification_file_access_event`**
+
+| Field                  | Type      | Rules                                                        |
+| ---------------------- | --------- | ------------------------------------------------------------ |
+| `id`                   | UUID      | Primary key                                                  |
+| `verification_file_id` | UUID      | Required retained verification-file record                   |
+| `admin_user_id`        | UUID      | Required administrator account                               |
+| `action`               | enum      | `viewed` at launch                                           |
+| `request_id`           | text      | Required request correlation ID                              |
+| `created_at`           | timestamp | Required; append-only and retained after evidence-file purge |
+
 #### 5. Explicitly not in MVP
 
 - Automated government or professional-registry integrations.
@@ -742,14 +753,14 @@ Public pages expose a visible Berufe support/report contact. The founding-cohort
 
 **`moderation_media_access_event`**
 
-| Field           | Type      | Rules                                                               |
-| --------------- | --------- | ------------------------------------------------------------------- |
-| `id`            | UUID      | Primary key                                                         |
-| `target_type`   | enum      | `profile_photo` or `portfolio_item`                                 |
-| `target_id`     | UUID      | Required media-bearing moderation target                            |
-| `admin_user_id` | UUID      | Required administrator account                                      |
-| `request_id`    | text      | Required request correlation ID                                     |
-| `created_at`    | timestamp | Required; append-only and retained with moderation audit metadata   |
+| Field           | Type      | Rules                                                             |
+| --------------- | --------- | ----------------------------------------------------------------- |
+| `id`            | UUID      | Primary key                                                       |
+| `target_type`   | enum      | `profile_photo` or `portfolio_item`                               |
+| `target_id`     | UUID      | Required media-bearing moderation target                          |
+| `admin_user_id` | UUID      | Required administrator account                                    |
+| `request_id`    | text      | Required request correlation ID                                   |
+| `created_at`    | timestamp | Required; append-only and retained with moderation audit metadata |
 
 #### 5. Explicitly not in MVP
 

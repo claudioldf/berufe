@@ -11,6 +11,7 @@ import {
   createAdminModerationDecision,
   fetchAdminModeration,
   fetchAdminModerationMedia,
+  fetchAdminVerificationFile,
 } from "~/services/api/admin-moderation";
 import { useApiClient } from "~/services/api/client";
 
@@ -34,8 +35,13 @@ interface ModerationQueueDependencies {
     attributes: { reason?: string; note?: string },
   ) => Promise<ModerationQueue>;
   loadMedia?: (item: ModerationQueueItem) => Promise<Blob>;
+  loadEvidence?: (item: ModerationQueueItem) => Promise<Blob>;
   createObjectUrl?: (blob: Blob) => string;
   revokeObjectUrl?: (url: string) => void;
+  openEvidenceTarget?: () => {
+    navigate: (url: string) => void;
+    close: () => void;
+  } | null;
 }
 
 export function useModerationQueue(
@@ -55,10 +61,13 @@ export function useModerationQueue(
   const mediaUrl = shallowRef("");
   const mediaLoading = shallowRef(false);
   const mediaError = shallowRef("");
+  const evidenceLoading = shallowRef(false);
+  const evidenceError = shallowRef("");
   let loadSequence = 0;
   let searchTimer: ReturnType<typeof setTimeout> | undefined;
   let mediaSequence = 0;
   let mediaExpiryTimer: ReturnType<typeof setTimeout> | undefined;
+  const evidenceExpiryTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
   const filters = computed<ModerationFilters>(() => ({
     type: typeFilter.value,
@@ -94,10 +103,30 @@ export function useModerationQueue(
       }
       return fetchAdminModerationMedia(client, item.targetType, item.id);
     });
+  const loadTargetEvidence =
+    dependencies.loadEvidence ??
+    ((item) => {
+      if (!item.verificationFileId) {
+        throw new Error("Este item não possui evidência disponível.");
+      }
+      return fetchAdminVerificationFile(client, item.verificationFileId);
+    });
   const createObjectUrl =
     dependencies.createObjectUrl ?? ((blob: Blob) => URL.createObjectURL(blob));
   const revokeObjectUrl =
     dependencies.revokeObjectUrl ?? ((url: string) => URL.revokeObjectURL(url));
+  const openEvidenceTarget =
+    dependencies.openEvidenceTarget ??
+    (() => {
+      const popup = window.open("about:blank", "_blank");
+      if (!popup) return null;
+
+      popup.opener = null;
+      return {
+        navigate: (url: string) => popup.location.replace(url),
+        close: () => popup.close(),
+      };
+    });
 
   function adopt(nextQueue: ModerationQueue) {
     queue.value = nextQueue;
@@ -159,6 +188,49 @@ export function useModerationQueue(
     mediaUrl.value = "";
     mediaLoading.value = false;
     mediaError.value = "";
+  }
+
+  function releaseEvidence(url: string) {
+    const timer = evidenceExpiryTimers.get(url);
+    if (timer) clearTimeout(timer);
+    evidenceExpiryTimers.delete(url);
+    revokeObjectUrl(url);
+  }
+
+  async function openEvidence() {
+    const item = selected.value;
+    if (!item?.verificationFileId || evidenceLoading.value) return null;
+
+    evidenceLoading.value = true;
+    evidenceError.value = "";
+    const target = openEvidenceTarget();
+    if (!target) {
+      evidenceLoading.value = false;
+      evidenceError.value = "Não foi possível abrir a evidência privada.";
+      throw new Error(evidenceError.value);
+    }
+
+    let url = "";
+    try {
+      const blob = await loadTargetEvidence(item);
+      url = createObjectUrl(blob);
+      evidenceExpiryTimers.set(
+        url,
+        setTimeout(() => releaseEvidence(url), 60_000),
+      );
+      target.navigate(url);
+      return url;
+    } catch (error) {
+      if (url) releaseEvidence(url);
+      target.close();
+      evidenceError.value =
+        error instanceof Error
+          ? error.message
+          : "Não foi possível abrir a evidência privada.";
+      throw error;
+    } finally {
+      evidenceLoading.value = false;
+    }
   }
 
   async function loadSelectedMedia(item: ModerationQueueItem) {
@@ -231,6 +303,7 @@ export function useModerationQueue(
   onScopeDispose(() => {
     if (searchTimer) clearTimeout(searchTimer);
     releaseMedia();
+    for (const url of [...evidenceExpiryTimers.keys()]) releaseEvidence(url);
   });
 
   return {
@@ -247,6 +320,8 @@ export function useModerationQueue(
     mediaUrl: readonly(mediaUrl),
     mediaLoading: readonly(mediaLoading),
     mediaError: readonly(mediaError),
+    evidenceLoading: readonly(evidenceLoading),
+    evidenceError: readonly(evidenceError),
     load,
     select,
     setTypeFilter,
@@ -255,6 +330,7 @@ export function useModerationQueue(
     setPage,
     setNote,
     decide,
+    openEvidence,
     releaseMedia,
   };
 }

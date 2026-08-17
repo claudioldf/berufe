@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_17_110000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_17_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -504,6 +504,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_110000) do
     t.check_constraint "terms_accepted_at IS NULL AND terms_version IS NULL AND privacy_notice_version IS NULL OR terms_accepted_at IS NOT NULL AND terms_version IS NOT NULL AND privacy_notice_version IS NOT NULL AND btrim(terms_version) <> ''::text AND btrim(privacy_notice_version) <> ''::text", name: "user_accounts_complete_legal_acceptance"
   end
 
+  create_table "verification_file_access_events", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.text "action", null: false
+    t.uuid "admin_user_id", null: false
+    t.datetime "created_at", null: false
+    t.text "request_id", null: false
+    t.uuid "verification_file_id", null: false
+    t.index ["admin_user_id", "created_at"], name: "idx_verification_file_access_admin_created"
+    t.index ["admin_user_id"], name: "index_verification_file_access_events_on_admin_user_id"
+    t.index ["verification_file_id", "created_at"], name: "idx_verification_file_access_target_created"
+    t.index ["verification_file_id"], name: "index_verification_file_access_events_on_verification_file_id"
+    t.check_constraint "action = 'viewed'::text", name: "verification_file_access_known_action"
+    t.check_constraint "request_id ~ '^[A-Za-z0-9._-]{1,100}$'::text", name: "verification_file_access_request_id_format"
+  end
+
   create_table "verification_files", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.bigint "byte_size", null: false
     t.text "content_type", null: false
@@ -565,6 +579,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_110000) do
   add_foreign_key "professional_profiles", "professional_profile_revisions", column: "working_revision_id"
   add_foreign_key "professional_profiles", "user_accounts"
   add_foreign_key "services", "service_categories", column: "category_id"
+  add_foreign_key "verification_file_access_events", "user_accounts", column: "admin_user_id"
+  add_foreign_key "verification_file_access_events", "verification_files"
   add_foreign_key "verification_files", "media_uploads"
   add_foreign_key "verification_files", "verification_requests"
   add_foreign_key "verification_requests", "professional_profiles"

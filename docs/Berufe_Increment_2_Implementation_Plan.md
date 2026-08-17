@@ -1,6 +1,7 @@
 # Berufe — Increment 2 Implementation Plan
 
-**Status:** approved for implementation  
+**Status:** implemented
+
 **Updated:** August 17, 2026  
 **Scope:** S019–S031 — credible professional supply
 
@@ -82,7 +83,7 @@ This order lets media, portfolio, and identity evidence exist before the initial
 - Approve and reject remain the primary review actions. The existing ellipsis action hosts hide or restore for previously approved content.
 - Rejection and hide require a private reason. Every decision appends an immutable action with actor, target, action, reason/note, request ID, and timestamp.
 - The existing **Conteúdo enviado** preview is functional for profile photos and portfolio items: Nuxt retrieves only the regenerated private image from an authenticated Rails moderation-media endpoint, renders it inside that existing block, and never receives a permanent private URL or storage key. The response uses the exact image content type, `Cache-Control: no-store`, `X-Content-Type-Options: nosniff`, and a server-generated inline filename; every retrieval appends an immutable admin media-access event. The browser revokes its object URL after 60 seconds, when selection changes, and on unmount.
-- The existing **Abrir documento** action retrieves only the regenerated identity image through an authenticated, audited Rails response. It uses the exact image content type, `Cache-Control: no-store`, `X-Content-Type-Options: nosniff`, and a server-generated inline filename. The browser opens an object URL and revokes it after 60 seconds.
+- The existing **Abrir documento** action retrieves only the regenerated identity image through an authenticated, audited Rails response. It uses the exact image content type, `Cache-Control: no-store`, `X-Content-Type-Options: nosniff`, and a server-generated inline filename. The click reserves a new browser tab before the asynchronous fetch so popup blocking cannot discard the action; a failed fetch closes that tab. A successful fetch navigates it to an object URL that the opener revokes after 60 seconds.
 - The safe public professional projection represents phone confirmation separately and exposes an approved identity request only as the controlled `Identidade verificada` label plus its verification timestamp. It never serializes the verification request/file ID, review note, or evidence metadata.
 - Identity evidence is retained while pending and for 30 days after approval or rejection, then the private object is deleted by a retry-safe daily job. Decision, label, moderation, and access-audit metadata are retained. This is the implementation default and requires qualified Brazilian privacy/legal signoff before real-user intake.
 
@@ -123,3 +124,11 @@ The professional workspace response is the single authenticated projection used 
 ## 6. Verification and launch gate for the increment
 
 Each story includes Rails request/model/service/policy coverage and behavior-focused Vitest coverage where its Nuxt surface changes. The increment closes only after OpenAPI-generated types are current, the full Rails and Nuxt checks pass in Docker Compose, production builds succeed, browser flows are exercised through Codex Chrome at desktop and mobile viewports, relevant network requests are inspected, and the browser console has no unexplained errors.
+
+### Completion evidence — August 17, 2026
+
+- The full Rails suite passes with 278 examples, current OpenAPI coverage, clean StandardRB and Zeitwerk checks, and zero Brakeman warnings.
+- Nuxt formatting, lint, styles, type checking, all 154 unit tests, and the production build pass against generated contract types.
+- Codex Chrome exercises the real password-admin queue at desktop and mobile viewports, including server-backed type/status/search filters, the existing private portfolio preview, and the existing restricted-document action.
+- Browser network inspection confirms authenticated JPEG/PNG responses with `no-store`, `nosniff`, and server-generated inline filenames; database inspection confirms the matching immutable access events.
+- Anonymous direct evidence access returns `401`, the temporary evidence Blob URL is unusable after 60 seconds, and the final mobile Lighthouse snapshot scores 100 for accessibility, best practices, SEO, and agentic browsing with no browser-console errors.

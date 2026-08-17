@@ -29,6 +29,7 @@ Rails.application.routes.draw do
         get "moderation", to: "moderation#index"
         post "moderation/:target_type/:target_id/decisions", to: "moderation_decisions#create"
         get "moderation/:target_type/:target_id/media", to: "moderation_media#show"
+        get "verification-files/:id/content", to: "verification_files#show"
         post "catalog/services", to: "catalog_services#create"
         patch "catalog/services/:id", to: "catalog_services#update"
         put "catalog/services/order", to: "catalog_services#reorder"

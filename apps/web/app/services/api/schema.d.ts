@@ -235,6 +235,25 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/verification-files/{id}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** Read regenerated identity evidence through an audited response */
+        get: operations["getAdminVerificationFileContent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/catalog": {
         parameters: {
             query?: never;
@@ -1706,6 +1725,44 @@ export interface operations {
             };
             401: components["responses"]["AdminModerationUnauthorized"];
             404: components["responses"]["AdminModerationNotFound"];
+        };
+    };
+    getAdminVerificationFileContent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Valid retained regenerated identity evidence; access is recorded immutably. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Cache-Control"?: "no-store";
+                    "Content-Disposition"?: string;
+                    "X-Content-Type-Options"?: "nosniff";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                    "image/png": string;
+                };
+            };
+            401: components["responses"]["AdminModerationUnauthorized"];
+            /** @description The evidence is absent, deleted, unsafe, or not a retained regenerated identity image. */
+            404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
         };
     };
     getPublicCatalog: {

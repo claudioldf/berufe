@@ -153,4 +153,71 @@ describe("administrator moderation composable", () => {
     expect(workflow.mediaError.value).toBe("Imagem indisponível.");
     scope.stop();
   });
+
+  it("opens the existing document action and revokes its temporary URL after sixty seconds", async () => {
+    vi.useFakeTimers();
+    const verification: ModerationQueueItem = {
+      ...item("verification-id"),
+      targetType: "verification_request",
+      type: "Verificação",
+      hasMedia: false,
+      verificationFileId: "verification-file-id",
+    };
+    const revokeObjectUrl = vi.fn();
+    const navigate = vi.fn();
+    const close = vi.fn();
+    const openEvidenceTarget = vi.fn(() => ({ navigate, close }));
+    const scope = effectScope();
+    const workflow = scope.run(() =>
+      useModerationQueue({
+        load: vi.fn().mockResolvedValue(queue([verification])),
+        loadEvidence: vi
+          .fn()
+          .mockResolvedValue(new Blob(["identity"], { type: "image/png" })),
+        createObjectUrl: () => "blob:identity-evidence",
+        revokeObjectUrl,
+        openEvidenceTarget,
+      }),
+    )!;
+
+    await workflow.load();
+    await expect(workflow.openEvidence()).resolves.toBe(
+      "blob:identity-evidence",
+    );
+    expect(openEvidenceTarget).toHaveBeenCalledOnce();
+    expect(navigate).toHaveBeenCalledWith("blob:identity-evidence");
+    expect(close).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(revokeObjectUrl).toHaveBeenCalledWith("blob:identity-evidence");
+    scope.stop();
+  });
+
+  it("closes the reserved document tab when private evidence cannot load", async () => {
+    const verification: ModerationQueueItem = {
+      ...item("verification-id"),
+      targetType: "verification_request",
+      type: "Verificação",
+      hasMedia: false,
+      verificationFileId: "verification-file-id",
+    };
+    const close = vi.fn();
+    const scope = effectScope();
+    const workflow = scope.run(() =>
+      useModerationQueue({
+        load: vi.fn().mockResolvedValue(queue([verification])),
+        loadEvidence: vi
+          .fn()
+          .mockRejectedValue(new Error("Documento indisponível.")),
+        openEvidenceTarget: () => ({ navigate: vi.fn(), close }),
+      }),
+    )!;
+
+    await workflow.load();
+    await expect(workflow.openEvidence()).rejects.toThrow(
+      "Documento indisponível.",
+    );
+    expect(close).toHaveBeenCalledOnce();
+    scope.stop();
+  });
 });

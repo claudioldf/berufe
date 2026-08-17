@@ -28,6 +28,11 @@ Rails.application.configure do
       cron: "*/10 * * * *",
       class: "MediaUploadAuthorizationCleanupJob",
       description: "Expire abandoned private media upload authorizations"
+    },
+    verification_file_retention_cleanup: {
+      cron: "43 3 * * *",
+      class: "VerificationFileRetentionCleanupJob",
+      description: "Delete identity evidence thirty days after a decision"
     }
   }
 end

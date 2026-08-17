@@ -536,6 +536,59 @@ paths:
           $ref: "#/components/responses/AdminModerationUnauthorized"
         "404":
           $ref: "#/components/responses/AdminModerationNotFound"
+  /api/v1/admin/verification-files/{id}/content:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getAdminVerificationFileContent
+      summary: Read regenerated identity evidence through an audited response
+      tags:
+        - Moderation
+      security:
+        - applicationSession: []
+      responses:
+        "200":
+          description: Valid retained regenerated identity evidence; access is recorded immutably.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+            Content-Disposition:
+              schema:
+                type: string
+                pattern: '^inline; filename="berufe-identidade-[a-f0-9-]+\.(jpg|png)"'
+            X-Content-Type-Options:
+              schema:
+                type: string
+                const: nosniff
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+        "401":
+          $ref: "#/components/responses/AdminModerationUnauthorized"
+        "404":
+          description: The evidence is absent, deleted, unsafe, or not a retained regenerated identity image.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/catalog:
     get:
       operationId: getPublicCatalog

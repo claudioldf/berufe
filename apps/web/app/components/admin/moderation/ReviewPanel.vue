@@ -7,6 +7,7 @@ const props = defineProps<{
   mediaUrl?: string;
   mediaLoading?: boolean;
   mediaError?: string;
+  evidenceLoading?: boolean;
   mutating?: boolean;
 }>();
 const emit = defineEmits<{
@@ -68,6 +69,9 @@ function toggleVisibility() {
         v-if="mediaUrl"
         :src="mediaUrl"
         :alt="`Conteúdo enviado para análise: ${item.title}`"
+        width="112"
+        height="112"
+        loading="lazy"
       />
       <div v-else>
         <UIcon
@@ -98,6 +102,7 @@ function toggleVisibility() {
         size="sm"
         color="neutral"
         variant="outline"
+        :loading="evidenceLoading"
         @click="$emit('openEvidence')"
       >
         Abrir documento
@@ -109,7 +114,9 @@ function toggleVisibility() {
       label="Nota interna opcional"
     >
       <textarea
+        id="moderation-note"
         name="moderation-note"
+        autocomplete="off"
         :value="note"
         maxlength="500"
         placeholder="Adicione contexto para a trilha de auditoria…"
@@ -118,6 +125,7 @@ function toggleVisibility() {
     </DesignSystemFormField>
     <footer v-if="item.status === 'pending_review'">
       <UButton
+        class="moderation__decision moderation__decision--reject"
         color="error"
         variant="outline"
         icon="i-lucide-x"
@@ -127,6 +135,7 @@ function toggleVisibility() {
         Rejeitar
       </UButton>
       <UButton
+        class="moderation__decision moderation__decision--approve"
         color="primary"
         icon="i-lucide-check"
         :loading="mutating"

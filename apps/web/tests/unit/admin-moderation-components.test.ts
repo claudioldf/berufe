@@ -61,4 +61,20 @@ describe("administrator moderation components", () => {
     await wrapper.get('input[type="search"]').setValue("Ana");
     expect(wrapper.emitted("search")?.at(-1)).toEqual(["Ana"]);
   });
+
+  it("emits the existing restricted-document action for verification work", async () => {
+    const verification: ModerationQueueItem = {
+      ...photo,
+      targetType: "verification_request",
+      type: "Verificação",
+      hasMedia: false,
+      verificationFileId: "verification-file-id",
+    };
+    const wrapper = mount(ReviewPanel, {
+      props: { item: verification, note: "" },
+    });
+
+    await wrapper.get(".moderation__private-warning button").trigger("click");
+    expect(wrapper.emitted("openEvidence")).toHaveLength(1);
+  });
 });

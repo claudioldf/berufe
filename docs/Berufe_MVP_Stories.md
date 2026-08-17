@@ -370,7 +370,7 @@ Apply these rules whenever they are relevant to the story:
 
 ## 6. Increment 2 — Credible professional supply
 
-**Status:** WIP
+**Status:** DONE
 
 **Increment outcome:** founding professionals can create, submit, and receive approval for complete profiles, portfolio evidence, and verification labels. Approved profiles are safe to expose publicly.
 
@@ -591,7 +591,7 @@ Apply these rules whenever they are relevant to the story:
 
 ### S031 — Protect and retain restricted files
 
-**Status:** PENDING
+**Status:** DONE
 
 **Story:** As Berufe operations, I want verification-file access and retention controlled so that identity evidence is not kept or exposed unnecessarily.
 

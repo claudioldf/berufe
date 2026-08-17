@@ -3,6 +3,7 @@ import {
   createAdminModerationDecision,
   fetchAdminModeration,
   fetchAdminModerationMedia,
+  fetchAdminVerificationFile,
   formatModerationAge,
   mapAdminModeration,
 } from "@app/services/api/admin-moderation";
@@ -154,6 +155,31 @@ describe("administrator moderation API", () => {
             target_type: "profile_photo",
             target_id: "de83e041-286f-4b50-91fa-61a0ee8c1801",
           },
+        },
+        parseAs: "blob",
+      },
+    );
+  });
+
+  it("requests retained identity evidence as an audited Blob response", async () => {
+    const blob = new Blob(["identity"], { type: "image/png" });
+    const client = clientReturning({
+      data: blob,
+      error: undefined,
+      response: new Response(null),
+    });
+
+    await expect(
+      fetchAdminVerificationFile(
+        client,
+        "43a94f5e-1429-4ec7-bbc4-a6f805d5182d",
+      ),
+    ).resolves.toBe(blob);
+    expect(client.GET).toHaveBeenCalledWith(
+      "/api/v1/admin/verification-files/{id}/content",
+      {
+        params: {
+          path: { id: "43a94f5e-1429-4ec7-bbc4-a6f805d5182d" },
         },
         parseAs: "blob",
       },

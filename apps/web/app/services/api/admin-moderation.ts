@@ -167,3 +167,26 @@ export async function fetchAdminModerationMedia(
 
   return result.data;
 }
+
+export async function fetchAdminVerificationFile(
+  client: BerufeApiClient,
+  id: string,
+): Promise<Blob> {
+  const result = await client.GET(
+    "/api/v1/admin/verification-files/{id}/content",
+    {
+      params: { path: { id } },
+      parseAs: "blob",
+    },
+  );
+  if (result.error || !result.data) {
+    throw new ApiRequestError(
+      normalizeApiError(
+        result.error,
+        result.response.headers.get("X-Request-Id") ?? "client",
+      ),
+    );
+  }
+
+  return result.data;
+}
