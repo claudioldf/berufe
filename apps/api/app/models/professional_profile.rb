@@ -16,6 +16,16 @@ class ProfessionalProfile < ApplicationRecord
   has_many :media_uploads, dependent: :destroy
   has_many :portfolio_items, dependent: :destroy
   has_many :verification_requests, dependent: :destroy
+  has_many :initiated_relationships,
+    class_name: "ProfessionalRelationship",
+    foreign_key: :initiator_professional_id,
+    inverse_of: :initiator_professional,
+    dependent: :restrict_with_exception
+  has_many :received_relationships,
+    class_name: "ProfessionalRelationship",
+    foreign_key: :recipient_professional_id,
+    inverse_of: :recipient_professional,
+    dependent: :restrict_with_exception
   has_many :profile_photos,
     class_name: "ProfessionalProfilePhoto",
     dependent: :destroy
@@ -38,6 +48,12 @@ class ProfessionalProfile < ApplicationRecord
   before_validation :normalize_initial_fields, on: :create
   before_validation :assign_public_slug, on: :create
   after_create :create_initial_revision!
+
+  scope :publicly_eligible, -> {
+    joins(:user_account, :published_revision)
+      .where(profile_status: "published", user_accounts: {status: "active"})
+      .where(professional_profile_revisions: {status: "approved"})
+  }
 
   INITIAL_REVISION_FIELDS.each do |field|
     define_method(field) do

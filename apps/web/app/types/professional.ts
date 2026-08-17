@@ -83,6 +83,31 @@ export interface Professional {
   youtube?: string;
 }
 
+export interface PublicProfessionalCard {
+  id: string;
+  slug: string;
+  name: string;
+  headline: string | null;
+  photoUrl: string | null;
+  primaryService: {
+    id: string;
+    name: string;
+    slug: string;
+  } | null;
+  coverage: {
+    allJoinville: boolean;
+    neighborhoods: Array<{ code: string; name: string }>;
+  };
+  verificationLabels: Array<{
+    type: "identity";
+    label: "Identidade verificada";
+    verifiedAt: string;
+  }>;
+  portfolioCount: number;
+  relationshipCount: number;
+  publicSnapshotUpdatedAt: string | null;
+}
+
 export interface ProfessionalProfileDraft {
   name: string;
   headline: string;

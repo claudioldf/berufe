@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { Professional } from "~/types";
+import type { PublicProfessionalCard } from "~/types";
 
-defineProps<{ professionals: Professional[] }>();
+defineProps<{ professionals: PublicProfessionalCard[] }>();
 </script>
 
 <template>
@@ -30,14 +30,17 @@ defineProps<{ professionals: Professional[] }>();
           :to="`/profissionais/${professional.slug}`"
         >
           <div class="featured-card__image">
-            <img
-              :src="professional.avatar"
-              :alt="`Foto de ${professional.name}`"
-              width="1024"
-              height="1536"
+            <DesignSystemAvatar
+              class="featured-card__avatar"
+              :name="professional.name"
+              :src="professional.photoUrl ?? undefined"
+              size="profile"
+              shape="rounded"
               loading="lazy"
             />
-            <span>{{ professional.primaryService }}</span>
+            <span v-if="professional.primaryService">
+              {{ professional.primaryService.name }}
+            </span>
           </div>
           <div class="featured-card__body">
             <div>
@@ -45,20 +48,23 @@ defineProps<{ professionals: Professional[] }>();
               <small>
                 <UIcon name="i-lucide-map-pin" />
                 {{
-                  professional.allJoinville
+                  professional.coverage.allJoinville
                     ? "Toda Joinville"
-                    : professional.neighborhoods.slice(0, 2).join(" e ")
+                    : professional.coverage.neighborhoods
+                        .slice(0, 2)
+                        .map((neighborhood) => neighborhood.name)
+                        .join(" e ")
                 }}
               </small>
             </div>
             <UIcon name="i-lucide-arrow-up-right" />
           </div>
           <div class="featured-card__proof">
-            <span>
+            <span v-if="professional.verificationLabels.length > 0">
               <UIcon name="i-lucide-badge-check" /> Identidade verificada
             </span>
             <span>
-              {{ professional.relationships.length }} relações profissionais
+              {{ professional.relationshipCount }} relações profissionais
             </span>
           </div>
         </NuxtLink>
@@ -66,3 +72,19 @@ defineProps<{ professionals: Professional[] }>();
     </DesignSystemContainer>
   </DesignSystemPageSection>
 </template>
+
+<style scoped lang="scss">
+.featured-card__avatar {
+  width: 100%;
+  height: 100%;
+
+  :deep(.avatar__image),
+  :deep(.avatar__fallback) {
+    border-radius: 0;
+  }
+
+  :deep(.avatar__fallback) {
+    font-size: 3rem;
+  }
+}
+</style>

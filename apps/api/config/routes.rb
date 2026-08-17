@@ -5,6 +5,8 @@ Rails.application.routes.draw do
     namespace :v1 do
       resource :status, only: :show, controller: :status
       resource :catalog, only: :show, controller: :catalogs
+      get "public/professionals/featured", to: "public_featured_professionals#index"
+      get "public/profile-photos/:id/image", to: "public_profile_photos#show"
       get "public/portfolio-items/:id/image", to: "public_portfolio_images#show"
       put "professional-registration", to: "professional_registrations#update"
       namespace :professional do

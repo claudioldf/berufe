@@ -615,6 +615,78 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/public/professionals/featured:
+    get:
+      operationId: getFeaturedPublicProfessionals
+      summary: Read the most recently approved publicly eligible professionals
+      tags:
+        - Public discovery
+      security: []
+      responses:
+        "200":
+          description: Up to three publicly eligible professional cards in deterministic order.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeaturedPublicProfessionalsResponse"
+        "503":
+          description: The public professional query is temporarily unavailable.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/public/profile-photos/{id}/image:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getPublicProfilePhotoImage
+      summary: Read a currently published approved profile photo
+      tags:
+        - Public discovery
+      security: []
+      responses:
+        "200":
+          description: An approved JPEG profile photo whose parent remains publicly eligible.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              schema:
+                type: string
+                const: max-age=0, public, must-revalidate
+            Content-Disposition:
+              schema:
+                type: string
+                pattern: '^inline; filename="berufe-profile-photo-[a-f0-9-]+\.jpg"'
+            X-Content-Type-Options:
+              schema:
+                type: string
+                const: nosniff
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: The photo is absent, not approved/published, has an ineligible parent, or its object is unavailable.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/public/portfolio-items/{id}/image:
     parameters:
       - name: id
@@ -3009,6 +3081,142 @@ components:
         city:
           type: string
           const: Joinville
+    FeaturedPublicProfessionalsResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required:
+            - professionals
+          properties:
+            professionals:
+              type: array
+              maxItems: 3
+              items:
+                $ref: "#/components/schemas/PublicProfessionalCard"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    PublicProfessionalCard:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - publicSlug
+        - displayName
+        - headline
+        - photoUrl
+        - primaryService
+        - coverage
+        - verificationLabels
+        - portfolioCount
+        - relationshipCount
+        - publicSnapshotUpdatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        publicSlug:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        displayName:
+          type: string
+          minLength: 3
+          maxLength: 70
+        headline:
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 120
+        photoUrl:
+          type:
+            - string
+            - "null"
+          format: uri
+        primaryService:
+          oneOf:
+            - $ref: "#/components/schemas/PublicProfessionalServiceSummary"
+            - type: "null"
+        coverage:
+          $ref: "#/components/schemas/PublicProfessionalCoverage"
+        verificationLabels:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicVerificationLabel"
+        portfolioCount:
+          type: integer
+          minimum: 0
+        relationshipCount:
+          type: integer
+          minimum: 0
+        publicSnapshotUpdatedAt:
+          type:
+            - string
+            - "null"
+          format: date-time
+    PublicProfessionalServiceSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - name
+        - slug
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+        slug:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    PublicProfessionalCoverage:
+      type: object
+      additionalProperties: false
+      required:
+        - allJoinville
+        - neighborhoods
+      properties:
+        allJoinville:
+          type: boolean
+        neighborhoods:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - code
+              - name
+            properties:
+              code:
+                type: string
+                pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+              name:
+                type: string
+                minLength: 1
+    PublicVerificationLabel:
+      type: object
+      additionalProperties: false
+      required:
+        - type
+        - label
+        - verifiedAt
+      properties:
+        type:
+          type: string
+          const: identity
+        label:
+          type: string
+          const: Identidade verificada
+        verifiedAt:
+          type: string
+          format: date-time
     RequestId:
       type: string
       pattern: "^[A-Za-z0-9._-]{1,100}$"
