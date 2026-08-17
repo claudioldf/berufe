@@ -47,6 +47,25 @@ module Api
           )
         end
 
+        def submission
+          profile = Current.user_account.professional_profile
+          raise ActiveRecord::RecordNotFound unless profile
+
+          authorize profile, :submit?
+          ProfessionalProfileSubmitter.new.call(profile:)
+          render json: {
+            data: ProfessionalWorkspaceSerializer.new(profile.reload),
+            request_id: Current.request_id
+          }
+        rescue ProfessionalProfileSubmitter::Invalid => error
+          render_api_error(
+            code: "profile_incomplete",
+            message: "Complete as etapas indicadas antes de enviar o perfil.",
+            status: :unprocessable_entity,
+            field_errors: error.field_errors
+          )
+        end
+
         private
 
         def identity_params

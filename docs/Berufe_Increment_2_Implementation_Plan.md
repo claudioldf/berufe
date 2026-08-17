@@ -32,6 +32,9 @@ This order lets media, portfolio, and identity evidence exist before the initial
 - Each step saves its own validated data immediately to Rails. The browser does not accumulate one final profile payload.
 - The existing **Concluir onboarding** action performs only the final transition from `draft` to `pending_review` after Rails verifies the persisted checklist.
 - Initial submission requires complete identity/contact data, at least one service with exactly one primary service, valid Joinville coverage, one reviewable portfolio item, and one reviewable identity-verification request.
+- Rails calculates that checklist from the current persisted working revision. Selected services/categories and specific neighborhoods must still be active; reviewable portfolio and identity records are `pending_review` or `approved`, soft-deleted portfolio records do not count, and an identity request must still own its single regenerated file.
+- The profile and revision transition together in one database transaction. Repeating a successfully accepted pending submission is idempotent and preserves its original submission time.
+- Uploading the identity image leaves the existing fourth step visible. Nuxt shows the existing success surface only after **Concluir onboarding** returns a workspace whose server-owned profile status is no longer `draft`; submission failures remain on the same step and show the first actionable Rails checklist error.
 - Profile photo and social profile links remain optional. All four existing steps are required for the current 100% onboarding completion presentation.
 
 ### Approved snapshot and later edits

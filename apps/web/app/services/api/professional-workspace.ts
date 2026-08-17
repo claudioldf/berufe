@@ -210,6 +210,17 @@ export async function updateProfessionalProfile(
   return mapProfessionalWorkspace(data.data);
 }
 
+export async function submitProfessionalProfile(
+  client: BerufeApiClient,
+): Promise<ProfessionalWorkspace> {
+  const { data, error, response } = await client.POST(
+    "/api/v1/professional/profile/submission",
+  );
+  if (error || !data) throw requestError(error, response);
+
+  return mapProfessionalWorkspace(data.data);
+}
+
 export async function attachProfessionalProfilePhoto(
   client: BerufeApiClient,
   mediaUploadId: string,

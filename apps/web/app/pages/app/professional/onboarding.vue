@@ -27,6 +27,9 @@ const {
   retryPhoto,
   createPortfolioItem,
   createVerificationRequest,
+  submissionSaving,
+  submissionError,
+  submitProfile,
 } = await useProfessionalWorkspace();
 if (workspaceError.value || !workspace.value) {
   throw createError({
@@ -102,5 +105,8 @@ useSeoMeta({
     :retry-photo="retryPhoto"
     :photo-uploading="photoUploading"
     :photo-error="photoError"
+    :submission-saving="submissionSaving"
+    :submission-error="submissionError"
+    :submit-profile="submitProfile"
   />
 </template>

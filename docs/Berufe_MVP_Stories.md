@@ -430,7 +430,7 @@ Apply these rules whenever they are relevant to the story:
 
 ### S022 — Submit a profile for moderation
 
-**Status:** PENDING
+**Status:** DONE
 
 **Story:** As a professional, I want to submit a sufficiently complete profile so that Berufe can review it for publication.
 

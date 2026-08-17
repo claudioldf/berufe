@@ -4,6 +4,7 @@ import type { VerificationSubmission } from "~/types";
 defineProps<{
   submitted: boolean;
   saving?: boolean;
+  submitting?: boolean;
   serverError?: string;
 }>();
 defineEmits<{
@@ -28,6 +29,10 @@ function submit(submission: VerificationSubmission) {
       </p>
     </header>
 
+    <p v-if="serverError" class="onboarding-step-error" role="alert">
+      <UIcon name="i-lucide-circle-alert" /> {{ serverError }}
+    </p>
+
     <DesignSystemSurfaceCard v-if="submitted" class="onboarding-complete-card">
       <span><UIcon name="i-lucide-check" /></span>
       <div>
@@ -37,9 +42,6 @@ function submit(submission: VerificationSubmission) {
     </DesignSystemSurfaceCard>
 
     <DesignSystemSurfaceCard v-else class="onboarding-upload-card">
-      <p v-if="serverError" class="onboarding-step-error" role="alert">
-        <UIcon name="i-lucide-circle-alert" /> {{ serverError }}
-      </p>
       <DashboardVerificationIdentityUploadForm
         submit-label="Enviar e concluir"
         :submitting="saving"
@@ -53,7 +55,7 @@ function submit(submission: VerificationSubmission) {
         color="neutral"
         variant="ghost"
         icon="i-lucide-arrow-left"
-        :disabled="saving"
+        :disabled="saving || submitting"
         @click="$emit('back')"
       >
         Voltar
@@ -63,6 +65,8 @@ function submit(submission: VerificationSubmission) {
         type="button"
         color="primary"
         trailing-icon="i-lucide-check"
+        :loading="submitting"
+        :disabled="saving || submitting"
         @click="$emit('finish')"
       >
         Concluir onboarding

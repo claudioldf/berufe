@@ -32,8 +32,11 @@ const props = defineProps<{
   saveVerification: (file: File) => Promise<{ submittedAt: string }>;
   uploadPhoto: (file: File) => Promise<unknown>;
   retryPhoto: () => Promise<unknown>;
+  submitProfile: () => Promise<unknown>;
   photoUploading?: boolean;
   photoError?: string;
+  submissionSaving?: boolean;
+  submissionError?: string;
 }>();
 
 const route = useRoute();
@@ -76,6 +79,7 @@ const firstIncompleteIndex = computed(() =>
     (step) => step.id === firstIncompleteStep.value,
   ),
 );
+const isSubmitted = computed(() => props.workspace.profile.status !== "draft");
 const professionalName = computed(
   () => state.value.profile.name.trim().split(" ")[0] || "profissional",
 );
@@ -151,9 +155,7 @@ async function handlePortfolio(draft: PortfolioItemDraft) {
 }
 
 async function handleVerification(file: File) {
-  if (!(await completeVerification(file))) return;
-  reviewing.value = false;
-  void router.replace({ query: {} });
+  await completeVerification(file);
 }
 
 function reviewSteps() {
@@ -161,15 +163,21 @@ function reviewSteps() {
   void goToStep("profile");
 }
 
-function finishReview() {
-  reviewing.value = false;
-  void router.replace({ query: {} });
+async function finishReview() {
+  if (!isComplete.value) return;
+  try {
+    if (!isSubmitted.value) await props.submitProfile();
+    reviewing.value = false;
+    await router.replace({ query: {} });
+  } catch {
+    // The final step renders the safe server-owned checklist error.
+  }
 }
 
 watch(
   [hydrated, () => route.query.step],
   ([isHydrated, requestedStep]) => {
-    if (!isHydrated || (isComplete.value && !reviewing.value)) return;
+    if (!isHydrated || (isSubmitted.value && !reviewing.value)) return;
     const stepId = isStepId(requestedStep)
       ? requestedStep
       : firstIncompleteStep.value;
@@ -246,7 +254,7 @@ watch(
       </DesignSystemSurfaceCard>
 
       <OnboardingSuccess
-        v-else-if="isComplete && !reviewing"
+        v-else-if="isSubmitted && !reviewing"
         @review="reviewSteps"
       />
 
@@ -303,7 +311,8 @@ watch(
             v-else
             :submitted="state.verificationStatus === 'submitted'"
             :saving="verificationSaving"
-            :server-error="verificationError"
+            :submitting="props.submissionSaving"
+            :server-error="props.submissionError || verificationError"
             @back="previousStep"
             @complete="handleVerification"
             @finish="finishReview"

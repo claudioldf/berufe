@@ -6,6 +6,7 @@ import {
   deleteProfessionalPortfolioItem,
   attachProfessionalVerificationRequest,
   mapProfessionalWorkspace,
+  submitProfessionalProfile,
   updateProfessionalIdentity,
   updateProfessionalSupply,
 } from "@app/services/api/professional-workspace";
@@ -205,6 +206,20 @@ describe("professional workspace API", () => {
           },
         },
       },
+    );
+  });
+
+  it("submits persisted onboarding state without a browser profile payload", async () => {
+    const client = apiClientReturning("POST", {
+      data: { data: workspaceData, request_id: "profile-submission" },
+      error: undefined,
+      response: new Response(null),
+    });
+
+    await submitProfessionalProfile(client);
+
+    expect(client.POST).toHaveBeenCalledWith(
+      "/api/v1/professional/profile/submission",
     );
   });
 

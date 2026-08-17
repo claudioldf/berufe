@@ -4,6 +4,7 @@ import {
   attachProfessionalPortfolioItem,
   deleteProfessionalPortfolioItem,
   attachProfessionalVerificationRequest,
+  submitProfessionalProfile,
   updateProfessionalIdentity,
   updateProfessionalProfile,
   updateProfessionalSupply,
@@ -34,6 +35,8 @@ export async function useProfessionalWorkspace() {
   const portfolioError = shallowRef("");
   const verificationSaving = shallowRef(false);
   const verificationError = shallowRef("");
+  const submissionSaving = shallowRef(false);
+  const submissionError = shallowRef("");
 
   function reflectPhotoUpload(upload: MediaUpload) {
     if (!workspace.data.value) return;
@@ -225,6 +228,28 @@ export async function useProfessionalWorkspace() {
     return updated;
   }
 
+  async function submitProfile() {
+    if (submissionSaving.value) return workspace.data.value;
+    submissionSaving.value = true;
+    submissionError.value = "";
+    try {
+      const updated = await submitProfessionalProfile(client);
+      workspace.data.value = updated;
+      return updated;
+    } catch (error) {
+      if (error instanceof ApiRequestError) {
+        submissionError.value =
+          Object.values(error.fieldErrors).flat()[0] ?? error.message;
+      } else {
+        submissionError.value =
+          "Não foi possível enviar o perfil agora. Tente novamente.";
+      }
+      throw error;
+    } finally {
+      submissionSaving.value = false;
+    }
+  }
+
   return {
     ...workspace,
     saveIdentity,
@@ -241,5 +266,8 @@ export async function useProfessionalWorkspace() {
     verificationSaving,
     verificationError,
     createVerificationRequest,
+    submissionSaving,
+    submissionError,
+    submitProfile,
   };
 }

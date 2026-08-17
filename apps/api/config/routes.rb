@@ -9,6 +9,7 @@ Rails.application.routes.draw do
       namespace :professional do
         resource :workspace, only: :show, controller: :workspaces
         resource :profile, only: :update, controller: :profiles
+        post "profile/submission", to: "profiles#submission"
         put "profile/photo", to: "profile_photos#update"
         resources :portfolio_items, only: %i[create destroy], path: "portfolio-items"
         resources :verification_requests, only: :create, path: "verification-requests"
