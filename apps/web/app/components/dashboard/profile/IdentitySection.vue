@@ -1,7 +1,74 @@
 <script setup lang="ts">
-import type { ProfessionalProfileDraft } from "~/types";
+import { computed, shallowRef, useTemplateRef } from "vue";
+import type {
+  ProfessionalProfileDraft,
+  ProfessionalProfilePhotoState,
+} from "~/types";
+import { validateOnboardingImage } from "~/composables/useProfessionalOnboarding";
 
 const form = defineModel<ProfessionalProfileDraft>({ required: true });
+const props = withDefaults(
+  defineProps<{
+    photo?: ProfessionalProfilePhotoState;
+    photoUploading?: boolean;
+    photoError?: string;
+  }>(),
+  { photo: undefined, photoUploading: false, photoError: "" },
+);
+const emit = defineEmits<{
+  photoSelect: [file: File];
+  photoRetry: [];
+}>();
+const photoInput = useTemplateRef<HTMLInputElement>("photo-input");
+const selectionError = shallowRef("");
+const canRetry = computed(
+  () =>
+    props.photo?.latestUpload?.state === "failed" &&
+    props.photo.latestUpload.retryable,
+);
+const hasPhoto = computed(() =>
+  Boolean(props.photo?.current || props.photo?.hasPublishedPhoto),
+);
+const photoStatus = computed(() => {
+  if (props.photoUploading) return "Enviando e processando foto…";
+  if (selectionError.value || props.photoError)
+    return selectionError.value || props.photoError;
+
+  const latest = props.photo?.latestUpload;
+  if (latest) {
+    if (["authorized", "uploaded", "processing"].includes(latest.state))
+      return "Foto em processamento…";
+    if (latest.state === "failed")
+      return latest.retryable
+        ? "Não foi possível processar a foto. Tente novamente."
+        : "Essa foto não pôde ser processada. Selecione outra imagem.";
+  }
+
+  const current = props.photo?.current;
+  if (!current) return "JPEG ou PNG, até 10 MB.";
+  if (current.status === "pending_review") return "Foto em análise.";
+  if (current.status === "approved") return "Foto aprovada.";
+  if (current.status === "rejected")
+    return current.rejectionReason || "Foto recusada. Selecione outra imagem.";
+  if (current.status === "hidden") return "Foto oculta pela moderação.";
+  return "Selecione outra foto para análise.";
+});
+
+function openPhotoPicker() {
+  selectionError.value = "";
+  photoInput.value?.click();
+}
+
+function selectPhoto(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  input.value = "";
+  if (!file) return;
+
+  const validation = validateOnboardingImage(file);
+  selectionError.value = validation.error;
+  if (validation.valid) emit("photoSelect", file);
+}
 </script>
 
 <template>
@@ -16,6 +83,50 @@ const form = defineModel<ProfessionalProfileDraft>({ required: true });
       </div>
       <em>Obrigatório</em>
     </header>
+    <div class="profile-photo-control">
+      <div class="profile-photo-control__avatar" aria-hidden="true">
+        <UIcon name="i-lucide-user-round" />
+      </div>
+      <div>
+        <strong>Foto profissional <em>Opcional</em></strong>
+        <p
+          :class="{
+            'profile-photo-control__error': selectionError || props.photoError,
+          }"
+          aria-live="polite"
+        >
+          {{ photoStatus }}
+        </p>
+      </div>
+      <input
+        ref="photo-input"
+        class="profile-photo-control__input"
+        type="file"
+        accept="image/jpeg,image/png"
+        :disabled="props.photoUploading"
+        @change="selectPhoto"
+      />
+      <UButton
+        type="button"
+        color="neutral"
+        variant="outline"
+        :loading="props.photoUploading"
+        :disabled="props.photoUploading"
+        @click="openPhotoPicker"
+      >
+        {{ hasPhoto ? "Trocar foto" : "Adicionar foto" }}
+      </UButton>
+      <UButton
+        v-if="canRetry"
+        type="button"
+        color="neutral"
+        variant="ghost"
+        :disabled="props.photoUploading"
+        @click="emit('photoRetry')"
+      >
+        Tentar novamente
+      </UButton>
+    </div>
     <div class="editor-grid">
       <DesignSystemFormField
         id="profile-name"
@@ -115,3 +226,69 @@ const form = defineModel<ProfessionalProfileDraft>({ required: true });
     </div>
   </section>
 </template>
+
+<style scoped lang="scss">
+.profile-photo-control {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper-soft);
+
+  &__avatar {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: white;
+    color: var(--color-brand);
+    font-size: 1.35rem;
+  }
+
+  & strong {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--ink);
+    font-size: 0.86rem;
+  }
+
+  & strong em {
+    color: var(--ink-soft);
+    font-size: 0.7rem;
+    font-style: normal;
+    font-weight: 750;
+    text-transform: uppercase;
+  }
+
+  & p {
+    margin: 4px 0 0;
+    color: var(--ink-soft);
+    font-size: 0.78rem;
+  }
+
+  &__error {
+    color: var(--color-danger) !important;
+  }
+
+  &__input {
+    display: none;
+  }
+}
+
+@media (width <= 720px) {
+  .profile-photo-control {
+    grid-template-columns: auto minmax(0, 1fr);
+
+    & > button {
+      grid-column: 1 / -1;
+      justify-content: center;
+    }
+  }
+}
+</style>

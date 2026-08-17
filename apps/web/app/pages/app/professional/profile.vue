@@ -25,6 +25,10 @@ const {
   data: workspace,
   error: workspaceError,
   saveProfile: saveWorkspaceProfile,
+  photoUploading,
+  photoError,
+  uploadPhoto,
+  retryPhoto,
 } = await useProfessionalWorkspace();
 if (workspaceError.value || !workspace.value) {
   throw createError({
@@ -44,6 +48,7 @@ const professional = computed<Professional>(() => ({
   whatsapp: workspace.value!.profile.identity.whatsapp,
   instagram: workspace.value!.profile.identity.instagram || undefined,
   youtube: workspace.value!.profile.identity.youtube || undefined,
+  avatar: "",
   primaryService:
     workspace.value!.profile.services.find((service) => service.isPrimary)
       ?.name ?? "",
@@ -116,6 +121,42 @@ async function saveProfile(
     saving.value = false;
   }
 }
+
+async function handlePhoto(file: File) {
+  try {
+    await uploadPhoto(file);
+    showToast({
+      title: "Foto enviada",
+      description: "Ela aparecerá no perfil depois da análise.",
+    });
+  } catch (error) {
+    showToast({
+      title: "Não foi possível enviar a foto",
+      description:
+        error instanceof ApiRequestError
+          ? error.message
+          : "Tente novamente em instantes.",
+    });
+  }
+}
+
+async function handlePhotoRetry() {
+  try {
+    await retryPhoto();
+    showToast({
+      title: "Foto reenviada",
+      description: "Ela aparecerá no perfil depois da análise.",
+    });
+  } catch (error) {
+    showToast({
+      title: "Não foi possível reenviar a foto",
+      description:
+        error instanceof ApiRequestError
+          ? error.message
+          : "Tente novamente em instantes.",
+    });
+  }
+}
 </script>
 
 <template>
@@ -153,7 +194,12 @@ async function saveProfile(
         :services="services"
         :neighborhoods="neighborhoods"
         :saving="saving"
+        :photo="workspace?.profile.photo"
+        :photo-uploading="photoUploading"
+        :photo-error="photoError"
         @save="saveProfile"
+        @photo-select="handlePhoto"
+        @photo-retry="handlePhotoRetry"
       />
       <DashboardPortfolioManager
         v-else-if="activeTab === 'portfolio'"

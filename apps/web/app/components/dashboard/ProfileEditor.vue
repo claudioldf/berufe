@@ -3,6 +3,7 @@ import type {
   Neighborhood,
   Professional,
   ProfessionalProfileDraft,
+  ProfessionalProfilePhotoState,
   Service,
 } from "~/types";
 import { useProfessionalProfileDraft } from "~/composables/useProfessionalProfileDraft";
@@ -12,9 +13,14 @@ const props = defineProps<{
   services: Service[];
   neighborhoods: Neighborhood[];
   saving?: boolean;
+  photo?: ProfessionalProfilePhotoState;
+  photoUploading?: boolean;
+  photoError?: string;
 }>();
 const emit = defineEmits<{
   save: [draft: ProfessionalProfileDraft, confirm: () => void];
+  photoSelect: [file: File];
+  photoRetry: [];
 }>();
 
 const {
@@ -39,7 +45,14 @@ function save() {
 <template>
   <form class="profile-editor" @input="markDirty" @submit.prevent="save">
     <DashboardProfileFormLayout>
-      <DashboardProfileIdentitySection v-model="form" />
+      <DashboardProfileIdentitySection
+        v-model="form"
+        :photo="props.photo"
+        :photo-uploading="props.photoUploading"
+        :photo-error="props.photoError"
+        @photo-select="emit('photoSelect', $event)"
+        @photo-retry="emit('photoRetry')"
+      />
       <DashboardProfileSocialSection
         v-model="form"
         :errors="socialErrors"

@@ -3,6 +3,7 @@ import {
   fetchMediaUpload,
   retryMediaUpload,
   uploadMedia,
+  waitForMediaUpload,
 } from "@app/services/api/media-upload";
 import type { components } from "@app/services/api/schema";
 
@@ -15,6 +16,7 @@ const mediaUpload: MediaUpload = {
   declared_content_type: "image/jpeg",
   declared_byte_size: 3,
   actual_content_type: null,
+  sanitized_content_type: null,
   actual_byte_size: null,
   width: null,
   height: null,
@@ -161,5 +163,35 @@ describe("professional media upload API", () => {
       code: "upload_not_retryable",
       requestId: "retry",
     });
+  });
+
+  it("polls until background processing reaches a terminal state", async () => {
+    const processed: MediaUpload = {
+      ...mediaUpload,
+      state: "processed",
+      actual_content_type: "image/jpeg",
+      sanitized_content_type: "image/jpeg",
+      actual_byte_size: 3,
+      width: 3,
+      height: 1,
+    };
+    const client = {
+      GET: vi.fn().mockResolvedValue(
+        response({
+          data: { media_upload: processed },
+          request_id: "processed",
+        }),
+      ),
+    } as unknown as BerufeApiClient;
+    const onUpdate = vi.fn();
+
+    await expect(
+      waitForMediaUpload(client, mediaUpload, {
+        sleep: vi.fn().mockResolvedValue(undefined),
+        onUpdate,
+      }),
+    ).resolves.toEqual(processed);
+    expect(onUpdate).toHaveBeenNthCalledWith(1, mediaUpload);
+    expect(onUpdate).toHaveBeenNthCalledWith(2, processed);
   });
 });

@@ -63,6 +63,8 @@ This order lets media, portfolio, and identity evidence exist before the initial
 - A GoodJob task runs every 10 minutes to expire abandoned authorizations and delete any corresponding quarantine object.
 - A processed upload can be attached only once and only to the authorized owner and purpose.
 - The optional profile photo produces one JPEG display image fitted inside 1024 × 1536 pixels. A replacement remains private until approval while the existing approved photo remains public.
+- A processed profile-photo upload attaches to one review record and advances only the private working-photo pointer. Replacing a pending photo supersedes that pending record; it never changes the approved public-photo pointer.
+- The authenticated workspace exposes profile-photo workflow status but no private media URL. The existing identity section shows upload, processing, pending, rejection, replacement, and retry guidance without rendering an unapproved image. The browser polls background processing for up to 30 seconds; a timeout leaves the server-owned processing state intact and asks the owner to return shortly.
 - Portfolio management uses the existing form and list, permits at most 12 non-deleted items, uses soft deletion, and publishes approved items newest first with ID as the deterministic tie-breaker. Manual ordering remains out of scope.
 - The launch identity-verification request accepts exactly one regenerated image. It does not collect document numbers or accept PDF, company, or certificate evidence.
 

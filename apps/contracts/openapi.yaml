@@ -605,6 +605,66 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/professional/profile/photo:
+    put:
+      operationId: updateProfessionalProfilePhoto
+      summary: Attach a processed private image to the professional profile for review
+      tags:
+        - Professional supply
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfessionalProfilePhotoUpdateRequest"
+      responses:
+        "200":
+          description: The private JPEG variant was attached and submitted for review.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfessionalWorkspaceResponse"
+        "401":
+          description: An active Rails application session is required.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: The exact browser origin or profile owner is invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Professional registration or the owned upload was not found.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: The upload is not a processed, bounded profile-photo JPEG.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/professional/media-uploads:
     post:
       operationId: authorizeProfessionalMediaUpload
@@ -1300,6 +1360,7 @@ components:
         - profile_status
         - revision_status
         - has_published_revision
+        - photo
         - identity
         - services
         - coverage
@@ -1328,6 +1389,8 @@ components:
             - superseded
         has_published_revision:
           type: boolean
+        photo:
+          $ref: "#/components/schemas/ProfessionalWorkspacePhoto"
         identity:
           $ref: "#/components/schemas/ProfessionalIdentity"
         services:
@@ -1336,6 +1399,61 @@ components:
             $ref: "#/components/schemas/ProfessionalServiceSelection"
         coverage:
           $ref: "#/components/schemas/ProfessionalCoverage"
+    ProfessionalWorkspacePhoto:
+      type: object
+      additionalProperties: false
+      required:
+        - current
+        - has_published_photo
+        - latest_upload
+      properties:
+        current:
+          oneOf:
+            - $ref: "#/components/schemas/ProfessionalProfilePhotoSummary"
+            - type: "null"
+        has_published_photo:
+          type: boolean
+        latest_upload:
+          oneOf:
+            - $ref: "#/components/schemas/MediaUpload"
+            - type: "null"
+    ProfessionalProfilePhotoSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - status
+        - rejection_reason
+        - submitted_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+            - pending_review
+            - approved
+            - rejected
+            - hidden
+            - superseded
+        rejection_reason:
+          type:
+            - string
+            - "null"
+          maxLength: 500
+        submitted_at:
+          type: string
+          format: date-time
+    ProfessionalProfilePhotoUpdateRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - media_upload_id
+      properties:
+        media_upload_id:
+          type: string
+          format: uuid
     ProfessionalIdentity:
       type: object
       additionalProperties: false
@@ -1557,6 +1675,7 @@ components:
         - declared_content_type
         - declared_byte_size
         - actual_content_type
+        - sanitized_content_type
         - actual_byte_size
         - width
         - height
@@ -1593,6 +1712,14 @@ components:
           minimum: 1
           maximum: 10485760
         actual_content_type:
+          type:
+            - string
+            - "null"
+          enum:
+            - image/jpeg
+            - image/png
+            - null
+        sanitized_content_type:
           type:
             - string
             - "null"

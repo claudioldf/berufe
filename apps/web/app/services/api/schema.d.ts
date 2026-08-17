@@ -246,6 +246,23 @@ export interface paths {
         patch: operations["updateProfessionalProfile"];
         trace?: never;
     };
+    "/api/v1/professional/profile/photo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Attach a processed private image to the professional profile for review */
+        put: operations["updateProfessionalProfilePhoto"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/professional/media-uploads": {
         parameters: {
             query?: never;
@@ -470,9 +487,28 @@ export interface components {
             /** @enum {string} */
             revision_status: "draft" | "pending_review" | "approved" | "rejected" | "superseded";
             has_published_revision: boolean;
+            photo: components["schemas"]["ProfessionalWorkspacePhoto"];
             identity: components["schemas"]["ProfessionalIdentity"];
             services: components["schemas"]["ProfessionalServiceSelection"][];
             coverage: components["schemas"]["ProfessionalCoverage"];
+        };
+        ProfessionalWorkspacePhoto: {
+            current: components["schemas"]["ProfessionalProfilePhotoSummary"] | null;
+            has_published_photo: boolean;
+            latest_upload: components["schemas"]["MediaUpload"] | null;
+        };
+        ProfessionalProfilePhotoSummary: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "pending_review" | "approved" | "rejected" | "hidden" | "superseded";
+            rejection_reason: string | null;
+            /** Format: date-time */
+            submitted_at: string;
+        };
+        ProfessionalProfilePhotoUpdateRequest: {
+            /** Format: uuid */
+            media_upload_id: string;
         };
         ProfessionalIdentity: {
             display_name: string;
@@ -552,6 +588,8 @@ export interface components {
             declared_byte_size: number;
             /** @enum {string|null} */
             actual_content_type: "image/jpeg" | "image/png" | null;
+            /** @enum {string|null} */
+            sanitized_content_type: "image/jpeg" | "image/png" | null;
             actual_byte_size: number | null;
             width: number | null;
             height: number | null;
@@ -1450,6 +1488,71 @@ export interface operations {
                 };
             };
             /** @description One or more identity/contact fields are invalid. */
+            422: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    updateProfessionalProfilePhoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfessionalProfilePhotoUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description The private JPEG variant was attached and submitted for review. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalWorkspaceResponse"];
+                };
+            };
+            /** @description An active Rails application session is required. */
+            401: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The exact browser origin or profile owner is invalid. */
+            403: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Professional registration or the owned upload was not found. */
+            404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The upload is not a processed, bounded profile-photo JPEG. */
             422: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];

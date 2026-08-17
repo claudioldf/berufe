@@ -161,9 +161,10 @@ This is the base of both trust and discovery. Without structured services and co
 2. They select services from Berufe’s approved residential renovation catalog.
 3. They select Joinville and the neighborhoods they serve. “All Joinville” is a derived selector represented by the all-city service-area record, not a managed neighborhood.
 4. They add a short introduction and declared years of experience.
-5. They may add Instagram and YouTube profile identifiers or profile URLs. Berufe validates the platform and profile shape, then stores canonical HTTPS URLs.
-6. The editor shows an inline representation of the public fields, and the professional submits the profile for approval.
-7. An approved profile becomes searchable. A material edit returns the profile to moderation; the founding-cohort operations team may assist when an urgent correction is required.
+5. They may add one profile photo. JPEG and PNG uploads are processed privately into a metadata-free JPEG fitted inside 1024 × 1536 pixels; the photo remains private until approved, and a replacement does not displace the currently approved photo while it is under review.
+6. They may add Instagram and YouTube profile identifiers or profile URLs. Berufe validates the platform and profile shape, then stores canonical HTTPS URLs.
+7. The editor shows an inline representation of the public fields, and the professional submits the profile for approval.
+8. An approved profile becomes searchable. A material edit returns the profile to moderation; the founding-cohort operations team may assist when an urgent correction is required.
 
 Use structured service selections rather than free-form specialties. Allow a short free-text description for context, but do not use it as the only search source. Generate a stable, shareable public slug. Instagram accepts a bare or `@` handle and a direct `instagram.com/<handle>` profile URL. YouTube accepts a bare or `@` handle and a direct `youtube.com/@<handle>` channel URL; video, playlist, post/reel, off-platform, and legacy YouTube channel-path URLs are rejected. Both fields are independently optional, and copied query strings or fragments are removed during normalization.
 
@@ -177,7 +178,8 @@ Use structured service selections rather than free-form specialties. Allow a sho
 | `owner_user_id`             | UUID      | Foreign reference to account; unique                |
 | `public_slug`               | text      | Unique, stable, human-readable                      |
 | `display_name`              | text      | Required                                            |
-| `photo_url`                 | text      | Nullable until uploaded                             |
+| `working_photo_id`          | UUID      | Nullable private photo-review pointer               |
+| `published_photo_id`        | UUID      | Nullable approved public-photo pointer              |
 | `headline`                  | text      | Short public description                            |
 | `bio`                       | text      | Short, length-limited                               |
 | `years_experience_declared` | smallint  | Nullable; explicitly labeled “declared”             |
@@ -187,6 +189,24 @@ Use structured service selections rather than free-form specialties. Allow a sho
 | `profile_status`            | enum      | `draft`, `pending_review`, `published`, `suspended` |
 | `created_at`                | timestamp | Required                                            |
 | `updated_at`                | timestamp | Required                                            |
+
+**`professional_profile_photo`**
+
+| Field                     | Type      | Rules                                                                |
+| ------------------------- | --------- | -------------------------------------------------------------------- |
+| `id`                      | UUID      | Primary key                                                          |
+| `professional_profile_id` | UUID      | Owner profile                                                        |
+| `media_upload_id`         | UUID      | Unique processed upload                                              |
+| `status`                  | enum      | `pending_review`, `approved`, `rejected`, `hidden`, or `superseded`  |
+| `private_key`             | text      | Required sanitized JPEG; never returned as an owner-facing media URL |
+| `public_key`              | text      | Nullable until approval                                              |
+| `content_type`            | text      | Always `image/jpeg`                                                  |
+| `byte_size`               | bigint    | Positive                                                             |
+| `width`                   | integer   | 1–1024                                                               |
+| `height`                  | integer   | 1–1536                                                               |
+| `submitted_at`            | timestamp | Required                                                             |
+| `reviewed_at`             | timestamp | Nullable                                                             |
+| `rejection_reason`        | text      | Private; nullable                                                    |
 
 **`professional_service`**
 

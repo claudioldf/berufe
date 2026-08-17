@@ -1,6 +1,7 @@
 import type { BerufeApiClient } from "@app/services/api/client";
 import {
   fetchProfessionalWorkspace,
+  attachProfessionalProfilePhoto,
   mapProfessionalWorkspace,
   updateProfessionalIdentity,
   updateProfessionalSupply,
@@ -17,6 +18,11 @@ const workspaceData: WorkspaceData = {
     profile_status: "draft",
     revision_status: "draft",
     has_published_revision: false,
+    photo: {
+      current: null,
+      has_published_photo: false,
+      latest_upload: null,
+    },
     identity: {
       display_name: "Ana Souza",
       headline: "Elétrica residencial.",
@@ -41,7 +47,7 @@ const workspaceData: WorkspaceData = {
   },
 };
 
-function apiClientReturning(method: "GET" | "PATCH", result: object) {
+function apiClientReturning(method: "GET" | "PATCH" | "PUT", result: object) {
   return {
     [method]: vi.fn().mockResolvedValue(result),
   } as unknown as BerufeApiClient;
@@ -56,6 +62,11 @@ describe("professional workspace API", () => {
         status: "draft",
         revisionStatus: "draft",
         hasPublishedRevision: false,
+        photo: {
+          current: null,
+          hasPublishedPhoto: false,
+          latestUpload: null,
+        },
         identity: {
           name: "Ana Souza",
           headline: "Elétrica residencial.",
@@ -92,6 +103,28 @@ describe("professional workspace API", () => {
       mapProfessionalWorkspace(workspaceData),
     );
     expect(client.GET).toHaveBeenCalledWith("/api/v1/professional/workspace");
+  });
+
+  it("attaches a processed photo to the existing professional workspace", async () => {
+    const client = apiClientReturning("PUT", {
+      data: { data: workspaceData, request_id: "workspace-photo" },
+      error: undefined,
+      response: new Response(null),
+    });
+
+    await attachProfessionalProfilePhoto(
+      client,
+      "12d12a91-582e-4f1b-aa6b-49b5fd7ce1eb",
+    );
+
+    expect(client.PUT).toHaveBeenCalledWith(
+      "/api/v1/professional/profile/photo",
+      {
+        body: {
+          media_upload_id: "12d12a91-582e-4f1b-aa6b-49b5fd7ce1eb",
+        },
+      },
+    );
   });
 
   it("persists only the current identity/contact surface", async () => {

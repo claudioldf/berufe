@@ -33,6 +33,24 @@ RSpec.describe MediaUploadProcessor do
     expect { storage.read(scope: :private, key: upload.quarantine_key) }.to raise_error(Errno::ENOENT)
   end
 
+  it "normalizes profile-photo PNG uploads into bounded private JPEG variants" do
+    body = Vips::Image.black(1_200, 1_800).pngsave_buffer
+    upload = create_uploaded(body:, content_type: "image/png", purpose: "profile_photo")
+
+    described_class.new.call(upload:, storage:)
+
+    upload.reload
+    expect(upload).to have_attributes(
+      state: "processed",
+      actual_content_type: "image/png",
+      sanitized_content_type: "image/jpeg",
+      width: 1_024,
+      height: 1_536
+    )
+    expect(upload.sanitized_key).to end_with(".jpg")
+    expect(storage.read(scope: :private, key: upload.sanitized_key)).to start_with("\xFF\xD8\xFF".b)
+  end
+
   it "deletes terminally invalid originals and does not make them retryable" do
     body = "\xFF\xD8\xFFnot-a-jpeg".b
     upload = create_uploaded(body:, content_type: "image/jpeg")
@@ -57,16 +75,16 @@ RSpec.describe MediaUploadProcessor do
 
   private
 
-  def create_uploaded(body:, content_type:)
-    upload = create_upload(content_type:, byte_size: body.bytesize)
+  def create_uploaded(body:, content_type:, purpose: "portfolio_image")
+    upload = create_upload(content_type:, byte_size: body.bytesize, purpose:)
     storage.write(scope: :private, key: upload.quarantine_key, body:, content_type:)
     upload
   end
 
-  def create_upload(content_type:, byte_size:)
+  def create_upload(content_type:, byte_size:, purpose: "portfolio_image")
     MediaUpload.create!(
       professional_profile: profile,
-      purpose: "portfolio_image",
+      purpose:,
       state: "uploaded",
       declared_content_type: content_type,
       declared_byte_size: byte_size,

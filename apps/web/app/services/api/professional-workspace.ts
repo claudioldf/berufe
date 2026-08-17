@@ -25,6 +25,25 @@ export function mapProfessionalWorkspace(
       status: data.profile.profile_status,
       revisionStatus: data.profile.revision_status,
       hasPublishedRevision: data.profile.has_published_revision,
+      photo: {
+        current: data.profile.photo.current
+          ? {
+              id: data.profile.photo.current.id,
+              status: data.profile.photo.current.status,
+              rejectionReason: data.profile.photo.current.rejection_reason,
+              submittedAt: data.profile.photo.current.submitted_at,
+            }
+          : null,
+        hasPublishedPhoto: data.profile.photo.has_published_photo,
+        latestUpload: data.profile.photo.latest_upload
+          ? {
+              id: data.profile.photo.latest_upload.id,
+              state: data.profile.photo.latest_upload.state,
+              failureCode: data.profile.photo.latest_upload.failure_code,
+              retryable: data.profile.photo.latest_upload.retryable,
+            }
+          : null,
+      },
       identity: {
         name: identity.display_name,
         headline: identity.headline,
@@ -162,6 +181,19 @@ export async function updateProfessionalProfile(
         ...supplyBody(draft, services, neighborhoods),
       },
     },
+  );
+  if (error || !data) throw requestError(error, response);
+
+  return mapProfessionalWorkspace(data.data);
+}
+
+export async function attachProfessionalProfilePhoto(
+  client: BerufeApiClient,
+  mediaUploadId: string,
+): Promise<ProfessionalWorkspace> {
+  const { data, error, response } = await client.PUT(
+    "/api/v1/professional/profile/photo",
+    { body: { media_upload_id: mediaUploadId } },
   );
   if (error || !data) throw requestError(error, response);
 

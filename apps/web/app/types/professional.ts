@@ -90,6 +90,34 @@ export interface ProfessionalProfileDraft {
 export type ProfessionalProfileStatus =
   "draft" | "pending_review" | "published" | "suspended";
 
+export type ProfessionalProfilePhotoStatus =
+  "pending_review" | "approved" | "rejected" | "hidden" | "superseded";
+
+export interface ProfessionalMediaUploadState {
+  id: string;
+  state:
+    | "authorized"
+    | "uploaded"
+    | "processing"
+    | "processed"
+    | "failed"
+    | "attached"
+    | "expired";
+  failureCode: string | null;
+  retryable: boolean;
+}
+
+export interface ProfessionalProfilePhotoState {
+  current: {
+    id: string;
+    status: ProfessionalProfilePhotoStatus;
+    rejectionReason: string | null;
+    submittedAt: string;
+  } | null;
+  hasPublishedPhoto: boolean;
+  latestUpload: ProfessionalMediaUploadState | null;
+}
+
 export interface ProfessionalWorkspace {
   profile: {
     id: string;
@@ -98,6 +126,7 @@ export interface ProfessionalWorkspace {
     revisionStatus:
       "draft" | "pending_review" | "approved" | "rejected" | "superseded";
     hasPublishedRevision: boolean;
+    photo: ProfessionalProfilePhotoState;
     identity: Pick<
       ProfessionalProfileDraft,
       | "name"

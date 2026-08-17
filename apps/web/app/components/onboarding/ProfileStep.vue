@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref, shallowRef } from "vue";
-import type { ProfessionalProfileDraft } from "~/types";
+import type {
+  ProfessionalProfileDraft,
+  ProfessionalProfilePhotoState,
+} from "~/types";
 import { validateOnboardingProfile } from "~/composables/useProfessionalOnboarding";
 
 const props = withDefaults(
@@ -8,11 +11,22 @@ const props = withDefaults(
     draft: ProfessionalProfileDraft;
     saving?: boolean;
     serverError?: string;
+    photo?: ProfessionalProfilePhotoState;
+    photoUploading?: boolean;
+    photoError?: string;
   }>(),
-  { saving: false, serverError: "" },
+  {
+    saving: false,
+    serverError: "",
+    photo: undefined,
+    photoUploading: false,
+    photoError: "",
+  },
 );
 const emit = defineEmits<{
   complete: [draft: ProfessionalProfileDraft];
+  photoSelect: [file: File];
+  photoRetry: [];
 }>();
 
 const form = ref<ProfessionalProfileDraft>({
@@ -56,7 +70,14 @@ function submit() {
         <UIcon name="i-lucide-circle-alert" /> {{ error || props.serverError }}
       </p>
       <DashboardProfileFormLayout>
-        <DashboardProfileIdentitySection v-model="form" />
+        <DashboardProfileIdentitySection
+          v-model="form"
+          :photo="props.photo"
+          :photo-uploading="props.photoUploading"
+          :photo-error="props.photoError"
+          @photo-select="emit('photoSelect', $event)"
+          @photo-retry="emit('photoRetry')"
+        />
       </DashboardProfileFormLayout>
       <footer class="onboarding-step-actions onboarding-step-actions--end">
         <UButton

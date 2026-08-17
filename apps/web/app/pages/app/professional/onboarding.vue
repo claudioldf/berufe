@@ -21,6 +21,10 @@ const {
   error: workspaceError,
   saveIdentity,
   saveSupply,
+  photoUploading,
+  photoError,
+  uploadPhoto,
+  retryPhoto,
 } = await useProfessionalWorkspace();
 if (workspaceError.value || !workspace.value) {
   throw createError({
@@ -69,5 +73,9 @@ useSeoMeta({
     :workspace="professionalWorkspace"
     :save-identity="saveOnboardingIdentity"
     :save-supply="saveOnboardingSupply"
+    :upload-photo="uploadPhoto"
+    :retry-photo="retryPhoto"
+    :photo-uploading="photoUploading"
+    :photo-error="photoError"
   />
 </template>

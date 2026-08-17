@@ -9,18 +9,23 @@ class MediaUploadProcessor
     return upload unless start_processing(upload, now:)
 
     body = storage.read(scope: :private, key: upload.quarantine_key)
-    result = @inspector.call(body:, declared_content_type: upload.declared_content_type)
-    sanitized_key = sanitized_key_for(upload, result.content_type)
+    result = @inspector.call(
+      body:,
+      declared_content_type: upload.declared_content_type,
+      purpose: upload.purpose
+    )
+    sanitized_key = sanitized_key_for(upload, result.sanitized_content_type)
     upload.with_lock do
       storage.write(
         scope: :private,
         key: sanitized_key,
         body: result.sanitized_body,
-        content_type: result.content_type
+        content_type: result.sanitized_content_type
       )
       upload.update!(
         state: "processed",
         actual_content_type: result.content_type,
+        sanitized_content_type: result.sanitized_content_type,
         actual_byte_size: result.byte_size,
         sanitized_byte_size: result.sanitized_body.bytesize,
         width: result.width,

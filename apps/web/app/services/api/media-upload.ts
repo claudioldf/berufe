@@ -95,3 +95,42 @@ export async function uploadMedia(
 
   return completeMediaUpload(client, authorization.media_upload.id);
 }
+
+interface MediaUploadWaitOptions {
+  intervalMs?: number;
+  maxAttempts?: number;
+  sleep?: (milliseconds: number) => Promise<void>;
+  onUpdate?: (upload: MediaUpload) => void;
+}
+
+const wait = (milliseconds: number) =>
+  new Promise<void>((resolve) => globalThis.setTimeout(resolve, milliseconds));
+
+export async function waitForMediaUpload(
+  client: BerufeApiClient,
+  initial: MediaUpload,
+  options: MediaUploadWaitOptions = {},
+): Promise<MediaUpload> {
+  const intervalMs = options.intervalMs ?? 500;
+  const maxAttempts = options.maxAttempts ?? 60;
+  const sleep = options.sleep ?? wait;
+  let upload = initial;
+
+  options.onUpdate?.(upload);
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    if (["processed", "attached", "failed", "expired"].includes(upload.state))
+      return upload;
+
+    await sleep(intervalMs);
+    upload = await fetchMediaUpload(client, upload.id);
+    options.onUpdate?.(upload);
+  }
+
+  throw new ApiRequestError({
+    code: "media_processing_timeout",
+    message:
+      "A imagem ainda está sendo processada. Tente novamente em instantes.",
+    fieldErrors: {},
+    requestId: "media-processing",
+  });
+}

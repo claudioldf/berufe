@@ -13,6 +13,7 @@ class MediaUploadSerializer
       declared_content_type: @upload.declared_content_type,
       declared_byte_size: @upload.declared_byte_size,
       actual_content_type: @upload.actual_content_type,
+      sanitized_content_type: @upload.sanitized_content_type,
       actual_byte_size: @upload.actual_byte_size,
       width: @upload.width,
       height: @upload.height,

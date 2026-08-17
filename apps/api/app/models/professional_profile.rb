@@ -14,6 +14,11 @@ class ProfessionalProfile < ApplicationRecord
     inverse_of: :professional_profile,
     dependent: :destroy
   has_many :media_uploads, dependent: :destroy
+  has_many :profile_photos,
+    class_name: "ProfessionalProfilePhoto",
+    dependent: :destroy
+  belongs_to :working_photo, class_name: "ProfessionalProfilePhoto", optional: true
+  belongs_to :published_photo, class_name: "ProfessionalProfilePhoto", optional: true
 
   attr_writer(*INITIAL_REVISION_FIELDS)
 
@@ -26,6 +31,7 @@ class ProfessionalProfile < ApplicationRecord
   validates :public_slug, format: {with: /\A[a-z0-9]+(?:-[a-z0-9]+)*\z/}, uniqueness: true
   validate :initial_social_urls_are_canonical, on: :create
   validate :revision_pointers_belong_to_profile
+  validate :photo_pointers_belong_to_profile
 
   before_validation :normalize_initial_fields, on: :create
   before_validation :assign_public_slug, on: :create
@@ -74,6 +80,12 @@ class ProfessionalProfile < ApplicationRecord
   def revision_pointers_belong_to_profile
     [working_revision, published_revision].compact.each do |revision|
       errors.add(:base, :invalid) unless revision.professional_profile_id == id
+    end
+  end
+
+  def photo_pointers_belong_to_profile
+    [working_photo, published_photo].compact.each do |photo|
+      errors.add(:base, :invalid) unless photo.professional_profile_id == id
     end
   end
 end

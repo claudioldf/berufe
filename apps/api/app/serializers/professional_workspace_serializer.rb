@@ -13,6 +13,7 @@ class ProfessionalWorkspaceSerializer
         profile_status: profile.profile_status,
         revision_status: profile.working_revision.status,
         has_published_revision: profile.published_revision.present?,
+        photo: serialized_photo,
         identity: {
           display_name: profile.display_name,
           headline: profile.headline.to_s,
@@ -41,6 +42,22 @@ class ProfessionalWorkspaceSerializer
         note: selection.note
       }
     end
+  end
+
+  def serialized_photo
+    current = profile.working_photo
+    latest_upload = profile.media_uploads.where(purpose: "profile_photo").order(created_at: :desc, id: :desc).first
+    latest_upload = nil if latest_upload&.attached? && current&.media_upload_id == latest_upload.id
+    {
+      current: current && {
+        id: current.id,
+        status: current.status,
+        rejection_reason: current.rejection_reason,
+        submitted_at: current.submitted_at.iso8601
+      },
+      has_published_photo: profile.published_photo.present?,
+      latest_upload: latest_upload && MediaUploadSerializer.new(latest_upload).as_json
+    }
   end
 
   def serialized_coverage

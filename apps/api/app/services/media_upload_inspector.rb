@@ -12,9 +12,16 @@ class MediaUploadInspector
     end
   end
 
-  Result = Data.define(:content_type, :byte_size, :width, :height, :sanitized_body)
+  Result = Data.define(
+    :content_type,
+    :sanitized_content_type,
+    :byte_size,
+    :width,
+    :height,
+    :sanitized_body
+  )
 
-  def call(body:, declared_content_type:)
+  def call(body:, declared_content_type:, purpose: nil)
     content_type = content_type_from_signature(body)
     raise Invalid, "invalid_signature" unless content_type
     raise Invalid, "content_type_mismatch" unless content_type == declared_content_type
@@ -24,11 +31,14 @@ class MediaUploadInspector
     raise Invalid, "pixel_limit_exceeded" if image.width * image.height > MediaUpload::MAX_PIXELS
 
     normalized = image.autorot
-    sanitized_body = encode(normalized, content_type)
+    normalized = profile_photo_variant(normalized) if purpose == "profile_photo"
+    sanitized_content_type = (purpose == "profile_photo") ? "image/jpeg" : content_type
+    sanitized_body = encode(normalized, sanitized_content_type)
     raise Invalid, "sanitized_image_too_large" if sanitized_body.bytesize > MediaUpload::MAX_BYTE_SIZE
 
     Result.new(
       content_type:,
+      sanitized_content_type:,
       byte_size: body.bytesize,
       width: normalized.width,
       height: normalized.height,
@@ -58,5 +68,11 @@ class MediaUploadInspector
     when "image/png"
       image.pngsave_buffer(compression: 9, strip: true)
     end
+  end
+
+  def profile_photo_variant(image)
+    scale = [1024.0 / image.width, 1536.0 / image.height, 1.0].min
+    variant = (scale < 1.0) ? image.resize(scale) : image
+    variant.has_alpha? ? variant.flatten(background: [255, 255, 255]) : variant
   end
 end

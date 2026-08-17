@@ -23,6 +23,10 @@ const props = defineProps<{
   saveSupply: (
     draft: ProfessionalProfileDraft,
   ) => Promise<ProfessionalProfileDraft>;
+  uploadPhoto: (file: File) => Promise<unknown>;
+  retryPhoto: () => Promise<unknown>;
+  photoUploading?: boolean;
+  photoError?: string;
 }>();
 
 const route = useRoute();
@@ -111,6 +115,22 @@ async function handleProfile(draft: ProfessionalProfileDraft) {
 
 async function handleServices(draft: ProfessionalProfileDraft) {
   if (await completeServices(draft)) void goToStep("portfolio");
+}
+
+async function handlePhoto(file: File) {
+  try {
+    await props.uploadPhoto(file);
+  } catch {
+    // The shared photo state renders the safe server error in this step.
+  }
+}
+
+async function handlePhotoRetry() {
+  try {
+    await props.retryPhoto();
+  } catch {
+    // The shared photo state renders the safe server error in this step.
+  }
 }
 
 function handlePortfolio(draft: PortfolioItemDraft) {
@@ -225,7 +245,12 @@ watch(
             :draft="editableProfile"
             :saving="profileSaving"
             :server-error="profileError"
+            :photo="workspace.profile.photo"
+            :photo-uploading="props.photoUploading"
+            :photo-error="props.photoError"
             @complete="handleProfile"
+            @photo-select="handlePhoto"
+            @photo-retry="handlePhotoRetry"
           />
           <OnboardingServicesStep
             v-else-if="activeStep === 'services'"

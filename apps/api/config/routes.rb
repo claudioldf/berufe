@@ -9,6 +9,7 @@ Rails.application.routes.draw do
       namespace :professional do
         resource :workspace, only: :show, controller: :workspaces
         resource :profile, only: :update, controller: :profiles
+        put "profile/photo", to: "profile_photos#update"
         resources :media_uploads, only: %i[create show], path: "media-uploads" do
           member do
             put :content

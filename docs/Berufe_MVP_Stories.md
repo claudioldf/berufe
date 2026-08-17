@@ -502,7 +502,7 @@ Apply these rules whenever they are relevant to the story:
 
 ### S026 — Upload and moderate the profile photo
 
-**Status:** PENDING
+**Status:** DONE
 
 **Story:** As a professional, I want to add a profile photo so that customers can recognize me while unsafe or unapproved images remain private.
 

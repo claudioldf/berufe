@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_17_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_17_102000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -201,6 +201,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_100000) do
     t.text "purpose", null: false
     t.text "quarantine_key", null: false
     t.bigint "sanitized_byte_size"
+    t.text "sanitized_content_type"
     t.text "sanitized_key"
     t.text "state", default: "authorized", null: false
     t.datetime "updated_at", null: false
@@ -216,6 +217,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_100000) do
     t.check_constraint "declared_content_type = ANY (ARRAY['image/jpeg'::text, 'image/png'::text])", name: "media_uploads_supported_declared_type"
     t.check_constraint "processing_attempts >= 0", name: "media_uploads_nonnegative_attempts"
     t.check_constraint "purpose = ANY (ARRAY['profile_photo'::text, 'portfolio_image'::text, 'verification_identity'::text])", name: "media_uploads_known_purpose"
+    t.check_constraint "sanitized_content_type IS NULL OR (sanitized_content_type = ANY (ARRAY['image/jpeg'::text, 'image/png'::text]))", name: "media_uploads_supported_sanitized_type"
     t.check_constraint "state = ANY (ARRAY['authorized'::text, 'uploaded'::text, 'processing'::text, 'processed'::text, 'failed'::text, 'attached'::text, 'expired'::text])", name: "media_uploads_known_state"
     t.check_constraint "width IS NULL AND height IS NULL OR width > 0 AND height > 0", name: "media_uploads_valid_dimensions"
   end
@@ -275,6 +277,33 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_100000) do
     t.check_constraint "subject_digest ~ '^[0-9a-f]{64}$'::text", name: "otp_request_counters_digest_format"
   end
 
+  create_table "professional_profile_photos", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.bigint "byte_size", null: false
+    t.text "content_type", default: "image/jpeg", null: false
+    t.datetime "created_at", null: false
+    t.integer "height", null: false
+    t.datetime "hidden_at"
+    t.uuid "media_upload_id", null: false
+    t.text "private_key", null: false
+    t.uuid "professional_profile_id", null: false
+    t.text "public_key"
+    t.text "rejection_reason"
+    t.datetime "reviewed_at"
+    t.text "status", default: "pending_review", null: false
+    t.datetime "submitted_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "width", null: false
+    t.index ["media_upload_id"], name: "index_professional_profile_photos_on_media_upload_id", unique: true
+    t.index ["private_key"], name: "index_professional_profile_photos_on_private_key", unique: true
+    t.index ["professional_profile_id"], name: "idx_profile_photos_one_approved", unique: true, where: "(status = 'approved'::text)"
+    t.index ["professional_profile_id"], name: "idx_profile_photos_one_pending", unique: true, where: "(status = 'pending_review'::text)"
+    t.index ["professional_profile_id"], name: "index_professional_profile_photos_on_professional_profile_id"
+    t.index ["public_key"], name: "index_professional_profile_photos_on_public_key", unique: true, where: "(public_key IS NOT NULL)"
+    t.check_constraint "byte_size > 0 AND width >= 1 AND width <= 1024 AND height >= 1 AND height <= 1536", name: "professional_profile_photos_valid_variant"
+    t.check_constraint "content_type = 'image/jpeg'::text", name: "professional_profile_photos_jpeg_only"
+    t.check_constraint "status = ANY (ARRAY['pending_review'::text, 'approved'::text, 'rejected'::text, 'hidden'::text, 'superseded'::text])", name: "professional_profile_photos_known_status"
+  end
+
   create_table "professional_profile_revisions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.text "bio"
     t.datetime "created_at", null: false
@@ -331,14 +360,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_100000) do
     t.datetime "created_at", null: false
     t.text "profile_status", default: "draft", null: false
     t.text "public_slug", null: false
+    t.uuid "published_photo_id"
     t.uuid "published_revision_id"
     t.datetime "updated_at", null: false
     t.uuid "user_account_id", null: false
+    t.uuid "working_photo_id"
     t.uuid "working_revision_id"
     t.index ["profile_status"], name: "index_professional_profiles_on_profile_status"
     t.index ["public_slug"], name: "index_professional_profiles_on_public_slug", unique: true
+    t.index ["published_photo_id"], name: "index_professional_profiles_on_published_photo_id", unique: true
     t.index ["published_revision_id"], name: "index_professional_profiles_on_published_revision_id", unique: true
     t.index ["user_account_id"], name: "index_professional_profiles_on_user_account_id", unique: true
+    t.index ["working_photo_id"], name: "index_professional_profiles_on_working_photo_id", unique: true
     t.index ["working_revision_id"], name: "index_professional_profiles_on_working_revision_id", unique: true
     t.check_constraint "profile_status = ANY (ARRAY['draft'::text, 'pending_review'::text, 'published'::text, 'suspended'::text])", name: "professional_profiles_known_status"
     t.check_constraint "public_slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'::text", name: "professional_profiles_public_slug_format"
@@ -411,11 +444,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_100000) do
   add_foreign_key "application_sessions", "user_accounts"
   add_foreign_key "catalog_change_events", "user_accounts", column: "admin_user_id"
   add_foreign_key "media_uploads", "professional_profiles"
+  add_foreign_key "professional_profile_photos", "media_uploads"
+  add_foreign_key "professional_profile_photos", "professional_profiles"
   add_foreign_key "professional_profile_revisions", "professional_profiles"
   add_foreign_key "professional_profile_service_areas", "neighborhoods", column: "neighborhood_code", primary_key: "code"
   add_foreign_key "professional_profile_service_areas", "professional_profile_revisions"
   add_foreign_key "professional_profile_services", "professional_profile_revisions"
   add_foreign_key "professional_profile_services", "services"
+  add_foreign_key "professional_profiles", "professional_profile_photos", column: "published_photo_id"
+  add_foreign_key "professional_profiles", "professional_profile_photos", column: "working_photo_id"
   add_foreign_key "professional_profiles", "professional_profile_revisions", column: "published_revision_id"
   add_foreign_key "professional_profiles", "professional_profile_revisions", column: "working_revision_id"
   add_foreign_key "professional_profiles", "user_accounts"

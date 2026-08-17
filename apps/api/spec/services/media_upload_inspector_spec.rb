@@ -18,6 +18,26 @@ RSpec.describe MediaUploadInspector do
     expect([decoded.width, decoded.height]).to eq([12, 8])
   end
 
+  it "creates a metadata-free bounded JPEG variant for profile photos" do
+    body = Vips::Image.black(1_200, 1_800).pngsave_buffer
+
+    result = described_class.new.call(
+      body:,
+      declared_content_type: "image/png",
+      purpose: "profile_photo"
+    )
+
+    expect(result).to have_attributes(
+      content_type: "image/png",
+      sanitized_content_type: "image/jpeg",
+      width: 1_024,
+      height: 1_536
+    )
+    expect(result.sanitized_body).to start_with("\xFF\xD8\xFF".b)
+    decoded = Vips::Image.new_from_buffer(result.sanitized_body, "")
+    expect([decoded.width, decoded.height]).to eq([1_024, 1_536])
+  end
+
   it "rejects signature mismatches and undecodable payloads" do
     jpeg = Vips::Image.black(2, 2).jpegsave_buffer
 
