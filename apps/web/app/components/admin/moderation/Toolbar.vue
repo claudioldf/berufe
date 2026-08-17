@@ -1,7 +1,24 @@
 <script setup lang="ts">
-const filter = defineModel<string>("filter", { required: true });
-const search = defineModel<string>("search", { required: true });
-defineProps<{ types: string[] }>();
+import type { ModerationStatusFilter, ModerationTypeFilter } from "~/types";
+
+defineProps<{
+  typeFilter: ModerationTypeFilter;
+  statusFilter: ModerationStatusFilter;
+  search: string;
+}>();
+defineEmits<{
+  type: [value: ModerationTypeFilter];
+  status: [value: ModerationStatusFilter];
+  search: [value: string];
+}>();
+
+const types: { value: ModerationTypeFilter; label: string }[] = [
+  { value: "all", label: "Todos" },
+  { value: "profile_revision", label: "Perfil" },
+  { value: "profile_photo", label: "Foto" },
+  { value: "portfolio_item", label: "Portfólio" },
+  { value: "verification_request", label: "Verificação" },
+];
 </script>
 
 <template>
@@ -9,25 +26,48 @@ defineProps<{ types: string[] }>();
     <div class="moderation__filters" aria-label="Filtrar fila">
       <button
         v-for="type in types"
-        :key="type"
+        :key="type.value"
         type="button"
-        :class="{ active: filter === type }"
-        :aria-pressed="filter === type"
-        @click="filter = type"
+        :class="{ active: typeFilter === type.value }"
+        :aria-pressed="typeFilter === type.value"
+        @click="$emit('type', type.value)"
       >
-        {{ type }}
+        {{ type.label }}
       </button>
     </div>
+    <label class="moderation__status" for="moderation-status">
+      <span class="sr-only">Filtrar por status</span>
+      <select
+        id="moderation-status"
+        :value="statusFilter"
+        name="moderation-status"
+        @change="
+          $emit(
+            'status',
+            ($event.target as HTMLSelectElement)
+              .value as ModerationStatusFilter,
+          )
+        "
+      >
+        <option value="pending_review">Aguardando análise</option>
+        <option value="approved">Aprovados</option>
+        <option value="rejected">Rejeitados</option>
+        <option value="hidden">Ocultos</option>
+        <option value="all">Todos os status</option>
+      </select>
+    </label>
     <label for="moderation-search">
       <UIcon name="i-lucide-search" />
       <span class="sr-only">Buscar na fila</span>
       <input
         id="moderation-search"
-        v-model="search"
+        :value="search"
         name="moderation-search"
         type="search"
         autocomplete="off"
+        maxlength="100"
         placeholder="Buscar na fila…"
+        @input="$emit('search', ($event.target as HTMLInputElement).value)"
       />
     </label>
   </div>

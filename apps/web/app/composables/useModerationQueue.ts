@@ -1,68 +1,260 @@
-import { computed, ref, shallowRef, watch } from "vue";
-import type { ModerationQueueItem } from "~/types";
-import { normalizeSearchText } from "~/utils/text";
+import { computed, onScopeDispose, readonly, shallowRef, watch } from "vue";
+import type {
+  ModerationDecision,
+  ModerationFilters,
+  ModerationQueue,
+  ModerationQueueItem,
+  ModerationStatusFilter,
+  ModerationTypeFilter,
+} from "~/types";
+import {
+  createAdminModerationDecision,
+  fetchAdminModeration,
+  fetchAdminModerationMedia,
+} from "~/services/api/admin-moderation";
+import { useApiClient } from "~/services/api/client";
 
-export function useModerationQueue(initialQueue: ModerationQueueItem[]) {
-  const queue = ref<ModerationQueueItem[]>([...initialQueue]);
-  const selectedId = shallowRef(queue.value[0]?.id ?? "");
-  const typeFilter = shallowRef("Todos");
+const emptyQueue = (): ModerationQueue => ({
+  items: [],
+  meta: { page: 1, perPage: 20, totalCount: 0, totalPages: 0 },
+  summary: {
+    pendingCount: 0,
+    reviewedTodayCount: 0,
+    oldestPendingAt: null,
+    oldestPendingAge: "—",
+  },
+});
+
+interface ModerationQueueDependencies {
+  load?: (filters: ModerationFilters) => Promise<ModerationQueue>;
+  decide?: (
+    item: ModerationQueueItem,
+    action: ModerationDecision,
+    filters: ModerationFilters,
+    attributes: { reason?: string; note?: string },
+  ) => Promise<ModerationQueue>;
+  loadMedia?: (item: ModerationQueueItem) => Promise<Blob>;
+  createObjectUrl?: (blob: Blob) => string;
+  revokeObjectUrl?: (url: string) => void;
+}
+
+export function useModerationQueue(
+  dependencies: ModerationQueueDependencies = {},
+) {
+  const client = useApiClient();
+  const queue = shallowRef<ModerationQueue>(emptyQueue());
+  const selectedId = shallowRef("");
+  const typeFilter = shallowRef<ModerationTypeFilter>("all");
+  const statusFilter = shallowRef<ModerationStatusFilter>("pending_review");
   const searchQuery = shallowRef("");
-  const rejectionOpen = shallowRef(false);
-  const rejectionReason = shallowRef("");
+  const page = shallowRef(1);
+  const note = shallowRef("");
+  const isLoading = shallowRef(false);
+  const isMutating = shallowRef(false);
+  const loadError = shallowRef("");
+  const mediaUrl = shallowRef("");
+  const mediaLoading = shallowRef(false);
+  const mediaError = shallowRef("");
+  let loadSequence = 0;
+  let searchTimer: ReturnType<typeof setTimeout> | undefined;
+  let mediaSequence = 0;
+  let mediaExpiryTimer: ReturnType<typeof setTimeout> | undefined;
 
-  const types = computed(() => [
-    "Todos",
-    ...new Set(queue.value.map((item) => item.type)),
-  ]);
-  const filteredQueue = computed(() => {
-    const search = normalizeSearchText(searchQuery.value);
-    return queue.value.filter((item) => {
-      const matchesType =
-        typeFilter.value === "Todos" || item.type === typeFilter.value;
-      const matchesSearch =
-        !search ||
-        normalizeSearchText(
-          `${item.title} ${item.subtitle} ${item.type} ${item.id}`,
-        ).includes(search);
-      return matchesType && matchesSearch;
-    });
-  });
-  const selected = computed(
-    () =>
-      filteredQueue.value.find((item) => item.id === selectedId.value) ??
-      filteredQueue.value[0],
+  const filters = computed<ModerationFilters>(() => ({
+    type: typeFilter.value,
+    status: statusFilter.value,
+    search: searchQuery.value.trim(),
+    page: page.value,
+    perPage: queue.value.meta.perPage,
+  }));
+  const selected = computed(() =>
+    queue.value.items.find((item) => item.id === selectedId.value),
   );
+  const loadQueue =
+    dependencies.load ?? ((input) => fetchAdminModeration(client, input));
+  const decideTarget =
+    dependencies.decide ??
+    ((item, action, input, attributes) =>
+      createAdminModerationDecision(
+        client,
+        item.targetType,
+        item.id,
+        action,
+        input,
+        attributes,
+      ));
+  const loadTargetMedia =
+    dependencies.loadMedia ??
+    ((item) => {
+      if (
+        item.targetType !== "profile_photo" &&
+        item.targetType !== "portfolio_item"
+      ) {
+        throw new Error("Este item não possui imagem de moderação.");
+      }
+      return fetchAdminModerationMedia(client, item.targetType, item.id);
+    });
+  const createObjectUrl =
+    dependencies.createObjectUrl ?? ((blob: Blob) => URL.createObjectURL(blob));
+  const revokeObjectUrl =
+    dependencies.revokeObjectUrl ?? ((url: string) => URL.revokeObjectURL(url));
 
-  watch(filteredQueue, (items) => {
-    if (!items.some((item) => item.id === selectedId.value)) {
-      selectedId.value = items[0]?.id ?? "";
+  function adopt(nextQueue: ModerationQueue) {
+    queue.value = nextQueue;
+    if (!nextQueue.items.some((item) => item.id === selectedId.value)) {
+      selectedId.value = nextQueue.items[0]?.id ?? "";
     }
-  });
+  }
+
+  async function load() {
+    const sequence = ++loadSequence;
+    isLoading.value = true;
+    loadError.value = "";
+    try {
+      const result = await loadQueue(filters.value);
+      if (sequence === loadSequence) adopt(result);
+    } catch (error) {
+      if (sequence === loadSequence) {
+        loadError.value =
+          error instanceof Error
+            ? error.message
+            : "Não foi possível carregar a fila de moderação.";
+      }
+      throw error;
+    } finally {
+      if (sequence === loadSequence) isLoading.value = false;
+    }
+  }
+
+  async function decide(
+    action: ModerationDecision,
+    attributes: { reason?: string } = {},
+  ) {
+    const item = selected.value;
+    if (!item || isMutating.value) return null;
+
+    isMutating.value = true;
+    try {
+      const result = await decideTarget(item, action, filters.value, {
+        reason: attributes.reason?.trim(),
+        note: note.value.trim(),
+      });
+      adopt(result);
+      note.value = "";
+      if (result.items.length === 0 && page.value > 1) {
+        page.value -= 1;
+        await load();
+      }
+      return item;
+    } finally {
+      isMutating.value = false;
+    }
+  }
+
+  function releaseMedia() {
+    mediaSequence += 1;
+    if (mediaExpiryTimer) clearTimeout(mediaExpiryTimer);
+    mediaExpiryTimer = undefined;
+    if (mediaUrl.value) revokeObjectUrl(mediaUrl.value);
+    mediaUrl.value = "";
+    mediaLoading.value = false;
+    mediaError.value = "";
+  }
+
+  async function loadSelectedMedia(item: ModerationQueueItem) {
+    releaseMedia();
+    if (!item.hasMedia) return;
+
+    const sequence = ++mediaSequence;
+    mediaLoading.value = true;
+    try {
+      const blob = await loadTargetMedia(item);
+      if (sequence !== mediaSequence) return;
+      mediaUrl.value = createObjectUrl(blob);
+      mediaExpiryTimer = setTimeout(releaseMedia, 60_000);
+    } catch (error) {
+      if (sequence === mediaSequence) {
+        mediaError.value =
+          error instanceof Error
+            ? error.message
+            : "Não foi possível abrir a imagem privada.";
+      }
+    } finally {
+      if (sequence === mediaSequence) mediaLoading.value = false;
+    }
+  }
 
   function select(id: string) {
     selectedId.value = id;
   }
 
-  function decide() {
-    const item = selected.value;
-    if (!item) return null;
-    queue.value = queue.value.filter((queueItem) => queueItem.id !== item.id);
-    rejectionOpen.value = false;
-    rejectionReason.value = "";
-    return item;
+  function setTypeFilter(value: ModerationTypeFilter) {
+    page.value = 1;
+    typeFilter.value = value;
   }
 
+  function setStatusFilter(value: ModerationStatusFilter) {
+    page.value = 1;
+    statusFilter.value = value;
+  }
+
+  function setSearchQuery(value: string) {
+    page.value = 1;
+    searchQuery.value = value.slice(0, 100);
+  }
+
+  function setPage(value: number) {
+    const lastPage = Math.max(1, queue.value.meta.totalPages);
+    page.value = Math.min(Math.max(1, value), lastPage);
+  }
+
+  function setNote(value: string) {
+    note.value = value.slice(0, 500);
+  }
+
+  function refreshSafely() {
+    void load().catch(() => undefined);
+  }
+
+  watch([typeFilter, statusFilter, searchQuery, page], (current, previous) => {
+    if (searchTimer) clearTimeout(searchTimer);
+    if (current[2] !== previous[2]) {
+      searchTimer = setTimeout(refreshSafely, 250);
+    } else {
+      refreshSafely();
+    }
+  });
+  watch(selected, (item) => {
+    if (item) void loadSelectedMedia(item);
+    else releaseMedia();
+  });
+  onScopeDispose(() => {
+    if (searchTimer) clearTimeout(searchTimer);
+    releaseMedia();
+  });
+
   return {
-    queue,
-    selectedId,
-    typeFilter,
-    searchQuery,
-    rejectionOpen,
-    rejectionReason,
-    types,
-    filteredQueue,
+    queue: readonly(queue),
+    selectedId: readonly(selectedId),
     selected,
+    typeFilter: readonly(typeFilter),
+    statusFilter: readonly(statusFilter),
+    searchQuery: readonly(searchQuery),
+    note: readonly(note),
+    isLoading: readonly(isLoading),
+    isMutating: readonly(isMutating),
+    loadError: readonly(loadError),
+    mediaUrl: readonly(mediaUrl),
+    mediaLoading: readonly(mediaLoading),
+    mediaError: readonly(mediaError),
+    load,
     select,
+    setTypeFilter,
+    setStatusFilter,
+    setSearchQuery,
+    setPage,
+    setNote,
     decide,
+    releaseMedia,
   };
 }

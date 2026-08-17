@@ -719,7 +719,7 @@ The public promise depends on accurate evidence and controlled content. With onl
 
 1. Admins sign in with an admin role and stronger authentication controls.
 2. The queue groups pending items by type and oldest submission.
-3. The reviewer sees only the information required for that review.
+3. The reviewer sees only the information required for that review. The existing content-preview block retrieves regenerated profile-photo and portfolio images through authenticated, no-store Rails responses and records the administrator, target, request, and access time without returning a storage key or permanent private URL.
 4. They approve, reject with a private reason, or hide previously approved content.
 5. Every admin decision is recorded in an audit trail.
 6. Public pages never show pending or rejected content.
@@ -739,6 +739,17 @@ Public pages expose a visible Berufe support/report contact. The founding-cohort
 | `reason`        | text      | Private; required for rejection/hide                                             |
 | `admin_user_id` | UUID      | Foreign reference to admin account                                               |
 | `created_at`    | timestamp | Required                                                                         |
+
+**`moderation_media_access_event`**
+
+| Field           | Type      | Rules                                                               |
+| --------------- | --------- | ------------------------------------------------------------------- |
+| `id`            | UUID      | Primary key                                                         |
+| `target_type`   | enum      | `profile_photo` or `portfolio_item`                                 |
+| `target_id`     | UUID      | Required media-bearing moderation target                            |
+| `admin_user_id` | UUID      | Required administrator account                                      |
+| `request_id`    | text      | Required request correlation ID                                     |
+| `created_at`    | timestamp | Required; append-only and retained with moderation audit metadata   |
 
 #### 5. Explicitly not in MVP
 

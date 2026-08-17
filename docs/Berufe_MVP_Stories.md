@@ -448,7 +448,7 @@ Apply these rules whenever they are relevant to the story:
 
 ### S023 — Build the shared moderation queue and audit trail
 
-**Status:** PENDING
+**Status:** DONE
 
 **Story:** As an admin, I want one oldest-first queue for pending content so that the founding cohort can be reviewed consistently.
 
@@ -456,6 +456,7 @@ Apply these rules whenever they are relevant to the story:
 
 - The admin area lists profile revisions/photos, portfolio items, and identity-verification requests oldest first, with pagination plus type/status/search filters. Accepted professional relationships join this queue in Increment 4.
 - The reviewer sees only fields and files required for the selected decision.
+- The existing review preview loads regenerated profile-photo and portfolio images through authenticated, no-store Rails responses with an immutable admin access record; storage keys and permanent private URLs never reach Nuxt.
 - Approve, reject, hide, and restore actions create immutable `moderation_actions` with actor, target, action, private reason, time, and request ID.
 - Rejection and hide require a private reason.
 - Pending, rejected, and hidden items never appear through public scopes.

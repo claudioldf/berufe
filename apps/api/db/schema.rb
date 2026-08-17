@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_17_104000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_17_110000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -220,6 +220,39 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_104000) do
     t.check_constraint "sanitized_content_type IS NULL OR (sanitized_content_type = ANY (ARRAY['image/jpeg'::text, 'image/png'::text]))", name: "media_uploads_supported_sanitized_type"
     t.check_constraint "state = ANY (ARRAY['authorized'::text, 'uploaded'::text, 'processing'::text, 'processed'::text, 'failed'::text, 'attached'::text, 'expired'::text])", name: "media_uploads_known_state"
     t.check_constraint "width IS NULL AND height IS NULL OR width > 0 AND height > 0", name: "media_uploads_valid_dimensions"
+  end
+
+  create_table "moderation_actions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.text "action", null: false
+    t.uuid "admin_user_id", null: false
+    t.datetime "created_at", null: false
+    t.text "note"
+    t.text "reason"
+    t.text "request_id", null: false
+    t.uuid "target_id", null: false
+    t.text "target_type", null: false
+    t.index ["admin_user_id", "created_at"], name: "index_moderation_actions_on_admin_user_id_and_created_at"
+    t.index ["admin_user_id"], name: "index_moderation_actions_on_admin_user_id"
+    t.index ["target_type", "target_id", "created_at"], name: "idx_moderation_actions_target_created"
+    t.check_constraint "(action <> ALL (ARRAY['rejected'::text, 'hidden'::text])) OR reason IS NOT NULL AND char_length(btrim(reason)) >= 10 AND char_length(btrim(reason)) <= 500", name: "moderation_actions_required_reason"
+    t.check_constraint "action = ANY (ARRAY['approved'::text, 'rejected'::text, 'hidden'::text, 'restored'::text])", name: "moderation_actions_known_action"
+    t.check_constraint "note IS NULL OR char_length(btrim(note)) >= 1 AND char_length(btrim(note)) <= 500", name: "moderation_actions_note_length"
+    t.check_constraint "reason IS NULL OR char_length(btrim(reason)) >= 1 AND char_length(btrim(reason)) <= 500", name: "moderation_actions_reason_length"
+    t.check_constraint "request_id ~ '^[A-Za-z0-9._-]{1,100}$'::text", name: "moderation_actions_request_id_format"
+    t.check_constraint "target_type = ANY (ARRAY['profile_revision'::text, 'profile_photo'::text, 'portfolio_item'::text, 'verification_request'::text])", name: "moderation_actions_known_target"
+  end
+
+  create_table "moderation_media_access_events", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "admin_user_id", null: false
+    t.datetime "created_at", null: false
+    t.text "request_id", null: false
+    t.uuid "target_id", null: false
+    t.text "target_type", null: false
+    t.index ["admin_user_id", "created_at"], name: "idx_moderation_media_access_admin_created"
+    t.index ["admin_user_id"], name: "index_moderation_media_access_events_on_admin_user_id"
+    t.index ["target_type", "target_id", "created_at"], name: "idx_moderation_media_access_target_created"
+    t.check_constraint "request_id ~ '^[A-Za-z0-9._-]{1,100}$'::text", name: "moderation_media_access_request_id_format"
+    t.check_constraint "target_type = ANY (ARRAY['profile_photo'::text, 'portfolio_item'::text])", name: "moderation_media_access_known_target"
   end
 
   create_table "neighborhoods", primary_key: "code", id: :text, force: :cascade do |t|
@@ -514,6 +547,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_104000) do
   add_foreign_key "application_sessions", "user_accounts"
   add_foreign_key "catalog_change_events", "user_accounts", column: "admin_user_id"
   add_foreign_key "media_uploads", "professional_profiles"
+  add_foreign_key "moderation_actions", "user_accounts", column: "admin_user_id"
+  add_foreign_key "moderation_media_access_events", "user_accounts", column: "admin_user_id"
   add_foreign_key "portfolio_items", "media_uploads"
   add_foreign_key "portfolio_items", "professional_profiles"
   add_foreign_key "portfolio_items", "services"

@@ -423,6 +423,119 @@ paths:
           $ref: "#/components/responses/AdminCatalogInvalid"
         "503":
           $ref: "#/components/responses/AdminCatalogUnavailable"
+  /api/v1/admin/moderation:
+    get:
+      operationId: getAdminModerationQueue
+      summary: Read the shared professional-supply moderation queue
+      tags:
+        - Moderation
+      security:
+        - applicationSession: []
+      parameters:
+        - $ref: "#/components/parameters/ModerationType"
+        - $ref: "#/components/parameters/ModerationStatus"
+        - $ref: "#/components/parameters/ModerationSearch"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/ModerationPageSize"
+      responses:
+        "200":
+          description: Oldest-first moderation work and server-owned summary counts.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminModerationResponse"
+        "401":
+          $ref: "#/components/responses/AdminModerationUnauthorized"
+        "422":
+          $ref: "#/components/responses/AdminModerationInvalid"
+  /api/v1/admin/moderation/{target_type}/{target_id}/decisions:
+    parameters:
+      - $ref: "#/components/parameters/ModerationTargetType"
+      - $ref: "#/components/parameters/ModerationTargetId"
+    post:
+      operationId: createAdminModerationDecision
+      summary: Append an audited moderation decision and refresh the queue
+      tags:
+        - Moderation
+      security:
+        - applicationSession: []
+      parameters:
+        - $ref: "#/components/parameters/ModerationType"
+        - $ref: "#/components/parameters/ModerationStatus"
+        - $ref: "#/components/parameters/ModerationSearch"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/ModerationPageSize"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ModerationDecisionRequest"
+      responses:
+        "200":
+          description: The decision and immutable audit record were committed together.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminModerationResponse"
+        "401":
+          $ref: "#/components/responses/AdminModerationUnauthorized"
+        "403":
+          $ref: "#/components/responses/AdminModerationForbidden"
+        "404":
+          $ref: "#/components/responses/AdminModerationNotFound"
+        "409":
+          $ref: "#/components/responses/AdminModerationConflict"
+        "422":
+          $ref: "#/components/responses/AdminModerationInvalid"
+  /api/v1/admin/moderation/{target_type}/{target_id}/media:
+    parameters:
+      - $ref: "#/components/parameters/ModerationMediaTargetType"
+      - $ref: "#/components/parameters/ModerationTargetId"
+    get:
+      operationId: getAdminModerationMedia
+      summary: Read a regenerated private image for in-place moderation preview
+      tags:
+        - Moderation
+      security:
+        - applicationSession: []
+      responses:
+        "200":
+          description: The regenerated private image; access is recorded immutably.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+            Content-Disposition:
+              schema:
+                type: string
+                pattern: '^inline; filename="berufe-analise-(profile_photo|portfolio_item)-[a-f0-9-]+\.(jpg|png)"'
+            X-Content-Type-Options:
+              schema:
+                type: string
+                const: nosniff
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+        "401":
+          $ref: "#/components/responses/AdminModerationUnauthorized"
+        "404":
+          $ref: "#/components/responses/AdminModerationNotFound"
   /api/v1/catalog:
     get:
       operationId: getPublicCatalog
@@ -1230,6 +1343,70 @@ components:
       schema:
         type: string
         format: uuid
+    ModerationType:
+      name: type
+      in: query
+      description: Moderation target family shown by the existing type control.
+      schema:
+        type: string
+        default: all
+        enum:
+          - all
+          - profile_revision
+          - profile_photo
+          - portfolio_item
+          - verification_request
+    ModerationStatus:
+      name: status
+      in: query
+      description: Moderation workflow state.
+      schema:
+        type: string
+        default: pending_review
+        enum:
+          - pending_review
+          - approved
+          - rejected
+          - hidden
+          - all
+    ModerationSearch:
+      name: search
+      in: query
+      description: Accent-insensitive search across the safe queue presentation.
+      schema:
+        type: string
+        maxLength: 100
+    ModerationPageSize:
+      name: per_page
+      in: query
+      description: Moderation result count per page.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 50
+        default: 20
+    ModerationTargetType:
+      name: target_type
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/ModerationTargetType"
+    ModerationMediaTargetType:
+      name: target_type
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+          - profile_photo
+          - portfolio_item
+    ModerationTargetId:
+      name: target_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
   responses:
     ProfessionalMediaUnauthorized:
       description: An active Rails application session is required.
@@ -1332,6 +1509,51 @@ components:
             $ref: "#/components/schemas/ErrorResponse"
     AdminCatalogUnavailable:
       description: Catalog persistence is temporarily unavailable.
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    AdminModerationUnauthorized:
+      description: An active password-authenticated administrator session is required.
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    AdminModerationForbidden:
+      description: The exact browser origin or administrator account is not permitted.
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    AdminModerationNotFound:
+      description: The moderation target or regenerated private image does not exist.
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    AdminModerationConflict:
+      description: The moderation target changed and no longer permits this decision.
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    AdminModerationInvalid:
+      description: One or more queue filters or decision fields are invalid.
       headers:
         X-Request-Id:
           $ref: "#/components/headers/RequestId"
@@ -2448,6 +2670,139 @@ components:
             type: string
             pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
             maxLength: 80
+    AdminModerationResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          $ref: "#/components/schemas/AdminModerationData"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    AdminModerationData:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+        - meta
+        - summary
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminModerationQueueItem"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+        summary:
+          $ref: "#/components/schemas/AdminModerationSummary"
+    AdminModerationQueueItem:
+      type: object
+      additionalProperties: false
+      required:
+        - target_type
+        - target_id
+        - status
+        - title
+        - subtitle
+        - submitted_at
+        - details
+        - preview
+        - has_media
+        - verification_file_id
+      properties:
+        target_type:
+          $ref: "#/components/schemas/ModerationTargetType"
+        target_id:
+          type: string
+          format: uuid
+        status:
+          $ref: "#/components/schemas/ModerationStatus"
+        title:
+          type: string
+          minLength: 1
+        subtitle:
+          type: string
+        submitted_at:
+          type: string
+          format: date-time
+        details:
+          type: string
+          minLength: 1
+        preview:
+          type: string
+        has_media:
+          type: boolean
+        verification_file_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+    AdminModerationSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - pending_count
+        - reviewed_today_count
+        - oldest_pending_submitted_at
+      properties:
+        pending_count:
+          type: integer
+          minimum: 0
+        reviewed_today_count:
+          type: integer
+          minimum: 0
+        oldest_pending_submitted_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+    ModerationDecisionRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - decision
+      properties:
+        decision:
+          $ref: "#/components/schemas/ModerationDecisionInput"
+    ModerationDecisionInput:
+      type: object
+      additionalProperties: false
+      required:
+        - action
+      properties:
+        action:
+          type: string
+          enum:
+            - approved
+            - rejected
+            - hidden
+            - restored
+        reason:
+          type:
+            - string
+            - "null"
+          maxLength: 500
+        note:
+          type:
+            - string
+            - "null"
+          maxLength: 500
+    ModerationTargetType:
+      type: string
+      enum:
+        - profile_revision
+        - profile_photo
+        - portfolio_item
+        - verification_request
+    ModerationStatus:
+      type: string
+      enum:
+        - pending_review
+        - approved
+        - rejected
+        - hidden
     CatalogData:
       type: object
       additionalProperties: false
@@ -2630,4 +2985,5 @@ tags:
   - name: Authentication
   - name: Catalog
   - name: Foundation
+  - name: Moderation
   - name: Professional supply

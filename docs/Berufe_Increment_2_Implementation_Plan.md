@@ -81,6 +81,7 @@ This order lets media, portfolio, and identity evidence exist before the initial
 - Results are oldest first and may be filtered by the existing type control, an approved status control beside it, and the existing search field.
 - Approve and reject remain the primary review actions. The existing ellipsis action hosts hide or restore for previously approved content.
 - Rejection and hide require a private reason. Every decision appends an immutable action with actor, target, action, reason/note, request ID, and timestamp.
+- The existing **Conteúdo enviado** preview is functional for profile photos and portfolio items: Nuxt retrieves only the regenerated private image from an authenticated Rails moderation-media endpoint, renders it inside that existing block, and never receives a permanent private URL or storage key. The response uses the exact image content type, `Cache-Control: no-store`, `X-Content-Type-Options: nosniff`, and a server-generated inline filename; every retrieval appends an immutable admin media-access event. The browser revokes its object URL after 60 seconds, when selection changes, and on unmount.
 - The existing **Abrir documento** action retrieves only the regenerated identity image through an authenticated, audited Rails response. It uses the exact image content type, `Cache-Control: no-store`, `X-Content-Type-Options: nosniff`, and a server-generated inline filename. The browser opens an object URL and revokes it after 60 seconds.
 - Identity evidence is retained while pending and for 30 days after approval or rejection, then the private object is deleted by a retry-safe daily job. Decision, label, moderation, and access-audit metadata are retained. This is the implementation default and requires qualified Brazilian privacy/legal signoff before real-user intake.
 
@@ -104,6 +105,7 @@ The shared OpenAPI contract exposes these authenticated operations without addin
 - `POST /api/v1/professional/verification-requests`
 - `GET /api/v1/admin/moderation`
 - `POST /api/v1/admin/moderation/{target_type}/{target_id}/decisions`
+- `GET /api/v1/admin/moderation/{target_type}/{target_id}/media` for profile-photo and portfolio-image previews
 - `GET /api/v1/admin/verification-files/{id}/content`
 
 The professional workspace response is the single authenticated projection used by onboarding, the profile editor, supply-related dashboard status/checklist content, portfolio management, and verification status. Public Finder/profile HTTP integration remains Increment 3; Increment 2 supplies a tested safe public projection without wiring the existing public mockup pages.

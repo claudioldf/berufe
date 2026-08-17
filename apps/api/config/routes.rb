@@ -25,6 +25,9 @@ Rails.application.routes.draw do
       namespace :admin do
         resource :session, only: :create
         resource :catalog, only: :show
+        get "moderation", to: "moderation#index"
+        post "moderation/:target_type/:target_id/decisions", to: "moderation_decisions#create"
+        get "moderation/:target_type/:target_id/media", to: "moderation_media#show"
         post "catalog/services", to: "catalog_services#create"
         patch "catalog/services/:id", to: "catalog_services#update"
         put "catalog/services/order", to: "catalog_services#reorder"

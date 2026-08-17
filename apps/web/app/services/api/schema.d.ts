@@ -178,6 +178,63 @@ export interface paths {
         patch: operations["updateAdminCatalogNeighborhood"];
         trace?: never;
     };
+    "/api/v1/admin/moderation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read the shared professional-supply moderation queue */
+        get: operations["getAdminModerationQueue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/moderation/{target_type}/{target_id}/decisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                target_type: components["parameters"]["ModerationTargetType"];
+                target_id: components["parameters"]["ModerationTargetId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Append an audited moderation decision and refresh the queue */
+        post: operations["createAdminModerationDecision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/moderation/{target_type}/{target_id}/media": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                target_type: components["parameters"]["ModerationMediaTargetType"];
+                target_id: components["parameters"]["ModerationTargetId"];
+            };
+            cookie?: never;
+        };
+        /** Read a regenerated private image for in-place moderation preview */
+        get: operations["getAdminModerationMedia"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/catalog": {
         parameters: {
             query?: never;
@@ -820,6 +877,49 @@ export interface components {
         AdminCatalogNeighborhoodOrderRequest: {
             codes: string[];
         };
+        AdminModerationResponse: {
+            data: components["schemas"]["AdminModerationData"];
+            request_id: components["schemas"]["RequestId"];
+        };
+        AdminModerationData: {
+            items: components["schemas"]["AdminModerationQueueItem"][];
+            meta: components["schemas"]["PageMeta"];
+            summary: components["schemas"]["AdminModerationSummary"];
+        };
+        AdminModerationQueueItem: {
+            target_type: components["schemas"]["ModerationTargetType"];
+            /** Format: uuid */
+            target_id: string;
+            status: components["schemas"]["ModerationStatus"];
+            title: string;
+            subtitle: string;
+            /** Format: date-time */
+            submitted_at: string;
+            details: string;
+            preview: string;
+            has_media: boolean;
+            /** Format: uuid */
+            verification_file_id: string | null;
+        };
+        AdminModerationSummary: {
+            pending_count: number;
+            reviewed_today_count: number;
+            /** Format: date-time */
+            oldest_pending_submitted_at: string | null;
+        };
+        ModerationDecisionRequest: {
+            decision: components["schemas"]["ModerationDecisionInput"];
+        };
+        ModerationDecisionInput: {
+            /** @enum {string} */
+            action: "approved" | "rejected" | "hidden" | "restored";
+            reason?: string | null;
+            note?: string | null;
+        };
+        /** @enum {string} */
+        ModerationTargetType: "profile_revision" | "profile_photo" | "portfolio_item" | "verification_request";
+        /** @enum {string} */
+        ModerationStatus: "pending_review" | "approved" | "rejected" | "hidden";
         CatalogData: {
             categories: components["schemas"]["PublicServiceCategory"][];
             services: components["schemas"]["PublicService"][];
@@ -999,6 +1099,56 @@ export interface components {
                 "application/json": components["schemas"]["ErrorResponse"];
             };
         };
+        /** @description An active password-authenticated administrator session is required. */
+        AdminModerationUnauthorized: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description The exact browser origin or administrator account is not permitted. */
+        AdminModerationForbidden: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description The moderation target or regenerated private image does not exist. */
+        AdminModerationNotFound: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description The moderation target changed and no longer permits this decision. */
+        AdminModerationConflict: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description One or more queue filters or decision fields are invalid. */
+        AdminModerationInvalid: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
     };
     parameters: {
         /** @description One-based result page. */
@@ -1009,6 +1159,17 @@ export interface components {
         Order: string;
         /** @description Opaque server-generated media upload identifier. */
         MediaUploadId: string;
+        /** @description Moderation target family shown by the existing type control. */
+        ModerationType: "all" | "profile_revision" | "profile_photo" | "portfolio_item" | "verification_request";
+        /** @description Moderation workflow state. */
+        ModerationStatus: "pending_review" | "approved" | "rejected" | "hidden" | "all";
+        /** @description Accent-insensitive search across the safe queue presentation. */
+        ModerationSearch: string;
+        /** @description Moderation result count per page. */
+        ModerationPageSize: number;
+        ModerationTargetType: components["schemas"]["ModerationTargetType"];
+        ModerationMediaTargetType: "profile_photo" | "portfolio_item";
+        ModerationTargetId: string;
     };
     requestBodies: never;
     headers: {
@@ -1417,6 +1578,114 @@ export interface operations {
             409: components["responses"]["AdminCatalogConflict"];
             422: components["responses"]["AdminCatalogInvalid"];
             503: components["responses"]["AdminCatalogUnavailable"];
+        };
+    };
+    getAdminModerationQueue: {
+        parameters: {
+            query?: {
+                /** @description Moderation target family shown by the existing type control. */
+                type?: components["parameters"]["ModerationType"];
+                /** @description Moderation workflow state. */
+                status?: components["parameters"]["ModerationStatus"];
+                /** @description Accent-insensitive search across the safe queue presentation. */
+                search?: components["parameters"]["ModerationSearch"];
+                /** @description One-based result page. */
+                page?: components["parameters"]["Page"];
+                /** @description Moderation result count per page. */
+                per_page?: components["parameters"]["ModerationPageSize"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Oldest-first moderation work and server-owned summary counts. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminModerationResponse"];
+                };
+            };
+            401: components["responses"]["AdminModerationUnauthorized"];
+            422: components["responses"]["AdminModerationInvalid"];
+        };
+    };
+    createAdminModerationDecision: {
+        parameters: {
+            query?: {
+                /** @description Moderation target family shown by the existing type control. */
+                type?: components["parameters"]["ModerationType"];
+                /** @description Moderation workflow state. */
+                status?: components["parameters"]["ModerationStatus"];
+                /** @description Accent-insensitive search across the safe queue presentation. */
+                search?: components["parameters"]["ModerationSearch"];
+                /** @description One-based result page. */
+                page?: components["parameters"]["Page"];
+                /** @description Moderation result count per page. */
+                per_page?: components["parameters"]["ModerationPageSize"];
+            };
+            header?: never;
+            path: {
+                target_type: components["parameters"]["ModerationTargetType"];
+                target_id: components["parameters"]["ModerationTargetId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModerationDecisionRequest"];
+            };
+        };
+        responses: {
+            /** @description The decision and immutable audit record were committed together. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminModerationResponse"];
+                };
+            };
+            401: components["responses"]["AdminModerationUnauthorized"];
+            403: components["responses"]["AdminModerationForbidden"];
+            404: components["responses"]["AdminModerationNotFound"];
+            409: components["responses"]["AdminModerationConflict"];
+            422: components["responses"]["AdminModerationInvalid"];
+        };
+    };
+    getAdminModerationMedia: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                target_type: components["parameters"]["ModerationMediaTargetType"];
+                target_id: components["parameters"]["ModerationTargetId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The regenerated private image; access is recorded immutably. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Cache-Control"?: "no-store";
+                    "Content-Disposition"?: string;
+                    "X-Content-Type-Options"?: "nosniff";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                    "image/png": string;
+                };
+            };
+            401: components["responses"]["AdminModerationUnauthorized"];
+            404: components["responses"]["AdminModerationNotFound"];
         };
     };
     getPublicCatalog: {
