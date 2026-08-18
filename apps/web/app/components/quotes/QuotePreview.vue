@@ -1,16 +1,29 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { Professional, Quote } from "~/types";
+import type { Quote, QuoteProfessional } from "~/types";
 import { formatCurrency, formatDate } from "~/utils/formatters";
 import { quoteSubtotal, quoteTotal } from "~/utils/quotes";
 
 const props = defineProps<{
   quote: Quote;
-  professional: Professional;
+  professional: QuoteProfessional;
   customerFacing?: boolean;
+  authoritativeTotals?: boolean;
 }>();
-const subtotal = computed(() => quoteSubtotal(props.quote));
-const total = computed(() => quoteTotal(props.quote));
+const subtotal = computed(() =>
+  props.authoritativeTotals ? props.quote.subtotal : quoteSubtotal(props.quote),
+);
+const total = computed(() =>
+  props.authoritativeTotals ? props.quote.total : quoteTotal(props.quote),
+);
+
+function itemTotal(index: number) {
+  const item = props.quote.items[index];
+  if (!item) return 0;
+  return props.authoritativeTotals
+    ? item.lineTotal
+    : item.quantity * item.unitPrice;
+}
 </script>
 
 <template>
@@ -21,21 +34,21 @@ const total = computed(() => quoteTotal(props.quote));
     <header>
       <div class="quote-preview__brand">berufe<span>.</span></div>
       <div>
-        <span>Orçamento</span><strong>#{{ quote.number }}</strong>
+        <span>Orçamento</span
+        ><strong v-if="quote.number">#{{ quote.number }}</strong>
       </div>
     </header>
     <section class="quote-preview__professional">
-      <img
-        :src="professional.avatar"
-        :alt="`Foto de ${professional.name}`"
-        width="1024"
-        height="1536"
-        loading="lazy"
+      <DesignSystemAvatar
+        :name="professional.name"
+        :src="professional.avatar ?? undefined"
+        size="sm"
+        shape="rounded"
       />
       <div>
         <strong>{{ professional.name }}</strong
         ><span>{{ professional.primaryService }} · Joinville</span
-        ><small
+        ><small v-if="professional.identityVerified"
           ><UIcon name="i-lucide-badge-check" /> Identidade verificada</small
         >
       </div>
@@ -59,7 +72,7 @@ const total = computed(() => quoteTotal(props.quote));
         <span>Descrição</span><span>Qtd.</span><span>Valor</span>
       </div>
       <div
-        v-for="item in quote.items"
+        v-for="(item, index) in quote.items"
         :key="item.id"
         class="quote-preview__item"
       >
@@ -70,7 +83,7 @@ const total = computed(() => quoteTotal(props.quote));
           ></span
         >
         <span>{{ item.quantity }}</span>
-        <span>{{ formatCurrency(item.quantity * item.unitPrice) }}</span>
+        <span>{{ formatCurrency(itemTotal(index)) }}</span>
       </div>
     </section>
     <section class="quote-preview__totals">
@@ -90,7 +103,7 @@ const total = computed(() => quoteTotal(props.quote));
       <p>{{ quote.notes }}</p>
     </section>
     <footer>
-      <span
+      <span v-if="professional.identityVerified"
         ><UIcon name="i-lucide-shield-check" /> Identidade profissional
         conferida</span
       ><small>Este orçamento não representa aceite ou pagamento.</small>
@@ -146,11 +159,9 @@ const total = computed(() => quoteTotal(props.quote));
     padding: 16px 22px;
     border-bottom: 1px solid var(--line);
   }
-  &__professional img {
+  &__professional :deep(.avatar) {
     width: 44px;
     height: 44px;
-    border-radius: 12px;
-    object-fit: cover;
   }
   &__professional strong,
   &__professional span,

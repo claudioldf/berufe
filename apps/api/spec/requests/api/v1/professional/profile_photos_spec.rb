@@ -30,6 +30,7 @@ RSpec.describe "Professional profile photo", type: :request, openapi: true do
         "rejection_reason" => nil
       ),
       "has_published_photo" => false,
+      "published_image_url" => nil,
       "latest_upload" => nil
     )
     expect(upload.reload).to be_attached

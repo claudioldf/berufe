@@ -7,6 +7,8 @@ class ProfessionalWorkspaceSerializer
 
   def as_json(*)
     {
+      dashboard: serialized_dashboard,
+      pending_relationships: serialized_pending_relationships,
       profile: {
         id: profile.id,
         public_slug: profile.public_slug,
@@ -36,6 +38,27 @@ class ProfessionalWorkspaceSerializer
 
   attr_reader :profile
 
+  def serialized_dashboard
+    {
+      local_date: Time.current.in_time_zone(ProfessionalDailyActivity::PRODUCT_TIME_ZONE).to_date.iso8601,
+      readiness: ProfessionalDashboardReadiness.new(profile).as_json,
+      recent_quotes: profile.quotes.newest_first.limit(5).map do |quote|
+        ProfessionalQuoteSummarySerializer.new(quote).as_json
+      end
+    }
+  end
+
+  def serialized_pending_relationships
+    profile.received_relationships
+      .where(status: "pending")
+      .includes(
+        initiator_professional: %i[working_revision published_revision],
+        recipient_professional: %i[working_revision published_revision]
+      )
+      .order(created_at: :asc, id: :asc)
+      .map { |relationship| ProfessionalRelationshipSerializer.new(relationship).as_json }
+  end
+
   def serialized_services
     profile.working_revision.professional_profile_services.includes(:service).map do |selection|
       {
@@ -59,6 +82,7 @@ class ProfessionalWorkspaceSerializer
         submitted_at: current.submitted_at.iso8601
       },
       has_published_photo: profile.published_photo.present?,
+      published_image_url: profile.published_photo && PublicProfilePhotoImageUrl.call(profile.published_photo),
       latest_upload: latest_upload && MediaUploadSerializer.new(latest_upload).as_json
     }
   end

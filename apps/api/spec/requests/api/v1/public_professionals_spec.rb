@@ -118,6 +118,7 @@ RSpec.describe "Public professional profiles", type: :request, openapi: true do
       {
         "id" => relationship.id,
         "type" => "recommendation",
+        "direction" => "incoming",
         "note" => "Indicação profissional aprovada.",
         "professional" => {
           "id" => partner.id,

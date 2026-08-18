@@ -76,6 +76,7 @@ function professional(
         professionalSlug: "beto-lima",
         avatar: null,
         type: "worked_together",
+        direction: "incoming",
         note: "Trabalharam em reformas residenciais.",
       },
     ],
@@ -200,5 +201,41 @@ describe("public profile components", () => {
     expect(details.text()).toContain("não garante a execução");
     expect(evidence.text()).toContain("Telefone confirmado");
     expect(evidence.text()).toContain("Identidade verificada");
+  });
+
+  it("names who authored each professional recommendation", async () => {
+    const profile = professional({
+      relationships: [
+        {
+          id: "de381ccd-d0e5-4d50-8322-a4daff09a486",
+          professionalName: "Beto Lima",
+          professionalSlug: "beto-lima",
+          avatar: null,
+          type: "recommendation",
+          direction: "incoming",
+          note: "Indicação recebida.",
+        },
+        {
+          id: "8dd0465b-9efc-4f78-9981-05aa69ea7496",
+          professionalName: "Carla Luz",
+          professionalSlug: "carla-luz",
+          avatar: null,
+          type: "recommendation",
+          direction: "outgoing",
+          note: "Indicação enviada.",
+        },
+      ],
+    });
+    const details = await mountSuspended(ProfileDetails, {
+      props: {
+        professional: profile,
+        canRequestRelationship: false,
+        supportEmailUrl: "mailto:suporte@berufe.com.br",
+      },
+      global: { stubs: globalStubs },
+    });
+
+    expect(details.text()).toContain("Recomendado por Beto Lima");
+    expect(details.text()).toContain("Recomendou Carla Luz");
   });
 });

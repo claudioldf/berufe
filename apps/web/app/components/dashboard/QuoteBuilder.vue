@@ -1,25 +1,27 @@
 <script setup lang="ts">
 import type {
-  Professional,
   Quote,
   QuoteDraft,
+  QuoteProfessional,
   QuoteShareMethod,
 } from "~/types";
 import { useQuoteDraft } from "~/composables/useQuoteDraft";
-import { useShare } from "~/composables/useShare";
-import { useToast } from "~/composables/useToast";
 import { cloneQuote } from "~/utils/quotes";
 
 const props = defineProps<{
   initialQuote: Quote;
-  professional: Professional;
+  professional: QuoteProfessional;
+  saving: boolean;
+  saveError: string;
+  sharingMethod: QuoteShareMethod | null;
+  shareError: string;
+  shareUrl: string;
+  shareEnabled?: boolean;
 }>();
 const emit = defineEmits<{
   save: [draft: QuoteDraft];
-  shared: [method: QuoteShareMethod];
+  share: [method: QuoteShareMethod];
 }>();
-const { copyText } = useShare();
-const { showToast } = useToast();
 const {
   quote,
   previewOpen,
@@ -31,42 +33,17 @@ const {
   markDirty,
   addItem,
   removeItem,
-  markSaved,
-  markShared,
 } = useQuoteDraft(() => props.initialQuote);
-const customerQuoteUrl = "https://berufe.com.br/orcamento/BERUFE-DEMO-1042";
+
+watch(
+  () => props.shareUrl,
+  (value) => {
+    if (value) shareOpen.value = false;
+  },
+);
 
 function save() {
-  markSaved();
   emit("save", cloneQuote(quote.value));
-  showToast({
-    title: "Rascunho salvo",
-    description: `Orçamento #${quote.value.number} atualizado.`,
-  });
-}
-
-function finishSharing(method: QuoteShareMethod) {
-  markShared();
-  emit("shared", method);
-}
-
-function shareQuote() {
-  finishSharing("whatsapp");
-  const message = encodeURIComponent(
-    `Olá, ${quote.value.customerName}! Segue o orçamento #${quote.value.number}: ${customerQuoteUrl}`,
-  );
-  if (import.meta.client) {
-    window.open(
-      `https://wa.me/?text=${message}`,
-      "_blank",
-      "noopener,noreferrer",
-    );
-  }
-}
-
-async function copyQuoteLink() {
-  const copied = await copyText(customerQuoteUrl, "Link do orçamento copiado");
-  if (copied) finishSharing("copy");
 }
 </script>
 
@@ -86,6 +63,9 @@ async function copyQuoteLink() {
         :saved="isSaved"
         :shared="isShared"
         :valid="isValid"
+        :saving="saving"
+        :error="saveError"
+        :share-enabled="shareEnabled ?? false"
         @preview="previewOpen = true"
         @save="save"
         @share="shareOpen = true"
@@ -130,9 +110,12 @@ async function copyQuoteLink() {
         </div>
         <div class="share-quote__link">
           <UIcon name="i-lucide-link" /><span
-            >berufe.com.br/orcamento/••••••••1042</span
+            >berufe.com.br/orcamento/••••••••{{ quote.number }}</span
           >
         </div>
+        <p v-if="shareError" class="share-quote__error" role="alert">
+          {{ shareError }}
+        </p>
       </template>
       <template #footer
         ><UButton color="neutral" variant="ghost" @click="shareOpen = false"
@@ -141,12 +124,16 @@ async function copyQuoteLink() {
           color="neutral"
           variant="outline"
           icon="i-lucide-link"
-          @click="copyQuoteLink"
+          :loading="sharingMethod === 'copy'"
+          :disabled="Boolean(sharingMethod)"
+          @click="emit('share', 'copy')"
           >Copiar link</UButton
         ><UButton
           color="primary"
           icon="i-lucide-message-circle"
-          @click="shareQuote"
+          :loading="sharingMethod === 'whatsapp'"
+          :disabled="Boolean(sharingMethod)"
+          @click="emit('share', 'whatsapp')"
           >Abrir WhatsApp</UButton
         ></template
       >
@@ -177,6 +164,7 @@ async function copyQuoteLink() {
     &__form {
       min-width: 0;
       display: grid;
+      grid-template-columns: minmax(0, 1fr);
       gap: 14px;
     }
   }
@@ -405,6 +393,9 @@ async function copyQuoteLink() {
       color: var(--ink-soft);
       font-size: 0.86rem;
     }
+    &__error {
+      color: #a45245;
+    }
   }
   @media (width <= 1000px) {
     .quote-builder {
@@ -415,6 +406,11 @@ async function copyQuoteLink() {
     }
   }
   @media (width <= 720px) {
+    .quote-item input,
+    .quote-item select,
+    .builder-total input {
+      font-size: 1rem;
+    }
     .builder-fields {
       grid-template-columns: 1fr;
       &__full {

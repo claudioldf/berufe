@@ -57,6 +57,7 @@ export interface Relationship {
   professionalSlug: string;
   avatar: string;
   type: "recommendation" | "worked_together";
+  direction: "incoming" | "outgoing";
   note: string;
 }
 
@@ -166,6 +167,7 @@ export interface PublicProfessionalProfile {
     professionalSlug: string;
     avatar: string | null;
     type: "recommendation" | "worked_together";
+    direction: "incoming" | "outgoing";
     note: string | null;
   }>;
   updatedAt: string | null;
@@ -176,6 +178,25 @@ export interface PublicProfessionalProfile {
 export interface PublicProfessionalProfileResult {
   professional: PublicProfessionalProfile;
   interactionToken: string;
+}
+
+export type ProfessionalRelationshipType = "recommendation" | "worked_together";
+
+export interface ProfessionalRelationshipParty {
+  id: string;
+  publicSlug: string;
+  displayName: string;
+}
+
+export interface ProfessionalRelationship {
+  id: string;
+  relationshipType: ProfessionalRelationshipType;
+  contextNote: string | null;
+  status: "pending" | "accepted" | "declined";
+  createdAt: string;
+  respondedAt: string | null;
+  initiator: ProfessionalRelationshipParty;
+  recipient: ProfessionalRelationshipParty;
 }
 
 export interface ProfessionalProfileDraft {
@@ -221,6 +242,7 @@ export interface ProfessionalProfilePhotoState {
     submittedAt: string;
   } | null;
   hasPublishedPhoto: boolean;
+  publishedImageUrl: string | null;
   latestUpload: ProfessionalMediaUploadState | null;
 }
 
@@ -235,6 +257,28 @@ export interface ProfessionalVerificationState {
 }
 
 export interface ProfessionalWorkspace {
+  dashboard: {
+    localDate: string;
+    readiness: {
+      percentage: number;
+      steps: {
+        identityContact: boolean;
+        serviceCoverage: boolean;
+        reviewablePortfolio: boolean;
+        approvedIdentity: boolean;
+      };
+    };
+    recentQuotes: Array<{
+      id: string;
+      number: number;
+      customerName: string;
+      serviceDescription: string;
+      total: number;
+      status: "draft" | "shared";
+      createdAt: string;
+    }>;
+  };
+  pendingRelationships: ProfessionalRelationship[];
   profile: {
     id: string;
     publicSlug: string;

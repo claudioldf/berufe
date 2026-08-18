@@ -405,6 +405,8 @@ The dashboard contains:
 - Pending professional relationship confirmations.
 - Primary actions: edit profile, add a portfolio item, request identity verification, manage existing-member relationships, and create a quote.
 
+Profile readiness is calculated as four equally weighted rows: complete identity/contact data, valid service/coverage data, at least one reviewable pending-or-approved portfolio item, and approved identity verification. Rejected, hidden, or deleted work does not complete the portfolio row.
+
 The share action opens the device share sheet when available and falls back to copying the stable URL. Berufe still records the minimal privacy-friendly search/profile/contact aggregates required to evaluate the MVP, but professional-facing activity reporting is deferred.
 
 #### 4. Suggested feature-scoped data schema
@@ -670,7 +672,7 @@ The profile helps professionals get discovered; the quote helps them perform a f
 5. First share atomically marks the quote shared, creates a long unguessable bearer token whose hash alone is stored, records the aggregate share action, and opens WhatsApp with the link.
 6. The customer can view or print the quote without an account.
 
-The shared page shows only the quote and the professional's approved public identity and labels. Token-authorized responses are `no-store` and `noindex`, are excluded from shared caches, and reveal nothing for invalid tokens. MVP statuses are only `draft` and `shared`; the commercial validity date is not token expiry, and Berufe does not represent acceptance or payment.
+The owner may continue editing a shared quote. Its `shared` status, original `shared_at`, and active token remain unchanged, and the customer link resolves the latest saved content. A quote can be shared or resolved only while its owner remains an active, currently published professional. The shared page shows only the quote and the professional's approved public identity and labels, and an identity-verification label appears only when identity approval actually exists. Token-authorized responses are `no-store` and `noindex`, are excluded from shared caches, and reveal nothing for invalid tokens. MVP statuses are only `draft` and `shared`; the commercial validity date is not token expiry, and Berufe does not represent acceptance or payment.
 
 #### 4. Suggested feature-scoped data schema
 

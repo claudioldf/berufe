@@ -1,6 +1,8 @@
 import { mountSuspended } from "@nuxt/test-utils/runtime";
 import { flushPromises } from "@vue/test-utils";
+import { useState } from "#app";
 import type { PublicProfessionalProfileResult } from "@app/types";
+import type { CurrentAccount } from "@app/services/api/application-session";
 import PublicProfilePage from "@app/pages/profissionais/[slug].vue";
 
 const mocks = vi.hoisted(() => ({
@@ -50,6 +52,11 @@ const result: PublicProfessionalProfileResult = {
 describe("public profile page", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
+    useState("application-session-status", () => "unknown").value = "unknown";
+    useState<CurrentAccount | null>(
+      "application-session-account",
+      () => null,
+    ).value = null;
     mocks.fetchProfile.mockResolvedValue(result);
     mocks.recordView.mockResolvedValue(undefined);
   });
@@ -100,5 +107,52 @@ describe("public profile page", () => {
 
     expect(wrapper.getComponent({ name: "ProfileHero" }).exists()).toBe(true);
     expect(mocks.recordView).toHaveBeenCalledOnce();
+  });
+
+  it("shows the existing relationship action only to an eligible different professional", async () => {
+    useState("application-session-status", () => "unknown").value =
+      "authenticated";
+    useState<CurrentAccount | null>(
+      "application-session-account",
+      () => null,
+    ).value = {
+      id: "0f1f76eb-ce21-4e39-83c8-acfc255101f1",
+      role: "professional",
+      status: "active",
+      registrationCompleted: true,
+      professionalProfileId: "fc34e59b-0915-45c1-b0ea-29015578264a",
+      relationshipEligible: true,
+    };
+
+    const wrapper = await mountSuspended(PublicProfilePage, {
+      shallow: true,
+      route: "/profissionais/ana-souza",
+      global: { renderStubDefaultSlot: true },
+    });
+    await flushPromises();
+
+    const details = wrapper.getComponent({ name: "ProfileDetails" });
+    expect(details.props("canRequestRelationship")).toBe(true);
+    details.vm.$emit("requestRelationship");
+    await wrapper.vm.$nextTick();
+    expect(
+      wrapper
+        .getComponent({ name: "ProfileRelationshipRequestDialog" })
+        .props("open"),
+    ).toBe(true);
+
+    useState<CurrentAccount | null>(
+      "application-session-account",
+      () => null,
+    ).value = {
+      id: "0f1f76eb-ce21-4e39-83c8-acfc255101f1",
+      role: "professional",
+      status: "active",
+      registrationCompleted: true,
+      professionalProfileId: result.professional.id,
+      relationshipEligible: true,
+    };
+    await wrapper.vm.$nextTick();
+    expect(details.props("canRequestRelationship")).toBe(false);
   });
 });

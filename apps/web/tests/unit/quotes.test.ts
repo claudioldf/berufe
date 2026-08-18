@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import quotesData from "@data/quotes.json";
 import type { Quote } from "~/types";
 import { useQuoteDraft } from "~/composables/useQuoteDraft";
 import {
@@ -9,7 +8,41 @@ import {
   quoteTotal,
 } from "~/utils/quotes";
 
-const source = quotesData.default as Quote;
+const source: Quote = {
+  id: "0fd22016-3021-46cc-8e31-a83e2f2d9180",
+  number: 1043,
+  customerName: "Ana Paula",
+  serviceDescription: "Adequação elétrica",
+  validUntil: "2026-08-25",
+  discount: 75,
+  notes: "Materiais a definir.",
+  status: "draft",
+  subtotal: 1520,
+  total: 1445,
+  sharedAt: null,
+  createdAt: "2026-08-18T12:00:00Z",
+  updatedAt: "2026-08-18T12:00:00Z",
+  items: [
+    {
+      id: "9e918053-d334-45e2-ae6c-3eeb28240438",
+      description: "Revisão do circuito",
+      quantity: 1,
+      unit: "serviço",
+      unitPrice: 680,
+      lineTotal: 680,
+      sortOrder: 0,
+    },
+    {
+      id: "14b9f55b-b03f-47f9-92f7-d28ca56a4cf2",
+      description: "Pontos de iluminação",
+      quantity: 4,
+      unit: "ponto",
+      unitPrice: 210,
+      lineTotal: 840,
+      sortOrder: 1,
+    },
+  ],
+};
 
 describe("quote utilities", () => {
   it("calculates subtotal, discounts, and a non-negative total", () => {
@@ -49,5 +82,19 @@ describe("quote draft state", () => {
     draft.markShared();
     expect(draft.isShared.value).toBe(true);
     expect(draft.isSaved.value).toBe(true);
+  });
+
+  it("keeps a shared quote shared while its owner edits it", () => {
+    const shared: Quote = {
+      ...source,
+      status: "shared",
+      sharedAt: "2026-08-18T12:10:00Z",
+    };
+    const draft = useQuoteDraft(shared);
+
+    draft.markDirty();
+
+    expect(draft.isSaved.value).toBe(false);
+    expect(draft.isShared.value).toBe(true);
   });
 });

@@ -1,12 +1,21 @@
 <script setup lang="ts">
-import quotesData from "@data/quotes.json";
-import professionalsData from "@data/professionals.json";
-import type { Professional, Quote } from "~/types";
+import type {
+  Quote,
+  QuoteDraft,
+  QuoteProfessional,
+  QuoteShareMethod,
+} from "~/types";
+import { useShare } from "~/composables/useShare";
 import { useToast } from "~/composables/useToast";
-
-const { showToast } = useToast();
-const professional = (professionalsData as Professional[])[0]!;
-const quote = quotesData.default as Quote;
+import { useApiClient } from "~/services/api/client";
+import { ApiRequestError } from "~/services/api/errors";
+import {
+  createProfessionalQuote,
+  fetchProfessionalQuote,
+  shareProfessionalQuote,
+  updateProfessionalQuote,
+} from "~/services/api/professional-quotes";
+import { fetchProfessionalWorkspace } from "~/services/api/professional-workspace";
 
 definePageMeta({ layout: "workspace" });
 
@@ -15,12 +24,149 @@ useSeoMeta({
   robots: "noindex, nofollow",
 });
 
-function handleShared(method: "whatsapp" | "copy") {
-  if (method === "copy") return;
-  showToast({
-    title: "Abrindo o WhatsApp",
-    description: "O link seguro foi criado; a Berufe não confirma a entrega.",
-  });
+const route = useRoute();
+const router = useRouter();
+const client = useApiClient();
+const { showToast } = useToast();
+const { copyText } = useShare();
+const requestedQuoteId = Array.isArray(route.query.quote)
+  ? route.query.quote[0]
+  : route.query.quote;
+const editor = await useAsyncData(
+  `professional-quote-editor-${requestedQuoteId ?? "new"}`,
+  async () => {
+    const [workspace, quote] = await Promise.all([
+      fetchProfessionalWorkspace(client),
+      requestedQuoteId
+        ? fetchProfessionalQuote(client, requestedQuoteId)
+        : Promise.resolve(createEmptyQuote()),
+    ]);
+    return { workspace, quote };
+  },
+);
+const saving = shallowRef(false);
+const saveError = shallowRef("");
+const sharingMethod = shallowRef<QuoteShareMethod | null>(null);
+const shareError = shallowRef("");
+const shareUrl = shallowRef("");
+const quote = computed(() => editor.data.value?.quote ?? null);
+const professional = computed<QuoteProfessional | null>(() => {
+  const workspace = editor.data.value?.workspace;
+  if (!workspace) return null;
+  const primaryService =
+    workspace.profile.services.find((service) => service.isPrimary) ??
+    workspace.profile.services[0];
+  return {
+    name: workspace.profile.identity.name,
+    avatar: workspace.profile.photo.publishedImageUrl,
+    primaryService: primaryService?.name ?? "",
+    identityVerified: workspace.dashboard.readiness.steps.approvedIdentity,
+  };
+});
+const shareEnabled = computed(() => {
+  const workspace = editor.data.value?.workspace;
+  return Boolean(
+    quote.value?.id &&
+    workspace?.profile.status === "published" &&
+    workspace.profile.hasPublishedRevision,
+  );
+});
+
+function createEmptyQuote(): Quote {
+  return {
+    id: null,
+    number: null,
+    customerName: "",
+    serviceDescription: "",
+    validUntil: "",
+    discount: 0,
+    notes: "",
+    status: "draft",
+    subtotal: 0,
+    total: 0,
+    sharedAt: null,
+    createdAt: null,
+    updatedAt: null,
+    items: [
+      {
+        id: globalThis.crypto.randomUUID(),
+        description: "",
+        quantity: 1,
+        unit: "serviço",
+        unitPrice: 0,
+        lineTotal: 0,
+        sortOrder: 0,
+      },
+    ],
+  };
+}
+
+async function saveQuote(draft: QuoteDraft) {
+  if (saving.value || !editor.data.value) return;
+  saving.value = true;
+  saveError.value = "";
+  try {
+    const saved = draft.id
+      ? await updateProfessionalQuote(client, draft.id, draft)
+      : await createProfessionalQuote(client, draft);
+    editor.data.value = { ...editor.data.value, quote: saved };
+    if (!draft.id) {
+      await router.replace({
+        path: "/app/professional/quotes/new",
+        query: { quote: saved.id },
+      });
+    }
+    showToast({
+      title: "Rascunho salvo",
+      description: `Orçamento #${saved.number} atualizado.`,
+    });
+  } catch (error) {
+    saveError.value =
+      error instanceof ApiRequestError
+        ? error.message
+        : "Não foi possível salvar o orçamento. Tente novamente.";
+  } finally {
+    saving.value = false;
+  }
+}
+
+async function shareQuote(method: QuoteShareMethod) {
+  const quoteId = quote.value?.id;
+  if (!quoteId || sharingMethod.value) return;
+  const handoffWindow =
+    method === "whatsapp" && import.meta.client
+      ? window.open("about:blank", "_blank")
+      : null;
+  if (handoffWindow) handoffWindow.opener = null;
+  sharingMethod.value = method;
+  shareError.value = "";
+  shareUrl.value = "";
+  try {
+    const result = await shareProfessionalQuote(client, quoteId, method);
+    if (editor.data.value) {
+      editor.data.value = { ...editor.data.value, quote: result.quote };
+    }
+    shareUrl.value = result.shareUrl;
+    if (method === "copy") {
+      await copyText(result.shareUrl, "Link do orçamento copiado");
+    } else if (handoffWindow) {
+      handoffWindow.location.replace(result.whatsappUrl);
+      showToast({
+        title: "Abrindo o WhatsApp",
+        description: "A Berufe não envia nem confirma a entrega da mensagem.",
+      });
+    } else if (import.meta.client) {
+      window.location.assign(result.whatsappUrl);
+    }
+  } catch (error) {
+    handoffWindow?.close();
+    shareError.value =
+      error instanceof ApiRequestError
+        ? error.message
+        : "Não foi possível compartilhar o orçamento. Tente novamente.";
+  } finally {
+    sharingMethod.value = null;
+  }
 }
 </script>
 
@@ -37,19 +183,39 @@ function handleShared(method: "whatsapp" | "copy") {
               >Berufe Ferramentas</DesignSystemEyebrow
             >
             <h1>
-              Novo orçamento <em>#{{ quote.number }}</em>
+              Novo orçamento <em v-if="quote?.number">#{{ quote.number }}</em>
             </h1>
             <p>Crie, revise e compartilhe um link seguro com seu cliente.</p>
           </div>
-          <span><DesignSystemStatusDot /> Rascunho</span>
+          <span
+            ><DesignSystemStatusDot />
+            {{
+              quote?.status === "shared" ? "Compartilhado" : "Rascunho"
+            }}</span
+          >
         </div>
       </DesignSystemContainer>
     </section>
     <DesignSystemContainer class="quote-workspace__content">
+      <p v-if="editor.status.value === 'pending'" aria-live="polite">
+        Carregando orçamento…
+      </p>
+      <p v-else-if="editor.error.value || !quote || !professional" role="alert">
+        Não foi possível carregar o orçamento. Volte ao painel e tente
+        novamente.
+      </p>
       <DashboardQuoteBuilder
+        v-else
         :initial-quote="quote"
         :professional="professional"
-        @shared="handleShared"
+        :saving="saving"
+        :save-error="saveError"
+        :sharing-method="sharingMethod"
+        :share-error="shareError"
+        :share-url="shareUrl"
+        :share-enabled="shareEnabled"
+        @save="saveQuote"
+        @share="shareQuote"
       />
     </DesignSystemContainer>
   </div>

@@ -7,6 +7,7 @@ import type {
 import type { BerufeApiClient } from "~/services/api/client";
 import { ApiRequestError, normalizeApiError } from "~/services/api/errors";
 import type { components } from "~/services/api/schema";
+import { mapProfessionalRelationship } from "~/services/api/professional-relationships";
 
 type ContractWorkspace = components["schemas"]["ProfessionalWorkspaceData"];
 
@@ -19,6 +20,31 @@ export function mapProfessionalWorkspace(
 ): ProfessionalWorkspace {
   const identity = data.profile.identity;
   return {
+    dashboard: {
+      localDate: data.dashboard.local_date,
+      readiness: {
+        percentage: data.dashboard.readiness.percentage,
+        steps: {
+          identityContact: data.dashboard.readiness.steps.identity_contact,
+          serviceCoverage: data.dashboard.readiness.steps.service_coverage,
+          reviewablePortfolio:
+            data.dashboard.readiness.steps.reviewable_portfolio,
+          approvedIdentity: data.dashboard.readiness.steps.approved_identity,
+        },
+      },
+      recentQuotes: data.dashboard.recent_quotes.map((quote) => ({
+        id: quote.id,
+        number: quote.quote_number,
+        customerName: quote.customer_name,
+        serviceDescription: quote.service_description,
+        total: Number(quote.total_amount),
+        status: quote.status,
+        createdAt: quote.created_at,
+      })),
+    },
+    pendingRelationships: data.pending_relationships.map(
+      mapProfessionalRelationship,
+    ),
     profile: {
       id: data.profile.id,
       publicSlug: data.profile.public_slug,
@@ -36,6 +62,7 @@ export function mapProfessionalWorkspace(
             }
           : null,
         hasPublishedPhoto: data.profile.photo.has_published_photo,
+        publishedImageUrl: data.profile.photo.published_image_url,
         latestUpload: data.profile.photo.latest_upload
           ? {
               id: data.profile.photo.latest_upload.id,

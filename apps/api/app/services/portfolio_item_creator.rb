@@ -35,6 +35,11 @@ class PortfolioItemCreator
         submitted_at: now
       )
       upload.update!(state: "attached", attached_at: now)
+      ProfessionalDailyActivity.increment!(
+        professional_id: profile.id,
+        counter: :evidence_creations,
+        occurred_at: now
+      )
       item
     end
   rescue ActiveRecord::RecordInvalid => error

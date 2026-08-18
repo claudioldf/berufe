@@ -16,6 +16,20 @@ import type { ProfessionalProfileDraft } from "~/types";
 type WorkspaceData = components["schemas"]["ProfessionalWorkspaceData"];
 
 const workspaceData: WorkspaceData = {
+  dashboard: {
+    local_date: "2026-08-18",
+    readiness: {
+      percentage: 50,
+      steps: {
+        identity_contact: true,
+        service_coverage: true,
+        reviewable_portfolio: false,
+        approved_identity: false,
+      },
+    },
+    recent_quotes: [],
+  },
+  pending_relationships: [],
   profile: {
     id: "23a94f5e-1429-4ec7-bbc4-a6f805d5182d",
     public_slug: "ana-souza",
@@ -26,6 +40,7 @@ const workspaceData: WorkspaceData = {
     photo: {
       current: null,
       has_published_photo: false,
+      published_image_url: null,
       latest_upload: null,
     },
     portfolio_items: [],
@@ -66,6 +81,20 @@ function apiClientReturning(
 describe("professional workspace API", () => {
   it("maps the server-owned identity into the existing editor shape", () => {
     expect(mapProfessionalWorkspace(workspaceData)).toEqual({
+      dashboard: {
+        localDate: "2026-08-18",
+        readiness: {
+          percentage: 50,
+          steps: {
+            identityContact: true,
+            serviceCoverage: true,
+            reviewablePortfolio: false,
+            approvedIdentity: false,
+          },
+        },
+        recentQuotes: [],
+      },
+      pendingRelationships: [],
       profile: {
         id: workspaceData.profile.id,
         publicSlug: "ana-souza",
@@ -76,6 +105,7 @@ describe("professional workspace API", () => {
         photo: {
           current: null,
           hasPublishedPhoto: false,
+          publishedImageUrl: null,
           latestUpload: null,
         },
         portfolioItems: [],
@@ -116,6 +146,53 @@ describe("professional workspace API", () => {
       mapProfessionalWorkspace(workspaceData),
     );
     expect(client.GET).toHaveBeenCalledWith("/api/v1/professional/workspace");
+  });
+
+  it("maps inbound pending relationships without exposing account contact data", () => {
+    const pending = {
+      id: "d25c64fa-3e6a-4e56-adc9-85bdac0045cb",
+      relationship_type: "worked_together" as const,
+      context_note: "Atuamos juntos em uma obra.",
+      status: "pending" as const,
+      created_at: "2026-08-17T12:00:00Z",
+      responded_at: null,
+      initiator: {
+        id: "f39d4810-f28d-4977-b5e5-387131d12942",
+        public_slug: "ana-souza",
+        display_name: "Ana Souza",
+      },
+      recipient: {
+        id: workspaceData.profile.id,
+        public_slug: "beto-lima",
+        display_name: "Beto Lima",
+      },
+    };
+
+    expect(
+      mapProfessionalWorkspace({
+        ...workspaceData,
+        pending_relationships: [pending],
+      }).pendingRelationships,
+    ).toEqual([
+      {
+        id: pending.id,
+        relationshipType: "worked_together",
+        contextNote: "Atuamos juntos em uma obra.",
+        status: "pending",
+        createdAt: "2026-08-17T12:00:00Z",
+        respondedAt: null,
+        initiator: {
+          id: pending.initiator.id,
+          publicSlug: "ana-souza",
+          displayName: "Ana Souza",
+        },
+        recipient: {
+          id: pending.recipient.id,
+          publicSlug: "beto-lima",
+          displayName: "Beto Lima",
+        },
+      },
+    ]);
   });
 
   it("attaches a processed photo to the existing professional workspace", async () => {

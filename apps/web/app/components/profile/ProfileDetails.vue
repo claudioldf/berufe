@@ -103,7 +103,9 @@ defineEmits<{
               {{
                 relationship.type === "worked_together"
                   ? "Trabalharam juntos"
-                  : "Recomendação profissional"
+                  : relationship.direction === "incoming"
+                    ? `Recomendado por ${relationship.professionalName}`
+                    : `Recomendou ${relationship.professionalName}`
               }}
             </span>
             <p v-if="relationship.note">“{{ relationship.note }}”</p>

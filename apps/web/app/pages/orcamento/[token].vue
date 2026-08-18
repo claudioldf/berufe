@@ -1,20 +1,47 @@
 <script setup lang="ts">
-import quotesData from "@data/quotes.json";
-import professionalsData from "@data/professionals.json";
-import type { Professional, Quote } from "~/types";
+import { useApiClient } from "~/services/api/client";
+import { ApiRequestError } from "~/services/api/errors";
+import { resolveSharedQuote } from "~/services/api/shared-quotes";
 
 const route = useRoute();
-const professional = (professionalsData as Professional[])[0]!;
-const valid = route.params.token === quotesData.shared.token;
-const quote = quotesData.shared as Quote;
-
-if (!valid)
+const client = useApiClient();
+const token = computed(() =>
+  Array.isArray(route.params.token)
+    ? (route.params.token[0] ?? "")
+    : String(route.params.token ?? ""),
+);
+const resolved = await useAsyncData(
+  "shared-quote-resolve",
+  async () => {
+    try {
+      return {
+        kind: "success" as const,
+        value: await resolveSharedQuote(client, token.value),
+      };
+    } catch (error) {
+      return {
+        kind: "error" as const,
+        notFound:
+          error instanceof ApiRequestError && error.code === "not_found",
+      };
+    }
+  },
+  { watch: [token] },
+);
+const outcome = resolved.data.value;
+if (!outcome || outcome.kind === "error") {
   throw createError({
-    statusCode: 404,
-    statusMessage: "Orçamento não encontrado",
+    statusCode: outcome?.notFound ? 404 : 503,
+    statusMessage: outcome?.notFound
+      ? "Orçamento não encontrado"
+      : "Orçamento temporariamente indisponível",
   });
+}
+const quote = computed(() => outcome.value.quote);
+const professional = computed(() => outcome.value.professional);
+
 useSeoMeta({
-  title: `Orçamento #${quote.number}`,
+  title: `Orçamento #${quote.value.number}`,
   robots: "noindex, nofollow",
 });
 
@@ -53,6 +80,7 @@ function printQuote() {
         :quote="quote"
         :professional="professional"
         customer-facing
+        authoritative-totals
       />
       <p class="shared-quote-page__notice">
         <UIcon name="i-lucide-info" /> Este link permite visualizar o orçamento,

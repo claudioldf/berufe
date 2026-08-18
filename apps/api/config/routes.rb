@@ -20,6 +20,11 @@ Rails.application.routes.draw do
         put "profile/photo", to: "profile_photos#update"
         resources :portfolio_items, only: %i[create destroy], path: "portfolio-items"
         resources :verification_requests, only: :create, path: "verification-requests"
+        resources :relationships, only: :create
+        post "relationships/:id/response", to: "relationships#respond"
+        resources :quotes, only: %i[index create show update] do
+          post :share, on: :member
+        end
         resources :media_uploads, only: %i[create show], path: "media-uploads" do
           member do
             put :content
@@ -29,6 +34,7 @@ Rails.application.routes.draw do
         end
       end
       resource :session, only: %i[show destroy]
+      post "shared-quotes/resolve", to: "shared_quotes#resolve"
       namespace :admin do
         resource :session, only: :create
         resource :catalog, only: :show

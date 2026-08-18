@@ -3,6 +3,8 @@
 require "rails_helper"
 
 RSpec.describe "Professional workspace identity", type: :request, openapi: true do
+  include ActiveSupport::Testing::TimeHelpers
+
   let(:account) do
     UserAccount.create!(phone_e164: "+5547999996201", role: "professional", status: "active")
   end
@@ -20,6 +22,23 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
     expect(response).to have_http_status(:ok)
     expect(response.parsed_body).to eq(
       "data" => {
+        "dashboard" => {
+          "local_date" => Time.current
+            .in_time_zone(ProfessionalDailyActivity::PRODUCT_TIME_ZONE)
+            .to_date
+            .iso8601,
+          "readiness" => {
+            "percentage" => 0,
+            "steps" => {
+              "identity_contact" => false,
+              "service_coverage" => false,
+              "reviewable_portfolio" => false,
+              "approved_identity" => false
+            }
+          },
+          "recent_quotes" => []
+        },
+        "pending_relationships" => [],
         "profile" => {
           "id" => profile.id,
           "public_slug" => "ana-souza",
@@ -30,6 +49,7 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
           "photo" => {
             "current" => nil,
             "has_published_photo" => false,
+            "published_image_url" => nil,
             "latest_upload" => nil
           },
           "portfolio_items" => [],
@@ -50,6 +70,59 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
       "request_id" => "workspace-show"
     )
     expect(response.headers["Cache-Control"]).to include("no-store")
+    assert_api_conform(status: 200)
+  end
+
+  it "uses the São Paulo product date in the dashboard summary" do
+    travel_to(Time.zone.parse("2026-08-18 02:30:00 UTC")) do
+      get "/api/v1/professional/workspace", headers: session_headers(request_id: "workspace-product-date")
+
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body.dig("data", "dashboard", "local_date")).to eq("2026-08-17")
+      assert_api_conform(status: 200)
+    end
+  end
+
+  it "returns only inbound pending relationships in deterministic order" do
+    older_initiator = create_relationship_initiator("+5547999981201", "Beto Antigo")
+    newer_initiator = create_relationship_initiator("+5547999981202", "Caio Novo")
+    older = ProfessionalRelationship.create!(
+      initiator_professional: older_initiator,
+      recipient_professional: profile,
+      relationship_type: "recommendation",
+      created_at: 2.days.ago
+    )
+    newer = ProfessionalRelationship.create!(
+      initiator_professional: newer_initiator,
+      recipient_professional: profile,
+      relationship_type: "worked_together",
+      context_note: "Atuamos juntos em uma obra.",
+      created_at: 1.day.ago
+    )
+    ProfessionalRelationship.create!(
+      initiator_professional: profile,
+      recipient_professional: newer_initiator,
+      relationship_type: "recommendation"
+    )
+    ProfessionalRelationship.create!(
+      initiator_professional: older_initiator,
+      recipient_professional: profile,
+      relationship_type: "worked_together",
+      status: "declined",
+      responded_at: Time.current
+    )
+
+    get "/api/v1/professional/workspace", headers: session_headers(request_id: "workspace-relationships")
+
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body.dig("data", "pending_relationships").pluck("id")).to eq(
+      [older.id, newer.id]
+    )
+    expect(response.parsed_body.dig("data", "pending_relationships", 1)).to include(
+      "relationship_type" => "worked_together",
+      "context_note" => "Atuamos juntos em uma obra.",
+      "initiator" => hash_including("display_name" => "Caio Novo")
+    )
     assert_api_conform(status: 200)
   end
 
@@ -96,6 +169,10 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
       "all_joinville" => false,
       "neighborhoods" => [{"code" => neighborhood.code, "name" => neighborhood.name}]
     )
+    expect(ProfessionalDailyActivity.sole).to have_attributes(
+      professional: profile,
+      profile_updates: 1
+    )
     assert_api_conform(status: 200)
   end
 
@@ -123,6 +200,26 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
       "youtube" => "https://www.youtube.com/@AnaObras"
     )
     expect(profile.reload.whatsapp_e164).to eq("+5547999996202")
+    expect(ProfessionalDailyActivity.sole.profile_updates).to eq(1)
+    assert_api_conform(status: 200)
+
+    patch "/api/v1/professional/profile",
+      params: {
+        identity: {
+          display_name: "Ana Souza",
+          headline: "Elétrica residencial com cuidado.",
+          bio: "Instalações e manutenção em Joinville.",
+          years_experience: 12,
+          whatsapp: "+5547999996202",
+          instagram: "@ana.obras",
+          youtube: "youtube.com/@AnaObras"
+        }
+      },
+      headers: session_headers(request_id: "workspace-no-material-update", origin: true),
+      as: :json
+
+    expect(response).to have_http_status(:ok)
+    expect(ProfessionalDailyActivity.sole.profile_updates).to eq(1)
     assert_api_conform(status: 200)
   end
 
@@ -192,6 +289,11 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
       instagram: "",
       youtube: ""
     }
+  end
+
+  def create_relationship_initiator(phone, display_name)
+    initiator_account = UserAccount.create!(phone_e164: phone, role: "professional", status: "active")
+    ProfessionalProfile.create!(user_account: initiator_account, display_name:)
   end
 
   def session_headers(request_id:, origin: false, token: session_token)

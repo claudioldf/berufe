@@ -5,6 +5,20 @@ import type { ProfessionalWorkspace } from "~/types";
 
 function completeWorkspace(): ProfessionalWorkspace {
   return {
+    dashboard: {
+      localDate: "2026-08-18",
+      readiness: {
+        percentage: 75,
+        steps: {
+          identityContact: true,
+          serviceCoverage: true,
+          reviewablePortfolio: true,
+          approvedIdentity: false,
+        },
+      },
+      recentQuotes: [],
+    },
+    pendingRelationships: [],
     profile: {
       id: "23a94f5e-1429-4ec7-bbc4-a6f805d5182d",
       publicSlug: "ana-souza",
@@ -15,6 +29,7 @@ function completeWorkspace(): ProfessionalWorkspace {
       photo: {
         current: null,
         hasPublishedPhoto: false,
+        publishedImageUrl: null,
         latestUpload: null,
       },
       portfolioItems: [
@@ -130,6 +145,7 @@ describe("professional onboarding submission", () => {
 
     await wrapper.setProps({
       workspace: {
+        ...workspace,
         profile: {
           ...workspace.profile,
           status: "pending_review",

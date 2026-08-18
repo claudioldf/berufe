@@ -128,6 +128,7 @@ export function mapPublicProfessionalProfile(
       professionalSlug: relationship.professional.publicSlug,
       avatar: relationship.professional.photoUrl,
       type: relationship.type,
+      direction: relationship.direction,
       note: relationship.note,
     })),
     updatedAt: profile.publicSnapshotUpdatedAt,

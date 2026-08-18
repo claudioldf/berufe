@@ -12,7 +12,9 @@ class CurrentSessionSerializer
         id: @account.id,
         role: @account.role,
         status: @account.status,
-        registration_completed: @account.registration_completed?
+        registration_completed: @account.registration_completed?,
+        professional_profile_id: professional_profile&.id,
+        relationship_eligible: relationship_eligible?
       },
       session: {
         authentication_method: @application_session.authentication_method,
@@ -21,5 +23,17 @@ class CurrentSessionSerializer
         absolute_expires_at: @application_session.absolute_expires_at
       }
     }
+  end
+
+  private
+
+  def professional_profile
+    @professional_profile ||= @account.professional_profile
+  end
+
+  def relationship_eligible?
+    return false unless @account.professional? && professional_profile
+
+    professional_profile.verification_requests.identity.exists?(status: "approved")
   end
 end

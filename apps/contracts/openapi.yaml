@@ -1082,6 +1082,497 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/professional/relationships:
+    post:
+      operationId: createProfessionalRelationship
+      summary: Request a professional relationship with a published Berufe member
+      tags:
+        - Professional relationships
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfessionalRelationshipCreateRequest"
+      responses:
+        "201":
+          description: The eligible professional's private pending request was created.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Location:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfessionalRelationshipResponse"
+        "401":
+          description: An active Rails application session is required.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: The exact browser origin, professional role, ownership, or approved-identity gate is invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Registration is incomplete or the selected recipient is not currently published.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: The exact directional relationship request already exists.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: The relationship type, recipient, or optional context note is invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/professional/relationships/{id}/response:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Opaque server-generated professional relationship identifier.
+        schema:
+          type: string
+          format: uuid
+    post:
+      operationId: respondProfessionalRelationship
+      summary: Accept or decline one inbound pending professional relationship
+      tags:
+        - Professional relationships
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfessionalRelationshipResponseRequest"
+      responses:
+        "200":
+          description: The recipient recorded the relationship response exactly once.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfessionalRelationshipResponse"
+        "401":
+          description: An active Rails application session is required.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: The exact browser origin or professional ownership is invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: The relationship is not an inbound record owned by this recipient.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: The relationship already received a response.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/professional/quotes:
+    get:
+      operationId: listProfessionalQuotes
+      summary: List the authenticated professional's private quotes
+      tags:
+        - Professional quotes
+      security:
+        - applicationSession: []
+      responses:
+        "200":
+          description: Owned quotes ordered newest first.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfessionalQuoteListResponse"
+        "401":
+          description: An active Rails application session is required.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Professional registration has not created a profile yet.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: createProfessionalQuote
+      summary: Create one private itemized quote
+      tags:
+        - Professional quotes
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfessionalQuoteWriteRequest"
+      responses:
+        "201":
+          description: The valid quote received its next owner-scoped number.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Location:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfessionalQuoteResponse"
+        "401":
+          description: An active Rails application session is required.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: The exact browser origin or professional owner is invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Professional registration has not created a profile yet.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Quote fields, items, or monetary constraints are invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/professional/quotes/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Opaque server-generated professional quote identifier.
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getProfessionalQuote
+      summary: Read one owned private quote
+      tags:
+        - Professional quotes
+      security:
+        - applicationSession: []
+      responses:
+        "200":
+          description: The owned quote and server-calculated ordered items.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfessionalQuoteResponse"
+        "401":
+          description: An active Rails application session is required.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: The quote does not exist or belongs to another professional.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateProfessionalQuote
+      summary: Replace the editable content of one owned draft or shared quote
+      tags:
+        - Professional quotes
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfessionalQuoteWriteRequest"
+      responses:
+        "200":
+          description: The quote was recalculated without changing its lifecycle or active share token.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfessionalQuoteResponse"
+        "401":
+          description: An active Rails application session is required.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: The exact browser origin or professional owner is invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: The quote does not exist or belongs to another professional.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Quote fields, items, or monetary constraints are invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/professional/quotes/{id}/share:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Opaque server-generated professional quote identifier.
+        schema:
+          type: string
+          format: uuid
+    post:
+      operationId: shareProfessionalQuote
+      summary: Create or reproduce the owned quote's stable bearer link
+      tags:
+        - Professional quotes
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfessionalQuoteShareRequest"
+      responses:
+        "200":
+          description: The quote is shared and the raw bearer appears only in this owner response.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfessionalQuoteShareResponse"
+        "401":
+          description: An active Rails application session is required.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: The exact browser origin or professional owner is invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: The quote does not exist or belongs to another professional.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: The owner does not currently have an active published profile.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/shared-quotes/resolve:
+    post:
+      operationId: resolveSharedQuote
+      summary: Resolve one bearer-private shared quote without a customer account
+      tags:
+        - Shared quotes
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SharedQuoteResolveRequest"
+      responses:
+        "200":
+          description: Current quote content and the owner's approved public identity only.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              schema:
+                type: string
+                const: "private, no-store"
+            Referrer-Policy:
+              schema:
+                type: string
+                const: no-referrer
+            X-Robots-Tag:
+              schema:
+                type: string
+                const: "noindex, nofollow"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SharedQuoteResponse"
+        "403":
+          description: The exact configured Nuxt origin is required.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Generic response for every malformed, unknown, revoked, or ineligible bearer.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              schema:
+                type: string
+                const: "private, no-store"
+            Referrer-Policy:
+              schema:
+                type: string
+                const: no-referrer
+            X-Robots-Tag:
+              schema:
+                type: string
+                const: "noindex, nofollow"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: Quote persistence is temporarily unavailable.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              schema:
+                type: string
+                const: "private, no-store"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/professional/profile:
     patch:
       operationId: updateProfessionalProfile
@@ -1780,6 +2271,7 @@ components:
           - profile_photo
           - portfolio_item
           - verification_request
+          - professional_relationship
     ModerationStatus:
       name: status
       in: query
@@ -2226,10 +2718,487 @@ components:
       type: object
       additionalProperties: false
       required:
+        - dashboard
         - profile
+        - pending_relationships
       properties:
+        dashboard:
+          $ref: "#/components/schemas/ProfessionalDashboardSummary"
+        pending_relationships:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProfessionalRelationshipSummary"
         profile:
           $ref: "#/components/schemas/ProfessionalWorkspaceProfile"
+    ProfessionalDashboardSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - local_date
+        - readiness
+        - recent_quotes
+      properties:
+        local_date:
+          type: string
+          format: date
+        readiness:
+          $ref: "#/components/schemas/ProfessionalDashboardReadiness"
+        recent_quotes:
+          type: array
+          maxItems: 5
+          items:
+            $ref: "#/components/schemas/ProfessionalQuoteSummary"
+    ProfessionalDashboardReadiness:
+      type: object
+      additionalProperties: false
+      required:
+        - percentage
+        - steps
+      properties:
+        percentage:
+          type: integer
+          minimum: 0
+          maximum: 100
+          multipleOf: 25
+        steps:
+          type: object
+          additionalProperties: false
+          required:
+            - identity_contact
+            - service_coverage
+            - reviewable_portfolio
+            - approved_identity
+          properties:
+            identity_contact:
+              type: boolean
+            service_coverage:
+              type: boolean
+            reviewable_portfolio:
+              type: boolean
+            approved_identity:
+              type: boolean
+    ProfessionalQuoteSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - quote_number
+        - customer_name
+        - service_description
+        - total_amount
+        - status
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        quote_number:
+          type: integer
+          minimum: 1
+        customer_name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        service_description:
+          type: string
+          minLength: 1
+          maxLength: 160
+        total_amount:
+          type: string
+          pattern: "^[0-9]+\\.[0-9]{2}$"
+        status:
+          type: string
+          enum:
+            - draft
+            - shared
+        created_at:
+          type: string
+          format: date-time
+    ProfessionalQuoteWriteRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - quote
+      properties:
+        quote:
+          type: object
+          additionalProperties: false
+          required:
+            - customer_name
+            - service_description
+            - discount_amount
+            - valid_until
+            - notes
+            - items
+          properties:
+            customer_name:
+              type: string
+              minLength: 1
+              maxLength: 80
+            service_description:
+              type: string
+              minLength: 1
+              maxLength: 160
+            discount_amount:
+              type: number
+              minimum: 0
+            valid_until:
+              type:
+                - string
+                - "null"
+              format: date
+            notes:
+              type:
+                - string
+                - "null"
+              maxLength: 700
+            items:
+              type: array
+              minItems: 1
+              maxItems: 20
+              items:
+                $ref: "#/components/schemas/ProfessionalQuoteItemInput"
+    ProfessionalQuoteItemInput:
+      type: object
+      additionalProperties: false
+      required:
+        - description
+        - quantity
+        - unit
+        - unit_price
+      properties:
+        description:
+          type: string
+          minLength: 1
+          maxLength: 160
+        quantity:
+          type: number
+          exclusiveMinimum: 0
+        unit:
+          type: string
+          minLength: 1
+          maxLength: 20
+        unit_price:
+          type: number
+          minimum: 0
+    ProfessionalQuoteListResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required:
+            - quotes
+          properties:
+            quotes:
+              type: array
+              items:
+                $ref: "#/components/schemas/ProfessionalQuote"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    ProfessionalQuoteResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required:
+            - quote
+          properties:
+            quote:
+              $ref: "#/components/schemas/ProfessionalQuote"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    ProfessionalQuoteShareResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required:
+            - quote
+            - share_url
+            - whatsapp_url
+          properties:
+            quote:
+              $ref: "#/components/schemas/ProfessionalQuote"
+            share_url:
+              type: string
+              format: uri
+              pattern: "/orcamento/bq_[A-Za-z0-9_-]{43}$"
+            whatsapp_url:
+              type: string
+              format: uri
+              pattern: "^https://wa\\.me/\\?text="
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    ProfessionalQuoteShareRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - share
+      properties:
+        share:
+          type: object
+          additionalProperties: false
+          required:
+            - method
+          properties:
+            method:
+              type: string
+              enum:
+                - copy
+                - whatsapp
+    SharedQuoteResolveRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - token
+      properties:
+        token:
+          type: string
+          maxLength: 200
+    SharedQuoteResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required:
+            - quote
+            - professional
+          properties:
+            quote:
+              $ref: "#/components/schemas/SharedQuote"
+            professional:
+              $ref: "#/components/schemas/SharedQuoteProfessional"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    SharedQuote:
+      type: object
+      additionalProperties: false
+      required:
+        - quote_number
+        - customer_name
+        - service_description
+        - valid_until
+        - notes
+        - subtotal_amount
+        - discount_amount
+        - total_amount
+        - items
+      properties:
+        quote_number:
+          type: integer
+          minimum: 1
+        customer_name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        service_description:
+          type: string
+          minLength: 1
+          maxLength: 160
+        valid_until:
+          type:
+            - string
+            - "null"
+          format: date
+        notes:
+          type:
+            - string
+            - "null"
+          maxLength: 700
+        subtotal_amount:
+          $ref: "#/components/schemas/MoneyAmount"
+        discount_amount:
+          $ref: "#/components/schemas/MoneyAmount"
+        total_amount:
+          $ref: "#/components/schemas/MoneyAmount"
+        items:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            $ref: "#/components/schemas/SharedQuoteItem"
+    SharedQuoteItem:
+      type: object
+      additionalProperties: false
+      required:
+        - description
+        - quantity
+        - unit
+        - unit_price
+        - line_total
+        - sort_order
+      properties:
+        description:
+          type: string
+          minLength: 1
+          maxLength: 160
+        quantity:
+          type: string
+          pattern: "^[0-9]+(?:\\.[0-9]{1,3})?$"
+        unit:
+          type: string
+          minLength: 1
+          maxLength: 20
+        unit_price:
+          $ref: "#/components/schemas/MoneyAmount"
+        line_total:
+          $ref: "#/components/schemas/MoneyAmount"
+        sort_order:
+          type: integer
+          minimum: 0
+    SharedQuoteProfessional:
+      type: object
+      additionalProperties: false
+      required:
+        - display_name
+        - photo_url
+        - primary_service
+        - identity_verified
+      properties:
+        display_name:
+          type: string
+          minLength: 3
+          maxLength: 70
+        photo_url:
+          type:
+            - string
+            - "null"
+          format: uri
+        primary_service:
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 80
+        identity_verified:
+          type: boolean
+    ProfessionalQuote:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - quote_number
+        - customer_name
+        - service_description
+        - valid_until
+        - notes
+        - status
+        - subtotal_amount
+        - discount_amount
+        - total_amount
+        - shared_at
+        - created_at
+        - updated_at
+        - items
+      properties:
+        id:
+          type: string
+          format: uuid
+        quote_number:
+          type: integer
+          minimum: 1
+        customer_name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        service_description:
+          type: string
+          minLength: 1
+          maxLength: 160
+        valid_until:
+          type:
+            - string
+            - "null"
+          format: date
+        notes:
+          type:
+            - string
+            - "null"
+          maxLength: 700
+        status:
+          type: string
+          enum:
+            - draft
+            - shared
+        subtotal_amount:
+          $ref: "#/components/schemas/MoneyAmount"
+        discount_amount:
+          $ref: "#/components/schemas/MoneyAmount"
+        total_amount:
+          $ref: "#/components/schemas/MoneyAmount"
+        shared_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        items:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            $ref: "#/components/schemas/ProfessionalQuoteItem"
+    ProfessionalQuoteItem:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - description
+        - quantity
+        - unit
+        - unit_price
+        - line_total
+        - sort_order
+      properties:
+        id:
+          type: string
+          format: uuid
+        description:
+          type: string
+          minLength: 1
+          maxLength: 160
+        quantity:
+          type: string
+          pattern: "^[0-9]+(?:\\.[0-9]{1,3})?$"
+        unit:
+          type: string
+          minLength: 1
+          maxLength: 20
+        unit_price:
+          $ref: "#/components/schemas/MoneyAmount"
+        line_total:
+          $ref: "#/components/schemas/MoneyAmount"
+        sort_order:
+          type: integer
+          minimum: 0
+    MoneyAmount:
+      type: string
+      pattern: "^[0-9]+\\.[0-9]{2}$"
     ProfessionalWorkspaceProfile:
       type: object
       additionalProperties: false
@@ -2293,12 +3262,131 @@ components:
             $ref: "#/components/schemas/ProfessionalServiceSelection"
         coverage:
           $ref: "#/components/schemas/ProfessionalCoverage"
+    ProfessionalRelationshipCreateRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - relationship
+      properties:
+        relationship:
+          type: object
+          additionalProperties: false
+          required:
+            - recipient_professional_id
+            - relationship_type
+          properties:
+            recipient_professional_id:
+              type: string
+              format: uuid
+            relationship_type:
+              type: string
+              enum:
+                - recommendation
+                - worked_together
+            context_note:
+              type:
+                - string
+                - "null"
+              minLength: 1
+              maxLength: 300
+    ProfessionalRelationshipResponseRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - response
+      properties:
+        response:
+          type: string
+          enum:
+            - accepted
+            - declined
+    ProfessionalRelationshipResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required:
+            - relationship
+          properties:
+            relationship:
+              $ref: "#/components/schemas/ProfessionalRelationshipSummary"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    ProfessionalRelationshipSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - relationship_type
+        - context_note
+        - status
+        - created_at
+        - responded_at
+        - initiator
+        - recipient
+      properties:
+        id:
+          type: string
+          format: uuid
+        relationship_type:
+          type: string
+          enum:
+            - recommendation
+            - worked_together
+        context_note:
+          type:
+            - string
+            - "null"
+          maxLength: 300
+        status:
+          type: string
+          enum:
+            - pending
+            - accepted
+            - declined
+        created_at:
+          type: string
+          format: date-time
+        responded_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        initiator:
+          $ref: "#/components/schemas/ProfessionalRelationshipParty"
+        recipient:
+          $ref: "#/components/schemas/ProfessionalRelationshipParty"
+    ProfessionalRelationshipParty:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - public_slug
+        - display_name
+      properties:
+        id:
+          type: string
+          format: uuid
+        public_slug:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          maxLength: 100
+        display_name:
+          type: string
+          minLength: 3
+          maxLength: 70
     ProfessionalWorkspacePhoto:
       type: object
       additionalProperties: false
       required:
         - current
         - has_published_photo
+        - published_image_url
         - latest_upload
       properties:
         current:
@@ -2307,6 +3395,11 @@ components:
             - type: "null"
         has_published_photo:
           type: boolean
+        published_image_url:
+          type:
+            - string
+            - "null"
+          format: uri
         latest_upload:
           oneOf:
             - $ref: "#/components/schemas/MediaUpload"
@@ -2825,6 +3918,8 @@ components:
         - role
         - status
         - registration_completed
+        - professional_profile_id
+        - relationship_eligible
       properties:
         id:
           type: string
@@ -2838,6 +3933,13 @@ components:
           type: string
           const: active
         registration_completed:
+          type: boolean
+        professional_profile_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        relationship_eligible:
           type: boolean
     ApplicationSessionSummary:
       type: object
@@ -3226,6 +4328,7 @@ components:
         - profile_photo
         - portfolio_item
         - verification_request
+        - professional_relationship
     ModerationStatus:
       type: string
       enum:
@@ -3757,6 +4860,7 @@ components:
       required:
         - id
         - type
+        - direction
         - note
         - professional
       properties:
@@ -3768,6 +4872,11 @@ components:
           enum:
             - recommendation
             - worked_together
+        direction:
+          type: string
+          enum:
+            - incoming
+            - outgoing
         note:
           type:
             - string

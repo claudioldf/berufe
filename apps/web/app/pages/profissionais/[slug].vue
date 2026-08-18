@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, shallowRef } from "vue";
-import { useAppRole } from "~/composables/useAppRole";
+import { useApplicationSession } from "~/composables/useApplicationSession";
+import { useProfessionalRelationships } from "~/composables/useProfessionalRelationships";
 import { useShare } from "~/composables/useShare";
 import { useToast } from "~/composables/useToast";
 import { useApiClient } from "~/services/api/client";
@@ -10,6 +11,7 @@ import {
   recordPublicProfessionalProfileView,
 } from "~/services/api/public-discovery";
 import { buildPublicProfileWhatsAppUrl } from "~/utils/publicProfiles";
+import type { ProfessionalRelationshipRequestInput } from "~/services/api/professional-relationships";
 
 interface SocialLink {
   platform: "instagram" | "youtube";
@@ -21,7 +23,13 @@ interface SocialLink {
 const route = useRoute();
 const client = useApiClient();
 const runtimeConfig = useRuntimeConfig();
-const { role: activeRole } = useAppRole();
+const { account, restoreSession } = useApplicationSession();
+const {
+  isSubmitting: relationshipSubmitting,
+  error: relationshipError,
+  requestRelationship,
+  clearError: clearRelationshipError,
+} = useProfessionalRelationships();
 const { share } = useShare();
 const { showToast } = useToast();
 const requestedSlug = computed(() =>
@@ -57,11 +65,15 @@ if (profileError.value || !profileResult.value) {
 const professional = computed(() => profileResult.value!.professional);
 const activePortfolio = shallowRef(0);
 const portfolioOpen = shallowRef(false);
+const relationshipOpen = shallowRef(false);
 const selectedPortfolio = computed(
   () => professional.value?.portfolio[activePortfolio.value],
 );
 const canRequestRelationship = computed(
-  () => activeRole.value === "professional",
+  () =>
+    account.value?.role === "professional" &&
+    account.value.relationshipEligible &&
+    account.value.professionalProfileId !== professional.value.id,
 );
 const supportEmailUrl = computed(() => {
   const subject = encodeURIComponent(
@@ -133,6 +145,7 @@ useHead(() => ({
 }));
 
 onMounted(() => {
+  void restoreSession().catch(() => false);
   void recordPublicProfessionalProfileView(
     client,
     professional.value.id,
@@ -160,12 +173,23 @@ async function shareProfile() {
   });
 }
 
-function requestRelationship() {
-  showToast({
-    title: "Solicitação enviada",
-    description:
-      "A relação só poderá seguir para moderação depois da confirmação do outro profissional.",
-  });
+function openRelationshipRequest() {
+  clearRelationshipError();
+  relationshipOpen.value = true;
+}
+
+async function submitRelationship(input: ProfessionalRelationshipRequestInput) {
+  try {
+    await requestRelationship(input);
+    relationshipOpen.value = false;
+    showToast({
+      title: "Solicitação enviada",
+      description:
+        "A relação só poderá seguir para moderação depois da confirmação do outro profissional.",
+    });
+  } catch {
+    // The dialog keeps the normalized API error visible for a retry.
+  }
 }
 </script>
 
@@ -186,7 +210,7 @@ function requestRelationship() {
         :professional="professional"
         :can-request-relationship="canRequestRelationship"
         :support-email-url="supportEmailUrl"
-        @request-relationship="requestRelationship"
+        @request-relationship="openRelationshipRequest"
         @view-portfolio="openPortfolio"
       />
       <ProfileSidebar
@@ -200,6 +224,15 @@ function requestRelationship() {
       :professional="professional"
       :contact-url="contactUrl"
       @contact="announceContact"
+    />
+
+    <ProfileRelationshipRequestDialog
+      v-model:open="relationshipOpen"
+      :recipient-professional-id="professional.id"
+      :recipient-name="professional.name"
+      :submitting="relationshipSubmitting"
+      :error="relationshipError"
+      @submit="submitRelationship"
     />
 
     <UModal
