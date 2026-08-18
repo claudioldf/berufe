@@ -1,29 +1,21 @@
 <script setup lang="ts">
-import type {
-  Professional,
-  Quote,
-  QuoteDraft,
-  QuoteShareMethod,
-} from "~/types";
+import type { Quote, QuoteDraft, QuoteProfessional } from "~/types";
 import { useQuoteDraft } from "~/composables/useQuoteDraft";
-import { useShare } from "~/composables/useShare";
-import { useToast } from "~/composables/useToast";
 import { cloneQuote } from "~/utils/quotes";
 
 const props = defineProps<{
   initialQuote: Quote;
-  professional: Professional;
+  professional: QuoteProfessional;
+  saving: boolean;
+  saveError: string;
+  shareEnabled?: boolean;
 }>();
 const emit = defineEmits<{
   save: [draft: QuoteDraft];
-  shared: [method: QuoteShareMethod];
 }>();
-const { copyText } = useShare();
-const { showToast } = useToast();
 const {
   quote,
   previewOpen,
-  shareOpen,
   isSaved,
   isShared,
   subtotal,
@@ -31,42 +23,10 @@ const {
   markDirty,
   addItem,
   removeItem,
-  markSaved,
-  markShared,
 } = useQuoteDraft(() => props.initialQuote);
-const customerQuoteUrl = "https://berufe.com.br/orcamento/BERUFE-DEMO-1042";
 
 function save() {
-  markSaved();
   emit("save", cloneQuote(quote.value));
-  showToast({
-    title: "Rascunho salvo",
-    description: `Orçamento #${quote.value.number} atualizado.`,
-  });
-}
-
-function finishSharing(method: QuoteShareMethod) {
-  markShared();
-  emit("shared", method);
-}
-
-function shareQuote() {
-  finishSharing("whatsapp");
-  const message = encodeURIComponent(
-    `Olá, ${quote.value.customerName}! Segue o orçamento #${quote.value.number}: ${customerQuoteUrl}`,
-  );
-  if (import.meta.client) {
-    window.open(
-      `https://wa.me/?text=${message}`,
-      "_blank",
-      "noopener,noreferrer",
-    );
-  }
-}
-
-async function copyQuoteLink() {
-  const copied = await copyText(customerQuoteUrl, "Link do orçamento copiado");
-  if (copied) finishSharing("copy");
 }
 </script>
 
@@ -86,9 +46,11 @@ async function copyQuoteLink() {
         :saved="isSaved"
         :shared="isShared"
         :valid="isValid"
+        :saving="saving"
+        :error="saveError"
+        :share-enabled="shareEnabled ?? false"
         @preview="previewOpen = true"
         @save="save"
-        @share="shareOpen = true"
       />
     </div>
 
@@ -110,46 +72,6 @@ async function copyQuoteLink() {
           :professional="professional"
           customer-facing
       /></template>
-    </UModal>
-
-    <UModal
-      v-model:open="shareOpen"
-      title="Compartilhar orçamento"
-      description="Ao compartilhar, o rascunho ganha um link seguro e muda para compartilhado."
-    >
-      <template #body>
-        <div class="share-quote">
-          <span><UIcon name="i-lucide-message-circle" /></span>
-          <div>
-            <strong>Enviar pelo WhatsApp</strong>
-            <p>
-              A Berufe abre o aplicativo com uma mensagem e o link. Não enviamos
-              nem lemos a conversa.
-            </p>
-          </div>
-        </div>
-        <div class="share-quote__link">
-          <UIcon name="i-lucide-link" /><span
-            >berufe.com.br/orcamento/••••••••1042</span
-          >
-        </div>
-      </template>
-      <template #footer
-        ><UButton color="neutral" variant="ghost" @click="shareOpen = false"
-          >Cancelar</UButton
-        ><UButton
-          color="neutral"
-          variant="outline"
-          icon="i-lucide-link"
-          @click="copyQuoteLink"
-          >Copiar link</UButton
-        ><UButton
-          color="primary"
-          icon="i-lucide-message-circle"
-          @click="shareQuote"
-          >Abrir WhatsApp</UButton
-        ></template
-      >
     </UModal>
   </div>
 </template>

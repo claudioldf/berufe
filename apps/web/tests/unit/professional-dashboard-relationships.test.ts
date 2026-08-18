@@ -85,6 +85,7 @@ function workspace(options: { pending?: boolean; failed?: boolean } = {}) {
         photo: {
           current: null,
           hasPublishedPhoto: false,
+          publishedImageUrl: null,
           latestUpload: null,
         },
         portfolioItems: [],

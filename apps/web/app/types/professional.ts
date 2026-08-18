@@ -242,6 +242,7 @@ export interface ProfessionalProfilePhotoState {
     submittedAt: string;
   } | null;
   hasPublishedPhoto: boolean;
+  publishedImageUrl: string | null;
   latestUpload: ProfessionalMediaUploadState | null;
 }
 

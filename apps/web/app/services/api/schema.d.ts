@@ -476,6 +476,45 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/professional/quotes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the authenticated professional's private quotes */
+        get: operations["listProfessionalQuotes"];
+        put?: never;
+        /** Create one private itemized quote */
+        post: operations["createProfessionalQuote"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/professional/quotes/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Opaque server-generated professional quote identifier. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** Read one owned private quote */
+        get: operations["getProfessionalQuote"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Replace the editable content of one owned draft or shared quote */
+        patch: operations["updateProfessionalQuote"];
+        trace?: never;
+    };
     "/api/v1/professional/profile": {
         parameters: {
             query?: never;
@@ -825,6 +864,68 @@ export interface components {
             /** Format: date-time */
             created_at: string;
         };
+        ProfessionalQuoteWriteRequest: {
+            quote: {
+                customer_name: string;
+                service_description: string;
+                discount_amount: number;
+                /** Format: date */
+                valid_until: string | null;
+                notes: string | null;
+                items: components["schemas"]["ProfessionalQuoteItemInput"][];
+            };
+        };
+        ProfessionalQuoteItemInput: {
+            description: string;
+            quantity: number;
+            unit: string;
+            unit_price: number;
+        };
+        ProfessionalQuoteListResponse: {
+            data: {
+                quotes: components["schemas"]["ProfessionalQuote"][];
+            };
+            request_id: components["schemas"]["RequestId"];
+        };
+        ProfessionalQuoteResponse: {
+            data: {
+                quote: components["schemas"]["ProfessionalQuote"];
+            };
+            request_id: components["schemas"]["RequestId"];
+        };
+        ProfessionalQuote: {
+            /** Format: uuid */
+            id: string;
+            quote_number: number;
+            customer_name: string;
+            service_description: string;
+            /** Format: date */
+            valid_until: string | null;
+            notes: string | null;
+            /** @enum {string} */
+            status: "draft" | "shared";
+            subtotal_amount: components["schemas"]["MoneyAmount"];
+            discount_amount: components["schemas"]["MoneyAmount"];
+            total_amount: components["schemas"]["MoneyAmount"];
+            /** Format: date-time */
+            shared_at: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            items: components["schemas"]["ProfessionalQuoteItem"][];
+        };
+        ProfessionalQuoteItem: {
+            /** Format: uuid */
+            id: string;
+            description: string;
+            quantity: string;
+            unit: string;
+            unit_price: components["schemas"]["MoneyAmount"];
+            line_total: components["schemas"]["MoneyAmount"];
+            sort_order: number;
+        };
+        MoneyAmount: string;
         ProfessionalWorkspaceProfile: {
             /** Format: uuid */
             id: string;
@@ -885,6 +986,8 @@ export interface components {
         ProfessionalWorkspacePhoto: {
             current: components["schemas"]["ProfessionalProfilePhotoSummary"] | null;
             has_published_photo: boolean;
+            /** Format: uri */
+            published_image_url: string | null;
             latest_upload: components["schemas"]["MediaUpload"] | null;
         };
         ProfessionalProfilePhotoSummary: {
@@ -2741,6 +2844,225 @@ export interface operations {
             };
             /** @description The relationship already received a response. */
             409: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    listProfessionalQuotes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Owned quotes ordered newest first. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalQuoteListResponse"];
+                };
+            };
+            /** @description An active Rails application session is required. */
+            401: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Professional registration has not created a profile yet. */
+            404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    createProfessionalQuote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfessionalQuoteWriteRequest"];
+            };
+        };
+        responses: {
+            /** @description The valid quote received its next owner-scoped number. */
+            201: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalQuoteResponse"];
+                };
+            };
+            /** @description An active Rails application session is required. */
+            401: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The exact browser origin or professional owner is invalid. */
+            403: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Professional registration has not created a profile yet. */
+            404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Quote fields, items, or monetary constraints are invalid. */
+            422: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getProfessionalQuote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Opaque server-generated professional quote identifier. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The owned quote and server-calculated ordered items. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalQuoteResponse"];
+                };
+            };
+            /** @description An active Rails application session is required. */
+            401: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The quote does not exist or belongs to another professional. */
+            404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    updateProfessionalQuote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Opaque server-generated professional quote identifier. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfessionalQuoteWriteRequest"];
+            };
+        };
+        responses: {
+            /** @description The quote was recalculated without changing its lifecycle or active share token. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalQuoteResponse"];
+                };
+            };
+            /** @description An active Rails application session is required. */
+            401: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The exact browser origin or professional owner is invalid. */
+            403: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The quote does not exist or belongs to another professional. */
+            404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Quote fields, items, or monetary constraints are invalid. */
+            422: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;

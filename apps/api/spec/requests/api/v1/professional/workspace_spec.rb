@@ -49,6 +49,7 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
           "photo" => {
             "current" => nil,
             "has_published_photo" => false,
+            "published_image_url" => nil,
             "latest_upload" => nil
           },
           "portfolio_items" => [],

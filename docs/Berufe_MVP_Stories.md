@@ -804,7 +804,7 @@ Public profiles also show a visible Berufe support/report contact that routes to
 
 ### S049 — Create and edit a draft quote
 
-**Status:** PENDING
+**Status:** DONE
 
 **Story:** As a professional, I want to create a simple itemized quote so that I can use Berufe in a frequent customer workflow.
 
@@ -825,7 +825,7 @@ Public profiles also show a visible Berufe support/report contact that routes to
 
 ### S050 — Preview and share a secure quote link
 
-**Status:** PENDING
+**Status:** IN PROGRESS
 
 **Story:** As a professional, I want to preview and share an unguessable quote link so that a customer can view it without an account.
 

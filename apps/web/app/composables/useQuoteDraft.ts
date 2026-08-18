@@ -13,43 +13,43 @@ export function useQuoteDraft(initialQuote: MaybeRefOrGetter<Quote>) {
   const previewOpen = shallowRef(false);
   const shareOpen = shallowRef(false);
   const isSaved = shallowRef(true);
-  const isShared = shallowRef(false);
+  const isShared = shallowRef(toValue(initialQuote).status === "shared");
 
   const subtotal = computed(() => quoteSubtotal(quote.value));
   const total = computed(() => quoteTotal(quote.value));
   const isValid = computed(() => isQuoteValid(quote.value));
 
   watch(
-    () => toValue(initialQuote).number,
+    () => [toValue(initialQuote).id, toValue(initialQuote).updatedAt],
     () => reset(),
   );
 
   function reset() {
     quote.value = cloneQuote(toValue(initialQuote));
     isSaved.value = true;
-    isShared.value = false;
+    isShared.value = toValue(initialQuote).status === "shared";
     previewOpen.value = false;
     shareOpen.value = false;
   }
 
   function markDirty() {
     isSaved.value = false;
-    isShared.value = false;
   }
 
   function addItem() {
-    const nextId = Math.max(0, ...quote.value.items.map((item) => item.id)) + 1;
     quote.value.items.push({
-      id: nextId,
+      id: globalThis.crypto.randomUUID(),
       description: "",
       quantity: 1,
       unit: "serviço",
       unitPrice: 0,
+      lineTotal: 0,
+      sortOrder: quote.value.items.length,
     });
     markDirty();
   }
 
-  function removeItem(id: number) {
+  function removeItem(id: string) {
     if (quote.value.items.length === 1) return;
     quote.value.items = quote.value.items.filter((item) => item.id !== id);
     markDirty();

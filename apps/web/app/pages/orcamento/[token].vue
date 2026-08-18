@@ -1,12 +1,37 @@
 <script setup lang="ts">
 import quotesData from "@data/quotes.json";
 import professionalsData from "@data/professionals.json";
-import type { Professional, Quote } from "~/types";
+import type { Professional, Quote, QuoteProfessional } from "~/types";
+import { quoteSubtotal, quoteTotal } from "~/utils/quotes";
 
 const route = useRoute();
 const professional = (professionalsData as Professional[])[0]!;
 const valid = route.params.token === quotesData.shared.token;
-const quote = quotesData.shared as Quote;
+const quoteFixture = quotesData.shared;
+const quote = {
+  ...quoteFixture,
+  id: null,
+  status: "shared",
+  sharedAt: null,
+  createdAt: null,
+  updatedAt: null,
+  subtotal: 0,
+  total: 0,
+  items: quoteFixture.items.map((item, sortOrder) => ({
+    ...item,
+    id: String(item.id),
+    lineTotal: item.quantity * item.unitPrice,
+    sortOrder,
+  })),
+} satisfies Quote;
+quote.subtotal = quoteSubtotal(quote);
+quote.total = quoteTotal(quote);
+const quoteProfessional: QuoteProfessional = {
+  name: professional.name,
+  avatar: professional.avatar,
+  primaryService: professional.primaryService,
+  identityVerified: true,
+};
 
 if (!valid)
   throw createError({
@@ -51,7 +76,7 @@ function printQuote() {
       </div>
       <QuotesQuotePreview
         :quote="quote"
-        :professional="professional"
+        :professional="quoteProfessional"
         customer-facing
       />
       <p class="shared-quote-page__notice">

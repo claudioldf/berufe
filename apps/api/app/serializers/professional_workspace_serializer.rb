@@ -42,7 +42,9 @@ class ProfessionalWorkspaceSerializer
     {
       local_date: Time.current.in_time_zone(ProfessionalDailyActivity::PRODUCT_TIME_ZONE).to_date.iso8601,
       readiness: ProfessionalDashboardReadiness.new(profile).as_json,
-      recent_quotes: []
+      recent_quotes: profile.quotes.newest_first.limit(5).map do |quote|
+        ProfessionalQuoteSummarySerializer.new(quote).as_json
+      end
     }
   end
 
@@ -80,6 +82,7 @@ class ProfessionalWorkspaceSerializer
         submitted_at: current.submitted_at.iso8601
       },
       has_published_photo: profile.published_photo.present?,
+      published_image_url: profile.published_photo && PublicProfilePhotoImageUrl.call(profile.published_photo),
       latest_upload: latest_upload && MediaUploadSerializer.new(latest_upload).as_json
     }
   end

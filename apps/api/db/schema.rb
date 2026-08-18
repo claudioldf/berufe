@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_18_090000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_18_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -495,6 +495,47 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_18_090000) do
     t.check_constraint "status = ANY (ARRAY['pending'::text, 'accepted'::text, 'declined'::text])", name: "professional_relationships_known_status"
   end
 
+  create_table "quote_items", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "description", limit: 160, null: false
+    t.decimal "line_total", precision: 14, scale: 2, null: false
+    t.decimal "quantity", precision: 12, scale: 3, null: false
+    t.uuid "quote_id", null: false
+    t.integer "sort_order", null: false
+    t.string "unit", limit: 20, null: false
+    t.decimal "unit_price", precision: 14, scale: 2, null: false
+    t.index ["quote_id", "sort_order"], name: "index_quote_items_on_quote_id_and_sort_order", unique: true
+    t.index ["quote_id"], name: "index_quote_items_on_quote_id"
+    t.check_constraint "quantity > 0::numeric", name: "quote_items_positive_quantity"
+    t.check_constraint "sort_order >= 0", name: "quote_items_nonnegative_sort_order"
+    t.check_constraint "unit_price >= 0::numeric AND line_total >= 0::numeric", name: "quote_items_nonnegative_amounts"
+  end
+
+  create_table "quotes", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "customer_name", limit: 80, null: false
+    t.decimal "discount_amount", precision: 14, scale: 2, default: "0.0", null: false
+    t.text "notes"
+    t.uuid "professional_id", null: false
+    t.integer "quote_number", null: false
+    t.string "service_description", limit: 160, null: false
+    t.string "share_token_hash", limit: 64
+    t.datetime "shared_at"
+    t.string "status", limit: 16, default: "draft", null: false
+    t.decimal "subtotal_amount", precision: 14, scale: 2, default: "0.0", null: false
+    t.decimal "total_amount", precision: 14, scale: 2, default: "0.0", null: false
+    t.datetime "updated_at", null: false
+    t.date "valid_until"
+    t.index ["professional_id", "created_at", "id"], name: "index_quotes_on_professional_and_recent", order: { created_at: :desc, id: :desc }
+    t.index ["professional_id", "quote_number"], name: "index_quotes_on_professional_id_and_quote_number", unique: true
+    t.index ["professional_id"], name: "index_quotes_on_professional_id"
+    t.index ["share_token_hash"], name: "index_quotes_on_share_token_hash", unique: true
+    t.check_constraint "discount_amount <= subtotal_amount AND total_amount = (subtotal_amount - discount_amount)", name: "quotes_consistent_totals"
+    t.check_constraint "quote_number > 0", name: "quotes_positive_number"
+    t.check_constraint "status::text = 'draft'::text AND share_token_hash IS NULL AND shared_at IS NULL OR status::text = 'shared'::text AND share_token_hash IS NOT NULL AND shared_at IS NOT NULL", name: "quotes_consistent_share_state"
+    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying, 'shared'::character varying]::text[])", name: "quotes_known_status"
+    t.check_constraint "subtotal_amount >= 0::numeric AND discount_amount >= 0::numeric AND total_amount >= 0::numeric", name: "quotes_nonnegative_amounts"
+  end
+
   create_table "search_events", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.text "city_code", null: false
     t.datetime "created_at", null: false
@@ -653,6 +694,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_18_090000) do
   add_foreign_key "professional_profiles", "user_accounts"
   add_foreign_key "professional_relationships", "professional_profiles", column: "initiator_professional_id"
   add_foreign_key "professional_relationships", "professional_profiles", column: "recipient_professional_id"
+  add_foreign_key "quote_items", "quotes", on_delete: :cascade
+  add_foreign_key "quotes", "professional_profiles", column: "professional_id"
   add_foreign_key "search_events", "neighborhoods", column: "neighborhood_code", primary_key: "code"
   add_foreign_key "search_events", "services"
   add_foreign_key "services", "service_categories", column: "category_id"

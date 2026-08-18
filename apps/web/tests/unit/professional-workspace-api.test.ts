@@ -40,6 +40,7 @@ const workspaceData: WorkspaceData = {
     photo: {
       current: null,
       has_published_photo: false,
+      published_image_url: null,
       latest_upload: null,
     },
     portfolio_items: [],
@@ -104,6 +105,7 @@ describe("professional workspace API", () => {
         photo: {
           current: null,
           hasPublishedPhoto: false,
+          publishedImageUrl: null,
           latestUpload: null,
         },
         portfolioItems: [],

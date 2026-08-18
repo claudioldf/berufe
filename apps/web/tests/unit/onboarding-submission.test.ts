@@ -29,6 +29,7 @@ function completeWorkspace(): ProfessionalWorkspace {
       photo: {
         current: null,
         hasPublishedPhoto: false,
+        publishedImageUrl: null,
         latestUpload: null,
       },
       portfolioItems: [

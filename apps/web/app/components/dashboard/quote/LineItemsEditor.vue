@@ -7,7 +7,7 @@ defineProps<{ subtotal: number }>();
 const quote = defineModel<Quote>({ required: true });
 const emit = defineEmits<{
   add: [];
-  remove: [id: number];
+  remove: [id: string];
   dirty: [];
 }>();
 </script>
@@ -50,6 +50,7 @@ const emit = defineEmits<{
             :name="`item-${item.id}-description`"
             autocomplete="off"
             :placeholder="`Item ${index + 1}…`"
+            maxlength="160"
           />
         </label>
         <label>

@@ -62,6 +62,7 @@ export function mapProfessionalWorkspace(
             }
           : null,
         hasPublishedPhoto: data.profile.photo.has_published_photo,
+        publishedImageUrl: data.profile.photo.published_image_url,
         latestUpload: data.profile.photo.latest_upload
           ? {
               id: data.profile.photo.latest_upload.id,

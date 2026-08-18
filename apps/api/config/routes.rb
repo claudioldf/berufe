@@ -22,6 +22,7 @@ Rails.application.routes.draw do
         resources :verification_requests, only: :create, path: "verification-requests"
         resources :relationships, only: :create
         post "relationships/:id/response", to: "relationships#respond"
+        resources :quotes, only: %i[index create show update]
         resources :media_uploads, only: %i[create show], path: "media-uploads" do
           member do
             put :content
