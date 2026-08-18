@@ -26,6 +26,7 @@ function validDraft(): ProfessionalProfileDraft {
     instagram: "",
     youtube: "",
     selectedServices: ["Eletricista"],
+    serviceNotes: { Eletricista: "Quadros e circuitos" },
     primaryService: "Eletricista",
     allJoinville: true,
     selectedNeighborhoods: [],
@@ -103,7 +104,19 @@ describe("professional onboarding rules", () => {
     >();
     const Host = defineComponent({
       setup() {
-        onboarding.value = useProfessionalOnboarding();
+        onboarding.value = useProfessionalOnboarding({
+          saveIdentity: async (draft) => draft,
+          saveSupply: async (draft) => draft,
+          savePortfolio: async (draft) => ({
+            title: draft.title,
+            service: draft.service,
+            description: draft.description,
+            submittedAt: "2026-08-15T12:02:00.000Z",
+          }),
+          saveVerification: async () => ({
+            submittedAt: "2026-08-15T12:03:00.000Z",
+          }),
+        });
         return () => h("div");
       },
     });
@@ -117,20 +130,20 @@ describe("professional onboarding rules", () => {
     });
 
     const draft = validDraft();
-    expect(workflow.completeProfile(draft)).toBe(true);
-    expect(workflow.completeServices(draft)).toBe(true);
+    await expect(workflow.completeProfile(draft)).resolves.toBe(true);
+    await expect(workflow.completeServices(draft)).resolves.toBe(true);
     const file = new File(["private-image-bytes"], "private.jpg", {
       type: "image/jpeg",
     });
-    expect(
+    await expect(
       workflow.completePortfolio({
         file,
         title: "Iluminação da cozinha",
         service: "Eletricista",
         description: "",
       }),
-    ).toBe(true);
-    expect(workflow.completeVerification(file)).toBe(true);
+    ).resolves.toBe(true);
+    await expect(workflow.completeVerification(file)).resolves.toBe(true);
 
     const stored = window.localStorage.getItem(
       professionalOnboardingStorageKey,

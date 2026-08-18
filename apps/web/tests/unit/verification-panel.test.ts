@@ -1,0 +1,69 @@
+import { mount } from "@vue/test-utils";
+import VerificationPanel from "~/components/dashboard/VerificationPanel.vue";
+
+describe("professional verification panel", () => {
+  it("keeps phone confirmation separate from the controlled identity label", () => {
+    const wrapper = mount(VerificationPanel, {
+      props: {
+        evidence: [
+          { id: "phone", label: "Telefone confirmado" },
+          { id: "identity", label: "Identidade verificada" },
+        ],
+        verification: {
+          current: {
+            id: "verification-approved",
+            verificationType: "identity",
+            status: "approved",
+            rejectionReason: null,
+            submittedAt: "2026-08-17T12:00:00Z",
+          },
+        },
+      },
+    });
+
+    expect(wrapper.text()).toContain("Telefone confirmado");
+    expect(wrapper.text()).toContain("Identidade verificada");
+    expect(wrapper.find('input[type="file"]').exists()).toBe(false);
+  });
+
+  it("shows private pending status without exposing another upload action", () => {
+    const wrapper = mount(VerificationPanel, {
+      props: {
+        evidence: [{ id: "phone", label: "Telefone confirmado" }],
+        verification: {
+          current: {
+            id: "verification-1",
+            verificationType: "identity",
+            status: "pending_review",
+            rejectionReason: null,
+            submittedAt: "2026-08-17T12:00:00Z",
+          },
+        },
+      },
+    });
+
+    expect(wrapper.text()).toContain("Aguardando análise");
+    expect(wrapper.text()).toContain("está privada");
+    expect(wrapper.find('input[type="file"]').exists()).toBe(false);
+  });
+
+  it("shows private rejection guidance and permits a new image", () => {
+    const wrapper = mount(VerificationPanel, {
+      props: {
+        evidence: [{ id: "phone", label: "Telefone confirmado" }],
+        verification: {
+          current: {
+            id: "verification-2",
+            verificationType: "identity",
+            status: "rejected",
+            rejectionReason: "A imagem não está legível.",
+            submittedAt: "2026-08-17T12:00:00Z",
+          },
+        },
+      },
+    });
+
+    expect(wrapper.text()).toContain("A imagem não está legível.");
+    expect(wrapper.find('input[type="file"]').exists()).toBe(true);
+  });
+});

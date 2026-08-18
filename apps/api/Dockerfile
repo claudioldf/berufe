@@ -5,7 +5,7 @@ ENV BUNDLE_JOBS=4 \
     BUNDLE_RETRY=3
 
 RUN apt-get update -qq \
-    && apt-get install --no-install-recommends -y build-essential curl libpq-dev \
+    && apt-get install --no-install-recommends -y build-essential curl libpq-dev libvips42 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

@@ -178,6 +178,82 @@ export interface paths {
         patch: operations["updateAdminCatalogNeighborhood"];
         trace?: never;
     };
+    "/api/v1/admin/moderation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read the shared professional-supply moderation queue */
+        get: operations["getAdminModerationQueue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/moderation/{target_type}/{target_id}/decisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                target_type: components["parameters"]["ModerationTargetType"];
+                target_id: components["parameters"]["ModerationTargetId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Append an audited moderation decision and refresh the queue */
+        post: operations["createAdminModerationDecision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/moderation/{target_type}/{target_id}/media": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                target_type: components["parameters"]["ModerationMediaTargetType"];
+                target_id: components["parameters"]["ModerationTargetId"];
+            };
+            cookie?: never;
+        };
+        /** Read a regenerated private image for in-place moderation preview */
+        get: operations["getAdminModerationMedia"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/verification-files/{id}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** Read regenerated identity evidence through an audited response */
+        get: operations["getAdminVerificationFileContent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/catalog": {
         parameters: {
             query?: never;
@@ -187,6 +263,25 @@ export interface paths {
         };
         /** Read the active service and Joinville neighborhood catalog */
         get: operations["getPublicCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/portfolio-items/{id}/image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** Read the approved regenerated portfolio image */
+        get: operations["getPublicPortfolioItemImage"];
         put?: never;
         post?: never;
         delete?: never;
@@ -206,6 +301,225 @@ export interface paths {
         /** Accept the current legal documents and create one draft professional profile */
         put: operations["completeProfessionalRegistration"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/professional/workspace": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read the authenticated professional's server-owned workspace */
+        get: operations["getProfessionalWorkspace"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/professional/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Persist the authenticated professional's identity and contact step */
+        patch: operations["updateProfessionalProfile"];
+        trace?: never;
+    };
+    "/api/v1/professional/profile/submission": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit the persisted professional profile for moderation */
+        post: operations["submitProfessionalProfile"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/professional/profile/photo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Attach a processed private image to the professional profile for review */
+        put: operations["updateProfessionalProfilePhoto"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/professional/portfolio-items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Attach one processed image and submit a portfolio item for review */
+        post: operations["createProfessionalPortfolioItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/professional/portfolio-items/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Opaque server-generated portfolio item identifier. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Soft-delete one owned portfolio item */
+        delete: operations["deleteProfessionalPortfolioItem"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/professional/verification-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit one regenerated private identity image for review */
+        post: operations["createProfessionalVerificationRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/professional/media-uploads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Authorize a short-lived private professional image upload */
+        post: operations["authorizeProfessionalMediaUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/professional/media-uploads/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Opaque server-generated media upload identifier. */
+                id: components["parameters"]["MediaUploadId"];
+            };
+            cookie?: never;
+        };
+        /** Read private media processing state owned by the authenticated professional */
+        get: operations["getProfessionalMediaUpload"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/professional/media-uploads/{id}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Opaque server-generated media upload identifier. */
+                id: components["parameters"]["MediaUploadId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** Upload authorized image bytes through Rails in local and preview environments */
+        put: operations["uploadProfessionalMediaContent"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/professional/media-uploads/{id}/completion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Opaque server-generated media upload identifier. */
+                id: components["parameters"]["MediaUploadId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm a private upload and enqueue safe image processing */
+        post: operations["completeProfessionalMediaUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/professional/media-uploads/{id}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Opaque server-generated media upload identifier. */
+                id: components["parameters"]["MediaUploadId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Retry transient private image processing without accepting invalid content */
+        post: operations["retryProfessionalMediaUpload"];
         delete?: never;
         options?: never;
         head?: never;
@@ -309,6 +623,199 @@ export interface components {
             /** @constant */
             profile_status: "draft";
         };
+        ProfessionalProfileUpdateRequest: {
+            identity?: components["schemas"]["ProfessionalIdentityUpdate"];
+            services?: components["schemas"]["ProfessionalServiceUpdate"][];
+            coverage?: components["schemas"]["ProfessionalCoverageUpdate"];
+        };
+        ProfessionalIdentityUpdate: {
+            display_name: string;
+            headline: string;
+            bio: string;
+            years_experience?: number | null;
+            whatsapp: string;
+            instagram?: string | null;
+            youtube?: string | null;
+        };
+        ProfessionalWorkspaceResponse: {
+            data: components["schemas"]["ProfessionalWorkspaceData"];
+            request_id: components["schemas"]["RequestId"];
+        };
+        ProfessionalWorkspaceData: {
+            profile: components["schemas"]["ProfessionalWorkspaceProfile"];
+        };
+        ProfessionalWorkspaceProfile: {
+            /** Format: uuid */
+            id: string;
+            public_slug: string;
+            /** @enum {string} */
+            profile_status: "draft" | "pending_review" | "published" | "suspended";
+            /** @enum {string} */
+            revision_status: "draft" | "pending_review" | "approved" | "rejected" | "superseded";
+            revision_rejection_reason: string | null;
+            has_published_revision: boolean;
+            photo: components["schemas"]["ProfessionalWorkspacePhoto"];
+            portfolio_items: components["schemas"]["ProfessionalPortfolioItem"][];
+            verification: components["schemas"]["ProfessionalVerificationState"];
+            identity: components["schemas"]["ProfessionalIdentity"];
+            services: components["schemas"]["ProfessionalServiceSelection"][];
+            coverage: components["schemas"]["ProfessionalCoverage"];
+        };
+        ProfessionalWorkspacePhoto: {
+            current: components["schemas"]["ProfessionalProfilePhotoSummary"] | null;
+            has_published_photo: boolean;
+            latest_upload: components["schemas"]["MediaUpload"] | null;
+        };
+        ProfessionalProfilePhotoSummary: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "pending_review" | "approved" | "rejected" | "hidden" | "superseded";
+            rejection_reason: string | null;
+            /** Format: date-time */
+            submitted_at: string;
+        };
+        ProfessionalProfilePhotoUpdateRequest: {
+            /** Format: uuid */
+            media_upload_id: string;
+        };
+        ProfessionalPortfolioItemCreateRequest: {
+            portfolio_item: {
+                /** Format: uuid */
+                media_upload_id: string;
+                /** Format: uuid */
+                service_id: string;
+                title: string;
+                description: string | null;
+            };
+        };
+        ProfessionalPortfolioItem: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            description: string | null;
+            service: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+            };
+            /** @enum {string} */
+            status: "pending_review" | "approved" | "rejected" | "hidden";
+            rejection_reason: string | null;
+            /** Format: date-time */
+            submitted_at: string;
+            image_url: string | null;
+        };
+        ProfessionalVerificationRequestCreateRequest: {
+            verification_request: {
+                /** Format: uuid */
+                media_upload_id: string;
+                /** @constant */
+                verification_type: "identity";
+            };
+        };
+        ProfessionalVerificationState: {
+            current: components["schemas"]["ProfessionalVerificationRequest"] | null;
+        };
+        ProfessionalVerificationRequest: {
+            /** Format: uuid */
+            id: string;
+            /** @constant */
+            verification_type: "identity";
+            /** @enum {string} */
+            status: "pending_review" | "approved" | "rejected" | "expired";
+            rejection_reason: string | null;
+            /** Format: date-time */
+            submitted_at: string;
+        };
+        ProfessionalIdentity: {
+            display_name: string;
+            headline: string;
+            bio: string;
+            years_experience: number | null;
+            whatsapp: string;
+            /** Format: uri */
+            instagram: string | null;
+            /** Format: uri */
+            youtube: string | null;
+        };
+        ProfessionalServiceUpdate: {
+            /** Format: uuid */
+            service_id: string;
+            is_primary: boolean;
+            note?: string | null;
+        };
+        ProfessionalCoverageUpdate: {
+            all_joinville: boolean;
+            neighborhood_codes: string[];
+        };
+        ProfessionalServiceSelection: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            is_primary: boolean;
+            note: string | null;
+        };
+        ProfessionalCoverage: {
+            all_joinville: boolean;
+            neighborhoods: components["schemas"]["ProfessionalCoverageNeighborhood"][];
+        };
+        ProfessionalCoverageNeighborhood: {
+            code: string;
+            name: string;
+        };
+        MediaUploadAuthorizationRequest: {
+            /** @enum {string} */
+            purpose: "profile_photo" | "portfolio_image" | "verification_identity";
+            /** @enum {string} */
+            content_type: "image/jpeg" | "image/png";
+            byte_size: number;
+        };
+        MediaUploadAuthorizationResponse: {
+            data: {
+                media_upload: components["schemas"]["MediaUpload"];
+                upload: components["schemas"]["MediaUploadInstruction"];
+            };
+            request_id: components["schemas"]["RequestId"];
+        };
+        MediaUploadResponse: {
+            data: {
+                media_upload: components["schemas"]["MediaUpload"];
+            };
+            request_id: components["schemas"]["RequestId"];
+        };
+        MediaUploadInstruction: {
+            /** @enum {string} */
+            strategy: "rails" | "direct";
+            /** @constant */
+            method: "PUT";
+            url: string;
+            headers: {
+                [key: string]: string;
+            };
+        };
+        MediaUpload: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            purpose: "profile_photo" | "portfolio_image" | "verification_identity";
+            /** @enum {string} */
+            state: "authorized" | "uploaded" | "processing" | "processed" | "failed" | "attached" | "expired";
+            /** @enum {string} */
+            declared_content_type: "image/jpeg" | "image/png";
+            declared_byte_size: number;
+            /** @enum {string|null} */
+            actual_content_type: "image/jpeg" | "image/png" | null;
+            /** @enum {string|null} */
+            sanitized_content_type: "image/jpeg" | "image/png" | null;
+            actual_byte_size: number | null;
+            width: number | null;
+            height: number | null;
+            failure_code: string | null;
+            retryable: boolean;
+            /** Format: date-time */
+            authorization_expires_at: string;
+        };
         CurrentSessionResponse: {
             data: components["schemas"]["CurrentSessionData"];
             request_id: components["schemas"]["RequestId"];
@@ -409,6 +916,49 @@ export interface components {
         AdminCatalogNeighborhoodOrderRequest: {
             codes: string[];
         };
+        AdminModerationResponse: {
+            data: components["schemas"]["AdminModerationData"];
+            request_id: components["schemas"]["RequestId"];
+        };
+        AdminModerationData: {
+            items: components["schemas"]["AdminModerationQueueItem"][];
+            meta: components["schemas"]["PageMeta"];
+            summary: components["schemas"]["AdminModerationSummary"];
+        };
+        AdminModerationQueueItem: {
+            target_type: components["schemas"]["ModerationTargetType"];
+            /** Format: uuid */
+            target_id: string;
+            status: components["schemas"]["ModerationStatus"];
+            title: string;
+            subtitle: string;
+            /** Format: date-time */
+            submitted_at: string;
+            details: string;
+            preview: string;
+            has_media: boolean;
+            /** Format: uuid */
+            verification_file_id: string | null;
+        };
+        AdminModerationSummary: {
+            pending_count: number;
+            reviewed_today_count: number;
+            /** Format: date-time */
+            oldest_pending_submitted_at: string | null;
+        };
+        ModerationDecisionRequest: {
+            decision: components["schemas"]["ModerationDecisionInput"];
+        };
+        ModerationDecisionInput: {
+            /** @enum {string} */
+            action: "approved" | "rejected" | "hidden" | "restored";
+            reason?: string | null;
+            note?: string | null;
+        };
+        /** @enum {string} */
+        ModerationTargetType: "profile_revision" | "profile_photo" | "portfolio_item" | "verification_request";
+        /** @enum {string} */
+        ModerationStatus: "pending_review" | "approved" | "rejected" | "hidden";
         CatalogData: {
             categories: components["schemas"]["PublicServiceCategory"][];
             services: components["schemas"]["PublicService"][];
@@ -468,6 +1018,66 @@ export interface components {
         };
     };
     responses: {
+        /** @description An active Rails application session is required. */
+        ProfessionalMediaUnauthorized: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description The exact browser origin or professional ownership check failed. */
+        ProfessionalMediaForbidden: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description The professional profile or owned media upload does not exist. */
+        ProfessionalMediaNotFound: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description The media upload is not in a state that permits this transition. */
+        ProfessionalMediaConflict: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description The declaration, authorization, or uploaded object is invalid. */
+        ProfessionalMediaInvalid: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description Private media storage or asynchronous processing is temporarily unavailable. */
+        ProfessionalMediaUnavailable: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
         /** @description An active password-authenticated administrator session is required. */
         AdminCatalogUnauthorized: {
             headers: {
@@ -528,6 +1138,56 @@ export interface components {
                 "application/json": components["schemas"]["ErrorResponse"];
             };
         };
+        /** @description An active password-authenticated administrator session is required. */
+        AdminModerationUnauthorized: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description The exact browser origin or administrator account is not permitted. */
+        AdminModerationForbidden: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description The moderation target or regenerated private image does not exist. */
+        AdminModerationNotFound: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description The moderation target changed and no longer permits this decision. */
+        AdminModerationConflict: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description One or more queue filters or decision fields are invalid. */
+        AdminModerationInvalid: {
+            headers: {
+                "X-Request-Id": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
     };
     parameters: {
         /** @description One-based result page. */
@@ -536,6 +1196,19 @@ export interface components {
         PageSize: number;
         /** @description Endpoint-specific deterministic ordering key. */
         Order: string;
+        /** @description Opaque server-generated media upload identifier. */
+        MediaUploadId: string;
+        /** @description Moderation target family shown by the existing type control. */
+        ModerationType: "all" | "profile_revision" | "profile_photo" | "portfolio_item" | "verification_request";
+        /** @description Moderation workflow state. */
+        ModerationStatus: "pending_review" | "approved" | "rejected" | "hidden" | "all";
+        /** @description Accent-insensitive search across the safe queue presentation. */
+        ModerationSearch: string;
+        /** @description Moderation result count per page. */
+        ModerationPageSize: number;
+        ModerationTargetType: components["schemas"]["ModerationTargetType"];
+        ModerationMediaTargetType: "profile_photo" | "portfolio_item";
+        ModerationTargetId: string;
     };
     requestBodies: never;
     headers: {
@@ -946,6 +1619,152 @@ export interface operations {
             503: components["responses"]["AdminCatalogUnavailable"];
         };
     };
+    getAdminModerationQueue: {
+        parameters: {
+            query?: {
+                /** @description Moderation target family shown by the existing type control. */
+                type?: components["parameters"]["ModerationType"];
+                /** @description Moderation workflow state. */
+                status?: components["parameters"]["ModerationStatus"];
+                /** @description Accent-insensitive search across the safe queue presentation. */
+                search?: components["parameters"]["ModerationSearch"];
+                /** @description One-based result page. */
+                page?: components["parameters"]["Page"];
+                /** @description Moderation result count per page. */
+                per_page?: components["parameters"]["ModerationPageSize"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Oldest-first moderation work and server-owned summary counts. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminModerationResponse"];
+                };
+            };
+            401: components["responses"]["AdminModerationUnauthorized"];
+            422: components["responses"]["AdminModerationInvalid"];
+        };
+    };
+    createAdminModerationDecision: {
+        parameters: {
+            query?: {
+                /** @description Moderation target family shown by the existing type control. */
+                type?: components["parameters"]["ModerationType"];
+                /** @description Moderation workflow state. */
+                status?: components["parameters"]["ModerationStatus"];
+                /** @description Accent-insensitive search across the safe queue presentation. */
+                search?: components["parameters"]["ModerationSearch"];
+                /** @description One-based result page. */
+                page?: components["parameters"]["Page"];
+                /** @description Moderation result count per page. */
+                per_page?: components["parameters"]["ModerationPageSize"];
+            };
+            header?: never;
+            path: {
+                target_type: components["parameters"]["ModerationTargetType"];
+                target_id: components["parameters"]["ModerationTargetId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModerationDecisionRequest"];
+            };
+        };
+        responses: {
+            /** @description The decision and immutable audit record were committed together. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminModerationResponse"];
+                };
+            };
+            401: components["responses"]["AdminModerationUnauthorized"];
+            403: components["responses"]["AdminModerationForbidden"];
+            404: components["responses"]["AdminModerationNotFound"];
+            409: components["responses"]["AdminModerationConflict"];
+            422: components["responses"]["AdminModerationInvalid"];
+        };
+    };
+    getAdminModerationMedia: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                target_type: components["parameters"]["ModerationMediaTargetType"];
+                target_id: components["parameters"]["ModerationTargetId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The regenerated private image; access is recorded immutably. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Cache-Control"?: "no-store";
+                    "Content-Disposition"?: string;
+                    "X-Content-Type-Options"?: "nosniff";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                    "image/png": string;
+                };
+            };
+            401: components["responses"]["AdminModerationUnauthorized"];
+            404: components["responses"]["AdminModerationNotFound"];
+        };
+    };
+    getAdminVerificationFileContent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Valid retained regenerated identity evidence; access is recorded immutably. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Cache-Control"?: "no-store";
+                    "Content-Disposition"?: string;
+                    "X-Content-Type-Options"?: "nosniff";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                    "image/png": string;
+                };
+            };
+            401: components["responses"]["AdminModerationUnauthorized"];
+            /** @description The evidence is absent, deleted, unsafe, or not a retained regenerated identity image. */
+            404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     getPublicCatalog: {
         parameters: {
             query?: never;
@@ -967,6 +1786,43 @@ export interface operations {
             };
             /** @description The catalog database query is temporarily unavailable. */
             503: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getPublicPortfolioItemImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description An approved portfolio image that remains eligible for public display. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Cache-Control"?: "max-age=0, public, must-revalidate";
+                    "Content-Disposition"?: string;
+                    "X-Content-Type-Options"?: "nosniff";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                    "image/png": string;
+                };
+            };
+            /** @description The portfolio item is not approved, was hidden/deleted, or its public object is unavailable. */
+            404: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
@@ -1040,6 +1896,574 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
+        };
+    };
+    getProfessionalWorkspace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The owned professional profile and its current editable identity. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalWorkspaceResponse"];
+                };
+            };
+            /** @description An active Rails application session is required. */
+            401: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Professional registration has not created a profile yet. */
+            404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    updateProfessionalProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfessionalProfileUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Identity and contact data were validated, normalized, and persisted. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalWorkspaceResponse"];
+                };
+            };
+            /** @description An active Rails application session is required. */
+            401: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The exact browser origin or profile owner is invalid. */
+            403: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Professional registration has not created a profile yet. */
+            404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description One or more identity/contact fields are invalid. */
+            422: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    submitProfessionalProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The complete working profile revision was submitted for moderation, or was already submitted. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalWorkspaceResponse"];
+                };
+            };
+            /** @description An active Rails application session is required. */
+            401: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The exact browser origin or profile owner is invalid. */
+            403: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Professional registration has not created a profile yet. */
+            404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The persisted identity, supply, portfolio, or identity evidence checklist is incomplete. */
+            422: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    updateProfessionalProfilePhoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfessionalProfilePhotoUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description The private JPEG variant was attached and submitted for review. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalWorkspaceResponse"];
+                };
+            };
+            /** @description An active Rails application session is required. */
+            401: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The exact browser origin or profile owner is invalid. */
+            403: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Professional registration or the owned upload was not found. */
+            404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The upload is not a processed, bounded profile-photo JPEG. */
+            422: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    createProfessionalPortfolioItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfessionalPortfolioItemCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description The portfolio item was persisted privately for review. */
+            201: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalWorkspaceResponse"];
+                };
+            };
+            /** @description An active Rails application session is required. */
+            401: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The exact browser origin or profile owner is invalid. */
+            403: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Professional registration or the owned upload was not found. */
+            404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The image, selected service, item fields, or portfolio limit is invalid. */
+            422: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    deleteProfessionalPortfolioItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Opaque server-generated portfolio item identifier. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The item was removed from owner and public portfolio projections. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalWorkspaceResponse"];
+                };
+            };
+            /** @description An active Rails application session is required. */
+            401: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The exact browser origin or profile owner is invalid. */
+            403: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Professional registration or the active owned item was not found. */
+            404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    createProfessionalVerificationRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfessionalVerificationRequestCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description The identity request and its one private regenerated image were persisted. */
+            201: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalWorkspaceResponse"];
+                };
+            };
+            /** @description An active Rails application session is required. */
+            401: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The exact browser origin or profile owner is invalid. */
+            403: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Professional registration or the owned upload was not found. */
+            404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The type, processed upload, or one-pending-request rule is invalid. */
+            422: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    authorizeProfessionalMediaUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MediaUploadAuthorizationRequest"];
+            };
+        };
+        responses: {
+            /** @description A ten-minute private upload authorization and opaque quarantine key were created. */
+            201: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaUploadAuthorizationResponse"];
+                };
+            };
+            401: components["responses"]["ProfessionalMediaUnauthorized"];
+            403: components["responses"]["ProfessionalMediaForbidden"];
+            404: components["responses"]["ProfessionalMediaNotFound"];
+            422: components["responses"]["ProfessionalMediaInvalid"];
+            503: components["responses"]["ProfessionalMediaUnavailable"];
+        };
+    };
+    getProfessionalMediaUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Opaque server-generated media upload identifier. */
+                id: components["parameters"]["MediaUploadId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current authorization and asynchronous processing state. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaUploadResponse"];
+                };
+            };
+            401: components["responses"]["ProfessionalMediaUnauthorized"];
+            404: components["responses"]["ProfessionalMediaNotFound"];
+        };
+    };
+    uploadProfessionalMediaContent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Opaque server-generated media upload identifier. */
+                id: components["parameters"]["MediaUploadId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "image/jpeg": string;
+                "image/png": string;
+            };
+        };
+        responses: {
+            /** @description Exact declared bytes were written to the private quarantine scope. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaUploadResponse"];
+                };
+            };
+            401: components["responses"]["ProfessionalMediaUnauthorized"];
+            403: components["responses"]["ProfessionalMediaForbidden"];
+            404: components["responses"]["ProfessionalMediaNotFound"];
+            409: components["responses"]["ProfessionalMediaConflict"];
+            422: components["responses"]["ProfessionalMediaInvalid"];
+            503: components["responses"]["ProfessionalMediaUnavailable"];
+        };
+    };
+    completeProfessionalMediaUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Opaque server-generated media upload identifier. */
+                id: components["parameters"]["MediaUploadId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The quarantined object was verified and processing was queued. */
+            202: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaUploadResponse"];
+                };
+            };
+            401: components["responses"]["ProfessionalMediaUnauthorized"];
+            403: components["responses"]["ProfessionalMediaForbidden"];
+            404: components["responses"]["ProfessionalMediaNotFound"];
+            409: components["responses"]["ProfessionalMediaConflict"];
+            422: components["responses"]["ProfessionalMediaInvalid"];
+            503: components["responses"]["ProfessionalMediaUnavailable"];
+        };
+    };
+    retryProfessionalMediaUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Opaque server-generated media upload identifier. */
+                id: components["parameters"]["MediaUploadId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A transiently failed quarantined upload was queued again. */
+            202: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaUploadResponse"];
+                };
+            };
+            401: components["responses"]["ProfessionalMediaUnauthorized"];
+            403: components["responses"]["ProfessionalMediaForbidden"];
+            404: components["responses"]["ProfessionalMediaNotFound"];
+            409: components["responses"]["ProfessionalMediaConflict"];
+            503: components["responses"]["ProfessionalMediaUnavailable"];
         };
     };
     getCurrentSession: {

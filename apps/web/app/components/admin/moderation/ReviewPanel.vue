@@ -1,8 +1,28 @@
 <script setup lang="ts">
 import type { ModerationQueueItem } from "~/types";
 
-defineProps<{ item: ModerationQueueItem }>();
-defineEmits<{ approve: []; reject: [] }>();
+const props = defineProps<{
+  item: ModerationQueueItem;
+  note: string;
+  mediaUrl?: string;
+  mediaLoading?: boolean;
+  mediaError?: string;
+  evidenceLoading?: boolean;
+  mutating?: boolean;
+}>();
+const emit = defineEmits<{
+  approve: [];
+  reject: [];
+  hide: [];
+  restore: [];
+  openEvidence: [];
+  note: [value: string];
+}>();
+
+function toggleVisibility() {
+  if (props.item.status === "hidden") emit("restore");
+  else emit("hide");
+}
 </script>
 
 <template>
@@ -13,9 +33,26 @@ defineEmits<{ approve: []; reject: [] }>();
         <h2 id="moderation-item-title">{{ item.title }}</h2>
         <p>{{ item.subtitle }}</p>
       </div>
-      <button type="button" aria-label="Mais opções">
-        <UIcon name="i-lucide-ellipsis" />
-      </button>
+      <UPopover v-if="item.status === 'approved' || item.status === 'hidden'">
+        <button type="button" aria-label="Mais opções">
+          <UIcon name="i-lucide-ellipsis" />
+        </button>
+        <template #content>
+          <button
+            class="moderation__overflow-action"
+            type="button"
+            :disabled="mutating"
+            @click="toggleVisibility"
+          >
+            <UIcon
+              :name="
+                item.status === 'hidden' ? 'i-lucide-eye' : 'i-lucide-eye-off'
+              "
+            />
+            {{ item.status === "hidden" ? "Restaurar" : "Ocultar" }}
+          </button>
+        </template>
+      </UPopover>
     </header>
     <div class="moderation__meta">
       <span
@@ -27,8 +64,16 @@ defineEmits<{ approve: []; reject: [] }>();
       <span>Contexto da análise</span>
       <p>{{ item.details }}</p>
     </div>
-    <div class="moderation__preview">
-      <div>
+    <div class="moderation__preview" :class="{ 'has-image': mediaUrl }">
+      <img
+        v-if="mediaUrl"
+        :src="mediaUrl"
+        :alt="`Conteúdo enviado para análise: ${item.title}`"
+        width="112"
+        height="112"
+        loading="lazy"
+      />
+      <div v-else>
         <UIcon
           :name="
             item.type === 'Verificação'
@@ -39,7 +84,9 @@ defineEmits<{ approve: []; reject: [] }>();
       </div>
       <span>
         <small>Conteúdo enviado</small>
-        <p>{{ item.preview }}</p>
+        <p v-if="mediaLoading">Abrindo imagem privada…</p>
+        <p v-else-if="mediaError">{{ mediaError }}</p>
+        <p v-else>{{ item.preview }}</p>
       </span>
     </div>
     <div v-if="item.type === 'Verificação'" class="moderation__private-warning">
@@ -51,7 +98,13 @@ defineEmits<{ approve: []; reject: [] }>();
           solicitação.
         </small>
       </span>
-      <UButton size="sm" color="neutral" variant="outline">
+      <UButton
+        size="sm"
+        color="neutral"
+        variant="outline"
+        :loading="evidenceLoading"
+        @click="$emit('openEvidence')"
+      >
         Abrir documento
       </UButton>
     </div>
@@ -61,21 +114,33 @@ defineEmits<{ approve: []; reject: [] }>();
       label="Nota interna opcional"
     >
       <textarea
+        id="moderation-note"
         name="moderation-note"
+        autocomplete="off"
+        :value="note"
         maxlength="500"
         placeholder="Adicione contexto para a trilha de auditoria…"
+        @input="$emit('note', ($event.target as HTMLTextAreaElement).value)"
       />
     </DesignSystemFormField>
-    <footer>
+    <footer v-if="item.status === 'pending_review'">
       <UButton
+        class="moderation__decision moderation__decision--reject"
         color="error"
         variant="outline"
         icon="i-lucide-x"
+        :disabled="mutating"
         @click="$emit('reject')"
       >
         Rejeitar
       </UButton>
-      <UButton color="primary" icon="i-lucide-check" @click="$emit('approve')">
+      <UButton
+        class="moderation__decision moderation__decision--approve"
+        color="primary"
+        icon="i-lucide-check"
+        :loading="mutating"
+        @click="$emit('approve')"
+      >
         Aprovar e publicar
       </UButton>
     </footer>

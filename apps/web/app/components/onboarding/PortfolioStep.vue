@@ -4,6 +4,8 @@ import type { OnboardingPortfolioItem, PortfolioItemDraft } from "~/types";
 defineProps<{
   portfolio: OnboardingPortfolioItem | null;
   serviceOptions: string[];
+  saving?: boolean;
+  serverError?: string;
 }>();
 defineEmits<{
   back: [];
@@ -18,8 +20,8 @@ defineEmits<{
       <DesignSystemEyebrow>Etapa 3 de 4</DesignSystemEyebrow>
       <h2 id="onboarding-portfolio-title">Mostre um trabalho bem feito.</h2>
       <p>
-        Uma foto já é suficiente para completar esta etapa. Ela ficará marcada
-        como “em análise” neste mockup.
+        Uma foto já é suficiente para completar esta etapa. Ela ficará privada e
+        marcada como “em análise” até a aprovação.
       </p>
     </header>
 
@@ -32,9 +34,13 @@ defineEmits<{
     </DesignSystemSurfaceCard>
 
     <DesignSystemSurfaceCard v-else class="onboarding-upload-card">
+      <p v-if="serverError" class="onboarding-step-error" role="alert">
+        <UIcon name="i-lucide-circle-alert" /> {{ serverError }}
+      </p>
       <DashboardPortfolioUploadForm
         :service-options="serviceOptions"
         submit-label="Salvar e continuar"
+        :submitting="saving"
         @submitted="$emit('complete', $event)"
       />
     </DesignSystemSurfaceCard>

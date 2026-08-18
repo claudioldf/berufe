@@ -25,6 +25,11 @@ class LocalDiskStorage
     FileUtils.rm_f(path_for(scope, key))
   end
 
+  def stat(scope:, key:)
+    path = path_for(scope, key)
+    {byte_size: File.size(path), content_type: nil}
+  end
+
   private
 
   def path_for(scope, key)

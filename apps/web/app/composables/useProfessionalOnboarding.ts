@@ -1,9 +1,10 @@
-import { computed, onMounted, readonly } from "vue";
+import { computed, onMounted, readonly, shallowRef } from "vue";
 import type {
   OnboardingChecklistItem,
   OnboardingCompletionState,
   OnboardingFileValidation,
   OnboardingPortfolioSubmission,
+  OnboardingPortfolioItem,
   OnboardingProfileErrors,
   OnboardingServicesErrors,
   OnboardingStepDefinition,
@@ -11,6 +12,22 @@ import type {
   ProfessionalOnboardingState,
   ProfessionalProfileDraft,
 } from "~/types";
+import { updateProfessionalIdentity } from "~/services/api/professional-workspace";
+import { ApiRequestError } from "~/services/api/errors";
+import { useApiClient } from "~/services/api/client";
+
+interface ProfessionalOnboardingDependencies {
+  saveIdentity?: (
+    draft: ProfessionalProfileDraft,
+  ) => Promise<ProfessionalProfileDraft>;
+  saveSupply?: (
+    draft: ProfessionalProfileDraft,
+  ) => Promise<ProfessionalProfileDraft>;
+  savePortfolio?: (
+    draft: OnboardingPortfolioSubmission,
+  ) => Promise<OnboardingPortfolioItem>;
+  saveVerification?: (file: File) => Promise<{ submittedAt: string }>;
+}
 
 export const professionalOnboardingStorageKey =
   "berufe:professional-onboarding:v1";
@@ -53,6 +70,7 @@ export function createEmptyProfessionalProfileDraft(): ProfessionalProfileDraft 
     instagram: "",
     youtube: "",
     selectedServices: [],
+    serviceNotes: {},
     primaryService: "",
     allJoinville: false,
     selectedNeighborhoods: [],
@@ -119,6 +137,13 @@ function parseProfileDraft(value: unknown): ProfessionalProfileDraft | null {
     instagram: value.instagram as string,
     youtube: value.youtube as string,
     selectedServices: [...(value.selectedServices as string[])],
+    serviceNotes: isRecord(value.serviceNotes)
+      ? Object.fromEntries(
+          Object.entries(value.serviceNotes).filter(
+            (entry): entry is [string, string] => typeof entry[1] === "string",
+          ),
+        )
+      : {},
     primaryService: value.primaryService as string,
     allJoinville: value.allJoinville,
     selectedNeighborhoods: [...(value.selectedNeighborhoods as string[])],
@@ -279,16 +304,52 @@ function cloneProfileDraft(
   return {
     ...draft,
     selectedServices: [...draft.selectedServices],
+    serviceNotes: { ...draft.serviceNotes },
     selectedNeighborhoods: [...draft.selectedNeighborhoods],
   };
 }
 
-export function useProfessionalOnboarding() {
+export function useProfessionalOnboarding(
+  dependencies: ProfessionalOnboardingDependencies = {},
+) {
   const state = useState<ProfessionalOnboardingState>(
     "professional-onboarding",
     createInitialProfessionalOnboardingState,
   );
   const hydrated = useState("professional-onboarding-hydrated", () => false);
+  const profileSaving = shallowRef(false);
+  const profileError = shallowRef("");
+  const supplySaving = shallowRef(false);
+  const supplyError = shallowRef("");
+  const portfolioSaving = shallowRef(false);
+  const portfolioError = shallowRef("");
+  const verificationSaving = shallowRef(false);
+  const verificationError = shallowRef("");
+  const apiClient = dependencies.saveIdentity ? undefined : useApiClient();
+  const saveIdentity =
+    dependencies.saveIdentity ??
+    (async (draft: ProfessionalProfileDraft) => {
+      const workspace = await updateProfessionalIdentity(apiClient!, draft);
+      return {
+        ...draft,
+        ...workspace.profile.identity,
+      };
+    });
+  const saveSupply =
+    dependencies.saveSupply ??
+    (async () => {
+      throw new Error("Professional supply persistence is unavailable");
+    });
+  const savePortfolio =
+    dependencies.savePortfolio ??
+    (async () => {
+      throw new Error("Professional portfolio persistence is unavailable");
+    });
+  const saveVerification =
+    dependencies.saveVerification ??
+    (async () => {
+      throw new Error("Professional verification persistence is unavailable");
+    });
 
   function persist() {
     if (!import.meta.client) return;
@@ -350,79 +411,176 @@ export function useProfessionalOnboarding() {
     persist();
   }
 
-  function completeProfile(draft: ProfessionalProfileDraft) {
+  function initializeFromWorkspace(
+    identity: ProfessionalOnboardingState["profile"],
+    portfolio?: OnboardingPortfolioItem | null,
+    verificationSubmittedAt?: string | null,
+  ) {
+    hydrate();
+    const complete = Object.values(validateOnboardingProfile(identity)).every(
+      (error) => !error,
+    );
+    const servicesComplete = Object.values(
+      validateOnboardingServices(identity),
+    ).every((error) => !error);
+    state.value = {
+      ...state.value,
+      initialized: true,
+      profile: cloneProfileDraft(identity),
+      portfolio: portfolio === undefined ? state.value.portfolio : portfolio,
+      verificationStatus:
+        verificationSubmittedAt === undefined
+          ? state.value.verificationStatus
+          : verificationSubmittedAt
+            ? "submitted"
+            : "not_started",
+      completion: {
+        ...state.value.completion,
+        profile: complete
+          ? (state.value.completion.profile ?? new Date().toISOString())
+          : null,
+        services: servicesComplete
+          ? (state.value.completion.services ?? new Date().toISOString())
+          : null,
+        portfolio:
+          portfolio === undefined
+            ? state.value.completion.portfolio
+            : (portfolio?.submittedAt ?? null),
+        verification:
+          verificationSubmittedAt === undefined
+            ? state.value.completion.verification
+            : verificationSubmittedAt,
+      },
+    };
+    persist();
+  }
+
+  async function completeProfile(draft: ProfessionalProfileDraft) {
     const errors = validateOnboardingProfile(draft);
     if (Object.values(errors).some(Boolean)) return false;
-    const completedAt = new Date().toISOString();
-    state.value = {
-      ...state.value,
-      profile: {
-        ...cloneProfileDraft(draft),
-        name: draft.name.trim(),
-        whatsapp: normalizeBrazilianPhone(draft.whatsapp),
-        headline: draft.headline.trim(),
-        bio: draft.bio.trim(),
-      },
-      completion: {
-        ...state.value.completion,
-        profile: completedAt,
-      },
-    };
-    persist();
-    return true;
+    if (profileSaving.value) return false;
+
+    profileSaving.value = true;
+    profileError.value = "";
+    try {
+      const savedProfile = await saveIdentity(draft);
+      const completedAt = new Date().toISOString();
+      state.value = {
+        ...state.value,
+        profile: {
+          ...cloneProfileDraft(savedProfile),
+          name: savedProfile.name.trim(),
+          whatsapp: normalizeBrazilianPhone(savedProfile.whatsapp),
+          headline: savedProfile.headline.trim(),
+          bio: savedProfile.bio.trim(),
+        },
+        completion: {
+          ...state.value.completion,
+          profile: completedAt,
+        },
+      };
+      persist();
+      return true;
+    } catch (error) {
+      profileError.value =
+        error instanceof ApiRequestError
+          ? error.message
+          : "Não foi possível salvar seu perfil agora. Tente novamente.";
+      return false;
+    } finally {
+      profileSaving.value = false;
+    }
   }
 
-  function completeServices(draft: ProfessionalProfileDraft) {
+  async function completeServices(draft: ProfessionalProfileDraft) {
     const errors = validateOnboardingServices(draft);
     if (Object.values(errors).some(Boolean)) return false;
-    const completedAt = new Date().toISOString();
-    state.value = {
-      ...state.value,
-      profile: cloneProfileDraft(draft),
-      completion: {
-        ...state.value.completion,
-        services: completedAt,
-      },
-    };
-    persist();
-    return true;
+    if (supplySaving.value) return false;
+
+    supplySaving.value = true;
+    supplyError.value = "";
+    try {
+      const savedProfile = await saveSupply(draft);
+      const completedAt = new Date().toISOString();
+      state.value = {
+        ...state.value,
+        profile: cloneProfileDraft(savedProfile),
+        completion: {
+          ...state.value.completion,
+          services: completedAt,
+        },
+      };
+      persist();
+      return true;
+    } catch (error) {
+      supplyError.value =
+        error instanceof ApiRequestError
+          ? error.message
+          : "Não foi possível salvar os serviços agora. Tente novamente.";
+      return false;
+    } finally {
+      supplySaving.value = false;
+    }
   }
 
-  function completePortfolio(submission: OnboardingPortfolioSubmission) {
+  async function completePortfolio(submission: OnboardingPortfolioSubmission) {
     const validation = validateOnboardingImage(submission.file);
     if (!validation.valid) return false;
-    const completedAt = new Date().toISOString();
-    state.value = {
-      ...state.value,
-      portfolio: {
-        title: submission.title.trim(),
-        service: submission.service,
-        description: submission.description.trim(),
-        submittedAt: completedAt,
-      },
-      completion: {
-        ...state.value.completion,
-        portfolio: completedAt,
-      },
-    };
-    persist();
-    return true;
+    if (portfolioSaving.value) return false;
+
+    portfolioSaving.value = true;
+    portfolioError.value = "";
+    try {
+      const saved = await savePortfolio(submission);
+      state.value = {
+        ...state.value,
+        portfolio: saved,
+        completion: {
+          ...state.value.completion,
+          portfolio: saved.submittedAt,
+        },
+      };
+      persist();
+      return true;
+    } catch (error) {
+      portfolioError.value =
+        error instanceof ApiRequestError
+          ? error.message
+          : "Não foi possível enviar o trabalho agora. Tente novamente.";
+      return false;
+    } finally {
+      portfolioSaving.value = false;
+    }
   }
 
-  function completeVerification(file: File) {
+  async function completeVerification(file: File) {
     const validation = validateOnboardingImage(file);
     if (!validation.valid) return false;
-    const completedAt = new Date().toISOString();
-    state.value = {
-      ...state.value,
-      verificationStatus: "submitted",
-      completion: {
-        ...state.value.completion,
-        verification: completedAt,
-      },
-    };
-    persist();
-    return true;
+    if (verificationSaving.value) return false;
+
+    verificationSaving.value = true;
+    verificationError.value = "";
+    try {
+      const saved = await saveVerification(file);
+      state.value = {
+        ...state.value,
+        verificationStatus: "submitted",
+        completion: {
+          ...state.value.completion,
+          verification: saved.submittedAt,
+        },
+      };
+      persist();
+      return true;
+    } catch (error) {
+      verificationError.value =
+        error instanceof ApiRequestError
+          ? error.message
+          : "Não foi possível enviar a identidade agora. Tente novamente.";
+      return false;
+    } finally {
+      verificationSaving.value = false;
+    }
   }
 
   function reset() {
@@ -443,10 +601,19 @@ export function useProfessionalOnboarding() {
     firstIncompleteStep,
     hydrate,
     initializeFromAuth,
+    initializeFromWorkspace,
     completeProfile,
     completeServices,
     completePortfolio,
     completeVerification,
+    profileSaving: readonly(profileSaving),
+    profileError: readonly(profileError),
+    supplySaving: readonly(supplySaving),
+    supplyError: readonly(supplyError),
+    portfolioSaving: readonly(portfolioSaving),
+    portfolioError: readonly(portfolioError),
+    verificationSaving: readonly(verificationSaving),
+    verificationError: readonly(verificationError),
     reset,
   };
 }

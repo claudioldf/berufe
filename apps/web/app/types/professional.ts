@@ -28,6 +28,17 @@ export interface PortfolioItem {
   image: string;
 }
 
+export interface ProfessionalPortfolioItem {
+  id: string;
+  title: string;
+  service: string;
+  description: string;
+  image: string | null;
+  status: "pending_review" | "approved" | "rejected" | "hidden";
+  rejectionReason: string | null;
+  submittedAt: string;
+}
+
 export interface PortfolioItemDraft {
   file: File;
   title: string;
@@ -79,9 +90,86 @@ export interface ProfessionalProfileDraft {
   yearsExperience: number;
   whatsapp: string;
   selectedServices: string[];
+  serviceNotes: Record<string, string>;
   primaryService: string;
   allJoinville: boolean;
   selectedNeighborhoods: string[];
   instagram: string;
   youtube: string;
+}
+
+export type ProfessionalProfileStatus =
+  "draft" | "pending_review" | "published" | "suspended";
+
+export type ProfessionalProfilePhotoStatus =
+  "pending_review" | "approved" | "rejected" | "hidden" | "superseded";
+
+export interface ProfessionalMediaUploadState {
+  id: string;
+  state:
+    | "authorized"
+    | "uploaded"
+    | "processing"
+    | "processed"
+    | "failed"
+    | "attached"
+    | "expired";
+  failureCode: string | null;
+  retryable: boolean;
+}
+
+export interface ProfessionalProfilePhotoState {
+  current: {
+    id: string;
+    status: ProfessionalProfilePhotoStatus;
+    rejectionReason: string | null;
+    submittedAt: string;
+  } | null;
+  hasPublishedPhoto: boolean;
+  latestUpload: ProfessionalMediaUploadState | null;
+}
+
+export interface ProfessionalVerificationState {
+  current: {
+    id: string;
+    verificationType: "identity";
+    status: "pending_review" | "approved" | "rejected" | "expired";
+    rejectionReason: string | null;
+    submittedAt: string;
+  } | null;
+}
+
+export interface ProfessionalWorkspace {
+  profile: {
+    id: string;
+    publicSlug: string;
+    status: ProfessionalProfileStatus;
+    revisionStatus:
+      "draft" | "pending_review" | "approved" | "rejected" | "superseded";
+    revisionRejectionReason: string | null;
+    hasPublishedRevision: boolean;
+    photo: ProfessionalProfilePhotoState;
+    portfolioItems: ProfessionalPortfolioItem[];
+    verification: ProfessionalVerificationState;
+    identity: Pick<
+      ProfessionalProfileDraft,
+      | "name"
+      | "headline"
+      | "bio"
+      | "yearsExperience"
+      | "whatsapp"
+      | "instagram"
+      | "youtube"
+    >;
+    services: Array<{
+      id: string;
+      name: string;
+      isPrimary: boolean;
+      note: string;
+    }>;
+    coverage: {
+      allJoinville: boolean;
+      neighborhoods: Array<{ code: string; name: string }>;
+    };
+  };
 }

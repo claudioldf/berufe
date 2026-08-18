@@ -1,14 +1,19 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import professionalsData from "@data/professionals.json";
-import type { Professional } from "~/types";
+import type {
+  Professional,
+  ProfessionalProfileDraft,
+  VerificationSubmission,
+} from "~/types";
 import { useCatalogs } from "~/composables/useCatalogs";
 import { useToast } from "~/composables/useToast";
+import { ApiRequestError } from "~/services/api/errors";
 
 const route = useRoute();
 const router = useRouter();
 const { showToast } = useToast();
-const professional = (professionalsData as Professional[])[0]!;
+const mockProfessional = (professionalsData as Professional[])[0]!;
 const { data: catalog, error: catalogError } = await useCatalogs();
 if (catalogError.value || !catalog.value) {
   throw createError({
@@ -19,6 +24,71 @@ if (catalogError.value || !catalog.value) {
 const services = computed(() => catalog.value?.services ?? []);
 const neighborhoods = computed(() =>
   (catalog.value?.neighborhoods ?? []).filter((item) => item.code !== "all"),
+);
+const {
+  data: workspace,
+  error: workspaceError,
+  saveProfile: saveWorkspaceProfile,
+  photoUploading,
+  photoError,
+  uploadPhoto,
+  retryPhoto,
+  portfolioSaving,
+  createPortfolioItem,
+  deletePortfolioItem,
+  verificationSaving,
+  verificationError,
+  createVerificationRequest,
+} = await useProfessionalWorkspace();
+if (workspaceError.value || !workspace.value) {
+  throw createError({
+    statusCode: 503,
+    statusMessage: "Seu perfil está temporariamente indisponível.",
+  });
+}
+const saving = shallowRef(false);
+const professional = computed<Professional>(() => ({
+  ...mockProfessional,
+  id: workspace.value!.profile.id,
+  slug: workspace.value!.profile.publicSlug,
+  name: workspace.value!.profile.identity.name,
+  headline: workspace.value!.profile.identity.headline,
+  bio: workspace.value!.profile.identity.bio,
+  yearsExperience: workspace.value!.profile.identity.yearsExperience,
+  whatsapp: workspace.value!.profile.identity.whatsapp,
+  instagram: workspace.value!.profile.identity.instagram || undefined,
+  youtube: workspace.value!.profile.identity.youtube || undefined,
+  avatar: "",
+  primaryService:
+    workspace.value!.profile.services.find((service) => service.isPrimary)
+      ?.name ?? "",
+  services: workspace.value!.profile.services.map((service) => service.name),
+  serviceNotes: workspace
+    .value!.profile.services.map((service) => service.note)
+    .filter(Boolean),
+  allJoinville: workspace.value!.profile.coverage.allJoinville,
+  neighborhoods: workspace.value!.profile.coverage.neighborhoods.map(
+    (neighborhood) => neighborhood.name,
+  ),
+  portfolio: [],
+  evidence: [
+    { id: "phone-confirmed", label: "Telefone confirmado" },
+    ...(workspace.value!.profile.verification.current?.status === "approved"
+      ? [{ id: "identity-verified", label: "Identidade verificada" }]
+      : []),
+  ],
+}));
+const statusLabels = {
+  draft: "Rascunho",
+  pending_review: "Em análise",
+  published: "Publicado",
+  suspended: "Suspenso",
+} as const;
+const statusLabel = computed(() =>
+  workspace.value!.profile.hasPublishedRevision &&
+  workspace.value!.profile.revisionStatus === "pending_review"
+    ? "Alterações em análise"
+    : statusLabels[workspace.value!.profile.status],
 );
 const tabs = [
   { id: "dados", label: "Dados do perfil", icon: "i-lucide-user-round" },
@@ -41,6 +111,127 @@ useSeoMeta({
 async function selectTab(id: string) {
   await router.replace({ query: id === "dados" ? {} : { tab: id } });
 }
+
+async function saveProfile(
+  draft: ProfessionalProfileDraft,
+  confirm: () => void,
+) {
+  if (saving.value) return;
+
+  saving.value = true;
+  try {
+    await saveWorkspaceProfile(draft, services.value, neighborhoods.value);
+    confirm();
+    showToast({
+      title: "Perfil atualizado",
+      description: "As alterações foram salvas.",
+    });
+  } catch (error) {
+    showToast({
+      title: "Não foi possível salvar",
+      description:
+        error instanceof ApiRequestError
+          ? error.message
+          : "Tente novamente em instantes.",
+    });
+  } finally {
+    saving.value = false;
+  }
+}
+
+async function handlePhoto(file: File) {
+  try {
+    await uploadPhoto(file);
+    showToast({
+      title: "Foto enviada",
+      description: "Ela aparecerá no perfil depois da análise.",
+    });
+  } catch (error) {
+    showToast({
+      title: "Não foi possível enviar a foto",
+      description:
+        error instanceof ApiRequestError
+          ? error.message
+          : "Tente novamente em instantes.",
+    });
+  }
+}
+
+async function handlePhotoRetry() {
+  try {
+    await retryPhoto();
+    showToast({
+      title: "Foto reenviada",
+      description: "Ela aparecerá no perfil depois da análise.",
+    });
+  } catch (error) {
+    showToast({
+      title: "Não foi possível reenviar a foto",
+      description:
+        error instanceof ApiRequestError
+          ? error.message
+          : "Tente novamente em instantes.",
+    });
+  }
+}
+
+async function handlePortfolioAdd(
+  draft: Parameters<typeof createPortfolioItem>[0],
+) {
+  try {
+    await createPortfolioItem(draft);
+    showToast({
+      title: "Trabalho enviado",
+      description: "Ele aparecerá no perfil depois da análise.",
+    });
+  } catch (error) {
+    showToast({
+      title: "Não foi possível enviar o trabalho",
+      description:
+        error instanceof ApiRequestError
+          ? error.message
+          : "Tente novamente em instantes.",
+    });
+  }
+}
+
+async function handlePortfolioRemove(id: string) {
+  try {
+    await deletePortfolioItem(id);
+    showToast({
+      title: "Trabalho excluído",
+      description: "Ele foi removido do seu portfólio.",
+    });
+  } catch (error) {
+    showToast({
+      title: "Não foi possível excluir o trabalho",
+      description:
+        error instanceof ApiRequestError
+          ? error.message
+          : "Tente novamente em instantes.",
+    });
+  }
+}
+
+async function handleVerificationSubmission(
+  submission: VerificationSubmission,
+) {
+  try {
+    await createVerificationRequest(submission.file);
+    showToast({
+      title: "Verificação enviada",
+      description: "A equipe Berufe fará a conferência manual.",
+    });
+  } catch (error) {
+    showToast({
+      title: "Não foi possível enviar a verificação",
+      description:
+        error instanceof ApiRequestError
+          ? error.message
+          : "Tente novamente em instantes.",
+    });
+  }
+}
 </script>
 
 <template>
@@ -54,7 +245,15 @@ async function selectTab(id: string) {
           <h1>Meu perfil</h1>
           <p>Organize as informações e evidências que clientes verão.</p>
         </div>
-        <span><DesignSystemStatusDot tone="success" /> Publicado</span>
+        <span>
+          <DesignSystemStatusDot tone="success" />
+          <span>
+            {{ statusLabel }}
+            <small v-if="workspace?.profile.revisionRejectionReason">
+              {{ workspace?.profile.revisionRejectionReason }}
+            </small>
+          </span>
+        </span>
       </DesignSystemContainer>
     </section>
     <DesignSystemContainer class="profile-workspace__content">
@@ -68,7 +267,7 @@ async function selectTab(id: string) {
         >
           <UIcon :name="tab.icon" />{{ tab.label
           }}<span v-if="tab.id === 'portfolio'" class="workspace-tabs__count">{{
-            professional.portfolio.length
+            workspace?.profile.portfolioItems.length ?? 0
           }}</span>
         </button>
       </nav>
@@ -77,32 +276,29 @@ async function selectTab(id: string) {
         :professional="professional"
         :services="services"
         :neighborhoods="neighborhoods"
-        @save="
-          showToast({
-            title: 'Perfil atualizado',
-            description: 'As alterações foram salvas neste protótipo.',
-          })
-        "
+        :saving="saving"
+        :photo="workspace?.profile.photo"
+        :photo-uploading="photoUploading"
+        :photo-error="photoError"
+        @save="saveProfile"
+        @photo-select="handlePhoto"
+        @photo-retry="handlePhotoRetry"
       />
       <DashboardPortfolioManager
         v-else-if="activeTab === 'portfolio'"
-        :items="professional.portfolio"
-        @added="
-          showToast({
-            title: 'Trabalho enviado',
-            description: 'Ele aparecerá no perfil depois da análise.',
-          })
-        "
+        :items="workspace?.profile.portfolioItems ?? []"
+        :service-options="professional.services"
+        :submitting="portfolioSaving"
+        @added="handlePortfolioAdd"
+        @removed="handlePortfolioRemove"
       />
       <DashboardVerificationPanel
         v-else
         :evidence="professional.evidence"
-        @submitted="
-          showToast({
-            title: 'Verificação enviada',
-            description: 'A equipe Berufe fará a conferência manual.',
-          })
-        "
+        :verification="workspace?.profile.verification ?? { current: null }"
+        :submitting="verificationSaving"
+        :server-error="verificationError"
+        @submitted="handleVerificationSubmission"
       />
     </DesignSystemContainer>
   </div>
@@ -155,6 +351,17 @@ async function selectTab(id: string) {
     color: #b7dfd3;
     font-size: 0.84rem;
     font-weight: 850;
+  }
+  &__inner > span span,
+  &__inner > span small {
+    display: block;
+  }
+  &__inner > span small {
+    max-width: 320px;
+    margin-top: 2px;
+    color: rgb(255 255 255 / 72%);
+    font-size: 0.72rem;
+    font-weight: 600;
   }
 }
 .profile-workspace {

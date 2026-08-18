@@ -16,6 +16,7 @@ function profileDraft(
     instagram: "",
     youtube: "",
     selectedServices: [],
+    serviceNotes: {},
     primaryService: "",
     allJoinville: false,
     selectedNeighborhoods: [],
@@ -65,6 +66,22 @@ describe("onboarding step contracts", () => {
       ProfessionalProfileDraft | undefined;
     expect(payload?.name).toBe("Marcos Alves");
     expect(payload?.selectedServices).not.toBe(draft.selectedServices);
+  });
+
+  it("keeps the optional profile photo inside the identity step", async () => {
+    const wrapper = mount(ProfileStep, { props: { draft: profileDraft() } });
+    const file = new File(["photo"], "profile.png", { type: "image/png" });
+    const input = wrapper.get('input[type="file"]');
+    Object.defineProperty(input.element, "files", {
+      configurable: true,
+      value: [file],
+    });
+
+    await input.trigger("change");
+
+    expect(wrapper.text()).toContain("Foto profissional");
+    expect(wrapper.text()).toContain("Opcional");
+    expect(wrapper.emitted("photoSelect")?.[0]?.[0]).toBe(file);
   });
 
   it("requires both a service and coverage before advancing", async () => {

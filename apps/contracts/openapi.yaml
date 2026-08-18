@@ -423,6 +423,172 @@ paths:
           $ref: "#/components/responses/AdminCatalogInvalid"
         "503":
           $ref: "#/components/responses/AdminCatalogUnavailable"
+  /api/v1/admin/moderation:
+    get:
+      operationId: getAdminModerationQueue
+      summary: Read the shared professional-supply moderation queue
+      tags:
+        - Moderation
+      security:
+        - applicationSession: []
+      parameters:
+        - $ref: "#/components/parameters/ModerationType"
+        - $ref: "#/components/parameters/ModerationStatus"
+        - $ref: "#/components/parameters/ModerationSearch"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/ModerationPageSize"
+      responses:
+        "200":
+          description: Oldest-first moderation work and server-owned summary counts.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminModerationResponse"
+        "401":
+          $ref: "#/components/responses/AdminModerationUnauthorized"
+        "422":
+          $ref: "#/components/responses/AdminModerationInvalid"
+  /api/v1/admin/moderation/{target_type}/{target_id}/decisions:
+    parameters:
+      - $ref: "#/components/parameters/ModerationTargetType"
+      - $ref: "#/components/parameters/ModerationTargetId"
+    post:
+      operationId: createAdminModerationDecision
+      summary: Append an audited moderation decision and refresh the queue
+      tags:
+        - Moderation
+      security:
+        - applicationSession: []
+      parameters:
+        - $ref: "#/components/parameters/ModerationType"
+        - $ref: "#/components/parameters/ModerationStatus"
+        - $ref: "#/components/parameters/ModerationSearch"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/ModerationPageSize"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ModerationDecisionRequest"
+      responses:
+        "200":
+          description: The decision and immutable audit record were committed together.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminModerationResponse"
+        "401":
+          $ref: "#/components/responses/AdminModerationUnauthorized"
+        "403":
+          $ref: "#/components/responses/AdminModerationForbidden"
+        "404":
+          $ref: "#/components/responses/AdminModerationNotFound"
+        "409":
+          $ref: "#/components/responses/AdminModerationConflict"
+        "422":
+          $ref: "#/components/responses/AdminModerationInvalid"
+  /api/v1/admin/moderation/{target_type}/{target_id}/media:
+    parameters:
+      - $ref: "#/components/parameters/ModerationMediaTargetType"
+      - $ref: "#/components/parameters/ModerationTargetId"
+    get:
+      operationId: getAdminModerationMedia
+      summary: Read a regenerated private image for in-place moderation preview
+      tags:
+        - Moderation
+      security:
+        - applicationSession: []
+      responses:
+        "200":
+          description: The regenerated private image; access is recorded immutably.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+            Content-Disposition:
+              schema:
+                type: string
+                pattern: '^inline; filename="berufe-analise-(profile_photo|portfolio_item)-[a-f0-9-]+\.(jpg|png)"'
+            X-Content-Type-Options:
+              schema:
+                type: string
+                const: nosniff
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+        "401":
+          $ref: "#/components/responses/AdminModerationUnauthorized"
+        "404":
+          $ref: "#/components/responses/AdminModerationNotFound"
+  /api/v1/admin/verification-files/{id}/content:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getAdminVerificationFileContent
+      summary: Read regenerated identity evidence through an audited response
+      tags:
+        - Moderation
+      security:
+        - applicationSession: []
+      responses:
+        "200":
+          description: Valid retained regenerated identity evidence; access is recorded immutably.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+            Content-Disposition:
+              schema:
+                type: string
+                pattern: '^inline; filename="berufe-identidade-[a-f0-9-]+\.(jpg|png)"'
+            X-Content-Type-Options:
+              schema:
+                type: string
+                const: nosniff
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+        "401":
+          $ref: "#/components/responses/AdminModerationUnauthorized"
+        "404":
+          description: The evidence is absent, deleted, unsafe, or not a retained regenerated identity image.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/catalog:
     get:
       operationId: getPublicCatalog
@@ -442,6 +608,56 @@ paths:
                 $ref: "#/components/schemas/CatalogResponse"
         "503":
           description: The catalog database query is temporarily unavailable.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/public/portfolio-items/{id}/image:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getPublicPortfolioItemImage
+      summary: Read the approved regenerated portfolio image
+      tags:
+        - Professional supply
+      security: []
+      responses:
+        "200":
+          description: An approved portfolio image that remains eligible for public display.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              schema:
+                type: string
+                const: max-age=0, public, must-revalidate
+            Content-Disposition:
+              schema:
+                type: string
+                pattern: '^inline; filename="berufe-portfolio-[a-f0-9-]+\.(jpg|png)"'
+            X-Content-Type-Options:
+              schema:
+                type: string
+                const: nosniff
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: The portfolio item is not approved, was hidden/deleted, or its public object is unavailable.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
@@ -509,6 +725,558 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/professional/workspace:
+    get:
+      operationId: getProfessionalWorkspace
+      summary: Read the authenticated professional's server-owned workspace
+      tags:
+        - Professional supply
+      security:
+        - applicationSession: []
+      responses:
+        "200":
+          description: The owned professional profile and its current editable identity.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfessionalWorkspaceResponse"
+        "401":
+          description: An active Rails application session is required.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Professional registration has not created a profile yet.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/professional/profile:
+    patch:
+      operationId: updateProfessionalProfile
+      summary: Persist the authenticated professional's identity and contact step
+      tags:
+        - Professional supply
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfessionalProfileUpdateRequest"
+      responses:
+        "200":
+          description: Identity and contact data were validated, normalized, and persisted.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfessionalWorkspaceResponse"
+        "401":
+          description: An active Rails application session is required.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: The exact browser origin or profile owner is invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Professional registration has not created a profile yet.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: One or more identity/contact fields are invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/professional/profile/submission:
+    post:
+      operationId: submitProfessionalProfile
+      summary: Submit the persisted professional profile for moderation
+      tags:
+        - Professional supply
+      security:
+        - applicationSession: []
+      responses:
+        "200":
+          description: The complete working profile revision was submitted for moderation, or was already submitted.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfessionalWorkspaceResponse"
+        "401":
+          description: An active Rails application session is required.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: The exact browser origin or profile owner is invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Professional registration has not created a profile yet.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: The persisted identity, supply, portfolio, or identity evidence checklist is incomplete.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/professional/profile/photo:
+    put:
+      operationId: updateProfessionalProfilePhoto
+      summary: Attach a processed private image to the professional profile for review
+      tags:
+        - Professional supply
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfessionalProfilePhotoUpdateRequest"
+      responses:
+        "200":
+          description: The private JPEG variant was attached and submitted for review.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfessionalWorkspaceResponse"
+        "401":
+          description: An active Rails application session is required.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: The exact browser origin or profile owner is invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Professional registration or the owned upload was not found.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: The upload is not a processed, bounded profile-photo JPEG.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/professional/portfolio-items:
+    post:
+      operationId: createProfessionalPortfolioItem
+      summary: Attach one processed image and submit a portfolio item for review
+      tags:
+        - Professional supply
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfessionalPortfolioItemCreateRequest"
+      responses:
+        "201":
+          description: The portfolio item was persisted privately for review.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Location:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfessionalWorkspaceResponse"
+        "401":
+          description: An active Rails application session is required.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: The exact browser origin or profile owner is invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Professional registration or the owned upload was not found.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: The image, selected service, item fields, or portfolio limit is invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/professional/portfolio-items/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Opaque server-generated portfolio item identifier.
+        schema:
+          type: string
+          format: uuid
+    delete:
+      operationId: deleteProfessionalPortfolioItem
+      summary: Soft-delete one owned portfolio item
+      tags:
+        - Professional supply
+      security:
+        - applicationSession: []
+      responses:
+        "200":
+          description: The item was removed from owner and public portfolio projections.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfessionalWorkspaceResponse"
+        "401":
+          description: An active Rails application session is required.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: The exact browser origin or profile owner is invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Professional registration or the active owned item was not found.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/professional/verification-requests:
+    post:
+      operationId: createProfessionalVerificationRequest
+      summary: Submit one regenerated private identity image for review
+      tags:
+        - Professional supply
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfessionalVerificationRequestCreateRequest"
+      responses:
+        "201":
+          description: The identity request and its one private regenerated image were persisted.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Location:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfessionalWorkspaceResponse"
+        "401":
+          description: An active Rails application session is required.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: The exact browser origin or profile owner is invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Professional registration or the owned upload was not found.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: The type, processed upload, or one-pending-request rule is invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/professional/media-uploads:
+    post:
+      operationId: authorizeProfessionalMediaUpload
+      summary: Authorize a short-lived private professional image upload
+      tags:
+        - Professional supply
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MediaUploadAuthorizationRequest"
+      responses:
+        "201":
+          description: A ten-minute private upload authorization and opaque quarantine key were created.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MediaUploadAuthorizationResponse"
+        "401":
+          $ref: "#/components/responses/ProfessionalMediaUnauthorized"
+        "403":
+          $ref: "#/components/responses/ProfessionalMediaForbidden"
+        "404":
+          $ref: "#/components/responses/ProfessionalMediaNotFound"
+        "422":
+          $ref: "#/components/responses/ProfessionalMediaInvalid"
+        "503":
+          $ref: "#/components/responses/ProfessionalMediaUnavailable"
+  /api/v1/professional/media-uploads/{id}:
+    parameters:
+      - $ref: "#/components/parameters/MediaUploadId"
+    get:
+      operationId: getProfessionalMediaUpload
+      summary: Read private media processing state owned by the authenticated professional
+      tags:
+        - Professional supply
+      security:
+        - applicationSession: []
+      responses:
+        "200":
+          description: Current authorization and asynchronous processing state.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MediaUploadResponse"
+        "401":
+          $ref: "#/components/responses/ProfessionalMediaUnauthorized"
+        "404":
+          $ref: "#/components/responses/ProfessionalMediaNotFound"
+  /api/v1/professional/media-uploads/{id}/content:
+    parameters:
+      - $ref: "#/components/parameters/MediaUploadId"
+    put:
+      operationId: uploadProfessionalMediaContent
+      summary: Upload authorized image bytes through Rails in local and preview environments
+      tags:
+        - Professional supply
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          image/jpeg:
+            schema:
+              type: string
+              format: binary
+          image/png:
+            schema:
+              type: string
+              format: binary
+      responses:
+        "200":
+          description: Exact declared bytes were written to the private quarantine scope.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MediaUploadResponse"
+        "401":
+          $ref: "#/components/responses/ProfessionalMediaUnauthorized"
+        "403":
+          $ref: "#/components/responses/ProfessionalMediaForbidden"
+        "404":
+          $ref: "#/components/responses/ProfessionalMediaNotFound"
+        "409":
+          $ref: "#/components/responses/ProfessionalMediaConflict"
+        "422":
+          $ref: "#/components/responses/ProfessionalMediaInvalid"
+        "503":
+          $ref: "#/components/responses/ProfessionalMediaUnavailable"
+  /api/v1/professional/media-uploads/{id}/completion:
+    parameters:
+      - $ref: "#/components/parameters/MediaUploadId"
+    post:
+      operationId: completeProfessionalMediaUpload
+      summary: Confirm a private upload and enqueue safe image processing
+      tags:
+        - Professional supply
+      security:
+        - applicationSession: []
+      responses:
+        "202":
+          description: The quarantined object was verified and processing was queued.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MediaUploadResponse"
+        "401":
+          $ref: "#/components/responses/ProfessionalMediaUnauthorized"
+        "403":
+          $ref: "#/components/responses/ProfessionalMediaForbidden"
+        "404":
+          $ref: "#/components/responses/ProfessionalMediaNotFound"
+        "409":
+          $ref: "#/components/responses/ProfessionalMediaConflict"
+        "422":
+          $ref: "#/components/responses/ProfessionalMediaInvalid"
+        "503":
+          $ref: "#/components/responses/ProfessionalMediaUnavailable"
+  /api/v1/professional/media-uploads/{id}/retry:
+    parameters:
+      - $ref: "#/components/parameters/MediaUploadId"
+    post:
+      operationId: retryProfessionalMediaUpload
+      summary: Retry transient private image processing without accepting invalid content
+      tags:
+        - Professional supply
+      security:
+        - applicationSession: []
+      responses:
+        "202":
+          description: A transiently failed quarantined upload was queued again.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MediaUploadResponse"
+        "401":
+          $ref: "#/components/responses/ProfessionalMediaUnauthorized"
+        "403":
+          $ref: "#/components/responses/ProfessionalMediaForbidden"
+        "404":
+          $ref: "#/components/responses/ProfessionalMediaNotFound"
+        "409":
+          $ref: "#/components/responses/ProfessionalMediaConflict"
+        "503":
+          $ref: "#/components/responses/ProfessionalMediaUnavailable"
   /api/v1/session:
     get:
       operationId: getCurrentSession
@@ -670,7 +1438,133 @@ components:
       schema:
         type: string
         minLength: 1
+    MediaUploadId:
+      name: id
+      in: path
+      required: true
+      description: Opaque server-generated media upload identifier.
+      schema:
+        type: string
+        format: uuid
+    ModerationType:
+      name: type
+      in: query
+      description: Moderation target family shown by the existing type control.
+      schema:
+        type: string
+        default: all
+        enum:
+          - all
+          - profile_revision
+          - profile_photo
+          - portfolio_item
+          - verification_request
+    ModerationStatus:
+      name: status
+      in: query
+      description: Moderation workflow state.
+      schema:
+        type: string
+        default: pending_review
+        enum:
+          - pending_review
+          - approved
+          - rejected
+          - hidden
+          - all
+    ModerationSearch:
+      name: search
+      in: query
+      description: Accent-insensitive search across the safe queue presentation.
+      schema:
+        type: string
+        maxLength: 100
+    ModerationPageSize:
+      name: per_page
+      in: query
+      description: Moderation result count per page.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 50
+        default: 20
+    ModerationTargetType:
+      name: target_type
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/ModerationTargetType"
+    ModerationMediaTargetType:
+      name: target_type
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+          - profile_photo
+          - portfolio_item
+    ModerationTargetId:
+      name: target_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
   responses:
+    ProfessionalMediaUnauthorized:
+      description: An active Rails application session is required.
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    ProfessionalMediaForbidden:
+      description: The exact browser origin or professional ownership check failed.
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    ProfessionalMediaNotFound:
+      description: The professional profile or owned media upload does not exist.
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    ProfessionalMediaConflict:
+      description: The media upload is not in a state that permits this transition.
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    ProfessionalMediaInvalid:
+      description: The declaration, authorization, or uploaded object is invalid.
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    ProfessionalMediaUnavailable:
+      description: Private media storage or asynchronous processing is temporarily unavailable.
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
     AdminCatalogUnauthorized:
       description: An active password-authenticated administrator session is required.
       headers:
@@ -718,6 +1612,51 @@ components:
             $ref: "#/components/schemas/ErrorResponse"
     AdminCatalogUnavailable:
       description: Catalog persistence is temporarily unavailable.
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    AdminModerationUnauthorized:
+      description: An active password-authenticated administrator session is required.
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    AdminModerationForbidden:
+      description: The exact browser origin or administrator account is not permitted.
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    AdminModerationNotFound:
+      description: The moderation target or regenerated private image does not exist.
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    AdminModerationConflict:
+      description: The moderation target changed and no longer permits this decision.
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    AdminModerationInvalid:
+      description: One or more queue filters or decision fields are invalid.
       headers:
         X-Request-Id:
           $ref: "#/components/headers/RequestId"
@@ -890,6 +1829,651 @@ components:
         profile_status:
           type: string
           const: draft
+    ProfessionalProfileUpdateRequest:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      dependentRequired:
+        services:
+          - coverage
+        coverage:
+          - services
+      properties:
+        identity:
+          $ref: "#/components/schemas/ProfessionalIdentityUpdate"
+        services:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/ProfessionalServiceUpdate"
+        coverage:
+          $ref: "#/components/schemas/ProfessionalCoverageUpdate"
+    ProfessionalIdentityUpdate:
+      type: object
+      additionalProperties: false
+      required:
+        - display_name
+        - headline
+        - bio
+        - whatsapp
+      properties:
+        display_name:
+          type: string
+          minLength: 3
+          maxLength: 70
+        headline:
+          type: string
+          minLength: 1
+          maxLength: 120
+        bio:
+          type: string
+          minLength: 1
+          maxLength: 500
+        years_experience:
+          type:
+            - integer
+            - "null"
+          minimum: 0
+          maximum: 70
+        whatsapp:
+          type: string
+          minLength: 10
+          maxLength: 40
+        instagram:
+          type:
+            - string
+            - "null"
+          maxLength: 200
+        youtube:
+          type:
+            - string
+            - "null"
+          maxLength: 200
+    ProfessionalWorkspaceResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          $ref: "#/components/schemas/ProfessionalWorkspaceData"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    ProfessionalWorkspaceData:
+      type: object
+      additionalProperties: false
+      required:
+        - profile
+      properties:
+        profile:
+          $ref: "#/components/schemas/ProfessionalWorkspaceProfile"
+    ProfessionalWorkspaceProfile:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - public_slug
+        - profile_status
+        - revision_status
+        - revision_rejection_reason
+        - has_published_revision
+        - photo
+        - portfolio_items
+        - verification
+        - identity
+        - services
+        - coverage
+      properties:
+        id:
+          type: string
+          format: uuid
+        public_slug:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          maxLength: 100
+        profile_status:
+          type: string
+          enum:
+            - draft
+            - pending_review
+            - published
+            - suspended
+        revision_status:
+          type: string
+          enum:
+            - draft
+            - pending_review
+            - approved
+            - rejected
+            - superseded
+        revision_rejection_reason:
+          type:
+            - string
+            - "null"
+          maxLength: 500
+        has_published_revision:
+          type: boolean
+        photo:
+          $ref: "#/components/schemas/ProfessionalWorkspacePhoto"
+        portfolio_items:
+          type: array
+          maxItems: 12
+          items:
+            $ref: "#/components/schemas/ProfessionalPortfolioItem"
+        verification:
+          $ref: "#/components/schemas/ProfessionalVerificationState"
+        identity:
+          $ref: "#/components/schemas/ProfessionalIdentity"
+        services:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProfessionalServiceSelection"
+        coverage:
+          $ref: "#/components/schemas/ProfessionalCoverage"
+    ProfessionalWorkspacePhoto:
+      type: object
+      additionalProperties: false
+      required:
+        - current
+        - has_published_photo
+        - latest_upload
+      properties:
+        current:
+          oneOf:
+            - $ref: "#/components/schemas/ProfessionalProfilePhotoSummary"
+            - type: "null"
+        has_published_photo:
+          type: boolean
+        latest_upload:
+          oneOf:
+            - $ref: "#/components/schemas/MediaUpload"
+            - type: "null"
+    ProfessionalProfilePhotoSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - status
+        - rejection_reason
+        - submitted_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+            - pending_review
+            - approved
+            - rejected
+            - hidden
+            - superseded
+        rejection_reason:
+          type:
+            - string
+            - "null"
+          maxLength: 500
+        submitted_at:
+          type: string
+          format: date-time
+    ProfessionalProfilePhotoUpdateRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - media_upload_id
+      properties:
+        media_upload_id:
+          type: string
+          format: uuid
+    ProfessionalPortfolioItemCreateRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - portfolio_item
+      properties:
+        portfolio_item:
+          type: object
+          additionalProperties: false
+          required:
+            - media_upload_id
+            - service_id
+            - title
+            - description
+          properties:
+            media_upload_id:
+              type: string
+              format: uuid
+            service_id:
+              type: string
+              format: uuid
+            title:
+              type: string
+              minLength: 1
+              maxLength: 80
+            description:
+              type:
+                - string
+                - "null"
+              maxLength: 300
+    ProfessionalPortfolioItem:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - title
+        - description
+        - service
+        - status
+        - rejection_reason
+        - submitted_at
+        - image_url
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          minLength: 1
+          maxLength: 80
+        description:
+          type:
+            - string
+            - "null"
+          maxLength: 300
+        service:
+          type: object
+          additionalProperties: false
+          required:
+            - id
+            - name
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type: string
+              minLength: 1
+              maxLength: 80
+        status:
+          type: string
+          enum:
+            - pending_review
+            - approved
+            - rejected
+            - hidden
+        rejection_reason:
+          type:
+            - string
+            - "null"
+          maxLength: 500
+        submitted_at:
+          type: string
+          format: date-time
+        image_url:
+          type:
+            - string
+            - "null"
+    ProfessionalVerificationRequestCreateRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - verification_request
+      properties:
+        verification_request:
+          type: object
+          additionalProperties: false
+          required:
+            - media_upload_id
+            - verification_type
+          properties:
+            media_upload_id:
+              type: string
+              format: uuid
+            verification_type:
+              type: string
+              const: identity
+    ProfessionalVerificationState:
+      type: object
+      additionalProperties: false
+      required:
+        - current
+      properties:
+        current:
+          oneOf:
+            - $ref: "#/components/schemas/ProfessionalVerificationRequest"
+            - type: "null"
+    ProfessionalVerificationRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - verification_type
+        - status
+        - rejection_reason
+        - submitted_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        verification_type:
+          type: string
+          const: identity
+        status:
+          type: string
+          enum:
+            - pending_review
+            - approved
+            - rejected
+            - expired
+        rejection_reason:
+          type:
+            - string
+            - "null"
+          maxLength: 500
+        submitted_at:
+          type: string
+          format: date-time
+    ProfessionalIdentity:
+      type: object
+      additionalProperties: false
+      required:
+        - display_name
+        - headline
+        - bio
+        - years_experience
+        - whatsapp
+        - instagram
+        - youtube
+      properties:
+        display_name:
+          type: string
+          minLength: 3
+          maxLength: 70
+        headline:
+          type: string
+          maxLength: 120
+        bio:
+          type: string
+          maxLength: 500
+        years_experience:
+          type:
+            - integer
+            - "null"
+          minimum: 0
+          maximum: 70
+        whatsapp:
+          type: string
+          pattern: "^\\+55[1-9][1-9]9[0-9]{8}$"
+        instagram:
+          type:
+            - string
+            - "null"
+          format: uri
+          maxLength: 200
+        youtube:
+          type:
+            - string
+            - "null"
+          format: uri
+          maxLength: 200
+    ProfessionalServiceUpdate:
+      type: object
+      additionalProperties: false
+      required:
+        - service_id
+        - is_primary
+      properties:
+        service_id:
+          type: string
+          format: uuid
+        is_primary:
+          type: boolean
+        note:
+          type:
+            - string
+            - "null"
+          maxLength: 120
+    ProfessionalCoverageUpdate:
+      type: object
+      additionalProperties: false
+      required:
+        - all_joinville
+        - neighborhood_codes
+      properties:
+        all_joinville:
+          type: boolean
+        neighborhood_codes:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    ProfessionalServiceSelection:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - name
+        - is_primary
+        - note
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        is_primary:
+          type: boolean
+        note:
+          type:
+            - string
+            - "null"
+          maxLength: 120
+    ProfessionalCoverage:
+      type: object
+      additionalProperties: false
+      required:
+        - all_joinville
+        - neighborhoods
+      properties:
+        all_joinville:
+          type: boolean
+        neighborhoods:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProfessionalCoverageNeighborhood"
+    ProfessionalCoverageNeighborhood:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - name
+      properties:
+        code:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+    MediaUploadAuthorizationRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - purpose
+        - content_type
+        - byte_size
+      properties:
+        purpose:
+          type: string
+          enum:
+            - profile_photo
+            - portfolio_image
+            - verification_identity
+        content_type:
+          type: string
+          enum:
+            - image/jpeg
+            - image/png
+        byte_size:
+          type: integer
+          minimum: 1
+          maximum: 10485760
+    MediaUploadAuthorizationResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required:
+            - media_upload
+            - upload
+          properties:
+            media_upload:
+              $ref: "#/components/schemas/MediaUpload"
+            upload:
+              $ref: "#/components/schemas/MediaUploadInstruction"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    MediaUploadResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required:
+            - media_upload
+          properties:
+            media_upload:
+              $ref: "#/components/schemas/MediaUpload"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    MediaUploadInstruction:
+      type: object
+      additionalProperties: false
+      required:
+        - strategy
+        - method
+        - url
+        - headers
+      properties:
+        strategy:
+          type: string
+          enum:
+            - rails
+            - direct
+        method:
+          type: string
+          const: PUT
+        url:
+          type: string
+          minLength: 1
+        headers:
+          type: object
+          additionalProperties:
+            type: string
+          required:
+            - Content-Type
+    MediaUpload:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - purpose
+        - state
+        - declared_content_type
+        - declared_byte_size
+        - actual_content_type
+        - sanitized_content_type
+        - actual_byte_size
+        - width
+        - height
+        - failure_code
+        - retryable
+        - authorization_expires_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        purpose:
+          type: string
+          enum:
+            - profile_photo
+            - portfolio_image
+            - verification_identity
+        state:
+          type: string
+          enum:
+            - authorized
+            - uploaded
+            - processing
+            - processed
+            - failed
+            - attached
+            - expired
+        declared_content_type:
+          type: string
+          enum:
+            - image/jpeg
+            - image/png
+        declared_byte_size:
+          type: integer
+          minimum: 1
+          maximum: 10485760
+        actual_content_type:
+          type:
+            - string
+            - "null"
+          enum:
+            - image/jpeg
+            - image/png
+            - null
+        sanitized_content_type:
+          type:
+            - string
+            - "null"
+          enum:
+            - image/jpeg
+            - image/png
+            - null
+        actual_byte_size:
+          type:
+            - integer
+            - "null"
+          minimum: 1
+          maximum: 10485760
+        width:
+          type:
+            - integer
+            - "null"
+          minimum: 1
+        height:
+          type:
+            - integer
+            - "null"
+          minimum: 1
+        failure_code:
+          type:
+            - string
+            - "null"
+          pattern: "^[a-z0-9_]+$"
+        retryable:
+          type: boolean
+        authorization_expires_at:
+          type: string
+          format: date-time
     CurrentSessionResponse:
       type: object
       additionalProperties: false
@@ -1195,6 +2779,139 @@ components:
             type: string
             pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
             maxLength: 80
+    AdminModerationResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          $ref: "#/components/schemas/AdminModerationData"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    AdminModerationData:
+      type: object
+      additionalProperties: false
+      required:
+        - items
+        - meta
+        - summary
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminModerationQueueItem"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+        summary:
+          $ref: "#/components/schemas/AdminModerationSummary"
+    AdminModerationQueueItem:
+      type: object
+      additionalProperties: false
+      required:
+        - target_type
+        - target_id
+        - status
+        - title
+        - subtitle
+        - submitted_at
+        - details
+        - preview
+        - has_media
+        - verification_file_id
+      properties:
+        target_type:
+          $ref: "#/components/schemas/ModerationTargetType"
+        target_id:
+          type: string
+          format: uuid
+        status:
+          $ref: "#/components/schemas/ModerationStatus"
+        title:
+          type: string
+          minLength: 1
+        subtitle:
+          type: string
+        submitted_at:
+          type: string
+          format: date-time
+        details:
+          type: string
+          minLength: 1
+        preview:
+          type: string
+        has_media:
+          type: boolean
+        verification_file_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+    AdminModerationSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - pending_count
+        - reviewed_today_count
+        - oldest_pending_submitted_at
+      properties:
+        pending_count:
+          type: integer
+          minimum: 0
+        reviewed_today_count:
+          type: integer
+          minimum: 0
+        oldest_pending_submitted_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+    ModerationDecisionRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - decision
+      properties:
+        decision:
+          $ref: "#/components/schemas/ModerationDecisionInput"
+    ModerationDecisionInput:
+      type: object
+      additionalProperties: false
+      required:
+        - action
+      properties:
+        action:
+          type: string
+          enum:
+            - approved
+            - rejected
+            - hidden
+            - restored
+        reason:
+          type:
+            - string
+            - "null"
+          maxLength: 500
+        note:
+          type:
+            - string
+            - "null"
+          maxLength: 500
+    ModerationTargetType:
+      type: string
+      enum:
+        - profile_revision
+        - profile_photo
+        - portfolio_item
+        - verification_request
+    ModerationStatus:
+      type: string
+      enum:
+        - pending_review
+        - approved
+        - rejected
+        - hidden
     CatalogData:
       type: object
       additionalProperties: false
@@ -1377,3 +3094,5 @@ tags:
   - name: Authentication
   - name: Catalog
   - name: Foundation
+  - name: Moderation
+  - name: Professional supply

@@ -9,6 +9,10 @@ class ProfessionalProfilePolicy < ApplicationPolicy
     owns_record?
   end
 
+  def submit?
+    owns_record?
+  end
+
   class Scope < ApplicationPolicy::Scope
     def resolve
       return scope.none unless active_user?

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_16_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_17_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -184,6 +184,77 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_16_120000) do
     t.index ["scheduled_at"], name: "index_good_jobs_on_scheduled_at", where: "(finished_at IS NULL)"
   end
 
+  create_table "media_uploads", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.bigint "actual_byte_size"
+    t.text "actual_content_type"
+    t.datetime "attached_at"
+    t.datetime "authorization_expires_at", null: false
+    t.datetime "created_at", null: false
+    t.bigint "declared_byte_size", null: false
+    t.text "declared_content_type", null: false
+    t.text "failure_code"
+    t.integer "height"
+    t.datetime "processed_at"
+    t.integer "processing_attempts", default: 0, null: false
+    t.datetime "processing_started_at"
+    t.uuid "professional_profile_id", null: false
+    t.text "purpose", null: false
+    t.text "quarantine_key", null: false
+    t.bigint "sanitized_byte_size"
+    t.text "sanitized_content_type"
+    t.text "sanitized_key"
+    t.text "state", default: "authorized", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "uploaded_at"
+    t.integer "width"
+    t.index ["authorization_expires_at"], name: "idx_media_uploads_expiring_authorizations", where: "(state = 'authorized'::text)"
+    t.index ["professional_profile_id", "purpose", "created_at"], name: "idx_on_professional_profile_id_purpose_created_at_8d91ce7f11"
+    t.index ["professional_profile_id"], name: "index_media_uploads_on_professional_profile_id"
+    t.index ["quarantine_key"], name: "index_media_uploads_on_quarantine_key", unique: true
+    t.index ["sanitized_key"], name: "index_media_uploads_on_sanitized_key", unique: true, where: "(sanitized_key IS NOT NULL)"
+    t.check_constraint "actual_byte_size IS NULL OR actual_byte_size >= 1 AND actual_byte_size <= 10485760", name: "media_uploads_actual_size_range"
+    t.check_constraint "declared_byte_size >= 1 AND declared_byte_size <= 10485760", name: "media_uploads_declared_size_range"
+    t.check_constraint "declared_content_type = ANY (ARRAY['image/jpeg'::text, 'image/png'::text])", name: "media_uploads_supported_declared_type"
+    t.check_constraint "processing_attempts >= 0", name: "media_uploads_nonnegative_attempts"
+    t.check_constraint "purpose = ANY (ARRAY['profile_photo'::text, 'portfolio_image'::text, 'verification_identity'::text])", name: "media_uploads_known_purpose"
+    t.check_constraint "sanitized_content_type IS NULL OR (sanitized_content_type = ANY (ARRAY['image/jpeg'::text, 'image/png'::text]))", name: "media_uploads_supported_sanitized_type"
+    t.check_constraint "state = ANY (ARRAY['authorized'::text, 'uploaded'::text, 'processing'::text, 'processed'::text, 'failed'::text, 'attached'::text, 'expired'::text])", name: "media_uploads_known_state"
+    t.check_constraint "width IS NULL AND height IS NULL OR width > 0 AND height > 0", name: "media_uploads_valid_dimensions"
+  end
+
+  create_table "moderation_actions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.text "action", null: false
+    t.uuid "admin_user_id", null: false
+    t.datetime "created_at", null: false
+    t.text "note"
+    t.text "reason"
+    t.text "request_id", null: false
+    t.uuid "target_id", null: false
+    t.text "target_type", null: false
+    t.index ["admin_user_id", "created_at"], name: "index_moderation_actions_on_admin_user_id_and_created_at"
+    t.index ["admin_user_id"], name: "index_moderation_actions_on_admin_user_id"
+    t.index ["target_type", "target_id", "created_at"], name: "idx_moderation_actions_target_created"
+    t.check_constraint "(action <> ALL (ARRAY['rejected'::text, 'hidden'::text])) OR reason IS NOT NULL AND char_length(btrim(reason)) >= 10 AND char_length(btrim(reason)) <= 500", name: "moderation_actions_required_reason"
+    t.check_constraint "action = ANY (ARRAY['approved'::text, 'rejected'::text, 'hidden'::text, 'restored'::text])", name: "moderation_actions_known_action"
+    t.check_constraint "note IS NULL OR char_length(btrim(note)) >= 1 AND char_length(btrim(note)) <= 500", name: "moderation_actions_note_length"
+    t.check_constraint "reason IS NULL OR char_length(btrim(reason)) >= 1 AND char_length(btrim(reason)) <= 500", name: "moderation_actions_reason_length"
+    t.check_constraint "request_id ~ '^[A-Za-z0-9._-]{1,100}$'::text", name: "moderation_actions_request_id_format"
+    t.check_constraint "target_type = ANY (ARRAY['profile_revision'::text, 'profile_photo'::text, 'portfolio_item'::text, 'verification_request'::text])", name: "moderation_actions_known_target"
+  end
+
+  create_table "moderation_media_access_events", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "admin_user_id", null: false
+    t.datetime "created_at", null: false
+    t.text "request_id", null: false
+    t.uuid "target_id", null: false
+    t.text "target_type", null: false
+    t.index ["admin_user_id", "created_at"], name: "idx_moderation_media_access_admin_created"
+    t.index ["admin_user_id"], name: "index_moderation_media_access_events_on_admin_user_id"
+    t.index ["target_type", "target_id", "created_at"], name: "idx_moderation_media_access_target_created"
+    t.check_constraint "request_id ~ '^[A-Za-z0-9._-]{1,100}$'::text", name: "moderation_media_access_request_id_format"
+    t.check_constraint "target_type = ANY (ARRAY['profile_photo'::text, 'portfolio_item'::text])", name: "moderation_media_access_known_target"
+  end
+
   create_table "neighborhoods", primary_key: "code", id: :text, force: :cascade do |t|
     t.text "city_code", null: false
     t.datetime "created_at", null: false
@@ -239,16 +310,135 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_16_120000) do
     t.check_constraint "subject_digest ~ '^[0-9a-f]{64}$'::text", name: "otp_request_counters_digest_format"
   end
 
-  create_table "professional_profiles", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+  create_table "portfolio_items", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.bigint "byte_size", null: false
+    t.text "content_type", null: false
+    t.datetime "created_at", null: false
+    t.datetime "deleted_at"
+    t.text "description"
+    t.integer "height", null: false
+    t.datetime "hidden_at"
+    t.uuid "media_upload_id", null: false
+    t.text "private_key", null: false
+    t.uuid "professional_profile_id", null: false
+    t.text "public_key"
+    t.text "rejection_reason"
+    t.datetime "reviewed_at"
+    t.uuid "service_id", null: false
+    t.text "status", default: "pending_review", null: false
+    t.datetime "submitted_at", null: false
+    t.text "title", null: false
+    t.datetime "updated_at", null: false
+    t.integer "width", null: false
+    t.index ["media_upload_id"], name: "index_portfolio_items_on_media_upload_id", unique: true
+    t.index ["private_key"], name: "index_portfolio_items_on_private_key", unique: true
+    t.index ["professional_profile_id", "submitted_at", "id"], name: "idx_portfolio_items_owner_newest", order: { submitted_at: :desc, id: :desc }, where: "(deleted_at IS NULL)"
+    t.index ["professional_profile_id"], name: "index_portfolio_items_on_professional_profile_id"
+    t.index ["public_key"], name: "index_portfolio_items_on_public_key", unique: true, where: "(public_key IS NOT NULL)"
+    t.index ["service_id"], name: "index_portfolio_items_on_service_id"
+    t.check_constraint "byte_size > 0 AND width > 0 AND height > 0", name: "portfolio_items_valid_image"
+    t.check_constraint "content_type = ANY (ARRAY['image/jpeg'::text, 'image/png'::text])", name: "portfolio_items_supported_content_type"
+    t.check_constraint "status = ANY (ARRAY['pending_review'::text, 'approved'::text, 'rejected'::text, 'hidden'::text])", name: "portfolio_items_known_status"
+  end
+
+  create_table "professional_profile_photos", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.bigint "byte_size", null: false
+    t.text "content_type", default: "image/jpeg", null: false
+    t.datetime "created_at", null: false
+    t.integer "height", null: false
+    t.datetime "hidden_at"
+    t.uuid "media_upload_id", null: false
+    t.text "private_key", null: false
+    t.uuid "professional_profile_id", null: false
+    t.text "public_key"
+    t.text "rejection_reason"
+    t.datetime "reviewed_at"
+    t.text "status", default: "pending_review", null: false
+    t.datetime "submitted_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "width", null: false
+    t.index ["media_upload_id"], name: "index_professional_profile_photos_on_media_upload_id", unique: true
+    t.index ["private_key"], name: "index_professional_profile_photos_on_private_key", unique: true
+    t.index ["professional_profile_id"], name: "idx_profile_photos_one_approved", unique: true, where: "(status = 'approved'::text)"
+    t.index ["professional_profile_id"], name: "idx_profile_photos_one_pending", unique: true, where: "(status = 'pending_review'::text)"
+    t.index ["professional_profile_id"], name: "index_professional_profile_photos_on_professional_profile_id"
+    t.index ["public_key"], name: "index_professional_profile_photos_on_public_key", unique: true, where: "(public_key IS NOT NULL)"
+    t.check_constraint "byte_size > 0 AND width >= 1 AND width <= 1024 AND height >= 1 AND height <= 1536", name: "professional_profile_photos_valid_variant"
+    t.check_constraint "content_type = 'image/jpeg'::text", name: "professional_profile_photos_jpeg_only"
+    t.check_constraint "status = ANY (ARRAY['pending_review'::text, 'approved'::text, 'rejected'::text, 'hidden'::text, 'superseded'::text])", name: "professional_profile_photos_known_status"
+  end
+
+  create_table "professional_profile_revisions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.text "bio"
     t.datetime "created_at", null: false
     t.text "display_name", null: false
+    t.text "headline"
+    t.text "instagram_url"
+    t.uuid "professional_profile_id", null: false
+    t.text "rejection_reason"
+    t.datetime "reviewed_at"
+    t.text "status", default: "draft", null: false
+    t.datetime "submitted_at"
+    t.datetime "updated_at", null: false
+    t.integer "version", null: false
+    t.text "whatsapp_e164"
+    t.integer "years_experience"
+    t.text "youtube_url"
+    t.index ["professional_profile_id", "version"], name: "idx_profile_revisions_unique_version", unique: true
+    t.index ["professional_profile_id"], name: "idx_on_professional_profile_id_7926e53c9d"
+    t.index ["professional_profile_id"], name: "idx_profile_revisions_one_working", unique: true, where: "(status = ANY (ARRAY['draft'::text, 'pending_review'::text]))"
+    t.check_constraint "bio IS NULL OR char_length(btrim(bio)) >= 1 AND char_length(btrim(bio)) <= 500", name: "professional_profile_revisions_bio_length"
+    t.check_constraint "char_length(btrim(display_name)) >= 3 AND char_length(btrim(display_name)) <= 70", name: "professional_profile_revisions_display_name_length"
+    t.check_constraint "headline IS NULL OR char_length(btrim(headline)) >= 1 AND char_length(btrim(headline)) <= 120", name: "professional_profile_revisions_headline_length"
+    t.check_constraint "status = ANY (ARRAY['draft'::text, 'pending_review'::text, 'approved'::text, 'rejected'::text, 'superseded'::text])", name: "professional_profile_revisions_known_status"
+    t.check_constraint "whatsapp_e164 IS NULL OR whatsapp_e164 ~ '^\\+55[1-9][1-9]9[0-9]{8}$'::text", name: "professional_profile_revisions_whatsapp_format"
+    t.check_constraint "years_experience IS NULL OR years_experience >= 0 AND years_experience <= 70", name: "professional_profile_revisions_experience_range"
+  end
+
+  create_table "professional_profile_service_areas", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.text "city_code", default: "Joinville", null: false
+    t.datetime "created_at", null: false
+    t.text "neighborhood_code"
+    t.uuid "professional_profile_revision_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["professional_profile_revision_id", "city_code", "neighborhood_code"], name: "idx_revision_service_areas_unique_neighborhood", unique: true, where: "(neighborhood_code IS NOT NULL)"
+    t.index ["professional_profile_revision_id", "city_code"], name: "idx_revision_service_areas_unique_all_city", unique: true, where: "(neighborhood_code IS NULL)"
+    t.index ["professional_profile_revision_id"], name: "idx_revision_service_areas_revision"
+    t.check_constraint "city_code = 'Joinville'::text", name: "professional_profile_service_areas_joinville_only"
+  end
+
+  create_table "professional_profile_services", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.boolean "is_primary", default: false, null: false
+    t.text "note"
+    t.uuid "professional_profile_revision_id", null: false
+    t.uuid "service_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["professional_profile_revision_id", "service_id"], name: "idx_revision_services_unique_service", unique: true
+    t.index ["professional_profile_revision_id"], name: "idx_revision_services_one_primary", unique: true, where: "is_primary"
+    t.index ["service_id"], name: "index_professional_profile_services_on_service_id"
+    t.check_constraint "note IS NULL OR char_length(btrim(note)) >= 1 AND char_length(btrim(note)) <= 120", name: "professional_profile_services_note_length"
+  end
+
+  create_table "professional_profiles", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
     t.text "profile_status", default: "draft", null: false
+    t.text "public_slug", null: false
+    t.uuid "published_photo_id"
+    t.uuid "published_revision_id"
     t.datetime "updated_at", null: false
     t.uuid "user_account_id", null: false
+    t.uuid "working_photo_id"
+    t.uuid "working_revision_id"
     t.index ["profile_status"], name: "index_professional_profiles_on_profile_status"
+    t.index ["public_slug"], name: "index_professional_profiles_on_public_slug", unique: true
+    t.index ["published_photo_id"], name: "index_professional_profiles_on_published_photo_id", unique: true
+    t.index ["published_revision_id"], name: "index_professional_profiles_on_published_revision_id", unique: true
     t.index ["user_account_id"], name: "index_professional_profiles_on_user_account_id", unique: true
-    t.check_constraint "char_length(btrim(display_name)) >= 3 AND char_length(btrim(display_name)) <= 70", name: "professional_profiles_display_name_length"
+    t.index ["working_photo_id"], name: "index_professional_profiles_on_working_photo_id", unique: true
+    t.index ["working_revision_id"], name: "index_professional_profiles_on_working_revision_id", unique: true
     t.check_constraint "profile_status = ANY (ARRAY['draft'::text, 'pending_review'::text, 'published'::text, 'suspended'::text])", name: "professional_profiles_known_status"
+    t.check_constraint "public_slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'::text", name: "professional_profiles_public_slug_format"
   end
 
   create_table "service_categories", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -314,9 +504,85 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_16_120000) do
     t.check_constraint "terms_accepted_at IS NULL AND terms_version IS NULL AND privacy_notice_version IS NULL OR terms_accepted_at IS NOT NULL AND terms_version IS NOT NULL AND privacy_notice_version IS NOT NULL AND btrim(terms_version) <> ''::text AND btrim(privacy_notice_version) <> ''::text", name: "user_accounts_complete_legal_acceptance"
   end
 
+  create_table "verification_file_access_events", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.text "action", null: false
+    t.uuid "admin_user_id", null: false
+    t.datetime "created_at", null: false
+    t.text "request_id", null: false
+    t.uuid "verification_file_id", null: false
+    t.index ["admin_user_id", "created_at"], name: "idx_verification_file_access_admin_created"
+    t.index ["admin_user_id"], name: "index_verification_file_access_events_on_admin_user_id"
+    t.index ["verification_file_id", "created_at"], name: "idx_verification_file_access_target_created"
+    t.index ["verification_file_id"], name: "index_verification_file_access_events_on_verification_file_id"
+    t.check_constraint "action = 'viewed'::text", name: "verification_file_access_known_action"
+    t.check_constraint "request_id ~ '^[A-Za-z0-9._-]{1,100}$'::text", name: "verification_file_access_request_id_format"
+  end
+
+  create_table "verification_files", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.bigint "byte_size", null: false
+    t.text "content_type", null: false
+    t.datetime "created_at", null: false
+    t.datetime "deleted_at"
+    t.integer "height", null: false
+    t.uuid "media_upload_id", null: false
+    t.text "private_key", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "uploaded_at", null: false
+    t.uuid "verification_request_id", null: false
+    t.integer "width", null: false
+    t.index ["media_upload_id"], name: "index_verification_files_on_media_upload_id", unique: true
+    t.index ["private_key"], name: "index_verification_files_on_private_key", unique: true
+    t.index ["verification_request_id"], name: "index_verification_files_on_verification_request_id", unique: true
+    t.check_constraint "byte_size > 0 AND width > 0 AND height > 0", name: "verification_files_valid_image"
+    t.check_constraint "content_type = ANY (ARRAY['image/jpeg'::text, 'image/png'::text])", name: "verification_files_supported_content_type"
+  end
+
+  create_table "verification_requests", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.uuid "professional_profile_id", null: false
+    t.text "public_label"
+    t.text "review_note"
+    t.datetime "reviewed_at"
+    t.uuid "reviewed_by_user_account_id"
+    t.text "status", default: "pending_review", null: false
+    t.datetime "submitted_at", null: false
+    t.datetime "updated_at", null: false
+    t.text "verification_type", default: "identity", null: false
+    t.datetime "verified_at"
+    t.index ["professional_profile_id", "submitted_at", "id"], name: "idx_verification_requests_owner_newest", order: { submitted_at: :desc, id: :desc }
+    t.index ["professional_profile_id", "verification_type"], name: "idx_verification_requests_one_pending_type", unique: true, where: "(status = 'pending_review'::text)"
+    t.index ["professional_profile_id"], name: "index_verification_requests_on_professional_profile_id"
+    t.index ["reviewed_by_user_account_id"], name: "index_verification_requests_on_reviewed_by_user_account_id"
+    t.check_constraint "status = ANY (ARRAY['pending_review'::text, 'approved'::text, 'rejected'::text, 'expired'::text])", name: "verification_requests_known_status"
+    t.check_constraint "verification_type = 'identity'::text", name: "verification_requests_identity_only"
+  end
+
   add_foreign_key "admin_access_events", "user_accounts", column: "admin_user_id"
   add_foreign_key "application_sessions", "user_accounts"
   add_foreign_key "catalog_change_events", "user_accounts", column: "admin_user_id"
+  add_foreign_key "media_uploads", "professional_profiles"
+  add_foreign_key "moderation_actions", "user_accounts", column: "admin_user_id"
+  add_foreign_key "moderation_media_access_events", "user_accounts", column: "admin_user_id"
+  add_foreign_key "portfolio_items", "media_uploads"
+  add_foreign_key "portfolio_items", "professional_profiles"
+  add_foreign_key "portfolio_items", "services"
+  add_foreign_key "professional_profile_photos", "media_uploads"
+  add_foreign_key "professional_profile_photos", "professional_profiles"
+  add_foreign_key "professional_profile_revisions", "professional_profiles"
+  add_foreign_key "professional_profile_service_areas", "neighborhoods", column: "neighborhood_code", primary_key: "code"
+  add_foreign_key "professional_profile_service_areas", "professional_profile_revisions"
+  add_foreign_key "professional_profile_services", "professional_profile_revisions"
+  add_foreign_key "professional_profile_services", "services"
+  add_foreign_key "professional_profiles", "professional_profile_photos", column: "published_photo_id"
+  add_foreign_key "professional_profiles", "professional_profile_photos", column: "working_photo_id"
+  add_foreign_key "professional_profiles", "professional_profile_revisions", column: "published_revision_id"
+  add_foreign_key "professional_profiles", "professional_profile_revisions", column: "working_revision_id"
   add_foreign_key "professional_profiles", "user_accounts"
   add_foreign_key "services", "service_categories", column: "category_id"
+  add_foreign_key "verification_file_access_events", "user_accounts", column: "admin_user_id"
+  add_foreign_key "verification_file_access_events", "verification_files"
+  add_foreign_key "verification_files", "media_uploads"
+  add_foreign_key "verification_files", "verification_requests"
+  add_foreign_key "verification_requests", "professional_profiles"
+  add_foreign_key "verification_requests", "user_accounts", column: "reviewed_by_user_account_id"
 end

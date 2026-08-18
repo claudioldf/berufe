@@ -10,6 +10,10 @@ RSpec.describe LocalDiskStorage do
 
       expect(storage.write(scope: :private, key: "profile/image.jpg", body: "synthetic")).to eq("profile/image.jpg")
       expect(storage.read(scope: :private, key: "profile/image.jpg")).to eq("synthetic")
+      expect(storage.stat(scope: :private, key: "profile/image.jpg")).to eq(
+        byte_size: 9,
+        content_type: nil
+      )
 
       storage.delete(scope: :private, key: "profile/image.jpg")
       expect { storage.read(scope: :private, key: "profile/image.jpg") }.to raise_error(Errno::ENOENT)

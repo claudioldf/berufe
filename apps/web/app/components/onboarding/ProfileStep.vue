@@ -1,16 +1,38 @@
 <script setup lang="ts">
 import { ref, shallowRef } from "vue";
-import type { ProfessionalProfileDraft } from "~/types";
+import type {
+  ProfessionalProfileDraft,
+  ProfessionalProfilePhotoState,
+} from "~/types";
 import { validateOnboardingProfile } from "~/composables/useProfessionalOnboarding";
 
-const props = defineProps<{ draft: ProfessionalProfileDraft }>();
+const props = withDefaults(
+  defineProps<{
+    draft: ProfessionalProfileDraft;
+    saving?: boolean;
+    serverError?: string;
+    photo?: ProfessionalProfilePhotoState;
+    photoUploading?: boolean;
+    photoError?: string;
+  }>(),
+  {
+    saving: false,
+    serverError: "",
+    photo: undefined,
+    photoUploading: false,
+    photoError: "",
+  },
+);
 const emit = defineEmits<{
   complete: [draft: ProfessionalProfileDraft];
+  photoSelect: [file: File];
+  photoRetry: [];
 }>();
 
 const form = ref<ProfessionalProfileDraft>({
   ...props.draft,
   selectedServices: [...props.draft.selectedServices],
+  serviceNotes: { ...props.draft.serviceNotes },
   selectedNeighborhoods: [...props.draft.selectedNeighborhoods],
 });
 const error = shallowRef("");
@@ -22,6 +44,7 @@ function submit() {
   emit("complete", {
     ...form.value,
     selectedServices: [...form.value.selectedServices],
+    serviceNotes: { ...form.value.serviceNotes },
     selectedNeighborhoods: [...form.value.selectedNeighborhoods],
   });
 }
@@ -39,17 +62,30 @@ function submit() {
     </header>
 
     <form class="onboarding-step-form" @submit.prevent="submit">
-      <p v-if="error" class="onboarding-step-error" role="alert">
-        <UIcon name="i-lucide-circle-alert" /> {{ error }}
+      <p
+        v-if="error || props.serverError"
+        class="onboarding-step-error"
+        role="alert"
+      >
+        <UIcon name="i-lucide-circle-alert" /> {{ error || props.serverError }}
       </p>
       <DashboardProfileFormLayout>
-        <DashboardProfileIdentitySection v-model="form" />
+        <DashboardProfileIdentitySection
+          v-model="form"
+          :photo="props.photo"
+          :photo-uploading="props.photoUploading"
+          :photo-error="props.photoError"
+          @photo-select="emit('photoSelect', $event)"
+          @photo-retry="emit('photoRetry')"
+        />
       </DashboardProfileFormLayout>
       <footer class="onboarding-step-actions onboarding-step-actions--end">
         <UButton
           type="submit"
           color="primary"
           trailing-icon="i-lucide-arrow-right"
+          :loading="props.saving"
+          :disabled="props.saving"
         >
           Salvar e continuar
         </UButton>

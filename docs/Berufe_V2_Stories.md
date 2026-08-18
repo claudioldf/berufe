@@ -50,6 +50,8 @@ Former MVP story and feature IDs are recorded for traceability and are not reuse
 
 ### V2-004 — Preserve an approved profile while a revision is pending
 
+**Status:** MOVED TO MVP on August 17, 2026. The approved Increment 2 plan incorporates this behavior into S021–S024; this entry remains only for decision traceability and must not be implemented a second time.
+
 **Former scope:** Feature A2 and S022–S024 partial.
 
 **Story:** As a published professional, I want my last approved profile to remain public while material edits are reviewed so that routine maintenance does not remove me from search.

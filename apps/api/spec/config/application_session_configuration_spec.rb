@@ -15,4 +15,22 @@ RSpec.describe "Application session configuration" do
       class: "AuthenticationRecordsCleanupJob"
     )
   end
+
+  it "schedules abandoned upload authorization cleanup through GoodJob" do
+    cleanup = Rails.configuration.good_job.cron.fetch(:media_upload_authorization_cleanup)
+
+    expect(cleanup).to include(
+      cron: "*/10 * * * *",
+      class: "MediaUploadAuthorizationCleanupJob"
+    )
+  end
+
+  it "schedules decided identity-evidence retention cleanup daily" do
+    cleanup = Rails.configuration.good_job.cron.fetch(:verification_file_retention_cleanup)
+
+    expect(cleanup).to include(
+      cron: "43 3 * * *",
+      class: "VerificationFileRetentionCleanupJob"
+    )
+  end
 end

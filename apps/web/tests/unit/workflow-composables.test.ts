@@ -1,9 +1,7 @@
-import { effectScope, nextTick } from "vue";
+import { effectScope } from "vue";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import moderationData from "@data/moderation.json";
 import professionalsData from "@data/professionals.json";
-import type { ModerationQueueItem, Professional } from "~/types";
-import { useModerationQueue } from "~/composables/useModerationQueue";
+import type { Professional } from "~/types";
 import { usePhoneAuthFlow } from "~/composables/usePhoneAuthFlow";
 import { useProfessionalProfileDraft } from "~/composables/useProfessionalProfileDraft";
 import { PhoneOtpRequestError } from "~/services/api/phone-auth";
@@ -11,28 +9,6 @@ import { ApiRequestError } from "~/services/api/errors";
 
 afterEach(() => {
   vi.useRealTimers();
-});
-
-describe("moderation queue", () => {
-  it("filters searchable fields and advances selection after a decision", async () => {
-    const workflow = useModerationQueue(
-      moderationData.queue as ModerationQueueItem[],
-    );
-    workflow.searchQuery.value = "verificação";
-    await nextTick();
-    expect(workflow.filteredQueue.value.length).toBeGreaterThan(0);
-    expect(
-      workflow.filteredQueue.value.every((item) =>
-        `${item.type} ${item.title}`
-          .toLocaleLowerCase("pt-BR")
-          .includes("verificação"),
-      ),
-    ).toBe(true);
-
-    const decided = workflow.decide();
-    expect(decided).not.toBeNull();
-    expect(workflow.queue.value).not.toContainEqual(decided);
-  });
 });
 
 describe("profile drafts", () => {

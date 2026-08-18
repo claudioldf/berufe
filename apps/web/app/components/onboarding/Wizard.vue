@@ -5,6 +5,7 @@ import type {
   OnboardingStepId,
   PortfolioItemDraft,
   ProfessionalProfileDraft,
+  ProfessionalWorkspace,
   Service,
 } from "~/types";
 import {
@@ -12,9 +13,30 @@ import {
   useProfessionalOnboarding,
 } from "~/composables/useProfessionalOnboarding";
 
-defineProps<{
+const props = defineProps<{
   services: Service[];
   neighborhoods: Neighborhood[];
+  workspace: ProfessionalWorkspace;
+  saveIdentity: (
+    draft: ProfessionalProfileDraft,
+  ) => Promise<ProfessionalProfileDraft>;
+  saveSupply: (
+    draft: ProfessionalProfileDraft,
+  ) => Promise<ProfessionalProfileDraft>;
+  savePortfolio: (draft: PortfolioItemDraft) => Promise<{
+    title: string;
+    service: string;
+    description: string;
+    submittedAt: string;
+  }>;
+  saveVerification: (file: File) => Promise<{ submittedAt: string }>;
+  uploadPhoto: (file: File) => Promise<unknown>;
+  retryPhoto: () => Promise<unknown>;
+  submitProfile: () => Promise<unknown>;
+  photoUploading?: boolean;
+  photoError?: string;
+  submissionSaving?: boolean;
+  submissionError?: string;
 }>();
 
 const route = useRoute();
@@ -30,7 +52,21 @@ const {
   completeServices,
   completePortfolio,
   completeVerification,
-} = useProfessionalOnboarding();
+  initializeFromWorkspace,
+  profileSaving,
+  profileError,
+  supplySaving,
+  supplyError,
+  portfolioSaving,
+  portfolioError,
+  verificationSaving,
+  verificationError,
+} = useProfessionalOnboarding({
+  saveIdentity: props.saveIdentity,
+  saveSupply: props.saveSupply,
+  savePortfolio: props.savePortfolio,
+  saveVerification: props.saveVerification,
+});
 
 const activeStep = shallowRef<OnboardingStepId>("profile");
 const reviewing = shallowRef(false);
@@ -43,6 +79,7 @@ const firstIncompleteIndex = computed(() =>
     (step) => step.id === firstIncompleteStep.value,
   ),
 );
+const isSubmitted = computed(() => props.workspace.profile.status !== "draft");
 const professionalName = computed(
   () => state.value.profile.name.trim().split(" ")[0] || "profissional",
 );
@@ -89,22 +126,36 @@ function previousStep() {
   if (previous) void goToStep(previous.id);
 }
 
-function handleProfile(draft: ProfessionalProfileDraft) {
-  if (completeProfile(draft)) void goToStep("services");
+async function handleProfile(draft: ProfessionalProfileDraft) {
+  if (await completeProfile(draft)) void goToStep("services");
 }
 
-function handleServices(draft: ProfessionalProfileDraft) {
-  if (completeServices(draft)) void goToStep("portfolio");
+async function handleServices(draft: ProfessionalProfileDraft) {
+  if (await completeServices(draft)) void goToStep("portfolio");
 }
 
-function handlePortfolio(draft: PortfolioItemDraft) {
-  if (completePortfolio(draft)) void goToStep("verification");
+async function handlePhoto(file: File) {
+  try {
+    await props.uploadPhoto(file);
+  } catch {
+    // The shared photo state renders the safe server error in this step.
+  }
 }
 
-function handleVerification(file: File) {
-  if (!completeVerification(file)) return;
-  reviewing.value = false;
-  void router.replace({ query: {} });
+async function handlePhotoRetry() {
+  try {
+    await props.retryPhoto();
+  } catch {
+    // The shared photo state renders the safe server error in this step.
+  }
+}
+
+async function handlePortfolio(draft: PortfolioItemDraft) {
+  if (await completePortfolio(draft)) void goToStep("verification");
+}
+
+async function handleVerification(file: File) {
+  await completeVerification(file);
 }
 
 function reviewSteps() {
@@ -112,21 +163,62 @@ function reviewSteps() {
   void goToStep("profile");
 }
 
-function finishReview() {
-  reviewing.value = false;
-  void router.replace({ query: {} });
+async function finishReview() {
+  if (!isComplete.value) return;
+  try {
+    if (!isSubmitted.value) await props.submitProfile();
+    reviewing.value = false;
+    await router.replace({ query: {} });
+  } catch {
+    // The final step renders the safe server-owned checklist error.
+  }
 }
 
 watch(
   [hydrated, () => route.query.step],
   ([isHydrated, requestedStep]) => {
-    if (!isHydrated || (isComplete.value && !reviewing.value)) return;
+    if (!isHydrated || (isSubmitted.value && !reviewing.value)) return;
     const stepId = isStepId(requestedStep)
       ? requestedStep
       : firstIncompleteStep.value;
     activeStep.value = canVisitStep(stepId)
       ? stepId
       : firstIncompleteStep.value;
+  },
+  { immediate: true },
+);
+
+watch(
+  () => props.workspace,
+  (workspace) => {
+    const identity = workspace.profile.identity;
+    const selections = workspace.profile.services;
+    const firstPortfolioItem = workspace.profile.portfolioItems[0];
+    initializeFromWorkspace(
+      {
+        ...editableProfile.value,
+        ...identity,
+        selectedServices: selections.map((selection) => selection.name),
+        primaryService:
+          selections.find((selection) => selection.isPrimary)?.name ?? "",
+        serviceNotes: Object.fromEntries(
+          selections.map((selection) => [selection.name, selection.note]),
+        ),
+        allJoinville: workspace.profile.coverage.allJoinville,
+        selectedNeighborhoods: workspace.profile.coverage.neighborhoods.map(
+          (neighborhood) => neighborhood.name,
+        ),
+      },
+      firstPortfolioItem
+        ? {
+            title: firstPortfolioItem.title,
+            service: firstPortfolioItem.service,
+            description: firstPortfolioItem.description,
+            submittedAt: firstPortfolioItem.submittedAt,
+          }
+        : null,
+      workspace.profile.verification.current?.submittedAt ?? null,
+    );
   },
   { immediate: true },
 );
@@ -162,7 +254,7 @@ watch(
       </DesignSystemSurfaceCard>
 
       <OnboardingSuccess
-        v-else-if="isComplete && !reviewing"
+        v-else-if="isSubmitted && !reviewing"
         @review="reviewSteps"
       />
 
@@ -185,7 +277,14 @@ watch(
             v-if="activeStep === 'profile'"
             :key="`profile-${state.completion.profile ?? 'new'}`"
             :draft="editableProfile"
+            :saving="profileSaving"
+            :server-error="profileError"
+            :photo="workspace.profile.photo"
+            :photo-uploading="props.photoUploading"
+            :photo-error="props.photoError"
             @complete="handleProfile"
+            @photo-select="handlePhoto"
+            @photo-retry="handlePhotoRetry"
           />
           <OnboardingServicesStep
             v-else-if="activeStep === 'services'"
@@ -193,6 +292,8 @@ watch(
             :draft="editableProfile"
             :services="services"
             :neighborhoods="neighborhoods"
+            :saving="supplySaving"
+            :server-error="supplyError"
             @back="previousStep"
             @complete="handleServices"
           />
@@ -200,6 +301,8 @@ watch(
             v-else-if="activeStep === 'portfolio'"
             :portfolio="state.portfolio"
             :service-options="selectedServices"
+            :saving="portfolioSaving"
+            :server-error="portfolioError"
             @back="previousStep"
             @complete="handlePortfolio"
             @continue="goToStep('verification')"
@@ -207,6 +310,9 @@ watch(
           <OnboardingVerificationStep
             v-else
             :submitted="state.verificationStatus === 'submitted'"
+            :saving="verificationSaving"
+            :submitting="props.submissionSaving"
+            :server-error="props.submissionError || verificationError"
             @back="previousStep"
             @complete="handleVerification"
             @finish="finishReview"

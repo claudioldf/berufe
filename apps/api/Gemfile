@@ -12,6 +12,8 @@ gem "openapi_first", "~> 3.4"
 gem "rack-cors", "~> 3.0"
 # Store production media in Cloudflare R2 through its S3-compatible API
 gem "aws-sdk-s3", "~> 1.0"
+# Decode, orient, sanitize, and re-encode uploaded images outside request threads
+gem "ruby-vips", "~> 2.2"
 # Run Active Job work in PostgreSQL
 gem "good_job", "~> 4.0"
 # Enforce role, ownership, and public-data authorization at the API boundary

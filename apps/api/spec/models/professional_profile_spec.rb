@@ -27,4 +27,21 @@ RSpec.describe ProfessionalProfile, type: :model do
     expect(invalid.errors[:display_name]).to be_present
     expect(invalid.errors[:profile_status]).to be_present
   end
+
+  it "enforces identity limits and canonical social URLs in Rails" do
+    account = UserAccount.create!(phone_e164: "+5547999995003", role: "professional", status: "active")
+    profile = described_class.new(
+      user_account: account,
+      display_name: "Ana Souza",
+      headline: "H" * 121,
+      bio: "B" * 501,
+      years_experience: 71,
+      whatsapp_e164: "+5547999995003",
+      instagram_url: "https://example.com/ana",
+      youtube_url: "https://www.youtube.com/watch?v=unsafe"
+    )
+
+    expect(profile).not_to be_valid
+    expect(profile.errors).to include(:headline, :bio, :years_experience, :instagram_url, :youtube_url)
+  end
 end
