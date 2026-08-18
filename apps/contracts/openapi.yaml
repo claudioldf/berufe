@@ -1920,6 +1920,7 @@ components:
           - profile_photo
           - portfolio_item
           - verification_request
+          - professional_relationship
     ModerationStatus:
       name: status
       in: query
@@ -3498,6 +3499,7 @@ components:
         - profile_photo
         - portfolio_item
         - verification_request
+        - professional_relationship
     ModerationStatus:
       type: string
       enum:
@@ -4029,6 +4031,7 @@ components:
       required:
         - id
         - type
+        - direction
         - note
         - professional
       properties:
@@ -4040,6 +4043,11 @@ components:
           enum:
             - recommendation
             - worked_together
+        direction:
+          type: string
+          enum:
+            - incoming
+            - outgoing
         note:
           type:
             - string

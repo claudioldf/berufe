@@ -761,7 +761,7 @@ Public profiles also show a visible Berufe support/report contact that routes to
 
 ### S046 — Moderate and display professional trust relationships publicly
 
-**Status:** PENDING
+**Status:** DONE
 
 **Story:** As an admin and customer, I want accepted professional relationships reviewed before publication so that network evidence is controlled and transparent rather than anonymous.
 

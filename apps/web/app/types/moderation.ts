@@ -2,7 +2,8 @@ export type ModerationTargetType =
   | "profile_revision"
   | "profile_photo"
   | "portfolio_item"
-  | "verification_request";
+  | "verification_request"
+  | "professional_relationship";
 
 export type ModerationTypeFilter = ModerationTargetType | "all";
 export type ModerationStatus =

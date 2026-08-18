@@ -1152,7 +1152,7 @@ export interface components {
             note?: string | null;
         };
         /** @enum {string} */
-        ModerationTargetType: "profile_revision" | "profile_photo" | "portfolio_item" | "verification_request";
+        ModerationTargetType: "profile_revision" | "profile_photo" | "portfolio_item" | "verification_request" | "professional_relationship";
         /** @enum {string} */
         ModerationStatus: "pending_review" | "approved" | "rejected" | "hidden";
         CatalogData: {
@@ -1312,6 +1312,8 @@ export interface components {
             id: string;
             /** @enum {string} */
             type: "recommendation" | "worked_together";
+            /** @enum {string} */
+            direction: "incoming" | "outgoing";
             note: string | null;
             professional: {
                 /** Format: uuid */
@@ -1544,7 +1546,7 @@ export interface components {
         /** @description Opaque server-generated media upload identifier. */
         MediaUploadId: string;
         /** @description Moderation target family shown by the existing type control. */
-        ModerationType: "all" | "profile_revision" | "profile_photo" | "portfolio_item" | "verification_request";
+        ModerationType: "all" | "profile_revision" | "profile_photo" | "portfolio_item" | "verification_request" | "professional_relationship";
         /** @description Moderation workflow state. */
         ModerationStatus: "pending_review" | "approved" | "rejected" | "hidden" | "all";
         /** @description Accent-insensitive search across the safe queue presentation. */

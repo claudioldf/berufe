@@ -86,6 +86,7 @@ const contractProfile: ContractProfessionalProfile = {
     {
       id: "de381ccd-d0e5-4d50-8322-a4daff09a486",
       type: "recommendation",
+      direction: "incoming",
       note: "Indicação profissional.",
       professional: {
         id: "9c315329-e728-4d48-96bc-7be4bc70d147",
@@ -287,6 +288,7 @@ describe("public discovery API", () => {
           professionalSlug: "beto-lima",
           avatar: null,
           type: "recommendation",
+          direction: "incoming",
           note: "Indicação profissional.",
         },
       ],

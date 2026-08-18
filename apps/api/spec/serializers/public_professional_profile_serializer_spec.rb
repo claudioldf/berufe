@@ -80,4 +80,54 @@ RSpec.describe PublicProfessionalProfileSerializer do
 
     expect(described_class.new(profile.reload).as_json).to be_nil
   end
+
+  it "projects recommendation authorship from each public profile direction" do
+    publish(profile)
+    partner_account = UserAccount.create!(
+      phone_e164: "+5547999996602",
+      role: "professional",
+      status: "active"
+    )
+    partner = ProfessionalProfile.create!(user_account: partner_account, display_name: "Beto Lima")
+    publish(partner)
+    relationship = ProfessionalRelationship.create!(
+      initiator_professional: partner,
+      recipient_professional: profile,
+      relationship_type: "recommendation",
+      context_note: "Indicação profissional aprovada.",
+      status: "accepted",
+      responded_at: Time.current
+    )
+    admin = UserAccount.create!(
+      email: "relationship-serializer@example.com",
+      password: "a-secure-admin-password",
+      password_confirmation: "a-secure-admin-password",
+      role: "admin",
+      status: "active"
+    )
+    ModerationAction.create!(
+      admin_user: admin,
+      target_type: "professional_relationship",
+      target_id: relationship.id,
+      action: "approved",
+      request_id: "relationship-serializer",
+      created_at: Time.current
+    )
+
+    received = described_class.new(profile.reload).as_json.fetch(:relationships).sole
+    authored = described_class.new(partner.reload).as_json.fetch(:relationships).sole
+
+    expect(received).to include(direction: "incoming")
+    expect(received.dig(:professional, :displayName)).to eq("Beto Lima")
+    expect(authored).to include(direction: "outgoing")
+    expect(authored.dig(:professional, :displayName)).to eq("Ana Souza")
+  end
+
+  private
+
+  def publish(public_profile)
+    revision = public_profile.working_revision
+    revision.update!(status: "approved", reviewed_at: Time.current)
+    public_profile.update!(profile_status: "published", published_revision: revision)
+  end
 end

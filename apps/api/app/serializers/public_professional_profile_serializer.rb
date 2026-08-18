@@ -118,6 +118,7 @@ class PublicProfessionalProfileSerializer
     {
       id: relationship.id,
       type: relationship.relationship_type,
+      direction: (relationship.initiator_professional_id == profile.id) ? "outgoing" : "incoming",
       note: relationship.context_note,
       professional: {
         id: other.id,

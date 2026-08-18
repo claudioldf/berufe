@@ -78,6 +78,8 @@ class ModerationDecision
       transition_portfolio!(target, attributes, public_keys_to_delete, created_public_keys)
     when "verification_request"
       transition_verification!(target, attributes)
+    when "professional_relationship"
+      transition_relationship!(target, attributes)
     else
       raise ActiveRecord::RecordNotFound, "moderation target"
     end
@@ -192,6 +194,21 @@ class ModerationDecision
     else
       raise Conflict, "verification decision is not allowed"
     end
+  end
+
+  def transition_relationship!(relationship, attributes)
+    raise Conflict, "professional relationship is not accepted" unless relationship.status == "accepted"
+
+    latest_action = ProfessionalRelationshipModerationState.latest_action_for(relationship.id)
+    allowed = case attributes[:action]
+    when "approved", "rejected"
+      latest_action.nil?
+    when "hidden"
+      latest_action&.action&.in?(%w[approved restored])
+    when "restored"
+      latest_action&.action == "hidden"
+    end
+    raise Conflict, "professional relationship decision is not allowed" unless allowed
   end
 
   def require_status!(actual, expected)

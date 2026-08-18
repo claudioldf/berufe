@@ -57,6 +57,7 @@ export interface Relationship {
   professionalSlug: string;
   avatar: string;
   type: "recommendation" | "worked_together";
+  direction: "incoming" | "outgoing";
   note: string;
 }
 
@@ -166,6 +167,7 @@ export interface PublicProfessionalProfile {
     professionalSlug: string;
     avatar: string | null;
     type: "recommendation" | "worked_together";
+    direction: "incoming" | "outgoing";
     note: string | null;
   }>;
   updatedAt: string | null;

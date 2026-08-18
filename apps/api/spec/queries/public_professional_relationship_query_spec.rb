@@ -40,6 +40,32 @@ RSpec.describe PublicProfessionalRelationshipQuery do
     expect(described_class.call).to be_empty
   end
 
+  it "excludes rejected, declined, pending, and unreviewed relationships" do
+    rejected = create_relationship
+    moderate(
+      rejected,
+      "rejected",
+      at: 3.minutes.ago,
+      reason: "O contexto não atende aos critérios de publicação atuais."
+    )
+    declined = ProfessionalRelationship.create!(
+      initiator_professional: recipient,
+      recipient_professional: initiator,
+      relationship_type: "recommendation",
+      status: "declined",
+      responded_at: 2.minutes.ago
+    )
+    pending = ProfessionalRelationship.create!(
+      initiator_professional: recipient,
+      recipient_professional: initiator,
+      relationship_type: "worked_together",
+      status: "pending"
+    )
+
+    expect(described_class.call).to be_empty
+    expect([rejected, declined, pending]).to all(be_persisted)
+  end
+
   private
 
   def create_published_profile(phone, name)
