@@ -12,6 +12,7 @@ x-api-service: &api-service
     - ./apps/api:/app
     - ./apps/contracts:/contracts:ro
     - ./apps/web/data:/catalog-data:ro
+    - ./apps/web/public/images:/demo-images:ro
     - api_bundle:/usr/local/bundle
   depends_on:
     db:

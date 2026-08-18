@@ -25,14 +25,14 @@ Stories are implemented serially in their documented dependency order:
 
 `S032 → S033 → S034 → S035 → S036 → S037`
 
-| Story | Status  | Outcome                                                                                 |
-| ----- | ------- | --------------------------------------------------------------------------------------- |
-| S032  | DONE    | Public home and discovery foundation use approved Rails data.                           |
-| S033  | DONE    | Search returns eligible professionals for a resolved service and optional neighborhood. |
-| S034  | DONE    | Searches produce privacy-safe aggregate events and short-lived interaction context.     |
-| S035  | DONE    | Finder renders deterministic, explainable API-backed results.                           |
-| S036  | DONE    | Public profiles render approved evidence and count privacy-safe views.                  |
-| S037  | PENDING | WhatsApp handoffs redirect safely and count source-aware aggregate clicks.              |
+| Story | Status | Outcome                                                                                 |
+| ----- | ------ | --------------------------------------------------------------------------------------- |
+| S032  | DONE   | Public home and discovery foundation use approved Rails data.                           |
+| S033  | DONE   | Search returns eligible professionals for a resolved service and optional neighborhood. |
+| S034  | DONE   | Searches produce privacy-safe aggregate events and short-lived interaction context.     |
+| S035  | DONE   | Finder renders deterministic, explainable API-backed results.                           |
+| S036  | DONE   | Public profiles render approved evidence and count privacy-safe views.                  |
+| S037  | DONE   | WhatsApp handoffs redirect safely and count source-aware aggregate clicks.              |
 
 ## 3. Approved product decisions
 

@@ -345,6 +345,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/professionals/{id}/whatsapp": {
+        parameters: {
+            query: {
+                source: "search_result" | "public_profile";
+                interactionToken: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** Attribute an anonymous direct-contact handoff and redirect to WhatsApp */
+        get: operations["openPublicProfessionalWhatsapp"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/profile-photos/{id}/image": {
         parameters: {
             query?: never;
@@ -2216,6 +2238,64 @@ export interface operations {
                 };
             };
             /** @description The interaction is missing, invalid, expired, or belongs to another profile. */
+            422: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Public profile eligibility is temporarily unavailable. */
+            503: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    openPublicProfessionalWhatsapp: {
+        parameters: {
+            query: {
+                source: "search_result" | "public_profile";
+                interactionToken: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The eligible professional's allowlisted WhatsApp conversation URL. */
+            302: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Cache-Control"?: "no-store";
+                    Location: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+            /** @description The professional is not currently public or has no approved contact. */
+            404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The source or signed interaction is missing, invalid, expired, or unrelated. */
             422: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];

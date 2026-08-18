@@ -702,6 +702,8 @@ Apply these rules whenever they are relevant to the story:
 
 ### S037 — Open a direct WhatsApp conversation and count the handoff
 
+**Status:** DONE
+
 **Story:** As a customer, I want to contact one selected professional through WhatsApp so that I can continue the conversation directly without a Berufe lead marketplace.
 
 **Acceptance criteria:**
