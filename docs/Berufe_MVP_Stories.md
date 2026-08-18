@@ -784,7 +784,7 @@ Public profiles also show a visible Berufe support/report contact that routes to
 
 ### S047 — Show profile readiness and pending work
 
-**Status:** PENDING
+**Status:** DONE
 
 **Story:** As a professional, I want one dashboard showing what needs attention so that I can complete and maintain my Berufe presence.
 

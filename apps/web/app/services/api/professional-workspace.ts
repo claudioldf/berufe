@@ -20,6 +20,28 @@ export function mapProfessionalWorkspace(
 ): ProfessionalWorkspace {
   const identity = data.profile.identity;
   return {
+    dashboard: {
+      localDate: data.dashboard.local_date,
+      readiness: {
+        percentage: data.dashboard.readiness.percentage,
+        steps: {
+          identityContact: data.dashboard.readiness.steps.identity_contact,
+          serviceCoverage: data.dashboard.readiness.steps.service_coverage,
+          reviewablePortfolio:
+            data.dashboard.readiness.steps.reviewable_portfolio,
+          approvedIdentity: data.dashboard.readiness.steps.approved_identity,
+        },
+      },
+      recentQuotes: data.dashboard.recent_quotes.map((quote) => ({
+        id: quote.id,
+        number: quote.quote_number,
+        customerName: quote.customer_name,
+        serviceDescription: quote.service_description,
+        total: Number(quote.total_amount),
+        status: quote.status,
+        createdAt: quote.created_at,
+      })),
+    },
     pendingRelationships: data.pending_relationships.map(
       mapProfessionalRelationship,
     ),

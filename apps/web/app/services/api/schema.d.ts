@@ -794,8 +794,36 @@ export interface components {
             request_id: components["schemas"]["RequestId"];
         };
         ProfessionalWorkspaceData: {
+            dashboard: components["schemas"]["ProfessionalDashboardSummary"];
             pending_relationships: components["schemas"]["ProfessionalRelationshipSummary"][];
             profile: components["schemas"]["ProfessionalWorkspaceProfile"];
+        };
+        ProfessionalDashboardSummary: {
+            /** Format: date */
+            local_date: string;
+            readiness: components["schemas"]["ProfessionalDashboardReadiness"];
+            recent_quotes: components["schemas"]["ProfessionalQuoteSummary"][];
+        };
+        ProfessionalDashboardReadiness: {
+            percentage: number;
+            steps: {
+                identity_contact: boolean;
+                service_coverage: boolean;
+                reviewable_portfolio: boolean;
+                approved_identity: boolean;
+            };
+        };
+        ProfessionalQuoteSummary: {
+            /** Format: uuid */
+            id: string;
+            quote_number: number;
+            customer_name: string;
+            service_description: string;
+            total_amount: string;
+            /** @enum {string} */
+            status: "draft" | "shared";
+            /** Format: date-time */
+            created_at: string;
         };
         ProfessionalWorkspaceProfile: {
             /** Format: uuid */

@@ -256,6 +256,27 @@ export interface ProfessionalVerificationState {
 }
 
 export interface ProfessionalWorkspace {
+  dashboard: {
+    localDate: string;
+    readiness: {
+      percentage: number;
+      steps: {
+        identityContact: boolean;
+        serviceCoverage: boolean;
+        reviewablePortfolio: boolean;
+        approvedIdentity: boolean;
+      };
+    };
+    recentQuotes: Array<{
+      id: string;
+      number: number;
+      customerName: string;
+      serviceDescription: string;
+      total: number;
+      status: "draft" | "shared";
+      createdAt: string;
+    }>;
+  };
   pendingRelationships: ProfessionalRelationship[];
   profile: {
     id: string;

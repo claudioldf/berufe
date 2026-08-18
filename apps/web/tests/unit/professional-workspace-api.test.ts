@@ -16,6 +16,19 @@ import type { ProfessionalProfileDraft } from "~/types";
 type WorkspaceData = components["schemas"]["ProfessionalWorkspaceData"];
 
 const workspaceData: WorkspaceData = {
+  dashboard: {
+    local_date: "2026-08-18",
+    readiness: {
+      percentage: 50,
+      steps: {
+        identity_contact: true,
+        service_coverage: true,
+        reviewable_portfolio: false,
+        approved_identity: false,
+      },
+    },
+    recent_quotes: [],
+  },
   pending_relationships: [],
   profile: {
     id: "23a94f5e-1429-4ec7-bbc4-a6f805d5182d",
@@ -67,6 +80,19 @@ function apiClientReturning(
 describe("professional workspace API", () => {
   it("maps the server-owned identity into the existing editor shape", () => {
     expect(mapProfessionalWorkspace(workspaceData)).toEqual({
+      dashboard: {
+        localDate: "2026-08-18",
+        readiness: {
+          percentage: 50,
+          steps: {
+            identityContact: true,
+            serviceCoverage: true,
+            reviewablePortfolio: false,
+            approvedIdentity: false,
+          },
+        },
+        recentQuotes: [],
+      },
       pendingRelationships: [],
       profile: {
         id: workspaceData.profile.id,

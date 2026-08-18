@@ -2367,15 +2367,102 @@ components:
       type: object
       additionalProperties: false
       required:
+        - dashboard
         - profile
         - pending_relationships
       properties:
+        dashboard:
+          $ref: "#/components/schemas/ProfessionalDashboardSummary"
         pending_relationships:
           type: array
           items:
             $ref: "#/components/schemas/ProfessionalRelationshipSummary"
         profile:
           $ref: "#/components/schemas/ProfessionalWorkspaceProfile"
+    ProfessionalDashboardSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - local_date
+        - readiness
+        - recent_quotes
+      properties:
+        local_date:
+          type: string
+          format: date
+        readiness:
+          $ref: "#/components/schemas/ProfessionalDashboardReadiness"
+        recent_quotes:
+          type: array
+          maxItems: 5
+          items:
+            $ref: "#/components/schemas/ProfessionalQuoteSummary"
+    ProfessionalDashboardReadiness:
+      type: object
+      additionalProperties: false
+      required:
+        - percentage
+        - steps
+      properties:
+        percentage:
+          type: integer
+          minimum: 0
+          maximum: 100
+          multipleOf: 25
+        steps:
+          type: object
+          additionalProperties: false
+          required:
+            - identity_contact
+            - service_coverage
+            - reviewable_portfolio
+            - approved_identity
+          properties:
+            identity_contact:
+              type: boolean
+            service_coverage:
+              type: boolean
+            reviewable_portfolio:
+              type: boolean
+            approved_identity:
+              type: boolean
+    ProfessionalQuoteSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - quote_number
+        - customer_name
+        - service_description
+        - total_amount
+        - status
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        quote_number:
+          type: integer
+          minimum: 1
+        customer_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        service_description:
+          type: string
+          minLength: 1
+          maxLength: 200
+        total_amount:
+          type: string
+          pattern: "^[0-9]+\\.[0-9]{2}$"
+        status:
+          type: string
+          enum:
+            - draft
+            - shared
+        created_at:
+          type: string
+          format: date-time
     ProfessionalWorkspaceProfile:
       type: object
       additionalProperties: false

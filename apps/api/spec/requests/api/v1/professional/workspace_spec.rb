@@ -3,6 +3,8 @@
 require "rails_helper"
 
 RSpec.describe "Professional workspace identity", type: :request, openapi: true do
+  include ActiveSupport::Testing::TimeHelpers
+
   let(:account) do
     UserAccount.create!(phone_e164: "+5547999996201", role: "professional", status: "active")
   end
@@ -20,6 +22,22 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
     expect(response).to have_http_status(:ok)
     expect(response.parsed_body).to eq(
       "data" => {
+        "dashboard" => {
+          "local_date" => Time.current
+            .in_time_zone(ProfessionalDailyActivity::PRODUCT_TIME_ZONE)
+            .to_date
+            .iso8601,
+          "readiness" => {
+            "percentage" => 0,
+            "steps" => {
+              "identity_contact" => false,
+              "service_coverage" => false,
+              "reviewable_portfolio" => false,
+              "approved_identity" => false
+            }
+          },
+          "recent_quotes" => []
+        },
         "pending_relationships" => [],
         "profile" => {
           "id" => profile.id,
@@ -52,6 +70,16 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
     )
     expect(response.headers["Cache-Control"]).to include("no-store")
     assert_api_conform(status: 200)
+  end
+
+  it "uses the São Paulo product date in the dashboard summary" do
+    travel_to(Time.zone.parse("2026-08-18 02:30:00 UTC")) do
+      get "/api/v1/professional/workspace", headers: session_headers(request_id: "workspace-product-date")
+
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body.dig("data", "dashboard", "local_date")).to eq("2026-08-17")
+      assert_api_conform(status: 200)
+    end
   end
 
   it "returns only inbound pending relationships in deterministic order" do

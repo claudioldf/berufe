@@ -30,7 +30,7 @@ Stories are implemented serially in dependency and deployment order:
 | S042  | DONE        | An eligible professional can send a private relationship request from a public profile. |
 | S043  | DONE        | The recipient can accept or decline once from authenticated workspace data.            |
 | S046  | DONE        | Accepted relationships use the shared moderation queue and honest public direction.    |
-| S047  | PENDING     | The professional dashboard is fully backed by the authenticated Rails workspace.        |
+| S047  | DONE        | The professional dashboard is fully backed by the authenticated Rails workspace.        |
 | S049  | PENDING     | Quotes are private, owner-scoped, server-calculated, persistent, and live-editable.     |
 | S050  | PENDING     | Published professionals can expose quotes through stable, digest-only bearer links.     |
 | S051  | PENDING     | Explicit copy and WhatsApp share actions use secure URLs and aggregate counters.         |

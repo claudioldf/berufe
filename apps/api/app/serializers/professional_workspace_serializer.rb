@@ -7,6 +7,7 @@ class ProfessionalWorkspaceSerializer
 
   def as_json(*)
     {
+      dashboard: serialized_dashboard,
       pending_relationships: serialized_pending_relationships,
       profile: {
         id: profile.id,
@@ -36,6 +37,14 @@ class ProfessionalWorkspaceSerializer
   private
 
   attr_reader :profile
+
+  def serialized_dashboard
+    {
+      local_date: Time.current.in_time_zone(ProfessionalDailyActivity::PRODUCT_TIME_ZONE).to_date.iso8601,
+      readiness: ProfessionalDashboardReadiness.new(profile).as_json,
+      recent_quotes: []
+    }
+  end
 
   def serialized_pending_relationships
     profile.received_relationships
