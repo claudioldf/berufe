@@ -64,11 +64,12 @@ RSpec.describe "Shared quotes", type: :request, openapi: true do
     profile.update!(published_photo: photo)
     first_shared_at = Time.zone.parse("2026-08-18 12:00:00 UTC")
     travel_to(first_shared_at) do
-      share_quote(request_id: "quote-share-first")
+      share_quote(request_id: "quote-share-first", method: "copy")
     end
 
     expect(response).to have_http_status(:ok)
     first_url = response.parsed_body.dig("data", "share_url")
+    whatsapp_url = response.parsed_body.dig("data", "whatsapp_url")
     token = URI(first_url).path.split("/").last
     expect(token).to match(/\Abq_[A-Za-z0-9_-]{43}\z/)
     expect(quote.reload).to have_attributes(
@@ -78,14 +79,20 @@ RSpec.describe "Shared quotes", type: :request, openapi: true do
     )
     expect(quote.attributes.to_json).not_to include(token)
     expect(response.headers.fetch("Cache-Control")).to eq("no-store")
+    expect(URI(whatsapp_url)).to have_attributes(host: "wa.me", path: "/")
+    whatsapp_message = URI.decode_www_form(URI(whatsapp_url).query).to_h.fetch("text")
+    expect(whatsapp_message).to include("orçamento #1", first_url)
+    expect(whatsapp_message).not_to include("Ana Paula")
+    expect(ProfessionalDailyMetric.sole.quotes_shared).to eq(1)
     assert_api_conform(status: 200)
 
     travel_to(first_shared_at + 1.hour) do
-      share_quote(request_id: "quote-share-repeat")
+      share_quote(request_id: "quote-share-repeat", method: "whatsapp")
     end
     expect(response).to have_http_status(:ok)
     expect(response.parsed_body.dig("data", "share_url")).to eq(first_url)
     expect(quote.reload.shared_at).to eq(first_shared_at)
+    expect(ProfessionalDailyMetric.sole.quotes_shared).to eq(2)
     assert_api_conform(status: 200)
 
     resolve_quote(token:, request_id: "quote-resolve-valid")
@@ -151,7 +158,7 @@ RSpec.describe "Shared quotes", type: :request, openapi: true do
   end
 
   it "uses the same generic denial for malformed, unknown, revoked, and non-public bearers" do
-    share_quote(request_id: "quote-share-for-denials")
+    share_quote(request_id: "quote-share-for-denials", method: "copy")
     token = URI(response.parsed_body.dig("data", "share_url")).path.split("/").last
     draft = ProfessionalQuoteWriter.new.call(
       profile:,
@@ -180,7 +187,7 @@ RSpec.describe "Shared quotes", type: :request, openapi: true do
     expect(response).to have_http_status(:not_found)
     envelopes << response.parsed_body
 
-    share_quote(request_id: "quote-share-before-suspension")
+    share_quote(request_id: "quote-share-before-suspension", method: "copy")
     token = URI(response.parsed_body.dig("data", "share_url")).path.split("/").last
     profile.update!(profile_status: "suspended")
     resolve_quote(token:, request_id: "shared-quote-denied")
@@ -218,25 +225,28 @@ RSpec.describe "Shared quotes", type: :request, openapi: true do
     )
 
     post "/api/v1/professional/quotes/#{own_quote.id}/share",
+      params: {share: {method: "copy"}},
       headers: {"Origin" => ENV.fetch("WEB_ORIGIN"), "X-Request-Id" => "quote-share-anonymous"},
       as: :json
     expect(response).to have_http_status(:unauthorized)
     assert_api_conform(status: 401)
 
     post "/api/v1/professional/quotes/#{own_quote.id}/share",
+      params: {share: {method: "copy"}},
       headers: session_headers(request_id: "quote-share-origin", origin: "https://untrusted.example"),
       as: :json
     expect(response).to have_http_status(:forbidden)
     assert_api_conform(status: 403)
 
     post "/api/v1/professional/quotes/#{other_quote.id}/share",
+      params: {share: {method: "copy"}},
       headers: session_headers(request_id: "quote-share-owner", origin: true),
       as: :json
     expect(response).to have_http_status(:not_found)
     assert_api_conform(status: 404)
 
     profile.update!(profile_status: "draft", published_revision: nil)
-    share_quote(request_id: "quote-share-unpublished")
+    share_quote(request_id: "quote-share-unpublished", method: "copy")
     expect(response).to have_http_status(:unprocessable_entity)
     expect(own_quote.reload).to be_draft
     expect(own_quote.share_token_hash).to be_nil
@@ -310,8 +320,9 @@ RSpec.describe "Shared quotes", type: :request, openapi: true do
     )
   end
 
-  def share_quote(request_id:)
+  def share_quote(request_id:, method:)
     post "/api/v1/professional/quotes/#{quote.id}/share",
+      params: {share: {method:}},
       headers: session_headers(request_id:, origin: true),
       as: :json
   end

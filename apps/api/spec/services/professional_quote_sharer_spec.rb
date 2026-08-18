@@ -24,6 +24,11 @@ RSpec.describe ProfessionalQuoteSharer do
         items: [{description: "Item", quantity: 1, unit: "serviço", unit_price: 10}]
       }
     )
+    expect do
+      described_class.new.call(quote:, method: "email")
+    end.to raise_error(ProfessionalQuoteSharer::InvalidMethod)
+    expect(quote.reload).to be_draft
+    expect(ProfessionalDailyMetric.where(professional_id: profile.id)).to be_empty
     ready = Queue.new
     start = Queue.new
     threads = 2.times.map do
@@ -32,7 +37,7 @@ RSpec.describe ProfessionalQuoteSharer do
           owned_quote = Quote.find(quote.id)
           ready << true
           start.pop
-          described_class.new.call(quote: owned_quote).share_url
+          described_class.new.call(quote: owned_quote, method: "copy").share_url
         end
       end
     end
@@ -46,10 +51,12 @@ RSpec.describe ProfessionalQuoteSharer do
     expect(quote.reload).to be_shared
     expect(quote.share_token_hash).to eq(QuoteShareToken.digest(token))
     expect(quote.shared_at).to be_present
+    expect(ProfessionalDailyMetric.find_by!(professional_id: profile.id).quotes_shared).to eq(2)
   ensure
     if profile
       Quote.where(professional_id: profile.id).delete_all
       ProfessionalDailyActivity.where(professional_id: profile.id).delete_all
+      ProfessionalDailyMetric.where(professional_id: profile.id).delete_all
       profile.update_columns(
         working_revision_id: nil,
         published_revision_id: nil,

@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import type { Quote, QuoteDraft, QuoteProfessional } from "~/types";
+import type {
+  Quote,
+  QuoteDraft,
+  QuoteProfessional,
+  QuoteShareMethod,
+} from "~/types";
 import { useShare } from "~/composables/useShare";
 import { useToast } from "~/composables/useToast";
 import { useApiClient } from "~/services/api/client";
@@ -41,7 +46,7 @@ const editor = await useAsyncData(
 );
 const saving = shallowRef(false);
 const saveError = shallowRef("");
-const sharing = shallowRef(false);
+const sharingMethod = shallowRef<QuoteShareMethod | null>(null);
 const shareError = shallowRef("");
 const shareUrl = shallowRef("");
 const quote = computed(() => editor.data.value?.quote ?? null);
@@ -104,7 +109,7 @@ async function saveQuote(draft: QuoteDraft) {
     const saved = draft.id
       ? await updateProfessionalQuote(client, draft.id, draft)
       : await createProfessionalQuote(client, draft);
-    editor.data.value.quote = saved;
+    editor.data.value = { ...editor.data.value, quote: saved };
     if (!draft.id) {
       await router.replace({
         path: "/app/professional/quotes/new",
@@ -125,24 +130,42 @@ async function saveQuote(draft: QuoteDraft) {
   }
 }
 
-async function copyQuoteLink() {
+async function shareQuote(method: QuoteShareMethod) {
   const quoteId = quote.value?.id;
-  if (!quoteId || sharing.value) return;
-  sharing.value = true;
+  if (!quoteId || sharingMethod.value) return;
+  const handoffWindow =
+    method === "whatsapp" && import.meta.client
+      ? window.open("about:blank", "_blank")
+      : null;
+  if (handoffWindow) handoffWindow.opener = null;
+  sharingMethod.value = method;
   shareError.value = "";
   shareUrl.value = "";
   try {
-    const result = await shareProfessionalQuote(client, quoteId);
-    if (editor.data.value) editor.data.value.quote = result.quote;
+    const result = await shareProfessionalQuote(client, quoteId, method);
+    if (editor.data.value) {
+      editor.data.value = { ...editor.data.value, quote: result.quote };
+    }
     shareUrl.value = result.shareUrl;
-    await copyText(result.shareUrl, "Link do orçamento copiado");
+    if (method === "copy") {
+      await copyText(result.shareUrl, "Link do orçamento copiado");
+    } else if (handoffWindow) {
+      handoffWindow.location.replace(result.whatsappUrl);
+      showToast({
+        title: "Abrindo o WhatsApp",
+        description: "A Berufe não envia nem confirma a entrega da mensagem.",
+      });
+    } else if (import.meta.client) {
+      window.location.assign(result.whatsappUrl);
+    }
   } catch (error) {
+    handoffWindow?.close();
     shareError.value =
       error instanceof ApiRequestError
         ? error.message
         : "Não foi possível compartilhar o orçamento. Tente novamente.";
   } finally {
-    sharing.value = false;
+    sharingMethod.value = null;
   }
 }
 </script>
@@ -187,12 +210,12 @@ async function copyQuoteLink() {
         :professional="professional"
         :saving="saving"
         :save-error="saveError"
-        :sharing="sharing"
+        :sharing-method="sharingMethod"
         :share-error="shareError"
         :share-url="shareUrl"
         :share-enabled="shareEnabled"
         @save="saveQuote"
-        @share="copyQuoteLink"
+        @share="shareQuote"
       />
     </DesignSystemContainer>
   </div>

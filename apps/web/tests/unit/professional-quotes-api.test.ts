@@ -142,6 +142,8 @@ describe("professional quote API", () => {
             quote: { ...contractQuote, status: "shared" },
             share_url:
               "https://berufe.com.br/orcamento/bq_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            whatsapp_url:
+              "https://wa.me/?text=Orcamento+https%3A%2F%2Fberufe.com.br%2Forcamento%2Fbq_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
           },
           request_id: "quote-share",
         },
@@ -151,15 +153,20 @@ describe("professional quote API", () => {
     } as unknown as BerufeApiClient;
 
     await expect(
-      shareProfessionalQuote(client, contractQuote.id),
+      shareProfessionalQuote(client, contractQuote.id, "copy"),
     ).resolves.toMatchObject({
       quote: { status: "shared" },
       shareUrl:
         "https://berufe.com.br/orcamento/bq_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      whatsappUrl:
+        "https://wa.me/?text=Orcamento+https%3A%2F%2Fberufe.com.br%2Forcamento%2Fbq_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
     });
     expect(client.POST).toHaveBeenCalledWith(
       "/api/v1/professional/quotes/{id}/share",
-      { params: { path: { id: contractQuote.id } } },
+      {
+        params: { path: { id: contractQuote.id } },
+        body: { share: { method: "copy" } },
+      },
     );
   });
 });

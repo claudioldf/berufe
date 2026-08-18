@@ -1439,6 +1439,12 @@ paths:
         - Professional quotes
       security:
         - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfessionalQuoteShareRequest"
       responses:
         "200":
           description: The quote is shared and the raw bearer appears only in this owner response.
@@ -2924,6 +2930,7 @@ components:
           required:
             - quote
             - share_url
+            - whatsapp_url
           properties:
             quote:
               $ref: "#/components/schemas/ProfessionalQuote"
@@ -2931,8 +2938,29 @@ components:
               type: string
               format: uri
               pattern: "/orcamento/bq_[A-Za-z0-9_-]{43}$"
+            whatsapp_url:
+              type: string
+              format: uri
+              pattern: "^https://wa\\.me/\\?text="
         request_id:
           $ref: "#/components/schemas/RequestId"
+    ProfessionalQuoteShareRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - share
+      properties:
+        share:
+          type: object
+          additionalProperties: false
+          required:
+            - method
+          properties:
+            method:
+              type: string
+              enum:
+                - copy
+                - whatsapp
     SharedQuoteResolveRequest:
       type: object
       additionalProperties: false

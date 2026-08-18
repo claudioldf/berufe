@@ -1,6 +1,6 @@
 # Berufe — Increments 4–5 Implementation Plan
 
-**Status:** in progress
+**Status:** complete
 
 **Updated:** August 18, 2026
 
@@ -25,15 +25,15 @@ Stories are implemented serially in dependency and deployment order:
 
 `S042 → S043 → S046 → S047 → S049 → S050 → S051`
 
-| Story | Status      | Outcome                                                                                |
-| ----- | ----------- | -------------------------------------------------------------------------------------- |
-| S042  | DONE        | An eligible professional can send a private relationship request from a public profile. |
-| S043  | DONE        | The recipient can accept or decline once from authenticated workspace data.            |
-| S046  | DONE        | Accepted relationships use the shared moderation queue and honest public direction.    |
-| S047  | DONE        | The professional dashboard is fully backed by the authenticated Rails workspace.        |
-| S049  | DONE        | Quotes are private, owner-scoped, server-calculated, persistent, and live-editable.     |
-| S050  | DONE        | Published professionals can expose quotes through stable, digest-only bearer links.     |
-| S051  | IN PROGRESS | Explicit copy and WhatsApp share actions use secure URLs and aggregate counters.         |
+| Story | Status | Outcome                                                                                 |
+| ----- | ------ | --------------------------------------------------------------------------------------- |
+| S042  | DONE   | An eligible professional can send a private relationship request from a public profile. |
+| S043  | DONE   | The recipient can accept or decline once from authenticated workspace data.             |
+| S046  | DONE   | Accepted relationships use the shared moderation queue and honest public direction.     |
+| S047  | DONE   | The professional dashboard is fully backed by the authenticated Rails workspace.        |
+| S049  | DONE   | Quotes are private, owner-scoped, server-calculated, persistent, and live-editable.     |
+| S050  | DONE   | Published professionals can expose quotes through stable, digest-only bearer links.     |
+| S051  | DONE   | Explicit copy and WhatsApp share actions use secure URLs and aggregate counters.        |
 
 S047 and S049 are delivered consecutively so the dashboard quote action and recent-quote table never target a fixture-backed editor in a release candidate.
 

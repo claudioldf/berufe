@@ -57,11 +57,15 @@ module Api
         def share
           quote = owned_quote!
           authorize quote, :share?
-          result = ProfessionalQuoteSharer.new.call(quote:)
+          result = ProfessionalQuoteSharer.new.call(
+            quote:,
+            method: params.dig(:share, :method)
+          )
           render json: {
             data: {
               quote: ProfessionalQuoteSerializer.new(result.quote),
-              share_url: result.share_url
+              share_url: result.share_url,
+              whatsapp_url: result.whatsapp_url
             },
             request_id: Current.request_id
           }
@@ -70,6 +74,13 @@ module Api
             code: "quote_sharing_unavailable",
             message: "Publique seu perfil para compartilhar este orçamento.",
             status: :unprocessable_entity
+          )
+        rescue ProfessionalQuoteSharer::InvalidMethod
+          render_api_error(
+            code: "validation_failed",
+            message: "Revise os dados de compartilhamento.",
+            status: :unprocessable_entity,
+            field_errors: {method: ["não é válido"]}
           )
         end
 

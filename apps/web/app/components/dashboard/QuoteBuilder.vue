@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import type { Quote, QuoteDraft, QuoteProfessional } from "~/types";
+import type {
+  Quote,
+  QuoteDraft,
+  QuoteProfessional,
+  QuoteShareMethod,
+} from "~/types";
 import { useQuoteDraft } from "~/composables/useQuoteDraft";
 import { cloneQuote } from "~/utils/quotes";
 
@@ -8,14 +13,14 @@ const props = defineProps<{
   professional: QuoteProfessional;
   saving: boolean;
   saveError: string;
-  sharing: boolean;
+  sharingMethod: QuoteShareMethod | null;
   shareError: string;
   shareUrl: string;
   shareEnabled?: boolean;
 }>();
 const emit = defineEmits<{
   save: [draft: QuoteDraft];
-  share: [];
+  share: [method: QuoteShareMethod];
 }>();
 const {
   quote,
@@ -119,11 +124,16 @@ function save() {
           color="neutral"
           variant="outline"
           icon="i-lucide-link"
-          :loading="sharing"
-          :disabled="sharing"
-          @click="emit('share')"
+          :loading="sharingMethod === 'copy'"
+          :disabled="Boolean(sharingMethod)"
+          @click="emit('share', 'copy')"
           >Copiar link</UButton
-        ><UButton color="primary" icon="i-lucide-message-circle" disabled
+        ><UButton
+          color="primary"
+          icon="i-lucide-message-circle"
+          :loading="sharingMethod === 'whatsapp'"
+          :disabled="Boolean(sharingMethod)"
+          @click="emit('share', 'whatsapp')"
           >Abrir WhatsApp</UButton
         ></template
       >
@@ -154,6 +164,7 @@ function save() {
     &__form {
       min-width: 0;
       display: grid;
+      grid-template-columns: minmax(0, 1fr);
       gap: 14px;
     }
   }
@@ -395,6 +406,11 @@ function save() {
     }
   }
   @media (width <= 720px) {
+    .quote-item input,
+    .quote-item select,
+    .builder-total input {
+      font-size: 1rem;
+    }
     .builder-fields {
       grid-template-columns: 1fr;
       &__full {

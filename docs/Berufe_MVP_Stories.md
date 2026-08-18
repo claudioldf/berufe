@@ -845,7 +845,7 @@ Public profiles also show a visible Berufe support/report contact that routes to
 
 ### S051 — Share a quote through WhatsApp and record the action
 
-**Status:** IN PROGRESS
+**Status:** DONE
 
 **Story:** As a professional, I want to share a quote through my device so that the customer receives the secure link through my normal WhatsApp workflow.
 

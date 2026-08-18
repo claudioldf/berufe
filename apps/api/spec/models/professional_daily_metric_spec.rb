@@ -79,4 +79,18 @@ RSpec.describe ProfessionalDailyMetric do
       )
     end.to raise_error(KeyError)
   end
+
+  it "increments each quote-share attempt on the São Paulo local date" do
+    occurred_at = Time.zone.parse("2026-08-17 02:30:00 UTC")
+
+    described_class.increment_quote_shares!(professional_id: profile.id, occurred_at:)
+    described_class.increment_quote_shares!(professional_id: profile.id, occurred_at:)
+
+    expect(described_class.sole).to have_attributes(
+      metric_date: Date.new(2026, 8, 16),
+      quotes_shared: 2,
+      profile_views: 0,
+      whatsapp_clicks: 0
+    )
+  end
 end

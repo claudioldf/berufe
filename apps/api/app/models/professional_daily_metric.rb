@@ -39,6 +39,14 @@ class ProfessionalDailyMetric < ApplicationRecord
     metric.reload
   end
 
+  def self.increment_quote_shares!(professional_id:, occurred_at: Time.current)
+    metric = find_or_create_counter_row!(professional_id:, occurred_at:)
+    where(id: metric.id).update_all(
+      "quotes_shared = quotes_shared + 1, updated_at = CURRENT_TIMESTAMP"
+    )
+    metric.reload
+  end
+
   def self.find_or_create_counter_row!(professional_id:, occurred_at:)
     metric_date = occurred_at.in_time_zone(PRODUCT_TIME_ZONE).to_date
     insert_all(

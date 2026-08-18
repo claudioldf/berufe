@@ -1,7 +1,7 @@
 import type { BerufeApiClient } from "~/services/api/client";
 import { ApiRequestError, normalizeApiError } from "~/services/api/errors";
 import type { components } from "~/services/api/schema";
-import type { Quote, QuoteDraft } from "~/types";
+import type { Quote, QuoteDraft, QuoteShareMethod } from "~/types";
 
 type ContractQuote = components["schemas"]["ProfessionalQuote"];
 
@@ -99,15 +99,20 @@ export async function updateProfessionalQuote(
 export async function shareProfessionalQuote(
   client: BerufeApiClient,
   id: string,
-): Promise<{ quote: Quote; shareUrl: string }> {
+  method: QuoteShareMethod,
+): Promise<{ quote: Quote; shareUrl: string; whatsappUrl: string }> {
   const { data, error, response } = await client.POST(
     "/api/v1/professional/quotes/{id}/share",
-    { params: { path: { id } } },
+    {
+      params: { path: { id } },
+      body: { share: { method } },
+    },
   );
   if (error || !data) throw requestError(error, response);
 
   return {
     quote: mapProfessionalQuote(data.data.quote),
     shareUrl: data.data.share_url,
+    whatsappUrl: data.data.whatsapp_url,
   };
 }

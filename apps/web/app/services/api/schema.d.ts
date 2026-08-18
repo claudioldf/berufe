@@ -935,8 +935,16 @@ export interface components {
                 quote: components["schemas"]["ProfessionalQuote"];
                 /** Format: uri */
                 share_url: string;
+                /** Format: uri */
+                whatsapp_url: string;
             };
             request_id: components["schemas"]["RequestId"];
+        };
+        ProfessionalQuoteShareRequest: {
+            share: {
+                /** @enum {string} */
+                method: "copy" | "whatsapp";
+            };
         };
         SharedQuoteResolveRequest: {
             token: string;
@@ -3165,7 +3173,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfessionalQuoteShareRequest"];
+            };
+        };
         responses: {
             /** @description The quote is shared and the raw bearer appears only in this owner response. */
             200: {
