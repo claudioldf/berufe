@@ -15,7 +15,9 @@ RSpec.describe CurrentSessionSerializer do
         id: account.id,
         role: "professional",
         status: "active",
-        registration_completed: false
+        registration_completed: false,
+        professional_profile_id: nil,
+        relationship_eligible: false
       },
       session: {
         authentication_method: "sms_otp",

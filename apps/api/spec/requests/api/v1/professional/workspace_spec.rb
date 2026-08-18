@@ -96,6 +96,10 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
       "all_joinville" => false,
       "neighborhoods" => [{"code" => neighborhood.code, "name" => neighborhood.name}]
     )
+    expect(ProfessionalDailyActivity.sole).to have_attributes(
+      professional: profile,
+      profile_updates: 1
+    )
     assert_api_conform(status: 200)
   end
 
@@ -123,6 +127,26 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
       "youtube" => "https://www.youtube.com/@AnaObras"
     )
     expect(profile.reload.whatsapp_e164).to eq("+5547999996202")
+    expect(ProfessionalDailyActivity.sole.profile_updates).to eq(1)
+    assert_api_conform(status: 200)
+
+    patch "/api/v1/professional/profile",
+      params: {
+        identity: {
+          display_name: "Ana Souza",
+          headline: "Elétrica residencial com cuidado.",
+          bio: "Instalações e manutenção em Joinville.",
+          years_experience: 12,
+          whatsapp: "+5547999996202",
+          instagram: "@ana.obras",
+          youtube: "youtube.com/@AnaObras"
+        }
+      },
+      headers: session_headers(request_id: "workspace-no-material-update", origin: true),
+      as: :json
+
+    expect(response).to have_http_status(:ok)
+    expect(ProfessionalDailyActivity.sole.profile_updates).to eq(1)
     assert_api_conform(status: 200)
   end
 

@@ -1082,6 +1082,78 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/professional/relationships:
+    post:
+      operationId: createProfessionalRelationship
+      summary: Request a professional relationship with a published Berufe member
+      tags:
+        - Professional relationships
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfessionalRelationshipCreateRequest"
+      responses:
+        "201":
+          description: The eligible professional's private pending request was created.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Location:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfessionalRelationshipResponse"
+        "401":
+          description: An active Rails application session is required.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: The exact browser origin, professional role, ownership, or approved-identity gate is invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Registration is incomplete or the selected recipient is not currently published.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: The exact directional relationship request already exists.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: The relationship type, recipient, or optional context note is invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/professional/profile:
     patch:
       operationId: updateProfessionalProfile
@@ -2293,6 +2365,113 @@ components:
             $ref: "#/components/schemas/ProfessionalServiceSelection"
         coverage:
           $ref: "#/components/schemas/ProfessionalCoverage"
+    ProfessionalRelationshipCreateRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - relationship
+      properties:
+        relationship:
+          type: object
+          additionalProperties: false
+          required:
+            - recipient_professional_id
+            - relationship_type
+          properties:
+            recipient_professional_id:
+              type: string
+              format: uuid
+            relationship_type:
+              type: string
+              enum:
+                - recommendation
+                - worked_together
+            context_note:
+              type:
+                - string
+                - "null"
+              minLength: 1
+              maxLength: 300
+    ProfessionalRelationshipResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required:
+            - relationship
+          properties:
+            relationship:
+              $ref: "#/components/schemas/ProfessionalRelationshipSummary"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    ProfessionalRelationshipSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - relationship_type
+        - context_note
+        - status
+        - created_at
+        - responded_at
+        - initiator
+        - recipient
+      properties:
+        id:
+          type: string
+          format: uuid
+        relationship_type:
+          type: string
+          enum:
+            - recommendation
+            - worked_together
+        context_note:
+          type:
+            - string
+            - "null"
+          maxLength: 300
+        status:
+          type: string
+          enum:
+            - pending
+            - accepted
+            - declined
+        created_at:
+          type: string
+          format: date-time
+        responded_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+        initiator:
+          $ref: "#/components/schemas/ProfessionalRelationshipParty"
+        recipient:
+          $ref: "#/components/schemas/ProfessionalRelationshipParty"
+    ProfessionalRelationshipParty:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - public_slug
+        - display_name
+      properties:
+        id:
+          type: string
+          format: uuid
+        public_slug:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          maxLength: 100
+        display_name:
+          type: string
+          minLength: 3
+          maxLength: 70
     ProfessionalWorkspacePhoto:
       type: object
       additionalProperties: false
@@ -2825,6 +3004,8 @@ components:
         - role
         - status
         - registration_completed
+        - professional_profile_id
+        - relationship_eligible
       properties:
         id:
           type: string
@@ -2838,6 +3019,13 @@ components:
           type: string
           const: active
         registration_completed:
+          type: boolean
+        professional_profile_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        relationship_eligible:
           type: boolean
     ApplicationSessionSummary:
       type: object

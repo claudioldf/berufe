@@ -23,7 +23,9 @@ RSpec.describe "Application sessions", type: :request, openapi: true do
           "id" => account.id,
           "role" => "professional",
           "status" => "active",
-          "registration_completed" => false
+          "registration_completed" => false,
+          "professional_profile_id" => nil,
+          "relationship_eligible" => false
         },
         "session" => {
           "authentication_method" => "sms_otp",
@@ -61,10 +63,33 @@ RSpec.describe "Application sessions", type: :request, openapi: true do
       "id" => account.id,
       "role" => "admin",
       "status" => "active",
-      "registration_completed" => false
+      "registration_completed" => false,
+      "professional_profile_id" => nil,
+      "relationship_eligible" => false
     )
     expect(response.parsed_body.dig("data", "session", "authentication_method")).to eq("password")
     expect(response.body).not_to include(account.email, account.password_digest)
+    assert_api_conform(status: 200)
+  end
+
+  it "projects the owned profile and approved-identity relationship eligibility" do
+    account = create_account
+    profile = ProfessionalProfile.create!(user_account: account, display_name: "Ana Elegível")
+    profile.verification_requests.create!(
+      verification_type: "identity",
+      status: "approved",
+      submitted_at: 1.day.ago,
+      verified_at: Time.current
+    )
+    _application_session, session_token = ApplicationSession.issue!(user_account: account)
+
+    get_current_session(session_token:, request_id: "session-relationship-eligibility")
+
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body.dig("data", "account")).to include(
+      "professional_profile_id" => profile.id,
+      "relationship_eligible" => true
+    )
     assert_api_conform(status: 200)
   end
 

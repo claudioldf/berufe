@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_17_133000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_18_090000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -341,6 +341,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_133000) do
     t.check_constraint "status = ANY (ARRAY['pending_review'::text, 'approved'::text, 'rejected'::text, 'hidden'::text])", name: "portfolio_items_known_status"
   end
 
+  create_table "professional_daily_activities", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.date "activity_date", null: false
+    t.datetime "created_at", null: false
+    t.integer "evidence_creations", default: 0, null: false
+    t.uuid "professional_id", null: false
+    t.integer "profile_updates", default: 0, null: false
+    t.integer "quotes_created", default: 0, null: false
+    t.integer "relationship_interactions", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["activity_date", "professional_id"], name: "idx_professional_daily_activities_date_professional"
+    t.index ["professional_id", "activity_date"], name: "idx_professional_daily_activities_professional_date", unique: true
+    t.index ["professional_id"], name: "index_professional_daily_activities_on_professional_id"
+    t.check_constraint "profile_updates >= 0 AND evidence_creations >= 0 AND relationship_interactions >= 0 AND quotes_created >= 0", name: "professional_daily_activities_nonnegative"
+  end
+
   create_table "professional_daily_metrics", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.datetime "created_at", null: false
     t.date "metric_date", null: false
@@ -622,6 +637,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_133000) do
   add_foreign_key "portfolio_items", "media_uploads"
   add_foreign_key "portfolio_items", "professional_profiles"
   add_foreign_key "portfolio_items", "services"
+  add_foreign_key "professional_daily_activities", "professional_profiles", column: "professional_id"
   add_foreign_key "professional_daily_metrics", "professional_profiles", column: "professional_id"
   add_foreign_key "professional_profile_photos", "media_uploads"
   add_foreign_key "professional_profile_photos", "professional_profiles"

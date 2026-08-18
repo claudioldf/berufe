@@ -32,6 +32,8 @@ async function mountHeader(route: string) {
       role,
       status: "active",
       registrationCompleted: true,
+      professionalProfileId: "fc34e59b-0915-45c1-b0ea-29015578264a",
+      relationshipEligible: true,
     };
     useState<CurrentSession | null>(
       "application-session-summary",

@@ -60,6 +60,10 @@ RSpec.describe "Professional portfolio items", type: :request, openapi: true do
         "image_url" => nil
       )
     )
+    expect(ProfessionalDailyActivity.sole).to have_attributes(
+      professional: profile,
+      evidence_creations: 1
+    )
     assert_api_conform(status: 201)
   end
 

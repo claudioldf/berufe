@@ -21,6 +21,8 @@ describe("application-session API", () => {
             role: "professional",
             status: "active",
             registration_completed: true,
+            professional_profile_id: "fc34e59b-0915-45c1-b0ea-29015578264a",
+            relationship_eligible: true,
           },
           session: {
             authentication_method: "sms_otp",
@@ -41,6 +43,8 @@ describe("application-session API", () => {
         role: "professional",
         status: "active",
         registrationCompleted: true,
+        professionalProfileId: "fc34e59b-0915-45c1-b0ea-29015578264a",
+        relationshipEligible: true,
       },
       session: {
         authenticationMethod: "sms_otp",

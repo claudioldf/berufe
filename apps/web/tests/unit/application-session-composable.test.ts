@@ -9,6 +9,8 @@ const restoredSession: RestoredApplicationSession = {
     role: "professional",
     status: "active",
     registrationCompleted: true,
+    professionalProfileId: "fc34e59b-0915-45c1-b0ea-29015578264a",
+    relationshipEligible: true,
   },
   session: {
     authenticationMethod: "sms_otp",

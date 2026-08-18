@@ -726,6 +726,8 @@ Public profiles also show a visible Berufe support/report contact that routes to
 
 ### S042 — Initiate a relationship with an existing member
 
+**Status:** DONE
+
 **Story:** As a verified professional, I want to recommend or record work with another published professional so that real professional trust can be represented.
 
 **Acceptance criteria:**
@@ -735,11 +737,14 @@ Public profiles also show a visible Berufe support/report contact that routes to
 - Rails prevents self-relationships and duplicate initiator/recipient/type records.
 - The new relationship is pending and not public.
 - Search for recipients exposes published professional identity only.
+- The existing public-profile action opens a compact relationship dialog with only the exact relationship type and optional context note; it is hidden for self and ineligible sessions, and no new relationship page is added.
 
 **Depends on:** S030, S035.
 **Covers:** Feature C1.
 
 ### S043 — Accept or decline a professional relationship
+
+**Status:** PENDING
 
 **Story:** As a recipient professional, I want to accept or decline a relationship so that nothing is made public without my confirmation.
 
@@ -755,6 +760,8 @@ Public profiles also show a visible Berufe support/report contact that routes to
 **Covers:** Feature C1 and Feature A6 pending actions.
 
 ### S046 — Moderate and display professional trust relationships publicly
+
+**Status:** PENDING
 
 **Story:** As an admin and customer, I want accepted professional relationships reviewed before publication so that network evidence is controlled and transparent rather than anonymous.
 
@@ -777,11 +784,14 @@ Public profiles also show a visible Berufe support/report contact that routes to
 
 ### S047 — Show profile readiness and pending work
 
+**Status:** PENDING
+
 **Story:** As a professional, I want one dashboard showing what needs attention so that I can complete and maintain my Berufe presence.
 
 **Acceptance criteria:**
 
 - The dashboard calculates profile readiness from existing data without a checklist table.
+- Readiness uses four equally weighted rows: complete identity/contact, valid service/coverage, at least one pending-or-approved reviewable portfolio item, and approved identity verification.
 - It shows profile/publication status, missing setup steps, pending moderation/verification, and pending relationship confirmations.
 - Primary actions link to edit profile, add portfolio, request identity verification, find an existing member for a relationship, and create a quote.
 - Profile sharing uses the Web Share API and falls back to copying the stable public URL.
@@ -794,6 +804,8 @@ Public profiles also show a visible Berufe support/report contact that routes to
 
 ### S049 — Create and edit a draft quote
 
+**Status:** PENDING
+
 **Story:** As a professional, I want to create a simple itemized quote so that I can use Berufe in a frequent customer workflow.
 
 **Acceptance criteria:**
@@ -803,6 +815,7 @@ Public profiles also show a visible Berufe support/report contact that routes to
 - Rails recalculates each line total, subtotal, discount, and total with `BigDecimal`; Nuxt calculations are preview-only and persisted client totals are never trusted.
 - Quote numbers are sequential per professional and assigned concurrency-safely.
 - Draft quote and customer data is private to the owner and available to admins only when operationally required.
+- A shared quote remains owner-editable without changing its `shared` status, original `shared_at`, or active token; the customer link resolves the latest saved content.
 - OpenAPI operations, generated Nuxt types, owner/admin policy tests, validation tests, and request contract tests ship with the feature.
 
 **Data shape:** `quote` contains UUID `id`, owner `professional_id`, per-professional sequential `quote_number`, required `customer_name` and `service_description`, decimal `discount_amount` and server-calculated `total_amount`, optional `valid_until` and notes, `draft|shared` status, unique nullable `share_token_hash`, timestamps, and nullable `shared_at`. `quote_item` contains UUID `id`, `quote_id`, required description, positive decimal quantity, length-limited unit label, non-negative decimal unit price, server-calculated line total, and deterministic `sort_order`.
@@ -812,6 +825,8 @@ Public profiles also show a visible Berufe support/report contact that routes to
 
 ### S050 — Preview and share a secure quote link
 
+**Status:** PENDING
+
 **Story:** As a professional, I want to preview and share an unguessable quote link so that a customer can view it without an account.
 
 **Acceptance criteria:**
@@ -819,6 +834,7 @@ Public profiles also show a visible Berufe support/report contact that routes to
 - The owner can preview the current quote in the same mobile-first presentation used by the customer page.
 - First share generates a high-entropy token, stores only its hash, and atomically changes status from `draft` to `shared`.
 - A valid bearer link returns only the quote and approved professional public identity/labels; it never exposes private profile fields.
+- Sharing and resolving require the owner to remain active and currently published; the identity label appears only when identity verification is actually approved.
 - Malformed, invalid, revoked, or unknown tokens reveal no quote or customer details.
 - The token remains valid only while the quote is `shared`; `valid_until` describes the commercial offer and is not token expiry.
 - Token-authorized API and Nuxt responses use `Cache-Control: private, no-store` and `noindex`, and never enter shared caches, static generation, logs, analytics payloads, or search indexes.
@@ -828,6 +844,8 @@ Public profiles also show a visible Berufe support/report contact that routes to
 **Covers:** Feature D1; Infrastructure §§9 and 14.
 
 ### S051 — Share a quote through WhatsApp and record the action
+
+**Status:** PENDING
 
 **Story:** As a professional, I want to share a quote through my device so that the customer receives the secure link through my normal WhatsApp workflow.
 

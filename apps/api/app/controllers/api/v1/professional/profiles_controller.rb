@@ -13,6 +13,7 @@ module Api
 
           authorize profile, :update?
           ProfessionalProfile.transaction do
+            before_update = ProfessionalProfileActivitySnapshot.call(profile)
             if params[:identity].present?
               ProfessionalProfileIdentityUpdater.new.call(
                 profile:,
@@ -24,6 +25,13 @@ module Api
                 profile:,
                 services: supply_params.require(:services),
                 coverage: supply_params.require(:coverage)
+              )
+            end
+            profile.reload
+            if ProfessionalProfileActivitySnapshot.call(profile) != before_update
+              ProfessionalDailyActivity.increment!(
+                professional_id: profile.id,
+                counter: :profile_updates
               )
             end
           end

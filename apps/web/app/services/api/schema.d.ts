@@ -439,6 +439,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/professional/relationships": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Request a professional relationship with a published Berufe member */
+        post: operations["createProfessionalRelationship"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/professional/profile": {
         parameters: {
             query?: never;
@@ -776,6 +793,42 @@ export interface components {
             services: components["schemas"]["ProfessionalServiceSelection"][];
             coverage: components["schemas"]["ProfessionalCoverage"];
         };
+        ProfessionalRelationshipCreateRequest: {
+            relationship: {
+                /** Format: uuid */
+                recipient_professional_id: string;
+                /** @enum {string} */
+                relationship_type: "recommendation" | "worked_together";
+                context_note?: string | null;
+            };
+        };
+        ProfessionalRelationshipResponse: {
+            data: {
+                relationship: components["schemas"]["ProfessionalRelationshipSummary"];
+            };
+            request_id: components["schemas"]["RequestId"];
+        };
+        ProfessionalRelationshipSummary: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            relationship_type: "recommendation" | "worked_together";
+            context_note: string | null;
+            /** @enum {string} */
+            status: "pending" | "accepted" | "declined";
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            responded_at: string | null;
+            initiator: components["schemas"]["ProfessionalRelationshipParty"];
+            recipient: components["schemas"]["ProfessionalRelationshipParty"];
+        };
+        ProfessionalRelationshipParty: {
+            /** Format: uuid */
+            id: string;
+            public_slug: string;
+            display_name: string;
+        };
         ProfessionalWorkspacePhoto: {
             current: components["schemas"]["ProfessionalProfilePhotoSummary"] | null;
             has_published_photo: boolean;
@@ -947,6 +1000,9 @@ export interface components {
             /** @constant */
             status: "active";
             registration_completed: boolean;
+            /** Format: uuid */
+            professional_profile_id: string | null;
+            relationship_eligible: boolean;
         };
         ApplicationSessionSummary: {
             /** @enum {string} */
@@ -2486,6 +2542,82 @@ export interface operations {
             };
             /** @description Professional registration has not created a profile yet. */
             404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    createProfessionalRelationship: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfessionalRelationshipCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description The eligible professional's private pending request was created. */
+            201: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalRelationshipResponse"];
+                };
+            };
+            /** @description An active Rails application session is required. */
+            401: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The exact browser origin, professional role, ownership, or approved-identity gate is invalid. */
+            403: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Registration is incomplete or the selected recipient is not currently published. */
+            404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The exact directional relationship request already exists. */
+            409: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The relationship type, recipient, or optional context note is invalid. */
+            422: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
