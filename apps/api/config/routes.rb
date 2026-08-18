@@ -9,6 +9,7 @@ Rails.application.routes.draw do
       post "public/professional-searches", to: "public_professional_searches#create"
       get "public/professionals/:slug", to: "public_professionals#show"
       post "public/professionals/:id/views", to: "public_professional_views#create"
+      get "public/professionals/:id/whatsapp", to: "public_professional_whatsapp#show"
       get "public/profile-photos/:id/image", to: "public_profile_photos#show"
       get "public/portfolio-items/:id/image", to: "public_portfolio_images#show"
       put "professional-registration", to: "professional_registrations#update"

@@ -15,8 +15,12 @@ RUN bundle install
 
 COPY apps/api/ .
 COPY apps/web/data/catalogs.json /catalog-data/catalogs.json
+COPY apps/web/data/professionals.json /catalog-data/professionals.json
+COPY apps/web/public/images/ /demo-images/
 
-ENV CATALOG_SEED_PATH=/catalog-data/catalogs.json
+ENV CATALOG_SEED_PATH=/catalog-data/catalogs.json \
+    PROFESSIONAL_DEMO_SEED_PATH=/catalog-data/professionals.json \
+    PROFESSIONAL_DEMO_IMAGE_ROOT=/demo-images
 
 ENTRYPOINT ["bin/docker-entrypoint"]
 CMD ["bin/rails", "server", "--binding", "0.0.0.0", "--port", "3000"]

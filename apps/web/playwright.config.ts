@@ -1,5 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const serverPort = process.env.PLAYWRIGHT_PORT ?? "4173";
+const baseUrl =
+  process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${serverPort}`;
+
 export default defineConfig({
   testDir: "tests/e2e",
   fullyParallel: true,
@@ -7,7 +11,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? "github" : "list",
   use: {
-    baseURL: "http://127.0.0.1:4173",
+    baseURL: baseUrl,
     trace: "on-first-retry",
   },
   projects: [
@@ -24,9 +28,9 @@ export default defineConfig({
     command: "npm run build && node .output/server/index.mjs",
     env: {
       NITRO_HOST: "127.0.0.1",
-      NITRO_PORT: "4173",
+      NITRO_PORT: serverPort,
     },
-    url: "http://127.0.0.1:4173",
+    url: baseUrl,
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
   },

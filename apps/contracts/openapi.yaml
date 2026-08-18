@@ -814,6 +814,82 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/public/professionals/{id}/whatsapp:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: source
+        in: query
+        required: true
+        schema:
+          type: string
+          enum:
+            - search_result
+            - public_profile
+      - name: interactionToken
+        in: query
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 2048
+    get:
+      operationId: openPublicProfessionalWhatsapp
+      summary: Attribute an anonymous direct-contact handoff and redirect to WhatsApp
+      tags:
+        - Public discovery
+      security: []
+      responses:
+        "302":
+          description: The eligible professional's allowlisted WhatsApp conversation URL.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+            Location:
+              required: true
+              schema:
+                type: string
+                format: uri
+                pattern: '^https://wa\.me/[0-9]{13}\?text=.+$'
+          content:
+            text/html:
+              schema:
+                type: string
+        "404":
+          description: The professional is not currently public or has no approved contact.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: The source or signed interaction is missing, invalid, expired, or unrelated.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: Public profile eligibility is temporarily unavailable.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/public/profile-photos/{id}/image:
     parameters:
       - name: id

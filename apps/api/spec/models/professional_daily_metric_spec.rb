@@ -51,4 +51,32 @@ RSpec.describe ProfessionalDailyMetric do
       )
     end.to raise_error(ActiveRecord::StatementInvalid)
   end
+
+  it "atomically increments the WhatsApp total with exactly one source on the São Paulo date" do
+    occurred_at = Time.zone.parse("2026-08-17 02:30:00 UTC")
+
+    described_class.increment_whatsapp_clicks!(
+      professional_id: profile.id,
+      source: "public_profile",
+      occurred_at:
+    )
+    described_class.increment_whatsapp_clicks!(
+      professional_id: profile.id,
+      source: "search_result",
+      occurred_at:
+    )
+
+    expect(described_class.sole).to have_attributes(
+      metric_date: Date.new(2026, 8, 16),
+      whatsapp_clicks: 2,
+      whatsapp_clicks_public_profile: 1,
+      whatsapp_clicks_search_result: 1
+    )
+    expect do
+      described_class.increment_whatsapp_clicks!(
+        professional_id: profile.id,
+        source: "unknown"
+      )
+    end.to raise_error(KeyError)
+  end
 end

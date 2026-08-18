@@ -19,9 +19,16 @@ function syntheticPhone(projectName: string, sequence: number) {
   return `479${projectDigit}111${sequence.toString().padStart(4, "0")}`;
 }
 
-test("visitor can discover and open a professional profile", async ({
+test("visitor can search, open a profile, and inspect the WhatsApp redirect", async ({
   page,
+  request,
 }) => {
+  const browserErrors: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") browserErrors.push(message.text());
+  });
+  page.on("pageerror", (error) => browserErrors.push(error.message));
+
   await page.goto("/");
   await expect(
     page.getByRole("heading", { level: 1, name: /sua casa em boas mãos/i }),
@@ -33,13 +40,43 @@ test("visitor can discover and open a professional profile", async ({
       /\d+ (?:profissional encontrado|profissionais encontrados)/i,
     ),
   ).toBeVisible();
+  const profileResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/public/professionals/") &&
+      !response.url().includes("/views") &&
+      response.request().method() === "GET",
+  );
+  const profileViewResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().endsWith("/views") &&
+      response.request().method() === "POST",
+  );
   await page.getByRole("link", { name: "Ver perfil" }).first().click();
+  await expect((await profileResponsePromise).status()).toBe(200);
+  await expect((await profileViewResponsePromise).status()).toBe(204);
   await expect(
     page.getByRole("heading", { level: 1, name: "Marcos Alves" }),
   ).toBeVisible();
-  await expect(
-    page.locator('a[href^="https://wa.me/"]:visible').first(),
-  ).toHaveAttribute("href", /^https:\/\/wa\.me\//);
+  const contact = page
+    .locator('a[href*="/whatsapp?source=public_profile"]:visible')
+    .first();
+  const contactUrl = await contact.getAttribute("href");
+  expect(contactUrl).toBeTruthy();
+  expect(contactUrl).not.toContain("wa.me");
+  expect(contactUrl).not.toMatch(/5547\d{9}/);
+
+  const redirect = await request.get(contactUrl!, {
+    maxRedirects: 0,
+    headers: {
+      "User-Agent": "Mozilla/5.0 AppleWebKit/537.36 Chrome/140 Safari/537.36",
+    },
+  });
+  expect(redirect.status()).toBe(302);
+  expect(redirect.headers().location).toMatch(
+    /^https:\/\/wa\.me\/\d{12,13}\?text=/,
+  );
+  expect(decodeURIComponent(redirect.headers().location)).toContain("Berufe");
+  expect(browserErrors).toEqual([]);
 });
 
 test("an incomplete professional sees onboarding and can skip it", async ({
