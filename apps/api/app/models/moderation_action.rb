@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
 class ModerationAction < ApplicationRecord
-  TARGET_TYPES = %w[profile_revision profile_photo portfolio_item verification_request].freeze
+  TARGET_TYPES = %w[
+    profile_revision profile_photo portfolio_item verification_request professional_relationship
+  ].freeze
   ACTIONS = %w[approved rejected hidden restored].freeze
 
   belongs_to :admin_user, class_name: "UserAccount", inverse_of: :moderation_actions

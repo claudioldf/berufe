@@ -1,67 +1,74 @@
 <script setup lang="ts">
-import type { Professional } from "~/types";
+import { computed } from "vue";
+import type { PublicProfessionalCard } from "~/types";
+import { isRecentPublicSnapshot } from "~/utils/publicProfiles";
 
-defineProps<{
-  professional: Professional;
-  matchingService: string;
+const props = defineProps<{
+  professional: PublicProfessionalCard;
+  profileUrl: string;
   contactUrl: string;
 }>();
 
 const emit = defineEmits<{
-  contact: [professional: Professional];
+  contact: [professional: PublicProfessionalCard];
 }>();
+
+const hasVerifiedIdentity = computed(() =>
+  props.professional.verificationLabels.some(
+    (label) => label.type === "identity",
+  ),
+);
+const wasUpdatedRecently = computed(() =>
+  isRecentPublicSnapshot(props.professional.publicSnapshotUpdatedAt),
+);
 </script>
 
 <template>
   <article class="professional-card">
-    <NuxtLink
-      class="professional-card__media"
-      :to="`/profissionais/${professional.slug}`"
-    >
-      <img
-        :src="professional.avatar"
-        :alt="`Foto de ${professional.name}`"
-        width="1024"
-        height="1536"
+    <NuxtLink class="professional-card__media" :to="profileUrl">
+      <DesignSystemAvatar
+        class="professional-card__avatar"
+        :name="professional.name"
+        :src="professional.photoUrl ?? undefined"
+        size="profile"
+        shape="rounded"
         loading="lazy"
       />
-      <span
-        v-if="
-          professional.evidence.some((item) =>
-            item.label.includes('Identidade'),
-          )
-        "
-        class="professional-card__verified"
-      >
+      <span v-if="hasVerifiedIdentity" class="professional-card__verified">
         <UIcon name="i-lucide-badge-check" /> Verificada
       </span>
     </NuxtLink>
 
     <div class="professional-card__body">
       <div class="professional-card__topline">
-        <span><UIcon name="i-lucide-sparkles" /> {{ matchingService }}</span>
-        <span>Atualizado recentemente</span>
+        <span v-if="professional.matchingService"
+          ><UIcon name="i-lucide-sparkles" />
+          {{ professional.matchingService.name }}</span
+        >
+        <span v-if="wasUpdatedRecently">Atualizado recentemente</span>
       </div>
-      <NuxtLink
-        class="professional-card__name"
-        :to="`/profissionais/${professional.slug}`"
-      >
+      <NuxtLink class="professional-card__name" :to="profileUrl">
         {{ professional.name }}
       </NuxtLink>
-      <p class="professional-card__headline">{{ professional.headline }}</p>
+      <p v-if="professional.headline" class="professional-card__headline">
+        {{ professional.headline }}
+      </p>
       <p class="professional-card__coverage">
         <UIcon name="i-lucide-map-pin" />
         {{
-          professional.allJoinville
+          professional.coverage.allJoinville
             ? "Atende toda Joinville"
-            : `Atende ${professional.neighborhoods.slice(0, 3).join(", ")}`
+            : `Atende ${professional.coverage.neighborhoods
+                .slice(0, 3)
+                .map((neighborhood) => neighborhood.name)
+                .join(", ")}`
         }}
       </p>
 
       <div class="professional-card__evidence">
         <PublicEvidenceBadge
-          v-for="evidence in professional.evidence.slice(0, 2)"
-          :key="evidence.id"
+          v-for="evidence in professional.verificationLabels.slice(0, 2)"
+          :key="evidence.type"
           :evidence="evidence"
           compact
         />
@@ -69,17 +76,17 @@ const emit = defineEmits<{
 
       <div class="professional-card__proof">
         <span
-          ><strong>{{ professional.portfolio.length }}</strong> trabalhos</span
+          ><strong>{{ professional.portfolioCount }}</strong> trabalhos</span
         >
         <span
-          ><strong>{{ professional.relationships.length }}</strong> relações
+          ><strong>{{ professional.relationshipCount }}</strong> relações
           profissionais</span
         >
       </div>
 
       <div class="professional-card__actions">
         <UButton
-          :to="`/profissionais/${professional.slug}`"
+          :to="profileUrl"
           color="neutral"
           variant="outline"
           label="Ver perfil"
@@ -119,10 +126,14 @@ const emit = defineEmits<{
     min-height: 270px;
     background: var(--mint);
   }
-  &__media img {
+  &__avatar {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+  }
+  &__avatar :deep(.avatar__image),
+  &__avatar :deep(.avatar__fallback) {
+    border-radius: 0;
+    font-size: 2.5rem;
   }
   &__verified {
     position: absolute;

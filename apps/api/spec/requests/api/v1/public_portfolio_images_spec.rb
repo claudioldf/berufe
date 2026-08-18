@@ -4,7 +4,13 @@ require "rails_helper"
 
 RSpec.describe "Public portfolio images", type: :request, openapi: true do
   let(:account) { UserAccount.create!(phone_e164: "+5547999998208", role: "professional", status: "active") }
-  let(:profile) { ProfessionalProfile.create!(user_account: account, display_name: "Ana Souza") }
+  let(:profile) do
+    record = ProfessionalProfile.create!(user_account: account, display_name: "Ana Souza")
+    revision = record.working_revision
+    revision.update!(status: "approved", reviewed_at: Time.current)
+    record.update!(profile_status: "published", published_revision: revision)
+    record
+  end
   let(:service) { create_service }
   let(:storage) { instance_double(LocalDiskStorage) }
 
@@ -39,6 +45,18 @@ RSpec.describe "Public portfolio images", type: :request, openapi: true do
     item = create_item(status: "pending_review", public_key: nil)
 
     get "/api/v1/public/portfolio-items/#{item.id}/image", headers: {"X-Request-Id" => "portfolio-image-private"}
+    expect(response).to have_http_status(:not_found)
+    expect(storage).not_to have_received(:read)
+    assert_api_conform(status: 404)
+  end
+
+  it "revalidates the parent professional on every image read" do
+    item = create_item
+    allow(storage).to receive(:read).with(scope: :public, key: item.public_key).and_return("image")
+    account.update!(status: "suspended")
+
+    get "/api/v1/public/portfolio-items/#{item.id}/image", headers: {"X-Request-Id" => "portfolio-parent-private"}
+
     expect(response).to have_http_status(:not_found)
     expect(storage).not_to have_received(:read)
     assert_api_conform(status: 404)

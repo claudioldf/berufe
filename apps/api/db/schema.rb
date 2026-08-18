@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_17_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_17_133000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -239,7 +239,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_120000) do
     t.check_constraint "note IS NULL OR char_length(btrim(note)) >= 1 AND char_length(btrim(note)) <= 500", name: "moderation_actions_note_length"
     t.check_constraint "reason IS NULL OR char_length(btrim(reason)) >= 1 AND char_length(btrim(reason)) <= 500", name: "moderation_actions_reason_length"
     t.check_constraint "request_id ~ '^[A-Za-z0-9._-]{1,100}$'::text", name: "moderation_actions_request_id_format"
-    t.check_constraint "target_type = ANY (ARRAY['profile_revision'::text, 'profile_photo'::text, 'portfolio_item'::text, 'verification_request'::text])", name: "moderation_actions_known_target"
+    t.check_constraint "target_type = ANY (ARRAY['profile_revision'::text, 'profile_photo'::text, 'portfolio_item'::text, 'verification_request'::text, 'professional_relationship'::text])", name: "moderation_actions_known_target"
   end
 
   create_table "moderation_media_access_events", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -341,6 +341,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_120000) do
     t.check_constraint "status = ANY (ARRAY['pending_review'::text, 'approved'::text, 'rejected'::text, 'hidden'::text])", name: "portfolio_items_known_status"
   end
 
+  create_table "professional_daily_metrics", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.date "metric_date", null: false
+    t.uuid "professional_id", null: false
+    t.integer "profile_views", default: 0, null: false
+    t.integer "quotes_shared", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.integer "whatsapp_clicks", default: 0, null: false
+    t.integer "whatsapp_clicks_public_profile", default: 0, null: false
+    t.integer "whatsapp_clicks_search_result", default: 0, null: false
+    t.index ["professional_id", "metric_date"], name: "index_professional_daily_metrics_on_professional_and_date", unique: true
+    t.index ["professional_id"], name: "index_professional_daily_metrics_on_professional_id"
+    t.check_constraint "profile_views >= 0 AND whatsapp_clicks >= 0 AND whatsapp_clicks_public_profile >= 0 AND whatsapp_clicks_search_result >= 0 AND quotes_shared >= 0", name: "professional_daily_metrics_nonnegative_counters"
+    t.check_constraint "whatsapp_clicks = (whatsapp_clicks_public_profile + whatsapp_clicks_search_result)", name: "professional_daily_metrics_whatsapp_source_total"
+  end
+
   create_table "professional_profile_photos", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.bigint "byte_size", null: false
     t.text "content_type", default: "image/jpeg", null: false
@@ -401,6 +417,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_120000) do
     t.text "neighborhood_code"
     t.uuid "professional_profile_revision_id", null: false
     t.datetime "updated_at", null: false
+    t.index ["neighborhood_code", "professional_profile_revision_id"], name: "idx_revision_service_areas_neighborhood_revision", where: "(neighborhood_code IS NOT NULL)"
     t.index ["professional_profile_revision_id", "city_code", "neighborhood_code"], name: "idx_revision_service_areas_unique_neighborhood", unique: true, where: "(neighborhood_code IS NOT NULL)"
     t.index ["professional_profile_revision_id", "city_code"], name: "idx_revision_service_areas_unique_all_city", unique: true, where: "(neighborhood_code IS NULL)"
     t.index ["professional_profile_revision_id"], name: "idx_revision_service_areas_revision"
@@ -416,6 +433,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_120000) do
     t.datetime "updated_at", null: false
     t.index ["professional_profile_revision_id", "service_id"], name: "idx_revision_services_unique_service", unique: true
     t.index ["professional_profile_revision_id"], name: "idx_revision_services_one_primary", unique: true, where: "is_primary"
+    t.index ["service_id", "professional_profile_revision_id"], name: "idx_revision_services_service_revision"
     t.index ["service_id"], name: "index_professional_profile_services_on_service_id"
     t.check_constraint "note IS NULL OR char_length(btrim(note)) >= 1 AND char_length(btrim(note)) <= 120", name: "professional_profile_services_note_length"
   end
@@ -439,6 +457,44 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_120000) do
     t.index ["working_revision_id"], name: "index_professional_profiles_on_working_revision_id", unique: true
     t.check_constraint "profile_status = ANY (ARRAY['draft'::text, 'pending_review'::text, 'published'::text, 'suspended'::text])", name: "professional_profiles_known_status"
     t.check_constraint "public_slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'::text", name: "professional_profiles_public_slug_format"
+  end
+
+  create_table "professional_relationships", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.text "context_note"
+    t.datetime "created_at", null: false
+    t.uuid "initiator_professional_id", null: false
+    t.uuid "recipient_professional_id", null: false
+    t.text "relationship_type", null: false
+    t.datetime "responded_at"
+    t.text "status", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.index ["initiator_professional_id", "recipient_professional_id", "relationship_type"], name: "idx_professional_relationships_unique_direction", unique: true
+    t.index ["initiator_professional_id", "status"], name: "idx_professional_relationships_initiator_status"
+    t.index ["initiator_professional_id"], name: "index_professional_relationships_on_initiator_professional_id"
+    t.index ["recipient_professional_id", "status"], name: "idx_professional_relationships_recipient_status"
+    t.index ["recipient_professional_id"], name: "index_professional_relationships_on_recipient_professional_id"
+    t.check_constraint "context_note IS NULL OR char_length(btrim(context_note)) >= 1 AND char_length(btrim(context_note)) <= 300", name: "professional_relationships_context_length"
+    t.check_constraint "initiator_professional_id <> recipient_professional_id", name: "professional_relationships_distinct_profiles"
+    t.check_constraint "relationship_type = ANY (ARRAY['recommendation'::text, 'worked_together'::text])", name: "professional_relationships_known_type"
+    t.check_constraint "status = 'pending'::text AND responded_at IS NULL OR (status = ANY (ARRAY['accepted'::text, 'declined'::text])) AND responded_at IS NOT NULL", name: "professional_relationships_response_state"
+    t.check_constraint "status = ANY (ARRAY['pending'::text, 'accepted'::text, 'declined'::text])", name: "professional_relationships_known_status"
+  end
+
+  create_table "search_events", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.text "city_code", null: false
+    t.datetime "created_at", null: false
+    t.text "neighborhood_code"
+    t.boolean "profile_opened", default: false, null: false
+    t.text "query_text_normalized"
+    t.integer "result_count", null: false
+    t.uuid "service_id"
+    t.datetime "updated_at", null: false
+    t.boolean "whatsapp_handoff_occurred", default: false, null: false
+    t.index ["created_at", "service_id", "neighborhood_code"], name: "index_search_events_on_time_service_and_neighborhood"
+    t.index ["service_id"], name: "index_search_events_on_service_id"
+    t.check_constraint "city_code = 'Joinville'::text", name: "search_events_launch_city"
+    t.check_constraint "query_text_normalized IS NULL OR query_text_normalized ~ '^[a-z0-9]+( [a-z0-9]+)*$'::text AND char_length(query_text_normalized) <= 80", name: "search_events_normalized_query_format"
+    t.check_constraint "result_count >= 0", name: "search_events_result_count_nonnegative"
   end
 
   create_table "service_categories", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -566,6 +622,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_120000) do
   add_foreign_key "portfolio_items", "media_uploads"
   add_foreign_key "portfolio_items", "professional_profiles"
   add_foreign_key "portfolio_items", "services"
+  add_foreign_key "professional_daily_metrics", "professional_profiles", column: "professional_id"
   add_foreign_key "professional_profile_photos", "media_uploads"
   add_foreign_key "professional_profile_photos", "professional_profiles"
   add_foreign_key "professional_profile_revisions", "professional_profiles"
@@ -578,6 +635,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_120000) do
   add_foreign_key "professional_profiles", "professional_profile_revisions", column: "published_revision_id"
   add_foreign_key "professional_profiles", "professional_profile_revisions", column: "working_revision_id"
   add_foreign_key "professional_profiles", "user_accounts"
+  add_foreign_key "professional_relationships", "professional_profiles", column: "initiator_professional_id"
+  add_foreign_key "professional_relationships", "professional_profiles", column: "recipient_professional_id"
+  add_foreign_key "search_events", "neighborhoods", column: "neighborhood_code", primary_key: "code"
+  add_foreign_key "search_events", "services"
   add_foreign_key "services", "service_categories", column: "category_id"
   add_foreign_key "verification_file_access_events", "user_accounts", column: "admin_user_id"
   add_foreign_key "verification_file_access_events", "verification_files"

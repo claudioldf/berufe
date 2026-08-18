@@ -6,6 +6,14 @@ class ProfessionalProfilePhoto < ApplicationRecord
   belongs_to :professional_profile
   belongs_to :media_upload
 
+  scope :publicly_visible, -> {
+    joins(:professional_profile)
+      .merge(ProfessionalProfile.publicly_eligible)
+      .where(status: "approved")
+      .where("professional_profiles.published_photo_id = professional_profile_photos.id")
+      .where.not(public_key: nil)
+  }
+
   validates :status, inclusion: {in: STATUSES}
   validates :private_key, presence: true, uniqueness: true
   validates :public_key, uniqueness: true, allow_nil: true

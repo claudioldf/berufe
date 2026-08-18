@@ -1,17 +1,22 @@
 import { computed, shallowRef, watch } from "vue";
-import type { Neighborhood, Professional, Service } from "~/types";
-import { findService, professionalRelevance } from "~/utils/services";
+import type { Neighborhood, Service } from "~/types";
+import { searchPublicProfessionals } from "~/services/api/public-discovery";
+import { useApiClient } from "~/services/api/client";
+import { findService } from "~/utils/services";
+import { normalizeSearchText } from "~/utils/text";
 
 interface ProfessionalSearchOptions {
   services: Service[];
   neighborhoods: Neighborhood[];
-  professionals: Professional[];
   defaultService?: string;
 }
 
-export function useProfessionalSearch(options: ProfessionalSearchOptions) {
+export async function useProfessionalSearch(
+  options: ProfessionalSearchOptions,
+) {
   const route = useRoute();
   const router = useRouter();
+  const client = useApiClient();
   const serviceInput = shallowRef("");
   const neighborhoodInput = shallowRef("all");
 
@@ -19,52 +24,63 @@ export function useProfessionalSearch(options: ProfessionalSearchOptions) {
     String(route.query.servico ?? options.defaultService ?? "eletricista"),
   );
   const neighborhoodCode = computed(() => String(route.query.bairro ?? "all"));
-  const selectedService = computed(() =>
-    findService(options.services, serviceQuery.value),
-  );
   const selectedNeighborhood = computed(
     () =>
       options.neighborhoods.find(
         (item) => item.code === neighborhoodCode.value,
       ) ?? options.neighborhoods[0],
   );
+  const effectiveNeighborhoodCode = computed(
+    () => selectedNeighborhood.value?.code ?? "all",
+  );
+  const { data, error, status, refresh } = await useAsyncData(
+    "public-professional-search",
+    () =>
+      searchPublicProfessionals(client, {
+        service: serviceQuery.value,
+        neighborhoodCode:
+          effectiveNeighborhoodCode.value === "all"
+            ? null
+            : effectiveNeighborhoodCode.value,
+      }),
+    { watch: [serviceQuery, effectiveNeighborhoodCode] },
+  );
+  const currentResult = computed(() => {
+    const result = data.value;
+    if (!result) return null;
+    if (
+      result.normalizedTerm !== normalizeSearchText(serviceQuery.value) ||
+      (result.neighborhood?.code ?? "all") !== effectiveNeighborhoodCode.value
+    ) {
+      return null;
+    }
 
-  const results = computed(() => {
-    const service = selectedService.value;
-    const neighborhood = selectedNeighborhood.value;
-    if (!service) return [];
-
-    return options.professionals
-      .filter((professional) => professional.services.includes(service.name))
-      .filter(
-        (professional) =>
-          neighborhood?.code === "all" ||
-          professional.allJoinville ||
-          professional.neighborhoods.includes(neighborhood?.name ?? ""),
-      )
-      .toSorted(
-        (a, b) =>
-          professionalRelevance(b, service, neighborhood) -
-            professionalRelevance(a, service, neighborhood) ||
-          b.updatedAt.localeCompare(a.updatedAt),
+    return result;
+  });
+  const selectedService = computed(() => {
+    const resolvedService = currentResult.value?.resolvedService;
+    if (resolvedService) {
+      return options.services.find(
+        (service) => service.id === resolvedService.id,
       );
+    }
+
+    return currentResult.value
+      ? undefined
+      : findService(options.services, serviceQuery.value);
   });
 
-  const relatedServices = computed(() => {
-    const service = selectedService.value;
-    if (!service) return options.services.slice(0, 3);
-    return options.services
-      .filter(
-        (item) => item.category === service.category && item.id !== service.id,
-      )
-      .slice(0, 3);
-  });
+  const results = computed(() => currentResult.value?.professionals ?? []);
+  const relatedServices = computed(
+    () => currentResult.value?.relatedServices ?? [],
+  );
+  const interaction = computed(() => currentResult.value?.interaction ?? null);
 
   watch(
     [serviceQuery, neighborhoodCode],
     () => {
       serviceInput.value = selectedService.value?.name ?? serviceQuery.value;
-      neighborhoodInput.value = neighborhoodCode.value;
+      neighborhoodInput.value = effectiveNeighborhoodCode.value;
     },
     { immediate: true },
   );
@@ -92,6 +108,10 @@ export function useProfessionalSearch(options: ProfessionalSearchOptions) {
     selectedNeighborhood,
     results,
     relatedServices,
+    interaction,
+    error,
+    status,
+    refresh,
     submitSearch,
   };
 }

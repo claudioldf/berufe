@@ -613,6 +613,8 @@ Apply these rules whenever they are relevant to the story:
 
 ### S032 — Publish the public home and search entry
 
+**Status:** DONE
+
 **Story:** As a customer, I want to choose a residential service from the home page so that I can begin a relevant search without understanding Berufe’s internal taxonomy.
 
 **Acceptance criteria:**
@@ -626,6 +628,8 @@ Apply these rules whenever they are relevant to the story:
 **Covers:** Feature B1.
 
 ### S033 — Search published professionals
+
+**Status:** DONE
 
 **Story:** As a customer, I want to filter professionals by service and neighborhood so that results match what I need and where I live.
 
@@ -641,6 +645,8 @@ Apply these rules whenever they are relevant to the story:
 **Covers:** Feature B1.
 
 ### S034 — Record privacy-friendly search aggregates
+
+**Status:** DONE
 
 **Story:** As Berufe product operations, I want aggregate search demand data so that I can identify missing supply without tracking customers.
 
@@ -659,6 +665,8 @@ Apply these rules whenever they are relevant to the story:
 
 ### S035 — Show transparent, deterministic results
 
+**Status:** DONE
+
 **Story:** As a customer, I want each result to show relevant evidence and explainable ordering so that I can choose whom to inspect without trusting an opaque score.
 
 **Acceptance criteria:**
@@ -674,6 +682,8 @@ Apply these rules whenever they are relevant to the story:
 **Covers:** Feature B2.
 
 ### S036 — Render the public professional profile
+
+**Status:** DONE
 
 **Story:** As a customer, I want one mobile-first page containing all approved evidence so that I can decide whether to contact a professional.
 
@@ -691,6 +701,8 @@ Apply these rules whenever they are relevant to the story:
 **Covers:** Feature B3.
 
 ### S037 — Open a direct WhatsApp conversation and count the handoff
+
+**Status:** DONE
 
 **Story:** As a customer, I want to contact one selected professional through WhatsApp so that I can continue the conversation directly without a Berufe lead marketplace.
 

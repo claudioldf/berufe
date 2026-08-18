@@ -12,6 +12,7 @@ export default defineNuxtConfig({
     apiInternalBaseUrl: process.env.NUXT_API_INTERNAL_BASE_URL,
     public: {
       apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL,
+      siteUrl: process.env.NUXT_PUBLIC_SITE_URL,
     },
   },
   alias: {
@@ -139,6 +140,9 @@ export default defineNuxtConfig({
   },
   routeRules: {
     "/**": { headers: browserSecurityHeaders },
+    "/": { prerender: false },
+    "/encontrar": { prerender: false },
+    "/profissionais/**": { prerender: false },
     "/foundation": { prerender: false },
     "/app/**": {
       ssr: false,

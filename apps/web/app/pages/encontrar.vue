@@ -1,12 +1,15 @@
 <script setup lang="ts">
-import professionalsData from "@data/professionals.json";
-import type { Professional } from "~/types";
+import type { PublicProfessionalCard } from "~/types";
 import { useCatalogs } from "~/composables/useCatalogs";
 import { useProfessionalSearch } from "~/composables/useProfessionalSearch";
 import { useToast } from "~/composables/useToast";
-import { buildWhatsAppUrl } from "~/utils/contact";
+import {
+  buildPublicProfileResultUrl,
+  buildSearchResultWhatsAppUrl,
+} from "~/utils/publicProfiles";
 
 const { showToast } = useToast();
+const runtimeConfig = useRuntimeConfig();
 const { data: catalog, error: catalogError } = await useCatalogs();
 if (catalogError.value || !catalog.value) {
   throw createError({
@@ -16,18 +19,34 @@ if (catalogError.value || !catalog.value) {
 }
 const services = catalog.value.services;
 const neighborhoods = catalog.value.neighborhoods;
-const professionals = professionalsData as Professional[];
 const {
   serviceInput,
   neighborhoodInput,
   serviceQuery,
-  neighborhoodCode,
   selectedService,
   selectedNeighborhood,
   results,
   relatedServices,
+  interaction,
+  error: searchError,
   submitSearch,
-} = useProfessionalSearch({ services, neighborhoods, professionals });
+} = await useProfessionalSearch({ services, neighborhoods });
+if (searchError.value) {
+  throw createError({
+    statusCode: 503,
+    statusMessage: "Busca temporariamente indisponível.",
+  });
+}
+watch(searchError, (failure) => {
+  if (!failure) return;
+
+  showError(
+    createError({
+      statusCode: 503,
+      statusMessage: "Busca temporariamente indisponível.",
+    }),
+  );
+});
 
 useSeoMeta({
   title: () =>
@@ -36,11 +55,24 @@ useSeoMeta({
     `Compare evidências e encontre ${selectedService.value?.name.toLocaleLowerCase("pt-BR") ?? "profissionais"} em Joinville.`,
 });
 
-function contactUrl(professional: Professional) {
-  return buildWhatsAppUrl(
-    professional.whatsapp,
-    `Olá, ${professional.name}! Encontrei seu perfil na Berufe e gostaria de conversar sobre ${selectedService.value?.name ?? professional.primaryService}.`,
-  );
+function profileUrl(professional: PublicProfessionalCard) {
+  return buildPublicProfileResultUrl({
+    slug: professional.slug,
+    serviceSlug:
+      professional.matchingService?.slug ??
+      selectedService.value?.slug ??
+      serviceQuery.value,
+    neighborhoodCode: selectedNeighborhood.value?.code ?? "all",
+    interactionToken: interaction.value?.token,
+  });
+}
+
+function contactUrl(professional: PublicProfessionalCard) {
+  return buildSearchResultWhatsAppUrl({
+    apiBaseUrl: runtimeConfig.public.apiBaseUrl,
+    professionalId: professional.id,
+    interactionToken: interaction.value?.token,
+  });
 }
 
 function announceContact() {
@@ -134,9 +166,7 @@ function announceContact() {
               v-for="professional in results"
               :key="professional.id"
               :professional="professional"
-              :matching-service="
-                selectedService?.name ?? professional.primaryService
-              "
+              :profile-url="profileUrl(professional)"
               :contact-url="contactUrl(professional)"
               @contact="announceContact"
             />
@@ -155,7 +185,7 @@ function announceContact() {
               <NuxtLink
                 v-for="service in relatedServices"
                 :key="service.id"
-                :to="`/encontrar?servico=${service.slug}&bairro=${neighborhoodCode}`"
+                :to="`/encontrar?servico=${service.slug}&bairro=${selectedNeighborhood?.code ?? 'all'}`"
               >
                 <UIcon :name="service.icon" /> {{ service.name }}
               </NuxtLink>
