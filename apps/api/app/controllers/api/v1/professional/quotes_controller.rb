@@ -54,6 +54,25 @@ module Api
           render_quote_errors(error)
         end
 
+        def share
+          quote = owned_quote!
+          authorize quote, :share?
+          result = ProfessionalQuoteSharer.new.call(quote:)
+          render json: {
+            data: {
+              quote: ProfessionalQuoteSerializer.new(result.quote),
+              share_url: result.share_url
+            },
+            request_id: Current.request_id
+          }
+        rescue ProfessionalQuoteSharer::Unavailable
+          render_api_error(
+            code: "quote_sharing_unavailable",
+            message: "Publique seu perfil para compartilhar este orçamento.",
+            status: :unprocessable_entity
+          )
+        end
+
         private
 
         def owned_profile!

@@ -95,3 +95,19 @@ export async function updateProfessionalQuote(
 
   return mapProfessionalQuote(data.data.quote);
 }
+
+export async function shareProfessionalQuote(
+  client: BerufeApiClient,
+  id: string,
+): Promise<{ quote: Quote; shareUrl: string }> {
+  const { data, error, response } = await client.POST(
+    "/api/v1/professional/quotes/{id}/share",
+    { params: { path: { id } } },
+  );
+  if (error || !data) throw requestError(error, response);
+
+  return {
+    quote: mapProfessionalQuote(data.data.quote),
+    shareUrl: data.data.share_url,
+  };
+}

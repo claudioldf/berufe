@@ -825,7 +825,7 @@ Public profiles also show a visible Berufe support/report contact that routes to
 
 ### S050 — Preview and share a secure quote link
 
-**Status:** IN PROGRESS
+**Status:** DONE
 
 **Story:** As a professional, I want to preview and share an unguessable quote link so that a customer can view it without an account.
 
@@ -845,7 +845,7 @@ Public profiles also show a visible Berufe support/report contact that routes to
 
 ### S051 — Share a quote through WhatsApp and record the action
 
-**Status:** PENDING
+**Status:** IN PROGRESS
 
 **Story:** As a professional, I want to share a quote through my device so that the customer receives the secure link through my normal WhatsApp workflow.
 

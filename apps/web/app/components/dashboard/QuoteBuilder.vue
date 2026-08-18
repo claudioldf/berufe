@@ -8,14 +8,19 @@ const props = defineProps<{
   professional: QuoteProfessional;
   saving: boolean;
   saveError: string;
+  sharing: boolean;
+  shareError: string;
+  shareUrl: string;
   shareEnabled?: boolean;
 }>();
 const emit = defineEmits<{
   save: [draft: QuoteDraft];
+  share: [];
 }>();
 const {
   quote,
   previewOpen,
+  shareOpen,
   isSaved,
   isShared,
   subtotal,
@@ -24,6 +29,13 @@ const {
   addItem,
   removeItem,
 } = useQuoteDraft(() => props.initialQuote);
+
+watch(
+  () => props.shareUrl,
+  (value) => {
+    if (value) shareOpen.value = false;
+  },
+);
 
 function save() {
   emit("save", cloneQuote(quote.value));
@@ -51,6 +63,7 @@ function save() {
         :share-enabled="shareEnabled ?? false"
         @preview="previewOpen = true"
         @save="save"
+        @share="shareOpen = true"
       />
     </div>
 
@@ -72,6 +85,48 @@ function save() {
           :professional="professional"
           customer-facing
       /></template>
+    </UModal>
+
+    <UModal
+      v-model:open="shareOpen"
+      title="Compartilhar orçamento"
+      description="Ao compartilhar, o rascunho ganha um link seguro e muda para compartilhado."
+    >
+      <template #body>
+        <div class="share-quote">
+          <span><UIcon name="i-lucide-message-circle" /></span>
+          <div>
+            <strong>Enviar pelo WhatsApp</strong>
+            <p>
+              A Berufe abre o aplicativo com uma mensagem e o link. Não enviamos
+              nem lemos a conversa.
+            </p>
+          </div>
+        </div>
+        <div class="share-quote__link">
+          <UIcon name="i-lucide-link" /><span
+            >berufe.com.br/orcamento/••••••••{{ quote.number }}</span
+          >
+        </div>
+        <p v-if="shareError" class="share-quote__error" role="alert">
+          {{ shareError }}
+        </p>
+      </template>
+      <template #footer
+        ><UButton color="neutral" variant="ghost" @click="shareOpen = false"
+          >Cancelar</UButton
+        ><UButton
+          color="neutral"
+          variant="outline"
+          icon="i-lucide-link"
+          :loading="sharing"
+          :disabled="sharing"
+          @click="emit('share')"
+          >Copiar link</UButton
+        ><UButton color="primary" icon="i-lucide-message-circle" disabled
+          >Abrir WhatsApp</UButton
+        ></template
+      >
     </UModal>
   </div>
 </template>
@@ -326,6 +381,9 @@ function save() {
       border-radius: 10px;
       color: var(--ink-soft);
       font-size: 0.86rem;
+    }
+    &__error {
+      color: #a45245;
     }
   }
   @media (width <= 1000px) {

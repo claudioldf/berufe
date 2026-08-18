@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import type { Quote, QuoteDraft, QuoteProfessional } from "~/types";
+import { useShare } from "~/composables/useShare";
 import { useToast } from "~/composables/useToast";
 import { useApiClient } from "~/services/api/client";
 import { ApiRequestError } from "~/services/api/errors";
 import {
   createProfessionalQuote,
   fetchProfessionalQuote,
+  shareProfessionalQuote,
   updateProfessionalQuote,
 } from "~/services/api/professional-quotes";
 import { fetchProfessionalWorkspace } from "~/services/api/professional-workspace";
@@ -21,6 +23,7 @@ const route = useRoute();
 const router = useRouter();
 const client = useApiClient();
 const { showToast } = useToast();
+const { copyText } = useShare();
 const requestedQuoteId = Array.isArray(route.query.quote)
   ? route.query.quote[0]
   : route.query.quote;
@@ -38,6 +41,9 @@ const editor = await useAsyncData(
 );
 const saving = shallowRef(false);
 const saveError = shallowRef("");
+const sharing = shallowRef(false);
+const shareError = shallowRef("");
+const shareUrl = shallowRef("");
 const quote = computed(() => editor.data.value?.quote ?? null);
 const professional = computed<QuoteProfessional | null>(() => {
   const workspace = editor.data.value?.workspace;
@@ -51,6 +57,14 @@ const professional = computed<QuoteProfessional | null>(() => {
     primaryService: primaryService?.name ?? "",
     identityVerified: workspace.dashboard.readiness.steps.approvedIdentity,
   };
+});
+const shareEnabled = computed(() => {
+  const workspace = editor.data.value?.workspace;
+  return Boolean(
+    quote.value?.id &&
+    workspace?.profile.status === "published" &&
+    workspace.profile.hasPublishedRevision,
+  );
 });
 
 function createEmptyQuote(): Quote {
@@ -110,6 +124,27 @@ async function saveQuote(draft: QuoteDraft) {
     saving.value = false;
   }
 }
+
+async function copyQuoteLink() {
+  const quoteId = quote.value?.id;
+  if (!quoteId || sharing.value) return;
+  sharing.value = true;
+  shareError.value = "";
+  shareUrl.value = "";
+  try {
+    const result = await shareProfessionalQuote(client, quoteId);
+    if (editor.data.value) editor.data.value.quote = result.quote;
+    shareUrl.value = result.shareUrl;
+    await copyText(result.shareUrl, "Link do orçamento copiado");
+  } catch (error) {
+    shareError.value =
+      error instanceof ApiRequestError
+        ? error.message
+        : "Não foi possível compartilhar o orçamento. Tente novamente.";
+  } finally {
+    sharing.value = false;
+  }
+}
 </script>
 
 <template>
@@ -152,7 +187,12 @@ async function saveQuote(draft: QuoteDraft) {
         :professional="professional"
         :saving="saving"
         :save-error="saveError"
+        :sharing="sharing"
+        :share-error="shareError"
+        :share-url="shareUrl"
+        :share-enabled="shareEnabled"
         @save="saveQuote"
+        @share="copyQuoteLink"
       />
     </DesignSystemContainer>
   </div>

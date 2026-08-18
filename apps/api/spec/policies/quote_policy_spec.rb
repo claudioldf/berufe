@@ -12,10 +12,12 @@ RSpec.describe QuotePolicy do
     owner_policy = described_class.new(owner, quote)
     expect(owner_policy.create?).to be(true)
     expect(owner_policy.update?).to be(true)
+    expect(owner_policy.share?).to be(true)
     expect(owner_policy.show?).to be(true)
     other_policy = described_class.new(other, quote)
     expect(other_policy.create?).to be(false)
     expect(other_policy.update?).to be(false)
+    expect(other_policy.share?).to be(false)
     expect(other_policy.show?).to be(false)
 
     admin = UserAccount.create!(
@@ -29,11 +31,13 @@ RSpec.describe QuotePolicy do
     expect(admin_policy.show?).to be(true)
     expect(admin_policy.create?).to be(false)
     expect(admin_policy.update?).to be(false)
+    expect(admin_policy.share?).to be(false)
 
     owner.update!(status: "suspended")
     suspended_policy = described_class.new(owner, quote)
     expect(suspended_policy.create?).to be(false)
     expect(suspended_policy.update?).to be(false)
+    expect(suspended_policy.share?).to be(false)
     expect(suspended_policy.show?).to be(false)
   end
 

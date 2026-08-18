@@ -8,9 +8,22 @@ const props = defineProps<{
   quote: Quote;
   professional: QuoteProfessional;
   customerFacing?: boolean;
+  authoritativeTotals?: boolean;
 }>();
-const subtotal = computed(() => quoteSubtotal(props.quote));
-const total = computed(() => quoteTotal(props.quote));
+const subtotal = computed(() =>
+  props.authoritativeTotals ? props.quote.subtotal : quoteSubtotal(props.quote),
+);
+const total = computed(() =>
+  props.authoritativeTotals ? props.quote.total : quoteTotal(props.quote),
+);
+
+function itemTotal(index: number) {
+  const item = props.quote.items[index];
+  if (!item) return 0;
+  return props.authoritativeTotals
+    ? item.lineTotal
+    : item.quantity * item.unitPrice;
+}
 </script>
 
 <template>
@@ -59,7 +72,7 @@ const total = computed(() => quoteTotal(props.quote));
         <span>Descrição</span><span>Qtd.</span><span>Valor</span>
       </div>
       <div
-        v-for="item in quote.items"
+        v-for="(item, index) in quote.items"
         :key="item.id"
         class="quote-preview__item"
       >
@@ -70,7 +83,7 @@ const total = computed(() => quoteTotal(props.quote));
           ></span
         >
         <span>{{ item.quantity }}</span>
-        <span>{{ formatCurrency(item.quantity * item.unitPrice) }}</span>
+        <span>{{ formatCurrency(itemTotal(index)) }}</span>
       </div>
     </section>
     <section class="quote-preview__totals">

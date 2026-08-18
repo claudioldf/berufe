@@ -32,8 +32,8 @@ Stories are implemented serially in dependency and deployment order:
 | S046  | DONE        | Accepted relationships use the shared moderation queue and honest public direction.    |
 | S047  | DONE        | The professional dashboard is fully backed by the authenticated Rails workspace.        |
 | S049  | DONE        | Quotes are private, owner-scoped, server-calculated, persistent, and live-editable.     |
-| S050  | IN PROGRESS | Published professionals can expose quotes through stable, digest-only bearer links.     |
-| S051  | PENDING     | Explicit copy and WhatsApp share actions use secure URLs and aggregate counters.         |
+| S050  | DONE        | Published professionals can expose quotes through stable, digest-only bearer links.     |
+| S051  | IN PROGRESS | Explicit copy and WhatsApp share actions use secure URLs and aggregate counters.         |
 
 S047 and S049 are delivered consecutively so the dashboard quote action and recent-quote table never target a fixture-backed editor in a release candidate.
 

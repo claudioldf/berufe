@@ -17,6 +17,10 @@ class QuotePolicy < ApplicationPolicy
     owns_quote?
   end
 
+  def share?
+    owns_quote?
+  end
+
   class Scope < ApplicationPolicy::Scope
     def resolve
       return scope.none unless active_user?

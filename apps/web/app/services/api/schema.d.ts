@@ -515,6 +515,43 @@ export interface paths {
         patch: operations["updateProfessionalQuote"];
         trace?: never;
     };
+    "/api/v1/professional/quotes/{id}/share": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Opaque server-generated professional quote identifier. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create or reproduce the owned quote's stable bearer link */
+        post: operations["shareProfessionalQuote"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/shared-quotes/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resolve one bearer-private shared quote without a customer account */
+        post: operations["resolveSharedQuote"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/professional/profile": {
         parameters: {
             query?: never;
@@ -892,6 +929,51 @@ export interface components {
                 quote: components["schemas"]["ProfessionalQuote"];
             };
             request_id: components["schemas"]["RequestId"];
+        };
+        ProfessionalQuoteShareResponse: {
+            data: {
+                quote: components["schemas"]["ProfessionalQuote"];
+                /** Format: uri */
+                share_url: string;
+            };
+            request_id: components["schemas"]["RequestId"];
+        };
+        SharedQuoteResolveRequest: {
+            token: string;
+        };
+        SharedQuoteResponse: {
+            data: {
+                quote: components["schemas"]["SharedQuote"];
+                professional: components["schemas"]["SharedQuoteProfessional"];
+            };
+            request_id: components["schemas"]["RequestId"];
+        };
+        SharedQuote: {
+            quote_number: number;
+            customer_name: string;
+            service_description: string;
+            /** Format: date */
+            valid_until: string | null;
+            notes: string | null;
+            subtotal_amount: components["schemas"]["MoneyAmount"];
+            discount_amount: components["schemas"]["MoneyAmount"];
+            total_amount: components["schemas"]["MoneyAmount"];
+            items: components["schemas"]["SharedQuoteItem"][];
+        };
+        SharedQuoteItem: {
+            description: string;
+            quantity: string;
+            unit: string;
+            unit_price: components["schemas"]["MoneyAmount"];
+            line_total: components["schemas"]["MoneyAmount"];
+            sort_order: number;
+        };
+        SharedQuoteProfessional: {
+            display_name: string;
+            /** Format: uri */
+            photo_url: string | null;
+            primary_service: string | null;
+            identity_verified: boolean;
         };
         ProfessionalQuote: {
             /** Format: uuid */
@@ -3065,6 +3147,133 @@ export interface operations {
             422: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    shareProfessionalQuote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Opaque server-generated professional quote identifier. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The quote is shared and the raw bearer appears only in this owner response. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalQuoteShareResponse"];
+                };
+            };
+            /** @description An active Rails application session is required. */
+            401: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The exact browser origin or professional owner is invalid. */
+            403: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The quote does not exist or belongs to another professional. */
+            404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The owner does not currently have an active published profile. */
+            422: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    resolveSharedQuote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SharedQuoteResolveRequest"];
+            };
+        };
+        responses: {
+            /** @description Current quote content and the owner's approved public identity only. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Cache-Control"?: "private, no-store";
+                    "Referrer-Policy"?: "no-referrer";
+                    "X-Robots-Tag"?: "noindex, nofollow";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SharedQuoteResponse"];
+                };
+            };
+            /** @description The exact configured Nuxt origin is required. */
+            403: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Generic response for every malformed, unknown, revoked, or ineligible bearer. */
+            404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Cache-Control"?: "private, no-store";
+                    "Referrer-Policy"?: "no-referrer";
+                    "X-Robots-Tag"?: "noindex, nofollow";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Quote persistence is temporarily unavailable. */
+            503: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Cache-Control"?: "private, no-store";
                     [name: string]: unknown;
                 };
                 content: {

@@ -3,6 +3,7 @@ import {
   createProfessionalQuote,
   fetchProfessionalQuote,
   mapProfessionalQuote,
+  shareProfessionalQuote,
   updateProfessionalQuote,
 } from "@app/services/api/professional-quotes";
 import type { components } from "@app/services/api/schema";
@@ -130,6 +131,35 @@ describe("professional quote API", () => {
       expect.objectContaining({
         params: { path: { id: contractQuote.id } },
       }),
+    );
+  });
+
+  it("maps the owner-only secure share response without deriving a browser token", async () => {
+    const client = {
+      POST: vi.fn().mockResolvedValue({
+        data: {
+          data: {
+            quote: { ...contractQuote, status: "shared" },
+            share_url:
+              "https://berufe.com.br/orcamento/bq_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+          },
+          request_id: "quote-share",
+        },
+        error: undefined,
+        response: new Response(null),
+      }),
+    } as unknown as BerufeApiClient;
+
+    await expect(
+      shareProfessionalQuote(client, contractQuote.id),
+    ).resolves.toMatchObject({
+      quote: { status: "shared" },
+      shareUrl:
+        "https://berufe.com.br/orcamento/bq_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    });
+    expect(client.POST).toHaveBeenCalledWith(
+      "/api/v1/professional/quotes/{id}/share",
+      { params: { path: { id: contractQuote.id } } },
     );
   });
 });
