@@ -1154,6 +1154,74 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/professional/relationships/{id}/response:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Opaque server-generated professional relationship identifier.
+        schema:
+          type: string
+          format: uuid
+    post:
+      operationId: respondProfessionalRelationship
+      summary: Accept or decline one inbound pending professional relationship
+      tags:
+        - Professional relationships
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfessionalRelationshipResponseRequest"
+      responses:
+        "200":
+          description: The recipient recorded the relationship response exactly once.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfessionalRelationshipResponse"
+        "401":
+          description: An active Rails application session is required.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: The exact browser origin or professional ownership is invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: The relationship is not an inbound record owned by this recipient.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: The relationship already received a response.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/professional/profile:
     patch:
       operationId: updateProfessionalProfile
@@ -2299,7 +2367,12 @@ components:
       additionalProperties: false
       required:
         - profile
+        - pending_relationships
       properties:
+        pending_relationships:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProfessionalRelationshipSummary"
         profile:
           $ref: "#/components/schemas/ProfessionalWorkspaceProfile"
     ProfessionalWorkspaceProfile:
@@ -2392,6 +2465,17 @@ components:
                 - "null"
               minLength: 1
               maxLength: 300
+    ProfessionalRelationshipResponseRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - response
+      properties:
+        response:
+          type: string
+          enum:
+            - accepted
+            - declined
     ProfessionalRelationshipResponse:
       type: object
       additionalProperties: false

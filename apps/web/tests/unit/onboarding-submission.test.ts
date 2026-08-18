@@ -5,6 +5,7 @@ import type { ProfessionalWorkspace } from "~/types";
 
 function completeWorkspace(): ProfessionalWorkspace {
   return {
+    pendingRelationships: [],
     profile: {
       id: "23a94f5e-1429-4ec7-bbc4-a6f805d5182d",
       publicSlug: "ana-souza",
@@ -130,6 +131,7 @@ describe("professional onboarding submission", () => {
 
     await wrapper.setProps({
       workspace: {
+        ...workspace,
         profile: {
           ...workspace.profile,
           status: "pending_review",

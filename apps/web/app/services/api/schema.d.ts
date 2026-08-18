@@ -456,6 +456,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/professional/relationships/{id}/response": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Opaque server-generated professional relationship identifier. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept or decline one inbound pending professional relationship */
+        post: operations["respondProfessionalRelationship"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/professional/profile": {
         parameters: {
             query?: never;
@@ -774,6 +794,7 @@ export interface components {
             request_id: components["schemas"]["RequestId"];
         };
         ProfessionalWorkspaceData: {
+            pending_relationships: components["schemas"]["ProfessionalRelationshipSummary"][];
             profile: components["schemas"]["ProfessionalWorkspaceProfile"];
         };
         ProfessionalWorkspaceProfile: {
@@ -801,6 +822,10 @@ export interface components {
                 relationship_type: "recommendation" | "worked_together";
                 context_note?: string | null;
             };
+        };
+        ProfessionalRelationshipResponseRequest: {
+            /** @enum {string} */
+            response: "accepted" | "declined";
         };
         ProfessionalRelationshipResponse: {
             data: {
@@ -2618,6 +2643,74 @@ export interface operations {
             };
             /** @description The relationship type, recipient, or optional context note is invalid. */
             422: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    respondProfessionalRelationship: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Opaque server-generated professional relationship identifier. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfessionalRelationshipResponseRequest"];
+            };
+        };
+        responses: {
+            /** @description The recipient recorded the relationship response exactly once. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalRelationshipResponse"];
+                };
+            };
+            /** @description An active Rails application session is required. */
+            401: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The exact browser origin or professional ownership is invalid. */
+            403: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The relationship is not an inbound record owned by this recipient. */
+            404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The relationship already received a response. */
+            409: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;

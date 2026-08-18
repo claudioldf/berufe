@@ -20,6 +20,7 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
     expect(response).to have_http_status(:ok)
     expect(response.parsed_body).to eq(
       "data" => {
+        "pending_relationships" => [],
         "profile" => {
           "id" => profile.id,
           "public_slug" => "ana-souza",
@@ -50,6 +51,49 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
       "request_id" => "workspace-show"
     )
     expect(response.headers["Cache-Control"]).to include("no-store")
+    assert_api_conform(status: 200)
+  end
+
+  it "returns only inbound pending relationships in deterministic order" do
+    older_initiator = create_relationship_initiator("+5547999981201", "Beto Antigo")
+    newer_initiator = create_relationship_initiator("+5547999981202", "Caio Novo")
+    older = ProfessionalRelationship.create!(
+      initiator_professional: older_initiator,
+      recipient_professional: profile,
+      relationship_type: "recommendation",
+      created_at: 2.days.ago
+    )
+    newer = ProfessionalRelationship.create!(
+      initiator_professional: newer_initiator,
+      recipient_professional: profile,
+      relationship_type: "worked_together",
+      context_note: "Atuamos juntos em uma obra.",
+      created_at: 1.day.ago
+    )
+    ProfessionalRelationship.create!(
+      initiator_professional: profile,
+      recipient_professional: newer_initiator,
+      relationship_type: "recommendation"
+    )
+    ProfessionalRelationship.create!(
+      initiator_professional: older_initiator,
+      recipient_professional: profile,
+      relationship_type: "worked_together",
+      status: "declined",
+      responded_at: Time.current
+    )
+
+    get "/api/v1/professional/workspace", headers: session_headers(request_id: "workspace-relationships")
+
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body.dig("data", "pending_relationships").pluck("id")).to eq(
+      [older.id, newer.id]
+    )
+    expect(response.parsed_body.dig("data", "pending_relationships", 1)).to include(
+      "relationship_type" => "worked_together",
+      "context_note" => "Atuamos juntos em uma obra.",
+      "initiator" => hash_including("display_name" => "Caio Novo")
+    )
     assert_api_conform(status: 200)
   end
 
@@ -216,6 +260,11 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
       instagram: "",
       youtube: ""
     }
+  end
+
+  def create_relationship_initiator(phone, display_name)
+    initiator_account = UserAccount.create!(phone_e164: phone, role: "professional", status: "active")
+    ProfessionalProfile.create!(user_account: initiator_account, display_name:)
   end
 
   def session_headers(request_id:, origin: false, token: session_token)

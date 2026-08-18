@@ -21,6 +21,7 @@ Rails.application.routes.draw do
         resources :portfolio_items, only: %i[create destroy], path: "portfolio-items"
         resources :verification_requests, only: :create, path: "verification-requests"
         resources :relationships, only: :create
+        post "relationships/:id/response", to: "relationships#respond"
         resources :media_uploads, only: %i[create show], path: "media-uploads" do
           member do
             put :content

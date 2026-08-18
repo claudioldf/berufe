@@ -7,6 +7,7 @@ class ProfessionalWorkspaceSerializer
 
   def as_json(*)
     {
+      pending_relationships: serialized_pending_relationships,
       profile: {
         id: profile.id,
         public_slug: profile.public_slug,
@@ -35,6 +36,17 @@ class ProfessionalWorkspaceSerializer
   private
 
   attr_reader :profile
+
+  def serialized_pending_relationships
+    profile.received_relationships
+      .where(status: "pending")
+      .includes(
+        initiator_professional: %i[working_revision published_revision],
+        recipient_professional: %i[working_revision published_revision]
+      )
+      .order(created_at: :asc, id: :asc)
+      .map { |relationship| ProfessionalRelationshipSerializer.new(relationship).as_json }
+  end
 
   def serialized_services
     profile.working_revision.professional_profile_services.includes(:service).map do |selection|

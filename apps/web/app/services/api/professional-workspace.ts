@@ -7,6 +7,7 @@ import type {
 import type { BerufeApiClient } from "~/services/api/client";
 import { ApiRequestError, normalizeApiError } from "~/services/api/errors";
 import type { components } from "~/services/api/schema";
+import { mapProfessionalRelationship } from "~/services/api/professional-relationships";
 
 type ContractWorkspace = components["schemas"]["ProfessionalWorkspaceData"];
 
@@ -19,6 +20,9 @@ export function mapProfessionalWorkspace(
 ): ProfessionalWorkspace {
   const identity = data.profile.identity;
   return {
+    pendingRelationships: data.pending_relationships.map(
+      mapProfessionalRelationship,
+    ),
     profile: {
       id: data.profile.id,
       publicSlug: data.profile.public_slug,

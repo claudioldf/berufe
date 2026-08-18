@@ -3,6 +3,8 @@
 require "rails_helper"
 
 RSpec.describe "Professional relationship requests", type: :request, openapi: true do
+  include ActiveSupport::Testing::TimeHelpers
+
   let(:initiator_account) do
     UserAccount.create!(phone_e164: "+5547999981101", role: "professional", status: "active")
   end
@@ -136,6 +138,106 @@ RSpec.describe "Professional relationship requests", type: :request, openapi: tr
     assert_api_conform(status: 403)
   end
 
+  it "lets only the recipient accept once and records the response activity" do
+    relationship = create_pending_relationship
+    now = Time.zone.parse("2026-08-18 14:30:00 UTC")
+    travel_to(now) do
+      post "/api/v1/professional/relationships/#{relationship.id}/response",
+        params: {response: "accepted"},
+        headers: session_headers(
+          request_id: "relationship-accept",
+          origin: true,
+          token: recipient_session_token
+        ),
+        as: :json
+    end
+
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body.dig("data", "relationship")).to include(
+      "id" => relationship.id,
+      "status" => "accepted",
+      "responded_at" => now.iso8601(3)
+    )
+    expect(relationship.reload).to have_attributes(status: "accepted", responded_at: now)
+    expect(ModerationAction.where(target_type: "professional_relationship")).to be_empty
+    expect(
+      ProfessionalDailyActivity.find_by!(professional: recipient).relationship_interactions
+    ).to eq(1)
+    assert_api_conform(status: 200)
+
+    post "/api/v1/professional/relationships/#{relationship.id}/response",
+      params: {response: "declined"},
+      headers: session_headers(
+        request_id: "relationship-repeat",
+        origin: true,
+        token: recipient_session_token
+      ),
+      as: :json
+
+    expect(response).to have_http_status(:conflict)
+    expect(relationship.reload).to have_attributes(status: "accepted", responded_at: now)
+    expect(
+      ProfessionalDailyActivity.find_by!(professional: recipient).relationship_interactions
+    ).to eq(1)
+    assert_api_conform(status: 409)
+  end
+
+  it "lets the recipient decline while keeping the relationship private" do
+    relationship = create_pending_relationship(relationship_type: "worked_together")
+
+    post "/api/v1/professional/relationships/#{relationship.id}/response",
+      params: {response: "declined"},
+      headers: session_headers(
+        request_id: "relationship-decline",
+        origin: true,
+        token: recipient_session_token
+      ),
+      as: :json
+
+    expect(response).to have_http_status(:ok)
+    expect(relationship.reload.status).to eq("declined")
+    expect(PublicProfessionalRelationshipQuery.for_professional(recipient.id)).to be_empty
+    assert_api_conform(status: 200)
+  end
+
+  it "does not let the initiator or an anonymous session respond" do
+    relationship = create_pending_relationship
+
+    post "/api/v1/professional/relationships/#{relationship.id}/response",
+      params: {response: "accepted"},
+      headers: session_headers(request_id: "relationship-wrong-owner", origin: true),
+      as: :json
+
+    expect(response).to have_http_status(:not_found)
+    expect(relationship.reload.status).to eq("pending")
+    assert_api_conform(status: 404)
+
+    post "/api/v1/professional/relationships/#{relationship.id}/response",
+      params: {response: "accepted"},
+      headers: {"X-Request-Id" => "relationship-response-anonymous", "Origin" => ENV.fetch("WEB_ORIGIN")},
+      as: :json
+
+    expect(response).to have_http_status(:unauthorized)
+    assert_api_conform(status: 401)
+  end
+
+  it "rejects a response from an invalid origin" do
+    relationship = create_pending_relationship
+
+    post "/api/v1/professional/relationships/#{relationship.id}/response",
+      params: {response: "accepted"},
+      headers: session_headers(
+        request_id: "relationship-response-origin",
+        origin: "https://untrusted.example",
+        token: recipient_session_token
+      ),
+      as: :json
+
+    expect(response).to have_http_status(:forbidden)
+    expect(relationship.reload.status).to eq("pending")
+    assert_api_conform(status: 403)
+  end
+
   private
 
   def relationship_params(
@@ -158,6 +260,19 @@ RSpec.describe "Professional relationship requests", type: :request, openapi: tr
     publish_profile!(profile)
   end
 
+  def create_pending_relationship(relationship_type: "recommendation")
+    ProfessionalRelationship.create!(
+      initiator_professional: initiator,
+      recipient_professional: recipient,
+      relationship_type:,
+      context_note: "Executamos uma reforma juntos."
+    )
+  end
+
+  def recipient_session_token
+    @recipient_session_token ||= ApplicationSession.issue!(user_account: recipient.user_account).last
+  end
+
   def publish_profile!(profile)
     revision = profile.working_revision
     revision.update!(status: "approved", reviewed_at: Time.current)
@@ -165,10 +280,10 @@ RSpec.describe "Professional relationship requests", type: :request, openapi: tr
     profile
   end
 
-  def session_headers(request_id:, origin: false)
+  def session_headers(request_id:, origin: false, token: session_token)
     headers = {
       "X-Request-Id" => request_id,
-      "Cookie" => "#{ApplicationSession::COOKIE_NAME}=#{session_token}"
+      "Cookie" => "#{ApplicationSession::COOKIE_NAME}=#{token}"
     }
     headers["Origin"] = (origin == true) ? ENV.fetch("WEB_ORIGIN") : origin if origin
     headers

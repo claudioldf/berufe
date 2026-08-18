@@ -178,6 +178,25 @@ export interface PublicProfessionalProfileResult {
   interactionToken: string;
 }
 
+export type ProfessionalRelationshipType = "recommendation" | "worked_together";
+
+export interface ProfessionalRelationshipParty {
+  id: string;
+  publicSlug: string;
+  displayName: string;
+}
+
+export interface ProfessionalRelationship {
+  id: string;
+  relationshipType: ProfessionalRelationshipType;
+  contextNote: string | null;
+  status: "pending" | "accepted" | "declined";
+  createdAt: string;
+  respondedAt: string | null;
+  initiator: ProfessionalRelationshipParty;
+  recipient: ProfessionalRelationshipParty;
+}
+
 export interface ProfessionalProfileDraft {
   name: string;
   headline: string;
@@ -235,6 +254,7 @@ export interface ProfessionalVerificationState {
 }
 
 export interface ProfessionalWorkspace {
+  pendingRelationships: ProfessionalRelationship[];
   profile: {
     id: string;
     publicSlug: string;

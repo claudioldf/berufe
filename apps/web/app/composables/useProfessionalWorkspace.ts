@@ -23,6 +23,10 @@ import type {
 } from "~/types";
 import { useApiClient } from "~/services/api/client";
 import { ApiRequestError } from "~/services/api/errors";
+import {
+  respondProfessionalRelationship,
+  type ProfessionalRelationshipResponse,
+} from "~/services/api/professional-relationships";
 
 export async function useProfessionalWorkspace() {
   const client = useApiClient();
@@ -37,6 +41,8 @@ export async function useProfessionalWorkspace() {
   const verificationError = shallowRef("");
   const submissionSaving = shallowRef(false);
   const submissionError = shallowRef("");
+  const relationshipRespondingId = shallowRef<string | null>(null);
+  const relationshipError = shallowRef("");
 
   function reflectPhotoUpload(upload: MediaUpload) {
     if (!workspace.data.value) return;
@@ -250,6 +256,38 @@ export async function useProfessionalWorkspace() {
     }
   }
 
+  async function respondToRelationship(
+    id: string,
+    response: ProfessionalRelationshipResponse,
+  ) {
+    if (relationshipRespondingId.value) return undefined;
+
+    relationshipRespondingId.value = id;
+    relationshipError.value = "";
+    try {
+      const relationship = await respondProfessionalRelationship(
+        client,
+        id,
+        response,
+      );
+      if (workspace.data.value) {
+        workspace.data.value.pendingRelationships =
+          workspace.data.value.pendingRelationships.filter(
+            (pending) => pending.id !== id,
+          );
+      }
+      return relationship;
+    } catch (error) {
+      relationshipError.value =
+        error instanceof ApiRequestError
+          ? error.message
+          : "Não foi possível responder à solicitação agora. Tente novamente.";
+      throw error;
+    } finally {
+      relationshipRespondingId.value = null;
+    }
+  }
+
   return {
     ...workspace,
     saveIdentity,
@@ -269,5 +307,8 @@ export async function useProfessionalWorkspace() {
     submissionSaving,
     submissionError,
     submitProfile,
+    relationshipRespondingId,
+    relationshipError,
+    respondToRelationship,
   };
 }

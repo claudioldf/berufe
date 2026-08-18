@@ -744,7 +744,7 @@ Public profiles also show a visible Berufe support/report contact that routes to
 
 ### S043 — Accept or decline a professional relationship
 
-**Status:** PENDING
+**Status:** DONE
 
 **Story:** As a recipient professional, I want to accept or decline a relationship so that nothing is made public without my confirmation.
 

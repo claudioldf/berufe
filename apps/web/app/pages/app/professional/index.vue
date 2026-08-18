@@ -3,13 +3,15 @@ import dashboardData from "@data/dashboard.json";
 import professionalsData from "@data/professionals.json";
 import type { Professional } from "~/types";
 import { useProfessionalOnboarding } from "~/composables/useProfessionalOnboarding";
+import { useProfessionalWorkspace } from "~/composables/useProfessionalWorkspace";
 import { useShare } from "~/composables/useShare";
 import { useToast } from "~/composables/useToast";
-import { formatCurrency } from "~/utils/formatters";
+import { formatCurrency, formatDateTime } from "~/utils/formatters";
 
 const { share } = useShare();
 const { showToast } = useToast();
 const { state: onboarding, checklist, progress } = useProfessionalOnboarding();
+const professionalWorkspace = await useProfessionalWorkspace();
 const professional = (professionalsData as Professional[]).find(
   (item) => item.id === dashboardData.professionalId,
 )!;
@@ -18,6 +20,25 @@ const professionalFirstName = computed(
     onboarding.value.profile.name.trim().split(" ")[0] ||
     professional.name.split(" ")[0],
 );
+const fixturePending = dashboardData.pending.filter(
+  (item) => item.type !== "relationship",
+);
+const pendingRelationships = computed(
+  () => professionalWorkspace.data.value?.pendingRelationships ?? [],
+);
+const pendingItems = computed(() => [
+  ...fixturePending,
+  ...pendingRelationships.value.map((relationship) => ({
+    id: relationship.id,
+    type: "relationship" as const,
+    title:
+      relationship.relationshipType === "worked_together"
+        ? `${relationship.initiator.displayName} trabalhou com você`
+        : `${relationship.initiator.displayName} recomendou você`,
+    status: "Aguardando sua resposta",
+    date: `Recebido em ${formatDateTime(relationship.createdAt)}`,
+  })),
+]);
 
 definePageMeta({ layout: "workspace" });
 
@@ -34,13 +55,21 @@ async function shareProfile() {
   });
 }
 
-function respondRelationship(accepted: boolean) {
-  showToast({
-    title: accepted ? "Colaboração confirmada" : "Solicitação recusada",
-    description: accepted
-      ? "Agora ela seguirá para moderação."
-      : "Essa relação continuará privada.",
-  });
+async function respondRelationship(id: string, accepted: boolean) {
+  try {
+    await professionalWorkspace.respondToRelationship(
+      id,
+      accepted ? "accepted" : "declined",
+    );
+    showToast({
+      title: accepted ? "Colaboração confirmada" : "Solicitação recusada",
+      description: accepted
+        ? "Agora ela seguirá para moderação."
+        : "Essa relação continuará privada.",
+    });
+  } catch {
+    // The pending section keeps the normalized API error visible for retry.
+  }
 }
 </script>
 
@@ -122,10 +151,37 @@ function respondRelationship(accepted: boolean) {
             <DesignSystemEyebrow>Precisa de atenção</DesignSystemEyebrow>
             <h2>Pendências e análises.</h2>
           </div>
-          <span>{{ dashboardData.pending.length }} itens</span>
+          <span>{{ pendingItems.length }} itens</span>
         </div>
+        <p
+          v-if="professionalWorkspace.status.value === 'pending'"
+          class="pending-list__feedback"
+          aria-live="polite"
+        >
+          Carregando solicitações profissionais…
+        </p>
+        <p
+          v-else-if="professionalWorkspace.error.value"
+          class="pending-list__feedback pending-list__feedback--error"
+          role="alert"
+        >
+          Não foi possível carregar as solicitações profissionais.
+        </p>
+        <p
+          v-else-if="pendingRelationships.length === 0"
+          class="pending-list__feedback"
+        >
+          Nenhuma relação profissional aguarda sua resposta.
+        </p>
+        <p
+          v-if="professionalWorkspace.relationshipError.value"
+          class="pending-list__feedback pending-list__feedback--error"
+          role="alert"
+        >
+          {{ professionalWorkspace.relationshipError.value }}
+        </p>
         <div class="pending-list">
-          <article v-for="item in dashboardData.pending" :key="item.id">
+          <article v-for="item in pendingItems" :key="item.id">
             <span class="pending-list__icon"
               ><UIcon
                 :name="
@@ -147,13 +203,27 @@ function respondRelationship(accepted: boolean) {
                 size="sm"
                 color="neutral"
                 variant="ghost"
-                @click="respondRelationship(false)"
+                :loading="
+                  professionalWorkspace.relationshipRespondingId.value ===
+                  item.id
+                "
+                :disabled="
+                  Boolean(professionalWorkspace.relationshipRespondingId.value)
+                "
+                @click="respondRelationship(item.id, false)"
                 >Recusar</UButton
               >
               <UButton
                 size="sm"
                 color="primary"
-                @click="respondRelationship(true)"
+                :loading="
+                  professionalWorkspace.relationshipRespondingId.value ===
+                  item.id
+                "
+                :disabled="
+                  Boolean(professionalWorkspace.relationshipRespondingId.value)
+                "
+                @click="respondRelationship(item.id, true)"
                 >Confirmar</UButton
               >
             </div>
@@ -428,6 +498,16 @@ function respondRelationship(accepted: boolean) {
   &__actions {
     display: flex;
     gap: 5px;
+  }
+  &__feedback {
+    margin: 0 0 12px;
+    color: var(--ink-soft);
+    font-size: 0.86rem;
+
+    &--error {
+      color: var(--color-danger);
+      font-weight: 700;
+    }
   }
 }
 .quotes-table {
