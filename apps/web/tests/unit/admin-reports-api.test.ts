@@ -134,6 +134,7 @@ const data: ApiReport = {
   moderation: {
     pending: 1,
     oldest_pending_hours: 4,
+    oldest_pending_target_hours: 24,
     median_review_hours: 2,
     p90_review_hours: 5,
     rejected: 1,
@@ -163,6 +164,7 @@ describe("administrator reports API", () => {
       numerator: 2,
     });
     expect(report.discovery.gaps[0]?.catalogStatus).toBe("inactive");
+    expect(report.operations.oldestPendingTargetHours).toBe(24);
     expect(report).not.toHaveProperty("discovery.otherCount");
     expect(report).not.toHaveProperty("operations.byTargetType");
   });
@@ -177,6 +179,15 @@ describe("administrator reports API", () => {
         directional: true,
       }),
     ).toBe("+8,6 pp · direcional");
+    expect(
+      formatReportComparison({
+        kind: "count",
+        reached: null,
+        next: null,
+        delta: null,
+        directional: false,
+      }),
+    ).toBe("—");
 
     const client = {
       GET: vi.fn().mockResolvedValue({

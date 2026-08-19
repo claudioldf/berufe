@@ -29,6 +29,7 @@ RSpec.describe "Administrator growth report", type: :request, openapi: true do
     expect(data.dig("summary", "search_coverage")).to include(
       "numerator" => 0, "denominator" => 0, "rate" => nil
     )
+    expect(data.dig("moderation", "oldest_pending_target_hours")).to eq(24)
     expect(data.dig("discovery", "stages").pluck("key")).to eq(
       %w[searches results choice profile_open contact]
     )

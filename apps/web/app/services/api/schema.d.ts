@@ -963,6 +963,7 @@ export interface components {
         AdminGrowthReportModeration: {
             pending: number;
             oldest_pending_hours: number;
+            oldest_pending_target_hours: number;
             median_review_hours: number;
             p90_review_hours: number;
             rejected: number;

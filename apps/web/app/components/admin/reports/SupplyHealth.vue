@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, type DeepReadonly } from "vue";
 import type { ReportPeriodData } from "~/types";
-import { formatRate } from "~/utils/formatters";
+import { formatRate, formatRateWidth } from "~/utils/formatters";
 
 const props = defineProps<{
   supply: DeepReadonly<ReportPeriodData["supply"]>;
@@ -95,7 +95,7 @@ const funnel = computed(() =>
               ><b>{{ metric.value }}/{{ metric.total }}</b>
             </div>
             <div class="activation-item__track">
-              <i :style="{ width: formatRate(metric.rate, 0) }" />
+              <i :style="{ width: formatRateWidth(metric.rate) }" />
             </div>
             <small
               >{{ metric.description }} ·

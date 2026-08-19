@@ -369,9 +369,11 @@ module Admin
         rejected = actions.where(action: "rejected").count
         durations = moderation_durations(actions.where(action: %w[approved rejected]))
         target_counts = actions.group(:target_type).count
+        reporting = Rails.configuration.x.berufe.reporting
         {
           pending: pending[:pending_count],
           oldest_pending_hours: pending[:oldest_pending_submitted_at] ? ((generated_at - pending[:oldest_pending_submitted_at]) / 1.hour).round(1) : 0,
+          oldest_pending_target_hours: reporting.moderation_oldest_pending_target_hours,
           median_review_hours: percentile(durations, 0.5),
           p90_review_hours: percentile(durations, 0.9),
           rejected:,

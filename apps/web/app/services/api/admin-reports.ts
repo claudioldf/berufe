@@ -25,7 +25,9 @@ export function formatReportComparison(
     return "Marco final alcançado";
   }
 
-  const delta = comparison.delta ?? 0;
+  if (comparison.delta === null) return "—";
+
+  const delta = comparison.delta;
   const sign = delta > 0 ? "+" : "";
   const value =
     comparison.kind === "percentage_points"
@@ -139,6 +141,7 @@ export function mapAdminGrowthReport(data: ApiReport): ReportPeriodData {
     operations: {
       pending: data.moderation.pending,
       oldestPendingHours: data.moderation.oldest_pending_hours,
+      oldestPendingTargetHours: data.moderation.oldest_pending_target_hours,
       medianReviewHours: data.moderation.median_review_hours,
       p90ReviewHours: data.moderation.p90_review_hours,
       rejected: data.moderation.rejected,

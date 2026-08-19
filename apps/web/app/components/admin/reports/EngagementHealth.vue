@@ -9,6 +9,11 @@ const props = defineProps<{
 const maxAction = computed(() =>
   Math.max(...props.engagement.actions.map((action) => action.value), 1),
 );
+const frequencyStyle = computed(() => ({
+  "--frequency-columns": String(
+    Math.max(props.engagement.activeWeeks.length, 1),
+  ),
+}));
 
 function retention(value: number | null, size: number) {
   if (value === null || !size) return "—";
@@ -68,7 +73,7 @@ function retentionWidth(value: number | null, size: number) {
             <strong>{{ action.value }}</strong>
           </div>
         </div>
-        <div class="frequency-strip">
+        <div class="frequency-strip" :style="frequencyStyle">
           <div v-for="frequency in engagement.activeWeeks" :key="frequency.key">
             <strong>{{ frequency.value }}</strong
             ><small>{{ frequency.label }}</small>
@@ -83,7 +88,7 @@ function retentionWidth(value: number | null, size: number) {
             <p>Retorno após o perfil entrar no ar</p>
           </div>
           <div class="widget-actions">
-            <span class="sample-note">n pequeno: exibimos n/N</span>
+            <span class="sample-note">exibimos n/N</span>
             <AdminReportsMetricHelp
               title="Coortes de retenção W1/W4"
               meaning="Agrupa profissionais pela semana de primeira publicação e mostra quantos voltaram com ação útil após uma e quatro semanas."
@@ -244,7 +249,7 @@ function retentionWidth(value: number | null, size: number) {
 }
 .frequency-strip {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(var(--frequency-columns), minmax(0, 1fr));
   gap: 6px;
   margin-top: 20px;
 }

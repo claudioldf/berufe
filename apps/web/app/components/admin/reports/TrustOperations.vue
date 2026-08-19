@@ -1,13 +1,19 @@
 <script setup lang="ts">
-import type { DeepReadonly } from "vue";
+import { computed, type DeepReadonly } from "vue";
 import type { ReportPeriodData } from "~/types";
 import { formatRate } from "~/utils/formatters";
 
-defineProps<{
+const props = defineProps<{
   trust: DeepReadonly<ReportPeriodData["trust"]>;
   quotes: DeepReadonly<ReportPeriodData["quotes"]>;
   operations: DeepReadonly<ReportPeriodData["operations"]>;
 }>();
+
+const oldestPendingExceedsTarget = computed(
+  () =>
+    props.operations.oldestPendingHours >
+    props.operations.oldestPendingTargetHours,
+);
 </script>
 
 <template>
@@ -111,17 +117,17 @@ defineProps<{
           <span
             :class="[
               'pending-chip',
-              { 'pending-chip--alert': operations.oldestPendingHours > 24 },
+              { 'pending-chip--alert': oldestPendingExceedsTarget },
             ]"
           >
             <DesignSystemStatusDot
-              :tone="operations.oldestPendingHours > 24 ? 'warning' : 'success'"
+              :tone="oldestPendingExceedsTarget ? 'warning' : 'success'"
             />{{ operations.pending }} pendentes
           </span>
           <AdminReportsMetricHelp
             title="Saúde da moderação"
             meaning="Monitora tamanho e idade da fila, mediana, P90 de análise, aprovação e conteúdo ocultado."
-            goal="Evitar itens acima de 24 horas e reduzir tempos sem enfraquecer a revisão."
+            :goal="`Evitar itens acima de ${operations.oldestPendingTargetHours} horas e reduzir tempos sem enfraquecer a revisão.`"
             reading="P90 revela casos lentos. Rejeição não é uma falha a zerar; pode ser uma proteção necessária."
           />
         </div>
@@ -130,7 +136,9 @@ defineProps<{
         <div>
           <span>Mais antigo</span
           ><strong>{{ operations.oldestPendingHours }}h</strong
-          ><small>atenção acima de 24h</small>
+          ><small
+            >atenção acima de {{ operations.oldestPendingTargetHours }}h</small
+          >
         </div>
         <div>
           <span>Tempo mediano</span

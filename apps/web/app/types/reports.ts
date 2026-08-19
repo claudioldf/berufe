@@ -94,6 +94,7 @@ export interface ReportPeriodData {
   operations: {
     pending: number;
     oldestPendingHours: number;
+    oldestPendingTargetHours: number;
     medianReviewHours: number;
     p90ReviewHours: number;
     rejected: number;

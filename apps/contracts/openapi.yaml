@@ -2747,10 +2747,11 @@ components:
     AdminGrowthReportModeration:
       type: object
       additionalProperties: false
-      required: [pending, oldest_pending_hours, median_review_hours, p90_review_hours, rejected, reviewed, approval_rate, hidden, by_target_type]
+      required: [pending, oldest_pending_hours, oldest_pending_target_hours, median_review_hours, p90_review_hours, rejected, reviewed, approval_rate, hidden, by_target_type]
       properties:
         pending: { type: integer, minimum: 0 }
         oldest_pending_hours: { type: number, minimum: 0 }
+        oldest_pending_target_hours: { type: integer, minimum: 1 }
         median_review_hours: { type: number, minimum: 0 }
         p90_review_hours: { type: number, minimum: 0 }
         rejected: { type: integer, minimum: 0 }

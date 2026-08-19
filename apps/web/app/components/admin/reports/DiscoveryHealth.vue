@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, type DeepReadonly } from "vue";
 import type { ReportPeriodData } from "~/types";
-import { formatRate } from "~/utils/formatters";
+import { formatRate, formatRateWidth } from "~/utils/formatters";
 
 const props = defineProps<{
   discovery: DeepReadonly<ReportPeriodData["discovery"]>;
@@ -50,7 +50,7 @@ const maxDemand = computed(() =>
             ><strong>{{ stage.numerator }}</strong>
           </div>
           <div class="discovery-stage__bar">
-            <i :style="{ width: formatRate(stage.rate) }" />
+            <i :style="{ width: formatRateWidth(stage.rate) }" />
           </div>
           <small>{{
             index > 0

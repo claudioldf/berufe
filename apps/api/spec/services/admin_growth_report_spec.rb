@@ -41,5 +41,6 @@ RSpec.describe Admin::Reports::GrowthReport do
     expect(report.dig(:discovery, :gaps)).to be_empty
     expect(report.dig(:summary, :search_coverage, :rate)).to be_within(0.001).of(2.fdiv(3))
     expect(report.dig(:summary, :search_coverage, :comparison, :directional)).to be(true)
+    expect(report.dig(:moderation, :oldest_pending_target_hours)).to eq(24)
   end
 end

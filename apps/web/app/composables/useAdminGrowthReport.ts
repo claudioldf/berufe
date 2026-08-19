@@ -26,15 +26,20 @@ export function useAdminGrowthReport(
 
   async function load() {
     const current = ++sequence;
+    const requestedPeriod = period.value;
     controller?.abort();
-    controller = new AbortController();
+    const requestController = new AbortController();
+    controller = requestController;
+    if (report.value && report.value.period.key !== requestedPeriod) {
+      report.value = null;
+    }
     isLoading.value = true;
     error.value = "";
     try {
-      const next = await loadReport(period.value, controller.signal);
+      const next = await loadReport(requestedPeriod, requestController.signal);
       if (current === sequence) report.value = next;
     } catch (cause) {
-      if (controller.signal.aborted) return;
+      if (requestController.signal.aborted) return;
       if (current === sequence) {
         error.value =
           cause instanceof Error

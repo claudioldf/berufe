@@ -12,3 +12,4 @@ Rails.application.config.x.berufe.reporting.raw_search_retention_days = 90
 Rails.application.config.x.berufe.reporting.aggregate_retention_days = 730
 Rails.application.config.x.berufe.reporting.founding_target_minimum = 30
 Rails.application.config.x.berufe.reporting.founding_target_maximum = 50
+Rails.application.config.x.berufe.reporting.moderation_oldest_pending_target_hours = 24
