@@ -13,6 +13,7 @@ interface ApiClientOptions {
   baseUrl: string;
   fetch?: ClientOptions["fetch"];
   origin?: string;
+  requireOrigin?: boolean;
   requestId?: () => string | undefined;
 }
 
@@ -20,6 +21,9 @@ export function createApiClient(options: ApiClientOptions): BerufeApiClient {
   const baseUrl = options.baseUrl.replace(/\/$/, "");
   if (!baseUrl) {
     throw new Error("API base URL is required");
+  }
+  if (options.requireOrigin && !options.origin) {
+    throw new Error("Request origin is required.");
   }
 
   const client = createClient<paths>({
@@ -65,6 +69,7 @@ export function useApiClient(): BerufeApiClient {
       import.meta.server && configuredSiteUrl
         ? new URL(configuredSiteUrl).origin
         : undefined,
+    requireOrigin: import.meta.server,
     requestId: () => inboundRequestId ?? undefined,
   });
 }

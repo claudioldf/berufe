@@ -77,4 +77,13 @@ describe("API client", () => {
     expect(request?.headers.get("Origin")).toBe("http://localhost:3000");
     expect(window.localStorage.length).toBe(0);
   });
+
+  it("refuses to build a server-side client without a configured origin", () => {
+    expect(() =>
+      createApiClient({
+        baseUrl: "http://localhost:3001",
+        requireOrigin: true,
+      }),
+    ).toThrow(/Request origin is required/);
+  });
 });

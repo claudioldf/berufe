@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, type DeepReadonly } from "vue";
 import type { ReportPeriodData } from "~/types";
-import { formatPercent } from "~/utils/formatters";
+import { formatRate } from "~/utils/formatters";
 
-const props = defineProps<{ report: ReportPeriodData }>();
+const props = defineProps<{ report: DeepReadonly<ReportPeriodData> }>();
 
 interface SummaryCard {
   key: string;
@@ -16,24 +16,13 @@ interface SummaryCard {
   help: { meaning: string; goal: string; reading: string };
 }
 
-const published = computed(
-  () =>
-    props.report.supply.funnel.find((stage) => stage.key === "published")
-      ?.value ?? 0,
-);
-const activated = computed(
-  () =>
-    props.report.supply.funnel.find((stage) => stage.key === "activated")
-      ?.value ?? 0,
-);
-
 const cards = computed<SummaryCard[]>(() => [
   {
     key: "published",
     label: "Publicados no período",
-    value: `${published.value}`,
-    detail: `meta fundadora ${props.report.supply.targetMinimum}–${props.report.supply.targetMaximum}`,
-    change: props.report.summaryChanges.published,
+    value: `${props.report.summary.published.value}`,
+    detail: `${props.report.summary.published.currentStock}/${props.report.supply.targetMinimum} publicados agora`,
+    change: props.report.summary.published.change,
     icon: "i-lucide-users-round",
     tone: "forest",
     help: {
@@ -47,9 +36,9 @@ const cards = computed<SummaryCard[]>(() => [
   {
     key: "activated",
     label: "Perfis ativados",
-    value: `${activated.value}/${published.value}`,
-    detail: `${formatPercent(activated.value, published.value)} dos publicados`,
-    change: props.report.summaryChanges.activated,
+    value: `${props.report.summary.activated.numerator}/${props.report.summary.activated.denominator}`,
+    detail: `${formatRate(props.report.summary.activated.rate)} dos publicados`,
+    change: props.report.summary.activated.change,
     icon: "i-lucide-badge-check",
     tone: "purple",
     help: {
@@ -63,9 +52,9 @@ const cards = computed<SummaryCard[]>(() => [
   {
     key: "coverage",
     label: "Buscas com resultado",
-    value: `${props.report.discovery.searchesWithResults}/${props.report.discovery.searches}`,
-    detail: `${formatPercent(props.report.discovery.searchesWithResults, props.report.discovery.searches)} de cobertura`,
-    change: props.report.summaryChanges.searchCoverage,
+    value: `${props.report.summary.searchCoverage.numerator}/${props.report.summary.searchCoverage.denominator}`,
+    detail: `${formatRate(props.report.summary.searchCoverage.rate)} de cobertura`,
+    change: props.report.summary.searchCoverage.change,
     icon: "i-lucide-search-check",
     tone: "blue",
     help: {
@@ -79,9 +68,9 @@ const cards = computed<SummaryCard[]>(() => [
   {
     key: "handoffs",
     label: "Contatos iniciados",
-    value: `${props.report.discovery.whatsappHandoffs}`,
-    detail: `${formatPercent(props.report.discovery.whatsappHandoffs, props.report.discovery.profileViews)} dos perfis abertos`,
-    change: props.report.summaryChanges.handoffs,
+    value: `${props.report.summary.handoffs.numerator}`,
+    detail: `${formatRate(props.report.summary.handoffs.rate)} dos perfis abertos`,
+    change: props.report.summary.handoffs.change,
     icon: "i-lucide-message-circle-more",
     tone: "coral",
     help: {
@@ -95,9 +84,9 @@ const cards = computed<SummaryCard[]>(() => [
   {
     key: "returning",
     label: "Profissionais recorrentes",
-    value: `${props.report.engagement.returningProfessionals}/${props.report.engagement.eligibleProfessionals}`,
-    detail: `${formatPercent(props.report.engagement.returningProfessionals, props.report.engagement.eligibleProfessionals)} da base publicada`,
-    change: props.report.summaryChanges.returning,
+    value: `${props.report.summary.returning.numerator}/${props.report.summary.returning.denominator}`,
+    detail: `${formatRate(props.report.summary.returning.rate)} da base publicada`,
+    change: props.report.summary.returning.change,
     icon: "i-lucide-refresh-cw",
     tone: "gold",
     help: {

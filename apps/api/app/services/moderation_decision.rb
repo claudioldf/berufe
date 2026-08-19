@@ -93,7 +93,12 @@ class ModerationDecision
       previous = profile.published_revision
       previous.update!(status: "superseded") if previous && previous != revision
       revision.update!(status: "approved", reviewed_at: Time.current, rejection_reason: nil)
-      profile.update!(published_revision: revision, working_revision: revision, profile_status: "published")
+      profile.update!(
+        published_revision: revision,
+        working_revision: revision,
+        profile_status: "published",
+        published_at: profile.published_at || Time.current
+      )
     when "rejected"
       require_status!(revision.status, "pending_review")
       revision.update!(

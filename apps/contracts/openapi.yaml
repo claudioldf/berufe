@@ -451,6 +451,36 @@ paths:
           $ref: "#/components/responses/AdminModerationUnauthorized"
         "422":
           $ref: "#/components/responses/AdminModerationInvalid"
+  /api/v1/admin/reports/growth:
+    get:
+      operationId: getAdminGrowthReport
+      summary: Read the privacy-safe administrator growth report
+      tags:
+        - Reports
+      security:
+        - applicationSession: []
+      parameters:
+        - name: period
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/AdminGrowthReportPeriodKey"
+      responses:
+        "200":
+          description: Aggregate-only growth, supply, discovery, engagement, trust, quote, and moderation metrics.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminGrowthReportResponse"
+        "401":
+          $ref: "#/components/responses/AdminModerationUnauthorized"
+        "403":
+          $ref: "#/components/responses/AdminModerationForbidden"
+        "422":
+          $ref: "#/components/responses/AdminModerationInvalid"
   /api/v1/admin/moderation/{target_type}/{target_id}/decisions:
     parameters:
       - $ref: "#/components/parameters/ModerationTargetType"
@@ -2478,6 +2508,261 @@ components:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
   schemas:
+    AdminGrowthReportPeriodKey:
+      type: string
+      enum: [since_launch, last_30_days, last_7_days]
+    AdminGrowthReportResponse:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data:
+          $ref: "#/components/schemas/AdminGrowthReportData"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    AdminGrowthReportData:
+      type: object
+      additionalProperties: false
+      required: [generated_at, period, privacy_notice, summary, supply, discovery, engagement, trust, quotes, moderation]
+      properties:
+        generated_at: { type: string, format: date-time }
+        period: { $ref: "#/components/schemas/AdminGrowthReportPeriod" }
+        privacy_notice: { type: string }
+        summary: { $ref: "#/components/schemas/AdminGrowthReportSummary" }
+        supply: { $ref: "#/components/schemas/AdminGrowthReportSupply" }
+        discovery: { $ref: "#/components/schemas/AdminGrowthReportDiscovery" }
+        engagement: { $ref: "#/components/schemas/AdminGrowthReportEngagement" }
+        trust: { $ref: "#/components/schemas/AdminGrowthReportTrust" }
+        quotes: { $ref: "#/components/schemas/AdminGrowthReportQuotes" }
+        moderation: { $ref: "#/components/schemas/AdminGrowthReportModeration" }
+    AdminGrowthReportPeriod:
+      type: object
+      additionalProperties: false
+      required: [key, label, short_label, window_label, start_at, end_at, truncated, data_available_from]
+      properties:
+        key: { $ref: "#/components/schemas/AdminGrowthReportPeriodKey" }
+        label: { type: string }
+        short_label: { type: string }
+        window_label: { type: string }
+        start_at: { type: string, format: date-time }
+        end_at: { type: string, format: date-time }
+        truncated: { type: boolean }
+        data_available_from: { type: string, format: date }
+    AdminGrowthReportRate:
+      type: object
+      required: [numerator, denominator, rate]
+      properties:
+        numerator: { type: integer, minimum: 0 }
+        denominator: { type: integer, minimum: 0 }
+        rate:
+          type: [number, "null"]
+          minimum: 0
+          maximum: 1
+    AdminGrowthReportComparison:
+      type: object
+      additionalProperties: false
+      required: [kind, reached, next, delta, directional]
+      properties:
+        kind:
+          type: string
+          enum: [milestone, count, percentage_points]
+        reached: { type: [number, "null"], minimum: 0 }
+        next: { type: [number, "null"], minimum: 0 }
+        delta: { type: [number, "null"] }
+        directional: { type: boolean }
+    AdminGrowthReportSummary:
+      type: object
+      additionalProperties: false
+      required: [published, activated, search_coverage, handoffs, returning]
+      properties:
+        published: { $ref: "#/components/schemas/AdminGrowthReportPublishedSummary" }
+        activated: { $ref: "#/components/schemas/AdminGrowthReportRatioSummary" }
+        search_coverage: { $ref: "#/components/schemas/AdminGrowthReportRatioSummary" }
+        handoffs: { $ref: "#/components/schemas/AdminGrowthReportRatioSummary" }
+        returning: { $ref: "#/components/schemas/AdminGrowthReportRatioSummary" }
+    AdminGrowthReportPublishedSummary:
+      type: object
+      additionalProperties: false
+      required: [value, current_stock, metric_type, comparison]
+      properties:
+        value: { type: integer, minimum: 0 }
+        current_stock: { type: integer, minimum: 0 }
+        metric_type: { type: string, const: flow }
+        comparison: { $ref: "#/components/schemas/AdminGrowthReportComparison" }
+    AdminGrowthReportRatioSummary:
+      allOf:
+        - $ref: "#/components/schemas/AdminGrowthReportRate"
+        - type: object
+          required: [metric_type, comparison]
+          properties:
+            metric_type:
+              type: string
+              enum: [flow, cohort_outcome, current_stock]
+            comparison: { $ref: "#/components/schemas/AdminGrowthReportComparison" }
+    AdminGrowthReportSupply:
+      type: object
+      additionalProperties: false
+      required: [target_minimum, target_maximum, funnel, activation]
+      properties:
+        target_minimum: { type: integer, minimum: 1 }
+        target_maximum: { type: integer, minimum: 1 }
+        funnel:
+          type: array
+          items: { $ref: "#/components/schemas/AdminGrowthReportStage" }
+        activation:
+          type: array
+          items: { $ref: "#/components/schemas/AdminGrowthReportActivation" }
+    AdminGrowthReportStage:
+      type: object
+      additionalProperties: false
+      required: [key, label, value, description, ratio]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        value: { type: integer, minimum: 0 }
+        description: { type: [string, "null"] }
+        ratio: { $ref: "#/components/schemas/AdminGrowthReportRate" }
+    AdminGrowthReportActivation:
+      allOf:
+        - $ref: "#/components/schemas/AdminGrowthReportRate"
+        - type: object
+          required: [key, label, description, icon]
+          properties:
+            key: { type: string }
+            label: { type: string }
+            description: { type: string }
+            icon: { type: string }
+    AdminGrowthReportDiscovery:
+      type: object
+      additionalProperties: false
+      required: [stages, profile_views, whatsapp_handoffs, demand, other_count, gaps]
+      properties:
+        stages:
+          type: array
+          items: { $ref: "#/components/schemas/AdminGrowthReportDiscoveryStage" }
+        profile_views: { type: integer, minimum: 0 }
+        whatsapp_handoffs: { type: integer, minimum: 0 }
+        demand:
+          type: array
+          items: { $ref: "#/components/schemas/AdminGrowthReportDemandItem" }
+        other_count: { type: integer, minimum: 0 }
+        gaps:
+          type: array
+          items: { $ref: "#/components/schemas/AdminGrowthReportGap" }
+    AdminGrowthReportDiscoveryStage:
+      allOf:
+        - $ref: "#/components/schemas/AdminGrowthReportRate"
+        - type: object
+          required: [key, label]
+          properties:
+            key: { type: string }
+            label: { type: string }
+    AdminGrowthReportDemandItem:
+      type: object
+      additionalProperties: false
+      required: [label, value]
+      properties:
+        label: { type: string }
+        value: { type: integer, minimum: 0 }
+    AdminGrowthReportGap:
+      type: object
+      additionalProperties: false
+      required: [service, location, searches, zero_result_searches, thin_result_searches, professionals, catalog_status]
+      properties:
+        service: { type: string }
+        location: { type: string }
+        searches: { type: integer, minimum: 0 }
+        zero_result_searches: { type: integer, minimum: 0 }
+        thin_result_searches: { type: integer, minimum: 0 }
+        professionals: { type: integer, minimum: 0 }
+        catalog_status:
+          type: string
+          enum: [active, inactive, outside_mvp]
+    AdminGrowthReportEngagement:
+      type: object
+      additionalProperties: false
+      required: [eligible_professionals, meaningful_actives, meaningful_active_rate, returning_professionals, returning_rate, active_weeks, actions, cohorts]
+      properties:
+        eligible_professionals: { type: integer, minimum: 0 }
+        meaningful_actives: { type: integer, minimum: 0 }
+        meaningful_active_rate: { $ref: "#/components/schemas/AdminGrowthReportRate" }
+        returning_professionals: { type: integer, minimum: 0 }
+        returning_rate: { $ref: "#/components/schemas/AdminGrowthReportRate" }
+        active_weeks:
+          type: array
+          items: { $ref: "#/components/schemas/AdminGrowthReportCountItem" }
+        actions:
+          type: array
+          items: { $ref: "#/components/schemas/AdminGrowthReportCountItem" }
+        cohorts:
+          type: array
+          items: { $ref: "#/components/schemas/AdminGrowthReportCohort" }
+    AdminGrowthReportCountItem:
+      type: object
+      additionalProperties: false
+      required: [key, label, value]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        value: { type: integer, minimum: 0 }
+    AdminGrowthReportCohort:
+      type: object
+      additionalProperties: false
+      required: [cohort, size, week1, week4]
+      properties:
+        cohort: { type: string }
+        size: { type: integer, minimum: 0 }
+        week1: { type: [integer, "null"], minimum: 0 }
+        week4: { type: [integer, "null"], minimum: 0 }
+    AdminGrowthReportTrust:
+      type: object
+      additionalProperties: false
+      required: [funnels]
+      properties:
+        funnels:
+          type: array
+          items: { $ref: "#/components/schemas/AdminGrowthReportTrustFunnel" }
+    AdminGrowthReportTrustFunnel:
+      type: object
+      additionalProperties: false
+      required: [key, label, started, responded, approved, response_rate, approval_rate]
+      properties:
+        key: { type: string, const: relationships }
+        label: { type: string }
+        started: { type: integer, minimum: 0 }
+        responded: { type: integer, minimum: 0 }
+        approved: { type: integer, minimum: 0 }
+        response_rate: { $ref: "#/components/schemas/AdminGrowthReportRate" }
+        approval_rate: { $ref: "#/components/schemas/AdminGrowthReportRate" }
+    AdminGrowthReportQuotes:
+      type: object
+      additionalProperties: false
+      required: [created, shared, share_rate, unique_creators, repeat_creators]
+      properties:
+        created: { type: integer, minimum: 0 }
+        shared: { type: integer, minimum: 0 }
+        share_rate: { $ref: "#/components/schemas/AdminGrowthReportRate" }
+        unique_creators: { type: integer, minimum: 0 }
+        repeat_creators: { type: integer, minimum: 0 }
+    AdminGrowthReportModeration:
+      type: object
+      additionalProperties: false
+      required: [pending, oldest_pending_hours, oldest_pending_target_hours, median_review_hours, p90_review_hours, rejected, reviewed, approval_rate, hidden, by_target_type]
+      properties:
+        pending: { type: integer, minimum: 0 }
+        oldest_pending_hours: { type: number, minimum: 0 }
+        oldest_pending_target_hours: { type: integer, minimum: 1 }
+        median_review_hours: { type: number, minimum: 0 }
+        p90_review_hours: { type: number, minimum: 0 }
+        rejected: { type: integer, minimum: 0 }
+        reviewed: { type: integer, minimum: 0 }
+        approval_rate: { $ref: "#/components/schemas/AdminGrowthReportRate" }
+        hidden: { type: integer, minimum: 0 }
+        by_target_type:
+          type: object
+          additionalProperties:
+            type: integer
+            minimum: 0
     AdminSessionRequest:
       type: object
       additionalProperties: false

@@ -1,23 +1,24 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, type DeepReadonly } from "vue";
 import type { ReportPeriodData } from "~/types";
-import { formatPercent } from "~/utils/formatters";
+import { formatRate, formatRateWidth } from "~/utils/formatters";
 
-const props = defineProps<{ supply: ReportPeriodData["supply"] }>();
+const props = defineProps<{
+  supply: DeepReadonly<ReportPeriodData["supply"]>;
+}>();
 
 const maxStage = computed(() =>
   Math.max(...props.supply.funnel.map((stage) => stage.value), 1),
 );
 const funnel = computed(() =>
-  props.supply.funnel.map((stage, index) => {
-    const previous = props.supply.funnel[index - 1]?.value ?? stage.value;
+  props.supply.funnel.map((stage) => {
     return {
       ...stage,
       width: Math.max(
         (stage.value / maxStage.value) * 100,
         stage.value ? 8 : 0,
       ),
-      conversion: previous ? Math.round((stage.value / previous) * 100) : 0,
+      conversion: formatRate(stage.rate ?? null, 0),
     };
   }),
 );
@@ -60,7 +61,7 @@ const funnel = computed(() =>
             <i :style="{ width: `${stage.width}%` }" />
           </div>
           <strong>{{ stage.value }}</strong>
-          <em>{{ index > 0 ? `${stage.conversion}%` : "base" }}</em>
+          <em>{{ index > 0 ? stage.conversion : "base" }}</em>
         </div>
       </div>
     </DesignSystemSurfaceCard>
@@ -94,13 +95,11 @@ const funnel = computed(() =>
               ><b>{{ metric.value }}/{{ metric.total }}</b>
             </div>
             <div class="activation-item__track">
-              <i
-                :style="{ width: formatPercent(metric.value, metric.total, 0) }"
-              />
+              <i :style="{ width: formatRateWidth(metric.rate) }" />
             </div>
             <small
               >{{ metric.description }} ·
-              {{ formatPercent(metric.value, metric.total, 0) }}</small
+              {{ formatRate(metric.rate, 0) }}</small
             >
           </div>
         </div>

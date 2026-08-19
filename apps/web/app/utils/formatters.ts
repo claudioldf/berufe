@@ -16,6 +16,18 @@ export function formatPercent(
   return `${new Intl.NumberFormat("pt-BR", { maximumFractionDigits }).format((value / total) * 100)}%`;
 }
 
+export function formatRate(rate: number | null, maximumFractionDigits = 1) {
+  if (rate === null) return "—";
+  return `${new Intl.NumberFormat("pt-BR", { maximumFractionDigits }).format(rate * 100)}%`;
+}
+
+export function formatRateWidth(rate: number | null) {
+  if (rate === null) return "0%";
+  const clampedRate = Math.min(Math.max(rate, 0), 1);
+  const percentage = Math.round(clampedRate * 10_000) / 100;
+  return `${percentage}%`;
+}
+
 export function formatDate(value?: string) {
   if (!value) return "—";
   return new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC" }).format(

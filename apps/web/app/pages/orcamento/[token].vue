@@ -3,6 +3,8 @@ import { useApiClient } from "~/services/api/client";
 import { ApiRequestError } from "~/services/api/errors";
 import { resolveSharedQuote } from "~/services/api/shared-quotes";
 
+definePageMeta({ layout: false });
+
 const route = useRoute();
 const client = useApiClient();
 const token = computed(() =>
@@ -58,7 +60,12 @@ function printQuote() {
         <UIcon name="i-lucide-lock-keyhole" /> Link privado do orçamento
       </div></DesignSystemContainer
     >
-    <DesignSystemContainer class="shared-quote-page__content">
+    <DesignSystemContainer
+      id="main-content"
+      as="main"
+      tabindex="-1"
+      class="shared-quote-page__content"
+    >
       <div class="shared-quote-page__heading">
         <div>
           <p>Olá, {{ quote.customerName }}.</p>

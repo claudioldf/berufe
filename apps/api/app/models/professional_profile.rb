@@ -58,6 +58,7 @@ class ProfessionalProfile < ApplicationRecord
   validate :initial_social_urls_are_canonical, on: :create
   validate :revision_pointers_belong_to_profile
   validate :photo_pointers_belong_to_profile
+  validate :published_at_is_immutable, on: :update
 
   before_validation :normalize_initial_fields, on: :create
   before_validation :assign_public_slug, on: :create
@@ -119,5 +120,11 @@ class ProfessionalProfile < ApplicationRecord
     [working_photo, published_photo].compact.each do |photo|
       errors.add(:base, :invalid) unless photo.professional_profile_id == id
     end
+  end
+
+  def published_at_is_immutable
+    return unless published_at_was.present? && will_save_change_to_published_at?
+
+    errors.add(:published_at, :readonly)
   end
 end

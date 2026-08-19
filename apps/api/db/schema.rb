@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_18_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_18_111000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -457,6 +457,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_18_100000) do
     t.datetime "created_at", null: false
     t.text "profile_status", default: "draft", null: false
     t.text "public_slug", null: false
+    t.datetime "published_at"
     t.uuid "published_photo_id"
     t.uuid "published_revision_id"
     t.datetime "updated_at", null: false
@@ -465,6 +466,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_18_100000) do
     t.uuid "working_revision_id"
     t.index ["profile_status"], name: "index_professional_profiles_on_profile_status"
     t.index ["public_slug"], name: "index_professional_profiles_on_public_slug", unique: true
+    t.index ["published_at"], name: "index_professional_profiles_on_published_at"
     t.index ["published_photo_id"], name: "index_professional_profiles_on_published_photo_id", unique: true
     t.index ["published_revision_id"], name: "index_professional_profiles_on_published_revision_id", unique: true
     t.index ["user_account_id"], name: "index_professional_profiles_on_user_account_id", unique: true
@@ -532,8 +534,32 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_18_100000) do
     t.check_constraint "discount_amount <= subtotal_amount AND total_amount = (subtotal_amount - discount_amount)", name: "quotes_consistent_totals"
     t.check_constraint "quote_number > 0", name: "quotes_positive_number"
     t.check_constraint "status::text = 'draft'::text AND share_token_hash IS NULL AND shared_at IS NULL OR status::text = 'shared'::text AND share_token_hash IS NOT NULL AND shared_at IS NOT NULL", name: "quotes_consistent_share_state"
-    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying, 'shared'::character varying]::text[])", name: "quotes_known_status"
+    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying::text, 'shared'::character varying::text])", name: "quotes_known_status"
     t.check_constraint "subtotal_amount >= 0::numeric AND discount_amount >= 0::numeric AND total_amount >= 0::numeric", name: "quotes_nonnegative_amounts"
+  end
+
+  create_table "search_daily_rollups", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "neighborhood_code"
+    t.date "report_date", null: false
+    t.integer "searches", default: 0, null: false
+    t.uuid "service_id"
+    t.integer "thin_results", default: 0, null: false
+    t.text "unmatched_query"
+    t.datetime "updated_at", null: false
+    t.integer "with_profile_open", default: 0, null: false
+    t.integer "with_results", default: 0, null: false
+    t.integer "with_three_results", default: 0, null: false
+    t.integer "with_whatsapp_handoff", default: 0, null: false
+    t.integer "zero_results", default: 0, null: false
+    t.index ["neighborhood_code", "report_date"], name: "idx_on_neighborhood_code_report_date_981793e93c"
+    t.index ["report_date", "service_id", "neighborhood_code", "unmatched_query"], name: "idx_search_daily_rollups_unique_dimensions", unique: true, nulls_not_distinct: true
+    t.index ["service_id", "report_date"], name: "index_search_daily_rollups_on_service_id_and_report_date"
+    t.index ["service_id"], name: "index_search_daily_rollups_on_service_id"
+    t.check_constraint "(service_id IS NULL) <> (unmatched_query IS NULL)", name: "search_daily_rollups_matched_or_unmatched"
+    t.check_constraint "searches >= 0 AND with_results >= 0 AND with_three_results >= 0 AND with_profile_open >= 0 AND with_whatsapp_handoff >= 0 AND zero_results >= 0 AND thin_results >= 0", name: "search_daily_rollups_nonnegative"
+    t.check_constraint "unmatched_query IS NULL OR unmatched_query ~ '^[a-z0-9]+( [a-z0-9]+)*$'::text AND char_length(unmatched_query) <= 80", name: "search_daily_rollups_query_format"
+    t.check_constraint "with_results <= searches AND with_three_results <= with_results AND with_profile_open <= searches AND with_whatsapp_handoff <= searches AND (zero_results + with_results) = searches AND thin_results <= with_results", name: "search_daily_rollups_subset_counts"
   end
 
   create_table "search_events", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -696,6 +722,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_18_100000) do
   add_foreign_key "professional_relationships", "professional_profiles", column: "recipient_professional_id"
   add_foreign_key "quote_items", "quotes", on_delete: :cascade
   add_foreign_key "quotes", "professional_profiles", column: "professional_id"
+  add_foreign_key "search_daily_rollups", "neighborhoods", column: "neighborhood_code", primary_key: "code"
+  add_foreign_key "search_daily_rollups", "services"
   add_foreign_key "search_events", "neighborhoods", column: "neighborhood_code", primary_key: "code"
   add_foreign_key "search_events", "services"
   add_foreign_key "services", "service_categories", column: "category_id"
