@@ -13,7 +13,8 @@ RSpec.describe Berufe::Environment do
       "GOOD_JOB_QUEUES" => "default",
       "GOOD_JOB_PROBE_PORT" => "7001",
       "WEB_ORIGIN" => "http://localhost:3000",
-      "API_PUBLIC_URL" => "http://localhost:3001"
+      "API_PUBLIC_URL" => "http://localhost:3001",
+      "PRODUCT_LAUNCH_DATE" => "2026-08-01"
     }
   end
 
@@ -70,7 +71,8 @@ RSpec.describe Berufe::Environment do
     expect(fake_config).to have_attributes(
       name: "local",
       sms_otp_adapter: "fake",
-      media_storage_adapter: "local"
+      media_storage_adapter: "local",
+      product_launch_date: Date.new(2026, 8, 1)
     )
     expect(infobip_config).to have_attributes(
       name: "local",
@@ -167,6 +169,13 @@ RSpec.describe Berufe::Environment do
 
     expect { described_class.load!(environment:) }
       .to raise_error(described_class::InvalidConfiguration, /GOOD_JOB_MAX_THREADS must be 2.*GOOD_JOB_QUEUES must be default/)
+  end
+
+  it "requires a valid explicit product launch date in deployed environments" do
+    environment = production_environment.merge("PRODUCT_LAUNCH_DATE" => "not-a-date")
+
+    expect { described_class.load!(environment:, rails_environment: "production") }
+      .to raise_error(described_class::InvalidConfiguration, /PRODUCT_LAUNCH_DATE must be an ISO date/)
   end
 
   it "reports variable names without leaking their values" do

@@ -2,11 +2,13 @@
 
 **Status:** launch-MVP implementation stories for Feature E3
 
-**Updated:** August 13, 2026
+**Updated:** August 18, 2026
 
 ## 1. Purpose and source of truth
 
 This document is the implementation specification for the launch-MVP administrative growth report represented by `./apps/web/app/components/admin/reports`. R001–R014 are required MVP stories and ship as one aggregate-only, admin-authorized feature.
+
+The approved decisions in `Berufe_Increment_6_Implementation_Plan.md` take precedence where they intentionally refine this specification, including contact attribution, previous-stage supply percentages, retention truncation, the five-stage discovery funnel, and report-specific retention.
 
 It explains what each card or widget means, which records it reads, the required associations and filters, and the exact calculation to return from the Rails API. Launch widgets use only MVP domains. Sections concerning client recommendations, external invitations, professional-facing metrics, or persisted content reports remain conditional on their corresponding V2 stories; unavailable domains are omitted or explicitly unavailable, never fabricated as zero activity.
 

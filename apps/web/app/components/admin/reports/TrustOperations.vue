@@ -1,28 +1,13 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import type { DeepReadonly } from "vue";
 import type { ReportPeriodData } from "~/types";
-import { formatPercent } from "~/utils/formatters";
+import { formatRate } from "~/utils/formatters";
 
-const props = defineProps<{
-  trust: ReportPeriodData["trust"];
-  quotes: ReportPeriodData["quotes"];
-  operations: ReportPeriodData["operations"];
+defineProps<{
+  trust: DeepReadonly<ReportPeriodData["trust"]>;
+  quotes: DeepReadonly<ReportPeriodData["quotes"]>;
+  operations: DeepReadonly<ReportPeriodData["operations"]>;
 }>();
-
-const quoteShareRate = computed(() =>
-  props.quotes.created
-    ? Math.round((props.quotes.shared / props.quotes.created) * 100)
-    : 0,
-);
-const approvalRate = computed(() =>
-  props.operations.reviewed
-    ? Math.round(
-        ((props.operations.reviewed - props.operations.rejected) /
-          props.operations.reviewed) *
-          100,
-      )
-    : 0,
-);
 </script>
 
 <template>
@@ -51,8 +36,8 @@ const approvalRate = computed(() =>
             >
             <UIcon name="i-lucide-arrow-right" />
             <span
-              ><b>{{ funnel.completed }}</b
-              ><small>confirmadas</small></span
+              ><b>{{ funnel.responded }}</b
+              ><small>respondidas</small></span
             >
             <UIcon name="i-lucide-arrow-right" />
             <span
@@ -61,9 +46,8 @@ const approvalRate = computed(() =>
             >
           </div>
           <p>
-            {{ formatPercent(funnel.completed, funnel.started, 0) }} de
-            confirmação ·
-            {{ formatPercent(funnel.approved, funnel.completed, 0) }} aprovadas
+            {{ formatRate(funnel.responseRate.rate, 0) }} de resposta ·
+            {{ formatRate(funnel.approvalRate.rate, 0) }} aprovadas
           </p>
         </div>
       </div>
@@ -77,7 +61,9 @@ const approvalRate = computed(() =>
           <span>Uso que pode trazer o profissional de volta.</span>
         </div>
         <div class="widget-actions">
-          <span class="rate-chip">{{ quoteShareRate }}% compartilhados</span>
+          <span class="rate-chip"
+            >{{ formatRate(quotes.shareRate.rate, 0) }} compartilhados</span
+          >
           <AdminReportsMetricHelp
             title="Uso de orçamentos"
             meaning="Mostra orçamentos criados e compartilhados, criadores distintos e quem usou a ferramenta mais de uma vez."
@@ -109,7 +95,7 @@ const approvalRate = computed(() =>
           <UIcon name="i-lucide-repeat-2" />
           <span
             ><strong>{{ quotes.repeatCreators }}</strong
-            ><small>criadores recorrentes</small></span
+            ><small>2+ no período</small></span
           >
         </div>
       </div>
@@ -157,7 +143,8 @@ const approvalRate = computed(() =>
           ><small>90% abaixo disso</small>
         </div>
         <div>
-          <span>Aprovação</span><strong>{{ approvalRate }}%</strong
+          <span>Aprovação</span
+          ><strong>{{ formatRate(operations.approvalRate.rate, 0) }}</strong
           ><small
             >{{ operations.rejected }}/{{
               operations.reviewed

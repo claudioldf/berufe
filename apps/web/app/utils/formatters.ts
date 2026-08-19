@@ -16,6 +16,11 @@ export function formatPercent(
   return `${new Intl.NumberFormat("pt-BR", { maximumFractionDigits }).format((value / total) * 100)}%`;
 }
 
+export function formatRate(rate: number | null, maximumFractionDigits = 1) {
+  if (rate === null) return "—";
+  return `${new Intl.NumberFormat("pt-BR", { maximumFractionDigits }).format(rate * 100)}%`;
+}
+
 export function formatDate(value?: string) {
   if (!value) return "—";
   return new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC" }).format(

@@ -6,11 +6,18 @@ export interface ReportPeriodOption {
   shortLabel: string;
 }
 
+export interface ReportRate {
+  numerator: number;
+  denominator: number;
+  rate: number | null;
+}
+
 export interface ReportCountStage {
   key: string;
   label: string;
   value: number;
   description?: string;
+  rate?: number | null;
 }
 
 export interface ReportRatioMetric {
@@ -18,46 +25,21 @@ export interface ReportRatioMetric {
   label: string;
   value: number;
   total: number;
+  rate: number | null;
   description: string;
   icon: string;
 }
 
-export interface ReportDemandItem {
-  label: string;
-  value: number;
-}
-
-export interface ReportGapItem {
-  service: string;
-  location: string;
-  searches: number;
-  professionals: number;
-  catalogStatus: "active" | "outside_mvp";
-}
-
-export interface ReportRetentionCohort {
-  cohort: string;
-  size: number;
-  week1: number | null;
-  week4: number | null;
-}
-
-export interface ReportTrustFunnel {
-  key: "relationships";
-  label: string;
-  started: number;
-  completed: number;
-  approved: number;
-}
-
 export interface ReportPeriodData {
-  windowLabel: string;
-  summaryChanges: {
-    published: string;
-    activated: string;
-    searchCoverage: string;
-    handoffs: string;
-    returning: string;
+  generatedAt: string;
+  period: ReportPeriodOption & { windowLabel: string; truncated: boolean };
+  privacyNotice: string;
+  summary: {
+    published: { value: number; currentStock: number; change: string };
+    activated: ReportRate & { change: string };
+    searchCoverage: ReportRate & { change: string };
+    handoffs: ReportRate & { change: string };
+    returning: ReportRate & { change: string };
   };
   supply: {
     targetMinimum: number;
@@ -66,14 +48,17 @@ export interface ReportPeriodData {
     activation: ReportRatioMetric[];
   };
   discovery: {
-    searches: number;
-    searchesWithResults: number;
-    searchesWithThreeResults: number;
-    searchesWithProfileOpen: number;
+    stages: Array<ReportRate & { key: string; label: string }>;
     profileViews: number;
     whatsappHandoffs: number;
-    demand: ReportDemandItem[];
-    gaps: ReportGapItem[];
+    demand: Array<{ label: string; value: number }>;
+    gaps: Array<{
+      service: string;
+      location: string;
+      searches: number;
+      professionals: number;
+      catalogStatus: "active" | "inactive" | "outside_mvp";
+    }>;
   };
   engagement: {
     eligibleProfessionals: number;
@@ -81,14 +66,28 @@ export interface ReportPeriodData {
     returningProfessionals: number;
     activeWeeks: ReportCountStage[];
     actions: ReportCountStage[];
-    cohorts: ReportRetentionCohort[];
+    cohorts: Array<{
+      cohort: string;
+      size: number;
+      week1: number | null;
+      week4: number | null;
+    }>;
   };
   trust: {
-    funnels: ReportTrustFunnel[];
+    funnels: Array<{
+      key: "relationships";
+      label: string;
+      started: number;
+      responded: number;
+      approved: number;
+      responseRate: ReportRate;
+      approvalRate: ReportRate;
+    }>;
   };
   quotes: {
     created: number;
     shared: number;
+    shareRate: ReportRate;
     uniqueCreators: number;
     repeatCreators: number;
   };
@@ -99,13 +98,7 @@ export interface ReportPeriodData {
     p90ReviewHours: number;
     rejected: number;
     reviewed: number;
+    approvalRate: ReportRate;
     hidden: number;
   };
-}
-
-export interface GrowthReportsData {
-  generatedAt: string;
-  privacyNotice: string;
-  periods: ReportPeriodOption[];
-  data: Record<ReportPeriodKey, ReportPeriodData>;
 }

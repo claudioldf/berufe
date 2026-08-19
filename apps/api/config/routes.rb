@@ -38,6 +38,7 @@ Rails.application.routes.draw do
       namespace :admin do
         resource :session, only: :create
         resource :catalog, only: :show
+        get "reports/growth", to: "reports#growth"
         get "moderation", to: "moderation#index"
         post "moderation/:target_type/:target_id/decisions", to: "moderation_decisions#create"
         get "moderation/:target_type/:target_id/media", to: "moderation_media#show"

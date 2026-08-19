@@ -33,6 +33,11 @@ Rails.application.configure do
       cron: "43 3 * * *",
       class: "VerificationFileRetentionCleanupJob",
       description: "Delete identity evidence thirty days after a decision"
+    },
+    search_reporting_retention: {
+      cron: "17 4 * * *",
+      class: "SearchReportingRetentionJob",
+      description: "Roll up anonymous search events and enforce report retention"
     }
   }
 end

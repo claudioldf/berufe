@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, type DeepReadonly } from "vue";
 import type { ReportPeriodData } from "~/types";
 
 const props = defineProps<{
-  engagement: ReportPeriodData["engagement"];
+  engagement: DeepReadonly<ReportPeriodData["engagement"]>;
 }>();
 
 const maxAction = computed(() =>

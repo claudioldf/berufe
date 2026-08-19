@@ -1,36 +1,41 @@
 <script setup lang="ts">
 import { computed, shallowRef, watch } from "vue";
-import reportsData from "@data/reports.json";
-import type { GrowthReportsData, ReportPeriodKey } from "~/types";
+import type { ReportPeriodKey, ReportPeriodOption } from "~/types";
 import { formatDateTime } from "~/utils/formatters";
 
-const reports = reportsData as GrowthReportsData;
+const periods: ReportPeriodOption[] = [
+  {
+    key: "since_launch",
+    label: "Desde o lançamento",
+    shortLabel: "Desde o início",
+  },
+  { key: "last_30_days", label: "Últimos 30 dias", shortLabel: "30 dias" },
+  { key: "last_7_days", label: "Últimos 7 dias", shortLabel: "7 dias" },
+];
 const route = useRoute();
 const router = useRouter();
 
 function isReportPeriod(value: unknown): value is ReportPeriodKey {
-  return reports.periods.some((period) => period.key === value);
+  return periods.some((period) => period.key === value);
 }
 
 const selectedPeriod = shallowRef<ReportPeriodKey>(
   isReportPeriod(route.query.period) ? route.query.period : "since_launch",
 );
-
-const report = computed(() => reports.data[selectedPeriod.value]);
+const { report, isLoading, error, load } = useAdminGrowthReport(selectedPeriod);
+const displayedPeriods = computed(() =>
+  periods.map((option) =>
+    report.value?.period.key === option.key ? report.value.period : option,
+  ),
+);
 const selectedPeriodLabel = computed(
   () =>
-    reports.periods.find((period) => period.key === selectedPeriod.value)
+    displayedPeriods.value.find((period) => period.key === selectedPeriod.value)
       ?.label ?? "",
 );
-const published = computed(
-  () =>
-    report.value.supply.funnel.find((stage) => stage.key === "published")
-      ?.value ?? 0,
+const generatedLabel = computed(() =>
+  report.value ? formatDateTime(report.value.generatedAt) : "",
 );
-const hasData = computed(
-  () => published.value > 0 || report.value.discovery.searches > 0,
-);
-const generatedLabel = formatDateTime(reports.generatedAt);
 
 async function selectPeriod(period: ReportPeriodKey) {
   selectedPeriod.value = period;
@@ -49,56 +54,63 @@ watch(
 </script>
 
 <template>
-  <section class="growth-reports">
-    <div class="report-toolbar">
-      <div>
-        <strong>{{ selectedPeriodLabel }}</strong>
-        <small
-          >{{ report.windowLabel }} · atualizado em {{ generatedLabel }}</small
+  <section class="growth-reports" :aria-busy="isLoading">
+    <div v-if="isLoading && !report" class="report-state" role="status">
+      <UIcon name="i-lucide-loader-circle" />
+      <span>Carregando relatório…</span>
+    </div>
+
+    <div
+      v-else-if="error && !report"
+      class="report-state report-state--error"
+      role="alert"
+    >
+      <UIcon name="i-lucide-circle-alert" />
+      <span>{{ error }}</span>
+      <button type="button" @click="load">Tentar novamente</button>
+    </div>
+
+    <template v-else-if="report">
+      <div class="report-toolbar">
+        <div>
+          <strong>{{ selectedPeriodLabel }}</strong>
+          <small
+            >{{ report.period.windowLabel }} · atualizado em
+            {{ generatedLabel }}</small
+          >
+        </div>
+        <div
+          class="period-switcher"
+          role="group"
+          aria-label="Período do relatório"
         >
+          <button
+            v-for="period in displayedPeriods"
+            :key="period.key"
+            type="button"
+            :class="{ active: selectedPeriod === period.key }"
+            :aria-pressed="selectedPeriod === period.key"
+            @click="selectPeriod(period.key)"
+          >
+            {{ period.shortLabel }}
+          </button>
+        </div>
       </div>
-      <div
-        class="period-switcher"
-        role="group"
-        aria-label="Período do relatório"
-      >
-        <button
-          v-for="period in reports.periods"
-          :key="period.key"
-          type="button"
-          :class="{ active: selectedPeriod === period.key }"
-          :aria-pressed="selectedPeriod === period.key"
-          @click="selectPeriod(period.key)"
-        >
-          {{ period.shortLabel }}
-        </button>
-      </div>
-    </div>
 
-    <div class="privacy-notice">
-      <UIcon name="i-lucide-user-round-x" />
-      <div>
-        <strong>Privacidade desde o primeiro dado</strong>
-        <p>{{ reports.privacyNotice }}</p>
-      </div>
-      <span><UIcon name="i-lucide-info" /> Contato não é contratação</span>
-    </div>
+      <p v-if="error" class="report-refresh-error" role="alert">
+        {{ error }}
+        <button type="button" @click="load">Tentar novamente</button>
+      </p>
 
-    <div v-if="!hasData" class="launch-empty">
-      <span><UIcon name="i-lucide-rocket" /></span>
-      <div>
-        <DesignSystemKicker>Primeiro marco</DesignSystemKicker>
-        <h2>Publique os primeiros 5 profissionais</h2>
-        <p>
-          O relatório ganhará funis e taxas assim que houver denominadores. Até
-          lá, acompanhe cadastro, verificação e publicação em contagens
-          absolutas.
-        </p>
+      <div class="privacy-notice">
+        <UIcon name="i-lucide-user-round-x" />
+        <div>
+          <strong>Privacidade desde o primeiro dado</strong>
+          <p>{{ report.privacyNotice }}</p>
+        </div>
+        <span><UIcon name="i-lucide-info" /> Contato não é contratação</span>
       </div>
-      <strong>0/{{ report.supply.targetMinimum }}</strong>
-    </div>
 
-    <template v-else>
       <AdminReportsGrowthSummary :report="report" />
       <AdminReportsSupplyHealth :supply="report.supply" />
       <AdminReportsDiscoveryHealth :discovery="report.discovery" />
@@ -108,16 +120,16 @@ watch(
         :quotes="report.quotes"
         :operations="report.operations"
       />
-    </template>
 
-    <footer class="report-footnote">
-      <UIcon name="i-lucide-database" />
-      <p>
-        <strong>Como lemos estes dados:</strong> ações profissionais vêm dos
-        registros do produto; buscas e contatos são agregados sem identidade de
-        visitante. Percentuais nunca escondem a base.
-      </p>
-    </footer>
+      <footer class="report-footnote">
+        <UIcon name="i-lucide-database" />
+        <p>
+          <strong>Como lemos estes dados:</strong> ações profissionais vêm dos
+          registros do produto; buscas e contatos são agregados sem identidade
+          de visitante. Percentuais nunca escondem a base.
+        </p>
+      </footer>
+    </template>
   </section>
 </template>
 
@@ -125,6 +137,34 @@ watch(
 .growth-reports {
   display: grid;
   gap: 26px;
+}
+.report-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 240px;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: white;
+  color: var(--ink-soft);
+}
+.report-state--error {
+  color: var(--color-danger);
+}
+.report-state button,
+.report-refresh-error button {
+  border: 0;
+  background: transparent;
+  color: var(--color-brand);
+  cursor: pointer;
+  font-weight: 800;
+}
+.report-refresh-error {
+  margin: -12px 0;
+  color: var(--color-danger);
+  font-size: var(--font-size-min);
 }
 .report-toolbar {
   display: flex;
@@ -205,46 +245,6 @@ watch(
   gap: 4px;
   font-weight: 850;
 }
-.launch-empty {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 17px;
-  padding: 22px;
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  background: white;
-}
-.launch-empty > span {
-  display: grid;
-  place-items: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
-  background: var(--color-accent-tint);
-  color: #b9533e;
-  font-size: 1.3rem;
-}
-.launch-empty h2,
-.launch-empty p {
-  margin: 0;
-}
-.launch-empty h2 {
-  margin-top: 3px;
-  font-family: var(--font-display);
-  font-size: 1.3rem;
-  font-weight: 500;
-}
-.launch-empty div > p:last-child {
-  margin-top: 5px;
-  color: var(--ink-soft);
-  font-size: var(--font-size-min);
-  line-height: 1.5;
-}
-.launch-empty > strong {
-  font-family: var(--font-display);
-  font-size: 1.7rem;
-}
 .report-footnote {
   display: flex;
   align-items: start;
@@ -281,12 +281,6 @@ watch(
   }
   .privacy-notice > span {
     display: none;
-  }
-  .launch-empty {
-    grid-template-columns: auto 1fr;
-  }
-  .launch-empty > strong {
-    grid-column: 2;
   }
 }
 </style>

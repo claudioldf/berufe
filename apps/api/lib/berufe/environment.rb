@@ -4,7 +4,7 @@ module Berufe
   class Environment
     class InvalidConfiguration < StandardError; end
 
-    Config = Data.define(:name, :sms_otp_adapter, :media_storage_adapter)
+    Config = Data.define(:name, :sms_otp_adapter, :media_storage_adapter, :product_launch_date)
 
     ENVIRONMENTS = %w[local preview staging integration production test].freeze
     SMS_OTP_ADAPTERS = {
@@ -59,12 +59,14 @@ module Berufe
       "development" => {
         "BERUFE_ENV" => "local",
         "SMS_OTP_ADAPTER" => "fake",
-        "MEDIA_STORAGE_ADAPTER" => "local"
+        "MEDIA_STORAGE_ADAPTER" => "local",
+        "PRODUCT_LAUNCH_DATE" => "2026-08-01"
       },
       "test" => {
         "BERUFE_ENV" => "test",
         "SMS_OTP_ADAPTER" => "fake",
-        "MEDIA_STORAGE_ADAPTER" => "local"
+        "MEDIA_STORAGE_ADAPTER" => "local",
+        "PRODUCT_LAUNCH_DATE" => "2026-08-01"
       }
     }.freeze
 
@@ -73,8 +75,9 @@ module Berufe
       name = values["BERUFE_ENV"]
       sms_otp_adapter = values["SMS_OTP_ADAPTER"]
       media_storage_adapter = values["MEDIA_STORAGE_ADAPTER"]
-
       errors = []
+      product_launch_date = parse_product_launch_date(values["PRODUCT_LAUNCH_DATE"], errors)
+
       errors << "BERUFE_ENV must be one of: #{ENVIRONMENTS.join(", ")}" unless ENVIRONMENTS.include?(name)
 
       if ENVIRONMENTS.include?(name)
@@ -97,8 +100,21 @@ module Berufe
 
       raise InvalidConfiguration, "Invalid Berufe configuration: #{errors.join("; ")}" if errors.any?
 
-      Config.new(name:, sms_otp_adapter:, media_storage_adapter:)
+      Config.new(name:, sms_otp_adapter:, media_storage_adapter:, product_launch_date:)
     end
+
+    def self.parse_product_launch_date(value, errors)
+      if value.to_s.strip.empty?
+        errors << "missing required variables: PRODUCT_LAUNCH_DATE"
+        return
+      end
+
+      Date.iso8601(value)
+    rescue Date::Error
+      errors << "PRODUCT_LAUNCH_DATE must be an ISO date"
+      nil
+    end
+    private_class_method :parse_product_launch_date
 
     def self.required_variables(name, sms_otp_adapter, media_storage_adapter)
       required = (name == "test") ? %w[TEST_DATABASE_URL DB_POOL] : COMMON_REQUIRED.dup

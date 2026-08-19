@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { formatCurrency, formatDate, formatPercent } from "~/utils/formatters";
+import {
+  formatCurrency,
+  formatDate,
+  formatPercent,
+  formatRate,
+} from "~/utils/formatters";
 
 describe("formatters", () => {
   it("formats BRL values for Brazilian readers", () => {
@@ -9,6 +14,8 @@ describe("formatters", () => {
   it("keeps percentage denominators explicit", () => {
     expect(formatPercent(1, 3)).toBe("33,3%");
     expect(formatPercent(0, 0)).toBe("—");
+    expect(formatRate(1 / 3)).toBe("33,3%");
+    expect(formatRate(null)).toBe("—");
   });
 
   it("formats date-only values without local timezone drift", () => {

@@ -195,6 +195,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/reports/growth": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read the privacy-safe administrator growth report */
+        get: operations["getAdminGrowthReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/moderation/{target_type}/{target_id}/decisions": {
         parameters: {
             query?: never;
@@ -793,6 +810,169 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @enum {string} */
+        AdminGrowthReportPeriodKey: "since_launch" | "last_30_days" | "last_7_days";
+        AdminGrowthReportResponse: {
+            data: components["schemas"]["AdminGrowthReportData"];
+            request_id: components["schemas"]["RequestId"];
+        };
+        AdminGrowthReportData: {
+            /** Format: date-time */
+            generated_at: string;
+            period: components["schemas"]["AdminGrowthReportPeriod"];
+            privacy_notice: string;
+            summary: components["schemas"]["AdminGrowthReportSummary"];
+            supply: components["schemas"]["AdminGrowthReportSupply"];
+            discovery: components["schemas"]["AdminGrowthReportDiscovery"];
+            engagement: components["schemas"]["AdminGrowthReportEngagement"];
+            trust: components["schemas"]["AdminGrowthReportTrust"];
+            quotes: components["schemas"]["AdminGrowthReportQuotes"];
+            moderation: components["schemas"]["AdminGrowthReportModeration"];
+        };
+        AdminGrowthReportPeriod: {
+            key: components["schemas"]["AdminGrowthReportPeriodKey"];
+            label: string;
+            short_label: string;
+            window_label: string;
+            /** Format: date-time */
+            start_at: string;
+            /** Format: date-time */
+            end_at: string;
+            truncated: boolean;
+            /** Format: date */
+            data_available_from: string;
+        };
+        AdminGrowthReportRate: {
+            numerator: number;
+            denominator: number;
+            rate: number | null;
+        };
+        AdminGrowthReportComparison: {
+            /** @enum {string} */
+            kind: "milestone" | "count" | "percentage_points";
+            reached: number | null;
+            next: number | null;
+            delta: number | null;
+            directional: boolean;
+        };
+        AdminGrowthReportSummary: {
+            published: components["schemas"]["AdminGrowthReportPublishedSummary"];
+            activated: components["schemas"]["AdminGrowthReportRatioSummary"];
+            search_coverage: components["schemas"]["AdminGrowthReportRatioSummary"];
+            handoffs: components["schemas"]["AdminGrowthReportRatioSummary"];
+            returning: components["schemas"]["AdminGrowthReportRatioSummary"];
+        };
+        AdminGrowthReportPublishedSummary: {
+            value: number;
+            current_stock: number;
+            /** @constant */
+            metric_type: "flow";
+            comparison: components["schemas"]["AdminGrowthReportComparison"];
+        };
+        AdminGrowthReportRatioSummary: components["schemas"]["AdminGrowthReportRate"] & {
+            /** @enum {string} */
+            metric_type: "flow" | "cohort_outcome" | "current_stock";
+            comparison: components["schemas"]["AdminGrowthReportComparison"];
+        };
+        AdminGrowthReportSupply: {
+            target_minimum: number;
+            target_maximum: number;
+            funnel: components["schemas"]["AdminGrowthReportStage"][];
+            activation: components["schemas"]["AdminGrowthReportActivation"][];
+        };
+        AdminGrowthReportStage: {
+            key: string;
+            label: string;
+            value: number;
+            description: string | null;
+            ratio: components["schemas"]["AdminGrowthReportRate"];
+        };
+        AdminGrowthReportActivation: components["schemas"]["AdminGrowthReportRate"] & {
+            key: string;
+            label: string;
+            description: string;
+            icon: string;
+        };
+        AdminGrowthReportDiscovery: {
+            stages: components["schemas"]["AdminGrowthReportDiscoveryStage"][];
+            profile_views: number;
+            whatsapp_handoffs: number;
+            demand: components["schemas"]["AdminGrowthReportDemandItem"][];
+            other_count: number;
+            gaps: components["schemas"]["AdminGrowthReportGap"][];
+        };
+        AdminGrowthReportDiscoveryStage: components["schemas"]["AdminGrowthReportRate"] & {
+            key: string;
+            label: string;
+        };
+        AdminGrowthReportDemandItem: {
+            label: string;
+            value: number;
+        };
+        AdminGrowthReportGap: {
+            service: string;
+            location: string;
+            searches: number;
+            zero_result_searches: number;
+            thin_result_searches: number;
+            professionals: number;
+            /** @enum {string} */
+            catalog_status: "active" | "inactive" | "outside_mvp";
+        };
+        AdminGrowthReportEngagement: {
+            eligible_professionals: number;
+            meaningful_actives: number;
+            meaningful_active_rate: components["schemas"]["AdminGrowthReportRate"];
+            returning_professionals: number;
+            returning_rate: components["schemas"]["AdminGrowthReportRate"];
+            active_weeks: components["schemas"]["AdminGrowthReportCountItem"][];
+            actions: components["schemas"]["AdminGrowthReportCountItem"][];
+            cohorts: components["schemas"]["AdminGrowthReportCohort"][];
+        };
+        AdminGrowthReportCountItem: {
+            key: string;
+            label: string;
+            value: number;
+        };
+        AdminGrowthReportCohort: {
+            cohort: string;
+            size: number;
+            week1: number | null;
+            week4: number | null;
+        };
+        AdminGrowthReportTrust: {
+            funnels: components["schemas"]["AdminGrowthReportTrustFunnel"][];
+        };
+        AdminGrowthReportTrustFunnel: {
+            /** @constant */
+            key: "relationships";
+            label: string;
+            started: number;
+            responded: number;
+            approved: number;
+            response_rate: components["schemas"]["AdminGrowthReportRate"];
+            approval_rate: components["schemas"]["AdminGrowthReportRate"];
+        };
+        AdminGrowthReportQuotes: {
+            created: number;
+            shared: number;
+            share_rate: components["schemas"]["AdminGrowthReportRate"];
+            unique_creators: number;
+            repeat_creators: number;
+        };
+        AdminGrowthReportModeration: {
+            pending: number;
+            oldest_pending_hours: number;
+            median_review_hours: number;
+            p90_review_hours: number;
+            rejected: number;
+            reviewed: number;
+            approval_rate: components["schemas"]["AdminGrowthReportRate"];
+            hidden: number;
+            by_target_type: {
+                [key: string]: number;
+            };
+        };
         AdminSessionRequest: {
             /** Format: email */
             email: string;
@@ -2218,6 +2398,32 @@ export interface operations {
                 };
             };
             401: components["responses"]["AdminModerationUnauthorized"];
+            422: components["responses"]["AdminModerationInvalid"];
+        };
+    };
+    getAdminGrowthReport: {
+        parameters: {
+            query?: {
+                period?: components["schemas"]["AdminGrowthReportPeriodKey"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Aggregate-only growth, supply, discovery, engagement, trust, quote, and moderation metrics. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminGrowthReportResponse"];
+                };
+            };
+            401: components["responses"]["AdminModerationUnauthorized"];
+            403: components["responses"]["AdminModerationForbidden"];
             422: components["responses"]["AdminModerationInvalid"];
         };
     };

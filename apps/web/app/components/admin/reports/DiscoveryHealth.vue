@@ -1,38 +1,13 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, type DeepReadonly } from "vue";
 import type { ReportPeriodData } from "~/types";
-import { formatPercent } from "~/utils/formatters";
+import { formatRate } from "~/utils/formatters";
 
 const props = defineProps<{
-  discovery: ReportPeriodData["discovery"];
+  discovery: DeepReadonly<ReportPeriodData["discovery"]>;
 }>();
 
-const discoveryStages = computed(() => [
-  {
-    key: "searches",
-    label: "Buscas realizadas",
-    value: props.discovery.searches,
-    total: props.discovery.searches,
-  },
-  {
-    key: "results",
-    label: "Com algum resultado",
-    value: props.discovery.searchesWithResults,
-    total: props.discovery.searches,
-  },
-  {
-    key: "choice",
-    label: "Com 3+ opções",
-    value: props.discovery.searchesWithThreeResults,
-    total: props.discovery.searches,
-  },
-  {
-    key: "open",
-    label: "Com perfil aberto",
-    value: props.discovery.searchesWithProfileOpen,
-    total: props.discovery.searches,
-  },
-]);
+const discoveryStages = computed(() => props.discovery.stages);
 const maxDemand = computed(() =>
   Math.max(...props.discovery.demand.map((item) => item.value), 1),
 );
@@ -60,9 +35,9 @@ const maxDemand = computed(() =>
           </div>
           <AdminReportsMetricHelp
             title="Cobertura da jornada"
-            meaning="Mostra quantas buscas tiveram resultado, variedade e abertura de perfil. Cada etapa é comparada ao total de buscas."
+            meaning="Mostra quantas buscas tiveram resultado, variedade, abertura de perfil e contato iniciado. Cada etapa é comparada ao total de buscas."
             goal="Cobrir a demanda, oferecer escolha e despertar interesse em perfis confiáveis."
-            reading="A maior queda indica o problema principal. Atribuição de contato por busca permanece indisponível até existir suporte confiável."
+            reading="A maior queda indica o problema principal. Contato é um clique agregado para o WhatsApp, não uma contratação."
           />
         </header>
         <div
@@ -72,14 +47,14 @@ const maxDemand = computed(() =>
         >
           <div class="discovery-stage__top">
             <span>{{ stage.label }}</span
-            ><strong>{{ stage.value }}</strong>
+            ><strong>{{ stage.numerator }}</strong>
           </div>
           <div class="discovery-stage__bar">
-            <i :style="{ width: formatPercent(stage.value, stage.total) }" />
+            <i :style="{ width: formatRate(stage.rate) }" />
           </div>
           <small>{{
             index > 0
-              ? `${formatPercent(stage.value, stage.total)} das buscas`
+              ? `${formatRate(stage.rate)} das buscas`
               : "base do período"
           }}</small>
         </div>
@@ -135,11 +110,11 @@ const maxDemand = computed(() =>
           >
             <span
               :class="{
-                'gaps-list__icon--catalog': gap.catalogStatus === 'outside_mvp',
+                'gaps-list__icon--catalog': gap.catalogStatus !== 'active',
               }"
               ><UIcon
                 :name="
-                  gap.catalogStatus === 'outside_mvp'
+                  gap.catalogStatus !== 'active'
                     ? 'i-lucide-list-plus'
                     : 'i-lucide-map-pin'
                 "
@@ -154,9 +129,7 @@ const maxDemand = computed(() =>
               >
             </div>
             <em>{{
-              gap.catalogStatus === "outside_mvp"
-                ? "Avaliar catálogo"
-                : "Recrutar"
+              gap.catalogStatus !== "active" ? "Avaliar catálogo" : "Recrutar"
             }}</em>
           </div>
         </div>

@@ -37,6 +37,7 @@ RSpec.describe "Professional profile moderation" do
       published_revision: revision,
       working_revision: revision
     )
+    expect(profile.published_at).to be_within(2.seconds).of(Time.current)
     expect(PublicProfessionalProfileSerializer.new(profile).as_json).to include(
       displayName: "Ana Souza",
       services: [{id: service.id, name: service.name, slug: service.slug, isPrimary: true, note: nil}],
@@ -46,6 +47,7 @@ RSpec.describe "Professional profile moderation" do
 
   it "atomically swaps an edited snapshot and supersedes the former revision" do
     original = publish_initial_revision
+    first_published_at = profile.reload.published_at
     original_public = PublicProfessionalProfileSerializer.new(profile.reload).as_json
 
     ProfessionalProfileIdentityUpdater.new.call(
@@ -67,6 +69,7 @@ RSpec.describe "Professional profile moderation" do
 
     expect(original.reload.status).to eq("superseded")
     expect(profile.reload.published_revision).to eq(pending)
+    expect(profile.published_at).to eq(first_published_at)
     expect(PublicProfessionalProfileSerializer.new(profile).as_json).to include(
       displayName: "Ana Obras",
       headline: "Projetos elétricos residenciais."
