@@ -35,7 +35,7 @@ const wasUpdatedRecently = computed(() =>
         loading="lazy"
       />
       <span v-if="hasVerifiedIdentity" class="professional-card__verified">
-        <UIcon name="i-lucide-badge-check" /> Verificada
+        <UIcon name="i-lucide-badge-check" /> Verificado
       </span>
     </NuxtLink>
 
@@ -225,7 +225,7 @@ const wasUpdatedRecently = computed(() =>
     justify-content: center;
   }
   &__profile-button {
-    flex: 1;
+    min-width: 120px;
   }
 }
 

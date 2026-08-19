@@ -319,7 +319,7 @@ async function respondRelationship(id: string, accepted: boolean) {
       <DesignSystemContainer class="dashboard-welcome__inner">
         <div>
           <p>{{ localDateLabel || "Painel profissional" }}</p>
-          <h1>Olá, {{ professionalFirstName }}. <em>Vamos em frente?</em></h1>
+          <h1>Olá, {{ professionalFirstName }}.</h1>
         </div>
         <div class="dashboard-welcome__actions">
           <UButton
