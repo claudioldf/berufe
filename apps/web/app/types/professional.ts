@@ -129,6 +129,10 @@ export interface PublicProfessionalSearchResult {
   neighborhood: { code: string; name: string } | null;
   professionals: PublicProfessionalCard[];
   relatedServices: PublicServiceSuggestion[];
+  page: number;
+  perPage: number;
+  totalCount: number;
+  totalPages: number;
   interaction: {
     searchEventId: string;
     token: string;

@@ -16,70 +16,70 @@ type ContractProfessionalProfile =
 
 const contractCard: ContractProfessionalCard = {
   id: "ad59e74a-a1aa-47d5-b725-26350f0f2376",
-  publicSlug: "ana-souza",
-  displayName: "Ana Souza",
+  public_slug: "ana-souza",
+  display_name: "Ana Souza",
   headline: "Elétrica residencial.",
-  photoUrl:
+  photo_url:
     "https://api.berufe.test/api/v1/public/profile-photos/4efae63b-b17c-4d4d-a3de-49bebdcba821/image",
-  primaryService: {
+  primary_service: {
     id: "c43071a5-4c47-4324-99ef-41846ee35538",
     name: "Eletricista",
     slug: "eletricista",
   },
-  matchingService: {
+  matching_service: {
     id: "c43071a5-4c47-4324-99ef-41846ee35538",
     name: "Eletricista",
     slug: "eletricista",
   },
   coverage: {
-    allJoinville: false,
+    all_joinville: false,
     neighborhoods: [{ code: "america", name: "América" }],
   },
-  verificationLabels: [
+  verification_labels: [
     {
       type: "identity",
       label: "Identidade verificada",
-      verifiedAt: "2026-08-16T12:00:00Z",
+      verified_at: "2026-08-16T12:00:00Z",
     },
   ],
-  portfolioCount: 3,
-  relationshipCount: 2,
-  publicSnapshotUpdatedAt: "2026-08-17T12:00:00Z",
+  portfolio_count: 3,
+  relationship_count: 2,
+  public_snapshot_updated_at: "2026-08-17T12:00:00Z",
 };
 
 const contractProfile: ContractProfessionalProfile = {
   id: contractCard.id,
-  publicSlug: "ana-souza",
-  displayName: "Ana Souza",
+  public_slug: "ana-souza",
+  display_name: "Ana Souza",
   headline: "Elétrica residencial.",
   bio: "Instalações e reparos em Joinville.",
-  yearsExperience: 11,
-  photoUrl: contractCard.photoUrl,
+  years_experience: 11,
+  photo_url: contractCard.photo_url,
   services: [
     {
-      id: contractCard.primaryService!.id,
+      id: contractCard.primary_service!.id,
       name: "Eletricista",
       slug: "eletricista",
-      isPrimary: true,
+      is_primary: true,
       note: "Quadros elétricos",
     },
     {
       id: "894a140b-219f-4fab-a01e-6f0dc02f6764",
       name: "Marido de aluguel",
       slug: "marido-de-aluguel",
-      isPrimary: false,
+      is_primary: false,
       note: null,
     },
   ],
   coverage: contractCard.coverage,
-  verificationLabels: contractCard.verificationLabels,
+  verification_labels: contractCard.verification_labels,
   portfolio: [
     {
       id: "b9029f26-f2c1-4001-9696-cf34d7259999",
       title: "Quadro organizado",
       description: null,
-      service: contractCard.primaryService!,
-      imageUrl: "https://api.berufe.test/portfolio.png",
+      service: contractCard.primary_service!,
+      image_url: "https://api.berufe.test/portfolio.png",
     },
   ],
   relationships: [
@@ -90,17 +90,17 @@ const contractProfile: ContractProfessionalProfile = {
       note: "Indicação profissional.",
       professional: {
         id: "9c315329-e728-4d48-96bc-7be4bc70d147",
-        publicSlug: "beto-lima",
-        displayName: "Beto Lima",
-        photoUrl: null,
+        public_slug: "beto-lima",
+        display_name: "Beto Lima",
+        photo_url: null,
       },
     },
   ],
-  socialLinks: {
+  social_links: {
     instagram: "https://www.instagram.com/berufe.ana/",
     youtube: null,
   },
-  publicSnapshotUpdatedAt: "2026-08-17T12:00:00Z",
+  public_snapshot_updated_at: "2026-08-17T12:00:00Z",
 };
 
 function apiClientReturning(result: object) {
@@ -119,11 +119,20 @@ describe("public discovery API", () => {
       slug: "ana-souza",
       name: "Ana Souza",
       headline: "Elétrica residencial.",
-      photoUrl: contractCard.photoUrl,
-      primaryService: contractCard.primaryService,
-      matchingService: contractCard.matchingService,
-      coverage: contractCard.coverage,
-      verificationLabels: contractCard.verificationLabels,
+      photoUrl: contractCard.photo_url,
+      primaryService: contractCard.primary_service,
+      matchingService: contractCard.matching_service,
+      coverage: {
+        allJoinville: false,
+        neighborhoods: [{ code: "america", name: "América" }],
+      },
+      verificationLabels: [
+        {
+          type: "identity",
+          label: "Identidade verificada",
+          verifiedAt: "2026-08-16T12:00:00Z",
+        },
+      ],
       portfolioCount: 3,
       relationshipCount: 2,
       publicSnapshotUpdatedAt: "2026-08-17T12:00:00Z",
@@ -136,9 +145,9 @@ describe("public discovery API", () => {
       data: {
         data: {
           query: {
-            normalizedTerm: "eletrica",
+            normalized_term: "eletrica",
             service: {
-              id: contractCard.matchingService!.id,
+              id: contractCard.matching_service!.id,
               name: "Eletricista",
               slug: "eletricista",
               icon: "i-lucide-zap",
@@ -147,9 +156,10 @@ describe("public discovery API", () => {
             neighborhood: { code: "america", name: "América" },
           },
           professionals: [contractCard],
-          relatedServices: [],
+          related_services: [],
+          meta: { page: 1, per_page: 20, total_count: 1, total_pages: 1 },
           interaction: {
-            searchEventId: "8d09847f-14d8-4ef7-80ea-8be6e9eb6d81",
+            search_event_id: "8d09847f-14d8-4ef7-80ea-8be6e9eb6d81",
             token: "signed-search-interaction",
           },
         },
@@ -170,9 +180,10 @@ describe("public discovery API", () => {
       searchEventId: "8d09847f-14d8-4ef7-80ea-8be6e9eb6d81",
       token: "signed-search-interaction",
     });
+    expect(result.totalCount).toBe(1);
     expect(client.POST).toHaveBeenCalledWith(
       "/api/v1/public/professional-searches",
-      { body: { service: "Elétrica", neighborhoodCode: "america" } },
+      { body: { service: "Elétrica", neighborhood_code: "america" } },
     );
   });
 
@@ -192,7 +203,7 @@ describe("public discovery API", () => {
     } satisfies Partial<ApiRequestError>);
     expect(client.POST).toHaveBeenCalledWith(
       "/api/v1/public/professional-searches",
-      { body: { service: "Elétrica", neighborhoodCode: null } },
+      { body: { service: "Elétrica", neighborhood_code: null } },
     );
   });
 
@@ -258,7 +269,7 @@ describe("public discovery API", () => {
       name: "Ana Souza",
       headline: "Elétrica residencial.",
       bio: "Instalações e reparos em Joinville.",
-      avatar: contractProfile.photoUrl,
+      avatar: contractProfile.photo_url,
       primaryService: "Eletricista",
       primaryServiceSlug: "eletricista",
       services: ["Eletricista", "Marido de aluguel"],
@@ -266,11 +277,11 @@ describe("public discovery API", () => {
       neighborhoods: ["América"],
       allJoinville: false,
       yearsExperience: 11,
-      evidence: contractProfile.verificationLabels.map((label) => ({
+      evidence: contractProfile.verification_labels.map((label) => ({
         id: label.type,
         type: label.type,
         label: label.label,
-        verifiedAt: label.verifiedAt,
+        verifiedAt: label.verified_at,
       })),
       portfolio: [
         {
@@ -320,7 +331,7 @@ describe("public discovery API", () => {
       {
         params: {
           path: { slug: "ana-souza" },
-          query: { interactionToken: "signed-search-context" },
+          query: { interaction_token: "signed-search-context" },
         },
       },
     );
@@ -343,7 +354,7 @@ describe("public discovery API", () => {
       "/api/v1/public/professionals/{id}/views",
       {
         params: { path: { id: contractProfile.id } },
-        body: { interactionToken: "signed-profile-interaction" },
+        body: { interaction_token: "signed-profile-interaction" },
       },
     );
 

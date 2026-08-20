@@ -1,5 +1,5 @@
 import { computed, shallowRef, watch } from "vue";
-import type { Neighborhood, Service } from "~/types";
+import type { Neighborhood, PublicProfessionalCard, Service } from "~/types";
 import { searchPublicProfessionals } from "~/services/api/public-discovery";
 import { useApiClient } from "~/services/api/client";
 import { findService } from "~/utils/services";
@@ -8,7 +8,6 @@ import { normalizeSearchText } from "~/utils/text";
 interface ProfessionalSearchOptions {
   services: Service[];
   neighborhoods: Neighborhood[];
-  defaultService?: string;
 }
 
 export async function useProfessionalSearch(
@@ -19,10 +18,13 @@ export async function useProfessionalSearch(
   const client = useApiClient();
   const serviceInput = shallowRef("");
   const neighborhoodInput = shallowRef("all");
+  // Pages after the first are appended here; the async data always holds page 1.
+  const additionalResults = shallowRef<PublicProfessionalCard[]>([]);
+  const loadedPage = shallowRef(1);
+  const loadingMore = shallowRef(false);
 
-  const serviceQuery = computed(() =>
-    String(route.query.servico ?? options.defaultService ?? "eletricista"),
-  );
+  const serviceQuery = computed(() => String(route.query.servico ?? "").trim());
+  const hasSearchTerm = computed(() => serviceQuery.value.length > 0);
   const neighborhoodCode = computed(() => String(route.query.bairro ?? "all"));
   const selectedNeighborhood = computed(
     () =>
@@ -33,7 +35,7 @@ export async function useProfessionalSearch(
   const effectiveNeighborhoodCode = computed(
     () => selectedNeighborhood.value?.code ?? "all",
   );
-  const { data, error, status, refresh } = await useAsyncData(
+  const { data, error, status, refresh, clear } = await useAsyncData(
     "public-professional-search",
     () =>
       searchPublicProfessionals(client, {
@@ -43,9 +45,32 @@ export async function useProfessionalSearch(
             ? null
             : effectiveNeighborhoodCode.value,
       }),
-    { watch: [serviceQuery, effectiveNeighborhoodCode] },
+    {
+      enabled: hasSearchTerm,
+    },
   );
+
+  watch([serviceQuery, effectiveNeighborhoodCode], () => {
+    resetPaging();
+    if (!hasSearchTerm.value) {
+      clear();
+      return;
+    }
+
+    void refresh();
+  });
+
+  function resetPaging() {
+    additionalResults.value = [];
+    loadedPage.value = 1;
+    loadingMore.value = false;
+  }
+
+  if (!hasSearchTerm.value) clear();
+
   const currentResult = computed(() => {
+    if (!hasSearchTerm.value) return null;
+
     const result = data.value;
     if (!result) return null;
     if (
@@ -58,6 +83,8 @@ export async function useProfessionalSearch(
     return result;
   });
   const selectedService = computed(() => {
+    if (!hasSearchTerm.value) return undefined;
+
     const resolvedService = currentResult.value?.resolvedService;
     if (resolvedService) {
       return options.services.find(
@@ -70,11 +97,46 @@ export async function useProfessionalSearch(
       : findService(options.services, serviceQuery.value);
   });
 
-  const results = computed(() => currentResult.value?.professionals ?? []);
+  const results = computed(() =>
+    currentResult.value
+      ? [...currentResult.value.professionals, ...additionalResults.value]
+      : [],
+  );
+  const totalCount = computed(() => currentResult.value?.totalCount ?? 0);
+  const hasMoreResults = computed(
+    () => results.value.length < totalCount.value,
+  );
+
+  async function loadMoreResults() {
+    if (loadingMore.value || !hasMoreResults.value) return;
+
+    loadingMore.value = true;
+    try {
+      const nextPage = loadedPage.value + 1;
+      const page = await searchPublicProfessionals(client, {
+        service: serviceQuery.value,
+        neighborhoodCode:
+          effectiveNeighborhoodCode.value === "all"
+            ? null
+            : effectiveNeighborhoodCode.value,
+        page: nextPage,
+      });
+      additionalResults.value = [
+        ...additionalResults.value,
+        ...page.professionals,
+      ];
+      loadedPage.value = nextPage;
+    } finally {
+      loadingMore.value = false;
+    }
+  }
   const relatedServices = computed(
     () => currentResult.value?.relatedServices ?? [],
   );
   const interaction = computed(() => currentResult.value?.interaction ?? null);
+  const isSearching = computed(
+    () => hasSearchTerm.value && currentResult.value === null && !error.value,
+  );
 
   watch(
     [serviceQuery, neighborhoodCode],
@@ -89,11 +151,14 @@ export async function useProfessionalSearch(
     service: string;
     neighborhood: string;
   }) {
-    const service = findService(options.services, payload.service);
+    const serviceTerm = payload.service.trim();
+    if (!serviceTerm) return;
+
+    const service = findService(options.services, serviceTerm);
     await router.push({
       path: "/encontrar",
       query: {
-        servico: service?.slug ?? payload.service,
+        servico: service?.slug ?? serviceTerm,
         bairro: payload.neighborhood,
       },
     });
@@ -103,12 +168,18 @@ export async function useProfessionalSearch(
     serviceInput,
     neighborhoodInput,
     serviceQuery,
+    hasSearchTerm,
     neighborhoodCode,
     selectedService,
     selectedNeighborhood,
     results,
+    totalCount,
+    hasMoreResults,
+    loadingMore,
+    loadMoreResults,
     relatedServices,
     interaction,
+    isSearching,
     error,
     status,
     refresh,

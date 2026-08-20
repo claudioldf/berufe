@@ -3,13 +3,16 @@
 module Api
   module V1
     class PublicProfessionalSearchesController < BaseController
-      before_action :prevent_caching
-
+      # Public reads stay cacheable on purpose (see PublicProfessionalsController).
+      # This operation is a POST that records a SearchEvent, so it is not
+      # cacheable in practice either way.
       def create
         term = params.require(:service)
         result = PublicProfessionalSearch.new.call(
           term:,
-          neighborhood_code: params[:neighborhoodCode]
+          neighborhood_code: params[:neighborhood_code],
+          page: params[:page],
+          per_page: params[:per_page]
         )
         result.professionals.load
         interaction = PublicSearchEventRecorder.new.call(
@@ -17,7 +20,7 @@ module Api
           normalized_term: result.normalized_term,
           service: result.service,
           neighborhood: result.neighborhood,
-          result_count: result.professionals.length
+          result_count: result.total_count
         )
         render json: {
           data: PublicProfessionalSearchSerializer.new(result, interaction:).as_json,

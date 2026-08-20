@@ -1613,7 +1613,11 @@ export interface components {
         };
         PublicProfessionalSearchRequest: {
             service: string;
-            neighborhoodCode?: string | null;
+            neighborhood_code?: string | null;
+            /** @description One-based page of matching professionals; defaults to 1. */
+            page?: number;
+            /** @description Professionals per page; defaults to 20. */
+            per_page?: number;
         };
         PublicProfessionalSearchResponse: {
             data: components["schemas"]["PublicProfessionalSearchData"];
@@ -1621,12 +1625,13 @@ export interface components {
         };
         PublicProfessionalSearchData: {
             query: {
-                normalizedTerm: string;
+                normalized_term: string;
                 service: components["schemas"]["PublicServiceSuggestion"] | null;
                 neighborhood: components["schemas"]["PublicProfessionalNeighborhoodSummary"] | null;
             };
             professionals: components["schemas"]["PublicProfessionalCard"][];
-            relatedServices: components["schemas"]["PublicServiceSuggestion"][];
+            related_services: components["schemas"]["PublicServiceSuggestion"][];
+            meta: components["schemas"]["PageMeta"];
             interaction: components["schemas"]["PublicSearchInteraction"] | null;
         };
         PublicSearchInteraction: {

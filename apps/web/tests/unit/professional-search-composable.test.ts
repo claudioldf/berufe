@@ -1,4 +1,5 @@
 import { clearNuxtData } from "#app";
+import { flushPromises } from "@vue/test-utils";
 import { useProfessionalSearch } from "@app/composables/useProfessionalSearch";
 import type { Neighborhood, Service } from "@app/types";
 
@@ -37,6 +38,30 @@ describe("professional search composable", () => {
     vi.clearAllMocks();
     await clearNuxtData("public-professional-search");
     await useRouter().replace("/encontrar?servico=eletricista&bairro=america");
+    await flushPromises();
+    vi.clearAllMocks();
+  });
+
+  it("keeps a first visit idle until a service is submitted", async () => {
+    await useRouter().replace("/encontrar");
+
+    const search = await useProfessionalSearch({
+      services: [service],
+      neighborhoods,
+    });
+
+    expect(search.hasSearchTerm.value).toBe(false);
+    expect(search.serviceInput.value).toBe("");
+    expect(search.results.value).toEqual([]);
+    expect(search.selectedService.value).toBeUndefined();
+    expect(search.isSearching.value).toBe(false);
+    expect(search.status.value).toBe("idle");
+    expect(apiClient.POST).not.toHaveBeenCalled();
+
+    await search.submitSearch({ service: "   ", neighborhood: "all" });
+
+    expect(useRoute().query.servico).toBeUndefined();
+    expect(apiClient.POST).not.toHaveBeenCalled();
   });
 
   it("loads the route search through Rails and retains its anonymous context", async () => {
@@ -44,7 +69,7 @@ describe("professional search composable", () => {
       data: {
         data: {
           query: {
-            normalizedTerm: "eletricista",
+            normalized_term: "eletricista",
             service: {
               id: service.id,
               name: service.name,
@@ -57,33 +82,34 @@ describe("professional search composable", () => {
           professionals: [
             {
               id: "ad59e74a-a1aa-47d5-b725-26350f0f2376",
-              publicSlug: "ana-souza",
-              displayName: "Ana Souza",
+              public_slug: "ana-souza",
+              display_name: "Ana Souza",
               headline: "Elétrica residencial.",
-              photoUrl: null,
-              primaryService: {
+              photo_url: null,
+              primary_service: {
                 id: service.id,
                 name: service.name,
                 slug: service.slug,
               },
-              matchingService: {
+              matching_service: {
                 id: service.id,
                 name: service.name,
                 slug: service.slug,
               },
               coverage: {
-                allJoinville: false,
+                all_joinville: false,
                 neighborhoods: [{ code: "america", name: "América" }],
               },
-              verificationLabels: [],
-              portfolioCount: 2,
-              relationshipCount: 1,
-              publicSnapshotUpdatedAt: "2026-08-17T12:00:00Z",
+              verification_labels: [],
+              portfolio_count: 2,
+              relationship_count: 1,
+              public_snapshot_updated_at: "2026-08-17T12:00:00Z",
             },
           ],
-          relatedServices: [],
+          related_services: [],
+          meta: { page: 1, per_page: 20, total_count: 1, total_pages: 1 },
           interaction: {
-            searchEventId: "8d09847f-14d8-4ef7-80ea-8be6e9eb6d81",
+            search_event_id: "8d09847f-14d8-4ef7-80ea-8be6e9eb6d81",
             token: "signed-search-context",
           },
         },
@@ -98,6 +124,8 @@ describe("professional search composable", () => {
       neighborhoods,
     });
 
+    expect(search.hasSearchTerm.value).toBe(true);
+    expect(search.isSearching.value).toBe(false);
     expect(search.error.value).toBeUndefined();
     expect(
       search.results.value.map((professional) => professional.name),
@@ -106,8 +134,17 @@ describe("professional search composable", () => {
     expect(search.relatedServices.value).toEqual([]);
     expect(apiClient.POST).toHaveBeenCalledWith(
       "/api/v1/public/professional-searches",
-      { body: { service: "eletricista", neighborhoodCode: "america" } },
+      { body: { service: "eletricista", neighborhood_code: "america" } },
     );
+    expect(apiClient.POST).toHaveBeenCalledOnce();
+
+    await useRouter().replace("/encontrar");
+
+    expect(search.hasSearchTerm.value).toBe(false);
+    expect(search.serviceInput.value).toBe("");
+    expect(search.results.value).toEqual([]);
+    expect(search.interaction.value).toBeNull();
+    expect(apiClient.POST).toHaveBeenCalledOnce();
   });
 
   it("canonicalizes a controlled alias when updating the existing route controls", async () => {
@@ -115,12 +152,13 @@ describe("professional search composable", () => {
       data: {
         data: {
           query: {
-            normalizedTerm: "stale-response",
+            normalized_term: "stale-response",
             service: null,
             neighborhood: null,
           },
           professionals: [],
-          relatedServices: [],
+          related_services: [],
+          meta: { page: 1, per_page: 20, total_count: 0, total_pages: 0 },
           interaction: null,
         },
         request_id: "finder-empty",
@@ -133,7 +171,10 @@ describe("professional search composable", () => {
       neighborhoods,
     });
 
-    await search.submitSearch({ service: "ELÉTRICA!", neighborhood: "all" });
+    await search.submitSearch({
+      service: "  ELÉTRICA!  ",
+      neighborhood: "all",
+    });
 
     expect(useRoute().query).toMatchObject({
       servico: "eletricista",
@@ -146,12 +187,13 @@ describe("professional search composable", () => {
       data: {
         data: {
           query: {
-            normalizedTerm: "eletricista",
+            normalized_term: "eletricista",
             service: null,
             neighborhood: { code: "centro", name: "Centro" },
           },
           professionals: [],
-          relatedServices: [],
+          related_services: [],
+          meta: { page: 1, per_page: 20, total_count: 0, total_pages: 0 },
           interaction: null,
         },
         request_id: "finder-stale-neighborhood",

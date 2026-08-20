@@ -101,7 +101,7 @@ RSpec.describe PublicProfessionalSearch do
       .to raise_error(described_class::InvalidInput)
     expect { described_class.new.call(term: electrician.slug, neighborhood_code: inactive.code) }
       .to raise_error(described_class::InvalidInput) do |error|
-        expect(error.field_errors).to have_key(:neighborhoodCode)
+        expect(error.field_errors).to have_key(:neighborhood_code)
       end
   end
 
@@ -207,8 +207,8 @@ RSpec.describe PublicProfessionalSearch do
       explicit_area,
       identity,
       portfolio,
-      relationship,
       recent,
+      relationship,
       *tied
     ])
   end
@@ -249,9 +249,7 @@ RSpec.describe PublicProfessionalSearch do
         revision.professional_profile_service_areas.create!(city_code: "Joinville", neighborhood:)
       end
     end
-    revision.update!(status: "approved", reviewed_at:)
-    profile.update!(profile_status: "published", published_revision: revision)
-    profile
+    make_profile_publicly_eligible(profile, revision:, reviewed_at:)
   end
 
   def create_portfolio_item(profile, status:)
@@ -290,27 +288,13 @@ RSpec.describe PublicProfessionalSearch do
   end
 
   def create_public_relationship(profile, partner)
-    relationship = ProfessionalRelationship.create!(
+    ProfessionalRelationship.create!(
       initiator_professional: profile,
       recipient_professional: partner,
       relationship_type: "recommendation",
       status: "accepted",
-      responded_at: Time.current
-    )
-    admin = UserAccount.create!(
-      email: "search-ranking@example.com",
-      password: "a-secure-admin-password",
-      password_confirmation: "a-secure-admin-password",
-      role: "admin",
-      status: "active"
-    )
-    ModerationAction.create!(
-      admin_user: admin,
-      target_type: "professional_relationship",
-      target_id: relationship.id,
-      action: "approved",
-      request_id: "search-ranking-relationship",
-      created_at: Time.current
+      responded_at: Time.current,
+      moderation_status: "approved"
     )
   end
 

@@ -4799,12 +4799,21 @@ components:
           type: string
           minLength: 1
           maxLength: 80
-        neighborhoodCode:
+        neighborhood_code:
           type:
             - string
             - "null"
           pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
           maxLength: 80
+        page:
+          type: integer
+          minimum: 1
+          description: One-based page of matching professionals; defaults to 1.
+        per_page:
+          type: integer
+          minimum: 1
+          maximum: 50
+          description: Professionals per page; defaults to 20.
     PublicProfessionalSearchResponse:
       type: object
       additionalProperties: false
@@ -4822,18 +4831,19 @@ components:
       required:
         - query
         - professionals
-        - relatedServices
+        - related_services
+        - meta
         - interaction
       properties:
         query:
           type: object
           additionalProperties: false
           required:
-            - normalizedTerm
+            - normalized_term
             - service
             - neighborhood
           properties:
-            normalizedTerm:
+            normalized_term:
               type: string
               minLength: 1
               maxLength: 80
@@ -4849,11 +4859,13 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PublicProfessionalCard"
-        relatedServices:
+        related_services:
           type: array
           maxItems: 3
           items:
             $ref: "#/components/schemas/PublicServiceSuggestion"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
         interaction:
           oneOf:
             - $ref: "#/components/schemas/PublicSearchInteraction"
