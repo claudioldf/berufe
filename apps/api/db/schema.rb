@@ -540,7 +540,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_20_100000) do
     t.check_constraint "discount_amount <= subtotal_amount AND total_amount = (subtotal_amount - discount_amount)", name: "quotes_consistent_totals"
     t.check_constraint "quote_number > 0", name: "quotes_positive_number"
     t.check_constraint "status::text = 'draft'::text AND share_token_hash IS NULL AND share_token_ciphertext IS NULL AND shared_at IS NULL OR status::text = 'shared'::text AND share_token_hash IS NOT NULL AND share_token_ciphertext IS NOT NULL AND shared_at IS NOT NULL", name: "quotes_consistent_share_state"
-    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying, 'shared'::character varying]::text[])", name: "quotes_known_status"
+    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying::text, 'shared'::character varying::text])", name: "quotes_known_status"
     t.check_constraint "subtotal_amount >= 0::numeric AND discount_amount >= 0::numeric AND total_amount >= 0::numeric", name: "quotes_nonnegative_amounts"
   end
 
