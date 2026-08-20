@@ -1,9 +1,16 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import type { ProfessionalProfileDraft, Service } from "~/types";
 
 const form = defineModel<ProfessionalProfileDraft>({ required: true });
-defineProps<{ services: Service[] }>();
+const props = defineProps<{ services: Service[] }>();
 defineEmits<{ toggle: [name: string] }>();
+
+const sortedServices = computed(() =>
+  [...props.services].sort((left, right) =>
+    left.name.localeCompare(right.name, "pt-BR", { sensitivity: "base" }),
+  ),
+);
 </script>
 
 <template>
@@ -20,7 +27,7 @@ defineEmits<{ toggle: [name: string] }>();
     </header>
     <div class="service-picker">
       <button
-        v-for="service in services"
+        v-for="service in sortedServices"
         :key="service.id"
         type="button"
         :class="{ selected: form.selectedServices.includes(service.name) }"

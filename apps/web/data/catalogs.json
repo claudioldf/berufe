@@ -19,6 +19,16 @@
       "id": "montagem",
       "name": "Montagem e marcenaria",
       "icon": "i-lucide-hammer"
+    },
+    {
+      "id": "servicos-domesticos",
+      "name": "Serviços domésticos",
+      "icon": "i-lucide-house"
+    },
+    {
+      "id": "outros-servicos",
+      "name": "Outros serviços",
+      "icon": "i-lucide-briefcase-business"
     }
   ],
   "services": [
@@ -171,6 +181,87 @@
       "icon": "i-lucide-droplets",
       "description": "Tratamento de infiltrações e impermeabilização de áreas residenciais.",
       "aliases": ["impermeabilizacao", "infiltracao", "umidade", "vedacao"]
+    },
+    {
+      "id": "svc-diarista",
+      "name": "Diarista",
+      "slug": "diarista",
+      "category": "servicos-domesticos",
+      "icon": "i-lucide-sparkles",
+      "description": "Limpeza e organização da casa para o dia a dia.",
+      "aliases": ["faxineira", "faxina", "limpeza diaria"]
+    },
+    {
+      "id": "svc-limpeza-residencial",
+      "name": "Limpeza Residencial",
+      "slug": "limpeza-residencial",
+      "category": "servicos-domesticos",
+      "icon": "i-lucide-sparkles",
+      "description": "Limpeza completa e recorrente de casas e apartamentos.",
+      "aliases": ["limpeza de casa", "limpeza residencial", "limpeza domestica"]
+    },
+    {
+      "id": "svc-chaveiro",
+      "name": "Chaveiro",
+      "slug": "chaveiro",
+      "category": "instalacoes",
+      "icon": "i-lucide-key-round",
+      "description": "Abertura, troca e instalação de fechaduras residenciais.",
+      "aliases": ["chaves", "fechadura", "abertura de porta"]
+    },
+    {
+      "id": "svc-desentupidor",
+      "name": "Desentupidor",
+      "slug": "desentupidor",
+      "category": "instalacoes",
+      "icon": "i-lucide-pipette",
+      "description": "Desentupimento de pias, ralos, vasos e tubulações.",
+      "aliases": ["desentupimento", "entupimento", "desentupidora"]
+    },
+    {
+      "id": "svc-gasista",
+      "name": "Gasista",
+      "slug": "gasista",
+      "category": "instalacoes",
+      "icon": "i-lucide-flame",
+      "description": "Instalação, manutenção e verificação de equipamentos a gás.",
+      "aliases": ["gas", "gás", "instalacao de gas", "vazamento de gas"]
+    },
+    {
+      "id": "svc-jardinagem",
+      "name": "Jardinagem",
+      "slug": "jardinagem",
+      "category": "servicos-domesticos",
+      "icon": "i-lucide-trees",
+      "description": "Manutenção, poda e cuidados com jardins residenciais.",
+      "aliases": ["jardineiro", "jardim", "poda", "paisagismo"]
+    },
+    {
+      "id": "svc-baba",
+      "name": "Babá",
+      "slug": "baba",
+      "category": "servicos-domesticos",
+      "icon": "i-lucide-baby",
+      "description": "Cuidados e acompanhamento de crianças em casa.",
+      "aliases": ["baba", "cuidadora de criancas", "babá"]
+    },
+    {
+      "id": "svc-petsitter",
+      "name": "Petsitter",
+      "slug": "petsitter",
+      "category": "servicos-domesticos",
+      "icon": "i-lucide-paw-print",
+      "description": "Cuidados, visitas e companhia para pets.",
+      "aliases": ["pet sitter", "cuidador de pets", "cuidadora de animais"]
+    },
+    {
+      "id": "svc-freelancer",
+      "name": "Freelancer",
+      "slug": "freelancer",
+      "category": "outros-servicos",
+      "icon": "i-lucide-briefcase-business",
+      "description": "Serviços profissionais independentes e sob demanda.",
+      "aliases": ["freela", "autonomo", "profissional freelancer"]
     }
   ],
   "neighborhoods": [
