@@ -4,58 +4,117 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository layout
 
-| Path              | What it is                                                                                                                  |
-| ----------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `apps/web/`       | **The active codebase.** Nuxt 4 + Vue 3 + Nuxt UI 4 static interactive prototype of the Berufe product. All work happens here. |
-| `docs/`           | Product source of truth: MVP stories, feature plan, infrastructure/architecture decisions, V2 backlog, reports stories.       |
-| `leads/`          | Independent, dependency-free Node ≥22 scraper/HTTP service (`achei-o-profissional`). Unrelated to `apps/web`.                 |
-| `full_mockups/`   | Frozen snapshot of an earlier prototype iteration, kept for reference. Do not edit; it is not built or tested.                |
-| `mockups/`, `qa-screenshots/` | Leftover artifacts (a stray CSS file, before/after QA screenshots). Not part of any build.                        |
+| Path                          | What it is                                                                                                                  |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `apps/api/`                   | **Rails 8.1 API** (Ruby 3.4, PostgreSQL, GoodJob, Pundit). Owns all data, auth, authorization, and metric semantics.        |
+| `apps/web/`                   | **Nuxt 4 + Vue 3 + Nuxt UI 4** frontend for the public, professional, and administrator surfaces. Talks only to `apps/api`. |
+| `apps/contracts/openapi.yaml` | **The API boundary.** Hand-edited; Rails validates against it in specs and Nuxt generates its types from it.                |
+| `docs/`                       | Product source of truth: MVP stories, feature plan, infrastructure/architecture decisions, increment plans, V2 backlog.     |
+| `leads/`                      | Independent, dependency-free Node ≥22 scraper/HTTP service (`achei-o-profissional`). Unrelated to the product apps.         |
+| `full_mockups/`               | Frozen snapshot of an earlier prototype iteration, kept for reference. Do not edit; it is not built or tested.              |
+| `mockups/`, `qa-screenshots/` | Leftover artifacts (a stray CSS file, before/after QA screenshots). Not part of any build.                                  |
 
-There is no root `package.json`. Run every frontend command from `apps/web/`; `leads/` has its own `package.json` and uses `node --test`.
+There is no root `package.json`. `apps/web` uses **pnpm** (`packageManager: pnpm@10.34.5`, Node pinned to 24.18.0 by `.node-version`); `apps/api` uses Bundler (Ruby 3.4.10 by `.ruby-version`); `leads/` has its own `package.json` and uses `node --test`.
 
-## Commands (`apps/web/`)
+## Environment
+
+A single root `.env` (gitignored, copied from `.env.example`) configures every service — Compose passes it to all four containers with `env_file`. `Berufe::Environment` (`apps/api/lib/berufe/environment.rb`) validates it at boot and **Rails refuses to start** when a required variable is missing or an adapter does not match the `BERUFE_ENV` matrix in `apps/api/README.md`. Adapter selection is explicit and never falls back at runtime.
+
+Only `NUXT_PUBLIC_*` values reach the browser bundle. `apps/web/nuxt.config.ts` loads the root `.env` when it exists, so host-run `pnpm dev` / `build` / `test` work outside Compose; variables already in the environment win, so Compose and CI stay authoritative.
+
+## Commands
+
+Docker Compose is the supported way to run everything (`web` :3000, `api` :3001, `worker` probe :7001, `db` PostgreSQL 18.4):
 
 ```bash
-npm run dev            # Nuxt dev server
-npm run generate       # static build into .output/public
-npm run check          # full gate: format:check + lint + stylelint + typecheck + test
+docker compose up --build          # start the four-service stack
+docker compose exec web pnpm check # frontend gate
+docker compose exec api bin/check  # backend gate: standardrb + brakeman + rspec
+docker compose down
 ```
 
-Focused: `npm run lint` / `lint:fix`, `npm run stylelint` / `stylelint:fix`, `npm run typecheck` (vue-tsc, strict), `npm run format`, `npm run test`, `npm run test:e2e`.
+Running on the host works too (`corepack enable` provides pnpm; `bundle install` in `apps/api`), but the API still needs PostgreSQL.
+
+**`apps/web/`** — every script is a pnpm script and `check` calls `pnpm` internally, so `npm run check` fails:
+
+```bash
+pnpm dev                 # Nuxt dev server
+pnpm build               # Nitro server build
+pnpm check               # full gate: format:check + lint + stylelint + typecheck + test
+pnpm api:generate        # regenerate app/services/api/schema.d.ts from ../contracts/openapi.yaml
+```
+
+Focused: `pnpm lint` / `lint:fix`, `pnpm stylelint` / `stylelint:fix`, `pnpm typecheck` (vue-tsc, strict), `pnpm format`, `pnpm test`, `pnpm test:coverage`, `pnpm test:e2e`. `pnpm format:repo:check` covers the root README, `docs/`, `compose.yaml`, and the workflows.
 
 Single unit test / single case:
 
 ```bash
-npx vitest run tests/unit/quotes.test.ts
-npx vitest run tests/unit/workflow-composables.test.ts -t "moderation queue"
+pnpm vitest run tests/unit/quotes.test.ts
+pnpm vitest run tests/unit/workflow-composables.test.ts -t "moderation queue"
 ```
 
-Single e2e test: `npx playwright test tests/e2e/public-flow.spec.ts -g "visitor can discover"`. Playwright runs `npm run build` and serves the Nitro output on `127.0.0.1:4173` itself (projects: `chromium`, `mobile-chromium`), so e2e runs are slow and always exercise the production build.
+Single e2e test: `pnpm playwright test tests/e2e/public-flow.spec.ts -g "visitor can discover"`. Playwright builds and serves the Nitro output on `127.0.0.1:4173` itself (projects: `chromium`, `mobile-chromium`), so e2e runs are slow and always exercise the production build.
 
-Vitest runs in the Nuxt environment (`@nuxt/test-utils`, happy-dom); coverage is scoped to `app/composables/**` and `app/utils/**`, which is where testable logic is expected to live.
+Vitest runs in the Nuxt environment (`@nuxt/test-utils`, happy-dom); coverage is scoped to `app/components/**`, `app/composables/**`, `app/middleware/**`, `app/utils/**`, and an explicit allowlist of `app/services/api/*.ts` — **a new API adapter must be added to that list in `vitest.config.ts`**.
+
+**`apps/api/`**:
+
+```bash
+bundle exec rspec                  # specs + OpenAPI contract coverage
+bundle exec standardrb             # style (no separate RuboCop config)
+bundle exec brakeman --quiet --no-pager --exit-on-warn --exit-on-error
+bin/rails db:migrate               # DATABASE_URL; specs use TEST_DATABASE_URL
+bin/rails zeitwerk:check           # boot and eager-load check, as CI runs it
+```
 
 `leads/`: `npm start` (HTTP service), `npm run scrape -- <city-slug> [cli|json|csv]`, `npm test`.
 
+CI (`.github/workflows/ci.yml`) runs three jobs: **backend** (standardrb, brakeman, migrations, `zeitwerk:check`, rspec, seeds), **frontend** (regenerate types and **fail on `schema.d.ts` drift**, format, lint, stylelint, typecheck, vitest, production build), and **integration** (build both images, boot the Compose stack, probe the API, Nuxt-to-Rails rendering, and worker connectivity).
+
+## The API contract
+
+`apps/contracts/openapi.yaml` is the boundary and is edited by hand. Both sides derive from it:
+
+- Rails registers it through `openapi_first` in `spec/rails_helper.rb`; request specs tagged `openapi: true` validate real responses against it, so an undocumented or mismatched response fails the suite.
+- Nuxt generates `app/services/api/schema.d.ts` with `pnpm api:generate`. It is committed, and CI fails if it drifts from the contract.
+
+**Changing an endpoint means editing the contract first**, then Rails, then regenerating types.
+
+## Architecture of `apps/api`
+
+Standard Rails layering with thin controllers and named service objects:
+
+- `app/controllers/api/v1/` — versioned endpoints under `public`, `professional`, and `admin` groupings. `BaseController` centralizes Pundit, error rendering (`render_api_error` with `code` / `message` / `field_errors`), the `Origin` check on state-changing requests, and the session/role `before_action`s. Every error message is Brazilian Portuguese.
+- `app/services/` — one purpose per class, `#call`-shaped (`ModerationDecision`, `ProfessionalQuoteSharer`, `Admin::Reports::GrowthReport`). This is where behavior lives; models stay thin.
+- `app/queries/` — read models for public projections and search.
+- `app/policies/` — Pundit policies; authorization is enforced at the API boundary, never assumed from the frontend.
+- `app/serializers/` — explicit response shaping; never expose an Active Record object directly.
+- `app/jobs/` — GoodJob. Recurring jobs are registered as cron entries in `config/initializers/good_job.rb`.
+
+Sessions are cookie-backed (`ApplicationSession`), with `Current.user_account`, `Current.application_session`, and `Current.request_id` set per request. Administrator surfaces additionally require `authentication_method == "password"` — an OTP-authenticated admin is refused.
+
+Data-shaped configuration (reporting targets, retention windows) lives in `config.x.berufe.*`, set from validated environment values in `config/initializers/berufe_environment.rb`.
+
 ## Architecture of `apps/web`
 
-**There is no backend.** Backend-shaped fixtures live in `apps/web/data/*.json` and are imported directly by pages/components with relative paths (`import professionalsData from "../../data/professionals.json"`) and cast to the shared types. Every "mutation" is local component/composable state; nothing persists across reloads except the onboarding draft and the hero image index in `localStorage`.
+All product data comes from the Rails API through the typed client. The layering is deliberate and enforced by review, not by tooling:
 
-The layering is deliberate and enforced by review, not by tooling:
-
-- `app/types/` — shared domain contracts (`Professional`, `Service`, quotes, moderation, reports, onboarding, UI). `index.ts` is a barrel; always import from `~/types`.
+- `app/services/api/` — one module per API area, each exporting typed functions over the shared `openapi-fetch` client in `client.ts`. They map snake_case contract fields to the camelCase domain types and normalize errors through `errors.ts` (`ApiRequestError`, `normalizeApiError`). **Pages and components never call `fetch` or the Rails routes directly.**
+- `app/types/` — shared domain contracts (`Professional`, `Service`, quotes, moderation, reports, onboarding, UI). `index.ts` is a barrel; always import from `~/types`. These are hand-written domain types, distinct from generated `schema.d.ts`.
 - `app/utils/` — pure functions only (formatters, catalog/service matching and relevance scoring, quote math, WhatsApp URL building, social-profile parsing, `pt-BR` text normalization).
-- `app/composables/` — stateful workflows. Cross-component state uses `useState` (`useAppRole` → `app-role`, `useToast` → `app-toast`); everything else is per-instance (`useProfessionalSearch`, `useQuoteDraft`, `useProfessionalProfileDraft`, `useProfessionalOnboarding`, `usePhoneAuthFlow`, `useModerationQueue`, `useShare`).
+- `app/composables/` — stateful workflows, each accepting optional injected dependencies so tests can drive them without a network. Cross-component state uses `useState` (`useAppRole` → `app-role`, `useToast` → `app-toast`, session state in `useApplicationSession`); everything else is per-instance.
 - `app/components/design-system/` — auto-imported with the `DesignSystem` prefix (`<DesignSystemSurfaceCard>`). Read `app/components/design-system/README.md` before touching these; it defines the component boundaries and the `FormField` scoped-slot accessibility contract.
 - `app/components/<feature>/` — page features (`home`, `profile`, `public`, `auth`, `dashboard/*`, `admin/*`, `onboarding`, `quotes`, `legal`). Widgets stay in their feature folder until the same complete pattern is genuinely reused.
 
+**Remaining fixtures:** `data/catalogs.json` and `data/professionals.json` are no longer read by the app — Rails seeds import them (`CatalogSeed`, `PublicDiscoveryDemoSeed`, mounted at `/catalog-data`), and two unit tests still import them as sample input. `data/dashboard.json`, `moderation.json`, and `quotes.json` are leftovers awaiting removal by their owning stories. Do not wire new UI to `data/*.json`; add an API adapter instead.
+
 **URL-backed state:** search filters (`?servico=`, `?bairro=`) and report periods live in the route, so views stay linkable and back/forward behaves. Add new filter state to the query, not to component refs.
 
-**Prerendering:** `nuxt.config.ts` lists every prerendered route in `nitro.prerender.routes`, and professional profile routes are generated from `data/professionals.json`. **Adding a page requires adding its route there**, otherwise it is missing from the static build.
+**Rendering:** `nuxt.config.ts` `routeRules` control this per route — public pages are server-rendered at request time (`prerender: false`), `/app/**` is client-only (`ssr: false`) with `private, no-store`, and `/orcamento/**` adds `no-referrer` and `x-robots-tag: noindex, nofollow`. Security headers apply to `/**`. **A new route with different privacy or caching needs its own rule.**
 
-**Icons:** `@iconify-json/lucide` is bundled through an explicit allowlist in `nuxt.config.ts` (`icon.clientBundle.icons`) alongside `scan: true`. Icons referenced indirectly — from `data/*.json` (`service.icon`) or from composable constants such as `professionalOnboardingSteps` — are not found by the scanner and must be added to that list or they render blank.
+**Auth:** `app/middleware/authenticated.global.ts` guards `/app/**` — it restores the session, redirects to the matching login page, enforces the professional/admin role for the path, and requires password authentication for `/app/admin`. `useAppRole` is only the header's "Explorar como" switcher for public surfaces; it is not auth.
 
-**Roles:** `useAppRole` drives the header's "Explorar como" switcher between `visitor` / `professional` / `admin` surfaces. It is a prototype affordance, not auth — there is no route guard.
+**Icons:** `@iconify-json/lucide` is bundled through an explicit allowlist in `nuxt.config.ts` (`icon.clientBundle.icons`) alongside `scan: true`. Icons referenced indirectly — from API responses (a report metric's `icon`, `service.icon`) or from composable constants such as `professionalOnboardingSteps` — are not found by the scanner and must be added to that list or they render blank.
 
 ## Styling
 
@@ -71,19 +130,26 @@ Prettier is the sole formatter (ESLint formatting rules are off); stylelint uses
 
 ## Conventions
 
-- **Language:** code identifiers, file names, and data keys in English; every user-facing string in Brazilian Portuguese. `htmlAttrs.lang` is `pt-BR`, and text comparison uses `toLocaleLowerCase("pt-BR")` / accent-stripping via `~/utils/text`.
+- **Language:** code identifiers, file names, data keys, and API fields in English; every user-facing string in Brazilian Portuguese, on both sides of the boundary. `htmlAttrs.lang` is `pt-BR`, and text comparison uses `toLocaleLowerCase("pt-BR")` / accent-stripping via `~/utils/text`.
 - Composition API with `<script setup lang="ts">` everywhere; TypeScript strict with `typeCheck: true` in the Nuxt config, so `vue-tsc` runs alongside `dev` and fails `build`.
+- Ruby is `# frozen_string_literal: true`, standardrb-formatted, and Brakeman-clean.
+- **Rails owns semantics.** Counts, denominators, rates, period boundaries, money, and status transitions are computed server-side; Nuxt formats a typed response. Do not re-derive a metric in the frontend.
 - Prefer Nuxt UI components (`UButton`, form controls, `UApp`) and their built-in accessibility before writing custom controls. Mobile-first, semantic HTML, visible labels and errors, and no status conveyed by color alone.
 - Add an abstraction only after a real second use; keep changes small and purpose-specific.
-- Verification labels and catalog entries (services, Joinville neighborhoods) are controlled values from `data/catalogs.json`, never free-form.
+- Verification labels and catalog entries (services, Joinville neighborhoods) are controlled values seeded from `data/catalogs.json`, never free-form.
 - Everything in `data/*.json` and `public/images/` is synthetic. Do not present it as real people, work, credentials, or endorsements.
+- Privacy is a design constraint: visitor search is anonymous and stored only as aggregates, admin reporting is aggregate-only, and access logs record identifiers rather than content.
 
-## Prototype-specific behavior worth knowing
+## Behavior worth knowing
 
-- The sign-in flow accepts the fixed OTP `123456` (`usePhoneAuthFlow`); phone and name fields are pre-filled with demo values. E2E tests depend on this.
-- `/orcamento/BERUFE-DEMO-1042` is prerendered only so the static prototype is reviewable. `docs/Berufe_MVP_Stories.md` requires the production implementation to serve tokenized quotes dynamically with `no-store` and `noindex`.
+- Non-production SMS OTP uses the fake adapter and the fixed code in `FAKE_SMS_OTP_CODE` (`123456` in `.env.example`). E2E tests depend on this. Every environment except `test` otherwise uses Infobip, with a recipient allowlist outside production.
+- The administrator seed (`ADMIN_AUTH_EMAIL` / `ADMIN_AUTH_PASSWORD`) refuses to run in production.
+- Tokenized quote links (`/orcamento/:token`) are request-time only, `no-store`, and `noindex`, and the page renders without the site layout.
 - Professional onboarding state persists in `localStorage` under `berufe:professional-onboarding:v1` with a `version: 1` field; bump/migrate deliberately if the shape changes.
+- Retention is enforced by scheduled jobs, not by hand: raw anonymous search events are rolled up and deleted after 90 days, aggregates are kept 730 days, and identity evidence is deleted 30 days after a decision.
 
 ## Product docs
 
-Read `docs/` before changing product behavior — the code is downstream of these. `Berufe_MVP_Feature_Plan.md` (scope and value loop), `Berufe_MVP_Stories.md` (acceptance criteria for MVP surfaces), `Berufe_Reports_Stories.md` (admin reporting), `Berufe_MVP_Infrastructure_Architecture.md` (target Rails API + Nuxt split, Compose layout, auth, storage, development standards), `Berufe_V2_Stories.md` (explicitly deferred; identifiers are never reused).
+Read `docs/` before changing product behavior — the code is downstream of these. `Berufe_MVP_Feature_Plan.md` (scope and value loop), `Berufe_MVP_Stories.md` (acceptance criteria for MVP surfaces, `Sxxx`), `Berufe_Reports_Stories.md` (admin reporting, `Rxxx`), `Berufe_MVP_Infrastructure_Architecture.md` (Rails API + Nuxt split, Compose layout, auth, storage, development standards), `Berufe_Increment_*_Implementation_Plan.md` (approved decisions that refine the stories for a given increment; these take precedence where they intentionally differ), `Berufe_V2_Stories.md` (explicitly deferred; identifiers are never reused).
+
+Commits are titled `[Sxxx]: <imperative summary>` for a story, or a plain imperative summary otherwise.
