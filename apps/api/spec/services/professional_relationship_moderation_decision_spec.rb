@@ -24,10 +24,10 @@ RSpec.describe "Professional relationship moderation decisions" do
     )
   end
 
-  it "derives approve, hide, and restore from append-only actions without rewriting acceptance" do
+  it "records approve, hide, and restore on the relationship without rewriting acceptance" do
     decide("approved", request_id: "relationship-approve")
     expect(relationship.reload.status).to eq("accepted")
-    expect(ProfessionalRelationshipModerationState.call(relationship)).to eq("approved")
+    expect(relationship.moderation_status).to eq("approved")
 
     decide(
       "hidden",
@@ -35,11 +35,11 @@ RSpec.describe "Professional relationship moderation decisions" do
       reason: "A relação precisa de uma nova revisão operacional."
     )
     expect(relationship.reload.status).to eq("accepted")
-    expect(ProfessionalRelationshipModerationState.call(relationship)).to eq("hidden")
+    expect(relationship.moderation_status).to eq("hidden")
 
     decide("restored", request_id: "relationship-restore")
     expect(relationship.reload.status).to eq("accepted")
-    expect(ProfessionalRelationshipModerationState.call(relationship)).to eq("approved")
+    expect(relationship.moderation_status).to eq("approved")
     expect(ModerationAction.where(target_id: relationship.id).pluck(:action)).to eq(
       %w[approved hidden restored]
     )
@@ -53,10 +53,18 @@ RSpec.describe "Professional relationship moderation decisions" do
     )
 
     expect(relationship.reload.status).to eq("accepted")
-    expect(ProfessionalRelationshipModerationState.call(relationship)).to eq("rejected")
+    expect(relationship.moderation_status).to eq("rejected")
     expect do
       decide("approved", request_id: "relationship-stale")
     end.to raise_error(ModerationDecision::Conflict)
+
+    retry_request = ProfessionalRelationship.create!(
+      initiator_professional: initiator,
+      recipient_professional: recipient,
+      relationship_type: "recommendation",
+      status: "pending"
+    )
+    expect(retry_request).to be_persisted
 
     pending = ProfessionalRelationship.create!(
       initiator_professional: recipient,

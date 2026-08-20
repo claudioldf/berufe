@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_18_111000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_19_090000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -480,6 +480,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_18_111000) do
     t.text "context_note"
     t.datetime "created_at", null: false
     t.uuid "initiator_professional_id", null: false
+    t.text "moderation_status", default: "pending_review", null: false
     t.uuid "recipient_professional_id", null: false
     t.text "relationship_type", null: false
     t.datetime "responded_at"
@@ -490,8 +491,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_18_111000) do
     t.index ["initiator_professional_id"], name: "index_professional_relationships_on_initiator_professional_id"
     t.index ["recipient_professional_id", "status"], name: "idx_professional_relationships_recipient_status"
     t.index ["recipient_professional_id"], name: "index_professional_relationships_on_recipient_professional_id"
+    t.index ["status", "moderation_status"], name: "idx_professional_relationships_status_moderation"
     t.check_constraint "context_note IS NULL OR char_length(btrim(context_note)) >= 1 AND char_length(btrim(context_note)) <= 300", name: "professional_relationships_context_length"
     t.check_constraint "initiator_professional_id <> recipient_professional_id", name: "professional_relationships_distinct_profiles"
+    t.check_constraint "moderation_status = ANY (ARRAY['pending_review'::text, 'approved'::text, 'rejected'::text, 'hidden'::text])", name: "professional_relationships_known_moderation_status"
     t.check_constraint "relationship_type = ANY (ARRAY['recommendation'::text, 'worked_together'::text])", name: "professional_relationships_known_type"
     t.check_constraint "status = 'pending'::text AND responded_at IS NULL OR (status = ANY (ARRAY['accepted'::text, 'declined'::text])) AND responded_at IS NOT NULL", name: "professional_relationships_response_state"
     t.check_constraint "status = ANY (ARRAY['pending'::text, 'accepted'::text, 'declined'::text])", name: "professional_relationships_known_status"

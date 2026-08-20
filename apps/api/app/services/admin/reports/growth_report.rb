@@ -54,7 +54,9 @@ module Admin
       end
 
       def public_relationship_counts
-        @public_relationship_counts ||= PublicProfessionalRelationshipQuery.call.each_with_object(Hash.new(0)) do |relationship, counts|
+        @public_relationship_counts ||= PublicProfessionalRelationshipQuery.call
+          .where(moderation_status: "approved")
+          .each_with_object(Hash.new(0)) do |relationship, counts|
           counts[relationship.initiator_professional_id] += 1
           counts[relationship.recipient_professional_id] += 1
         end
@@ -333,7 +335,9 @@ module Admin
         cohort = ProfessionalRelationship.where(created_at: period.start_at...period.end_at)
         started = cohort.count
         responded = cohort.where.not(responded_at: nil).count
-        public_ids = PublicProfessionalRelationshipQuery.call.where(id: cohort.select(:id)).pluck(:id)
+        public_ids = PublicProfessionalRelationshipQuery.call
+          .where(id: cohort.select(:id), moderation_status: "approved")
+          .pluck(:id)
         approved = public_ids.length
         {
           funnels: [{

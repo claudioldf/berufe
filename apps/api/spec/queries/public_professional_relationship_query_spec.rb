@@ -14,25 +14,26 @@ RSpec.describe PublicProfessionalRelationshipQuery do
   let(:initiator) { create_published_profile("+5547999997101", "Ana Pública") }
   let(:recipient) { create_published_profile("+5547999997102", "Beto Público") }
 
-  it "returns accepted relationships whose latest moderation action is public for both endpoints" do
+  it "returns recipient-accepted pending and reviewed relationships for both endpoints" do
     relationship = create_relationship
-    moderate(relationship, "approved", at: 2.minutes.ago)
 
     expect(described_class.for_professional(initiator.id)).to contain_exactly(relationship)
     expect(described_class.for_professional(recipient.id)).to contain_exactly(relationship)
 
-    moderate(relationship, "hidden", at: 1.minute.ago, reason: "Conteúdo ocultado para revisão operacional.")
+    moderate(relationship, "approved")
+    expect(described_class.for_professional(initiator.id)).to contain_exactly(relationship)
+
+    moderate(relationship, "hidden", reason: "Conteúdo ocultado para revisão operacional.")
     expect(described_class.for_professional(initiator.id)).to be_empty
 
-    moderate(relationship, "restored", at: Time.current)
+    moderate(relationship, "restored")
     expect(described_class.for_professional(initiator.id)).to contain_exactly(relationship)
   end
 
-  it "excludes unreviewed, pending, and relationships with a non-public endpoint" do
+  it "excludes unanswered relationships and relationships with a non-public endpoint" do
     accepted = create_relationship
-    expect(described_class.call).to be_empty
+    expect(described_class.call).to contain_exactly(accepted)
 
-    moderate(accepted, "approved", at: Time.current)
     recipient.user_account.update!(status: "suspended")
     expect(described_class.call).to be_empty
 
@@ -45,7 +46,6 @@ RSpec.describe PublicProfessionalRelationshipQuery do
     moderate(
       rejected,
       "rejected",
-      at: 3.minutes.ago,
       reason: "O contexto não atende aos critérios de publicação atuais."
     )
     declined = ProfessionalRelationship.create!(
@@ -72,9 +72,70 @@ RSpec.describe PublicProfessionalRelationshipQuery do
     account = UserAccount.create!(phone_e164: phone, role: "professional", status: "active")
     profile = ProfessionalProfile.create!(user_account: account, display_name: name)
     revision = profile.working_revision
+    category = ServiceCategory.find_or_create_by!(slug: "relacionamentos-publicos") do |record|
+      record.name = "Relacionamentos Públicos"
+      record.icon = "i-lucide-wrench"
+      record.is_active = true
+      record.sort_order = 0
+    end
+    service = Service.create!(
+      category:,
+      name: "Serviço #{name}",
+      slug: "servico-#{phone.last(4)}",
+      icon: "i-lucide-wrench",
+      description: "Serviço profissional.",
+      aliases: [],
+      is_active: true,
+      sort_order: 0
+    )
+    revision.professional_profile_services.create!(service:, is_primary: true)
+    revision.professional_profile_service_areas.create!(city_code: "Joinville")
     revision.update!(status: "approved", reviewed_at: Time.current)
-    profile.update!(profile_status: "published", published_revision: revision)
+    photo = create_approved_photo(profile)
+    profile.update!(
+      birthdate: Date.new(1990, 4, 12),
+      profile_status: "published",
+      published_revision: revision,
+      approved_revision: revision,
+      working_photo: photo,
+      published_photo: photo,
+      approved_photo: photo
+    )
     profile
+  end
+
+  def create_approved_photo(profile)
+    upload = MediaUpload.create!(
+      professional_profile: profile,
+      purpose: "profile_photo",
+      state: "attached",
+      declared_content_type: "image/jpeg",
+      declared_byte_size: 100,
+      actual_content_type: "image/jpeg",
+      sanitized_content_type: "image/jpeg",
+      actual_byte_size: 100,
+      sanitized_byte_size: 100,
+      width: 640,
+      height: 960,
+      quarantine_key: "quarantine/#{profile.id}/#{SecureRandom.uuid}",
+      sanitized_key: "sanitized/#{profile.id}/#{SecureRandom.uuid}.jpg",
+      authorization_expires_at: 5.minutes.from_now,
+      uploaded_at: 1.minute.ago,
+      processed_at: Time.current,
+      attached_at: Time.current
+    )
+    profile.profile_photos.create!(
+      media_upload: upload,
+      status: "approved",
+      private_key: upload.sanitized_key,
+      public_key: "moderation/profile_photo/#{SecureRandom.uuid}.jpg",
+      content_type: "image/jpeg",
+      byte_size: 100,
+      width: 640,
+      height: 960,
+      submitted_at: Time.current,
+      reviewed_at: Time.current
+    )
   end
 
   def create_relationship
@@ -87,15 +148,18 @@ RSpec.describe PublicProfessionalRelationshipQuery do
     )
   end
 
-  def moderate(relationship, action, at:, reason: nil)
-    ModerationAction.create!(
-      admin_user: admin,
+  def moderate(relationship, action, reason: nil)
+    ModerationDecision.new(
+      context: AdminActionContext.new(
+        admin_user_id: admin.id,
+        request_id: "relationship-#{action}-#{SecureRandom.hex(4)}"
+      )
+    ).call(
       target_type: "professional_relationship",
       target_id: relationship.id,
       action:,
-      reason:,
-      request_id: "relationship-#{action}-#{SecureRandom.hex(4)}",
-      created_at: at
+      reason:
     )
+    relationship.reload
   end
 end

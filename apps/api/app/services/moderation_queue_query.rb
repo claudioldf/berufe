@@ -123,26 +123,16 @@ class ModerationQueueQuery
   end
 
   def professional_relationships(status)
-    relationships = ProfessionalRelationship
-      .where(status: "accepted")
+    statuses = moderated_statuses(status, ProfessionalRelationship::MODERATION_STATUSES)
+    return [] if statuses.empty?
+
+    ProfessionalRelationship
+      .where(status: "accepted", moderation_status: statuses)
       .includes(
         initiator_professional: %i[published_revision working_revision],
         recipient_professional: %i[published_revision working_revision]
       )
-      .to_a
-    latest_actions = ProfessionalRelationshipModerationState.latest_actions_by_target_id(
-      relationships.map(&:id)
-    )
-
-    relationships.filter_map do |relationship|
-      effective_status = ProfessionalRelationshipModerationState.call(
-        relationship,
-        latest_action: latest_actions[relationship.id]
-      )
-      next unless status == "all" || effective_status == status
-
-      relationship_entry(relationship, effective_status)
-    end
+      .map { |relationship| relationship_entry(relationship, relationship.moderation_status) }
   end
 
   def moderated_statuses(status, allowed)

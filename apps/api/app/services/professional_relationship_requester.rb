@@ -59,7 +59,8 @@ class ProfessionalRelationshipRequester
     return unless ProfessionalRelationship.exists?(
       initiator_professional: initiator,
       recipient_professional: recipient,
-      relationship_type:
+      relationship_type:,
+      moderation_status: %w[pending_review approved hidden]
     )
 
     raise Duplicate

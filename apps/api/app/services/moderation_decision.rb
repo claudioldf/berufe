@@ -201,23 +201,30 @@ class ModerationDecision
     end
   end
 
+  RELATIONSHIP_TRANSITIONS = {
+    "approved" => {from: "pending_review", to: "approved"},
+    "rejected" => {from: "pending_review", to: "rejected"},
+    "hidden" => {from: "approved", to: "hidden"},
+    "restored" => {from: "hidden", to: "approved"}
+  }.freeze
+
   def transition_relationship!(relationship, attributes)
     raise Conflict, "professional relationship is not accepted" unless relationship.status == "accepted"
 
-    latest_action = ProfessionalRelationshipModerationState.latest_action_for(relationship.id)
-    allowed = case attributes[:action]
-    when "approved", "rejected"
-      latest_action.nil?
-    when "hidden"
-      latest_action&.action&.in?(%w[approved restored])
-    when "restored"
-      latest_action&.action == "hidden"
+    transition = RELATIONSHIP_TRANSITIONS[attributes[:action]]
+    unless transition && relationship.moderation_status == transition[:from]
+      raise Conflict, "professional relationship decision is not allowed"
     end
-    raise Conflict, "professional relationship decision is not allowed" unless allowed
+
+    relationship.update!(moderation_status: transition[:to])
   end
 
   def require_status!(actual, expected)
     raise Conflict, "moderation target changed" unless actual == expected
+  end
+
+  def current_photo_id(profile)
+    (profile.profile_status == "published") ? profile.published_photo_id : profile.working_photo_id
   end
 
   def cleanup_created_public_keys(public_keys)
