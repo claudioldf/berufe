@@ -22,6 +22,14 @@ RSpec.describe ProfessionalRelationship do
     )
     expect(duplicate).not_to be_valid
     expect(duplicate.errors[:relationship_type]).to be_present
+
+    relationship.update!(deleted_at: Time.current)
+    replacement = described_class.new(
+      initiator_professional: initiator,
+      recipient_professional: recipient,
+      relationship_type: "recommendation"
+    )
+    expect(replacement).to be_valid
   end
 
   it "rejects self relationships and inconsistent response state" do

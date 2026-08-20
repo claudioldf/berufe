@@ -56,7 +56,7 @@ class ProfessionalRelationshipRequester
   end
 
   def ensure_not_duplicate!(initiator, recipient, relationship_type)
-    return unless ProfessionalRelationship.exists?(
+    return unless ProfessionalRelationship.active.exists?(
       initiator_professional: initiator,
       recipient_professional: recipient,
       relationship_type:

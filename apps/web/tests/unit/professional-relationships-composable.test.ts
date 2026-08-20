@@ -13,11 +13,15 @@ const relationship: ProfessionalRelationship = {
     id: "f39d4810-f28d-4977-b5e5-387131d12942",
     publicSlug: "ana-souza",
     displayName: "Ana Souza",
+    photoUrl: null,
+    profileAvailable: false,
   },
   recipient: {
     id: "2cc1bdc4-e2d1-452b-8e76-241931a32bc9",
     publicSlug: "beto-lima",
     displayName: "Beto Lima",
+    photoUrl: null,
+    profileAvailable: false,
   },
 };
 

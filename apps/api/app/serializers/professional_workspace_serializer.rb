@@ -9,6 +9,7 @@ class ProfessionalWorkspaceSerializer
     {
       dashboard: serialized_dashboard,
       pending_relationships: serialized_pending_relationships,
+      relationships: serialized_relationships,
       profile: {
         id: profile.id,
         public_slug: profile.public_slug,
@@ -54,12 +55,28 @@ class ProfessionalWorkspaceSerializer
 
   def serialized_pending_relationships
     profile.received_relationships
+      .active
       .where(status: "pending")
       .includes(
-        initiator_professional: %i[working_revision published_revision],
-        recipient_professional: %i[working_revision published_revision]
+        initiator_professional: %i[user_account working_revision published_revision published_photo],
+        recipient_professional: %i[user_account working_revision published_revision published_photo]
       )
       .order(created_at: :asc, id: :asc)
+      .map { |relationship| ProfessionalRelationshipSerializer.new(relationship).as_json }
+  end
+
+  def serialized_relationships
+    ProfessionalRelationship.active
+      .where(status: %w[pending accepted])
+      .where(
+        "initiator_professional_id = :id OR recipient_professional_id = :id",
+        id: profile.id
+      )
+      .includes(
+        initiator_professional: %i[user_account working_revision published_revision published_photo],
+        recipient_professional: %i[user_account working_revision published_revision published_photo]
+      )
+      .order(created_at: :desc, id: :desc)
       .map { |relationship| ProfessionalRelationshipSerializer.new(relationship).as_json }
   end
 

@@ -1180,6 +1180,59 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/professional/relationships/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Opaque server-generated professional relationship identifier.
+        schema:
+          type: string
+          format: uuid
+    delete:
+      operationId: deleteProfessionalRelationship
+      summary: Remove an accepted relationship or cancel an outbound pending request
+      tags:
+        - Professional relationships
+      security:
+        - applicationSession: []
+      responses:
+        "200":
+          description: The active relationship was removed and the refreshed owner workspace is returned.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfessionalWorkspaceResponse"
+        "401":
+          description: An active Rails application session is required.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: The exact browser origin or professional ownership is invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: The relationship is not active or cannot be removed by this professional.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/professional/relationships/{id}/response:
     parameters:
       - name: id
@@ -3064,10 +3117,15 @@ components:
         - dashboard
         - profile
         - pending_relationships
+        - relationships
       properties:
         dashboard:
           $ref: "#/components/schemas/ProfessionalDashboardSummary"
         pending_relationships:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProfessionalRelationshipSummary"
+        relationships:
           type: array
           items:
             $ref: "#/components/schemas/ProfessionalRelationshipSummary"
@@ -3728,6 +3786,8 @@ components:
         - id
         - public_slug
         - display_name
+        - photo_url
+        - profile_available
       properties:
         id:
           type: string
@@ -3740,6 +3800,13 @@ components:
           type: string
           minLength: 3
           maxLength: 70
+        photo_url:
+          type:
+            - string
+            - "null"
+          format: uri
+        profile_available:
+          type: boolean
     ProfessionalWorkspacePhoto:
       type: object
       additionalProperties: false

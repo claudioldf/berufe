@@ -41,11 +41,12 @@ RSpec.describe "Professional relationship requests", type: :request, openapi: tr
       "context_note" => "Executamos uma reforma juntos.",
       "status" => "pending",
       "responded_at" => nil,
-      "recipient" => {
+      "recipient" => hash_including(
         "id" => recipient.id,
         "public_slug" => recipient.public_slug,
-        "display_name" => "Beto Publicado"
-      }
+        "display_name" => "Beto Publicado",
+        "profile_available" => true
+      )
     )
     expect(response.body).not_to include(recipient.user_account.phone_e164)
     expect(ProfessionalDailyActivity.sole).to have_attributes(
@@ -136,6 +137,26 @@ RSpec.describe "Professional relationship requests", type: :request, openapi: tr
       as: :json
     expect(response).to have_http_status(:forbidden)
     assert_api_conform(status: 403)
+
+    relationship = create_pending_relationship
+    delete "/api/v1/professional/relationships/#{relationship.id}",
+      headers: {
+        "X-Request-Id" => "relationship-delete-anonymous",
+        "Origin" => ENV.fetch("WEB_ORIGIN")
+      },
+      as: :json
+    expect(response).to have_http_status(:unauthorized)
+    assert_api_conform(status: 401)
+
+    delete "/api/v1/professional/relationships/#{relationship.id}",
+      headers: session_headers(
+        request_id: "relationship-delete-origin",
+        origin: "https://untrusted.example"
+      ),
+      as: :json
+    expect(response).to have_http_status(:forbidden)
+    expect(relationship.reload.deleted_at).to be_nil
+    assert_api_conform(status: 403)
   end
 
   it "lets only the recipient accept once and records the response activity" do
@@ -200,6 +221,66 @@ RSpec.describe "Professional relationship requests", type: :request, openapi: tr
     expect(relationship.reload.status).to eq("declined")
     expect(PublicProfessionalRelationshipQuery.for_professional(recipient.id)).to be_empty
     assert_api_conform(status: 200)
+  end
+
+  it "lets either party remove an accepted relationship and request it again" do
+    relationship = create_pending_relationship
+    relationship.update!(status: "accepted", responded_at: Time.current)
+    publish_profile!(initiator)
+
+    delete "/api/v1/professional/relationships/#{relationship.id}",
+      headers: session_headers(request_id: "relationship-remove", origin: true)
+
+    expect(response).to have_http_status(:ok)
+    expect(relationship.reload.deleted_at).to be_present
+    expect(response.parsed_body.dig("data", "relationships")).to be_empty
+    expect(PublicProfessionalRelationshipQuery.for_professional(initiator.id)).to be_empty
+    expect(ProfessionalDailyActivity.find_by!(professional: initiator).relationship_interactions).to eq(1)
+    assert_api_conform(status: 200)
+
+    replacement = ProfessionalRelationshipRequester.new.call(
+      initiator:,
+      recipient_professional_id: recipient.id,
+      relationship_type: relationship.relationship_type,
+      context_note: "Voltamos a trabalhar juntos."
+    )
+    expect(replacement).to have_attributes(status: "pending", deleted_at: nil)
+
+    recipient_owned = create_pending_relationship(relationship_type: "worked_together")
+    recipient_owned.update!(status: "accepted", responded_at: Time.current)
+    delete "/api/v1/professional/relationships/#{recipient_owned.id}",
+      headers: session_headers(
+        request_id: "relationship-remove-recipient",
+        origin: true,
+        token: recipient_session_token
+      )
+
+    expect(response).to have_http_status(:ok)
+    expect(recipient_owned.reload.deleted_at).to be_present
+    assert_api_conform(status: 200)
+  end
+
+  it "lets the initiator cancel a pending request but not the recipient" do
+    cancellable = create_pending_relationship
+
+    delete "/api/v1/professional/relationships/#{cancellable.id}",
+      headers: session_headers(request_id: "relationship-cancel", origin: true)
+
+    expect(response).to have_http_status(:ok)
+    expect(cancellable.reload.deleted_at).to be_present
+    assert_api_conform(status: 200)
+
+    recipient_pending = create_pending_relationship(relationship_type: "worked_together")
+    delete "/api/v1/professional/relationships/#{recipient_pending.id}",
+      headers: session_headers(
+        request_id: "relationship-recipient-cancel",
+        origin: true,
+        token: recipient_session_token
+      )
+
+    expect(response).to have_http_status(:not_found)
+    expect(recipient_pending.reload.deleted_at).to be_nil
+    assert_api_conform(status: 404)
   end
 
   it "does not let the initiator or an anonymous session respond" do

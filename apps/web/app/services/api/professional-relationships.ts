@@ -29,11 +29,15 @@ interface ContractRelationship {
     id: string;
     public_slug: string;
     display_name: string;
+    photo_url: string | null;
+    profile_available: boolean;
   };
   recipient: {
     id: string;
     public_slug: string;
     display_name: string;
+    photo_url: string | null;
+    profile_available: boolean;
   };
 }
 
@@ -51,11 +55,15 @@ export function mapProfessionalRelationship(
       id: relationship.initiator.id,
       publicSlug: relationship.initiator.public_slug,
       displayName: relationship.initiator.display_name,
+      photoUrl: relationship.initiator.photo_url,
+      profileAvailable: relationship.initiator.profile_available,
     },
     recipient: {
       id: relationship.recipient.id,
       publicSlug: relationship.recipient.public_slug,
       displayName: relationship.recipient.display_name,
+      photoUrl: relationship.recipient.photo_url,
+      profileAvailable: relationship.recipient.profile_available,
     },
   };
 }

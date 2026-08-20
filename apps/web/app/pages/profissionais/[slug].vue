@@ -181,6 +181,7 @@ function openRelationshipRequest() {
 async function submitRelationship(input: ProfessionalRelationshipRequestInput) {
   try {
     await requestRelationship(input);
+    clearNuxtData("professional-workspace");
     relationshipOpen.value = false;
     showToast({
       title: "Solicitação enviada",

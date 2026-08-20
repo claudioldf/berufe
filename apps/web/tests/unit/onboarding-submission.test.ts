@@ -19,6 +19,7 @@ function completeWorkspace(): ProfessionalWorkspace {
       recentQuotes: [],
     },
     pendingRelationships: [],
+    relationships: [],
     profile: {
       id: "23a94f5e-1429-4ec7-bbc4-a6f805d5182d",
       publicSlug: "ana-souza",

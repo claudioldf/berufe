@@ -44,6 +44,14 @@ RSpec.describe PublicProfessionalRelationshipQuery do
     expect([declined, pending]).to all(be_persisted)
   end
 
+  it "excludes removed relationships while preserving their history" do
+    relationship = create_relationship
+    relationship.update!(deleted_at: Time.current)
+
+    expect(described_class.call).to be_empty
+    expect(ProfessionalRelationship.find(relationship.id)).to eq(relationship)
+  end
+
   private
 
   def create_published_profile(phone, name)

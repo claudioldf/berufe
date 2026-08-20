@@ -24,10 +24,15 @@ class ProfessionalRelationshipSerializer
 
   def profile_summary(profile)
     display_revision = profile.published_revision || profile.working_revision
+    profile_available = profile.publicly_available?
     {
       id: profile.id,
       public_slug: profile.public_slug,
-      display_name: display_revision.display_name
+      display_name: display_revision.display_name,
+      photo_url: if profile_available && profile.published_photo
+                   PublicProfilePhotoImageUrl.call(profile.published_photo)
+                 end,
+      profile_available:
     }
   end
 end

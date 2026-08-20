@@ -45,6 +45,7 @@ export function mapProfessionalWorkspace(
     pendingRelationships: data.pending_relationships.map(
       mapProfessionalRelationship,
     ),
+    relationships: data.relationships.map(mapProfessionalRelationship),
     profile: {
       id: data.profile.id,
       publicSlug: data.profile.public_slug,
@@ -301,6 +302,19 @@ export async function deleteProfessionalPortfolioItem(
 ): Promise<ProfessionalWorkspace> {
   const { data, error, response } = await client.DELETE(
     "/api/v1/professional/portfolio-items/{id}",
+    { params: { path: { id } } },
+  );
+  if (error || !data) throw requestError(error, response);
+
+  return mapProfessionalWorkspace(data.data);
+}
+
+export async function deleteProfessionalRelationship(
+  client: BerufeApiClient,
+  id: string,
+): Promise<ProfessionalWorkspace> {
+  const { data, error, response } = await client.DELETE(
+    "/api/v1/professional/relationships/{id}",
     { params: { path: { id } } },
   );
   if (error || !data) throw requestError(error, response);

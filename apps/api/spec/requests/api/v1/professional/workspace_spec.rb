@@ -39,6 +39,7 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
           "recent_quotes" => []
         },
         "pending_relationships" => [],
+        "relationships" => [],
         "profile" => {
           "id" => profile.id,
           "public_slug" => "ana-souza",
@@ -87,7 +88,7 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
     end
   end
 
-  it "returns only inbound pending relationships in deterministic order" do
+  it "returns inbound pending alerts and active relationships in both directions" do
     older_initiator = create_relationship_initiator("+5547999981201", "Beto Antigo")
     newer_initiator = create_relationship_initiator("+5547999981202", "Caio Novo")
     older = ProfessionalRelationship.create!(
@@ -103,17 +104,30 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
       context_note: "Atuamos juntos em uma obra.",
       created_at: 1.day.ago
     )
-    ProfessionalRelationship.create!(
+    outbound = ProfessionalRelationship.create!(
       initiator_professional: profile,
       recipient_professional: newer_initiator,
       relationship_type: "recommendation"
     )
-    ProfessionalRelationship.create!(
+    declined = ProfessionalRelationship.create!(
       initiator_professional: older_initiator,
       recipient_professional: profile,
       relationship_type: "worked_together",
       status: "declined",
       responded_at: Time.current
+    )
+    accepted = ProfessionalRelationship.create!(
+      initiator_professional: profile,
+      recipient_professional: older_initiator,
+      relationship_type: "worked_together",
+      status: "accepted",
+      responded_at: Time.current
+    )
+    removed = ProfessionalRelationship.create!(
+      initiator_professional: newer_initiator,
+      recipient_professional: profile,
+      relationship_type: "recommendation",
+      deleted_at: Time.current
     )
 
     get "/api/v1/professional/workspace", headers: session_headers(request_id: "workspace-relationships")
@@ -126,6 +140,20 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
       "relationship_type" => "worked_together",
       "context_note" => "Atuamos juntos em uma obra.",
       "initiator" => hash_including("display_name" => "Caio Novo")
+    )
+    expect(response.parsed_body.dig("data", "relationships").pluck("id")).to contain_exactly(
+      older.id, newer.id, outbound.id, accepted.id
+    )
+    expect(response.parsed_body.dig("data", "relationships").pluck("id")).not_to include(
+      declined.id, removed.id
+    )
+    other_party = response.parsed_body.dig("data", "relationships").find do |relationship|
+      relationship["id"] == outbound.id
+    end.fetch("recipient")
+    expect(other_party).to include(
+      "display_name" => "Caio Novo",
+      "photo_url" => nil,
+      "profile_available" => false
     )
     assert_api_conform(status: 200)
   end

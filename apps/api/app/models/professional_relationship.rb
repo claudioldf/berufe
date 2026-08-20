@@ -7,11 +7,16 @@ class ProfessionalRelationship < ApplicationRecord
   belongs_to :initiator_professional, class_name: "ProfessionalProfile"
   belongs_to :recipient_professional, class_name: "ProfessionalProfile"
 
+  scope :active, -> { where(deleted_at: nil) }
+
   validates :relationship_type, inclusion: {in: TYPES}
   validates :status, inclusion: {in: STATUSES}
   validates :context_note, length: {in: 1..300}, allow_nil: true
   validates :relationship_type,
-    uniqueness: {scope: %i[initiator_professional_id recipient_professional_id]}
+    uniqueness: {
+      scope: %i[initiator_professional_id recipient_professional_id],
+      conditions: -> { where(deleted_at: nil) }
+    }
   validate :profiles_are_distinct
   validate :response_matches_status
 

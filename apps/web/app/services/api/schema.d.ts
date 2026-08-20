@@ -473,6 +473,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/professional/relationships/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Opaque server-generated professional relationship identifier. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove an accepted relationship or cancel an outbound pending request */
+        delete: operations["deleteProfessionalRelationship"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/professional/relationships/{id}/response": {
         parameters: {
             query?: never;
@@ -1058,6 +1078,7 @@ export interface components {
         ProfessionalWorkspaceData: {
             dashboard: components["schemas"]["ProfessionalDashboardSummary"];
             pending_relationships: components["schemas"]["ProfessionalRelationshipSummary"][];
+            relationships: components["schemas"]["ProfessionalRelationshipSummary"][];
             profile: components["schemas"]["ProfessionalWorkspaceProfile"];
         };
         ProfessionalDashboardSummary: {
@@ -1261,6 +1282,9 @@ export interface components {
             id: string;
             public_slug: string;
             display_name: string;
+            /** Format: uri */
+            photo_url: string | null;
+            profile_available: boolean;
         };
         ProfessionalWorkspacePhoto: {
             current: components["schemas"]["ProfessionalProfilePhotoSummary"] | null;
@@ -3097,6 +3121,60 @@ export interface operations {
             };
             /** @description The relationship type, recipient, or optional context note is invalid. */
             422: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    deleteProfessionalRelationship: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Opaque server-generated professional relationship identifier. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The active relationship was removed and the refreshed owner workspace is returned. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalWorkspaceResponse"];
+                };
+            };
+            /** @description An active Rails application session is required. */
+            401: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The exact browser origin or professional ownership is invalid. */
+            403: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The relationship is not active or cannot be removed by this professional. */
+            404: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;

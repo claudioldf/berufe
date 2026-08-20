@@ -39,7 +39,7 @@ module Api
 
         def respond
           recipient = owned_profile!
-          relationship = recipient.received_relationships.find(params[:id])
+          relationship = recipient.received_relationships.active.find(params[:id])
           relationship = ProfessionalRelationshipResponder.new.call(
             relationship:,
             recipient:,
@@ -64,6 +64,20 @@ module Api
           )
         end
 
+        def destroy
+          profile = owned_profile!
+          relationship = ProfessionalRelationship.active
+            .where(
+              "initiator_professional_id = :id OR recipient_professional_id = :id",
+              id: profile.id
+            )
+            .find(params[:id])
+          ProfessionalRelationshipRemover.new.call(relationship:, professional: profile)
+          render json: workspace_response(profile.reload)
+        rescue ProfessionalRelationshipRemover::NotRemovable
+          raise ActiveRecord::RecordNotFound
+        end
+
         private
 
         def relationship_params
@@ -80,6 +94,13 @@ module Api
 
           authorize profile, :update?
           profile
+        end
+
+        def workspace_response(profile)
+          {
+            data: ProfessionalWorkspaceSerializer.new(profile),
+            request_id: Current.request_id
+          }
         end
       end
     end

@@ -8,6 +8,7 @@ import type {
 import { useCatalogs } from "~/composables/useCatalogs";
 import { useToast } from "~/composables/useToast";
 import { ApiRequestError } from "~/services/api/errors";
+import type { ProfessionalRelationshipResponse } from "~/services/api/professional-relationships";
 
 const route = useRoute();
 const router = useRouter();
@@ -37,6 +38,11 @@ const {
   verificationSaving,
   verificationError,
   createVerificationRequest,
+  relationshipRespondingId,
+  relationshipRemovingId,
+  relationshipError,
+  respondToRelationship,
+  removeRelationship,
 } = await useProfessionalWorkspace();
 if (workspaceError.value || !workspace.value) {
   throw createError({
@@ -105,6 +111,7 @@ const statusLabel = computed(() => {
 const tabs = [
   { id: "dados", label: "Dados do perfil", icon: "i-lucide-user-round" },
   { id: "portfolio", label: "Portfólio", icon: "i-lucide-images" },
+  { id: "relacoes", label: "Relações", icon: "i-lucide-handshake" },
   { id: "verificacoes", label: "Verificações", icon: "i-lucide-shield-check" },
 ];
 const activeTab = computed(() =>
@@ -244,6 +251,46 @@ async function handleVerificationSubmission(
     });
   }
 }
+
+async function handleRelationshipResponse(
+  id: string,
+  response: ProfessionalRelationshipResponse,
+) {
+  try {
+    await respondToRelationship(id, response);
+    showToast({
+      title:
+        response === "accepted"
+          ? "Colaboração confirmada"
+          : "Solicitação recusada",
+      description:
+        response === "accepted"
+          ? "A relação já pode aparecer nos perfis públicos."
+          : "Essa relação continuará privada.",
+    });
+  } catch {
+    // The relationship manager keeps the normalized API error visible.
+  }
+}
+
+async function handleRelationshipRemove(id: string) {
+  const relationship = workspace.value?.relationships.find(
+    (current) => current.id === id,
+  );
+  const cancelling = relationship?.status === "pending";
+
+  try {
+    await removeRelationship(id);
+    showToast({
+      title: cancelling ? "Solicitação cancelada" : "Relação removida",
+      description: cancelling
+        ? "Você poderá enviar uma nova solicitação no futuro."
+        : "A relação não aparece mais nos perfis públicos.",
+    });
+  } catch {
+    // The relationship manager keeps the normalized API error visible.
+  }
+}
 </script>
 
 <template>
@@ -280,9 +327,15 @@ async function handleVerificationSubmission(
           @click="selectTab(tab.id)"
         >
           <UIcon :name="tab.icon" />{{ tab.label
-          }}<span v-if="tab.id === 'portfolio'" class="workspace-tabs__count">{{
-            workspace?.profile.portfolioItems.length ?? 0
-          }}</span>
+          }}<span
+            v-if="tab.id === 'portfolio' || tab.id === 'relacoes'"
+            class="workspace-tabs__count"
+            >{{
+              tab.id === "portfolio"
+                ? (workspace?.profile.portfolioItems.length ?? 0)
+                : (workspace?.relationships.length ?? 0)
+            }}</span
+          >
         </button>
       </nav>
       <DashboardProfileEditor
@@ -305,6 +358,16 @@ async function handleVerificationSubmission(
         :submitting="portfolioSaving"
         @added="handlePortfolioAdd"
         @removed="handlePortfolioRemove"
+      />
+      <DashboardRelationshipManager
+        v-else-if="activeTab === 'relacoes'"
+        :relationships="workspace?.relationships ?? []"
+        :owner-id="workspace?.profile.id ?? ''"
+        :responding-id="relationshipRespondingId"
+        :removing-id="relationshipRemovingId"
+        :error="relationshipError"
+        @respond="handleRelationshipResponse"
+        @remove="handleRelationshipRemove"
       />
       <DashboardVerificationPanel
         v-else

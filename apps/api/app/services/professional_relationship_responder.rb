@@ -22,6 +22,7 @@ class ProfessionalRelationshipResponder
 
     ProfessionalRelationship.transaction do
       relationship.lock!
+      raise ActiveRecord::RecordNotFound if relationship.deleted_at?
       raise ActiveRecord::RecordNotFound unless relationship.recipient_professional_id == recipient.id
       raise Conflict unless relationship.status == "pending"
 
