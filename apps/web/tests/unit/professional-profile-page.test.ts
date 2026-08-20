@@ -1,4 +1,5 @@
 import { mountSuspended } from "@nuxt/test-utils/runtime";
+import { flushPromises } from "@vue/test-utils";
 import { ref, shallowRef } from "vue";
 import professionalsData from "@data/professionals.json";
 import ProfessionalProfilePage from "@app/pages/app/professional/profile.vue";
@@ -72,6 +73,7 @@ function workspace() {
         recentQuotes: [],
       },
       pendingRelationships: [],
+      relationships: [],
       profile: {
         id: "2cc1bdc4-e2d1-452b-8e76-241931a32bc9",
         publicSlug: "beto-lima",
@@ -126,6 +128,11 @@ function workspace() {
     verificationSaving: shallowRef(false),
     verificationError: shallowRef(""),
     createVerificationRequest: vi.fn(),
+    relationshipRespondingId: shallowRef<string | null>(null),
+    relationshipRemovingId: shallowRef<string | null>(null),
+    relationshipError: shallowRef(""),
+    respondToRelationship: vi.fn(),
+    removeRelationship: vi.fn(),
   };
 }
 
@@ -169,5 +176,70 @@ describe("professional profile editor page", () => {
     }
     expect(JSON.stringify(professional)).not.toContain(fixture.name as string);
     expect(wrapper.html()).not.toContain(fixture.name as string);
+  });
+
+  it("opens the URL-backed relationships tab and delegates relationship mutations", async () => {
+    const currentWorkspace = workspace();
+    currentWorkspace.data.value.relationships = [
+      {
+        id: "d25c64fa-3e6a-4e56-adc9-85bdac0045cb",
+        relationshipType: "recommendation",
+        contextNote: "Executamos uma reforma juntos.",
+        status: "accepted",
+        createdAt: "2026-08-17T12:00:00Z",
+        respondedAt: "2026-08-18T12:00:00Z",
+        initiator: {
+          id: currentWorkspace.data.value.profile.id,
+          publicSlug: "beto-lima",
+          displayName: "Beto Lima",
+          photoUrl: null,
+          profileAvailable: true,
+        },
+        recipient: {
+          id: "f39d4810-f28d-4977-b5e5-387131d12942",
+          publicSlug: "ana-souza",
+          displayName: "Ana Souza",
+          photoUrl: null,
+          profileAvailable: true,
+        },
+      },
+    ];
+    mocks.useWorkspace.mockResolvedValue(currentWorkspace);
+
+    const wrapper = await mountSuspended(ProfessionalProfilePage, {
+      shallow: true,
+      global: { renderStubDefaultSlot: true },
+    });
+
+    await useRouter().replace("/?tab=relacoes");
+    await flushPromises();
+
+    const manager = wrapper.getComponent({
+      name: "DashboardRelationshipManager",
+    });
+    expect(manager.props("relationships")).toHaveLength(1);
+    expect(manager.props("ownerId")).toBe(
+      currentWorkspace.data.value.profile.id,
+    );
+
+    manager.vm.$emit(
+      "respond",
+      "d25c64fa-3e6a-4e56-adc9-85bdac0045cb",
+      "accepted",
+    );
+    await flushPromises();
+    expect(currentWorkspace.respondToRelationship).toHaveBeenCalledWith(
+      "d25c64fa-3e6a-4e56-adc9-85bdac0045cb",
+      "accepted",
+    );
+
+    manager.vm.$emit("remove", "d25c64fa-3e6a-4e56-adc9-85bdac0045cb");
+    await flushPromises();
+    expect(currentWorkspace.removeRelationship).toHaveBeenCalledWith(
+      "d25c64fa-3e6a-4e56-adc9-85bdac0045cb",
+    );
+    expect(mocks.showToast).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Relação removida" }),
+    );
   });
 });

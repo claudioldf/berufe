@@ -4,6 +4,7 @@ import {
   attachProfessionalProfilePhoto,
   attachProfessionalPortfolioItem,
   deleteProfessionalPortfolioItem,
+  deleteProfessionalRelationship,
   attachProfessionalVerificationRequest,
   mapProfessionalWorkspace,
   submitProfessionalProfile,
@@ -30,6 +31,7 @@ const workspaceData: WorkspaceData = {
     recent_quotes: [],
   },
   pending_relationships: [],
+  relationships: [],
   profile: {
     id: "23a94f5e-1429-4ec7-bbc4-a6f805d5182d",
     public_slug: "ana-souza",
@@ -99,6 +101,7 @@ describe("professional workspace API", () => {
         recentQuotes: [],
       },
       pendingRelationships: [],
+      relationships: [],
       profile: {
         id: workspaceData.profile.id,
         publicSlug: "ana-souza",
@@ -168,11 +171,15 @@ describe("professional workspace API", () => {
         id: "f39d4810-f28d-4977-b5e5-387131d12942",
         public_slug: "ana-souza",
         display_name: "Ana Souza",
+        photo_url: null,
+        profile_available: false,
       },
       recipient: {
         id: workspaceData.profile.id,
         public_slug: "beto-lima",
         display_name: "Beto Lima",
+        photo_url: null,
+        profile_available: false,
       },
     };
 
@@ -193,11 +200,15 @@ describe("professional workspace API", () => {
           id: pending.initiator.id,
           publicSlug: "ana-souza",
           displayName: "Ana Souza",
+          photoUrl: null,
+          profileAvailable: false,
         },
         recipient: {
           id: pending.recipient.id,
           publicSlug: "beto-lima",
           displayName: "Beto Lima",
+          photoUrl: null,
+          profileAvailable: false,
         },
       },
     ]);
@@ -266,6 +277,29 @@ describe("professional workspace API", () => {
       {
         params: {
           path: { id: "22d12a91-582e-4f1b-aa6b-49b5fd7ce1eb" },
+        },
+      },
+    );
+  });
+
+  it("removes a professional relationship and maps the refreshed workspace", async () => {
+    const client = apiClientReturning("DELETE", {
+      data: { data: workspaceData, request_id: "relationship-delete" },
+      error: undefined,
+      response: new Response(null),
+    });
+
+    await expect(
+      deleteProfessionalRelationship(
+        client,
+        "d25c64fa-3e6a-4e56-adc9-85bdac0045cb",
+      ),
+    ).resolves.toEqual(mapProfessionalWorkspace(workspaceData));
+    expect(client.DELETE).toHaveBeenCalledWith(
+      "/api/v1/professional/relationships/{id}",
+      {
+        params: {
+          path: { id: "d25c64fa-3e6a-4e56-adc9-85bdac0045cb" },
         },
       },
     );

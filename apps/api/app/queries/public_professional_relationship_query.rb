@@ -3,6 +3,7 @@
 class PublicProfessionalRelationshipQuery
   def self.call
     ProfessionalRelationship
+      .active
       .where(status: "accepted")
       .where(party_is_public_sql("initiator_professional_id"))
       .where(party_is_public_sql("recipient_professional_id"))

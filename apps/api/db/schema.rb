@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_20_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_20_110000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -484,13 +484,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_20_100000) do
   create_table "professional_relationships", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.text "context_note"
     t.datetime "created_at", null: false
+    t.datetime "deleted_at"
     t.uuid "initiator_professional_id", null: false
     t.uuid "recipient_professional_id", null: false
     t.text "relationship_type", null: false
     t.datetime "responded_at"
     t.text "status", default: "pending", null: false
     t.datetime "updated_at", null: false
-    t.index ["initiator_professional_id", "recipient_professional_id", "relationship_type"], name: "idx_professional_relationships_unique_direction", unique: true
+    t.index ["initiator_professional_id", "recipient_professional_id", "relationship_type"], name: "idx_professional_relationships_unique_direction", unique: true, where: "(deleted_at IS NULL)"
     t.index ["initiator_professional_id", "status"], name: "idx_professional_relationships_initiator_status"
     t.index ["initiator_professional_id"], name: "index_professional_relationships_on_initiator_professional_id"
     t.index ["recipient_professional_id", "status"], name: "idx_professional_relationships_recipient_status"

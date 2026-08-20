@@ -3,6 +3,7 @@ import {
   attachProfessionalProfilePhoto,
   attachProfessionalPortfolioItem,
   deleteProfessionalPortfolioItem,
+  deleteProfessionalRelationship,
   attachProfessionalVerificationRequest,
   submitProfessionalProfile,
   updateProfessionalIdentity,
@@ -19,6 +20,7 @@ import type {
   Neighborhood,
   PortfolioItemDraft,
   ProfessionalProfileDraft,
+  ProfessionalRelationship,
   Service,
 } from "~/types";
 import { useApiClient } from "~/services/api/client";
@@ -42,7 +44,19 @@ export async function useProfessionalWorkspace() {
   const submissionSaving = shallowRef(false);
   const submissionError = shallowRef("");
   const relationshipRespondingId = shallowRef<string | null>(null);
+  const relationshipRemovingId = shallowRef<string | null>(null);
   const relationshipError = shallowRef("");
+
+  function invalidatePublicRelationshipProfiles(
+    relationship: ProfessionalRelationship,
+  ) {
+    clearNuxtData(
+      `public-professional-profile-${relationship.initiator.publicSlug}`,
+    );
+    clearNuxtData(
+      `public-professional-profile-${relationship.recipient.publicSlug}`,
+    );
+  }
 
   function reflectPhotoUpload(upload: MediaUpload) {
     if (!workspace.data.value) return;
@@ -260,7 +274,8 @@ export async function useProfessionalWorkspace() {
     id: string,
     response: ProfessionalRelationshipResponse,
   ) {
-    if (relationshipRespondingId.value) return undefined;
+    if (relationshipRespondingId.value || relationshipRemovingId.value)
+      return undefined;
 
     relationshipRespondingId.value = id;
     relationshipError.value = "";
@@ -275,7 +290,16 @@ export async function useProfessionalWorkspace() {
           workspace.data.value.pendingRelationships.filter(
             (pending) => pending.id !== id,
           );
+        workspace.data.value.relationships =
+          relationship.status === "accepted"
+            ? workspace.data.value.relationships.map((current) =>
+                current.id === id ? relationship : current,
+              )
+            : workspace.data.value.relationships.filter(
+                (current) => current.id !== id,
+              );
       }
+      invalidatePublicRelationshipProfiles(relationship);
       return relationship;
     } catch (error) {
       relationshipError.value =
@@ -285,6 +309,31 @@ export async function useProfessionalWorkspace() {
       throw error;
     } finally {
       relationshipRespondingId.value = null;
+    }
+  }
+
+  async function removeRelationship(id: string) {
+    if (relationshipRespondingId.value || relationshipRemovingId.value)
+      return workspace.data.value;
+
+    relationshipRemovingId.value = id;
+    relationshipError.value = "";
+    const relationship = workspace.data.value?.relationships.find(
+      (current) => current.id === id,
+    );
+    try {
+      const updated = await deleteProfessionalRelationship(client, id);
+      workspace.data.value = updated;
+      if (relationship) invalidatePublicRelationshipProfiles(relationship);
+      return updated;
+    } catch (error) {
+      relationshipError.value =
+        error instanceof ApiRequestError
+          ? error.message
+          : "Não foi possível remover a relação agora. Tente novamente.";
+      throw error;
+    } finally {
+      relationshipRemovingId.value = null;
     }
   }
 
@@ -308,7 +357,9 @@ export async function useProfessionalWorkspace() {
     submissionError,
     submitProfile,
     relationshipRespondingId,
+    relationshipRemovingId,
     relationshipError,
     respondToRelationship,
+    removeRelationship,
   };
 }

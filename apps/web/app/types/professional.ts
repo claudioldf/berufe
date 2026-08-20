@@ -191,6 +191,8 @@ export interface ProfessionalRelationshipParty {
   id: string;
   publicSlug: string;
   displayName: string;
+  photoUrl: string | null;
+  profileAvailable: boolean;
 }
 
 export interface ProfessionalRelationship {
@@ -285,6 +287,7 @@ export interface ProfessionalWorkspace {
     }>;
   };
   pendingRelationships: ProfessionalRelationship[];
+  relationships: ProfessionalRelationship[];
   profile: {
     id: string;
     publicSlug: string;
