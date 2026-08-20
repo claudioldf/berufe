@@ -1,4 +1,15 @@
+import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+
+// Compose and CI supply the environment directly; a host-run `pnpm dev`, `pnpm
+// build`, or `pnpm test` would otherwise see none of it, because the only
+// `.env` lives at the repository root and Nuxt reads `.env` from this
+// directory. Already-set variables win, so Compose and CI stay authoritative.
+const repositoryEnvFile = fileURLToPath(new URL("../../.env", import.meta.url));
+if (existsSync(repositoryEnvFile)) {
+  process.loadEnvFile(repositoryEnvFile);
+}
+
 const browserSecurityHeaders = {
   "x-content-type-options": "nosniff",
   "x-frame-options": "DENY",
