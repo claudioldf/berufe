@@ -80,6 +80,7 @@ export interface Professional {
   relationships: Relationship[];
   updatedAt: string;
   whatsapp: string;
+  birthdate: string;
   instagram?: string;
   youtube?: string;
 }
@@ -201,6 +202,7 @@ export interface ProfessionalRelationship {
 
 export interface ProfessionalProfileDraft {
   name: string;
+  birthdate: string;
   headline: string;
   bio: string;
   yearsExperience: number;
@@ -283,6 +285,9 @@ export interface ProfessionalWorkspace {
     id: string;
     publicSlug: string;
     status: ProfessionalProfileStatus;
+    isPublic: boolean;
+    isSearchEligible: boolean;
+    publicationBlockers: Array<"identity" | "photo" | "services" | "coverage">;
     revisionStatus:
       "draft" | "pending_review" | "approved" | "rejected" | "superseded";
     revisionRejectionReason: string | null;
@@ -293,6 +298,7 @@ export interface ProfessionalWorkspace {
     identity: Pick<
       ProfessionalProfileDraft,
       | "name"
+      | "birthdate"
       | "headline"
       | "bio"
       | "yearsExperience"

@@ -34,6 +34,9 @@ const workspaceData: WorkspaceData = {
     id: "23a94f5e-1429-4ec7-bbc4-a6f805d5182d",
     public_slug: "ana-souza",
     profile_status: "draft",
+    is_public: false,
+    is_search_eligible: false,
+    publication_blockers: ["photo"],
     revision_status: "draft",
     revision_rejection_reason: null,
     has_published_revision: false,
@@ -47,6 +50,7 @@ const workspaceData: WorkspaceData = {
     verification: { current: null },
     identity: {
       display_name: "Ana Souza",
+      birthdate: "1990-04-12",
       headline: "Elétrica residencial.",
       bio: "Instalações em Joinville.",
       years_experience: 12,
@@ -99,6 +103,9 @@ describe("professional workspace API", () => {
         id: workspaceData.profile.id,
         publicSlug: "ana-souza",
         status: "draft",
+        isPublic: false,
+        isSearchEligible: false,
+        publicationBlockers: ["photo"],
         revisionStatus: "draft",
         revisionRejectionReason: null,
         hasPublishedRevision: false,
@@ -112,6 +119,7 @@ describe("professional workspace API", () => {
         verification: { current: null },
         identity: {
           name: "Ana Souza",
+          birthdate: "1990-04-12",
           headline: "Elétrica residencial.",
           bio: "Instalações em Joinville.",
           yearsExperience: 12,
@@ -323,6 +331,7 @@ describe("professional workspace API", () => {
       body: {
         identity: {
           display_name: "Ana Souza",
+          birthdate: "1990-04-12",
           headline: "Elétrica residencial.",
           bio: "Instalações em Joinville.",
           years_experience: 12,

@@ -23,6 +23,10 @@ export interface ModerationQueueItem {
   age: string;
   details: string;
   preview: string;
+  currentlyPublic: boolean;
+  fallbackAvailable: boolean;
+  changes: ReadonlyArray<{ field: string; before: unknown; after: unknown }>;
+  claimedBirthdate: string | null;
   hasMedia: boolean;
   verificationFileId: string | null;
 }

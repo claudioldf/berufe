@@ -9,6 +9,7 @@ function profileDraft(
 ): ProfessionalProfileDraft {
   return {
     name: "Marcos Alves",
+    birthdate: "1990-04-12",
     headline: "Elétrica residencial com cuidado.",
     bio: "Trabalho com instalações e manutenção residencial.",
     yearsExperience: 11,
@@ -34,6 +35,15 @@ const services: Service[] = [
     description: "Instalações e manutenção elétrica.",
     aliases: [],
   },
+  {
+    id: "svc-diarista",
+    name: "Diarista",
+    slug: "diarista",
+    category: "Serviços domésticos",
+    icon: "i-lucide-sparkles",
+    description: "Limpeza residencial.",
+    aliases: [],
+  },
 ];
 const neighborhoods: Neighborhood[] = [
   {
@@ -45,20 +55,52 @@ const neighborhoods: Neighborhood[] = [
 ];
 
 describe("onboarding step contracts", () => {
-  it("keeps an invalid profile on the current step", async () => {
+  it("lists services alphabetically", () => {
+    const wrapper = mount(ServicesStep, {
+      props: {
+        draft: profileDraft(),
+        services,
+        neighborhoods,
+      },
+    });
+
+    expect(
+      wrapper.findAll(".service-picker button").map((button) => button.text()),
+    ).toEqual(["Diarista", "Eletricista"]);
+  });
+
+  it("keeps a profile without a birthdate on the current step", async () => {
     const wrapper = mount(ProfileStep, {
-      props: { draft: profileDraft({ headline: "" }) },
+      props: {
+        draft: profileDraft({ birthdate: "" }),
+        photo: {
+          current: null,
+          hasPublishedPhoto: true,
+          publishedImageUrl: null,
+          latestUpload: null,
+        },
+      },
     });
 
     await wrapper.get("form").trigger("submit");
 
-    expect(wrapper.get('[role="alert"]').text()).toContain("apresentação");
+    expect(wrapper.get('[role="alert"]').text()).toContain("nascimento");
     expect(wrapper.emitted("complete")).toBeUndefined();
   });
 
   it("emits a cloned valid profile payload", async () => {
     const draft = profileDraft();
-    const wrapper = mount(ProfileStep, { props: { draft } });
+    const wrapper = mount(ProfileStep, {
+      props: {
+        draft,
+        photo: {
+          current: null,
+          hasPublishedPhoto: true,
+          publishedImageUrl: null,
+          latestUpload: null,
+        },
+      },
+    });
 
     await wrapper.get("form").trigger("submit");
 
@@ -68,7 +110,7 @@ describe("onboarding step contracts", () => {
     expect(payload?.selectedServices).not.toBe(draft.selectedServices);
   });
 
-  it("keeps the optional profile photo inside the identity step", async () => {
+  it("keeps the required profile photo inside the identity step", async () => {
     const wrapper = mount(ProfileStep, { props: { draft: profileDraft() } });
     const file = new File(["photo"], "profile.png", { type: "image/png" });
     const input = wrapper.get('input[type="file"]');
@@ -80,7 +122,7 @@ describe("onboarding step contracts", () => {
     await input.trigger("change");
 
     expect(wrapper.text()).toContain("Foto profissional");
-    expect(wrapper.text()).toContain("Opcional");
+    expect(wrapper.text()).toContain("Obrigatória");
     expect(wrapper.emitted("photoSelect")?.[0]?.[0]).toBe(file);
   });
 

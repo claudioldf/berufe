@@ -11,6 +11,7 @@ defineEmits<{
   back: [];
   complete: [file: File];
   finish: [];
+  skip: [];
 }>();
 
 function submit(submission: VerificationSubmission) {
@@ -21,11 +22,11 @@ function submit(submission: VerificationSubmission) {
 <template>
   <section aria-labelledby="onboarding-verification-title">
     <header class="onboarding-step-heading">
-      <DesignSystemEyebrow>Etapa 4 de 4</DesignSystemEyebrow>
-      <h2 id="onboarding-verification-title">Finalize com sua identidade.</h2>
+      <DesignSystemEyebrow>Etapa 3 de 3</DesignSystemEyebrow>
+      <h2 id="onboarding-verification-title">Quer verificar sua identidade?</h2>
       <p>
-        O envio conta para a conclusão; a análise pode continuar pendente. A
-        conferência da identidade não é uma garantia sobre o serviço realizado.
+        Esta etapa é opcional. Você pode enviar a evidência agora ou publicar o
+        perfil e fazer isso depois pelo painel.
       </p>
     </header>
 
@@ -61,7 +62,18 @@ function submit(submission: VerificationSubmission) {
         Voltar
       </UButton>
       <UButton
-        v-if="submitted"
+        v-if="!submitted"
+        type="button"
+        color="neutral"
+        variant="outline"
+        :loading="submitting"
+        :disabled="saving || submitting"
+        @click="$emit('skip')"
+      >
+        Agora não — publicar perfil
+      </UButton>
+      <UButton
+        v-else
         type="button"
         color="primary"
         trailing-icon="i-lucide-check"
@@ -69,7 +81,7 @@ function submit(submission: VerificationSubmission) {
         :disabled="saving || submitting"
         @click="$emit('finish')"
       >
-        Concluir onboarding
+        Publicar perfil
       </UButton>
     </footer>
   </section>

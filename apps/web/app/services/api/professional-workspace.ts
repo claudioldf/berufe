@@ -49,6 +49,9 @@ export function mapProfessionalWorkspace(
       id: data.profile.id,
       publicSlug: data.profile.public_slug,
       status: data.profile.profile_status,
+      isPublic: data.profile.is_public,
+      isSearchEligible: data.profile.is_search_eligible,
+      publicationBlockers: data.profile.publication_blockers,
       revisionStatus: data.profile.revision_status,
       revisionRejectionReason: data.profile.revision_rejection_reason,
       hasPublishedRevision: data.profile.has_published_revision,
@@ -97,6 +100,7 @@ export function mapProfessionalWorkspace(
       },
       identity: {
         name: identity.display_name,
+        birthdate: identity.birthdate ?? "",
         headline: identity.headline,
         bio: identity.bio,
         yearsExperience: identity.years_experience ?? 0,
@@ -180,6 +184,7 @@ export async function updateProfessionalIdentity(
       body: {
         identity: {
           display_name: draft.name,
+          birthdate: draft.birthdate,
           headline: draft.headline,
           bio: draft.bio,
           years_experience: draft.yearsExperience,
@@ -222,6 +227,7 @@ export async function updateProfessionalProfile(
       body: {
         identity: {
           display_name: draft.name,
+          birthdate: draft.birthdate,
           headline: draft.headline,
           bio: draft.bio,
           years_experience: draft.yearsExperience,

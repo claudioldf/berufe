@@ -65,11 +65,7 @@ const professional = computed<QuoteProfessional | null>(() => {
 });
 const shareEnabled = computed(() => {
   const workspace = editor.data.value?.workspace;
-  return Boolean(
-    quote.value?.id &&
-    workspace?.profile.status === "published" &&
-    workspace.profile.hasPublishedRevision,
-  );
+  return Boolean(quote.value?.id && workspace?.profile.isPublic);
 });
 
 function createEmptyQuote(): Quote {

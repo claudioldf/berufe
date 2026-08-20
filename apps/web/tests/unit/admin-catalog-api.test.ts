@@ -27,20 +27,20 @@ const catalogData: AdminCatalogData = {
       id: "de83e041-286f-4b50-91fa-61a0ee8c1801",
       name: "Eletricista",
       slug: "eletricista",
-      categorySlug: "instalacoes",
+      category_slug: "instalacoes",
       description: "Instalações elétricas.",
-      isActive: false,
-      sortOrder: 0,
+      is_active: false,
+      sort_order: 0,
     },
   ],
   neighborhoods: [
     {
       code: "america",
       name: "América",
-      stateCode: "SC",
+      state_code: "SC",
       city: "Joinville",
-      isActive: true,
-      sortOrder: 0,
+      is_active: true,
+      sort_order: 0,
     },
   ],
 };
@@ -96,15 +96,15 @@ describe("administrator catalog API", () => {
     await createAdminCatalogService(client, {
       name: "Encanador",
       slug: "encanador",
-      categorySlug: "instalacoes",
+      category_slug: "instalacoes",
       description: "Reparos hidráulicos.",
     });
-    await updateAdminCatalogService(client, serviceId, { isActive: false });
+    await updateAdminCatalogService(client, serviceId, { is_active: false });
     await reorderAdminCatalogServices(client, [serviceId]);
     await createAdminCatalogNeighborhood(client, {
       name: "América",
       code: "america",
-      stateCode: "SC",
+      state_code: "SC",
       city: "Joinville",
     });
     await updateAdminCatalogNeighborhood(client, "america", {
@@ -120,7 +120,7 @@ describe("administrator catalog API", () => {
         body: {
           name: "Encanador",
           slug: "encanador",
-          categorySlug: "instalacoes",
+          category_slug: "instalacoes",
           description: "Reparos hidráulicos.",
         },
       },
@@ -128,7 +128,7 @@ describe("administrator catalog API", () => {
     expect(client.PATCH).toHaveBeenNthCalledWith(
       1,
       "/api/v1/admin/catalog/services/{id}",
-      { params: { path: { id: serviceId } }, body: { isActive: false } },
+      { params: { path: { id: serviceId } }, body: { is_active: false } },
     );
     expect(client.PUT).toHaveBeenNthCalledWith(
       1,
@@ -142,7 +142,7 @@ describe("administrator catalog API", () => {
         body: {
           name: "América",
           code: "america",
-          stateCode: "SC",
+          state_code: "SC",
           city: "Joinville",
         },
       },

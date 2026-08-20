@@ -16,7 +16,7 @@ export function mapPublicCatalog(data: CatalogData): PublicCatalog {
       id: service.id,
       name: service.name,
       slug: service.slug,
-      category: service.categorySlug,
+      category: service.category_slug,
       icon: service.icon,
       description: service.description,
       aliases: service.aliases,
@@ -28,7 +28,12 @@ export function mapPublicCatalog(data: CatalogData): PublicCatalog {
         stateCode: "SC",
         city: "Joinville",
       },
-      ...data.neighborhoods,
+      ...data.neighborhoods.map((neighborhood) => ({
+        code: neighborhood.code,
+        name: neighborhood.name,
+        stateCode: neighborhood.state_code,
+        city: neighborhood.city,
+      })),
     ],
   };
 }

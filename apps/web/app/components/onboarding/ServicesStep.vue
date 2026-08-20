@@ -64,7 +64,7 @@ function submit() {
 <template>
   <section aria-labelledby="onboarding-services-title">
     <header class="onboarding-step-heading">
-      <DesignSystemEyebrow>Etapa 2 de 4</DesignSystemEyebrow>
+      <DesignSystemEyebrow>Etapa 2 de 3</DesignSystemEyebrow>
       <h2 id="onboarding-services-title">Escolha o que você oferece.</h2>
       <p>
         Selecione ao menos um serviço e informe onde os clientes podem encontrar

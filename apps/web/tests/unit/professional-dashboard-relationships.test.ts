@@ -1,5 +1,7 @@
 import { mountSuspended } from "@nuxt/test-utils/runtime";
+import { mount } from "@vue/test-utils";
 import { defineComponent, ref, shallowRef } from "vue";
+import DashboardChecklist from "@app/components/dashboard/DashboardChecklist.vue";
 import ProfessionalDashboardPage from "@app/pages/app/professional/index.vue";
 
 const mocks = vi.hoisted(() => ({
@@ -79,6 +81,9 @@ function workspace(options: { pending?: boolean; failed?: boolean } = {}) {
         id: "2cc1bdc4-e2d1-452b-8e76-241931a32bc9",
         publicSlug: "beto-lima",
         status: "published",
+        isPublic: true,
+        isSearchEligible: true,
+        publicationBlockers: [],
         revisionStatus: "approved",
         revisionRejectionReason: null,
         hasPublishedRevision: true,
@@ -100,6 +105,7 @@ function workspace(options: { pending?: boolean; failed?: boolean } = {}) {
         },
         identity: {
           name: "Beto Lima",
+          birthdate: "1990-04-12",
           headline: "Elétrica residencial.",
           bio: "Instalações em Joinville.",
           yearsExperience: 8,
@@ -115,11 +121,14 @@ function workspace(options: { pending?: boolean; failed?: boolean } = {}) {
     error: shallowRef(options.failed ? new Error("private failure") : null),
     relationshipRespondingId: shallowRef<string | null>(null),
     relationshipError: shallowRef(""),
+    submissionSaving: shallowRef(false),
+    submissionError: shallowRef(""),
+    submitProfile: vi.fn().mockResolvedValue(undefined),
     respondToRelationship,
   };
 }
 
-describe("professional dashboard relationships", () => {
+describe("professional dashboard", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -195,6 +204,7 @@ describe("professional dashboard relationships", () => {
     currentWorkspace.data.value.dashboard.readiness.percentage = 25;
     currentWorkspace.data.value.pendingRelationships = [];
     currentWorkspace.data.value.profile.status = "draft";
+    currentWorkspace.data.value.profile.isPublic = false;
     currentWorkspace.data.value.profile.revisionStatus = "rejected";
     currentWorkspace.data.value.profile.revisionRejectionReason =
       "A apresentação precisa de mais detalhes.";
@@ -217,5 +227,72 @@ describe("professional dashboard relationships", () => {
     expect(
       wrapper.find("dashboard-checklist-stub").attributes("readiness"),
     ).toBe("25");
+  });
+
+  it("publishes a complete draft directly from the status banner", async () => {
+    const currentWorkspace = workspace();
+    currentWorkspace.data.value.dashboard.readiness.percentage = 75;
+    currentWorkspace.data.value.profile.status = "draft";
+    currentWorkspace.data.value.profile.isPublic = false;
+    currentWorkspace.data.value.profile.isSearchEligible = false;
+    currentWorkspace.data.value.profile.revisionStatus = "draft";
+    currentWorkspace.data.value.profile.hasPublishedRevision = false;
+    mocks.useWorkspace.mockResolvedValue(currentWorkspace);
+
+    const wrapper = await mountSuspended(
+      ProfessionalDashboardPage,
+      mountOptions,
+    );
+
+    expect(wrapper.text()).toContain("Seu perfil está pronto para publicar");
+    expect(wrapper.text()).toContain("Os dados obrigatórios estão completos.");
+
+    const publishButton = wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("Publicar perfil"));
+    expect(publishButton).toBeDefined();
+    await publishButton!.trigger("click");
+
+    expect(currentWorkspace.submitProfile).toHaveBeenCalledOnce();
+    expect(mocks.showToast).toHaveBeenCalledWith({
+      title: "Perfil publicado",
+      description: "Clientes já podem encontrar e entrar em contato com você.",
+    });
+    expect(wrapper.findComponent(DashboardChecklist).props("canPublish")).toBe(
+      true,
+    );
+  });
+
+  it("emits the publish action from the bottom of the checklist card", async () => {
+    const wrapper = mount(DashboardChecklist, {
+      props: {
+        readiness: 75,
+        canPublish: true,
+        publishing: false,
+        items: [
+          {
+            id: "profile",
+            label: "Base do perfil",
+            description: "Nome, foto, nascimento e contato",
+            icon: "i-lucide-user-round",
+            done: true,
+            to: "/app/professional/profile",
+          },
+        ],
+      },
+      global: {
+        stubs: {
+          DesignSystemSurfaceCard: { template: "<section><slot /></section>" },
+          NuxtLink: { template: "<a><slot /></a>" },
+          UButton: ButtonStub,
+          UIcon: true,
+        },
+      },
+    });
+
+    const publishButton = wrapper.get("button");
+    expect(publishButton.text()).toContain("Publicar perfil");
+    await publishButton.trigger("click");
+    expect(wrapper.emitted("publish")).toEqual([[]]);
   });
 });

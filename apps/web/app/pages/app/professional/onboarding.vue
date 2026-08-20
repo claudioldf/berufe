@@ -25,7 +25,6 @@ const {
   photoError,
   uploadPhoto,
   retryPhoto,
-  createPortfolioItem,
   createVerificationRequest,
   submissionSaving,
   submissionError,
@@ -65,20 +64,6 @@ async function saveOnboardingSupply(draft: ProfessionalProfileDraft) {
   };
 }
 
-async function saveOnboardingPortfolio(
-  draft: Parameters<typeof createPortfolioItem>[0],
-) {
-  const updated = await createPortfolioItem(draft);
-  const item = updated?.profile.portfolioItems[0];
-  if (!item) throw new Error("Portfolio item was not persisted");
-  return {
-    title: item.title,
-    service: item.service,
-    description: item.description,
-    submittedAt: item.submittedAt,
-  };
-}
-
 async function saveOnboardingVerification(file: File) {
   const updated = await createVerificationRequest(file);
   const request = updated?.profile.verification.current;
@@ -99,7 +84,6 @@ useSeoMeta({
     :workspace="professionalWorkspace"
     :save-identity="saveOnboardingIdentity"
     :save-supply="saveOnboardingSupply"
-    :save-portfolio="saveOnboardingPortfolio"
     :save-verification="saveOnboardingVerification"
     :upload-photo="uploadPhoto"
     :retry-photo="retryPhoto"

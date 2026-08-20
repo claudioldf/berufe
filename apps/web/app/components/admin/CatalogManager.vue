@@ -155,14 +155,14 @@ async function saveEntry(draft: CatalogEntryDraft) {
       if (editingEntry.value) {
         await updateService(editingEntry.value.id, {
           name: draft.name,
-          categorySlug: draft.category,
+          category_slug: draft.category,
           description: draft.description,
         });
       } else {
         await createService({
           name: draft.name,
           slug: draft.identifier,
-          categorySlug: draft.category,
+          category_slug: draft.category,
           description: draft.description,
         });
       }
@@ -172,14 +172,14 @@ async function saveEntry(draft: CatalogEntryDraft) {
       if (editingEntry.value) {
         await updateNeighborhood(editingEntry.value.id, {
           name: draft.name,
-          stateCode: "SC",
+          state_code: "SC",
           city: "Joinville",
         });
       } else {
         await createNeighborhood({
           name: draft.name,
           code: draft.identifier,
-          stateCode: "SC",
+          state_code: "SC",
           city: "Joinville",
         });
       }
@@ -204,9 +204,9 @@ async function toggleEntry(id: string) {
 
   try {
     if (activeTab.value === "services") {
-      await updateService(id, { isActive: !entry.active });
+      await updateService(id, { is_active: !entry.active });
     } else {
-      await updateNeighborhood(id, { isActive: !entry.active });
+      await updateNeighborhood(id, { is_active: !entry.active });
     }
     showToast({
       title: "Status atualizado",
