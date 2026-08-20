@@ -97,7 +97,7 @@ defineSlots<{
   & :slotted(textarea) {
     width: 100%;
     height: 3rem;
-    padding: 12px 12px;
+    padding: 12px;
     border: 1px solid var(--line);
     border-radius: var(--radius-md);
     background: var(--color-surface);
