@@ -2,18 +2,19 @@
 
 **Status:** Approved for MVP implementation  
 **Date:** 2026-08-19  
-**Supersedes:** approval-gated publication text in Features A2, A3, C1, and E1; S023–S024, S026, S028, S046; and the five-stage supply funnel in R003.
+**Supersedes:** approval-gated publication text in Features A2, A3, and E1; S023–S024, S026, and S028; and the five-stage supply funnel in R003. Professional relationships are governed solely by recipient confirmation in Feature C1 and S043/S046.
 
 ## Outcome
 
-Moderation is an audit and takedown workflow, not the normal publishing gate. Once a professional completes the minimum publication requirements, new profile content, profile photos, portfolio items, and recipient-accepted professional relationships become public immediately with a private pending-review state. Public pages do not expose review state or “unreviewed” badges.
+Moderation is an audit and takedown workflow for profile content, profile photos, and portfolio items, not the normal publishing gate. Once a professional completes the minimum publication requirements, those targets become public immediately with a private pending-review state. Public pages do not expose review state or “unreviewed” badges.
+
+Professional relationships are not moderation targets. They remain private while `pending`, become publicly eligible when the recipient sets them to `accepted`, and remain private when `declined`. Both endpoint profiles and accounts must remain public and active.
 
 Admins still review every pending item. Approval marks the current item reviewed and removes it from the queue without changing its public visibility. Rejection removes inappropriate evidence immediately and uses the following deterministic fallback rules:
 
 - profile revision: restore the last approved revision; without one, make the profile unavailable;
 - profile photo: restore the last approved photo; without one, make the profile unavailable;
-- portfolio item: remove the item from public results;
-- professional relationship: remove the relationship from public results; a retry is a new request and requires a new recipient acceptance.
+- portfolio item: remove the item from public results.
 
 Identity evidence is the exception. Verification requests and evidence remain private until approved, and only an approved identity request can produce the public identity label.
 
@@ -34,7 +35,7 @@ Headline, biography, declared experience, social links, portfolio, professional 
 
 After first publication, every material profile save creates an immutable pending revision and atomically makes it the current public revision. A newer save supersedes an older pending revision so a stale queue item cannot later replace current content. The last approved revision remains a rollback pointer, not the normal public pointer.
 
-The same live-versus-approved-pointer model applies to profile photos. Portfolio and relationship records are individually removable, so they do not need fallback pointers.
+The same live-versus-approved-pointer model applies to profile photos. Portfolio records are individually removable, so they do not need fallback pointers. Relationship visibility is derived from recipient acceptance and party eligibility rather than a moderation pointer.
 
 Public media is served through a stable Rails endpoint that checks current eligibility on every request. Pending media is read from private storage and returned with `no-store`; approved media may use the published object but must revalidate so rejection or hiding takes effect immediately. Storage keys are never exposed in public or owner JSON.
 
@@ -49,7 +50,7 @@ The supply funnel is:
 3. identity verified within the published cohort;
 4. activated.
 
-Portfolio and identity verification remain trust-readiness criteria, but neither blocks first publication. Activation continues to count approved identity, approved portfolio evidence, and public professional relationships so the quality metric remains reviewed evidence rather than merely visible pending content.
+Portfolio and identity verification remain trust-readiness criteria, but neither blocks first publication. Activation counts approved identity, approved portfolio evidence, and recipient-accepted public professional relationships; the relationship criterion represents mutual confirmation rather than admin review.
 
 ## Privacy and identity matching
 

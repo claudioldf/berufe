@@ -37,9 +37,9 @@ RSpec.describe ModerationQueueQuery do
     expect(paged[:meta]).to eq(page: 2, per_page: 1, total_count: 2, total_pages: 2)
   end
 
-  it "presents accepted relationships by their recorded moderation state" do
+  it "does not count or present accepted relationships" do
     partner = create_profile(phone: "+5547999998204", name: "Beto Lima")
-    relationship = ProfessionalRelationship.create!(
+    ProfessionalRelationship.create!(
       initiator_professional: partner,
       recipient_professional: profile,
       relationship_type: "recommendation",
@@ -48,26 +48,13 @@ RSpec.describe ModerationQueueQuery do
       responded_at: 30.minutes.ago
     )
 
-    pending = described_class.new.call(type: "professional_relationship")
-    expect(pending[:items].sole).to include(
-      target_id: relationship.id,
-      status: "pending_review",
-      title: "Relação profissional · Beto Lima e Ana Souza",
-      subtitle: "Recomendação",
-      preview: "A parceria foi confirmada pelo profissional."
-    )
-    expect(pending[:summary]).to include(pending_count: 1)
+    result = described_class.new.call
 
-    moderate(relationship, "approved")
-    expect(
-      described_class.new.call(type: "professional_relationship", status: "approved")[:items].sole
-    ).to include(target_id: relationship.id, status: "approved")
-
-    moderate(relationship, "hidden", reason: "Conteúdo ocultado para uma nova revisão operacional.")
-    expect(
-      described_class.new.call(type: "professional_relationship", status: "hidden")[:items].sole
-    ).to include(target_id: relationship.id, status: "hidden")
-    expect(described_class.new.call[:summary]).to include(pending_count: 0)
+    expect(result[:items]).to be_empty
+    expect(result[:summary]).to include(pending_count: 0)
+    expect do
+      described_class.new.call(type: "professional_relationship")
+    end.to raise_error(described_class::Invalid)
   end
 
   it "rejects unknown or unbounded filters" do
@@ -83,27 +70,6 @@ RSpec.describe ModerationQueueQuery do
   def create_profile(phone:, name:)
     account = UserAccount.create!(phone_e164: phone, role: "professional", status: "active")
     ProfessionalProfile.create!(user_account: account, display_name: name)
-  end
-
-  def moderate(relationship, action, reason: nil)
-    admin = UserAccount.create!(
-      email: "queue-#{SecureRandom.hex(4)}@example.com",
-      password: "a-secure-admin-password",
-      password_confirmation: "a-secure-admin-password",
-      role: "admin",
-      status: "active"
-    )
-    ModerationDecision.new(
-      context: AdminActionContext.new(
-        admin_user_id: admin.id,
-        request_id: "queue-relationship-#{SecureRandom.hex(4)}"
-      )
-    ).call(
-      target_type: "professional_relationship",
-      target_id: relationship.id,
-      action:,
-      reason:
-    )
   end
 
   def create_selected_service(profile)

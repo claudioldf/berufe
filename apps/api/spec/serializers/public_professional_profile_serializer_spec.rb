@@ -109,8 +109,7 @@ RSpec.describe PublicProfessionalProfileSerializer do
       relationship_type: "recommendation",
       context_note: "Indicação profissional aprovada.",
       status: "accepted",
-      responded_at: Time.current,
-      moderation_status: "pending_review"
+      responded_at: Time.current
     )
 
     received = described_class.new(profile.reload).as_json.fetch(:relationships).sole

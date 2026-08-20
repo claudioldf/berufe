@@ -2354,7 +2354,6 @@ components:
           - profile_photo
           - portfolio_item
           - verification_request
-          - professional_relationship
     ModerationStatus:
       name: status
       in: query
@@ -2784,9 +2783,15 @@ components:
         label: { type: string }
         started: { type: integer, minimum: 0 }
         responded: { type: integer, minimum: 0 }
-        approved: { type: integer, minimum: 0 }
+        approved:
+          type: integer
+          minimum: 0
+          description: Recipient-accepted relationships whose two parties remain publicly eligible; no admin review is involved.
         response_rate: { $ref: "#/components/schemas/AdminGrowthReportRate" }
-        approval_rate: { $ref: "#/components/schemas/AdminGrowthReportRate" }
+        approval_rate:
+          allOf:
+            - $ref: "#/components/schemas/AdminGrowthReportRate"
+          description: Recipient-confirmed public relationships divided by responded relationships.
     AdminGrowthReportQuotes:
       type: object
       additionalProperties: false
@@ -4721,7 +4726,6 @@ components:
         - profile_photo
         - portfolio_item
         - verification_request
-        - professional_relationship
     ModerationStatus:
       type: string
       enum:

@@ -41,24 +41,9 @@ class EnablePostPublicationModeration < ActiveRecord::Migration[8.1]
         AND photos.id = profiles.working_photo_id
         AND photos.status = 'pending_review'
     SQL
-
-    remove_index :professional_relationships,
-      name: "idx_professional_relationships_unique_direction"
-    add_index :professional_relationships,
-      %i[initiator_professional_id recipient_professional_id relationship_type],
-      unique: true,
-      where: "moderation_status <> 'rejected'",
-      name: "idx_professional_relationships_active_direction"
   end
 
   def down
-    remove_index :professional_relationships,
-      name: "idx_professional_relationships_active_direction"
-    add_index :professional_relationships,
-      %i[initiator_professional_id recipient_professional_id relationship_type],
-      unique: true,
-      name: "idx_professional_relationships_unique_direction"
-
     remove_column :verification_requests, :expired_at
     remove_column :verification_requests, :identity_match_confirmed_at
     remove_column :verification_requests, :claimed_birthdate

@@ -2,7 +2,7 @@
 
 class ModerationQueueQuery
   TYPES = %w[
-    all profile_revision profile_photo portfolio_item verification_request professional_relationship
+    all profile_revision profile_photo portfolio_item verification_request
   ].freeze
   STATUSES = %w[pending_review approved rejected hidden all].freeze
   DEFAULT_PER_PAGE = 20
@@ -68,8 +68,7 @@ class ModerationQueueQuery
       "profile_revision" => method(:profile_revisions),
       "profile_photo" => method(:profile_photos),
       "portfolio_item" => method(:portfolio_items),
-      "verification_request" => method(:verification_requests),
-      "professional_relationship" => method(:professional_relationships)
+      "verification_request" => method(:verification_requests)
     }
     selected = (type == "all") ? loaders.values : [loaders.fetch(type)]
     selected.flat_map { |loader| loader.call(status) }
@@ -125,19 +124,6 @@ class ModerationQueueQuery
     VerificationRequest.includes(:verification_file, professional_profile: :working_revision)
       .where(status: statuses)
       .map { |request_record| verification_entry(request_record) }
-  end
-
-  def professional_relationships(status)
-    statuses = moderated_statuses(status, ProfessionalRelationship::MODERATION_STATUSES)
-    return [] if statuses.empty?
-
-    ProfessionalRelationship
-      .where(status: "accepted", moderation_status: statuses)
-      .includes(
-        initiator_professional: %i[published_revision working_revision],
-        recipient_professional: %i[published_revision working_revision]
-      )
-      .map { |relationship| relationship_entry(relationship, relationship.moderation_status) }
   end
 
   def moderated_statuses(status, allowed)
@@ -230,33 +216,6 @@ class ModerationQueueQuery
     }
   end
 
-  def relationship_entry(relationship, status)
-    initiator = relationship.initiator_professional
-    recipient = relationship.recipient_professional
-    type_label = if relationship.relationship_type == "recommendation"
-      "Recomendação"
-    else
-      "Trabalharam juntos"
-    end
-
-    {
-      target_type: "professional_relationship",
-      target_id: relationship.id,
-      status:,
-      title: "Relação profissional · #{profile_name(initiator)} e #{profile_name(recipient)}",
-      subtitle: type_label,
-      submitted_at: relationship.responded_at,
-      details: "Relação confirmada pelo destinatário e enviada para análise manual.",
-      preview: relationship.context_note.presence || "Sem contexto adicional.",
-      currently_public: PublicProfessionalRelationshipQuery.call.where(id: relationship.id).exists?,
-      fallback_available: false,
-      changes: [],
-      claimed_birthdate: nil,
-      has_media: false,
-      verification_file_id: nil
-    }
-  end
-
   def supply_subtitle(revision)
     primary = revision.professional_profile_services.find(&:is_primary?)&.service&.name
     [primary, coverage_label(revision)].compact_blank.join(" · ")
@@ -267,10 +226,6 @@ class ModerationQueueQuery
     return "Toda Joinville" if areas.any? { |area| area.neighborhood_code.nil? }
 
     areas.filter_map { |area| area.neighborhood&.name }.join(", ")
-  end
-
-  def profile_name(profile)
-    (profile.published_revision || profile.working_revision).display_name
   end
 
   def currently_public_revision?(revision)

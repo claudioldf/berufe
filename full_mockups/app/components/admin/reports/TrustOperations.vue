@@ -24,9 +24,9 @@ function percent(value: number, total: number) {
         <div><DesignSystemKicker>Efeito de rede</DesignSystemKicker><h2>Confiança e convites</h2><span>Conclusão dos pedidos que fortalecem cada perfil.</span></div>
         <AdminReportsMetricHelp
           title="Confiança e convites"
-          meaning="Acompanha pedidos de recomendação, relações profissionais e convites desde a criação até a conclusão e aprovação."
+          meaning="Acompanha pedidos de recomendação, relações profissionais e convites desde a criação até a resposta e a confirmação do destinatário."
           goal="Aumentar a conclusão de pedidos legítimos e transformar conexões reais em evidências de confiança para mais perfis."
-          reading="Baixa conclusão pede lembretes ou um fluxo mais simples. Aprovação não deve ser maximizada a qualquer custo: moderação continua protegendo a autenticidade."
+          reading="Baixa conclusão pede lembretes ou um fluxo mais simples. Para relações profissionais, aprovação significa confirmação do destinatário e não envolve revisão administrativa."
         />
       </header>
       <div class="network-list">

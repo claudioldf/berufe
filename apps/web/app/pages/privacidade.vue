@@ -123,10 +123,7 @@ useSeoMeta({
         <li>criar, revisar, publicar e manter perfis e portfólios;</li>
         <li>conferir identidade e moderar o conteúdo submetido;</li>
         <li>permitir busca por serviço e região com ordenação explicável;</li>
-        <li>
-          confirmar e publicar relações entre profissionais, após aceite e
-          moderação;
-        </li>
+        <li>confirmar e publicar relações aceitas entre profissionais;</li>
         <li>
           abrir o compartilhamento de perfil ou o contato solicitado pela
           pessoa;
@@ -158,7 +155,8 @@ useSeoMeta({
               <td><strong>Público</strong></td>
               <td>
                 Perfil aprovado, serviços, região, foto, experiência declarada,
-                portfólio, selos específicos e relações aprovadas.
+                portfólio, selos específicos e relações aceitas entre perfis
+                públicos e ativos.
               </td>
               <td>
                 Qualquer visitante e, quando aplicável, mecanismos de busca.
@@ -167,9 +165,9 @@ useSeoMeta({
             <tr>
               <td><strong>Privado</strong></td>
               <td>
-                Telefone, sessão, conteúdo pendente, respostas de relações,
-                rascunhos e dados de cliente em orçamentos e motivos de
-                moderação.
+                Telefone, sessão, conteúdo pendente, relações pendentes ou
+                recusadas, rascunhos, dados de cliente em orçamentos e motivos
+                de moderação.
               </td>
               <td>Titular e equipe autorizada, conforme a necessidade.</td>
             </tr>

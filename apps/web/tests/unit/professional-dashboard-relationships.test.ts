@@ -157,7 +157,10 @@ describe("professional dashboard", () => {
       "accepted",
     );
     expect(mocks.showToast).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "Colaboração confirmada" }),
+      expect.objectContaining({
+        title: "Colaboração confirmada",
+        description: "A relação já pode aparecer nos perfis públicos.",
+      }),
     );
 
     const shareButton = wrapper

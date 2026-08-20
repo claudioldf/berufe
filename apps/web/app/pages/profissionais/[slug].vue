@@ -185,7 +185,7 @@ async function submitRelationship(input: ProfessionalRelationshipRequestInput) {
     showToast({
       title: "Solicitação enviada",
       description:
-        "A relação só poderá seguir para moderação depois da confirmação do outro profissional.",
+        "A relação será exibida quando o outro profissional confirmar.",
     });
   } catch {
     // The dialog keeps the normalized API error visible for a retry.

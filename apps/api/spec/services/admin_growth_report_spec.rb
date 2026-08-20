@@ -43,4 +43,50 @@ RSpec.describe Admin::Reports::GrowthReport do
     expect(report.dig(:summary, :search_coverage, :comparison, :directional)).to be(true)
     expect(report.dig(:moderation, :oldest_pending_target_hours)).to eq(24)
   end
+
+  it "counts recipient responses and accepted relationships without moderation" do
+    now = Time.zone.parse("2026-08-18 15:00:00")
+    profiles = 4.times.map do |index|
+      account = UserAccount.create!(
+        phone_e164: "+5547999982#{index.to_s.rjust(3, "0")}",
+        role: "professional",
+        status: "active"
+      )
+      make_profile_publicly_eligible(
+        ProfessionalProfile.create!(user_account: account, display_name: "Profissional #{index}")
+      )
+    end
+    ProfessionalRelationship.create!(
+      initiator_professional: profiles[0],
+      recipient_professional: profiles[1],
+      relationship_type: "recommendation",
+      status: "accepted",
+      responded_at: now - 1.day,
+      created_at: now - 2.days
+    )
+    ProfessionalRelationship.create!(
+      initiator_professional: profiles[0],
+      recipient_professional: profiles[2],
+      relationship_type: "worked_together",
+      status: "declined",
+      responded_at: now - 1.day,
+      created_at: now - 2.days
+    )
+    ProfessionalRelationship.create!(
+      initiator_professional: profiles[0],
+      recipient_professional: profiles[3],
+      relationship_type: "recommendation",
+      status: "pending",
+      created_at: now - 2.days
+    )
+
+    report = described_class.new(period: "last_7_days", generated_at: now).call
+    funnel = report.dig(:trust, :funnels).sole
+
+    expect(funnel).to include(started: 3, responded: 2, approved: 1)
+    expect(funnel[:response_rate]).to eq(numerator: 2, denominator: 3, rate: 2.fdiv(3))
+    expect(funnel[:approval_rate]).to eq(numerator: 1, denominator: 2, rate: 0.5)
+    expect(report.dig(:moderation, :pending)).to eq(0)
+    expect(ModerationAction.count).to eq(0)
+  end
 end

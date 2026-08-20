@@ -454,7 +454,7 @@ Apply these rules whenever they are relevant to the story:
 
 **Acceptance criteria:**
 
-- The admin area lists profile revisions/photos, portfolio items, and identity-verification requests oldest first, with pagination plus type/status/search filters. Accepted professional relationships join this queue in Increment 4.
+- The admin area lists profile revisions/photos, portfolio items, and identity-verification requests oldest first, with pagination plus type/status/search filters. Professional relationships never join this queue.
 - The reviewer sees only fields and files required for the selected decision.
 - The existing review preview loads regenerated profile-photo and portfolio images through authenticated, no-store Rails responses with an immutable admin access record; storage keys and permanent private URLs never reach Nuxt.
 - Approve, reject, hide, and restore actions create immutable `moderation_actions` with actor, target, action, private reason, time, and request ID.
@@ -671,8 +671,8 @@ Apply these rules whenever they are relevant to the story:
 
 **Acceptance criteria:**
 
-- Each card shows photo, name, exact matching service, coverage, precise verification labels, and approved portfolio/relationship counts.
-- Ordering follows the approved sequence: exact service, neighborhood coverage, identity verification, portfolio evidence, professional-relationship evidence, then recent profile update.
+- Each card shows photo, name, exact matching service, coverage, precise verification labels, approved portfolio counts, and confirmed relationship counts.
+- Ordering follows the documented sequence: exact service, neighborhood coverage, identity verification, portfolio evidence, professional-relationship evidence, then recent profile update.
 - The API and UI display no numeric trust score, sponsored rank, availability, or price sort.
 - Ordering is deterministic for equivalent records and covered by request/query tests.
 - Pending, rejected, hidden, or suspended evidence contributes neither labels nor counts.
@@ -685,13 +685,13 @@ Apply these rules whenever they are relevant to the story:
 
 **Status:** DONE
 
-**Story:** As a customer, I want one mobile-first page containing all approved evidence so that I can decide whether to contact a professional.
+**Story:** As a customer, I want one mobile-first page containing all public evidence so that I can decide whether to contact a professional.
 
 **Acceptance criteria:**
 
-- The stable slug route is server-rendered and contains identity/coverage, optional Instagram/YouTube profile links, labels, services/declared experience, portfolio, and professional relationships in the approved order.
+- The stable slug route is server-rendered and contains identity/coverage, optional Instagram/YouTube profile links, labels, services/declared experience, portfolio, and confirmed professional relationships in the documented order.
 - The page distinguishes verified facts, declarations, recommendations, and collaborations.
-- Only approved public serializers feed the route; unknown, draft, hidden, and suspended profiles return the correct non-public response.
+- Only public serializers feed the route; unknown, draft, hidden, and suspended profiles return the correct non-public response.
 - The page includes the verification-not-a-guarantee disclaimer and useful share metadata.
 - Raw phone numbers are not presented as ordinary public text.
 - Only present, approved social links are rendered; each is labeled for its platform, opens as a safe external link in a new tab, and no empty social-links container appears.
@@ -722,7 +722,7 @@ Public profiles also show a visible Berufe support/report contact that routes to
 
 ## 8. Increment 4 — Existing-member professional trust graph
 
-**Increment outcome:** published professionals can represent recommendations and prior collaboration with other Berufe members through controlled, confirmed, moderated relationships.
+**Increment outcome:** published professionals can represent recommendations and prior collaboration with other Berufe members through controlled, recipient-confirmed relationships.
 
 ### S042 — Initiate a relationship with an existing member
 
@@ -752,25 +752,25 @@ Public profiles also show a visible Berufe support/report contact that routes to
 
 - The recipient sees pending relationships on authenticated pages and can accept or decline each once.
 - Only the recipient can respond; the initiator cannot accept for them.
-- Acceptance records response time and submits the exact relationship type and optional context note to the shared moderation queue; it is not public yet.
+- Acceptance records response time and makes the exact relationship type and optional context note publicly eligible immediately while both profiles remain public and active.
 - Declined relationships remain private and do not affect public counts.
 - “Worked together” is never public without confirmation by both parties.
 
 **Depends on:** S042.
 **Covers:** Feature C1 and Feature A6 pending actions.
 
-### S046 — Moderate and display professional trust relationships publicly
+### S046 — Display confirmed professional trust relationships publicly
 
 **Status:** DONE
 
-**Story:** As an admin and customer, I want accepted professional relationships reviewed before publication so that network evidence is controlled and transparent rather than anonymous.
+**Story:** As a customer, I want recipient-accepted professional relationships displayed transparently so that network evidence is attributable rather than anonymous.
 
 **Acceptance criteria:**
 
-- Accepted relationships enter the shared moderation queue, where an admin can approve, reject, hide, or restore them with the same audit rules as other moderated content.
-- Public profiles show only recipient-accepted and admin-approved relationships with author/other professional, exact type, and approved context when present.
-- Result cards count only recipient-accepted, admin-approved, visible relationships.
-- Rejected, hidden, declined, pending, unreviewed, or suspended-party relationships are excluded immediately.
+- Accepted relationships do not enter the shared moderation queue and require no admin decision.
+- Public profiles show only recipient-accepted relationships with author/other professional, exact type, and the submitted context when present.
+- Result cards count only recipient-accepted relationships whose two parties remain public and active.
+- Declined, pending, or non-public-party relationships are excluded immediately.
 - No follower counts, feed, messaging, forum, job board, or generic social graph is added.
 - Public relationship projections are covered by policy and serializer tests.
 
@@ -940,7 +940,7 @@ The MVP report includes only implemented launch domains: professional supply and
 
 **Acceptance criteria:**
 
-- Playwright covers: professional Infobip-adapter OTP login/profile submission; admin profile/evidence approval; public search/profile/WhatsApp handoff; existing-member professional relationship confirmation plus moderation; and draft quote creation, secure preview/share, valid customer view, invalid-token denial, and print behavior.
+- Playwright covers: professional Infobip-adapter OTP login/profile submission; admin profile/evidence approval; public search/profile/WhatsApp handoff; existing-member professional relationship request plus recipient confirmation; and draft quote creation, secure preview/share, valid customer view, invalid-token denial, and print behavior.
 - Tests use fake OTP/provider behavior and synthetic files/data.
 - Chromium mobile paths run for release-critical changes; focused WebKit and keyboard smoke checks run before production release.
 - Tests assert user-visible behavior rather than implementation details or snapshot-only output.
@@ -990,9 +990,9 @@ The MVP report includes only implemented launch domains: professional supply and
 **Acceptance criteria:**
 
 - First publication occurs from the final onboarding step after the professional submits optional identity evidence or explicitly skips it. Name, processed photo, private birthdate, confirmed-phone contact, exactly one primary service, and valid Joinville coverage are required; portfolio and identity verification are not.
-- A material profile edit creates an immutable pending revision and makes it public atomically. New profile photos, portfolio items, and recipient-accepted professional relationships also become public while pending. Public APIs never expose moderation state.
-- Approval marks the current item reviewed without changing public visibility. Rejection restores the last approved profile revision or photo; without that fallback the profile is unavailable. Rejected portfolio items and relationships are removed from public results.
-- Newer pending revisions/photos supersede older pending items. A rejected relationship can be retried only as a new request with a new recipient acceptance.
+- A material profile edit creates an immutable pending revision and makes it public atomically. New profile photos and portfolio items also become public while pending. Recipient-accepted professional relationships become public without moderation state. Public APIs never expose content moderation state.
+- Approval marks current moderated content reviewed without changing public visibility. Rejection restores the last approved profile revision or photo; without that fallback the profile is unavailable. Rejected portfolio items are removed from public results.
+- Newer pending revisions/photos supersede older pending items. Relationship requests retain only the recipient-owned `pending`, `accepted`, and `declined` lifecycle.
 - Birthdate is never public. An identity request captures the claimed birthdate, admin approval records explicit identity-match confirmation, and changing birthdate expires pending/approved identity verification and begins evidence cleanup retention.
 - Admin review shows current-public and fallback context, profile changes against the approved fallback, and uses “Marcar como revisado” for approval. Public media uses stable eligibility-checking application URLs so rejection/hiding has immediate effect.
 - The professional workspace returns derived public/search eligibility and actionable publication blockers. Dashboard readiness continues to treat portfolio and approved identity as trust improvements rather than publication gates.

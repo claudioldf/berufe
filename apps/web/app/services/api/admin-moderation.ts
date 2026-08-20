@@ -20,7 +20,6 @@ const typeLabels: Record<ModerationTargetType, string> = {
   profile_photo: "Foto",
   portfolio_item: "Portfólio",
   verification_request: "Verificação",
-  professional_relationship: "Relação profissional",
 };
 
 interface ApiResult<T> {

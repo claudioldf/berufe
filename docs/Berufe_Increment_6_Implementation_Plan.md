@@ -16,7 +16,7 @@ For Increment 6, this document records the approved decisions that refine `Beruf
 - Supply funnel percentages compare each row with the previous row. Verification and submission are not strictly sequential, so a percentage can exceed the preceding row and the UI explains that limitation.
 - The seven-day activity view uses the existing **Sem ação/Ativos** shape. Longer views use four complete local Monday–Sunday buckets.
 - The contact scorecard intentionally counts all WhatsApp handoffs divided by all profile views, regardless of handoff source. A handoff is not a hiring outcome.
-- A relationship is **respondida** when accepted or declined. Public approval remains a later, distinct stage.
+- A relationship is **respondida** when accepted or declined. The approved funnel stage counts recipient-accepted relationships whose two profiles remain publicly eligible; there is no admin review stage.
 - Zero counts are `0`; rates with no denominator are `null` and render as `—`.
 - Empty reports still render every existing widget. The launch-only replacement state is removed.
 - The publication target remains 30–50 and is configuration-backed. The publication scorecard detail uses current public stock.

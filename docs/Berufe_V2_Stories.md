@@ -213,7 +213,7 @@ Former MVP story and feature IDs are recorded for traceability and are not reuse
 - Registration retains the valid invitation association without storing the raw token.
 - Profile approval creates or reveals the pending relationship to the invitee.
 - The invitee explicitly accepts or declines it using the existing-member relationship rules.
-- Acceptance marks the invitation accepted and submits the confirmed relationship to moderation; publication still requires admin approval.
+- Acceptance marks the invitation accepted and the linked relationship recipient-accepted; it becomes publicly eligible immediately under the existing-member relationship rules.
 - Expiry or revocation before completion prevents relationship creation.
 
 **Depends on:** MVP S024 and S043; V2-011.

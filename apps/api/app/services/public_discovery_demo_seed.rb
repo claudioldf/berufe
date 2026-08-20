@@ -216,7 +216,7 @@ class PublicDiscoveryDemoSeed
         pair = [initiator.id, recipient.id].sort.push(relationship.fetch("type"))
         next unless seeded_pairs.add?(pair)
 
-        record = ProfessionalRelationship.find_or_create_by!(
+        ProfessionalRelationship.find_or_create_by!(
           initiator_professional: initiator,
           recipient_professional: recipient,
           relationship_type: relationship.fetch("type")
@@ -225,13 +225,6 @@ class PublicDiscoveryDemoSeed
           candidate.context_note = relationship.fetch("note")
           candidate.responded_at = Time.current
         end
-        next unless record.moderation_status == "pending_review"
-
-        ModerationDecision.new(context: admin_context).call(
-          target_type: "professional_relationship",
-          target_id: record.id,
-          action: "approved"
-        )
       end
     end
   end

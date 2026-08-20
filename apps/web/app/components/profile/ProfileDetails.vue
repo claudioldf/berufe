@@ -117,7 +117,7 @@ defineEmits<{
         </article>
       </div>
       <p v-else class="relationships-empty">
-        Este profissional ainda não possui relações públicas aprovadas.
+        Este profissional ainda não possui relações públicas confirmadas.
       </p>
       <UButton
         v-if="canRequestRelationship"

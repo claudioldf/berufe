@@ -950,8 +950,10 @@ export interface components {
             label: string;
             started: number;
             responded: number;
+            /** @description Recipient-accepted relationships whose two parties remain publicly eligible; no admin review is involved. */
             approved: number;
             response_rate: components["schemas"]["AdminGrowthReportRate"];
+            /** @description Recipient-confirmed public relationships divided by responded relationships. */
             approval_rate: components["schemas"]["AdminGrowthReportRate"];
         };
         AdminGrowthReportQuotes: {
@@ -1573,7 +1575,7 @@ export interface components {
             identity_match_confirmed?: boolean;
         };
         /** @enum {string} */
-        ModerationTargetType: "profile_revision" | "profile_photo" | "portfolio_item" | "verification_request" | "professional_relationship";
+        ModerationTargetType: "profile_revision" | "profile_photo" | "portfolio_item" | "verification_request";
         /** @enum {string} */
         ModerationStatus: "pending_review" | "approved" | "rejected" | "hidden";
         CatalogData: {
@@ -1972,7 +1974,7 @@ export interface components {
         /** @description Opaque server-generated media upload identifier. */
         MediaUploadId: string;
         /** @description Moderation target family shown by the existing type control. */
-        ModerationType: "all" | "profile_revision" | "profile_photo" | "portfolio_item" | "verification_request" | "professional_relationship";
+        ModerationType: "all" | "profile_revision" | "profile_photo" | "portfolio_item" | "verification_request";
         /** @description Moderation workflow state. */
         ModerationStatus: "pending_review" | "approved" | "rejected" | "hidden" | "all";
         /** @description Accent-insensitive search across the safe queue presentation. */

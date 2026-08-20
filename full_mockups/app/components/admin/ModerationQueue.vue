@@ -51,7 +51,7 @@ function decide(action: 'approved' | 'rejected') {
     <div v-if="queue.length" class="moderation__workspace">
       <section class="moderation__list" aria-label="Fila de moderação">
         <button v-for="item in filteredQueue" :key="item.id" type="button" :class="{ active: selected?.id === item.id, priority: item.priority === 'high' }" @click="selectedId = item.id">
-          <span class="moderation__type-icon"><UIcon :name="item.type === 'Perfil' ? 'i-lucide-user-round' : item.type === 'Verificação' ? 'i-lucide-shield-check' : item.type === 'Portfólio' ? 'i-lucide-image' : item.type === 'Recomendação' ? 'i-lucide-heart' : item.type === 'Relacionamento' ? 'i-lucide-handshake' : 'i-lucide-flag'" /></span>
+          <span class="moderation__type-icon"><UIcon :name="item.type === 'Perfil' ? 'i-lucide-user-round' : item.type === 'Verificação' ? 'i-lucide-shield-check' : item.type === 'Portfólio' ? 'i-lucide-image' : item.type === 'Recomendação' ? 'i-lucide-heart' : 'i-lucide-flag'" /></span>
           <span><em>{{ item.type }}</em><strong>{{ item.title }}</strong><small>{{ item.subtitle }}</small></span>
           <span class="moderation__age">{{ item.age }}</span>
         </button>

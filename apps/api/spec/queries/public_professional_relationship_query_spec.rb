@@ -3,31 +3,15 @@
 require "rails_helper"
 
 RSpec.describe PublicProfessionalRelationshipQuery do
-  let(:admin) do
-    UserAccount.create!(
-      email: "relationship-reviewer@berufe.com.br",
-      password: "@Qwer1234",
-      role: "admin",
-      status: "active"
-    )
-  end
   let(:initiator) { create_published_profile("+5547999997101", "Ana Pública") }
   let(:recipient) { create_published_profile("+5547999997102", "Beto Público") }
 
-  it "returns recipient-accepted pending and reviewed relationships for both endpoints" do
+  it "returns a recipient-accepted relationship for both endpoints without moderation" do
     relationship = create_relationship
 
     expect(described_class.for_professional(initiator.id)).to contain_exactly(relationship)
     expect(described_class.for_professional(recipient.id)).to contain_exactly(relationship)
-
-    moderate(relationship, "approved")
-    expect(described_class.for_professional(initiator.id)).to contain_exactly(relationship)
-
-    moderate(relationship, "hidden", reason: "Conteúdo ocultado para revisão operacional.")
-    expect(described_class.for_professional(initiator.id)).to be_empty
-
-    moderate(relationship, "restored")
-    expect(described_class.for_professional(initiator.id)).to contain_exactly(relationship)
+    expect(ModerationAction.count).to eq(0)
   end
 
   it "excludes unanswered relationships and relationships with a non-public endpoint" do
@@ -41,13 +25,7 @@ RSpec.describe PublicProfessionalRelationshipQuery do
     expect(described_class.call).to be_empty
   end
 
-  it "excludes rejected, declined, pending, and unreviewed relationships" do
-    rejected = create_relationship
-    moderate(
-      rejected,
-      "rejected",
-      reason: "O contexto não atende aos critérios de publicação atuais."
-    )
+  it "excludes declined and pending relationships" do
     declined = ProfessionalRelationship.create!(
       initiator_professional: recipient,
       recipient_professional: initiator,
@@ -63,7 +41,7 @@ RSpec.describe PublicProfessionalRelationshipQuery do
     )
 
     expect(described_class.call).to be_empty
-    expect([rejected, declined, pending]).to all(be_persisted)
+    expect([declined, pending]).to all(be_persisted)
   end
 
   private
@@ -146,20 +124,5 @@ RSpec.describe PublicProfessionalRelationshipQuery do
       status: "accepted",
       responded_at: 3.minutes.ago
     )
-  end
-
-  def moderate(relationship, action, reason: nil)
-    ModerationDecision.new(
-      context: AdminActionContext.new(
-        admin_user_id: admin.id,
-        request_id: "relationship-#{action}-#{SecureRandom.hex(4)}"
-      )
-    ).call(
-      target_type: "professional_relationship",
-      target_id: relationship.id,
-      action:,
-      reason:
-    )
-    relationship.reload
   end
 end

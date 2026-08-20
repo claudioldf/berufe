@@ -114,10 +114,10 @@ useSeoMeta({
         ausência de risco.
       </p>
       <p>
-        Perfis, fotos, itens de portfólio, solicitações de identidade e relações
-        aceitas podem ser aprovados, rejeitados, ocultados ou restaurados. Toda
-        decisão administrativa relevante deve ter responsável, horário e
-        justificativa quando aplicável.
+        Perfis, fotos, itens de portfólio e solicitações de identidade podem ser
+        aprovados, rejeitados, ocultados ou restaurados. Toda decisão
+        administrativa relevante deve ter responsável, horário e justificativa
+        quando aplicável.
       </p>
       <p>
         Conteúdo novo ou materialmente alterado não fica público antes de ser
@@ -135,10 +135,10 @@ useSeoMeta({
         mesmo nem duplicata do mesmo tipo.
       </p>
       <p>
-        O destinatário pode aceitar ou recusar. Uma relação aceita continua
-        privada até a moderação; somente relações confirmadas pelas partes,
-        aprovadas e visíveis aparecem no perfil. A recomendação profissional
-        identifica seu autor e não pode ser anônima.
+        O destinatário pode aceitar ou recusar. A relação aceita pode aparecer
+        nos perfis públicos assim que for confirmada, desde que ambos os perfis
+        continuem públicos e ativos. A recomendação profissional identifica seu
+        autor e não pode ser anônima.
       </p>
     </section>
 
@@ -146,7 +146,7 @@ useSeoMeta({
       <h2>7. Busca, compartilhamento e WhatsApp</h2>
       <p>
         A ordem dos resultados considera correspondência do serviço, cobertura,
-        identidade verificada, portfólio, relações profissionais aprovadas e
+        identidade verificada, portfólio, relações profissionais confirmadas e
         atualização do perfil. Não há compra de posição, nota oculta nem
         garantia de destaque.
       </p>

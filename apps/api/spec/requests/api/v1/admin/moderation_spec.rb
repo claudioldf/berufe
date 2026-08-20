@@ -84,52 +84,6 @@ RSpec.describe "Administrator professional-supply moderation", type: :request, o
     assert_api_conform(status: 200)
   end
 
-  it "reviews accepted professional relationships through the shared queue" do
-    partner_account = UserAccount.create!(
-      phone_e164: "+5547999998206",
-      role: "professional",
-      status: "active"
-    )
-    partner = ProfessionalProfile.create!(user_account: partner_account, display_name: "Beto Lima")
-    relationship = ProfessionalRelationship.create!(
-      initiator_professional: partner,
-      recipient_professional: profile,
-      relationship_type: "recommendation",
-      context_note: "Indicação confirmada entre membros.",
-      status: "accepted",
-      responded_at: 30.minutes.ago
-    )
-
-    get "/api/v1/admin/moderation",
-      params: {type: "professional_relationship", status: "pending_review", page: 1, per_page: 20},
-      headers: session_headers(token: admin_token, request_id: "relationship-moderation-list")
-
-    expect(response).to have_http_status(:ok)
-    expect(response.parsed_body.dig("data", "items").sole).to include(
-      "target_type" => "professional_relationship",
-      "target_id" => relationship.id,
-      "status" => "pending_review",
-      "has_media" => false
-    )
-    assert_api_conform(status: 200)
-
-    post "/api/v1/admin/moderation/professional_relationship/#{relationship.id}/decisions" \
-      "?type=professional_relationship&status=pending_review&page=1&per_page=20",
-      params: {decision: {action: "approved"}},
-      headers: session_headers(token: admin_token, request_id: "relationship-moderation-approve", origin: true),
-      as: :json
-
-    expect(response).to have_http_status(:ok)
-    expect(relationship.reload.status).to eq("accepted")
-    expect(ModerationAction.where(target_type: "professional_relationship").sole).to have_attributes(
-      action: "approved",
-      target_id: relationship.id,
-      admin_user: admin
-    )
-    expect(response.parsed_body.dig("data", "items")).to be_empty
-    assert_api_conform(status: 200)
-  end
-
   it "returns the documented decision failures without appending audit rows" do
     post decision_path(revision),
       params: {decision: {action: "approved"}},

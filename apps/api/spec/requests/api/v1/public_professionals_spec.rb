@@ -332,8 +332,7 @@ RSpec.describe "Public professional profiles", type: :request, openapi: true do
       relationship_type: "recommendation",
       context_note: "Indicação profissional aprovada.",
       status: "accepted",
-      responded_at: Time.current,
-      moderation_status: "approved"
+      responded_at: Time.current
     )
   end
 

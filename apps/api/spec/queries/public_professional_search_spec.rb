@@ -293,8 +293,7 @@ RSpec.describe PublicProfessionalSearch do
       recipient_professional: partner,
       relationship_type: "recommendation",
       status: "accepted",
-      responded_at: Time.current,
-      moderation_status: "approved"
+      responded_at: Time.current
     )
   end
 

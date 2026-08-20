@@ -622,7 +622,7 @@ This is the main differentiator from a standard directory. It creates the first 
 1. A verified professional finds another published professional.
 2. They select “Recommend” or “Worked together” and add an optional short context note.
 3. The recipient accepts or declines.
-4. Accepted relationships enter moderation and become public only after approval.
+4. Accepted relationships become publicly eligible immediately while both profiles remain public and active.
 
 Only verified professionals can initiate a public relationship. Both parties must confirm “worked together.” A recommendation is displayed with its author and cannot be anonymous.
 
@@ -630,17 +630,16 @@ Only verified professionals can initiate a public relationship. Both parties mus
 
 **`professional_relationship`**
 
-| Field                       | Type      | Rules                                                                                                                                                        |
-| --------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `id`                        | UUID      | Primary key                                                                                                                                                  |
-| `initiator_professional_id` | UUID      | Foreign reference to profile                                                                                                                                 |
-| `recipient_professional_id` | UUID      | Foreign reference to profile; cannot equal initiator                                                                                                         |
-| `relationship_type`         | enum      | `recommendation`, `worked_together`                                                                                                                          |
-| `context_note`              | text      | Optional and short                                                                                                                                           |
-| `status`                    | enum      | The recipient's own answer: `pending`, `accepted`, `declined`                                                                                                |
-| `moderation_status`         | enum      | Independent Berufe review: `pending_review`, `approved`, `rejected`, `hidden`. Accepted pending/approved records are public; rejected/hidden records are not |
-| `created_at`                | timestamp | Required                                                                                                                                                     |
-| `responded_at`              | timestamp | Nullable                                                                                                                                                     |
+| Field                       | Type      | Rules                                                         |
+| --------------------------- | --------- | ------------------------------------------------------------- |
+| `id`                        | UUID      | Primary key                                                   |
+| `initiator_professional_id` | UUID      | Foreign reference to profile                                  |
+| `recipient_professional_id` | UUID      | Foreign reference to profile; cannot equal initiator          |
+| `relationship_type`         | enum      | `recommendation`, `worked_together`                           |
+| `context_note`              | text      | Optional and short                                            |
+| `status`                    | enum      | Recipient answer: `pending`, `accepted`, or `declined`        |
+| `created_at`                | timestamp | Required                                                      |
+| `responded_at`              | timestamp | Required for `accepted` or `declined`; absent while `pending` |
 
 Unique key: `initiator_professional_id + recipient_professional_id + relationship_type`.
 
@@ -729,7 +728,7 @@ The owner may continue editing a shared quote. Its `shared` status, original `sh
 
 #### 1. Summary
 
-Gives a small Berufe operations team one place to approve identity-verification requests and moderate profiles, portfolios, and professional relationships.
+Gives a small Berufe operations team one place to approve identity-verification requests and moderate profiles and portfolios.
 
 #### 2. Why we need it
 
@@ -742,7 +741,7 @@ The public promise depends on accurate evidence and controlled content. With onl
 3. The reviewer sees only the information required for that review. The existing content-preview block retrieves regenerated profile-photo and portfolio images through authenticated, no-store Rails responses and records the administrator, target, request, and access time without returning a storage key or permanent private URL.
 4. They approve, reject with a private reason, or hide previously approved content.
 5. Every admin decision is recorded in an audit trail.
-6. Pending profile content, profile photos, portfolio items, and recipient-accepted professional relationships are public without a moderation badge. Rejected or hidden content is removed immediately. Verification evidence remains private and its label appears only after approval.
+6. Pending profile content, profile photos, and portfolio items are public without a moderation badge. Rejected or hidden content is removed immediately. Verification evidence remains private and its label appears only after approval. Professional relationships are outside this queue and become public through recipient acceptance.
 
 Public pages expose a visible Berufe support/report contact. The founding-cohort operations team records and handles reports through the documented manual support process; an in-product reporting workflow is deferred.
 
@@ -750,15 +749,15 @@ Public pages expose a visible Berufe support/report contact. The founding-cohort
 
 **`moderation_action`**
 
-| Field           | Type      | Rules                                                                            |
-| --------------- | --------- | -------------------------------------------------------------------------------- |
-| `id`            | UUID      | Primary key                                                                      |
-| `target_type`   | enum      | `profile`, `portfolio_item`, `professional_relationship`, `verification_request` |
-| `target_id`     | UUID      | ID in target feature                                                             |
-| `action`        | enum      | `approved`, `rejected`, `hidden`, `restored`                                     |
-| `reason`        | text      | Private; required for rejection/hide                                             |
-| `admin_user_id` | UUID      | Foreign reference to admin account                                               |
-| `created_at`    | timestamp | Required                                                                         |
+| Field           | Type      | Rules                                                                         |
+| --------------- | --------- | ----------------------------------------------------------------------------- |
+| `id`            | UUID      | Primary key                                                                   |
+| `target_type`   | enum      | `profile_revision`, `profile_photo`, `portfolio_item`, `verification_request` |
+| `target_id`     | UUID      | ID in target feature                                                          |
+| `action`        | enum      | `approved`, `rejected`, `hidden`, `restored`                                  |
+| `reason`        | text      | Private; required for rejection/hide                                          |
+| `admin_user_id` | UUID      | Foreign reference to admin account                                            |
+| `created_at`    | timestamp | Required                                                                      |
 
 **`moderation_media_access_event`**
 

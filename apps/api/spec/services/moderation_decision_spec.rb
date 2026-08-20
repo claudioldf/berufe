@@ -87,4 +87,31 @@ RSpec.describe ModerationDecision do
     end.to raise_error(described_class::Conflict)
     expect(ModerationAction.count).to eq(0)
   end
+
+  it "does not resolve professional relationships as moderation targets" do
+    recipient_account = UserAccount.create!(
+      phone_e164: "+5547999998204",
+      role: "professional",
+      status: "active"
+    )
+    relationship = ProfessionalRelationship.create!(
+      initiator_professional: profile,
+      recipient_professional: ProfessionalProfile.create!(
+        user_account: recipient_account,
+        display_name: "Beto Lima"
+      ),
+      relationship_type: "worked_together",
+      status: "accepted",
+      responded_at: Time.current
+    )
+
+    expect do
+      described_class.new(context:).call(
+        target_type: "professional_relationship",
+        target_id: relationship.id,
+        action: "approved"
+      )
+    end.to raise_error(ActiveRecord::RecordNotFound)
+    expect(ModerationAction.count).to eq(0)
+  end
 end

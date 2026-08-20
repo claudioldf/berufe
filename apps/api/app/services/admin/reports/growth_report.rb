@@ -55,7 +55,6 @@ module Admin
 
       def public_relationship_counts
         @public_relationship_counts ||= PublicProfessionalRelationshipQuery.call
-          .where(moderation_status: "approved")
           .each_with_object(Hash.new(0)) do |relationship, counts|
           counts[relationship.initiator_professional_id] += 1
           counts[relationship.recipient_professional_id] += 1
@@ -338,7 +337,7 @@ module Admin
         started = cohort.count
         responded = cohort.where.not(responded_at: nil).count
         public_ids = PublicProfessionalRelationshipQuery.call
-          .where(id: cohort.select(:id), moderation_status: "approved")
+          .where(id: cohort.select(:id))
           .pluck(:id)
         approved = public_ids.length
         {
@@ -395,8 +394,7 @@ module Admin
           "profile_revision" => ProfessionalProfileRevision.where(id: actions.where(target_type: "profile_revision").select(:target_id)).pluck(:id, :submitted_at).to_h,
           "profile_photo" => ProfessionalProfilePhoto.where(id: actions.where(target_type: "profile_photo").select(:target_id)).pluck(:id, :submitted_at).to_h,
           "portfolio_item" => PortfolioItem.where(id: actions.where(target_type: "portfolio_item").select(:target_id)).pluck(:id, :submitted_at).to_h,
-          "verification_request" => VerificationRequest.where(id: actions.where(target_type: "verification_request").select(:target_id)).pluck(:id, :submitted_at).to_h,
-          "professional_relationship" => ProfessionalRelationship.where(id: actions.where(target_type: "professional_relationship").select(:target_id)).pluck(:id, :responded_at).to_h
+          "verification_request" => VerificationRequest.where(id: actions.where(target_type: "verification_request").select(:target_id)).pluck(:id, :submitted_at).to_h
         }
         actions.filter_map do |action|
           start = submitted.dig(action.target_type, action.target_id)

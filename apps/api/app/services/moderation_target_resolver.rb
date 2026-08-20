@@ -5,8 +5,7 @@ class ModerationTargetResolver
     "profile_revision" => ProfessionalProfileRevision,
     "profile_photo" => ProfessionalProfilePhoto,
     "portfolio_item" => PortfolioItem,
-    "verification_request" => VerificationRequest,
-    "professional_relationship" => ProfessionalRelationship
+    "verification_request" => VerificationRequest
   }.freeze
 
   def call(target_type:, target_id:)

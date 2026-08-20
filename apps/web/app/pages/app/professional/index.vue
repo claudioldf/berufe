@@ -364,7 +364,7 @@ async function respondRelationship(id: string, accepted: boolean) {
     showToast({
       title: accepted ? "Colaboração confirmada" : "Solicitação recusada",
       description: accepted
-        ? "Agora ela seguirá para moderação."
+        ? "A relação já pode aparecer nos perfis públicos."
         : "Essa relação continuará privada.",
     });
   } catch {
