@@ -690,10 +690,6 @@ paths:
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
-            Cache-Control:
-              schema:
-                type: string
-                const: no-store
           content:
             application/json:
               schema:
@@ -752,10 +748,6 @@ paths:
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
-            Cache-Control:
-              schema:
-                type: string
-                const: no-store
           content:
             application/json:
               schema:

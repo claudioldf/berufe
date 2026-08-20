@@ -2,7 +2,9 @@
 
 class PublicPortfolioImageUrl
   def self.call(item, environment: ENV)
-    base_url = environment.fetch("API_PUBLIC_URL").delete_suffix("/")
-    "#{base_url}/api/v1/public/portfolio-items/#{item.id}/image"
+    PublicMediaUrl.call(
+      rails_path: "/api/v1/public/portfolio-items/#{item.id}/image",
+      environment:
+    )
   end
 end

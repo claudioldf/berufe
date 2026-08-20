@@ -23,8 +23,10 @@ class R2Storage
     @presigner = presigner || Aws::S3::Presigner.new(client: @client)
   end
 
-  def write(scope:, key:, body:, content_type: "application/octet-stream")
-    @client.put_object(bucket: bucket_for(scope), key:, body:, content_type:)
+  def write(scope:, key:, body:, content_type: "application/octet-stream", cache_control: nil)
+    options = {bucket: bucket_for(scope), key:, body:, content_type:}
+    options[:cache_control] = cache_control if cache_control
+    @client.put_object(**options)
     key
   end
 
