@@ -33,7 +33,7 @@ const links = computed(() => {
   return [
     { label: "Encontrar profissional", to: "/encontrar" },
     { label: "Como funciona", to: "/#como-funciona" },
-    { label: "Para profissionais", to: professionalLoginPath },
+    { label: "Sou um profissional", to: professionalLoginPath },
   ];
 });
 
