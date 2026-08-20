@@ -22,21 +22,21 @@ module Api
         private
 
         def neighborhood_attributes(include_code: false)
-          permitted = params.permit(:name, :code, :stateCode, :city, :isActive)
+          permitted = params.permit(:name, :code, :state_code, :city, :is_active)
           require_neighborhood_create_fields! if include_code
           attributes = {}
           attributes[:name] = permitted[:name] if permitted.key?(:name)
           attributes[:code] = permitted[:code] if include_code
-          attributes[:state_code] = permitted[:stateCode] if permitted.key?(:stateCode)
+          attributes[:state_code] = permitted[:state_code] if permitted.key?(:state_code)
           attributes[:city] = permitted[:city] if permitted.key?(:city)
-          attributes[:is_active] = permitted[:isActive] if permitted.key?(:isActive)
+          attributes[:is_active] = permitted[:is_active] if permitted.key?(:is_active)
           raise ActionController::ParameterMissing, :neighborhood if attributes.empty?
 
           attributes
         end
 
         def require_neighborhood_create_fields!
-          %i[name code stateCode city].each { |field| params.require(field) }
+          %i[name code state_code city].each { |field| params.require(field) }
         end
       end
     end

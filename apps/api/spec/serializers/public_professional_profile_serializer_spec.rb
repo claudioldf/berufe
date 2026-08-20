@@ -20,7 +20,7 @@ RSpec.describe PublicProfessionalProfileSerializer do
     expect(described_class.new(profile).as_json).to be_nil
   end
 
-  it "keeps the approved snapshot public while a material edit is pending" do
+  it "publishes a material edit immediately while retaining its approved fallback" do
     approved = profile.working_revision
     category = ServiceCategory.create!(
       name: "Instalações Revision",
@@ -42,13 +42,23 @@ RSpec.describe PublicProfessionalProfileSerializer do
     approved.professional_profile_services.create!(service:, is_primary: true, note: "Quadros")
     approved.professional_profile_service_areas.create!(city_code: "Joinville")
     approved.update!(status: "approved", reviewed_at: Time.current)
-    profile.update!(profile_status: "published", published_revision: approved)
+    photo = create_approved_photo(profile)
+    profile.update!(
+      birthdate: Date.new(1990, 4, 12),
+      profile_status: "published",
+      published_revision: approved,
+      approved_revision: approved,
+      working_photo: photo,
+      published_photo: photo,
+      approved_photo: photo
+    )
 
     before_edit = described_class.new(profile.reload).as_json
     ProfessionalProfileIdentityUpdater.new.call(
       profile:,
       attributes: {
         display_name: "Ana Obras",
+        birthdate: "1990-04-12",
         headline: "Nova apresentação pendente.",
         bio: "Conteúdo ainda não aprovado.",
         whatsapp: account.phone_e164,
@@ -60,22 +70,25 @@ RSpec.describe PublicProfessionalProfileSerializer do
     profile.reload
     expect(profile.working_revision).not_to eq(approved)
     expect(profile.working_revision.status).to eq("pending_review")
-    expect(profile.published_revision).to eq(approved)
+    expect(profile.published_revision).to eq(profile.working_revision)
+    expect(profile.approved_revision).to eq(approved)
     expect(profile.working_revision.professional_profile_services.sole.service).to eq(service)
     expect(profile.working_revision.professional_profile_service_areas.sole.neighborhood_code).to be_nil
-    expect(described_class.new(profile).as_json).to eq(before_edit)
+    expect(described_class.new(profile).as_json).to include(
+      display_name: "Ana Obras",
+      headline: "Nova apresentação pendente.",
+      bio: "Conteúdo ainda não aprovado."
+    )
     expect(before_edit).to include(
-      publicSlug: "ana-souza",
-      displayName: "Ana Souza",
+      public_slug: "ana-souza",
+      display_name: "Ana Souza",
       headline: "Elétrica residencial.",
-      verificationLabels: [{type: "phone", label: "Telefone confirmado", verifiedAt: nil}]
+      verification_labels: [{type: "phone", label: "Telefone confirmado", verified_at: nil}]
     )
   end
 
   it "excludes a suspended account even when an approved pointer exists" do
-    approved = profile.working_revision
-    approved.update!(status: "approved")
-    profile.update!(profile_status: "published", published_revision: approved)
+    publish(profile)
     account.update!(status: "suspended")
 
     expect(described_class.new(profile.reload).as_json).to be_nil
@@ -90,44 +103,91 @@ RSpec.describe PublicProfessionalProfileSerializer do
     )
     partner = ProfessionalProfile.create!(user_account: partner_account, display_name: "Beto Lima")
     publish(partner)
-    relationship = ProfessionalRelationship.create!(
+    ProfessionalRelationship.create!(
       initiator_professional: partner,
       recipient_professional: profile,
       relationship_type: "recommendation",
       context_note: "Indicação profissional aprovada.",
       status: "accepted",
-      responded_at: Time.current
-    )
-    admin = UserAccount.create!(
-      email: "relationship-serializer@example.com",
-      password: "a-secure-admin-password",
-      password_confirmation: "a-secure-admin-password",
-      role: "admin",
-      status: "active"
-    )
-    ModerationAction.create!(
-      admin_user: admin,
-      target_type: "professional_relationship",
-      target_id: relationship.id,
-      action: "approved",
-      request_id: "relationship-serializer",
-      created_at: Time.current
+      responded_at: Time.current,
+      moderation_status: "pending_review"
     )
 
     received = described_class.new(profile.reload).as_json.fetch(:relationships).sole
     authored = described_class.new(partner.reload).as_json.fetch(:relationships).sole
 
     expect(received).to include(direction: "incoming")
-    expect(received.dig(:professional, :displayName)).to eq("Beto Lima")
+    expect(received.dig(:professional, :display_name)).to eq("Beto Lima")
     expect(authored).to include(direction: "outgoing")
-    expect(authored.dig(:professional, :displayName)).to eq("Ana Souza")
+    expect(authored.dig(:professional, :display_name)).to eq("Ana Souza")
   end
 
   private
 
   def publish(public_profile)
     revision = public_profile.working_revision
+    category = ServiceCategory.find_or_create_by!(slug: "serializador-publico") do |record|
+      record.name = "Serializador Público"
+      record.icon = "i-lucide-wrench"
+      record.is_active = true
+      record.sort_order = 0
+    end
+    service = Service.create!(
+      category:,
+      name: "Serviço #{public_profile.id}",
+      slug: "servico-#{public_profile.id}",
+      icon: "i-lucide-wrench",
+      description: "Serviço profissional.",
+      aliases: [],
+      is_active: true,
+      sort_order: 0
+    )
+    revision.professional_profile_services.create!(service:, is_primary: true)
+    revision.professional_profile_service_areas.create!(city_code: "Joinville")
     revision.update!(status: "approved", reviewed_at: Time.current)
-    public_profile.update!(profile_status: "published", published_revision: revision)
+    photo = create_approved_photo(public_profile)
+    public_profile.update!(
+      birthdate: Date.new(1990, 4, 12),
+      profile_status: "published",
+      published_revision: revision,
+      approved_revision: revision,
+      working_photo: photo,
+      published_photo: photo,
+      approved_photo: photo
+    )
+  end
+
+  def create_approved_photo(public_profile)
+    upload = MediaUpload.create!(
+      professional_profile: public_profile,
+      purpose: "profile_photo",
+      state: "attached",
+      declared_content_type: "image/jpeg",
+      declared_byte_size: 100,
+      actual_content_type: "image/jpeg",
+      sanitized_content_type: "image/jpeg",
+      actual_byte_size: 100,
+      sanitized_byte_size: 100,
+      width: 640,
+      height: 960,
+      quarantine_key: "quarantine/#{public_profile.id}/#{SecureRandom.uuid}",
+      sanitized_key: "sanitized/#{public_profile.id}/#{SecureRandom.uuid}.jpg",
+      authorization_expires_at: 5.minutes.from_now,
+      uploaded_at: 1.minute.ago,
+      processed_at: Time.current,
+      attached_at: Time.current
+    )
+    public_profile.profile_photos.create!(
+      media_upload: upload,
+      status: "approved",
+      private_key: upload.sanitized_key,
+      public_key: "moderation/profile_photo/#{SecureRandom.uuid}.jpg",
+      content_type: "image/jpeg",
+      byte_size: 100,
+      width: 640,
+      height: 960,
+      submitted_at: Time.current,
+      reviewed_at: Time.current
+    )
   end
 end

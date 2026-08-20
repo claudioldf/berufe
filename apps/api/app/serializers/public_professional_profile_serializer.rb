@@ -6,10 +6,10 @@ class PublicProfessionalProfileSerializer
   end
 
   def as_json(*)
-    return nil unless profile.profile_status == "published" && profile.user_account.active?
+    return nil unless profile.publicly_available?
 
     revision = profile.published_revision
-    return nil unless revision&.status == "approved"
+    return nil unless revision&.status&.in?(%w[pending_review approved])
 
     selections = revision.professional_profile_services.sort_by do |selection|
       [selection.is_primary? ? 0 : 1, selection.service.name, selection.id]
@@ -19,37 +19,37 @@ class PublicProfessionalProfileSerializer
 
     {
       id: profile.id,
-      publicSlug: profile.public_slug,
-      displayName: revision.display_name,
+      public_slug: profile.public_slug,
+      display_name: revision.display_name,
       headline: revision.headline,
       bio: revision.bio,
-      yearsExperience: revision.years_experience,
-      photoUrl: public_photo_url,
+      years_experience: revision.years_experience,
+      photo_url: public_photo_url,
       services: selections.map do |selection|
         {
           id: selection.service_id,
           name: selection.service.name,
           slug: selection.service.slug,
-          isPrimary: selection.is_primary,
+          is_primary: selection.is_primary,
           note: selection.note
         }
       end,
       coverage: {
-        allJoinville: areas.any? { |area| area.neighborhood_code.nil? },
+        all_joinville: areas.any? { |area| area.neighborhood_code.nil? },
         neighborhoods: areas.filter_map do |area|
           next unless area.neighborhood
 
           {code: area.neighborhood.code, name: area.neighborhood.name}
         end.sort_by { |area| [area[:name], area[:code]] }
       },
-      verificationLabels: verification_labels(verification),
+      verification_labels: verification_labels(verification),
       portfolio: public_portfolio,
       relationships: public_relationships,
-      socialLinks: {
+      social_links: {
         instagram: revision.instagram_url,
         youtube: revision.youtube_url
       },
-      publicSnapshotUpdatedAt: revision.reviewed_at&.iso8601
+      public_snapshot_updated_at: (revision.submitted_at || revision.created_at).iso8601
     }
   end
 
@@ -58,12 +58,12 @@ class PublicProfessionalProfileSerializer
   attr_reader :profile
 
   def verification_labels(verification)
-    labels = [{type: "phone", label: "Telefone confirmado", verifiedAt: nil}]
+    labels = [{type: "phone", label: "Telefone confirmado", verified_at: nil}]
     if verification[:identity]
       labels << {
         type: "identity",
         label: verification[:identity][:label],
-        verifiedAt: verification[:identity][:verified_at]
+        verified_at: verification[:identity][:verified_at]
       }
     end
     labels
@@ -71,14 +71,14 @@ class PublicProfessionalProfileSerializer
 
   def public_photo_url
     photo = profile.published_photo
-    return unless photo&.approved? && photo.public_key.present?
+    return unless photo&.status&.in?(%w[pending_review approved])
 
     PublicProfilePhotoImageUrl.call(photo)
   end
 
   def public_portfolio
     profile.portfolio_items
-      .select { |item| item.approved? && item.deleted_at.nil? && item.public_key.present? }
+      .select { |item| item.status.in?(%w[pending_review approved]) && item.deleted_at.nil? }
       .sort_by { |item| [-item.submitted_at.to_f, item.id] }
       .map do |item|
         {
@@ -90,7 +90,7 @@ class PublicProfessionalProfileSerializer
             name: item.service.name,
             slug: item.service.slug
           },
-          imageUrl: PublicPortfolioImageUrl.call(item)
+          image_url: PublicPortfolioImageUrl.call(item)
         }
       end
   end
@@ -122,15 +122,15 @@ class PublicProfessionalProfileSerializer
       note: relationship.context_note,
       professional: {
         id: other.id,
-        publicSlug: other.public_slug,
-        displayName: other_revision.display_name,
-        photoUrl: public_relationship_photo_url(other_photo)
+        public_slug: other.public_slug,
+        display_name: other_revision.display_name,
+        photo_url: public_relationship_photo_url(other_photo)
       }
     }
   end
 
   def public_relationship_photo_url(photo)
-    return unless photo&.approved? && photo.public_key.present?
+    return unless photo&.status&.in?(%w[pending_review approved])
 
     PublicProfilePhotoImageUrl.call(photo)
   end

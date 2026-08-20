@@ -14,6 +14,7 @@ require_relative "../config/environment"
 abort("The Rails environment is running in production mode!") if Rails.env.production?
 require "rspec/rails"
 require "openapi_first"
+require_relative "support/professional_profile_spec_helpers"
 
 ActiveRecord::Migration.maintain_test_schema!
 
@@ -30,4 +31,5 @@ RSpec.configure do |config|
   config.infer_spec_type_from_file_location!
   config.filter_rails_from_backtrace!
   config.include OpenapiFirst::Test::Methods[Rails.application], openapi: true
+  config.include ProfessionalProfileSpecHelpers
 end

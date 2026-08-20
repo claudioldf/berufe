@@ -10,6 +10,11 @@ RSpec.describe "Administrator professional-supply moderation", type: :request, o
   let(:revision) do
     profile.working_revision.tap do |record|
       record.update!(status: "pending_review", submitted_at: 4.hours.ago)
+      profile.update!(
+        profile_status: "published",
+        published_revision: record,
+        published_at: 4.hours.ago
+      )
     end
   end
   let(:photo) { create_photo(submitted_at: 3.hours.ago) }

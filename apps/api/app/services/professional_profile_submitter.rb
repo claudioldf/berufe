@@ -10,14 +10,12 @@ class ProfessionalProfileSubmitter
     end
   end
 
-  REVIEWABLE_STATUSES = %w[pending_review approved].freeze
-
   def call(profile:)
     profile.with_lock do
       revision = profile.working_revision
       raise ActiveRecord::RecordNotFound, "professional profile revision" unless revision
 
-      return profile if already_submitted?(profile, revision)
+      return profile if already_published?(profile)
 
       validate_state!(profile, revision)
       validate_checklist!(profile, revision)
@@ -29,7 +27,12 @@ class ProfessionalProfileSubmitter
         reviewed_at: nil,
         rejection_reason: nil
       )
-      profile.update!(profile_status: "pending_review")
+      profile.update!(
+        published_revision: revision,
+        published_photo: profile.working_photo,
+        profile_status: "published",
+        published_at: profile.published_at || submitted_at
+      )
     end
     profile.reload
   rescue ActiveRecord::RecordInvalid => error
@@ -38,31 +41,33 @@ class ProfessionalProfileSubmitter
 
   private
 
-  def already_submitted?(profile, revision)
-    profile.profile_status == "pending_review" && revision.status == "pending_review"
+  def already_published?(profile)
+    profile.profile_status == "published" && profile.publicly_available?
   end
 
   def validate_state!(profile, revision)
-    return if profile.profile_status == "draft" && revision.status.in?(%w[draft rejected])
+    return if profile.profile_status != "suspended" && revision.status.in?(%w[draft pending_review])
 
     raise Invalid.new(base: ["o perfil não está disponível para envio"])
   end
 
   def validate_checklist!(profile, revision)
     errors = {}
-    errors[:identity] = ["complete nome, apresentação, biografia e WhatsApp"] unless identity_complete?(revision)
+    errors[:identity] = ["complete nome, data de nascimento e contato"] unless identity_complete?(profile, revision)
+    errors[:photo] = ["envie uma foto de perfil processada"] unless photo_complete?(profile)
     errors[:services] = ["escolha ao menos um serviço ativo e defina exatamente um principal"] unless services_complete?(revision)
     errors[:coverage] = ["selecione toda Joinville ou ao menos um bairro ativo"] unless coverage_complete?(revision)
-    errors[:portfolio] = ["envie ao menos um trabalho para análise"] unless reviewable_portfolio?(profile)
-    errors[:verification] = ["envie sua identidade para análise"] unless reviewable_identity?(profile)
     raise Invalid.new(errors) if errors.any?
   end
 
-  def identity_complete?(revision)
+  def identity_complete?(profile, revision)
     revision.display_name.present? &&
-      revision.headline.present? &&
-      revision.bio.present? &&
-      revision.whatsapp_e164.present?
+      profile.birthdate.present? &&
+      (revision.whatsapp_e164.presence || profile.user_account.phone_e164).present?
+  end
+
+  def photo_complete?(profile)
+    profile.working_photo&.status&.in?(%w[pending_review approved])
   end
 
   def services_complete?(revision)
@@ -78,17 +83,5 @@ class ProfessionalProfileSubmitter
     return true if areas.one? && areas.first.neighborhood_code.nil?
 
     areas.all? { |area| area.neighborhood_code.present? && area.neighborhood&.is_active? }
-  end
-
-  def reviewable_portfolio?(profile)
-    profile.portfolio_items.active.where(status: REVIEWABLE_STATUSES).exists?
-  end
-
-  def reviewable_identity?(profile)
-    profile.verification_requests
-      .identity
-      .where(status: REVIEWABLE_STATUSES)
-      .joins(:verification_file)
-      .exists?
   end
 end

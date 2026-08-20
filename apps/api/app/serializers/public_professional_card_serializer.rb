@@ -14,28 +14,30 @@ class PublicProfessionalCardSerializer
 
     {
       id: profile.id,
-      publicSlug: profile.public_slug,
-      displayName: revision.display_name,
+      public_slug: profile.public_slug,
+      display_name: revision.display_name,
       headline: revision.headline,
-      photoUrl: public_photo_url,
-      primaryService: primary_service && {
+      photo_url: public_photo_url,
+      primary_service: primary_service && {
         id: primary_service.service_id,
         name: primary_service.service.name,
         slug: primary_service.service.slug
       },
-      matchingService: serialize_service(matching_service || primary_service&.service),
+      matching_service: serialize_service(matching_service || primary_service&.service),
       coverage: {
-        allJoinville: areas.any? { |area| area.neighborhood_code.nil? },
+        all_joinville: areas.any? { |area| area.neighborhood_code.nil? },
         neighborhoods: areas.filter_map do |area|
           next unless area.neighborhood
 
           {code: area.neighborhood.code, name: area.neighborhood.name}
         end
       },
-      verificationLabels: verification_labels(verification),
-      portfolioCount: profile.portfolio_items.count { |item| item.status == "approved" && item.deleted_at.nil? },
-      relationshipCount: PublicProfessionalRelationshipQuery.for_professional(profile.id).count,
-      publicSnapshotUpdatedAt: revision.reviewed_at&.iso8601
+      verification_labels: verification_labels(verification),
+      portfolio_count: profile.portfolio_items.count do |item|
+        item.status.in?(%w[pending_review approved]) && item.deleted_at.nil?
+      end,
+      relationship_count: PublicProfessionalRelationshipQuery.for_professional(profile.id).count,
+      public_snapshot_updated_at: (revision.submitted_at || revision.created_at).iso8601
     }
   end
 
@@ -50,12 +52,12 @@ class PublicProfessionalCardSerializer
   end
 
   def verification_labels(verification)
-    labels = [{type: "phone", label: "Telefone confirmado", verifiedAt: nil}]
+    labels = [{type: "phone", label: "Telefone confirmado", verified_at: nil}]
     if verification[:identity]
       labels << {
         type: "identity",
         label: verification[:identity][:label],
-        verifiedAt: verification[:identity][:verified_at]
+        verified_at: verification[:identity][:verified_at]
       }
     end
     labels
@@ -63,7 +65,7 @@ class PublicProfessionalCardSerializer
 
   def public_photo_url
     photo = profile.published_photo
-    return unless photo&.approved? && photo.public_key.present?
+    return unless photo&.status&.in?(%w[pending_review approved])
 
     PublicProfilePhotoImageUrl.call(photo)
   end

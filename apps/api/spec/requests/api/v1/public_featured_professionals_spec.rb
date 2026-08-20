@@ -54,12 +54,12 @@ RSpec.describe "Featured public professionals", type: :request, openapi: true do
     expect(professionals.pluck("id")).to eq([newest.id, first.id, second.id])
     expect(professionals.pluck("id")).not_to include(oldest.id, suspended.id)
     expect(professionals.first).to include(
-      "publicSlug" => "dora-nova",
-      "displayName" => "Dora Nova",
-      "photoUrl" => nil,
-      "primaryService" => include("name" => "Eletricista em destaque"),
-      "portfolioCount" => 0,
-      "relationshipCount" => 0
+      "public_slug" => "dora-nova",
+      "display_name" => "Dora Nova",
+      "photo_url" => a_string_including("/api/v1/public/profile-photos/"),
+      "primary_service" => include("name" => "Eletricista em destaque"),
+      "portfolio_count" => 0,
+      "relationship_count" => 0
     )
     expect(response.body).not_to include("whatsapp", "+5547")
     assert_api_conform(status: 200)
@@ -91,8 +91,6 @@ RSpec.describe "Featured public professionals", type: :request, openapi: true do
     revision = profile.working_revision
     revision.professional_profile_services.create!(service:, is_primary: true)
     revision.professional_profile_service_areas.create!(city_code: "Joinville")
-    revision.update!(status: "approved", reviewed_at:)
-    profile.update!(profile_status: "published", published_revision: revision)
-    profile
+    make_profile_publicly_eligible(profile, revision:, reviewed_at:)
   end
 end

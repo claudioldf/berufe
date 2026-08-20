@@ -72,10 +72,10 @@ module Api
         def catalog_field_errors(record)
           record.errors.to_hash(true).transform_keys do |field|
             {
-              category: :categorySlug,
+              category: :category_slug,
               city_code: :city,
-              is_active: :isActive,
-              state_code: :stateCode
+              is_active: :is_active,
+              state_code: :state_code
             }.fetch(field, field)
           end
         end

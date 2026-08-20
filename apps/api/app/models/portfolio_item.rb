@@ -8,7 +8,7 @@ class PortfolioItem < ApplicationRecord
   belongs_to :service
 
   scope :active, -> { where(deleted_at: nil) }
-  scope :publicly_visible, -> { active.where(status: "approved") }
+  scope :publicly_visible, -> { active.where(status: %w[pending_review approved]) }
   scope :newest_first, -> { order(submitted_at: :desc, id: :desc) }
 
   validates :title, length: {in: 1..80}

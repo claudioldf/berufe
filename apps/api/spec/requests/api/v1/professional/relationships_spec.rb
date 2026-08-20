@@ -274,10 +274,7 @@ RSpec.describe "Professional relationship requests", type: :request, openapi: tr
   end
 
   def publish_profile!(profile)
-    revision = profile.working_revision
-    revision.update!(status: "approved", reviewed_at: Time.current)
-    profile.update!(profile_status: "published", published_revision: revision)
-    profile
+    make_profile_publicly_eligible(profile)
   end
 
   def session_headers(request_id:, origin: false, token: session_token)

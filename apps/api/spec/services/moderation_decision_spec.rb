@@ -19,6 +19,7 @@ RSpec.describe ModerationDecision do
   it "commits the target transition and immutable action together" do
     revision = profile.working_revision
     revision.update!(status: "pending_review", submitted_at: Time.current)
+    profile.update!(profile_status: "published", published_revision: revision, published_at: Time.current)
 
     described_class.new(context:).call(
       target_type: "profile_revision",
@@ -30,7 +31,8 @@ RSpec.describe ModerationDecision do
     expect(revision.reload.status).to eq("approved")
     expect(profile.reload).to have_attributes(
       profile_status: "published",
-      published_revision_id: revision.id
+      published_revision_id: revision.id,
+      approved_revision_id: revision.id
     )
     expect(ModerationAction.sole).to have_attributes(
       admin_user: admin,
@@ -45,6 +47,7 @@ RSpec.describe ModerationDecision do
   it "rolls back the transition when the audit append fails" do
     revision = profile.working_revision
     revision.update!(status: "pending_review", submitted_at: Time.current)
+    profile.update!(profile_status: "published", published_revision: revision, published_at: Time.current)
     allow(ModerationAction).to receive(:create!).and_raise(ActiveRecord::RecordInvalid.new(ModerationAction.new))
 
     expect do
@@ -56,13 +59,14 @@ RSpec.describe ModerationDecision do
     end.to raise_error(described_class::Invalid)
 
     expect(revision.reload.status).to eq("pending_review")
-    expect(profile.reload.profile_status).to eq("draft")
+    expect(profile.reload).to have_attributes(profile_status: "published", published_revision: revision)
     expect(ModerationAction.count).to eq(0)
   end
 
   it "requires private reasons and rejects stale transitions without appending an action" do
     revision = profile.working_revision
     revision.update!(status: "pending_review", submitted_at: Time.current)
+    profile.update!(profile_status: "published", published_revision: revision, published_at: Time.current)
 
     expect do
       described_class.new(context:).call(

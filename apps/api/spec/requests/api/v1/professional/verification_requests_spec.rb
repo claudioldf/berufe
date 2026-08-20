@@ -7,7 +7,11 @@ RSpec.describe "Professional verification requests", type: :request, openapi: tr
     UserAccount.create!(phone_e164: "+5547999996208", role: "professional", status: "active")
   end
   let(:profile) do
-    ProfessionalProfile.create!(user_account: account, display_name: "Ana Souza")
+    ProfessionalProfile.create!(
+      user_account: account,
+      display_name: "Ana Souza",
+      birthdate: Date.new(1990, 4, 12)
+    )
   end
   let(:session_token) do
     profile

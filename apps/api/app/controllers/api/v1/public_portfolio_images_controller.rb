@@ -8,9 +8,9 @@ module Api
           .publicly_visible
           .joins(:professional_profile)
           .merge(ProfessionalProfile.publicly_eligible)
-          .where.not(portfolio_items: {public_key: nil})
           .find(params[:id])
-        body = MediaStorage.build.read(scope: :public, key: item.public_key)
+        scope, key = (item.approved? && item.public_key.present?) ? [:public, item.public_key] : [:private, item.private_key]
+        body = MediaStorage.build.read(scope:, key:)
         extension = (item.content_type == "image/png") ? "png" : "jpg"
         send_data(
           body,
@@ -18,7 +18,8 @@ module Api
           disposition: "inline",
           filename: "berufe-portfolio-#{item.id}.#{extension}"
         )
-        response.set_header("Cache-Control", "public, max-age=0, must-revalidate")
+        cache_control = item.pending_review? ? "no-store" : "public, max-age=0, must-revalidate"
+        response.set_header("Cache-Control", cache_control)
         response.set_header("X-Content-Type-Options", "nosniff")
       rescue Errno::ENOENT, Aws::S3::Errors::NoSuchKey
         raise ActiveRecord::RecordNotFound

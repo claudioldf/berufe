@@ -10,7 +10,7 @@ module Api
         interaction = PublicWhatsappInteractionResolver.new.call(
           profile:,
           source: params[:source],
-          token: params[:interactionToken]
+          token: params[:interaction_token]
         )
         redirect_url = PublicWhatsappUrl.call(
           phone_e164: profile.published_revision.whatsapp_e164,
@@ -26,7 +26,7 @@ module Api
           code: "validation_failed",
           message: "Interação inválida ou expirada.",
           status: :unprocessable_entity,
-          field_errors: {interactionToken: ["é inválido ou expirou"]}
+          field_errors: {interaction_token: ["é inválido ou expirou"]}
         )
       rescue PublicWhatsappUrl::InvalidContact
         raise ActiveRecord::RecordNotFound

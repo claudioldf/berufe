@@ -19,7 +19,7 @@ module Api
 
         token = PublicProfileInteractionIssuer.new.call(
           profile:,
-          search_token: params[:interactionToken]
+          search_token: params[:interaction_token]
         )
         render json: {
           data: {

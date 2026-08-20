@@ -92,11 +92,11 @@ RSpec.describe "Public catalog", type: :request, openapi: true do
           {"id" => installations.id, "slug" => "instalacoes", "name" => "Instalações", "icon" => "i-lucide-wrench"}
         ],
         "services" => [
-          {"id" => painter.id, "name" => "Pintor", "slug" => "pintor", "categorySlug" => "acabamentos", "icon" => "i-lucide-paintbrush", "description" => "Pintura residencial.", "aliases" => ["pintura"]},
-          {"id" => electrician.id, "name" => "Eletricista", "slug" => "eletricista", "categorySlug" => "instalacoes", "icon" => "i-lucide-zap", "description" => "Instalações elétricas.", "aliases" => ["elétrica"]}
+          {"id" => painter.id, "name" => "Pintor", "slug" => "pintor", "category_slug" => "acabamentos", "icon" => "i-lucide-paintbrush", "description" => "Pintura residencial.", "aliases" => ["pintura"]},
+          {"id" => electrician.id, "name" => "Eletricista", "slug" => "eletricista", "category_slug" => "instalacoes", "icon" => "i-lucide-zap", "description" => "Instalações elétricas.", "aliases" => ["elétrica"]}
         ],
         "neighborhoods" => [
-          {"code" => america.code, "name" => "América", "stateCode" => "SC", "city" => "Joinville"}
+          {"code" => america.code, "name" => "América", "state_code" => "SC", "city" => "Joinville"}
         ]
       },
       "request_id" => "catalog-200"

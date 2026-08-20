@@ -18,9 +18,11 @@ class ProfessionalProfileSupplyUpdater
 
     profile.with_lock do
       validate_catalog!(normalized_services, normalized_coverage)
-      revision = ProfessionalProfileRevisionEditor.new.call(profile:)
+      editor = ProfessionalProfileRevisionEditor.new
+      revision = editor.call(profile:)
       replace_services!(revision, normalized_services)
       replace_coverage!(revision, normalized_coverage)
+      editor.synchronize_review_state!(profile:)
     end
     profile
   rescue ActiveRecord::RecordInvalid => error

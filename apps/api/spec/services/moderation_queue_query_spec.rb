@@ -37,7 +37,7 @@ RSpec.describe ModerationQueueQuery do
     expect(paged[:meta]).to eq(page: 2, per_page: 1, total_count: 2, total_pages: 2)
   end
 
-  it "presents accepted relationships by their latest effective moderation state" do
+  it "presents accepted relationships by their recorded moderation state" do
     partner = create_profile(phone: "+5547999998204", name: "Beto Lima")
     relationship = ProfessionalRelationship.create!(
       initiator_professional: partner,
@@ -93,14 +93,16 @@ RSpec.describe ModerationQueueQuery do
       role: "admin",
       status: "active"
     )
-    ModerationAction.create!(
-      admin_user: admin,
+    ModerationDecision.new(
+      context: AdminActionContext.new(
+        admin_user_id: admin.id,
+        request_id: "queue-relationship-#{SecureRandom.hex(4)}"
+      )
+    ).call(
       target_type: "professional_relationship",
       target_id: relationship.id,
       action:,
-      reason:,
-      request_id: "queue-relationship-#{SecureRandom.hex(4)}",
-      created_at: Time.current
+      reason:
     )
   end
 

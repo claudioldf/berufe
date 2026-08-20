@@ -325,7 +325,7 @@ export interface paths {
     "/api/v1/public/professionals/{slug}": {
         parameters: {
             query?: {
-                interactionToken?: string;
+                interaction_token?: string;
             };
             header?: never;
             path: {
@@ -366,7 +366,7 @@ export interface paths {
         parameters: {
             query: {
                 source: "search_result" | "public_profile";
-                interactionToken: string;
+                interaction_token: string;
             };
             header?: never;
             path: {
@@ -393,7 +393,7 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** Read a currently published approved profile photo */
+        /** Read a currently published pending or approved profile photo */
         get: operations["getPublicProfilePhotoImage"];
         put?: never;
         post?: never;
@@ -412,7 +412,7 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** Read the approved regenerated portfolio image */
+        /** Read a public pending or approved regenerated portfolio image */
         get: operations["getPublicPortfolioItemImage"];
         put?: never;
         post?: never;
@@ -595,7 +595,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Submit the persisted professional profile for moderation */
+        /** Publish the persisted professional profile and enqueue post-publication review */
         post: operations["submitProfessionalProfile"];
         delete?: never;
         options?: never;
@@ -611,7 +611,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Attach a processed private image to the professional profile for review */
+        /** Attach a processed profile photo and enqueue post-publication review */
         put: operations["updateProfessionalProfilePhoto"];
         post?: never;
         delete?: never;
@@ -1039,10 +1039,12 @@ export interface components {
         };
         ProfessionalIdentityUpdate: {
             display_name: string;
-            headline: string;
-            bio: string;
+            /** Format: date */
+            birthdate: string;
+            headline?: string;
+            bio?: string;
             years_experience?: number | null;
-            whatsapp: string;
+            whatsapp?: string | null;
             instagram?: string | null;
             youtube?: string | null;
         };
@@ -1203,6 +1205,9 @@ export interface components {
             public_slug: string;
             /** @enum {string} */
             profile_status: "draft" | "pending_review" | "published" | "suspended";
+            is_public: boolean;
+            is_search_eligible: boolean;
+            publication_blockers: ("identity" | "photo" | "services" | "coverage")[];
             /** @enum {string} */
             revision_status: "draft" | "pending_review" | "approved" | "rejected" | "superseded";
             revision_rejection_reason: string | null;
@@ -1325,6 +1330,8 @@ export interface components {
         };
         ProfessionalIdentity: {
             display_name: string;
+            /** Format: date */
+            birthdate: string | null;
             headline: string;
             bio: string;
             years_experience: number | null;
@@ -1465,32 +1472,32 @@ export interface components {
             id: string;
             name: string;
             slug: string;
-            categorySlug: string;
+            category_slug: string;
             description: string;
-            isActive: boolean;
-            sortOrder: number;
+            is_active: boolean;
+            sort_order: number;
         };
         AdminCatalogNeighborhood: {
             code: string;
             name: string;
             /** @constant */
-            stateCode: "SC";
+            state_code: "SC";
             /** @constant */
             city: "Joinville";
-            isActive: boolean;
-            sortOrder: number;
+            is_active: boolean;
+            sort_order: number;
         };
         AdminCatalogServiceCreateRequest: {
             name: string;
             slug: string;
-            categorySlug: string;
+            category_slug: string;
             description: string;
         };
         AdminCatalogServiceUpdateRequest: {
             name?: string;
-            categorySlug?: string;
+            category_slug?: string;
             description?: string;
-            isActive?: boolean;
+            is_active?: boolean;
         };
         AdminCatalogServiceOrderRequest: {
             ids: string[];
@@ -1499,17 +1506,17 @@ export interface components {
             name: string;
             code: string;
             /** @constant */
-            stateCode: "SC";
+            state_code: "SC";
             /** @constant */
             city: "Joinville";
         };
         AdminCatalogNeighborhoodUpdateRequest: {
             name?: string;
             /** @constant */
-            stateCode?: "SC";
+            state_code?: "SC";
             /** @constant */
             city?: "Joinville";
-            isActive?: boolean;
+            is_active?: boolean;
         };
         AdminCatalogNeighborhoodOrderRequest: {
             codes: string[];
@@ -1534,9 +1541,19 @@ export interface components {
             submitted_at: string;
             details: string;
             preview: string;
+            currently_public: boolean;
+            fallback_available: boolean;
+            changes: components["schemas"]["AdminModerationChange"][];
+            /** Format: date */
+            claimed_birthdate: string | null;
             has_media: boolean;
             /** Format: uuid */
             verification_file_id: string | null;
+        };
+        AdminModerationChange: {
+            field: string;
+            before: unknown;
+            after: unknown;
         };
         AdminModerationSummary: {
             pending_count: number;
@@ -1552,6 +1569,7 @@ export interface components {
             action: "approved" | "rejected" | "hidden" | "restored";
             reason?: string | null;
             note?: string | null;
+            identity_match_confirmed?: boolean;
         };
         /** @enum {string} */
         ModerationTargetType: "profile_revision" | "profile_photo" | "portfolio_item" | "verification_request" | "professional_relationship";
@@ -1574,7 +1592,7 @@ export interface components {
             id: string;
             name: string;
             slug: string;
-            categorySlug: string;
+            category_slug: string;
             icon: string;
             description: string;
             aliases: string[];
@@ -1583,7 +1601,7 @@ export interface components {
             code: string;
             name: string;
             /** @constant */
-            stateCode: "SC";
+            state_code: "SC";
             /** @constant */
             city: "Joinville";
         };
@@ -1613,7 +1631,7 @@ export interface components {
         };
         PublicSearchInteraction: {
             /** Format: uuid */
-            searchEventId: string;
+            search_event_id: string;
             token: string;
         };
         PublicServiceSuggestion: {
@@ -1631,19 +1649,19 @@ export interface components {
         PublicProfessionalCard: {
             /** Format: uuid */
             id: string;
-            publicSlug: string;
-            displayName: string;
+            public_slug: string;
+            display_name: string;
             headline: string | null;
             /** Format: uri */
-            photoUrl: string | null;
-            primaryService: components["schemas"]["PublicProfessionalServiceSummary"] | null;
-            matchingService: components["schemas"]["PublicProfessionalServiceSummary"] | null;
+            photo_url: string | null;
+            primary_service: components["schemas"]["PublicProfessionalServiceSummary"] | null;
+            matching_service: components["schemas"]["PublicProfessionalServiceSummary"] | null;
             coverage: components["schemas"]["PublicProfessionalCoverage"];
-            verificationLabels: components["schemas"]["PublicVerificationLabel"][];
-            portfolioCount: number;
-            relationshipCount: number;
+            verification_labels: components["schemas"]["PublicVerificationLabel"][];
+            portfolio_count: number;
+            relationship_count: number;
             /** Format: date-time */
-            publicSnapshotUpdatedAt: string | null;
+            public_snapshot_updated_at: string | null;
         };
         PublicProfessionalServiceSummary: {
             /** Format: uuid */
@@ -1652,7 +1670,7 @@ export interface components {
             slug: string;
         };
         PublicProfessionalCoverage: {
-            allJoinville: boolean;
+            all_joinville: boolean;
             neighborhoods: {
                 code: string;
                 name: string;
@@ -1664,7 +1682,7 @@ export interface components {
             /** @enum {string} */
             label: "Telefone confirmado" | "Identidade verificada";
             /** Format: date-time */
-            verifiedAt: string | null;
+            verified_at: string | null;
         };
         PublicProfessionalProfileResponse: {
             data: {
@@ -1676,28 +1694,28 @@ export interface components {
         PublicProfessionalProfile: {
             /** Format: uuid */
             id: string;
-            publicSlug: string;
-            displayName: string;
+            public_slug: string;
+            display_name: string;
             headline: string | null;
             bio: string | null;
-            yearsExperience: number | null;
+            years_experience: number | null;
             /** Format: uri */
-            photoUrl: string | null;
+            photo_url: string | null;
             services: components["schemas"]["PublicProfessionalProfileService"][];
             coverage: components["schemas"]["PublicProfessionalCoverage"];
-            verificationLabels: components["schemas"]["PublicVerificationLabel"][];
+            verification_labels: components["schemas"]["PublicVerificationLabel"][];
             portfolio: components["schemas"]["PublicProfessionalPortfolioItem"][];
             relationships: components["schemas"]["PublicProfessionalRelationship"][];
-            socialLinks: components["schemas"]["PublicProfessionalSocialLinks"];
+            social_links: components["schemas"]["PublicProfessionalSocialLinks"];
             /** Format: date-time */
-            publicSnapshotUpdatedAt: string | null;
+            public_snapshot_updated_at: string | null;
         };
         PublicProfessionalProfileService: {
             /** Format: uuid */
             id: string;
             name: string;
             slug: string;
-            isPrimary: boolean;
+            is_primary: boolean;
             note: string | null;
         };
         PublicProfessionalPortfolioItem: {
@@ -1707,7 +1725,7 @@ export interface components {
             description: string | null;
             service: components["schemas"]["PublicProfessionalServiceSummary"];
             /** Format: uri */
-            imageUrl: string;
+            image_url: string;
         };
         PublicProfessionalRelationship: {
             /** Format: uuid */
@@ -1720,10 +1738,10 @@ export interface components {
             professional: {
                 /** Format: uuid */
                 id: string;
-                publicSlug: string;
-                displayName: string;
+                public_slug: string;
+                display_name: string;
                 /** Format: uri */
-                photoUrl: string | null;
+                photo_url: string | null;
             };
         };
         PublicProfessionalSocialLinks: {
@@ -1736,7 +1754,7 @@ export interface components {
             token: string;
         };
         PublicProfessionalViewRequest: {
-            interactionToken: string;
+            interaction_token: string;
         };
         RequestId: string;
         StatusResponse: {
@@ -2619,7 +2637,6 @@ export interface operations {
             200: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
-                    "Cache-Control"?: "no-store";
                     [name: string]: unknown;
                 };
                 content: {
@@ -2661,7 +2678,7 @@ export interface operations {
     getPublicProfessionalProfile: {
         parameters: {
             query?: {
-                interactionToken?: string;
+                interaction_token?: string;
             };
             header?: never;
             path: {
@@ -2675,7 +2692,6 @@ export interface operations {
             200: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
-                    "Cache-Control"?: "no-store";
                     [name: string]: unknown;
                 };
                 content: {
@@ -2774,7 +2790,7 @@ export interface operations {
         parameters: {
             query: {
                 source: "search_result" | "public_profile";
-                interactionToken: string;
+                interaction_token: string;
             };
             header?: never;
             path: {
@@ -2839,11 +2855,11 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description An approved JPEG profile photo whose parent remains publicly eligible. */
+            /** @description A pending or approved JPEG profile photo whose parent remains publicly eligible. */
             200: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
-                    "Cache-Control"?: "max-age=0, public, must-revalidate";
+                    "Cache-Control"?: "no-store" | "max-age=0, public, must-revalidate";
                     "Content-Disposition"?: string;
                     "X-Content-Type-Options"?: "nosniff";
                     [name: string]: unknown;
@@ -2852,7 +2868,7 @@ export interface operations {
                     "image/jpeg": string;
                 };
             };
-            /** @description The photo is absent, not approved/published, has an ineligible parent, or its object is unavailable. */
+            /** @description The photo is absent, rejected/hidden, has an ineligible parent, or its object is unavailable. */
             404: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
@@ -2875,11 +2891,11 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description An approved portfolio image that remains eligible for public display. */
+            /** @description A pending or approved portfolio image that remains eligible for public display. */
             200: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
-                    "Cache-Control"?: "max-age=0, public, must-revalidate";
+                    "Cache-Control"?: "no-store" | "max-age=0, public, must-revalidate";
                     "Content-Disposition"?: string;
                     "X-Content-Type-Options"?: "nosniff";
                     [name: string]: unknown;
@@ -2889,7 +2905,7 @@ export interface operations {
                     "image/png": string;
                 };
             };
-            /** @description The portfolio item is not approved, was hidden/deleted, or its public object is unavailable. */
+            /** @description The portfolio item was rejected/hidden/deleted, its parent is unavailable, or its object is unavailable. */
             404: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
@@ -3575,7 +3591,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The complete working profile revision was submitted for moderation, or was already submitted. */
+            /** @description The complete working profile was published, or was already public. */
             200: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
@@ -3615,7 +3631,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description The persisted identity, supply, portfolio, or identity evidence checklist is incomplete. */
+            /** @description The persisted identity, required photo, service, or coverage checklist is incomplete. */
             422: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
@@ -3640,7 +3656,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description The private JPEG variant was attached and submitted for review. */
+            /** @description The JPEG variant was attached and, for a published profile, became public immediately. */
             200: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];

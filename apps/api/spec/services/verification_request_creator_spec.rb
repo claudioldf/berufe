@@ -7,7 +7,11 @@ RSpec.describe VerificationRequestCreator do
     UserAccount.create!(phone_e164: "+5547999998144", role: "professional", status: "active")
   end
   let(:profile) do
-    ProfessionalProfile.create!(user_account: account, display_name: "Ana Souza")
+    ProfessionalProfile.create!(
+      user_account: account,
+      display_name: "Ana Souza",
+      birthdate: Date.new(1990, 4, 12)
+    )
   end
 
   it "creates one pending identity request with exactly one private regenerated image" do
@@ -27,7 +31,8 @@ RSpec.describe VerificationRequestCreator do
     expect(repeated).to eq(request_record)
     expect(request_record).to have_attributes(
       verification_type: "identity",
-      status: "pending_review"
+      status: "pending_review",
+      claimed_birthdate: Date.new(1990, 4, 12)
     )
     expect(request_record.verification_file).to have_attributes(
       media_upload: upload,

@@ -2,6 +2,12 @@
 
 class ProfessionalProfileRevision < ApplicationRecord
   STATUSES = %w[draft pending_review approved rejected superseded].freeze
+  # The fields that reach the public projection. Only a change to one of these
+  # is a "material edit" in Feature Plan A2 §3.8, so only these send an already
+  # published profile back to moderation.
+  MATERIAL_FIELDS = %i[
+    display_name headline bio years_experience whatsapp_e164 instagram_url youtube_url
+  ].freeze
 
   belongs_to :professional_profile, inverse_of: :revisions
   has_many :professional_profile_services, dependent: :destroy
@@ -21,8 +27,25 @@ class ProfessionalProfileRevision < ApplicationRecord
 
   before_validation :normalize_fields
 
+  STATUSES.each do |known_status|
+    define_method("#{known_status}?") { status == known_status }
+  end
+
   def editable?
     status.in?(%w[draft pending_review rejected])
+  end
+
+  # Comparable value of everything the public sees, so two revisions can be
+  # checked for a material difference.
+  def material_snapshot
+    MATERIAL_FIELDS.index_with { |field| public_send(field) }.merge(
+      services: professional_profile_services.reload.map do |selection|
+        [selection.service_id, selection.is_primary?, selection.note.to_s]
+      end.sort,
+      areas: professional_profile_service_areas.reload.map do |area|
+        [area.city_code.to_s, area.neighborhood_code.to_s]
+      end.sort
+    )
   end
 
   private

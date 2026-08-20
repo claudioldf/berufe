@@ -6,10 +6,7 @@ RSpec.describe "Public professional profile views", type: :request, openapi: tru
   let(:account) { UserAccount.create!(phone_e164: "+5547999997801", role: "professional", status: "active") }
   let(:profile) do
     record = ProfessionalProfile.create!(user_account: account, display_name: "Perfil Métrica")
-    revision = record.working_revision
-    revision.update!(status: "approved", reviewed_at: Time.current)
-    record.update!(profile_status: "published", published_revision: revision)
-    record
+    make_profile_publicly_eligible(record)
   end
   let(:token) do
     PublicProfileInteractionToken.new.issue(
@@ -26,7 +23,7 @@ RSpec.describe "Public professional profile views", type: :request, openapi: tru
   it "records one daily aggregate and safely ignores a retry" do
     2.times do |index|
       post "/api/v1/public/professionals/#{profile.id}/views",
-        params: {interactionToken: token},
+        params: {interaction_token: token},
         headers: request_headers("profile-view-204-#{index}"),
         as: :json
 
@@ -51,7 +48,7 @@ RSpec.describe "Public professional profile views", type: :request, openapi: tru
 
     [nil, "invalid", other_token].each_with_index do |candidate, index|
       post "/api/v1/public/professionals/#{profile.id}/views",
-        params: candidate ? {interactionToken: candidate} : {},
+        params: candidate ? {interaction_token: candidate} : {},
         headers: request_headers("profile-view-422-#{index}"),
         as: :json
 
@@ -64,7 +61,7 @@ RSpec.describe "Public professional profile views", type: :request, openapi: tru
 
   it "requires the exact browser origin" do
     post "/api/v1/public/professionals/#{profile.id}/views",
-      params: {interactionToken: token},
+      params: {interaction_token: token},
       headers: {"X-Request-Id" => "profile-view-403", "Origin" => "https://untrusted.example"},
       as: :json
 
@@ -78,7 +75,7 @@ RSpec.describe "Public professional profile views", type: :request, openapi: tru
     account.update!(status: "suspended")
 
     post "/api/v1/public/professionals/#{profile.id}/views",
-      params: {interactionToken: token},
+      params: {interaction_token: token},
       headers: request_headers("profile-view-404"),
       as: :json
 
@@ -92,7 +89,7 @@ RSpec.describe "Public professional profile views", type: :request, openapi: tru
     allow(PublicProfileViewRecorder).to receive(:new).and_return(recorder)
 
     post "/api/v1/public/professionals/#{profile.id}/views",
-      params: {interactionToken: token},
+      params: {interaction_token: token},
       headers: request_headers("profile-view-metric-failure"),
       as: :json
 
@@ -104,7 +101,7 @@ RSpec.describe "Public professional profile views", type: :request, openapi: tru
     allow(ProfessionalProfile).to receive(:publicly_eligible).and_raise(ActiveRecord::ConnectionNotEstablished)
 
     post "/api/v1/public/professionals/#{SecureRandom.uuid}/views",
-      params: {interactionToken: "signed-but-unread"},
+      params: {interaction_token: "signed-but-unread"},
       headers: request_headers("profile-view-503"),
       as: :json
 

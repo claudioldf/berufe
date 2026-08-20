@@ -13,6 +13,9 @@ class ProfessionalWorkspaceSerializer
         id: profile.id,
         public_slug: profile.public_slug,
         profile_status: profile.profile_status,
+        is_public: profile.publicly_available?,
+        is_search_eligible: profile.search_eligible?,
+        publication_blockers: profile.publication_blockers,
         revision_status: profile.working_revision.status,
         revision_rejection_reason: profile.working_revision.rejection_reason,
         has_published_revision: profile.published_revision.present?,
@@ -21,6 +24,7 @@ class ProfessionalWorkspaceSerializer
         verification: serialized_verification,
         identity: {
           display_name: profile.display_name,
+          birthdate: profile.birthdate&.iso8601,
           headline: profile.headline.to_s,
           bio: profile.bio.to_s,
           years_experience: profile.years_experience,
@@ -97,7 +101,9 @@ class ProfessionalWorkspaceSerializer
         status: item.status,
         rejection_reason: item.rejection_reason,
         submitted_at: item.submitted_at.iso8601,
-        image_url: item.approved? ? PublicPortfolioImageUrl.call(item) : nil
+        image_url: if profile.publicly_available? && item.status.in?(%w[pending_review approved])
+                     PublicPortfolioImageUrl.call(item)
+                   end
       }
     end
   end

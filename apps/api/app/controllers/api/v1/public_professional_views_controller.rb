@@ -9,7 +9,7 @@ module Api
 
       def create
         profile = ProfessionalProfile.publicly_eligible.find(params[:id])
-        interaction = PublicProfileInteractionToken.new.verify(params.require(:interactionToken))
+        interaction = PublicProfileInteractionToken.new.verify(params.require(:interaction_token))
         raise InvalidInteraction unless interaction&.professional_id == profile.id
 
         PublicProfileViewRecorder.new.call(profile:, interaction:)
@@ -19,7 +19,7 @@ module Api
           code: "validation_failed",
           message: "Interação inválida ou expirada.",
           status: :unprocessable_entity,
-          field_errors: {interactionToken: ["é inválido ou expirou"]}
+          field_errors: {interaction_token: ["é inválido ou expirou"]}
         )
       rescue ActiveRecord::RecordNotFound
         raise

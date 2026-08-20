@@ -10,6 +10,7 @@ class PublicVerificationSerializer
       .identity
       .where(status: "approved", public_label: ModerationDecision::IDENTITY_LABEL)
       .where.not(verified_at: nil)
+      .where("identity_match_confirmed_at IS NOT NULL OR claimed_birthdate IS NULL")
       .order(verified_at: :desc, id: :desc)
       .first
 

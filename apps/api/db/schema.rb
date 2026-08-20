@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_19_090000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_19_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -454,6 +454,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_090000) do
   end
 
   create_table "professional_profiles", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "approved_photo_id"
+    t.uuid "approved_revision_id"
+    t.date "birthdate"
     t.datetime "created_at", null: false
     t.text "profile_status", default: "draft", null: false
     t.text "public_slug", null: false
@@ -464,6 +467,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_090000) do
     t.uuid "user_account_id", null: false
     t.uuid "working_photo_id"
     t.uuid "working_revision_id"
+    t.index ["approved_photo_id"], name: "index_professional_profiles_on_approved_photo_id", unique: true
+    t.index ["approved_revision_id"], name: "index_professional_profiles_on_approved_revision_id", unique: true
     t.index ["profile_status"], name: "index_professional_profiles_on_profile_status"
     t.index ["public_slug"], name: "index_professional_profiles_on_public_slug", unique: true
     t.index ["published_at"], name: "index_professional_profiles_on_published_at"
@@ -486,7 +491,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_090000) do
     t.datetime "responded_at"
     t.text "status", default: "pending", null: false
     t.datetime "updated_at", null: false
-    t.index ["initiator_professional_id", "recipient_professional_id", "relationship_type"], name: "idx_professional_relationships_unique_direction", unique: true
+    t.index ["initiator_professional_id", "recipient_professional_id", "relationship_type"], name: "idx_professional_relationships_active_direction", unique: true, where: "(moderation_status <> 'rejected'::text)"
     t.index ["initiator_professional_id", "status"], name: "idx_professional_relationships_initiator_status"
     t.index ["initiator_professional_id"], name: "index_professional_relationships_on_initiator_professional_id"
     t.index ["recipient_professional_id", "status"], name: "idx_professional_relationships_recipient_status"
@@ -679,7 +684,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_090000) do
   end
 
   create_table "verification_requests", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.date "claimed_birthdate"
     t.datetime "created_at", null: false
+    t.datetime "expired_at"
+    t.datetime "identity_match_confirmed_at"
     t.uuid "professional_profile_id", null: false
     t.text "public_label"
     t.text "review_note"
@@ -716,8 +724,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_090000) do
   add_foreign_key "professional_profile_service_areas", "professional_profile_revisions"
   add_foreign_key "professional_profile_services", "professional_profile_revisions"
   add_foreign_key "professional_profile_services", "services"
+  add_foreign_key "professional_profiles", "professional_profile_photos", column: "approved_photo_id"
   add_foreign_key "professional_profiles", "professional_profile_photos", column: "published_photo_id"
   add_foreign_key "professional_profiles", "professional_profile_photos", column: "working_photo_id"
+  add_foreign_key "professional_profiles", "professional_profile_revisions", column: "approved_revision_id"
   add_foreign_key "professional_profiles", "professional_profile_revisions", column: "published_revision_id"
   add_foreign_key "professional_profiles", "professional_profile_revisions", column: "working_revision_id"
   add_foreign_key "professional_profiles", "user_accounts"

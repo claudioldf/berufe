@@ -8,6 +8,7 @@ class ProfessionalProfileActivitySnapshot
   def self.call(profile)
     revision = profile.working_revision
     {
+      birthdate: profile.birthdate,
       identity: IDENTITY_FIELDS.index_with { |field| revision.public_send(field) },
       services: revision.professional_profile_services
         .order(:service_id)
