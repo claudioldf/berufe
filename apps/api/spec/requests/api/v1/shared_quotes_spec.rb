@@ -60,8 +60,7 @@ RSpec.describe "Shared quotes", type: :request, openapi: true do
   before { publish_profile! }
 
   it "shares once, reproduces the stable token, and resolves only current public content" do
-    photo = create_approved_photo!
-    profile.update!(published_photo: photo)
+    photo = profile.published_photo
     first_shared_at = Time.zone.parse("2026-08-18 12:00:00 UTC")
     travel_to(first_shared_at) do
       share_quote(request_id: "quote-share-first", method: "copy")
@@ -169,10 +168,11 @@ RSpec.describe "Shared quotes", type: :request, openapi: true do
         items: [{description: "Item", quantity: 1, unit: "serviço", unit_price: 10}]
       }
     )
+    expect(draft).to be_draft
     denied_tokens = [
       "malformed",
-      QuoteShareToken.issue(SecureRandom.uuid),
-      QuoteShareToken.issue(draft.id)
+      QuoteShareToken.issue,
+      QuoteShareToken.issue
     ]
     envelopes = denied_tokens.map do |denied_token|
       resolve_quote(token: denied_token, request_id: "shared-quote-denied")
@@ -181,7 +181,7 @@ RSpec.describe "Shared quotes", type: :request, openapi: true do
       response.parsed_body
     end
 
-    quote.reload.update!(status: "draft", share_token_hash: nil, shared_at: nil)
+    ProfessionalQuoteRevoker.new.call(quote: quote.reload)
     expect(Quote.find_by(share_token_hash: QuoteShareToken.digest(token))).to be_nil
     resolve_quote(token:, request_id: "shared-quote-denied")
     expect(response).to have_http_status(:not_found)
@@ -204,6 +204,42 @@ RSpec.describe "Shared quotes", type: :request, openapi: true do
       }
     ])
     assert_api_conform(status: 404)
+  end
+
+  it "revokes a shared link so the customer's copy stops resolving" do
+    share_quote(request_id: "quote-share-before-revoke", method: "copy")
+    token = URI(response.parsed_body.dig("data", "share_url")).path.split("/").last
+
+    revoke_share(request_id: "quote-share-revoke")
+
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body.dig("data", "quote")).to include(
+      "status" => "draft",
+      "shared_at" => nil
+    )
+    expect(quote.reload).to have_attributes(
+      status: "draft",
+      share_token_hash: nil,
+      share_token_ciphertext: nil,
+      shared_at: nil
+    )
+    assert_api_conform(status: 200)
+
+    resolve_quote(token:, request_id: "shared-quote-after-revoke")
+    expect(response).to have_http_status(:not_found)
+    expect(response.body).not_to include("Ana Paula")
+    assert_api_conform(status: 404)
+
+    revoke_share(request_id: "quote-share-revoke-twice")
+    expect(response).to have_http_status(:unprocessable_entity)
+    expect(response.parsed_body.dig("error", "code")).to eq("quote_not_shared")
+    assert_api_conform(status: 422)
+
+    share_quote(request_id: "quote-share-after-revoke", method: "copy")
+    new_token = URI(response.parsed_body.dig("data", "share_url")).path.split("/").last
+    expect(new_token).not_to eq(token)
+    resolve_quote(token: new_token, request_id: "shared-quote-new-link")
+    expect(response).to have_http_status(:ok)
   end
 
   it "enforces owner, session, origin, publication, and safe unavailable responses" do
@@ -245,6 +281,24 @@ RSpec.describe "Shared quotes", type: :request, openapi: true do
     expect(response).to have_http_status(:not_found)
     assert_api_conform(status: 404)
 
+    delete "/api/v1/professional/quotes/#{own_quote.id}/share",
+      headers: {"Origin" => ENV.fetch("WEB_ORIGIN"), "X-Request-Id" => "quote-revoke-anonymous"},
+      as: :json
+    expect(response).to have_http_status(:unauthorized)
+    assert_api_conform(status: 401)
+
+    delete "/api/v1/professional/quotes/#{own_quote.id}/share",
+      headers: session_headers(request_id: "quote-revoke-origin", origin: "https://untrusted.example"),
+      as: :json
+    expect(response).to have_http_status(:forbidden)
+    assert_api_conform(status: 403)
+
+    delete "/api/v1/professional/quotes/#{other_quote.id}/share",
+      headers: session_headers(request_id: "quote-revoke-owner", origin: true),
+      as: :json
+    expect(response).to have_http_status(:not_found)
+    assert_api_conform(status: 404)
+
     profile.update!(profile_status: "draft", published_revision: nil)
     share_quote(request_id: "quote-share-unpublished", method: "copy")
     expect(response).to have_http_status(:unprocessable_entity)
@@ -271,8 +325,7 @@ RSpec.describe "Shared quotes", type: :request, openapi: true do
   def publish_profile!
     revision = profile.working_revision
     revision.professional_profile_services.create!(service:, is_primary: true)
-    revision.update!(status: "approved", reviewed_at: Time.current)
-    profile.update!(profile_status: "published", published_revision: revision)
+    make_profile_publicly_eligible(profile, revision:)
   end
 
   def create_approved_identity!
@@ -323,6 +376,12 @@ RSpec.describe "Shared quotes", type: :request, openapi: true do
   def share_quote(request_id:, method:)
     post "/api/v1/professional/quotes/#{quote.id}/share",
       params: {share: {method:}},
+      headers: session_headers(request_id:, origin: true),
+      as: :json
+  end
+
+  def revoke_share(request_id:)
+    delete "/api/v1/professional/quotes/#{quote.id}/share",
       headers: session_headers(request_id:, origin: true),
       as: :json
   end

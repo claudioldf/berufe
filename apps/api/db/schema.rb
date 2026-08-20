@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_19_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_19_110000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -528,6 +528,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_100000) do
     t.uuid "professional_id", null: false
     t.integer "quote_number", null: false
     t.string "service_description", limit: 160, null: false
+    t.text "share_token_ciphertext"
     t.string "share_token_hash", limit: 64
     t.datetime "shared_at"
     t.string "status", limit: 16, default: "draft", null: false
@@ -541,8 +542,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_100000) do
     t.index ["share_token_hash"], name: "index_quotes_on_share_token_hash", unique: true
     t.check_constraint "discount_amount <= subtotal_amount AND total_amount = (subtotal_amount - discount_amount)", name: "quotes_consistent_totals"
     t.check_constraint "quote_number > 0", name: "quotes_positive_number"
-    t.check_constraint "status::text = 'draft'::text AND share_token_hash IS NULL AND shared_at IS NULL OR status::text = 'shared'::text AND share_token_hash IS NOT NULL AND shared_at IS NOT NULL", name: "quotes_consistent_share_state"
-    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying::text, 'shared'::character varying::text])", name: "quotes_known_status"
+    t.check_constraint "status::text = 'draft'::text AND share_token_hash IS NULL AND share_token_ciphertext IS NULL AND shared_at IS NULL OR status::text = 'shared'::text AND share_token_hash IS NOT NULL AND share_token_ciphertext IS NOT NULL AND shared_at IS NOT NULL", name: "quotes_consistent_share_state"
+    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying, 'shared'::character varying]::text[])", name: "quotes_known_status"
     t.check_constraint "subtotal_amount >= 0::numeric AND discount_amount >= 0::numeric AND total_amount >= 0::numeric", name: "quotes_nonnegative_amounts"
   end
 

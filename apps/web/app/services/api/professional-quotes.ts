@@ -116,3 +116,16 @@ export async function shareProfessionalQuote(
     whatsappUrl: data.data.whatsapp_url,
   };
 }
+
+export async function revokeProfessionalQuoteShare(
+  client: BerufeApiClient,
+  id: string,
+): Promise<Quote> {
+  const { data, error, response } = await client.DELETE(
+    "/api/v1/professional/quotes/{id}/share",
+    { params: { path: { id } } },
+  );
+  if (error || !data) throw requestError(error, response);
+
+  return mapProfessionalQuote(data.data.quote);
+}

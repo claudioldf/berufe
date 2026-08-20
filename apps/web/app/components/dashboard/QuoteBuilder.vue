@@ -17,11 +17,19 @@ const props = defineProps<{
   shareError: string;
   shareUrl: string;
   shareEnabled?: boolean;
+  revoking?: boolean;
 }>();
 const emit = defineEmits<{
   save: [draft: QuoteDraft];
   share: [method: QuoteShareMethod];
+  revoke: [];
 }>();
+const revokeOpen = shallowRef(false);
+
+function confirmRevoke() {
+  revokeOpen.value = false;
+  emit("revoke");
+}
 const {
   quote,
   previewOpen,
@@ -70,6 +78,20 @@ function save() {
         @save="save"
         @share="shareOpen = true"
       />
+      <div v-if="isShared" class="quote-builder__revoke">
+        <p>
+          O link ativo continua abrindo este orçamento para quem o recebeu.
+          Revogue para que ele pare de funcionar imediatamente.
+        </p>
+        <UButton
+          color="neutral"
+          variant="outline"
+          icon="i-lucide-link-2-off"
+          :loading="revoking"
+          @click="revokeOpen = true"
+          >Revogar link</UButton
+        >
+      </div>
     </div>
 
     <aside class="quote-builder__preview">
@@ -135,6 +157,30 @@ function save() {
           :disabled="Boolean(sharingMethod)"
           @click="emit('share', 'whatsapp')"
           >Abrir WhatsApp</UButton
+        ></template
+      >
+    </UModal>
+
+    <UModal
+      v-model:open="revokeOpen"
+      title="Revogar o link do orçamento"
+      description="O link que o cliente já recebeu deixa de abrir este orçamento e não pode ser reativado."
+    >
+      <template #body>
+        <p class="revoke-quote">
+          O orçamento volta a ser um rascunho. Você pode compartilhá-lo de novo
+          depois, e um link diferente será gerado.
+        </p>
+      </template>
+      <template #footer
+        ><UButton color="neutral" variant="ghost" @click="revokeOpen = false"
+          >Cancelar</UButton
+        ><UButton
+          color="error"
+          icon="i-lucide-link-2-off"
+          :loading="revoking"
+          @click="confirmRevoke"
+          >Revogar link</UButton
         ></template
       >
     </UModal>
@@ -395,6 +441,29 @@ function save() {
     }
     &__error {
       color: #a45245;
+    }
+  }
+  .revoke-quote {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 0.86rem;
+    line-height: 1.5;
+  }
+  .quote-builder__revoke {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--line);
+    border-radius: 13px;
+    & p {
+      flex: 1 1 260px;
+      margin: 0;
+      color: var(--ink-soft);
+      font-size: 0.84rem;
+      line-height: 1.5;
     }
   }
   @media (width <= 1000px) {

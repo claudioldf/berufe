@@ -832,10 +832,11 @@ Public profiles also show a visible Berufe support/report contact that routes to
 **Acceptance criteria:**
 
 - The owner can preview the current quote in the same mobile-first presentation used by the customer page.
-- First share generates a high-entropy token, stores only its hash, and atomically changes status from `draft` to `shared`.
+- First share generates a high-entropy random token unrelated to the quote id, stores its keyed hash for lookup plus an encrypted owner copy for reuse, and atomically changes status from `draft` to `shared`.
 - A valid bearer link returns only the quote and approved professional public identity/labels; it never exposes private profile fields.
 - Sharing and resolving require the owner to remain active and currently published; the identity label appears only when identity verification is actually approved.
-- Malformed, invalid, revoked, or unknown tokens reveal no quote or customer details.
+- The owner can revoke the link. Revocation atomically clears the hash, the encrypted copy, and `shared_at`, returns the quote to `draft`, and is confirmed in the UI because it breaks a link the customer may already hold. Sharing again issues a different token.
+- Malformed, invalid, revoked, or unknown tokens reveal no quote or customer details, and all four return the identical generic not-found envelope.
 - The token remains valid only while the quote is `shared`; `valid_until` describes the commercial offer and is not token expiry.
 - Token-authorized API and Nuxt responses use `Cache-Control: private, no-store` and `noindex`, and never enter shared caches, static generation, logs, analytics payloads, or search indexes.
 - The customer can use browser print. There is no server PDF, acceptance, signature, invoice, or payment flow.
@@ -854,8 +855,8 @@ Public profiles also show a visible Berufe support/report contact that routes to
 - The action opens an explicit WhatsApp deep link with a short message and quote URL, with copy-link fallback.
 - The explicit share action increments `quotes_shared` in the professional's daily aggregate with the same privacy and non-negative counter rules as other MVP aggregates.
 - Berufe does not send, read, or track a WhatsApp message and never claims delivery, acceptance, signature, payment, or completion.
-- Sharing a previously shared quote reuses the active token rather than exposing or persisting another raw token.
-- The initial lifecycle remains only `draft` or `shared`.
+- Sharing a previously shared quote reuses the active token rather than issuing another one; the token is recovered from its encrypted owner copy and is never stored or logged in the clear.
+- The initial lifecycle remains only `draft` or `shared`, with revocation as the only transition back to `draft`.
 
 **Depends on:** S037, S050.
 **Covers:** Features D1 and A6; Infrastructure §11.

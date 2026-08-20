@@ -1,22 +1,21 @@
 # frozen_string_literal: true
 
-require "base64"
 require "openssl"
 
 class QuoteShareToken
   PREFIX = "bq_"
+  TOKEN_BYTES = 32
   ENCODED_BYTES_LENGTH = 43
   PATTERN = /\A#{PREFIX}[A-Za-z0-9_-]{#{ENCODED_BYTES_LENGTH}}\z/
+  ENCRYPTION_PURPOSE = "berufe.quote_share.token"
 
-  def self.issue(quote_id)
-    digest = OpenSSL::HMAC.digest(
-      "SHA256",
-      signing_key,
-      "quote_share_v1\0#{quote_id}"
-    )
-    "#{PREFIX}#{Base64.urlsafe_encode64(digest, padding: false)}"
+  # High-entropy and unrelated to the quote, so a leaked signing key cannot be
+  # used to mint the link of an arbitrary quote and so a link can be replaced.
+  def self.issue
+    "#{PREFIX}#{SecureRandom.urlsafe_base64(TOKEN_BYTES, false)}"
   end
 
+  # Keyed digest stored for lookup; the raw token is never stored in the clear.
   def self.digest(token)
     OpenSSL::HMAC.hexdigest("SHA256", digest_key, token.to_s)
   end
@@ -25,19 +24,32 @@ class QuoteShareToken
     PATTERN.match?(token.to_s)
   end
 
-  def self.matches?(quote_id:, token:)
-    return false unless valid?(token)
-
-    ActiveSupport::SecurityUtils.secure_compare(issue(quote_id), token)
+  # The owner's reusable copy, so re-sharing a quote returns the active link
+  # instead of retiring the one the customer already holds.
+  def self.encrypt(token)
+    encryptor.encrypt_and_sign(token, purpose: ENCRYPTION_PURPOSE)
   end
 
-  def self.signing_key
-    @signing_key ||= Rails.application.key_generator.generate_key("berufe.quote_share_signing", 32)
+  def self.decrypt(ciphertext)
+    return if ciphertext.blank?
+
+    encryptor.decrypt_and_verify(ciphertext, purpose: ENCRYPTION_PURPOSE)
+  rescue ActiveSupport::MessageEncryptor::InvalidMessage, ActiveSupport::MessageVerifier::InvalidSignature
+    nil
   end
-  private_class_method :signing_key
 
   def self.digest_key
     @digest_key ||= Rails.application.key_generator.generate_key("berufe.quote_share_digest", 32)
   end
   private_class_method :digest_key
+
+  def self.encryptor
+    @encryptor ||= ActiveSupport::MessageEncryptor.new(
+      Rails.application.key_generator.generate_key(
+        "berufe.quote_share.encryption",
+        ActiveSupport::MessageEncryptor.key_len
+      )
+    )
+  end
+  private_class_method :encryptor
 end

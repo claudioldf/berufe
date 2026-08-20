@@ -673,8 +673,9 @@ The profile helps professionals get discovered; the quote helps them perform a f
 2. They enter the customer name, a short service description, ordered line items, optional discount, validity date, and notes.
 3. Rails calculates and persists every line total, subtotal, discount, and final total; browser calculations are previews only.
 4. The professional previews the mobile customer page.
-5. First share atomically marks the quote shared, creates a long unguessable bearer token whose hash alone is stored, records the aggregate share action, and opens WhatsApp with the link.
+5. First share atomically marks the quote shared, creates a long random bearer token, records the aggregate share action, and opens WhatsApp with the link. Only a keyed hash of the token is indexed, plus an encrypted copy so the owner can re-share the same link; the raw token is never stored in the clear and is never derivable from the quote.
 6. The customer can view or print the quote without an account.
+7. The owner can revoke the link at any time. Revocation clears the token, hash, and `shared_at` together and returns the quote to `draft`, so the copy the customer holds stops resolving. Sharing again issues a different link.
 
 The owner may continue editing a shared quote. Its `shared` status, original `shared_at`, and active token remain unchanged, and the customer link resolves the latest saved content. A quote can be shared or resolved only while its owner remains an active, currently published professional. The shared page shows only the quote and the professional's approved public identity and labels, and an identity-verification label appears only when identity approval actually exists. Token-authorized responses are `no-store` and `noindex`, are excluded from shared caches, and reveal nothing for invalid tokens. MVP statuses are only `draft` and `shared`; the commercial validity date is not token expiry, and Berufe does not represent acceptance or payment.
 
@@ -682,34 +683,36 @@ The owner may continue editing a shared quote. Its `shared` status, original `sh
 
 **`quote`**
 
-| Field                 | Type          | Rules                                                            |
-| --------------------- | ------------- | ---------------------------------------------------------------- |
-| `id`                  | UUID          | Primary key                                                      |
-| `professional_id`     | UUID          | Required owner reference                                         |
-| `quote_number`        | integer       | Sequential per professional and concurrency-safe                 |
-| `customer_name`       | text          | Required; no customer account                                    |
-| `service_description` | text          | Required and length-limited                                      |
-| `discount_amount`     | decimal(12,2) | Defaults to zero; cannot exceed subtotal                         |
-| `total_amount`        | decimal(12,2) | Server-calculated                                                |
-| `valid_until`         | date          | Nullable                                                         |
-| `notes`               | text          | Nullable and length-limited                                      |
-| `status`              | enum          | `draft`, `shared`                                                |
-| `share_token_hash`    | text          | Unique and nullable until first share; raw token is never stored |
-| `created_at`          | timestamp     | Required                                                         |
-| `shared_at`           | timestamp     | Nullable                                                         |
+| Field                    | Type          | Rules                                                                                                             |
+| ------------------------ | ------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `id`                     | UUID          | Primary key                                                                                                       |
+| `professional_id`        | UUID          | Required owner reference                                                                                          |
+| `quote_number`           | integer       | Sequential per professional and concurrency-safe                                                                  |
+| `customer_name`          | text          | Required; no customer account                                                                                     |
+| `service_description`    | text          | Required and length-limited                                                                                       |
+| `subtotal_amount`        | decimal(14,2) | Server-calculated sum of the line totals; persisted so PostgreSQL can enforce the totals rule                     |
+| `discount_amount`        | decimal(14,2) | Defaults to zero; cannot exceed subtotal                                                                          |
+| `total_amount`           | decimal(14,2) | Server-calculated as `subtotal_amount - discount_amount`                                                          |
+| `valid_until`            | date          | Nullable                                                                                                          |
+| `notes`                  | text          | Nullable and length-limited                                                                                       |
+| `status`                 | enum          | `draft`, `shared`; revocation returns a shared quote to `draft`                                                   |
+| `share_token_hash`       | text          | Unique keyed digest; nullable until first share and cleared by revocation; raw token is never stored in the clear |
+| `share_token_ciphertext` | text          | Encrypted owner copy of the active token so re-sharing reuses the same link; cleared by revocation                |
+| `created_at`             | timestamp     | Required                                                                                                          |
+| `shared_at`              | timestamp     | Nullable                                                                                                          |
 
 **`quote_item`**
 
-| Field         | Type          | Rules                                          |
-| ------------- | ------------- | ---------------------------------------------- |
-| `id`          | UUID          | Primary key                                    |
-| `quote_id`    | UUID          | Required quote reference                       |
-| `description` | text          | Required and length-limited                    |
-| `quantity`    | decimal(10,2) | Greater than zero                              |
-| `unit_label`  | text          | Controlled length; examples: service, hour, m² |
-| `unit_price`  | decimal(12,2) | Zero or greater                                |
-| `line_total`  | decimal(12,2) | Server-calculated                              |
-| `sort_order`  | smallint      | Required and deterministic                     |
+| Field         | Type          | Rules                                                                                             |
+| ------------- | ------------- | ------------------------------------------------------------------------------------------------- |
+| `id`          | UUID          | Primary key                                                                                       |
+| `quote_id`    | UUID          | Required quote reference                                                                          |
+| `description` | text          | Required and length-limited                                                                       |
+| `quantity`    | decimal(12,3) | Greater than zero; three decimals so measured units such as `1.5 m²` or `0.125 t` are not rounded |
+| `unit`        | text          | Controlled length; examples: service, hour, m²                                                    |
+| `unit_price`  | decimal(14,2) | Zero or greater                                                                                   |
+| `line_total`  | decimal(14,2) | Server-calculated                                                                                 |
+| `sort_order`  | smallint      | Required and deterministic                                                                        |
 
 #### 5. Explicitly not in MVP
 

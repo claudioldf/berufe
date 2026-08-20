@@ -72,8 +72,10 @@ class Quote < ApplicationRecord
 
   def share_state_matches_status
     if draft?
-      errors.add(:status, :invalid) if share_token_hash.present? || shared_at.present?
-    elsif share_token_hash.blank? || shared_at.blank?
+      if share_token_hash.present? || share_token_ciphertext.present? || shared_at.present?
+        errors.add(:status, :invalid)
+      end
+    elsif share_token_hash.blank? || share_token_ciphertext.blank? || shared_at.blank?
       errors.add(:status, :invalid)
     end
   end

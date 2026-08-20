@@ -546,7 +546,8 @@ export interface paths {
         put?: never;
         /** Create or reproduce the owned quote's stable bearer link */
         post: operations["shareProfessionalQuote"];
-        delete?: never;
+        /** Revoke the owned quote's bearer link and return it to draft */
+        delete: operations["revokeProfessionalQuoteShare"];
         options?: never;
         head?: never;
         patch?: never;
@@ -3449,6 +3450,71 @@ export interface operations {
                 };
             };
             /** @description The owner does not currently have an active published profile. */
+            422: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    revokeProfessionalQuoteShare: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Opaque server-generated professional quote identifier. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The link no longer resolves and the quote is a draft again. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalQuoteResponse"];
+                };
+            };
+            /** @description An active Rails application session is required. */
+            401: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The exact browser origin or professional owner is invalid. */
+            403: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The quote does not exist or belongs to another professional. */
+            404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The quote has no active link to revoke. */
             422: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];

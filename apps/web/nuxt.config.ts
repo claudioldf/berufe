@@ -93,6 +93,7 @@ export default defineNuxtConfig({
         "lucide:instagram",
         "lucide:lamp-floor",
         "lucide:link",
+        "lucide:link-2-off",
         "lucide:list-ordered",
         "lucide:lock-keyhole",
         "lucide:log-out",

@@ -64,8 +64,14 @@ RSpec.describe ProfessionalQuoteWriter do
   it "keeps shared lifecycle state and token stable while replacing live content" do
     quote = described_class.new.call(profile:, attributes: valid_attributes)
     shared_at = 2.minutes.ago.change(usec: 0)
-    token_hash = Digest::SHA256.hexdigest("stable-token")
-    quote.update!(status: "shared", share_token_hash: token_hash, shared_at:)
+    token = QuoteShareToken.issue
+    token_hash = QuoteShareToken.digest(token)
+    quote.update!(
+      status: "shared",
+      share_token_hash: token_hash,
+      share_token_ciphertext: QuoteShareToken.encrypt(token),
+      shared_at:
+    )
 
     updated = described_class.new.call(
       profile:,
