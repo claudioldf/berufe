@@ -223,7 +223,7 @@ watch(
           <h1>Vamos deixar seu perfil pronto, {{ professionalName }}.</h1>
           <p>
             Complete três etapas simples para apresentar seu trabalho com
-            clareza.<br/>Você pode sair e continuar depois.
+            clareza.<br />Você pode sair e continuar depois.
           </p>
         </div>
         <UButton to="/app/professional" color="neutral" variant="outline">
