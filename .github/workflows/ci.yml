@@ -44,6 +44,7 @@ jobs:
       MEDIA_STORAGE_ADAPTER: local
       LOCAL_STORAGE_ROOT: /tmp/berufe-ci-storage
       WEB_ORIGIN: http://localhost:3000
+      API_PUBLIC_URL: http://localhost:3001
       OPENAPI_CONTRACT_PATH: ${{ github.workspace }}/apps/contracts/openapi.yaml
     defaults:
       run:
