@@ -50,7 +50,7 @@ export function buildSearchResultWhatsAppUrl(
   );
   url.searchParams.set("source", "search_result");
   if (options.interactionToken) {
-    url.searchParams.set("interactionToken", options.interactionToken);
+    url.searchParams.set("interaction_token", options.interactionToken);
   }
 
   return url.toString();
@@ -70,7 +70,7 @@ export function buildPublicProfileWhatsAppUrl(
     `${options.apiBaseUrl.replace(/\/$/, "")}/`,
   );
   url.searchParams.set("source", "public_profile");
-  url.searchParams.set("interactionToken", options.interactionToken);
+  url.searchParams.set("interaction_token", options.interactionToken);
 
   return url.toString();
 }

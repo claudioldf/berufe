@@ -89,9 +89,10 @@ describe("public profile page", () => {
       `/api/v1/public/professionals/${result.professional.id}/whatsapp`,
     );
     expect(contactUrl.searchParams.get("source")).toBe("public_profile");
-    expect(contactUrl.searchParams.get("interactionToken")).toBe(
+    expect(contactUrl.searchParams.get("interaction_token")).toBe(
       "signed-profile-interaction",
     );
+    expect(contactUrl.searchParams.has("interactionToken")).toBe(false);
     expect(wrapper.html()).not.toContain("@data/professionals");
   });
 
