@@ -367,19 +367,16 @@ Do not show a percentage change when the previous count is zero. For `since_laun
 
 The measurable production funnel is cohort-based. Its denominator is professional profiles created during the selected period. Later stages show how many of that same cohort have reached each state by report generation time.
 
-| Stage                 | Source and association                          | Condition                                                                                   | Calculation                                     |
-| --------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| Cadastrados           | `professional_profiles` → `user_accounts`       | profile `created_at` in period; account role `professional`; account not a seed/test record | Distinct profile IDs                            |
-| Identidade verificada | cohort → `verification_requests`                | at least one identity request currently `approved`                                          | Distinct cohort profile IDs satisfying `EXISTS` |
-| Perfil enviado        | cohort → moderation submission                  | first profile `submitted_at IS NOT NULL`                                                    | Distinct cohort profile IDs                     |
-| Publicados            | cohort                                          | `published_at IS NOT NULL`                                                                  | Distinct cohort profile IDs                     |
-| Ativados              | cohort → verification, portfolio, relationships | all R004 criteria currently true                                                            | Distinct cohort profile IDs                     |
+| Stage                 | Source and association                          | Condition                                                                                   | Calculation                           |
+| --------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------- |
+| Cadastrados           | `professional_profiles` → `user_accounts`       | profile `created_at` in period; account role `professional`; account not a seed/test record | Distinct profile IDs                  |
+| Publicados            | cohort                                          | `published_at IS NOT NULL`                                                                  | Distinct cohort profile IDs           |
+| Identidade verificada | published cohort → `verification_requests`      | at least one identity request currently `approved` with confirmed identity match            | Distinct published cohort profile IDs |
+| Ativados              | cohort → verification, portfolio, relationships | all R004 criteria currently true                                                            | Distinct cohort profile IDs           |
 
 “Cadastrado” means a successful professional registration that created the one draft profile required by S016. It is not merely an OTP challenge attempt.
 
-“Perfil enviado” is a lifecycle milestone and must use an immutable first submission timestamp, not the current `profile_status`, because an approved profile no longer has `pending_review` status.
-
-The stages should be monotonic for a cohort: registered ≥ verified/submitted; submitted ≥ published; published ≥ activated when activation is defined only for published profiles. Verification can occur before or after submission, so the UI should not imply that verification and submission always happen in that exact order unless onboarding enforces it.
+The stages are monotonic for a cohort: registered ≥ published ≥ identity verified/activated. Identity verification and activation are outcomes within the published cohort; their order relative to one another is not implied.
 
 ### Founding target and prototype “Convidados” stage
 
@@ -391,8 +388,7 @@ The stages should be monotonic for a cohort: registered ≥ verified/submitted; 
 
 For each supported transition return `stage_count / cohort_registered_count`. Also return median elapsed time for:
 
-- registration → first profile submission;
-- first submission → first publication;
+- registration → first publication;
 - first publication → activation.
 
 Elapsed times require immutable milestone timestamps. Do not calculate them from mutable status or `updated_at`.
@@ -401,7 +397,7 @@ Elapsed times require immutable milestone timestamps. Do not calculate them from
 
 - All stages refer to the same registration cohort.
 - The API identifies stages whose data support is unavailable.
-- A rejected submission remains in “Perfil enviado” because the milestone occurred, but not in “Publicados”.
+- A profile whose current content is rejected remains in the historical “Publicados” milestone once first publication occurred, even if it is currently unavailable because no approved fallback exists.
 - A later suspended profile remains in the historical cohort stages but is excluded from the separate current published stock.
 
 **Depends on:** S016, S019–S024, S030, S046.

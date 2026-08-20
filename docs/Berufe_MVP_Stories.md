@@ -982,6 +982,25 @@ The MVP report includes only implemented launch domains: professional supply and
 
 **Covers:** Infrastructure §§15 and 18; all MVP features.
 
+### S058 — Publish professional content before operational review
+
+**Story:** As a professional, I want valid profile and trust content to go live without waiting for an administrator so that keeping my public presence current has minimal friction.
+
+**Acceptance criteria:**
+
+- First publication occurs from the final onboarding step after the professional submits optional identity evidence or explicitly skips it. Name, processed photo, private birthdate, confirmed-phone contact, exactly one primary service, and valid Joinville coverage are required; portfolio and identity verification are not.
+- A material profile edit creates an immutable pending revision and makes it public atomically. New profile photos, portfolio items, and recipient-accepted professional relationships also become public while pending. Public APIs never expose moderation state.
+- Approval marks the current item reviewed without changing public visibility. Rejection restores the last approved profile revision or photo; without that fallback the profile is unavailable. Rejected portfolio items and relationships are removed from public results.
+- Newer pending revisions/photos supersede older pending items. A rejected relationship can be retried only as a new request with a new recipient acceptance.
+- Birthdate is never public. An identity request captures the claimed birthdate, admin approval records explicit identity-match confirmation, and changing birthdate expires pending/approved identity verification and begins evidence cleanup retention.
+- Admin review shows current-public and fallback context, profile changes against the approved fallback, and uses “Marcar como revisado” for approval. Public media uses stable eligibility-checking application URLs so rejection/hiding has immediate effect.
+- The professional workspace returns derived public/search eligibility and actionable publication blockers. Dashboard readiness continues to treat portfolio and approved identity as trust improvements rather than publication gates.
+- The supply funnel is Registered → Published → Identity verified within the published cohort → Activated; activation continues to use approved evidence.
+
+**Depends on:** S019–S031, S043, S046, S047, and R003–R004.
+
+**Covers:** Features A2–A4, A6, C1, and E1; post-publication moderation decision.
+
 ## 12. Increment summary
 
 | Increment               | Stories         | Demonstrable result                                                                                            |
@@ -993,29 +1012,29 @@ The MVP report includes only implemented launch domains: professional supply and
 | 4. Trust graph          | S042–S043, S046 | Approved existing-member trust evidence appears publicly.                                                      |
 | 5. Dashboard and quotes | S047, S049–S051 | Professionals can maintain/share their profile and create/share simple quotes.                                 |
 | 6. Admin reporting      | R001–R014       | Administrators can inspect aggregate MVP growth, utility, and moderation signals.                              |
-| 7. Launch               | S052–S057       | Operations, privacy, recovery, deployment, and critical flows meet the launch gate.                            |
+| 7. Launch               | S052–S058       | Operations, privacy, recovery, deployment, critical flows, and low-friction moderation meet the launch gate.   |
 
 ## 13. Feature coverage matrix
 
-| Feature                                         | Primary stories                         |
-| ----------------------------------------------- | --------------------------------------- |
-| A1 — Professional account and onboarding        | S011–S016                               |
-| A2 — Profile, services, and service area        | S019–S024                               |
-| A3 — Portfolio                                  | S025–S028                               |
-| A4 — Verification and public evidence labels    | S029–S031                               |
-| A6 — Dashboard and profile sharing              | S043, S047                              |
-| B1 — Public home and search                     | S032–S034                               |
-| B2 — Transparent result list                    | S035                                    |
-| B3 — Public professional profile                | S036, S046                              |
-| B4 — Direct WhatsApp contact                    | S037                                    |
-| C1 — Existing-member professional relationships | S042–S043, S046                         |
-| D1 — Quote generator and secure share link      | S049–S051                               |
-| E1 — Verification and moderation queue          | S017, S023–S024, S026, S028, S030, S046 |
-| E2 — Service and location catalog               | S010, S018                              |
-| E3 — Administrator growth report                | R001–R014                               |
+| Feature                                         | Primary stories                               |
+| ----------------------------------------------- | --------------------------------------------- |
+| A1 — Professional account and onboarding        | S011–S016                                     |
+| A2 — Profile, services, and service area        | S019–S024, S058                               |
+| A3 — Portfolio                                  | S025–S028, S058                               |
+| A4 — Verification and public evidence labels    | S029–S031, S058                               |
+| A6 — Dashboard and profile sharing              | S043, S047, S058                              |
+| B1 — Public home and search                     | S032–S034                                     |
+| B2 — Transparent result list                    | S035                                          |
+| B3 — Public professional profile                | S036, S046                                    |
+| B4 — Direct WhatsApp contact                    | S037                                          |
+| C1 — Existing-member professional relationships | S042–S043, S046, S058                         |
+| D1 — Quote generator and secure share link      | S049–S051                                     |
+| E1 — Verification and moderation queue          | S017, S023–S024, S026, S028, S030, S046, S058 |
+| E2 — Service and location catalog               | S010, S018                                    |
+| E3 — Administrator growth report                | R001–R014                                     |
 
 ## 14. Not stories in this MVP
 
 Do not add backlog items for microservices, Redis, external search, graph/vector databases, automated WhatsApp messaging, CAPTCHA, Rack::Attack, Bugsnag performance monitoring/distributed tracing, payment systems, booking, internal chat, maps, native apps, multi-city support, feeds, CRM, server PDF generation or PDF verification uploads, analytics providers, or any item tracked in `Berufe_V2_Stories.md` unless the approved MVP scope changes.
 
-This backlog is complete when S057 passes. Product usage after launch should determine which evidence-triggered MVP 2.0 stories are created next.
+This backlog is complete when S058 passes. Product usage after launch should determine which evidence-triggered MVP 2.0 stories are created next.

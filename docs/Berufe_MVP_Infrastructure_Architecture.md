@@ -116,7 +116,8 @@ Launch with fresh SSR and no Redis or separate cache for 30–50 profiles. Befor
 - OpenAPI 3.1.0 in `apps/contracts/openapi.yaml` is the source of truth for the HTTP boundary. Prefix every product endpoint with `/api/v1`; health and worker probes may remain outside that namespace.
 - Use JSON request and response bodies. Document cookie authentication and the exact-origin requirement for state-changing operations in the contract.
 - Return one stable error envelope containing `code`, a safe `message`, `field_errors` as a map of field names to arrays of safe messages when applicable, and `request_id` as a string.
-- Use pagination and deterministic ordering for lists.
+- Use pagination and deterministic ordering for lists. Public search returns one `PageMeta` object (`page`, `per_page`, `total_count`, `total_pages`); the recorded search event keeps the full match count, not the page size.
+- Name every request and response field in `snake_case`, without exception. It is what Rails serializers produce naturally and what the Feature Plan's data tables use, so the boundary reads the same everywhere. Nuxt keeps `camelCase` for its own domain types and maps at the `app/services/api/` adapter, which is the only place the two conventions meet.
 - Keep private/internal fields out of serializers by default.
 - Allow credentialed CORS only from exact local, stable-staging, and production Nuxt origins. Never use a Vercel preview wildcard.
 - Generate `apps/web/app/services/api/schema.d.ts` from the contract with `openapi-typescript`. Keep `client.ts` and `errors.ts` handwritten; use `openapi-fetch` as the small typed transport rather than creating a workspace package.

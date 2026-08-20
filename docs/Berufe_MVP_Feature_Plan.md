@@ -161,10 +161,10 @@ This is the base of both trust and discovery. Without structured services and co
 2. They select services from Berufe’s approved residential renovation catalog.
 3. They select Joinville and the neighborhoods they serve. “All Joinville” is a derived selector represented by the all-city service-area record, not a managed neighborhood.
 4. They add a short introduction and declared years of experience.
-5. They may add one profile photo. JPEG and PNG uploads are processed privately into a metadata-free JPEG fitted inside 1024 × 1536 pixels; the photo remains private until approved, and a replacement does not displace the currently approved photo while it is under review.
+5. They add one required profile photo. JPEG and PNG uploads are processed privately into a metadata-free JPEG fitted inside 1024 × 1536 pixels. Once the profile is published, a replacement becomes public immediately and enters post-publication review; rejection restores the last approved photo or makes the profile unavailable when no fallback exists.
 6. They may add Instagram and YouTube profile identifiers or profile URLs. Berufe validates the platform and profile shape, then stores canonical HTTPS URLs.
-7. The editor shows an inline representation of the public fields. Each onboarding step persists immediately; the final action sends no accumulated profile payload and asks Rails to validate the persisted identity, active service/coverage, reviewable portfolio, and reviewable identity-evidence checklist before submitting the profile for approval.
-8. An approved profile becomes searchable. A material edit returns the profile to moderation; the founding-cohort operations team may assist when an urgent correction is required.
+7. The editor shows an inline representation of the public fields. Each onboarding step persists immediately. The final step publishes after optional identity evidence is submitted or explicitly skipped, once name, processed photo, private birthdate, confirmed-phone contact, active service selection with exactly one primary, and Joinville coverage are valid.
+8. Material profile edits become public immediately and enter post-publication review. Approval marks the current revision reviewed; rejection restores the last approved revision or makes the profile unavailable when no fallback exists. Public pages never expose review state.
 
 Use structured service selections rather than free-form specialties. Allow a short free-text description for context, but do not use it as the only search source. Generate a stable, shareable public slug. Instagram accepts a bare or `@` handle and a direct `instagram.com/<handle>` profile URL. YouTube accepts a bare or `@` handle and a direct `youtube.com/@<handle>` channel URL; video, playlist, post/reel, off-platform, and legacy YouTube channel-path URLs are rejected. Both fields are independently optional, and copied query strings or fragments are removed during normalization.
 
@@ -178,9 +178,12 @@ Use structured service selections rather than free-form specialties. Allow a sho
 | `owner_user_id`         | UUID      | Foreign reference to account; unique                |
 | `public_slug`           | text      | Unique, stable, human-readable                      |
 | `working_revision_id`   | UUID      | Required private working revision pointer           |
-| `published_revision_id` | UUID      | Nullable approved public snapshot pointer           |
+| `published_revision_id` | UUID      | Nullable current public snapshot pointer            |
+| `approved_revision_id`  | UUID      | Nullable last-reviewed rollback snapshot pointer    |
 | `working_photo_id`      | UUID      | Nullable private photo-review pointer               |
-| `published_photo_id`    | UUID      | Nullable approved public-photo pointer              |
+| `published_photo_id`    | UUID      | Nullable current public-photo pointer               |
+| `approved_photo_id`     | UUID      | Nullable last-reviewed rollback photo pointer       |
+| `birthdate`             | date      | Required for publication; private and never public  |
 | `profile_status`        | enum      | `draft`, `pending_review`, `published`, `suspended` |
 | `created_at`            | timestamp | Required                                            |
 | `updated_at`            | timestamp | Required                                            |
@@ -272,13 +275,13 @@ For renovation services, customers need visual evidence of relevant experience. 
 
 1. The professional uploads an image, selects the related service, adds a title, and optionally adds a short description.
 2. The application compresses the image and removes unnecessary image metadata.
-3. The item enters moderation.
-4. Approved items appear newest first with deterministic tie-breaking.
+3. For a published profile, the item appears publicly immediately and enters post-publication moderation.
+4. Pending and approved items appear newest first with deterministic tie-breaking; rejection or hiding removes an item immediately.
 5. Limit the MVP to 12 items per professional to keep storage and moderation manageable.
 
-Use direct-to-object-storage uploads with private temporary access before approval and public optimized versions after approval.
+Use direct-to-object-storage uploads with private objects before approval and public optimized versions after approval. Public clients always use an eligibility-checking Rails media endpoint so takedown is immediate and storage keys never leak.
 
-For profile identity, services, and coverage, the launch retains the last approved profile revision as one complete public snapshot while one material edit revision is reviewed. Approval replaces the snapshot atomically; rejection leaves the approved snapshot public and makes the rejected revision privately editable. This prevents public serializers from mixing reviewed and unreviewed fields.
+For profile identity, services, and coverage, each saved material edit becomes the complete public snapshot immediately. A separate last-approved pointer provides deterministic rollback on rejection and prevents serializers from mixing revision fields.
 
 #### 4. Suggested feature-scoped data schema
 
@@ -627,16 +630,17 @@ Only verified professionals can initiate a public relationship. Both parties mus
 
 **`professional_relationship`**
 
-| Field                       | Type      | Rules                                                |
-| --------------------------- | --------- | ---------------------------------------------------- |
-| `id`                        | UUID      | Primary key                                          |
-| `initiator_professional_id` | UUID      | Foreign reference to profile                         |
-| `recipient_professional_id` | UUID      | Foreign reference to profile; cannot equal initiator |
-| `relationship_type`         | enum      | `recommendation`, `worked_together`                  |
-| `context_note`              | text      | Optional and short                                   |
-| `status`                    | enum      | `pending`, `accepted`, `declined`, `hidden`          |
-| `created_at`                | timestamp | Required                                             |
-| `responded_at`              | timestamp | Nullable                                             |
+| Field                       | Type      | Rules                                                                                                                                                        |
+| --------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `id`                        | UUID      | Primary key                                                                                                                                                  |
+| `initiator_professional_id` | UUID      | Foreign reference to profile                                                                                                                                 |
+| `recipient_professional_id` | UUID      | Foreign reference to profile; cannot equal initiator                                                                                                         |
+| `relationship_type`         | enum      | `recommendation`, `worked_together`                                                                                                                          |
+| `context_note`              | text      | Optional and short                                                                                                                                           |
+| `status`                    | enum      | The recipient's own answer: `pending`, `accepted`, `declined`                                                                                                |
+| `moderation_status`         | enum      | Independent Berufe review: `pending_review`, `approved`, `rejected`, `hidden`. Accepted pending/approved records are public; rejected/hidden records are not |
+| `created_at`                | timestamp | Required                                                                                                                                                     |
+| `responded_at`              | timestamp | Nullable                                                                                                                                                     |
 
 Unique key: `initiator_professional_id + recipient_professional_id + relationship_type`.
 
@@ -735,7 +739,7 @@ The public promise depends on accurate evidence and controlled content. With onl
 3. The reviewer sees only the information required for that review. The existing content-preview block retrieves regenerated profile-photo and portfolio images through authenticated, no-store Rails responses and records the administrator, target, request, and access time without returning a storage key or permanent private URL.
 4. They approve, reject with a private reason, or hide previously approved content.
 5. Every admin decision is recorded in an audit trail.
-6. Public pages never show pending or rejected content.
+6. Pending profile content, profile photos, portfolio items, and recipient-accepted professional relationships are public without a moderation badge. Rejected or hidden content is removed immediately. Verification evidence remains private and its label appears only after approval.
 
 Public pages expose a visible Berufe support/report contact. The founding-cohort operations team records and handles reports through the documented manual support process; an in-product reporting workflow is deferred.
 
