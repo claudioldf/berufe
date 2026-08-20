@@ -160,7 +160,7 @@ function submitReport() {
               </div>
             </article>
           </div>
-          <p v-else class="relationships-empty">Este profissional ainda não possui relações públicas aprovadas.</p>
+          <p v-else class="relationships-empty">Este profissional ainda não possui relações públicas confirmadas.</p>
         </section>
 
         <section class="profile-disclaimer">

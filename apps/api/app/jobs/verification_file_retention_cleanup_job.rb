@@ -9,7 +9,10 @@ class VerificationFileRetentionCleanupJob < ApplicationJob
     VerificationFile
       .joins(:verification_request)
       .where(deleted_at: nil)
-      .where(verification_requests: {status: %w[approved rejected], reviewed_at: ..(now - RETENTION_PERIOD)})
+      .where(verification_requests: {status: %w[approved rejected expired]})
+      .where(<<~SQL.squish, cutoff: now - RETENTION_PERIOD)
+        COALESCE(verification_requests.expired_at, verification_requests.reviewed_at) <= :cutoff
+      SQL
       .find_each do |file|
         delete_eligible(file, now:, storage:)
       rescue => error
@@ -24,8 +27,9 @@ class VerificationFileRetentionCleanupJob < ApplicationJob
       file.reload
       request_record = file.verification_request.reload
       return if file.deleted_at
-      return unless request_record.status.in?(%w[approved rejected])
-      return unless request_record.reviewed_at && request_record.reviewed_at <= now - RETENTION_PERIOD
+      return unless request_record.status.in?(%w[approved rejected expired])
+      decision_at = request_record.expired_at || request_record.reviewed_at
+      return unless decision_at && decision_at <= now - RETENTION_PERIOD
 
       storage.delete(scope: :private, key: file.private_key)
       file.update!(deleted_at: now)

@@ -10,6 +10,11 @@ RSpec.describe "Administrator professional-supply moderation", type: :request, o
   let(:revision) do
     profile.working_revision.tap do |record|
       record.update!(status: "pending_review", submitted_at: 4.hours.ago)
+      profile.update!(
+        profile_status: "published",
+        published_revision: record,
+        published_at: 4.hours.ago
+      )
     end
   end
   let(:photo) { create_photo(submitted_at: 3.hours.ago) }
@@ -76,52 +81,6 @@ RSpec.describe "Administrator professional-supply moderation", type: :request, o
       reason: "O texto profissional precisa de mais detalhes.",
       request_id: "moderation-reject"
     )
-    assert_api_conform(status: 200)
-  end
-
-  it "reviews accepted professional relationships through the shared queue" do
-    partner_account = UserAccount.create!(
-      phone_e164: "+5547999998206",
-      role: "professional",
-      status: "active"
-    )
-    partner = ProfessionalProfile.create!(user_account: partner_account, display_name: "Beto Lima")
-    relationship = ProfessionalRelationship.create!(
-      initiator_professional: partner,
-      recipient_professional: profile,
-      relationship_type: "recommendation",
-      context_note: "Indicação confirmada entre membros.",
-      status: "accepted",
-      responded_at: 30.minutes.ago
-    )
-
-    get "/api/v1/admin/moderation",
-      params: {type: "professional_relationship", status: "pending_review", page: 1, per_page: 20},
-      headers: session_headers(token: admin_token, request_id: "relationship-moderation-list")
-
-    expect(response).to have_http_status(:ok)
-    expect(response.parsed_body.dig("data", "items").sole).to include(
-      "target_type" => "professional_relationship",
-      "target_id" => relationship.id,
-      "status" => "pending_review",
-      "has_media" => false
-    )
-    assert_api_conform(status: 200)
-
-    post "/api/v1/admin/moderation/professional_relationship/#{relationship.id}/decisions" \
-      "?type=professional_relationship&status=pending_review&page=1&per_page=20",
-      params: {decision: {action: "approved"}},
-      headers: session_headers(token: admin_token, request_id: "relationship-moderation-approve", origin: true),
-      as: :json
-
-    expect(response).to have_http_status(:ok)
-    expect(relationship.reload.status).to eq("accepted")
-    expect(ModerationAction.where(target_type: "professional_relationship").sole).to have_attributes(
-      action: "approved",
-      target_id: relationship.id,
-      admin_user: admin
-    )
-    expect(response.parsed_body.dig("data", "items")).to be_empty
     assert_api_conform(status: 200)
   end
 

@@ -9,7 +9,7 @@ class PublicProfessionalSearchSerializer
   def as_json(*)
     {
       query: {
-        normalizedTerm: result.normalized_term,
+        normalized_term: result.normalized_term,
         service: result.service && PublicServiceSuggestionSerializer.new(result.service).as_json,
         neighborhood: result.neighborhood && {
           code: result.neighborhood.code,
@@ -19,11 +19,17 @@ class PublicProfessionalSearchSerializer
       professionals: result.professionals.map do |profile|
         PublicProfessionalCardSerializer.new(profile, matching_service: result.service).as_json
       end,
-      relatedServices: result.related_services.map do |service|
+      related_services: result.related_services.map do |service|
         PublicServiceSuggestionSerializer.new(service).as_json
       end,
+      meta: {
+        page: result.page,
+        per_page: result.per_page,
+        total_count: result.total_count,
+        total_pages: result.total_pages
+      },
       interaction: interaction && {
-        searchEventId: interaction.search_event_id,
+        search_event_id: interaction.search_event_id,
         token: interaction.token
       }
     }

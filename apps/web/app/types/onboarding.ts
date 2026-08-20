@@ -1,7 +1,6 @@
 import type { ProfessionalProfileDraft } from "@app/types/professional";
 
-export type OnboardingStepId =
-  "profile" | "services" | "portfolio" | "verification";
+export type OnboardingStepId = "profile" | "services" | "verification";
 
 export interface OnboardingStepDefinition {
   id: OnboardingStepId;
@@ -10,7 +9,11 @@ export interface OnboardingStepDefinition {
   icon: string;
 }
 
-export interface OnboardingChecklistItem extends OnboardingStepDefinition {
+export interface OnboardingChecklistItem {
+  id: OnboardingStepId | "portfolio";
+  label: string;
+  description: string;
+  icon: string;
   done: boolean;
   to: string;
 }
@@ -25,24 +28,22 @@ export interface OnboardingPortfolioItem {
 export interface OnboardingCompletionState {
   profile: string | null;
   services: string | null;
-  portfolio: string | null;
   verification: string | null;
 }
 
 export interface ProfessionalOnboardingState {
-  version: 1;
+  version: 2;
   initialized: boolean;
   profile: ProfessionalProfileDraft;
-  portfolio: OnboardingPortfolioItem | null;
-  verificationStatus: "not_started" | "submitted";
+  photoReady: boolean;
+  verificationStatus: "not_started" | "submitted" | "skipped";
   completion: OnboardingCompletionState;
 }
 
 export interface OnboardingProfileErrors {
   name: string;
-  whatsapp: string;
-  headline: string;
-  bio: string;
+  birthdate: string;
+  photo: string;
 }
 
 export interface OnboardingServicesErrors {

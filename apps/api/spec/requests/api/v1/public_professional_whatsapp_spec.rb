@@ -39,7 +39,7 @@ RSpec.describe "Public professional WhatsApp handoffs", type: :request, openapi:
   it "counts one public-profile handoff and redirects retries to the same allowlisted WhatsApp URL" do
     2.times do |index|
       get endpoint(profile),
-        params: {source: "public_profile", interactionToken: profile_token},
+        params: {source: "public_profile", interaction_token: profile_token},
         headers: browser_headers("whatsapp-profile-302-#{index}")
 
       expect(response).to have_http_status(:found)
@@ -66,7 +66,7 @@ RSpec.describe "Public professional WhatsApp handoffs", type: :request, openapi:
     token = PublicInteractionToken.new.issue(search_event_id: event.id, service_id: service.id)
 
     get endpoint(profile),
-      params: {source: "search_result", interactionToken: token},
+      params: {source: "search_result", interaction_token: token},
       headers: browser_headers("whatsapp-search-302")
 
     expect(response).to have_http_status(:found)
@@ -82,7 +82,7 @@ RSpec.describe "Public professional WhatsApp handoffs", type: :request, openapi:
   it "redirects obvious bots and link previews without counting them" do
     ["facebookexternalhit/1.1", "WhatsApp/2.26", "Googlebot/2.1"].each_with_index do |agent, index|
       get endpoint(profile),
-        params: {source: "public_profile", interactionToken: profile_token},
+        params: {source: "public_profile", interaction_token: profile_token},
         headers: {"User-Agent" => agent, "X-Request-Id" => "whatsapp-bot-#{index}"}
 
       expect(response).to have_http_status(:found)
@@ -113,11 +113,11 @@ RSpec.describe "Public professional WhatsApp handoffs", type: :request, openapi:
     )
     cases = [
       {},
-      {source: "invalid", interactionToken: profile_token},
-      {source: "public_profile", interactionToken: "invalid"},
-      {source: "public_profile", interactionToken: other_token},
-      {source: "search_result", interactionToken: profile_token},
-      {source: "search_result", interactionToken: unrelated_token}
+      {source: "invalid", interaction_token: profile_token},
+      {source: "public_profile", interaction_token: "invalid"},
+      {source: "public_profile", interaction_token: other_token},
+      {source: "search_result", interaction_token: profile_token},
+      {source: "search_result", interaction_token: unrelated_token}
     ]
 
     cases.each_with_index do |query, index|
@@ -149,7 +149,7 @@ RSpec.describe "Public professional WhatsApp handoffs", type: :request, openapi:
 
     interactions.each_with_index do |(candidate, token), index|
       get endpoint(candidate),
-        params: {source: "public_profile", interactionToken: token},
+        params: {source: "public_profile", interaction_token: token},
         headers: browser_headers("whatsapp-404-#{index}")
 
       expect(response).to have_http_status(:not_found)
@@ -163,7 +163,7 @@ RSpec.describe "Public professional WhatsApp handoffs", type: :request, openapi:
     allow(PublicWhatsappHandoffRecorder).to receive(:new).and_return(recorder)
 
     get endpoint(profile),
-      params: {source: "public_profile", interactionToken: profile_token},
+      params: {source: "public_profile", interaction_token: profile_token},
       headers: browser_headers("whatsapp-metric-failure")
 
     expect(response).to have_http_status(:found)
@@ -176,7 +176,7 @@ RSpec.describe "Public professional WhatsApp handoffs", type: :request, openapi:
       .and_raise(ActiveRecord::ConnectionNotEstablished)
 
     get "/api/v1/public/professionals/#{SecureRandom.uuid}/whatsapp",
-      params: {source: "public_profile", interactionToken: "signed-but-unread"},
+      params: {source: "public_profile", interaction_token: "signed-but-unread"},
       headers: browser_headers("whatsapp-503")
 
     expect(response).to have_http_status(:service_unavailable)
@@ -219,8 +219,6 @@ RSpec.describe "Public professional WhatsApp handoffs", type: :request, openapi:
     )
     revision = record.working_revision
     revision.professional_profile_services.create!(service:, is_primary: true)
-    revision.update!(status: "approved", reviewed_at: Time.current)
-    record.update!(profile_status: "published", published_revision: revision)
-    record
+    make_profile_publicly_eligible(record, revision:)
   end
 end

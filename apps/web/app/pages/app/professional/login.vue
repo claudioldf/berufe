@@ -81,10 +81,10 @@ async function register() {
   initializeFromAuth({ name: name.value, phone: phone.value });
   setRole("professional");
   showToast({
-    title: isComplete.value ? "Acesso confirmado" : "Perfil rascunho criado",
+    title: isComplete.value ? "Acesso confirmado" : "Sucesso!",
     description: isComplete.value
       ? "Que bom ter você de volta."
-      : "Vamos completar sua presença na Berufe.",
+      : "Vamos completar seu perfil na Berufe.",
   });
   await enterProfessionalWorkspace();
 }

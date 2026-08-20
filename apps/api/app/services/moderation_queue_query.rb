@@ -2,7 +2,7 @@
 
 class ModerationQueueQuery
   TYPES = %w[
-    all profile_revision profile_photo portfolio_item verification_request professional_relationship
+    all profile_revision profile_photo portfolio_item verification_request
   ].freeze
   STATUSES = %w[pending_review approved rejected hidden all].freeze
   DEFAULT_PER_PAGE = 20
@@ -68,8 +68,7 @@ class ModerationQueueQuery
       "profile_revision" => method(:profile_revisions),
       "profile_photo" => method(:profile_photos),
       "portfolio_item" => method(:portfolio_items),
-      "verification_request" => method(:verification_requests),
-      "professional_relationship" => method(:professional_relationships)
+      "verification_request" => method(:verification_requests)
     }
     selected = (type == "all") ? loaders.values : [loaders.fetch(type)]
     selected.flat_map { |loader| loader.call(status) }
@@ -77,7 +76,7 @@ class ModerationQueueQuery
 
   def profile_revisions(status)
     scope = ProfessionalProfileRevision.includes(
-      professional_profile: :published_revision,
+      professional_profile: %i[published_revision approved_revision published_photo user_account],
       professional_profile_services: :service,
       professional_profile_service_areas: :neighborhood
     )
@@ -101,13 +100,18 @@ class ModerationQueueQuery
   end
 
   def profile_photos(status)
-    scope = ProfessionalProfilePhoto.includes(professional_profile: :working_revision)
+    scope = ProfessionalProfilePhoto.includes(
+      professional_profile: %i[working_revision approved_photo published_revision published_photo user_account]
+    )
     scope = scope.where(status: moderated_statuses(status, ProfessionalProfilePhoto::STATUSES))
     scope.map { |photo| photo_entry(photo) }
   end
 
   def portfolio_items(status)
-    scope = PortfolioItem.active.includes(:service, professional_profile: :working_revision)
+    scope = PortfolioItem.active.includes(
+      :service,
+      professional_profile: %i[working_revision published_revision published_photo user_account]
+    )
     scope = scope.where(status: moderated_statuses(status, PortfolioItem::STATUSES))
     scope.map { |item| portfolio_entry(item) }
   end
@@ -120,29 +124,6 @@ class ModerationQueueQuery
     VerificationRequest.includes(:verification_file, professional_profile: :working_revision)
       .where(status: statuses)
       .map { |request_record| verification_entry(request_record) }
-  end
-
-  def professional_relationships(status)
-    relationships = ProfessionalRelationship
-      .where(status: "accepted")
-      .includes(
-        initiator_professional: %i[published_revision working_revision],
-        recipient_professional: %i[published_revision working_revision]
-      )
-      .to_a
-    latest_actions = ProfessionalRelationshipModerationState.latest_actions_by_target_id(
-      relationships.map(&:id)
-    )
-
-    relationships.filter_map do |relationship|
-      effective_status = ProfessionalRelationshipModerationState.call(
-        relationship,
-        latest_action: latest_actions[relationship.id]
-      )
-      next unless status == "all" || effective_status == status
-
-      relationship_entry(relationship, effective_status)
-    end
   end
 
   def moderated_statuses(status, allowed)
@@ -161,9 +142,13 @@ class ModerationQueueQuery
       subtitle: supply_subtitle(revision),
       submitted_at: revision.submitted_at || revision.created_at,
       details: revision.professional_profile.published_revision_id.present? ?
-        "O perfil voltou para análise após uma alteração material." :
-        "Primeiro perfil enviado para análise e publicação.",
+        "O conteúdo atual está público enquanto aguarda revisão." :
+        "O conteúdo não está público porque não há uma revisão válida atual.",
       preview: [revision.headline, revision.bio].compact_blank.join(" — "),
+      currently_public: currently_public_revision?(revision),
+      fallback_available: revision.professional_profile.approved_revision.present?,
+      changes: profile_changes(revision),
+      claimed_birthdate: nil,
       has_media: false,
       verification_file_id: nil
     }
@@ -180,6 +165,10 @@ class ModerationQueueQuery
       submitted_at: photo.submitted_at,
       details: "Foto de perfil regenerada e enviada para conferência manual.",
       preview: "Imagem privada · acesso registrado na trilha de auditoria",
+      currently_public: currently_public_photo?(photo),
+      fallback_available: photo.professional_profile.approved_photo.present?,
+      changes: [],
+      claimed_birthdate: nil,
       has_media: true,
       verification_file_id: nil
     }
@@ -196,6 +185,12 @@ class ModerationQueueQuery
       submitted_at: item.submitted_at,
       details: "Nova imagem de portfólio associada ao serviço #{item.service.name}.",
       preview: item.description.presence || item.title,
+      currently_public: !!(
+        item.status.in?(%w[pending_review approved]) && item.professional_profile.publicly_available?
+      ),
+      fallback_available: false,
+      changes: [],
+      claimed_birthdate: nil,
       has_media: true,
       verification_file_id: nil
     }
@@ -212,31 +207,12 @@ class ModerationQueueQuery
       submitted_at: request_record.submitted_at,
       details: "Imagem de identidade enviada para conferência manual.",
       preview: "Arquivo privado · acesso registrado na trilha de auditoria",
+      currently_public: false,
+      fallback_available: false,
+      changes: [],
+      claimed_birthdate: request_record.claimed_birthdate&.iso8601,
       has_media: false,
       verification_file_id: request_record.verification_file&.id
-    }
-  end
-
-  def relationship_entry(relationship, status)
-    initiator = relationship.initiator_professional
-    recipient = relationship.recipient_professional
-    type_label = if relationship.relationship_type == "recommendation"
-      "Recomendação"
-    else
-      "Trabalharam juntos"
-    end
-
-    {
-      target_type: "professional_relationship",
-      target_id: relationship.id,
-      status:,
-      title: "Relação profissional · #{profile_name(initiator)} e #{profile_name(recipient)}",
-      subtitle: type_label,
-      submitted_at: relationship.responded_at,
-      details: "Relação confirmada pelo destinatário e enviada para análise manual.",
-      preview: relationship.context_note.presence || "Sem contexto adicional.",
-      has_media: false,
-      verification_file_id: nil
     }
   end
 
@@ -252,8 +228,25 @@ class ModerationQueueQuery
     areas.filter_map { |area| area.neighborhood&.name }.join(", ")
   end
 
-  def profile_name(profile)
-    (profile.published_revision || profile.working_revision).display_name
+  def currently_public_revision?(revision)
+    profile = revision.professional_profile
+    !!(profile.published_revision_id == revision.id && profile.publicly_available?)
+  end
+
+  def currently_public_photo?(photo)
+    profile = photo.professional_profile
+    !!(profile.published_photo_id == photo.id && profile.publicly_available?)
+  end
+
+  def profile_changes(revision)
+    fallback = revision.professional_profile.approved_revision
+    before = fallback&.material_snapshot || {}
+    after = revision.material_snapshot
+    (before.keys | after.keys).filter_map do |field|
+      next if before[field] == after[field]
+
+      {field: field.to_s, before: before[field], after: after[field]}
+    end
   end
 
   def search_match?(entry, search)

@@ -1,0 +1,173 @@
+import { mountSuspended } from "@nuxt/test-utils/runtime";
+import { ref, shallowRef } from "vue";
+import professionalsData from "@data/professionals.json";
+import ProfessionalProfilePage from "@app/pages/app/professional/profile.vue";
+
+const mocks = vi.hoisted(() => ({
+  useWorkspace: vi.fn(),
+  useCatalogs: vi.fn(),
+  showToast: vi.fn(),
+}));
+
+vi.mock("@app/composables/useProfessionalWorkspace", () => ({
+  useProfessionalWorkspace: mocks.useWorkspace,
+}));
+vi.mock("@app/composables/useCatalogs", () => ({
+  useCatalogs: mocks.useCatalogs,
+}));
+vi.mock("@app/composables/useToast", () => ({
+  useToast: () => ({ showToast: mocks.showToast }),
+}));
+
+const fixture = (professionalsData as Array<Record<string, unknown>>)[0]!;
+
+function catalog() {
+  return {
+    data: ref({
+      categories: [],
+      services: [
+        {
+          id: "c43071a5-4c47-4324-99ef-41846ee35538",
+          name: "Eletricista do painel",
+          slug: "eletricista-painel",
+          category: "instalacoes",
+          icon: "i-lucide-zap",
+          description: "Instalações elétricas.",
+          aliases: [],
+        },
+      ],
+      neighborhoods: [
+        {
+          code: "all",
+          name: "Toda Joinville",
+          stateCode: "SC",
+          city: "Joinville",
+        },
+        {
+          code: "america",
+          name: "América",
+          stateCode: "SC",
+          city: "Joinville",
+        },
+      ],
+    }),
+    error: shallowRef(null),
+  };
+}
+
+function workspace() {
+  return {
+    data: ref({
+      dashboard: {
+        localDate: "2026-08-19",
+        readiness: {
+          percentage: 100,
+          steps: {
+            identityContact: true,
+            serviceCoverage: true,
+            reviewablePortfolio: true,
+            approvedIdentity: true,
+          },
+        },
+        recentQuotes: [],
+      },
+      pendingRelationships: [],
+      profile: {
+        id: "2cc1bdc4-e2d1-452b-8e76-241931a32bc9",
+        publicSlug: "beto-lima",
+        status: "published" as const,
+        isPublic: true,
+        isSearchEligible: true,
+        publicationBlockers: [],
+        revisionStatus: "approved" as const,
+        revisionRejectionReason: null,
+        hasPublishedRevision: true,
+        photo: {
+          current: null,
+          hasPublishedPhoto: false,
+          publishedImageUrl: null,
+          latestUpload: null,
+        },
+        portfolioItems: [],
+        verification: { current: null },
+        identity: {
+          name: "Beto Lima",
+          birthdate: "1990-04-12",
+          headline: "Elétrica residencial.",
+          bio: "Instalações em Joinville.",
+          yearsExperience: 8,
+          whatsapp: "47999991111",
+          instagram: "",
+          youtube: "",
+        },
+        services: [
+          {
+            id: "c43071a5-4c47-4324-99ef-41846ee35538",
+            name: "Eletricista do painel",
+            isPrimary: true,
+            note: "",
+          },
+        ],
+        coverage: {
+          allJoinville: false,
+          neighborhoods: [{ code: "america", name: "América" }],
+        },
+      },
+    }),
+    error: shallowRef(null),
+    saveProfile: vi.fn(),
+    photoUploading: shallowRef(false),
+    photoError: shallowRef(""),
+    uploadPhoto: vi.fn(),
+    retryPhoto: vi.fn(),
+    portfolioSaving: shallowRef(false),
+    createPortfolioItem: vi.fn(),
+    deletePortfolioItem: vi.fn(),
+    verificationSaving: shallowRef(false),
+    verificationError: shallowRef(""),
+    createVerificationRequest: vi.fn(),
+  };
+}
+
+describe("professional profile editor page", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.useCatalogs.mockResolvedValue(catalog());
+    mocks.useWorkspace.mockResolvedValue(workspace());
+  });
+
+  it("builds the editor only from the authenticated workspace, never from a fixture", async () => {
+    const wrapper = await mountSuspended(ProfessionalProfilePage, {
+      shallow: true,
+      global: { renderStubDefaultSlot: true },
+    });
+
+    const editor = wrapper.getComponent({ name: "DashboardProfileEditor" });
+    const professional = editor.props("professional") as Record<
+      string,
+      unknown
+    >;
+
+    expect(professional).toMatchObject({
+      id: "2cc1bdc4-e2d1-452b-8e76-241931a32bc9",
+      slug: "beto-lima",
+      name: "Beto Lima",
+      headline: "Elétrica residencial.",
+      bio: "Instalações em Joinville.",
+      primaryService: "Eletricista do painel",
+      primaryServiceSlug: "eletricista-painel",
+      yearsExperience: 8,
+      allJoinville: false,
+      neighborhoods: ["América"],
+    });
+
+    // Nothing may survive from data/professionals.json, whichever fields the
+    // Professional type grows next.
+    for (const [key, value] of Object.entries(fixture)) {
+      if (typeof value !== "string" || !value) continue;
+      expect(professional[key]).not.toBe(value);
+    }
+    expect(JSON.stringify(professional)).not.toContain(fixture.name as string);
+    expect(wrapper.html()).not.toContain(fixture.name as string);
+  });
+});

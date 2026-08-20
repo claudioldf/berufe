@@ -26,6 +26,7 @@ RSpec.describe ProfessionalProfileRevision, type: :model do
       profile: first,
       attributes: {
         display_name: "João Obras",
+        birthdate: "1990-04-12",
         headline: "Reparos residenciais.",
         bio: "Atendimento em Joinville.",
         whatsapp: first_account.phone_e164,

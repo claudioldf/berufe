@@ -31,7 +31,7 @@ class PublicCatalogSerializer
       id: service.id,
       name: service.name,
       slug: service.slug,
-      categorySlug: service.category.slug,
+      category_slug: service.category.slug,
       icon: service.icon,
       description: service.description,
       aliases: service.aliases
@@ -42,7 +42,7 @@ class PublicCatalogSerializer
     {
       code: neighborhood.code,
       name: neighborhood.name,
-      stateCode: neighborhood.state_code,
+      state_code: neighborhood.state_code,
       city: neighborhood.city_code
     }
   end

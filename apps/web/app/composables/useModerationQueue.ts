@@ -32,7 +32,11 @@ interface ModerationQueueDependencies {
     item: ModerationQueueItem,
     action: ModerationDecision,
     filters: ModerationFilters,
-    attributes: { reason?: string; note?: string },
+    attributes: {
+      reason?: string;
+      note?: string;
+      identityMatchConfirmed?: boolean;
+    },
   ) => Promise<ModerationQueue>;
   loadMedia?: (item: ModerationQueueItem) => Promise<Blob>;
   loadEvidence?: (item: ModerationQueueItem) => Promise<Blob>;
@@ -157,7 +161,7 @@ export function useModerationQueue(
 
   async function decide(
     action: ModerationDecision,
-    attributes: { reason?: string } = {},
+    attributes: { reason?: string; identityMatchConfirmed?: boolean } = {},
   ) {
     const item = selected.value;
     if (!item || isMutating.value) return null;
@@ -167,6 +171,7 @@ export function useModerationQueue(
       const result = await decideTarget(item, action, filters.value, {
         reason: attributes.reason?.trim(),
         note: note.value.trim(),
+        identityMatchConfirmed: attributes.identityMatchConfirmed,
       });
       adopt(result);
       note.value = "";

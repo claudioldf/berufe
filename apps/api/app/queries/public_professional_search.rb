@@ -3,14 +3,23 @@
 class PublicProfessionalSearch
   MAXIMUM_TERM_LENGTH = 80
   ALL_JOINVILLE = "all"
+  DEFAULT_PER_PAGE = 20
+  MAX_PER_PAGE = 50
 
   Result = Data.define(
     :normalized_term,
     :service,
     :neighborhood,
     :professionals,
-    :related_services
-  )
+    :related_services,
+    :page,
+    :per_page,
+    :total_count
+  ) do
+    def total_pages
+      total_count.zero? ? 0 : (total_count.to_f / per_page).ceil
+    end
+  end
 
   class InvalidInput < StandardError
     attr_reader :field_errors
@@ -26,13 +35,17 @@ class PublicProfessionalSearch
     @related_services = related_services
   end
 
-  def call(term:, neighborhood_code: nil)
+  def call(term:, neighborhood_code: nil, page: 1, per_page: DEFAULT_PER_PAGE)
     validate_term!(term)
     resolution = resolver.call(term)
     validate_normalized_term!(resolution.normalized_term)
     neighborhood = resolve_neighborhood(neighborhood_code)
+    normalized_page, normalized_per_page = normalize_pagination(page, per_page)
 
-    professionals = resolution.service ? matching_professionals(resolution.service, neighborhood) : ProfessionalProfile.none
+    matches = resolution.service ? matching_professionals(resolution.service, neighborhood) : ProfessionalProfile.none
+    # The event records how many professionals matched, not how many this page
+    # returned, so the count is taken before the window is applied.
+    total_count = matches.count(:id)
     suggestions = related_services.call(
       normalized_term: resolution.normalized_term,
       active_services: resolution.active_services,
@@ -43,8 +56,11 @@ class PublicProfessionalSearch
       normalized_term: resolution.normalized_term,
       service: resolution.service,
       neighborhood:,
-      professionals:,
-      related_services: suggestions
+      professionals: page_of(matches, neighborhood, normalized_page, normalized_per_page),
+      related_services: suggestions,
+      page: normalized_page,
+      per_page: normalized_per_page,
+      total_count:
     )
   end
 
@@ -64,13 +80,26 @@ class PublicProfessionalSearch
     raise InvalidInput, {service: ["é obrigatório"]}
   end
 
+  def normalize_pagination(page, per_page)
+    normalized_page = Integer(page.to_s.presence || 1, exception: false)
+    normalized_per_page = Integer(per_page.to_s.presence || DEFAULT_PER_PAGE, exception: false)
+    errors = {}
+    errors[:page] = ["deve ser maior que zero"] unless normalized_page&.positive?
+    unless normalized_per_page&.between?(1, MAX_PER_PAGE)
+      errors[:per_page] = ["deve estar entre 1 e #{MAX_PER_PAGE}"]
+    end
+    raise InvalidInput, errors if errors.any?
+
+    [normalized_page, normalized_per_page]
+  end
+
   def resolve_neighborhood(neighborhood_code)
     code = neighborhood_code.to_s.strip
     return if code.blank? || code == ALL_JOINVILLE
 
     Neighborhood.active.find_by(code:) || raise(
       InvalidInput,
-      {neighborhoodCode: ["não é um bairro ativo de Joinville"]}
+      {neighborhood_code: ["não é um bairro ativo de Joinville"]}
     )
   end
 
@@ -79,7 +108,10 @@ class PublicProfessionalSearch
       .publicly_eligible
       .joins(published_revision: :professional_profile_services)
       .where(professional_profile_services: {service_id: service.id})
-    relation = relation.where(coverage_sql, neighborhood.code) if neighborhood
+    neighborhood ? relation.where(coverage_sql, neighborhood.code) : relation
+  end
+
+  def page_of(relation, neighborhood, page, per_page)
     relation
       .includes(
         :published_photo,
@@ -91,6 +123,8 @@ class PublicProfessionalSearch
         }
       )
       .order(*ranking_order(neighborhood))
+      .limit(per_page)
+      .offset((page - 1) * per_page)
   end
 
   def ranking_order(neighborhood)

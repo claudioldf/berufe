@@ -690,10 +690,6 @@ paths:
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
-            Cache-Control:
-              schema:
-                type: string
-                const: no-store
           content:
             application/json:
               schema:
@@ -733,7 +729,7 @@ paths:
         schema:
           type: string
           pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
-      - name: interactionToken
+      - name: interaction_token
         in: query
         required: false
         schema:
@@ -752,10 +748,6 @@ paths:
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
-            Cache-Control:
-              schema:
-                type: string
-                const: no-store
           content:
             application/json:
               schema:
@@ -860,7 +852,7 @@ paths:
           enum:
             - search_result
             - public_profile
-      - name: interactionToken
+      - name: interaction_token
         in: query
         required: true
         schema:
@@ -930,20 +922,22 @@ paths:
           format: uuid
     get:
       operationId: getPublicProfilePhotoImage
-      summary: Read a currently published approved profile photo
+      summary: Read a currently published pending or approved profile photo
       tags:
         - Public discovery
       security: []
       responses:
         "200":
-          description: An approved JPEG profile photo whose parent remains publicly eligible.
+          description: A pending or approved JPEG profile photo whose parent remains publicly eligible.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
               schema:
                 type: string
-                const: max-age=0, public, must-revalidate
+                enum:
+                  - no-store
+                  - max-age=0, public, must-revalidate
             Content-Disposition:
               schema:
                 type: string
@@ -958,7 +952,7 @@ paths:
                 type: string
                 format: binary
         "404":
-          description: The photo is absent, not approved/published, has an ineligible parent, or its object is unavailable.
+          description: The photo is absent, rejected/hidden, has an ineligible parent, or its object is unavailable.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
@@ -976,20 +970,22 @@ paths:
           format: uuid
     get:
       operationId: getPublicPortfolioItemImage
-      summary: Read the approved regenerated portfolio image
+      summary: Read a public pending or approved regenerated portfolio image
       tags:
         - Professional supply
       security: []
       responses:
         "200":
-          description: An approved portfolio image that remains eligible for public display.
+          description: A pending or approved portfolio image that remains eligible for public display.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
             Cache-Control:
               schema:
                 type: string
-                const: max-age=0, public, must-revalidate
+                enum:
+                  - no-store
+                  - max-age=0, public, must-revalidate
             Content-Disposition:
               schema:
                 type: string
@@ -1008,7 +1004,7 @@ paths:
                 type: string
                 format: binary
         "404":
-          description: The portfolio item is not approved, was hidden/deleted, or its public object is unavailable.
+          description: The portfolio item was rejected/hidden/deleted, its parent is unavailable, or its object is unavailable.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
@@ -1525,6 +1521,63 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: revokeProfessionalQuoteShare
+      summary: Revoke the owned quote's bearer link and return it to draft
+      tags:
+        - Professional quotes
+      security:
+        - applicationSession: []
+      responses:
+        "200":
+          description: The link no longer resolves and the quote is a draft again.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfessionalQuoteResponse"
+        "401":
+          description: An active Rails application session is required.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: The exact browser origin or professional owner is invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: The quote does not exist or belongs to another professional.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: The quote has no active link to revoke.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/shared-quotes/resolve:
     post:
       operationId: resolveSharedQuote
@@ -1666,14 +1719,14 @@ paths:
   /api/v1/professional/profile/submission:
     post:
       operationId: submitProfessionalProfile
-      summary: Submit the persisted professional profile for moderation
+      summary: Publish the persisted professional profile and enqueue post-publication review
       tags:
         - Professional supply
       security:
         - applicationSession: []
       responses:
         "200":
-          description: The complete working profile revision was submitted for moderation, or was already submitted.
+          description: The complete working profile was published, or was already public.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
@@ -1709,7 +1762,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "422":
-          description: The persisted identity, supply, portfolio, or identity evidence checklist is incomplete.
+          description: The persisted identity, required photo, service, or coverage checklist is incomplete.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
@@ -1720,7 +1773,7 @@ paths:
   /api/v1/professional/profile/photo:
     put:
       operationId: updateProfessionalProfilePhoto
-      summary: Attach a processed private image to the professional profile for review
+      summary: Attach a processed profile photo and enqueue post-publication review
       tags:
         - Professional supply
       security:
@@ -1733,7 +1786,7 @@ paths:
               $ref: "#/components/schemas/ProfessionalProfilePhotoUpdateRequest"
       responses:
         "200":
-          description: The private JPEG variant was attached and submitted for review.
+          description: The JPEG variant was attached and, for a published profile, became public immediately.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
@@ -2301,7 +2354,6 @@ components:
           - profile_photo
           - portfolio_item
           - verification_request
-          - professional_relationship
     ModerationStatus:
       name: status
       in: query
@@ -2731,9 +2783,15 @@ components:
         label: { type: string }
         started: { type: integer, minimum: 0 }
         responded: { type: integer, minimum: 0 }
-        approved: { type: integer, minimum: 0 }
+        approved:
+          type: integer
+          minimum: 0
+          description: Recipient-accepted relationships whose two parties remain publicly eligible; no admin review is involved.
         response_rate: { $ref: "#/components/schemas/AdminGrowthReportRate" }
-        approval_rate: { $ref: "#/components/schemas/AdminGrowthReportRate" }
+        approval_rate:
+          allOf:
+            - $ref: "#/components/schemas/AdminGrowthReportRate"
+          description: Recipient-confirmed public relationships divided by responded relationships.
     AdminGrowthReportQuotes:
       type: object
       additionalProperties: false
@@ -2952,21 +3010,20 @@ components:
       additionalProperties: false
       required:
         - display_name
-        - headline
-        - bio
-        - whatsapp
+        - birthdate
       properties:
         display_name:
           type: string
           minLength: 3
           maxLength: 70
+        birthdate:
+          type: string
+          format: date
         headline:
           type: string
-          minLength: 1
           maxLength: 120
         bio:
           type: string
-          minLength: 1
           maxLength: 500
         years_experience:
           type:
@@ -2975,8 +3032,9 @@ components:
           minimum: 0
           maximum: 70
         whatsapp:
-          type: string
-          minLength: 10
+          type:
+            - string
+            - "null"
           maxLength: 40
         instagram:
           type:
@@ -3491,6 +3549,9 @@ components:
         - id
         - public_slug
         - profile_status
+        - is_public
+        - is_search_eligible
+        - publication_blockers
         - revision_status
         - revision_rejection_reason
         - has_published_revision
@@ -3515,6 +3576,20 @@ components:
             - pending_review
             - published
             - suspended
+        is_public:
+          type: boolean
+        is_search_eligible:
+          type: boolean
+        publication_blockers:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            enum:
+              - identity
+              - photo
+              - services
+              - coverage
         revision_status:
           type: string
           enum:
@@ -3879,6 +3954,7 @@ components:
       additionalProperties: false
       required:
         - display_name
+        - birthdate
         - headline
         - bio
         - years_experience
@@ -3890,6 +3966,11 @@ components:
           type: string
           minLength: 3
           maxLength: 70
+        birthdate:
+          type:
+            - string
+            - "null"
+          format: date
         headline:
           type: string
           maxLength: 120
@@ -4317,10 +4398,10 @@ components:
         - id
         - name
         - slug
-        - categorySlug
+        - category_slug
         - description
-        - isActive
-        - sortOrder
+        - is_active
+        - sort_order
       properties:
         id:
           type: string
@@ -4333,7 +4414,7 @@ components:
           type: string
           pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
           maxLength: 80
-        categorySlug:
+        category_slug:
           type: string
           pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
           maxLength: 80
@@ -4341,9 +4422,9 @@ components:
           type: string
           minLength: 1
           maxLength: 240
-        isActive:
+        is_active:
           type: boolean
-        sortOrder:
+        sort_order:
           type: integer
           minimum: 0
     AdminCatalogNeighborhood:
@@ -4352,10 +4433,10 @@ components:
       required:
         - code
         - name
-        - stateCode
+        - state_code
         - city
-        - isActive
-        - sortOrder
+        - is_active
+        - sort_order
       properties:
         code:
           type: string
@@ -4365,15 +4446,15 @@ components:
           type: string
           minLength: 1
           maxLength: 80
-        stateCode:
+        state_code:
           type: string
           const: SC
         city:
           type: string
           const: Joinville
-        isActive:
+        is_active:
           type: boolean
-        sortOrder:
+        sort_order:
           type: integer
           minimum: 0
     AdminCatalogServiceCreateRequest:
@@ -4382,7 +4463,7 @@ components:
       required:
         - name
         - slug
-        - categorySlug
+        - category_slug
         - description
       properties:
         name:
@@ -4393,7 +4474,7 @@ components:
           type: string
           pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
           maxLength: 80
-        categorySlug:
+        category_slug:
           type: string
           pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
           maxLength: 80
@@ -4410,7 +4491,7 @@ components:
           type: string
           minLength: 1
           maxLength: 80
-        categorySlug:
+        category_slug:
           type: string
           pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
           maxLength: 80
@@ -4418,7 +4499,7 @@ components:
           type: string
           minLength: 1
           maxLength: 240
-        isActive:
+        is_active:
           type: boolean
     AdminCatalogServiceOrderRequest:
       type: object
@@ -4439,7 +4520,7 @@ components:
       required:
         - name
         - code
-        - stateCode
+        - state_code
         - city
       properties:
         name:
@@ -4450,7 +4531,7 @@ components:
           type: string
           pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
           maxLength: 80
-        stateCode:
+        state_code:
           type: string
           const: SC
         city:
@@ -4465,13 +4546,13 @@ components:
           type: string
           minLength: 1
           maxLength: 80
-        stateCode:
+        state_code:
           type: string
           const: SC
         city:
           type: string
           const: Joinville
-        isActive:
+        is_active:
           type: boolean
     AdminCatalogNeighborhoodOrderRequest:
       type: object
@@ -4526,6 +4607,10 @@ components:
         - submitted_at
         - details
         - preview
+        - currently_public
+        - fallback_available
+        - changes
+        - claimed_birthdate
         - has_media
         - verification_file_id
       properties:
@@ -4549,6 +4634,19 @@ components:
           minLength: 1
         preview:
           type: string
+        currently_public:
+          type: boolean
+        fallback_available:
+          type: boolean
+        changes:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminModerationChange"
+        claimed_birthdate:
+          type:
+            - string
+            - "null"
+          format: date
         has_media:
           type: boolean
         verification_file_id:
@@ -4556,6 +4654,19 @@ components:
             - string
             - "null"
           format: uuid
+    AdminModerationChange:
+      type: object
+      additionalProperties: false
+      required:
+        - field
+        - before
+        - after
+      properties:
+        field:
+          type: string
+          minLength: 1
+        before: {}
+        after: {}
     AdminModerationSummary:
       type: object
       additionalProperties: false
@@ -4606,6 +4717,8 @@ components:
             - string
             - "null"
           maxLength: 500
+        identity_match_confirmed:
+          type: boolean
     ModerationTargetType:
       type: string
       enum:
@@ -4613,7 +4726,6 @@ components:
         - profile_photo
         - portfolio_item
         - verification_request
-        - professional_relationship
     ModerationStatus:
       type: string
       enum:
@@ -4669,7 +4781,7 @@ components:
         - id
         - name
         - slug
-        - categorySlug
+        - category_slug
         - icon
         - description
         - aliases
@@ -4683,7 +4795,7 @@ components:
         slug:
           type: string
           pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
-        categorySlug:
+        category_slug:
           type: string
           pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
         icon:
@@ -4703,7 +4815,7 @@ components:
       required:
         - code
         - name
-        - stateCode
+        - state_code
         - city
       properties:
         code:
@@ -4712,7 +4824,7 @@ components:
         name:
           type: string
           minLength: 1
-        stateCode:
+        state_code:
           type: string
           const: SC
         city:
@@ -4748,12 +4860,21 @@ components:
           type: string
           minLength: 1
           maxLength: 80
-        neighborhoodCode:
+        neighborhood_code:
           type:
             - string
             - "null"
           pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
           maxLength: 80
+        page:
+          type: integer
+          minimum: 1
+          description: One-based page of matching professionals; defaults to 1.
+        per_page:
+          type: integer
+          minimum: 1
+          maximum: 50
+          description: Professionals per page; defaults to 20.
     PublicProfessionalSearchResponse:
       type: object
       additionalProperties: false
@@ -4771,18 +4892,19 @@ components:
       required:
         - query
         - professionals
-        - relatedServices
+        - related_services
+        - meta
         - interaction
       properties:
         query:
           type: object
           additionalProperties: false
           required:
-            - normalizedTerm
+            - normalized_term
             - service
             - neighborhood
           properties:
-            normalizedTerm:
+            normalized_term:
               type: string
               minLength: 1
               maxLength: 80
@@ -4798,11 +4920,13 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PublicProfessionalCard"
-        relatedServices:
+        related_services:
           type: array
           maxItems: 3
           items:
             $ref: "#/components/schemas/PublicServiceSuggestion"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
         interaction:
           oneOf:
             - $ref: "#/components/schemas/PublicSearchInteraction"
@@ -4811,10 +4935,10 @@ components:
       type: object
       additionalProperties: false
       required:
-        - searchEventId
+        - search_event_id
         - token
       properties:
-        searchEventId:
+        search_event_id:
           type: string
           format: uuid
         token:
@@ -4864,25 +4988,25 @@ components:
       additionalProperties: false
       required:
         - id
-        - publicSlug
-        - displayName
+        - public_slug
+        - display_name
         - headline
-        - photoUrl
-        - primaryService
-        - matchingService
+        - photo_url
+        - primary_service
+        - matching_service
         - coverage
-        - verificationLabels
-        - portfolioCount
-        - relationshipCount
-        - publicSnapshotUpdatedAt
+        - verification_labels
+        - portfolio_count
+        - relationship_count
+        - public_snapshot_updated_at
       properties:
         id:
           type: string
           format: uuid
-        publicSlug:
+        public_slug:
           type: string
           pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
-        displayName:
+        display_name:
           type: string
           minLength: 3
           maxLength: 70
@@ -4892,32 +5016,32 @@ components:
             - "null"
           minLength: 1
           maxLength: 120
-        photoUrl:
+        photo_url:
           type:
             - string
             - "null"
           format: uri
-        primaryService:
+        primary_service:
           oneOf:
             - $ref: "#/components/schemas/PublicProfessionalServiceSummary"
             - type: "null"
-        matchingService:
+        matching_service:
           oneOf:
             - $ref: "#/components/schemas/PublicProfessionalServiceSummary"
             - type: "null"
         coverage:
           $ref: "#/components/schemas/PublicProfessionalCoverage"
-        verificationLabels:
+        verification_labels:
           type: array
           items:
             $ref: "#/components/schemas/PublicVerificationLabel"
-        portfolioCount:
+        portfolio_count:
           type: integer
           minimum: 0
-        relationshipCount:
+        relationship_count:
           type: integer
           minimum: 0
-        publicSnapshotUpdatedAt:
+        public_snapshot_updated_at:
           type:
             - string
             - "null"
@@ -4943,10 +5067,10 @@ components:
       type: object
       additionalProperties: false
       required:
-        - allJoinville
+        - all_joinville
         - neighborhoods
       properties:
-        allJoinville:
+        all_joinville:
           type: boolean
         neighborhoods:
           type: array
@@ -4969,7 +5093,7 @@ components:
       required:
         - type
         - label
-        - verifiedAt
+        - verified_at
       properties:
         type:
           type: string
@@ -4981,7 +5105,7 @@ components:
           enum:
             - Telefone confirmado
             - Identidade verificada
-        verifiedAt:
+        verified_at:
           type:
             - string
             - "null"
@@ -5011,27 +5135,27 @@ components:
       additionalProperties: false
       required:
         - id
-        - publicSlug
-        - displayName
+        - public_slug
+        - display_name
         - headline
         - bio
-        - yearsExperience
-        - photoUrl
+        - years_experience
+        - photo_url
         - services
         - coverage
-        - verificationLabels
+        - verification_labels
         - portfolio
         - relationships
-        - socialLinks
-        - publicSnapshotUpdatedAt
+        - social_links
+        - public_snapshot_updated_at
       properties:
         id:
           type: string
           format: uuid
-        publicSlug:
+        public_slug:
           type: string
           pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
-        displayName:
+        display_name:
           type: string
           minLength: 3
           maxLength: 70
@@ -5047,13 +5171,13 @@ components:
             - "null"
           minLength: 1
           maxLength: 500
-        yearsExperience:
+        years_experience:
           type:
             - integer
             - "null"
           minimum: 0
           maximum: 70
-        photoUrl:
+        photo_url:
           type:
             - string
             - "null"
@@ -5065,7 +5189,7 @@ components:
             $ref: "#/components/schemas/PublicProfessionalProfileService"
         coverage:
           $ref: "#/components/schemas/PublicProfessionalCoverage"
-        verificationLabels:
+        verification_labels:
           type: array
           minItems: 1
           items:
@@ -5079,9 +5203,9 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PublicProfessionalRelationship"
-        socialLinks:
+        social_links:
           $ref: "#/components/schemas/PublicProfessionalSocialLinks"
-        publicSnapshotUpdatedAt:
+        public_snapshot_updated_at:
           type:
             - string
             - "null"
@@ -5093,7 +5217,7 @@ components:
         - id
         - name
         - slug
-        - isPrimary
+        - is_primary
         - note
       properties:
         id:
@@ -5105,7 +5229,7 @@ components:
         slug:
           type: string
           pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
-        isPrimary:
+        is_primary:
           type: boolean
         note:
           type:
@@ -5120,7 +5244,7 @@ components:
         - title
         - description
         - service
-        - imageUrl
+        - image_url
       properties:
         id:
           type: string
@@ -5136,7 +5260,7 @@ components:
           maxLength: 300
         service:
           $ref: "#/components/schemas/PublicProfessionalServiceSummary"
-        imageUrl:
+        image_url:
           type: string
           format: uri
     PublicProfessionalRelationship:
@@ -5172,21 +5296,21 @@ components:
           additionalProperties: false
           required:
             - id
-            - publicSlug
-            - displayName
-            - photoUrl
+            - public_slug
+            - display_name
+            - photo_url
           properties:
             id:
               type: string
               format: uuid
-            publicSlug:
+            public_slug:
               type: string
               pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
-            displayName:
+            display_name:
               type: string
               minLength: 3
               maxLength: 70
-            photoUrl:
+            photo_url:
               type:
                 - string
                 - "null"
@@ -5222,9 +5346,9 @@ components:
       type: object
       additionalProperties: false
       required:
-        - interactionToken
+        - interaction_token
       properties:
-        interactionToken:
+        interaction_token:
           type: string
           minLength: 1
           maxLength: 2048

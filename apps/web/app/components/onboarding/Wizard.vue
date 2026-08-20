@@ -3,7 +3,6 @@ import { computed, nextTick, shallowRef, useTemplateRef, watch } from "vue";
 import type {
   Neighborhood,
   OnboardingStepId,
-  PortfolioItemDraft,
   ProfessionalProfileDraft,
   ProfessionalWorkspace,
   Service,
@@ -23,12 +22,6 @@ const props = defineProps<{
   saveSupply: (
     draft: ProfessionalProfileDraft,
   ) => Promise<ProfessionalProfileDraft>;
-  savePortfolio: (draft: PortfolioItemDraft) => Promise<{
-    title: string;
-    service: string;
-    description: string;
-    submittedAt: string;
-  }>;
   saveVerification: (file: File) => Promise<{ submittedAt: string }>;
   uploadPhoto: (file: File) => Promise<unknown>;
   retryPhoto: () => Promise<unknown>;
@@ -50,21 +43,19 @@ const {
   firstIncompleteStep,
   completeProfile,
   completeServices,
-  completePortfolio,
   completeVerification,
+  skipVerification,
+  markPhotoReady,
   initializeFromWorkspace,
   profileSaving,
   profileError,
   supplySaving,
   supplyError,
-  portfolioSaving,
-  portfolioError,
   verificationSaving,
   verificationError,
 } = useProfessionalOnboarding({
   saveIdentity: props.saveIdentity,
   saveSupply: props.saveSupply,
-  savePortfolio: props.savePortfolio,
   saveVerification: props.saveVerification,
 });
 
@@ -79,7 +70,9 @@ const firstIncompleteIndex = computed(() =>
     (step) => step.id === firstIncompleteStep.value,
   ),
 );
-const isSubmitted = computed(() => props.workspace.profile.status !== "draft");
+const isSubmitted = computed(
+  () => props.workspace.profile.status === "published",
+);
 const professionalName = computed(
   () => state.value.profile.name.trim().split(" ")[0] || "profissional",
 );
@@ -88,9 +81,6 @@ const editableProfile = computed<ProfessionalProfileDraft>(() => ({
   selectedServices: [...state.value.profile.selectedServices],
   selectedNeighborhoods: [...state.value.profile.selectedNeighborhoods],
 }));
-const selectedServices = computed(() => [
-  ...state.value.profile.selectedServices,
-]);
 const availableSteps = computed(() =>
   professionalOnboardingSteps
     .filter((step) => canVisitStep(step.id))
@@ -131,12 +121,13 @@ async function handleProfile(draft: ProfessionalProfileDraft) {
 }
 
 async function handleServices(draft: ProfessionalProfileDraft) {
-  if (await completeServices(draft)) void goToStep("portfolio");
+  if (await completeServices(draft)) void goToStep("verification");
 }
 
 async function handlePhoto(file: File) {
   try {
     await props.uploadPhoto(file);
+    markPhotoReady();
   } catch {
     // The shared photo state renders the safe server error in this step.
   }
@@ -145,17 +136,19 @@ async function handlePhoto(file: File) {
 async function handlePhotoRetry() {
   try {
     await props.retryPhoto();
+    markPhotoReady();
   } catch {
     // The shared photo state renders the safe server error in this step.
   }
 }
 
-async function handlePortfolio(draft: PortfolioItemDraft) {
-  if (await completePortfolio(draft)) void goToStep("verification");
-}
-
 async function handleVerification(file: File) {
   await completeVerification(file);
+}
+
+async function skipAndFinish() {
+  skipVerification();
+  await finishReview();
 }
 
 function reviewSteps() {
@@ -193,7 +186,6 @@ watch(
   (workspace) => {
     const identity = workspace.profile.identity;
     const selections = workspace.profile.services;
-    const firstPortfolioItem = workspace.profile.portfolioItems[0];
     initializeFromWorkspace(
       {
         ...editableProfile.value,
@@ -209,14 +201,12 @@ watch(
           (neighborhood) => neighborhood.name,
         ),
       },
-      firstPortfolioItem
-        ? {
-            title: firstPortfolioItem.title,
-            service: firstPortfolioItem.service,
-            description: firstPortfolioItem.description,
-            submittedAt: firstPortfolioItem.submittedAt,
-          }
-        : null,
+      Boolean(
+        workspace.profile.photo.hasPublishedPhoto ||
+        ["pending_review", "approved"].includes(
+          workspace.profile.photo.current?.status ?? "",
+        ),
+      ),
       workspace.profile.verification.current?.submittedAt ?? null,
     );
   },
@@ -232,12 +222,12 @@ watch(
           <DesignSystemEyebrow>Primeiros passos</DesignSystemEyebrow>
           <h1>Vamos deixar seu perfil pronto, {{ professionalName }}.</h1>
           <p>
-            Complete quatro etapas simples para apresentar seu trabalho com
-            clareza. Você pode sair e continuar depois.
+            Complete três etapas simples para apresentar seu trabalho com
+            clareza.<br/>Você pode sair e continuar depois.
           </p>
         </div>
         <UButton to="/app/professional" color="neutral" variant="outline">
-          Pular por agora
+          Fazer depois
         </UButton>
       </DesignSystemContainer>
     </section>
@@ -297,16 +287,6 @@ watch(
             @back="previousStep"
             @complete="handleServices"
           />
-          <OnboardingPortfolioStep
-            v-else-if="activeStep === 'portfolio'"
-            :portfolio="state.portfolio"
-            :service-options="selectedServices"
-            :saving="portfolioSaving"
-            :server-error="portfolioError"
-            @back="previousStep"
-            @complete="handlePortfolio"
-            @continue="goToStep('verification')"
-          />
           <OnboardingVerificationStep
             v-else
             :submitted="state.verificationStatus === 'submitted'"
@@ -315,6 +295,7 @@ watch(
             :server-error="props.submissionError || verificationError"
             @back="previousStep"
             @complete="handleVerification"
+            @skip="skipAndFinish"
             @finish="finishReview"
           />
         </DesignSystemSurfaceCard>

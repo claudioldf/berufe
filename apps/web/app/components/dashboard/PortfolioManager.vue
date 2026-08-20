@@ -38,8 +38,8 @@ function submitUpload(draft: PortfolioItemDraft) {
         <DesignSystemEyebrow>Seu trabalho na prática</DesignSystemEyebrow>
         <h2>Portfólio</h2>
         <p>
-          Adicione até 12 trabalhos. Novos itens entram em análise antes de
-          aparecer no perfil público.
+          Adicione até 12 trabalhos. Em um perfil publicado, novos itens
+          aparecem imediatamente e continuam na fila de revisão.
         </p>
       </div>
       <UButton
@@ -95,7 +95,7 @@ function submitUpload(draft: PortfolioItemDraft) {
     <UModal
       v-model:open="uploadOpen"
       title="Adicionar trabalho"
-      description="A imagem ficará privada até a aprovação."
+      description="A imagem será publicada imediatamente e revisada pela equipe."
     >
       <template #body>
         <DashboardPortfolioUploadForm

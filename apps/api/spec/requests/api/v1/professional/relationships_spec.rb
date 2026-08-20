@@ -140,6 +140,7 @@ RSpec.describe "Professional relationship requests", type: :request, openapi: tr
 
   it "lets only the recipient accept once and records the response activity" do
     relationship = create_pending_relationship
+    publish_profile!(initiator)
     now = Time.zone.parse("2026-08-18 14:30:00 UTC")
     travel_to(now) do
       post "/api/v1/professional/relationships/#{relationship.id}/response",
@@ -159,6 +160,7 @@ RSpec.describe "Professional relationship requests", type: :request, openapi: tr
       "responded_at" => now.iso8601(3)
     )
     expect(relationship.reload).to have_attributes(status: "accepted", responded_at: now)
+    expect(PublicProfessionalRelationshipQuery.for_professional(recipient.id)).to contain_exactly(relationship)
     expect(ModerationAction.where(target_type: "professional_relationship")).to be_empty
     expect(
       ProfessionalDailyActivity.find_by!(professional: recipient).relationship_interactions
@@ -274,10 +276,7 @@ RSpec.describe "Professional relationship requests", type: :request, openapi: tr
   end
 
   def publish_profile!(profile)
-    revision = profile.working_revision
-    revision.update!(status: "approved", reviewed_at: Time.current)
-    profile.update!(profile_status: "published", published_revision: revision)
-    profile
+    make_profile_publicly_eligible(profile)
   end
 
   def session_headers(request_id:, origin: false, token: session_token)

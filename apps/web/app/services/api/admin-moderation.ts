@@ -20,7 +20,6 @@ const typeLabels: Record<ModerationTargetType, string> = {
   profile_photo: "Foto",
   portfolio_item: "Portfólio",
   verification_request: "Verificação",
-  professional_relationship: "Relação profissional",
 };
 
 interface ApiResult<T> {
@@ -60,6 +59,10 @@ export function mapAdminModeration(
       age: formatModerationAge(item.submitted_at, now),
       details: item.details,
       preview: item.preview,
+      currentlyPublic: item.currently_public,
+      fallbackAvailable: item.fallback_available,
+      changes: item.changes,
+      claimedBirthdate: item.claimed_birthdate,
       hasMedia: item.has_media,
       verificationFileId: item.verification_file_id,
     })),
@@ -123,7 +126,11 @@ export async function createAdminModerationDecision(
   targetId: string,
   action: ModerationDecision,
   filters: ModerationFilters,
-  attributes: { reason?: string; note?: string } = {},
+  attributes: {
+    reason?: string;
+    note?: string;
+    identityMatchConfirmed?: boolean;
+  } = {},
 ): Promise<ModerationQueue> {
   return requireModerationQueue(
     await client.POST(
@@ -138,6 +145,8 @@ export async function createAdminModerationDecision(
             action,
             reason: attributes.reason || null,
             note: attributes.note || null,
+            identity_match_confirmed:
+              attributes.identityMatchConfirmed ?? false,
           },
         },
       },

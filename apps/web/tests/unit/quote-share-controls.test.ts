@@ -81,5 +81,55 @@ describe("quote share controls", () => {
     await whatsapp?.trigger("click");
 
     expect(wrapper.emitted("share")).toEqual([["copy"], ["whatsapp"]]);
+    expect(wrapper.find(".quote-builder__revoke").exists()).toBe(false);
+  });
+
+  it("asks for confirmation before revoking a shared link", async () => {
+    const wrapper = mount(QuoteBuilder, {
+      props: {
+        initialQuote: {
+          ...quote,
+          status: "shared",
+          sharedAt: "2026-08-18T13:00:00Z",
+        },
+        professional,
+        saving: false,
+        saveError: "",
+        sharingMethod: null,
+        shareError: "",
+        shareUrl: "",
+        shareEnabled: true,
+      },
+      global: {
+        stubs: {
+          DashboardQuoteCustomerFields: true,
+          DashboardQuoteLineItemsEditor: true,
+          DashboardQuoteNotesField: true,
+          DashboardQuoteSaveBar: true,
+          QuotesQuotePreview: true,
+          UModal: ModalStub,
+          UButton: ButtonStub,
+          UIcon: true,
+        },
+      },
+    });
+
+    const panel = wrapper.find(".quote-builder__revoke");
+    expect(panel.exists()).toBe(true);
+
+    // Opening the panel action only asks for confirmation.
+    await panel.get("button").trigger("click");
+    expect(wrapper.emitted("revoke")).toBeUndefined();
+
+    const confirm = wrapper
+      .findAll("button")
+      .filter(
+        (button) =>
+          button.text() === "Revogar link" &&
+          !panel.element.contains(button.element),
+      );
+    expect(confirm).toHaveLength(1);
+    await confirm[0]!.trigger("click");
+    expect(wrapper.emitted("revoke")).toHaveLength(1);
   });
 });

@@ -34,8 +34,7 @@ RSpec.describe "Public professional profiles", type: :request, openapi: true do
       instagram: "https://www.instagram.com/berufe.ana/",
       youtube: "https://www.youtube.com/@berufe-ana"
     )
-    photo = create_photo(profile)
-    profile.update!(published_photo: photo)
+    photo = profile.published_photo
     approved_portfolio = create_portfolio(profile, status: "approved", service: primary_service)
     create_portfolio(profile, status: "hidden", service: additional_service)
     create_identity(profile, status: "approved")
@@ -47,7 +46,7 @@ RSpec.describe "Public professional profiles", type: :request, openapi: true do
       services: [additional_service]
     )
     relationship = create_public_relationship(profile, partner)
-    create_private_relationship(profile, partner)
+    pending_relationship = create_private_relationship(profile, partner)
     search_event = SearchEvent.create!(
       service: additional_service,
       query_text_normalized: "marido de aluguel publico",
@@ -61,7 +60,7 @@ RSpec.describe "Public professional profiles", type: :request, openapi: true do
     )
 
     get "/api/v1/public/professionals/#{profile.public_slug}",
-      params: {interactionToken: search_token},
+      params: {interaction_token: search_token},
       headers: {"X-Request-Id" => "public-profile-200"}
 
     expect(response).to have_http_status(:ok)
@@ -69,36 +68,36 @@ RSpec.describe "Public professional profiles", type: :request, openapi: true do
     professional = data.fetch("professional")
     expect(professional).to include(
       "id" => profile.id,
-      "publicSlug" => "ana-souza-publica",
-      "displayName" => "Ana Souza Pública",
+      "public_slug" => "ana-souza-publica",
+      "display_name" => "Ana Souza Pública",
       "headline" => "Elétrica residencial com cuidado.",
       "bio" => "Instalações e reparos residenciais em Joinville.",
-      "yearsExperience" => 11,
-      "photoUrl" => PublicProfilePhotoImageUrl.call(photo),
-      "publicSnapshotUpdatedAt" => profile.published_revision.reviewed_at.iso8601
+      "years_experience" => 11,
+      "photo_url" => PublicProfilePhotoImageUrl.call(photo),
+      "public_snapshot_updated_at" => profile.published_revision.reviewed_at.iso8601
     )
     expect(professional.fetch("services")).to eq([
       {
         "id" => primary_service.id,
         "name" => primary_service.name,
         "slug" => primary_service.slug,
-        "isPrimary" => true,
+        "is_primary" => true,
         "note" => "Quadros elétricos"
       },
       {
         "id" => additional_service.id,
         "name" => additional_service.name,
         "slug" => additional_service.slug,
-        "isPrimary" => false,
+        "is_primary" => false,
         "note" => "Pequenos reparos"
       }
     ])
     expect(professional.fetch("coverage")).to eq(
-      "allJoinville" => false,
+      "all_joinville" => false,
       "neighborhoods" => [{"code" => neighborhood.code, "name" => neighborhood.name}]
     )
-    expect(professional.fetch("verificationLabels")).to contain_exactly(
-      {"type" => "phone", "label" => "Telefone confirmado", "verifiedAt" => nil},
+    expect(professional.fetch("verification_labels")).to contain_exactly(
+      {"type" => "phone", "label" => "Telefone confirmado", "verified_at" => nil},
       include("type" => "identity", "label" => "Identidade verificada")
     )
     expect(professional.fetch("portfolio")).to eq([
@@ -111,10 +110,22 @@ RSpec.describe "Public professional profiles", type: :request, openapi: true do
           "name" => primary_service.name,
           "slug" => primary_service.slug
         },
-        "imageUrl" => PublicPortfolioImageUrl.call(approved_portfolio)
+        "image_url" => PublicPortfolioImageUrl.call(approved_portfolio)
       }
     ])
     expect(professional.fetch("relationships")).to eq([
+      {
+        "id" => pending_relationship.id,
+        "type" => "worked_together",
+        "direction" => "outgoing",
+        "note" => "Não revisada.",
+        "professional" => {
+          "id" => partner.id,
+          "public_slug" => partner.public_slug,
+          "display_name" => "Beto Parceiro Público",
+          "photo_url" => PublicProfilePhotoImageUrl.call(partner.published_photo)
+        }
+      },
       {
         "id" => relationship.id,
         "type" => "recommendation",
@@ -122,13 +133,13 @@ RSpec.describe "Public professional profiles", type: :request, openapi: true do
         "note" => "Indicação profissional aprovada.",
         "professional" => {
           "id" => partner.id,
-          "publicSlug" => partner.public_slug,
-          "displayName" => "Beto Parceiro Público",
-          "photoUrl" => nil
+          "public_slug" => partner.public_slug,
+          "display_name" => "Beto Parceiro Público",
+          "photo_url" => PublicProfilePhotoImageUrl.call(partner.published_photo)
         }
       }
     ])
-    expect(professional.fetch("socialLinks")).to eq(
+    expect(professional.fetch("social_links")).to eq(
       "instagram" => "https://www.instagram.com/berufe.ana/",
       "youtube" => "https://www.youtube.com/@berufe-ana"
     )
@@ -138,7 +149,7 @@ RSpec.describe "Public professional profiles", type: :request, openapi: true do
       service_id: additional_service.id,
       search_event_id: search_event.id
     )
-    expect(response.headers.fetch("Cache-Control")).to eq("no-store")
+    expect(response.headers.fetch("Cache-Control")).to eq("max-age=0, public, must-revalidate")
     expect(response.body).not_to include(
       profile.published_revision.whatsapp_e164,
       "+5547",
@@ -158,7 +169,7 @@ RSpec.describe "Public professional profiles", type: :request, openapi: true do
     )
 
     get "/api/v1/public/professionals/#{profile.public_slug}",
-      params: {interactionToken: "invalid"},
+      params: {interaction_token: "invalid"},
       headers: {"X-Request-Id" => "public-profile-direct"}
 
     expect(response).to have_http_status(:ok)
@@ -242,9 +253,7 @@ RSpec.describe "Public professional profiles", type: :request, openapi: true do
       )
     end
     revision.professional_profile_service_areas.create!(city_code: "Joinville", neighborhood:)
-    revision.update!(status: "approved", reviewed_at: Time.current)
-    profile.update!(profile_status: "published", published_revision: revision)
-    profile
+    make_profile_publicly_eligible(profile, revision:)
   end
 
   def create_photo(profile)
@@ -317,7 +326,7 @@ RSpec.describe "Public professional profiles", type: :request, openapi: true do
   end
 
   def create_public_relationship(profile, partner)
-    relationship = ProfessionalRelationship.create!(
+    ProfessionalRelationship.create!(
       initiator_professional: partner,
       recipient_professional: profile,
       relationship_type: "recommendation",
@@ -325,22 +334,6 @@ RSpec.describe "Public professional profiles", type: :request, openapi: true do
       status: "accepted",
       responded_at: Time.current
     )
-    admin = UserAccount.create!(
-      email: "public-profile@example.com",
-      password: "a-secure-admin-password",
-      password_confirmation: "a-secure-admin-password",
-      role: "admin",
-      status: "active"
-    )
-    ModerationAction.create!(
-      admin_user: admin,
-      target_type: "professional_relationship",
-      target_id: relationship.id,
-      action: "approved",
-      request_id: "public-profile-relationship",
-      created_at: Time.current
-    )
-    relationship
   end
 
   def create_private_relationship(profile, partner)

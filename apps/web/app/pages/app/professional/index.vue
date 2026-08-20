@@ -50,8 +50,8 @@ const checklist = computed<OnboardingChecklistItem[]>(() => {
   return [
     {
       id: "profile",
-      label: "Identidade e contato",
-      description: "Nome, apresentação e WhatsApp",
+      label: "Base do perfil",
+      description: "Nome, foto, nascimento e contato",
       icon: "i-lucide-user-round",
       done: steps?.identityContact ?? false,
       to: "/app/professional/profile",
@@ -85,6 +85,14 @@ const checklist = computed<OnboardingChecklistItem[]>(() => {
 const progress = computed(
   () => workspace.value?.dashboard.readiness.percentage ?? 0,
 );
+const canPublish = computed(() => {
+  const profile = workspace.value?.profile;
+  return (
+    profile?.status === "draft" &&
+    profile.revisionStatus === "draft" &&
+    profile.publicationBlockers.length === 0
+  );
+});
 const dashboardStatus = computed(() => {
   const profile = workspace.value?.profile;
   if (!profile) {
@@ -96,7 +104,7 @@ const dashboardStatus = computed(() => {
       publicAvailable: false,
     };
   }
-  if (profile.status === "published") {
+  if (profile.isPublic) {
     return {
       title: "Seu perfil está publicado",
       description: "Clientes já podem encontrar e entrar em contato com você.",
@@ -111,6 +119,36 @@ const dashboardStatus = computed(() => {
       description: "Revise as pendências antes de voltar a divulgá-lo.",
       icon: "i-lucide-circle-alert",
       tone: "attention",
+      publicAvailable: false,
+    };
+  }
+  if (profile.status === "published") {
+    const blockerLabels = {
+      identity: "nome e data de nascimento",
+      photo: "foto profissional",
+      services: "serviço principal",
+      coverage: "cobertura em Joinville",
+    } as const;
+    const missing = profile.publicationBlockers.map(
+      (blocker) => blockerLabels[blocker],
+    );
+    return {
+      title: "Seu perfil está temporariamente indisponível",
+      description: missing.length
+        ? `Complete: ${missing.join(", ")}.`
+        : "Edite o conteúdo indicado pela equipe para voltar ao ar.",
+      icon: "i-lucide-circle-alert",
+      tone: "attention",
+      publicAvailable: false,
+    };
+  }
+  if (canPublish.value) {
+    return {
+      title: "Seu perfil está pronto para publicar",
+      description:
+        "Os dados obrigatórios estão completos. Publique agora para aparecer aos clientes.",
+      icon: "i-lucide-megaphone",
+      tone: "pending",
       publicAvailable: false,
     };
   }
@@ -131,7 +169,8 @@ const dashboardStatus = computed(() => {
   ) {
     return {
       title: "Seu perfil está em análise",
-      description: "A equipe está conferindo os dados enviados.",
+      description:
+        "A equipe está conferindo os dados; conteúdo válido já fica público.",
       icon: "i-lucide-clock-3",
       tone: "pending",
       publicAvailable: false,
@@ -139,7 +178,7 @@ const dashboardStatus = computed(() => {
   }
   return {
     title: "Seu perfil ainda não está publicado",
-    description: "Complete as etapas abaixo e envie o perfil para análise.",
+    description: "Complete nome, foto, serviço e cobertura para publicar.",
     icon: "i-lucide-circle-alert",
     tone: "attention",
     publicAvailable: false,
@@ -166,7 +205,9 @@ const pendingItems = computed<PendingItem[]>(() => {
       type: "profile",
       title: "Perfil profissional",
       status: "Em análise",
-      detail: "Perfil enviado para conferência da equipe.",
+      detail: profile.isPublic
+        ? "As alterações já estão públicas e aguardam revisão."
+        : "Perfil enviado para conferência da equipe.",
       sortAt: "",
     });
   } else if (profile.revisionStatus === "rejected") {
@@ -187,7 +228,7 @@ const pendingItems = computed<PendingItem[]>(() => {
       type: "photo",
       title: "Foto do perfil",
       status: "Em análise",
-      detail: `Enviada em ${formatDateTime(photo.submittedAt)}`,
+      detail: `${profile.isPublic ? "Já está pública · " : ""}Enviada em ${formatDateTime(photo.submittedAt)}`,
       sortAt: photo.submittedAt,
     });
   } else if (photo?.status === "rejected" || photo?.status === "hidden") {
@@ -208,7 +249,7 @@ const pendingItems = computed<PendingItem[]>(() => {
         type: "portfolio",
         title: item.title,
         status: "Em análise",
-        detail: `Enviado em ${formatDateTime(item.submittedAt)}`,
+        detail: `${profile.isPublic ? "Já está público · " : ""}Enviado em ${formatDateTime(item.submittedAt)}`,
         sortAt: item.submittedAt,
       });
     } else if (item.status === "rejected" || item.status === "hidden") {
@@ -285,6 +326,25 @@ async function shareProfile() {
   });
 }
 
+async function publishProfile() {
+  if (!canPublish.value) return;
+
+  try {
+    await professionalWorkspace.submitProfile();
+    showToast({
+      title: "Perfil publicado",
+      description: "Clientes já podem encontrar e entrar em contato com você.",
+    });
+  } catch {
+    showToast({
+      title: "Não foi possível publicar",
+      description:
+        professionalWorkspace.submissionError.value ||
+        "Tente novamente em instantes.",
+    });
+  }
+}
+
 function pendingIcon(type: PendingItemType) {
   return {
     profile: "i-lucide-user-round",
@@ -304,7 +364,7 @@ async function respondRelationship(id: string, accepted: boolean) {
     showToast({
       title: accepted ? "Colaboração confirmada" : "Solicitação recusada",
       description: accepted
-        ? "Agora ela seguirá para moderação."
+        ? "A relação já pode aparecer nos perfis públicos."
         : "Essa relação continuará privada.",
     });
   } catch {
@@ -367,8 +427,21 @@ async function respondRelationship(id: string, accepted: boolean) {
           <strong>{{ dashboardStatus.title }}</strong>
           <p>{{ dashboardStatus.description }}</p>
         </div>
+        <UButton
+          v-if="canPublish"
+          class="status-banner__action"
+          type="button"
+          color="primary"
+          icon="i-lucide-megaphone"
+          :loading="professionalWorkspace.submissionSaving.value"
+          :disabled="professionalWorkspace.submissionSaving.value"
+          @click="publishProfile"
+        >
+          Publicar perfil
+        </UButton>
         <NuxtLink
-          v-if="dashboardStatus.publicAvailable"
+          v-else-if="dashboardStatus.publicAvailable"
+          class="status-banner__action"
           :to="`/profissionais/${workspace.profile.publicSlug}`"
           target="_blank"
           >Ver perfil público <UIcon name="i-lucide-arrow-up-right"
@@ -376,7 +449,13 @@ async function respondRelationship(id: string, accepted: boolean) {
       </section>
 
       <div class="dashboard-grid">
-        <DashboardChecklist :readiness="progress" :items="checklist" />
+        <DashboardChecklist
+          :readiness="progress"
+          :items="checklist"
+          :can-publish="canPublish"
+          :publishing="professionalWorkspace.submissionSaving.value"
+          @publish="publishProfile"
+        />
 
         <DesignSystemSurfaceCard as="section" class="actions-card">
           <header>
@@ -864,8 +943,9 @@ async function respondRelationship(id: string, accepted: boolean) {
   .status-banner {
     grid-template-columns: auto 1fr;
   }
-  .status-banner a {
+  .status-banner__action {
     grid-column: 2;
+    justify-self: start;
   }
   .pending-list {
     & article {

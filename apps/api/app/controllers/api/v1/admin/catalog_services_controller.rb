@@ -22,21 +22,21 @@ module Api
         private
 
         def service_attributes(include_slug: false)
-          permitted = params.permit(:name, :slug, :categorySlug, :description, :isActive)
+          permitted = params.permit(:name, :slug, :category_slug, :description, :is_active)
           require_service_create_fields! if include_slug
           attributes = {}
           attributes[:name] = permitted[:name] if permitted.key?(:name)
           attributes[:slug] = permitted[:slug] if include_slug
-          attributes[:category_slug] = permitted[:categorySlug] if permitted.key?(:categorySlug)
+          attributes[:category_slug] = permitted[:category_slug] if permitted.key?(:category_slug)
           attributes[:description] = permitted[:description] if permitted.key?(:description)
-          attributes[:is_active] = permitted[:isActive] if permitted.key?(:isActive)
+          attributes[:is_active] = permitted[:is_active] if permitted.key?(:is_active)
           raise ActionController::ParameterMissing, :service if attributes.empty?
 
           attributes
         end
 
         def require_service_create_fields!
-          %i[name slug categorySlug description].each { |field| params.require(field) }
+          %i[name slug category_slug description].each { |field| params.require(field) }
         end
       end
     end

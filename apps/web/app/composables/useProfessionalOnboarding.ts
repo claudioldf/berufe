@@ -3,8 +3,6 @@ import type {
   OnboardingChecklistItem,
   OnboardingCompletionState,
   OnboardingFileValidation,
-  OnboardingPortfolioSubmission,
-  OnboardingPortfolioItem,
   OnboardingProfileErrors,
   OnboardingServicesErrors,
   OnboardingStepDefinition,
@@ -23,21 +21,18 @@ interface ProfessionalOnboardingDependencies {
   saveSupply?: (
     draft: ProfessionalProfileDraft,
   ) => Promise<ProfessionalProfileDraft>;
-  savePortfolio?: (
-    draft: OnboardingPortfolioSubmission,
-  ) => Promise<OnboardingPortfolioItem>;
   saveVerification?: (file: File) => Promise<{ submittedAt: string }>;
 }
 
 export const professionalOnboardingStorageKey =
-  "berufe:professional-onboarding:v1";
+  "berufe:professional-onboarding:v2";
 export const onboardingImageMaxBytes = 10 * 1024 * 1024;
 
 export const professionalOnboardingSteps: OnboardingStepDefinition[] = [
   {
     id: "profile",
     label: "Perfil e contato",
-    description: "Nome, apresentação e WhatsApp",
+    description: "Nome, foto e data de nascimento",
     icon: "i-lucide-user-round",
   },
   {
@@ -47,15 +42,9 @@ export const professionalOnboardingSteps: OnboardingStepDefinition[] = [
     icon: "i-lucide-briefcase-business",
   },
   {
-    id: "portfolio",
-    label: "Primeiro trabalho",
-    description: "Uma foto que mostre seu serviço",
-    icon: "i-lucide-image-plus",
-  },
-  {
     id: "verification",
     label: "Verificação",
-    description: "Envio seguro da sua identidade",
+    description: "Opcional antes de publicar",
     icon: "i-lucide-shield-check",
   },
 ];
@@ -63,6 +52,7 @@ export const professionalOnboardingSteps: OnboardingStepDefinition[] = [
 export function createEmptyProfessionalProfileDraft(): ProfessionalProfileDraft {
   return {
     name: "",
+    birthdate: "",
     headline: "",
     bio: "",
     yearsExperience: 0,
@@ -81,17 +71,16 @@ function createEmptyCompletionState(): OnboardingCompletionState {
   return {
     profile: null,
     services: null,
-    portfolio: null,
     verification: null,
   };
 }
 
 export function createInitialProfessionalOnboardingState(): ProfessionalOnboardingState {
   return {
-    version: 1,
+    version: 2,
     initialized: false,
     profile: createEmptyProfessionalProfileDraft(),
-    portfolio: null,
+    photoReady: false,
     verificationStatus: "not_started",
     completion: createEmptyCompletionState(),
   };
@@ -109,6 +98,7 @@ function parseProfileDraft(value: unknown): ProfessionalProfileDraft | null {
   if (!isRecord(value)) return null;
   const stringKeys = [
     "name",
+    "birthdate",
     "headline",
     "bio",
     "whatsapp",
@@ -130,6 +120,7 @@ function parseProfileDraft(value: unknown): ProfessionalProfileDraft | null {
 
   return {
     name: value.name as string,
+    birthdate: value.birthdate as string,
     headline: value.headline as string,
     bio: value.bio as string,
     yearsExperience: value.yearsExperience,
@@ -155,7 +146,7 @@ export function parseProfessionalOnboardingState(
 ): ProfessionalOnboardingState | null {
   try {
     const value: unknown = JSON.parse(raw);
-    if (!isRecord(value) || value.version !== 1) return null;
+    if (!isRecord(value) || value.version !== 2) return null;
     if (typeof value.initialized !== "boolean") return null;
     const profile = parseProfileDraft(value.profile);
     if (!profile || !isRecord(value.completion)) return null;
@@ -164,49 +155,30 @@ export function parseProfessionalOnboardingState(
     const completionKeys: OnboardingStepId[] = [
       "profile",
       "services",
-      "portfolio",
       "verification",
     ];
     if (completionKeys.some((key) => !isNullableString(completion[key]))) {
       return null;
     }
 
-    let portfolio: ProfessionalOnboardingState["portfolio"] = null;
-    if (value.portfolio !== null) {
-      if (!isRecord(value.portfolio)) return null;
-      if (
-        typeof value.portfolio.title !== "string" ||
-        typeof value.portfolio.service !== "string" ||
-        typeof value.portfolio.description !== "string" ||
-        typeof value.portfolio.submittedAt !== "string"
-      ) {
-        return null;
-      }
-      portfolio = {
-        title: value.portfolio.title,
-        service: value.portfolio.service,
-        description: value.portfolio.description,
-        submittedAt: value.portfolio.submittedAt,
-      };
-    }
-
     if (
       value.verificationStatus !== "not_started" &&
-      value.verificationStatus !== "submitted"
+      value.verificationStatus !== "submitted" &&
+      value.verificationStatus !== "skipped"
     ) {
       return null;
     }
+    if (typeof value.photoReady !== "boolean") return null;
 
     return {
-      version: 1,
+      version: 2,
       initialized: value.initialized,
       profile,
-      portfolio,
+      photoReady: value.photoReady,
       verificationStatus: value.verificationStatus,
       completion: {
         profile: completion.profile as string | null,
         services: completion.services as string | null,
-        portfolio: completion.portfolio as string | null,
         verification: completion.verification as string | null,
       },
     };
@@ -224,18 +196,14 @@ export function normalizeBrazilianPhone(phone: string) {
 
 export function validateOnboardingProfile(
   draft: ProfessionalProfileDraft,
+  photoReady = true,
 ): OnboardingProfileErrors {
-  const phone = normalizeBrazilianPhone(draft.whatsapp);
   return {
     name: draft.name.trim().length >= 3 ? "" : "Informe seu nome profissional.",
-    whatsapp:
-      phone.length === 10 || phone.length === 11
-        ? ""
-        : "Informe um WhatsApp brasileiro com DDD.",
-    headline: draft.headline.trim()
+    birthdate: /^\d{4}-\d{2}-\d{2}$/.test(draft.birthdate)
       ? ""
-      : "Escreva uma frase curta de apresentação.",
-    bio: draft.bio.trim() ? "" : "Conte um pouco sobre o seu trabalho.",
+      : "Informe sua data de nascimento.",
+    photo: photoReady ? "" : "Envie uma foto profissional para continuar.",
   };
 }
 
@@ -275,7 +243,10 @@ export function validateOnboardingImage(
 export function getOnboardingStepCompletion(
   state: ProfessionalOnboardingState,
 ): Record<OnboardingStepId, boolean> {
-  const profileErrors = validateOnboardingProfile(state.profile);
+  const profileErrors = validateOnboardingProfile(
+    state.profile,
+    state.photoReady,
+  );
   const servicesErrors = validateOnboardingServices(state.profile);
   return {
     profile:
@@ -284,9 +255,9 @@ export function getOnboardingStepCompletion(
     services:
       Boolean(state.completion.services) &&
       Object.values(servicesErrors).every((error) => !error),
-    portfolio: Boolean(state.completion.portfolio && state.portfolio),
     verification: Boolean(
-      state.completion.verification && state.verificationStatus === "submitted",
+      state.completion.verification &&
+      ["submitted", "skipped"].includes(state.verificationStatus),
     ),
   };
 }
@@ -295,7 +266,7 @@ export function calculateOnboardingProgress(
   completion: Record<OnboardingStepId, boolean>,
 ) {
   const completed = Object.values(completion).filter(Boolean).length;
-  return completed * 25;
+  return Math.round((completed / professionalOnboardingSteps.length) * 100);
 }
 
 function cloneProfileDraft(
@@ -321,8 +292,6 @@ export function useProfessionalOnboarding(
   const profileError = shallowRef("");
   const supplySaving = shallowRef(false);
   const supplyError = shallowRef("");
-  const portfolioSaving = shallowRef(false);
-  const portfolioError = shallowRef("");
   const verificationSaving = shallowRef(false);
   const verificationError = shallowRef("");
   const apiClient = dependencies.saveIdentity ? undefined : useApiClient();
@@ -339,11 +308,6 @@ export function useProfessionalOnboarding(
     dependencies.saveSupply ??
     (async () => {
       throw new Error("Professional supply persistence is unavailable");
-    });
-  const savePortfolio =
-    dependencies.savePortfolio ??
-    (async () => {
-      throw new Error("Professional portfolio persistence is unavailable");
     });
   const saveVerification =
     dependencies.saveVerification ??
@@ -413,13 +377,13 @@ export function useProfessionalOnboarding(
 
   function initializeFromWorkspace(
     identity: ProfessionalOnboardingState["profile"],
-    portfolio?: OnboardingPortfolioItem | null,
+    photoReady: boolean,
     verificationSubmittedAt?: string | null,
   ) {
     hydrate();
-    const complete = Object.values(validateOnboardingProfile(identity)).every(
-      (error) => !error,
-    );
+    const complete = Object.values(
+      validateOnboardingProfile(identity, photoReady),
+    ).every((error) => !error);
     const servicesComplete = Object.values(
       validateOnboardingServices(identity),
     ).every((error) => !error);
@@ -427,7 +391,7 @@ export function useProfessionalOnboarding(
       ...state.value,
       initialized: true,
       profile: cloneProfileDraft(identity),
-      portfolio: portfolio === undefined ? state.value.portfolio : portfolio,
+      photoReady,
       verificationStatus:
         verificationSubmittedAt === undefined
           ? state.value.verificationStatus
@@ -442,10 +406,6 @@ export function useProfessionalOnboarding(
         services: servicesComplete
           ? (state.value.completion.services ?? new Date().toISOString())
           : null,
-        portfolio:
-          portfolio === undefined
-            ? state.value.completion.portfolio
-            : (portfolio?.submittedAt ?? null),
         verification:
           verificationSubmittedAt === undefined
             ? state.value.completion.verification
@@ -456,7 +416,7 @@ export function useProfessionalOnboarding(
   }
 
   async function completeProfile(draft: ProfessionalProfileDraft) {
-    const errors = validateOnboardingProfile(draft);
+    const errors = validateOnboardingProfile(draft, state.value.photoReady);
     if (Object.values(errors).some(Boolean)) return false;
     if (profileSaving.value) return false;
 
@@ -523,36 +483,6 @@ export function useProfessionalOnboarding(
     }
   }
 
-  async function completePortfolio(submission: OnboardingPortfolioSubmission) {
-    const validation = validateOnboardingImage(submission.file);
-    if (!validation.valid) return false;
-    if (portfolioSaving.value) return false;
-
-    portfolioSaving.value = true;
-    portfolioError.value = "";
-    try {
-      const saved = await savePortfolio(submission);
-      state.value = {
-        ...state.value,
-        portfolio: saved,
-        completion: {
-          ...state.value.completion,
-          portfolio: saved.submittedAt,
-        },
-      };
-      persist();
-      return true;
-    } catch (error) {
-      portfolioError.value =
-        error instanceof ApiRequestError
-          ? error.message
-          : "Não foi possível enviar o trabalho agora. Tente novamente.";
-      return false;
-    } finally {
-      portfolioSaving.value = false;
-    }
-  }
-
   async function completeVerification(file: File) {
     const validation = validateOnboardingImage(file);
     if (!validation.valid) return false;
@@ -583,6 +513,23 @@ export function useProfessionalOnboarding(
     }
   }
 
+  function skipVerification() {
+    state.value = {
+      ...state.value,
+      verificationStatus: "skipped",
+      completion: {
+        ...state.value.completion,
+        verification: new Date().toISOString(),
+      },
+    };
+    persist();
+  }
+
+  function markPhotoReady() {
+    state.value = { ...state.value, photoReady: true };
+    persist();
+  }
+
   function reset() {
     state.value = createInitialProfessionalOnboardingState();
     hydrated.value = true;
@@ -604,14 +551,13 @@ export function useProfessionalOnboarding(
     initializeFromWorkspace,
     completeProfile,
     completeServices,
-    completePortfolio,
     completeVerification,
+    skipVerification,
+    markPhotoReady,
     profileSaving: readonly(profileSaving),
     profileError: readonly(profileError),
     supplySaving: readonly(supplySaving),
     supplyError: readonly(supplyError),
-    portfolioSaving: readonly(portfolioSaving),
-    portfolioError: readonly(portfolioError),
     verificationSaving: readonly(verificationSaving),
     verificationError: readonly(verificationError),
     reset,

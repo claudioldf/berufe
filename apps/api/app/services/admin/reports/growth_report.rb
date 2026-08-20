@@ -54,7 +54,8 @@ module Admin
       end
 
       def public_relationship_counts
-        @public_relationship_counts ||= PublicProfessionalRelationshipQuery.call.each_with_object(Hash.new(0)) do |relationship, counts|
+        @public_relationship_counts ||= PublicProfessionalRelationshipQuery.call
+          .each_with_object(Hash.new(0)) do |relationship, counts|
           counts[relationship.initiator_professional_id] += 1
           counts[relationship.recipient_professional_id] += 1
         end
@@ -62,8 +63,11 @@ module Admin
 
       def criteria(profile_ids)
         ids = profile_ids.to_a
-        identities = VerificationRequest.identity.where(professional_profile_id: ids, status: "approved").distinct.pluck(:professional_profile_id).to_set
-        portfolios = PortfolioItem.publicly_visible.where(professional_profile_id: ids)
+        identities = VerificationRequest.identity
+          .where(professional_profile_id: ids, status: "approved")
+          .where("identity_match_confirmed_at IS NOT NULL OR claimed_birthdate IS NULL")
+          .distinct.pluck(:professional_profile_id).to_set
+        portfolios = PortfolioItem.active.where(professional_profile_id: ids, status: "approved")
           .group(:professional_profile_id).having("COUNT(*) >= 3").count.keys.to_set
         relationships = ids.select { |id| public_relationship_counts[id] >= 2 }.to_set
         all = identities & portfolios & relationships
@@ -156,14 +160,13 @@ module Admin
       def supply
         cohort = ProfessionalProfile.where(created_at: period.start_at...period.end_at)
         ids = cohort.pluck(:id)
-        verified = VerificationRequest.identity.where(professional_profile_id: ids, status: "approved").distinct.pluck(:professional_profile_id)
-        submitted = ProfessionalProfileRevision.where(professional_profile_id: ids).where.not(submitted_at: nil).distinct.pluck(:professional_profile_id)
         published = cohort.where.not(published_at: nil).pluck(:id)
-        activated = criteria(ids)[:all].length
-        values = [ids.length, verified.length, submitted.length, published.length, activated]
-        keys = %w[registered verified submitted published activated]
-        labels = ["Cadastrados", "Identidade verificada", "Perfil enviado", "Publicados", "Ativados"]
-        descriptions = ["telefone confirmado", nil, nil, nil, "cumpre os 3 critérios"]
+        verified = criteria(published)[:identity].length
+        activated = criteria(published)[:all].length
+        values = [ids.length, published.length, verified, activated]
+        keys = %w[registered published verified activated]
+        labels = ["Cadastrados", "Publicados", "Identidade verificada", "Ativados"]
+        descriptions = ["telefone confirmado", nil, "dentro dos publicados", "cumpre os 3 critérios"]
         stages = values.each_with_index.map do |value, index|
           denominator = index.zero? ? value : values[index - 1]
           {key: keys[index], label: labels[index], value:, description: descriptions[index], ratio: ratio(value, denominator)}
@@ -333,7 +336,9 @@ module Admin
         cohort = ProfessionalRelationship.where(created_at: period.start_at...period.end_at)
         started = cohort.count
         responded = cohort.where.not(responded_at: nil).count
-        public_ids = PublicProfessionalRelationshipQuery.call.where(id: cohort.select(:id)).pluck(:id)
+        public_ids = PublicProfessionalRelationshipQuery.call
+          .where(id: cohort.select(:id))
+          .pluck(:id)
         approved = public_ids.length
         {
           funnels: [{
@@ -389,8 +394,7 @@ module Admin
           "profile_revision" => ProfessionalProfileRevision.where(id: actions.where(target_type: "profile_revision").select(:target_id)).pluck(:id, :submitted_at).to_h,
           "profile_photo" => ProfessionalProfilePhoto.where(id: actions.where(target_type: "profile_photo").select(:target_id)).pluck(:id, :submitted_at).to_h,
           "portfolio_item" => PortfolioItem.where(id: actions.where(target_type: "portfolio_item").select(:target_id)).pluck(:id, :submitted_at).to_h,
-          "verification_request" => VerificationRequest.where(id: actions.where(target_type: "verification_request").select(:target_id)).pluck(:id, :submitted_at).to_h,
-          "professional_relationship" => ProfessionalRelationship.where(id: actions.where(target_type: "professional_relationship").select(:target_id)).pluck(:id, :responded_at).to_h
+          "verification_request" => VerificationRequest.where(id: actions.where(target_type: "verification_request").select(:target_id)).pluck(:id, :submitted_at).to_h
         }
         actions.filter_map do |action|
           start = submitted.dig(action.target_type, action.target_id)

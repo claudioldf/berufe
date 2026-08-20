@@ -79,9 +79,15 @@ RSpec.describe "Professional quotes", type: :request, openapi: true do
 
   it "keeps a shared quote's lifecycle stable while owner edits become live" do
     quote = create_quote
-    token_hash = Digest::SHA256.hexdigest("existing-share-token")
+    token = QuoteShareToken.issue
+    token_hash = QuoteShareToken.digest(token)
     shared_at = 1.hour.ago.change(usec: 0)
-    quote.update!(status: "shared", share_token_hash: token_hash, shared_at:)
+    quote.update!(
+      status: "shared",
+      share_token_hash: token_hash,
+      share_token_ciphertext: QuoteShareToken.encrypt(token),
+      shared_at:
+    )
 
     patch "/api/v1/professional/quotes/#{quote.id}",
       params: quote_body(customer_name: "Conteúdo mais recente"),

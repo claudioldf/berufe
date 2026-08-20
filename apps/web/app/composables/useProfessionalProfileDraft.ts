@@ -9,6 +9,7 @@ import {
 function createDraft(professional: Professional): ProfessionalProfileDraft {
   return {
     name: professional.name,
+    birthdate: professional.birthdate,
     headline: professional.headline,
     bio: professional.bio,
     yearsExperience: professional.yearsExperience,

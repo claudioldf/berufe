@@ -19,79 +19,49 @@ RSpec.describe "Professional profile moderation" do
       display_name: "Ana Souza",
       headline: "Elétrica residencial.",
       bio: "Instalações em Joinville.",
-      whatsapp_e164: account.phone_e164
+      whatsapp_e164: account.phone_e164,
+      birthdate: Date.new(1990, 4, 12)
     )
   end
   let(:context) { AdminActionContext.new(admin_user_id: admin.id, request_id: "profile-moderation") }
 
-  it "publishes the first approved revision and its exact relational snapshot" do
-    revision = profile.working_revision
-    service = select_service(revision, slug: "eletricista-primeira-revisao")
-    revision.professional_profile_service_areas.create!(city_code: "Joinville")
-    revision.update!(status: "pending_review", submitted_at: Time.current)
+  it "marks the already-public first revision reviewed without republishing it" do
+    revision = publish_pending_revision
+    public_before = PublicProfessionalProfileSerializer.new(profile.reload).as_json
 
     decide(revision, "approved")
 
     expect(profile.reload).to have_attributes(
       profile_status: "published",
       published_revision: revision,
+      approved_revision: revision,
       working_revision: revision
     )
-    expect(profile.published_at).to be_within(2.seconds).of(Time.current)
-    expect(PublicProfessionalProfileSerializer.new(profile).as_json).to include(
-      displayName: "Ana Souza",
-      services: [{id: service.id, name: service.name, slug: service.slug, isPrimary: true, note: nil}],
-      coverage: {allJoinville: true, neighborhoods: []}
-    )
+    expect(PublicProfessionalProfileSerializer.new(profile).as_json).to eq(public_before)
   end
 
-  it "atomically swaps an edited snapshot and supersedes the former revision" do
-    original = publish_initial_revision
+  it "updates the rollback pointer when a newer public revision is reviewed" do
+    original = approve_first_revision
     first_published_at = profile.reload.published_at
-    original_public = PublicProfessionalProfileSerializer.new(profile.reload).as_json
 
-    ProfessionalProfileIdentityUpdater.new.call(
-      profile:,
-      attributes: {
-        display_name: "Ana Obras",
-        headline: "Projetos elétricos residenciais.",
-        bio: "Novo conteúdo aprovado como uma unidade.",
-        years_experience: 12,
-        whatsapp: account.phone_e164,
-        instagram: "",
-        youtube: ""
-      }
+    save_identity(bio: "Novo conteúdo público aguardando revisão.")
+    pending = profile.reload.published_revision
+    expect(PublicProfessionalProfileSerializer.new(profile).as_json).to include(
+      bio: "Novo conteúdo público aguardando revisão."
     )
-    pending = profile.reload.working_revision
-    expect(PublicProfessionalProfileSerializer.new(profile).as_json).to eq(original_public)
 
     decide(pending, "approved")
 
     expect(original.reload.status).to eq("superseded")
-    expect(profile.reload.published_revision).to eq(pending)
+    expect(profile.reload).to have_attributes(published_revision: pending, approved_revision: pending)
     expect(profile.published_at).to eq(first_published_at)
-    expect(PublicProfessionalProfileSerializer.new(profile).as_json).to include(
-      displayName: "Ana Obras",
-      headline: "Projetos elétricos residenciais."
-    )
   end
 
-  it "keeps the previous public snapshot and returns private rejection guidance to the owner" do
-    publish_initial_revision
+  it "rolls a rejected live revision back to the last reviewed snapshot" do
+    approved = approve_first_revision
     approved_public = PublicProfessionalProfileSerializer.new(profile.reload).as_json
-    ProfessionalProfileIdentityUpdater.new.call(
-      profile:,
-      attributes: {
-        display_name: "Ana Obras",
-        headline: "Alteração pendente.",
-        bio: "Texto pendente para uma nova revisão.",
-        years_experience: 12,
-        whatsapp: account.phone_e164,
-        instagram: "",
-        youtube: ""
-      }
-    )
-    pending = profile.reload.working_revision
+    save_identity(bio: "Texto público que será retirado.")
+    pending = profile.reload.published_revision
 
     decide(pending, "rejected", reason: "Explique melhor os serviços oferecidos no texto.")
 
@@ -99,29 +69,42 @@ RSpec.describe "Professional profile moderation" do
       status: "rejected",
       rejection_reason: "Explique melhor os serviços oferecidos no texto."
     )
-    expect(profile.reload.profile_status).to eq("published")
-    expect(PublicProfessionalProfileSerializer.new(profile).as_json).to eq(approved_public)
-    expect(ProfessionalWorkspaceSerializer.new(profile).as_json.dig(:profile, :revision_rejection_reason)).to eq(
-      "Explique melhor os serviços oferecidos no texto."
+    expect(profile.reload).to have_attributes(
+      profile_status: "published",
+      published_revision: approved,
+      approved_revision: approved,
+      working_revision: pending
     )
+    expect(PublicProfessionalProfileSerializer.new(profile).as_json).to eq(approved_public)
   end
 
-  it "hides and restores public availability without destroying the approved snapshot" do
-    revision = publish_initial_revision
+  it "makes a rejected first revision unavailable when no fallback exists" do
+    revision = publish_pending_revision
 
-    decide(revision, "hidden", reason: "Suspensão preventiva solicitada pela operação.")
-    expect(profile.reload.profile_status).to eq("suspended")
-    expect(profile.published_revision).to eq(revision)
+    decide(revision, "rejected", reason: "O conteúdo precisa ser corrigido antes de permanecer público.")
+
+    expect(profile.reload).to have_attributes(profile_status: "published", published_revision: nil)
+    expect(profile).not_to be_publicly_available
     expect(PublicProfessionalProfileSerializer.new(profile).as_json).to be_nil
-
-    decide(revision, "restored")
-    expect(profile.reload.profile_status).to eq("published")
-    expect(profile.published_revision).to eq(revision)
-    expect(PublicProfessionalProfileSerializer.new(profile).as_json).to include(displayName: "Ana Souza")
-    expect(ModerationAction.order(:created_at).pluck(:action)).to eq(%w[approved hidden restored])
   end
 
   private
+
+  def save_identity(bio:)
+    ProfessionalProfileIdentityUpdater.new.call(
+      profile: profile.reload,
+      attributes: {
+        display_name: "Ana Souza",
+        birthdate: "1990-04-12",
+        headline: "Elétrica residencial.",
+        bio:,
+        years_experience: nil,
+        whatsapp: account.phone_e164,
+        instagram: "",
+        youtube: ""
+      }
+    )
+  end
 
   def decide(revision, action, reason: nil)
     ModerationDecision.new(context:).call(
@@ -132,33 +115,84 @@ RSpec.describe "Professional profile moderation" do
     )
   end
 
-  def publish_initial_revision
+  def approve_first_revision
+    publish_pending_revision.tap { |revision| decide(revision, "approved") }
+  end
+
+  def publish_pending_revision
     revision = profile.working_revision
-    select_service(revision, slug: "eletricista-publicado")
-    revision.professional_profile_service_areas.create!(city_code: "Joinville")
+    unless revision.professional_profile_services.exists?
+      revision.professional_profile_services.create!(service: selected_service, is_primary: true)
+      revision.professional_profile_service_areas.create!(city_code: "Joinville")
+    end
     revision.update!(status: "pending_review", submitted_at: Time.current)
-    decide(revision, "approved")
+    photo = approved_photo
+    profile.update!(
+      profile_status: "published",
+      published_at: profile.published_at || Time.current,
+      published_revision: revision,
+      published_photo: photo,
+      approved_photo: photo,
+      working_photo: photo
+    )
     revision
   end
 
-  def select_service(revision, slug:)
-    category = ServiceCategory.find_or_create_by!(slug: "perfil-moderacao") do |record|
-      record.name = "Perfil Moderação"
-      record.icon = "i-lucide-wrench"
-      record.is_active = true
-      record.sort_order = 0
+  def selected_service
+    @selected_service ||= begin
+      category = ServiceCategory.create!(
+        name: "Perfil Moderação",
+        slug: "perfil-moderacao",
+        icon: "i-lucide-wrench",
+        is_active: true,
+        sort_order: 0
+      )
+      Service.create!(
+        category:,
+        name: "Eletricista Moderação",
+        slug: "eletricista-moderacao",
+        icon: "i-lucide-zap",
+        description: "Instalações elétricas.",
+        aliases: [],
+        is_active: true,
+        sort_order: 0
+      )
     end
-    service = Service.create!(
-      category:,
-      name: slug.humanize,
-      slug:,
-      icon: "i-lucide-zap",
-      description: "Instalações elétricas.",
-      aliases: [],
-      is_active: true,
-      sort_order: 0
+  end
+
+  def approved_photo
+    return @approved_photo if defined?(@approved_photo)
+
+    upload = MediaUpload.create!(
+      professional_profile: profile,
+      purpose: "profile_photo",
+      state: "attached",
+      declared_content_type: "image/jpeg",
+      declared_byte_size: 100,
+      actual_content_type: "image/jpeg",
+      sanitized_content_type: "image/jpeg",
+      actual_byte_size: 100,
+      sanitized_byte_size: 100,
+      width: 640,
+      height: 960,
+      quarantine_key: "quarantine/#{profile.id}/#{SecureRandom.uuid}",
+      sanitized_key: "sanitized/#{profile.id}/#{SecureRandom.uuid}.jpg",
+      authorization_expires_at: 5.minutes.from_now,
+      uploaded_at: 1.minute.ago,
+      processed_at: Time.current,
+      attached_at: Time.current
     )
-    revision.professional_profile_services.create!(service:, is_primary: true)
-    service
+    @approved_photo = profile.profile_photos.create!(
+      media_upload: upload,
+      status: "approved",
+      private_key: upload.sanitized_key,
+      public_key: "moderation/profile_photo/#{SecureRandom.uuid}.jpg",
+      content_type: "image/jpeg",
+      byte_size: 100,
+      width: 640,
+      height: 960,
+      submitted_at: Time.current,
+      reviewed_at: Time.current
+    )
   end
 end

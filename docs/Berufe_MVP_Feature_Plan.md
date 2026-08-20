@@ -161,10 +161,10 @@ This is the base of both trust and discovery. Without structured services and co
 2. They select services from Berufe’s approved residential renovation catalog.
 3. They select Joinville and the neighborhoods they serve. “All Joinville” is a derived selector represented by the all-city service-area record, not a managed neighborhood.
 4. They add a short introduction and declared years of experience.
-5. They may add one profile photo. JPEG and PNG uploads are processed privately into a metadata-free JPEG fitted inside 1024 × 1536 pixels; the photo remains private until approved, and a replacement does not displace the currently approved photo while it is under review.
+5. They add one required profile photo. JPEG and PNG uploads are processed privately into a metadata-free JPEG fitted inside 1024 × 1536 pixels. Once the profile is published, a replacement becomes public immediately and enters post-publication review; rejection restores the last approved photo or makes the profile unavailable when no fallback exists.
 6. They may add Instagram and YouTube profile identifiers or profile URLs. Berufe validates the platform and profile shape, then stores canonical HTTPS URLs.
-7. The editor shows an inline representation of the public fields. Each onboarding step persists immediately; the final action sends no accumulated profile payload and asks Rails to validate the persisted identity, active service/coverage, reviewable portfolio, and reviewable identity-evidence checklist before submitting the profile for approval.
-8. An approved profile becomes searchable. A material edit returns the profile to moderation; the founding-cohort operations team may assist when an urgent correction is required.
+7. The editor shows an inline representation of the public fields. Each onboarding step persists immediately. The final step publishes after optional identity evidence is submitted or explicitly skipped, once name, processed photo, private birthdate, confirmed-phone contact, active service selection with exactly one primary, and Joinville coverage are valid.
+8. Material profile edits become public immediately and enter post-publication review. Approval marks the current revision reviewed; rejection restores the last approved revision or makes the profile unavailable when no fallback exists. Public pages never expose review state.
 
 Use structured service selections rather than free-form specialties. Allow a short free-text description for context, but do not use it as the only search source. Generate a stable, shareable public slug. Instagram accepts a bare or `@` handle and a direct `instagram.com/<handle>` profile URL. YouTube accepts a bare or `@` handle and a direct `youtube.com/@<handle>` channel URL; video, playlist, post/reel, off-platform, and legacy YouTube channel-path URLs are rejected. Both fields are independently optional, and copied query strings or fragments are removed during normalization.
 
@@ -178,9 +178,12 @@ Use structured service selections rather than free-form specialties. Allow a sho
 | `owner_user_id`         | UUID      | Foreign reference to account; unique                |
 | `public_slug`           | text      | Unique, stable, human-readable                      |
 | `working_revision_id`   | UUID      | Required private working revision pointer           |
-| `published_revision_id` | UUID      | Nullable approved public snapshot pointer           |
+| `published_revision_id` | UUID      | Nullable current public snapshot pointer            |
+| `approved_revision_id`  | UUID      | Nullable last-reviewed rollback snapshot pointer    |
 | `working_photo_id`      | UUID      | Nullable private photo-review pointer               |
-| `published_photo_id`    | UUID      | Nullable approved public-photo pointer              |
+| `published_photo_id`    | UUID      | Nullable current public-photo pointer               |
+| `approved_photo_id`     | UUID      | Nullable last-reviewed rollback photo pointer       |
+| `birthdate`             | date      | Required for publication; private and never public  |
 | `profile_status`        | enum      | `draft`, `pending_review`, `published`, `suspended` |
 | `created_at`            | timestamp | Required                                            |
 | `updated_at`            | timestamp | Required                                            |
@@ -272,13 +275,13 @@ For renovation services, customers need visual evidence of relevant experience. 
 
 1. The professional uploads an image, selects the related service, adds a title, and optionally adds a short description.
 2. The application compresses the image and removes unnecessary image metadata.
-3. The item enters moderation.
-4. Approved items appear newest first with deterministic tie-breaking.
+3. For a published profile, the item appears publicly immediately and enters post-publication moderation.
+4. Pending and approved items appear newest first with deterministic tie-breaking; rejection or hiding removes an item immediately.
 5. Limit the MVP to 12 items per professional to keep storage and moderation manageable.
 
-Use direct-to-object-storage uploads with private temporary access before approval and public optimized versions after approval.
+Use direct-to-object-storage uploads with private objects before approval and public optimized versions after approval. Public clients always use an eligibility-checking Rails media endpoint so takedown is immediate and storage keys never leak.
 
-For profile identity, services, and coverage, the launch retains the last approved profile revision as one complete public snapshot while one material edit revision is reviewed. Approval replaces the snapshot atomically; rejection leaves the approved snapshot public and makes the rejected revision privately editable. This prevents public serializers from mixing reviewed and unreviewed fields.
+For profile identity, services, and coverage, each saved material edit becomes the complete public snapshot immediately. A separate last-approved pointer provides deterministic rollback on rejection and prevents serializers from mixing revision fields.
 
 #### 4. Suggested feature-scoped data schema
 
@@ -619,7 +622,7 @@ This is the main differentiator from a standard directory. It creates the first 
 1. A verified professional finds another published professional.
 2. They select “Recommend” or “Worked together” and add an optional short context note.
 3. The recipient accepts or declines.
-4. Accepted relationships enter moderation and become public only after approval.
+4. Accepted relationships become publicly eligible immediately while both profiles remain public and active.
 
 Only verified professionals can initiate a public relationship. Both parties must confirm “worked together.” A recommendation is displayed with its author and cannot be anonymous.
 
@@ -627,16 +630,16 @@ Only verified professionals can initiate a public relationship. Both parties mus
 
 **`professional_relationship`**
 
-| Field                       | Type      | Rules                                                |
-| --------------------------- | --------- | ---------------------------------------------------- |
-| `id`                        | UUID      | Primary key                                          |
-| `initiator_professional_id` | UUID      | Foreign reference to profile                         |
-| `recipient_professional_id` | UUID      | Foreign reference to profile; cannot equal initiator |
-| `relationship_type`         | enum      | `recommendation`, `worked_together`                  |
-| `context_note`              | text      | Optional and short                                   |
-| `status`                    | enum      | `pending`, `accepted`, `declined`, `hidden`          |
-| `created_at`                | timestamp | Required                                             |
-| `responded_at`              | timestamp | Nullable                                             |
+| Field                       | Type      | Rules                                                         |
+| --------------------------- | --------- | ------------------------------------------------------------- |
+| `id`                        | UUID      | Primary key                                                   |
+| `initiator_professional_id` | UUID      | Foreign reference to profile                                  |
+| `recipient_professional_id` | UUID      | Foreign reference to profile; cannot equal initiator          |
+| `relationship_type`         | enum      | `recommendation`, `worked_together`                           |
+| `context_note`              | text      | Optional and short                                            |
+| `status`                    | enum      | Recipient answer: `pending`, `accepted`, or `declined`        |
+| `created_at`                | timestamp | Required                                                      |
+| `responded_at`              | timestamp | Required for `accepted` or `declined`; absent while `pending` |
 
 Unique key: `initiator_professional_id + recipient_professional_id + relationship_type`.
 
@@ -669,8 +672,9 @@ The profile helps professionals get discovered; the quote helps them perform a f
 2. They enter the customer name, a short service description, ordered line items, optional discount, validity date, and notes.
 3. Rails calculates and persists every line total, subtotal, discount, and final total; browser calculations are previews only.
 4. The professional previews the mobile customer page.
-5. First share atomically marks the quote shared, creates a long unguessable bearer token whose hash alone is stored, records the aggregate share action, and opens WhatsApp with the link.
+5. First share atomically marks the quote shared, creates a long random bearer token, records the aggregate share action, and opens WhatsApp with the link. Only a keyed hash of the token is indexed, plus an encrypted copy so the owner can re-share the same link; the raw token is never stored in the clear and is never derivable from the quote.
 6. The customer can view or print the quote without an account.
+7. The owner can revoke the link at any time. Revocation clears the token, hash, and `shared_at` together and returns the quote to `draft`, so the copy the customer holds stops resolving. Sharing again issues a different link.
 
 The owner may continue editing a shared quote. Its `shared` status, original `shared_at`, and active token remain unchanged, and the customer link resolves the latest saved content. A quote can be shared or resolved only while its owner remains an active, currently published professional. The shared page shows only the quote and the professional's approved public identity and labels, and an identity-verification label appears only when identity approval actually exists. Token-authorized responses are `no-store` and `noindex`, are excluded from shared caches, and reveal nothing for invalid tokens. MVP statuses are only `draft` and `shared`; the commercial validity date is not token expiry, and Berufe does not represent acceptance or payment.
 
@@ -678,34 +682,36 @@ The owner may continue editing a shared quote. Its `shared` status, original `sh
 
 **`quote`**
 
-| Field                 | Type          | Rules                                                            |
-| --------------------- | ------------- | ---------------------------------------------------------------- |
-| `id`                  | UUID          | Primary key                                                      |
-| `professional_id`     | UUID          | Required owner reference                                         |
-| `quote_number`        | integer       | Sequential per professional and concurrency-safe                 |
-| `customer_name`       | text          | Required; no customer account                                    |
-| `service_description` | text          | Required and length-limited                                      |
-| `discount_amount`     | decimal(12,2) | Defaults to zero; cannot exceed subtotal                         |
-| `total_amount`        | decimal(12,2) | Server-calculated                                                |
-| `valid_until`         | date          | Nullable                                                         |
-| `notes`               | text          | Nullable and length-limited                                      |
-| `status`              | enum          | `draft`, `shared`                                                |
-| `share_token_hash`    | text          | Unique and nullable until first share; raw token is never stored |
-| `created_at`          | timestamp     | Required                                                         |
-| `shared_at`           | timestamp     | Nullable                                                         |
+| Field                    | Type          | Rules                                                                                                             |
+| ------------------------ | ------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `id`                     | UUID          | Primary key                                                                                                       |
+| `professional_id`        | UUID          | Required owner reference                                                                                          |
+| `quote_number`           | integer       | Sequential per professional and concurrency-safe                                                                  |
+| `customer_name`          | text          | Required; no customer account                                                                                     |
+| `service_description`    | text          | Required and length-limited                                                                                       |
+| `subtotal_amount`        | decimal(14,2) | Server-calculated sum of the line totals; persisted so PostgreSQL can enforce the totals rule                     |
+| `discount_amount`        | decimal(14,2) | Defaults to zero; cannot exceed subtotal                                                                          |
+| `total_amount`           | decimal(14,2) | Server-calculated as `subtotal_amount - discount_amount`                                                          |
+| `valid_until`            | date          | Nullable                                                                                                          |
+| `notes`                  | text          | Nullable and length-limited                                                                                       |
+| `status`                 | enum          | `draft`, `shared`; revocation returns a shared quote to `draft`                                                   |
+| `share_token_hash`       | text          | Unique keyed digest; nullable until first share and cleared by revocation; raw token is never stored in the clear |
+| `share_token_ciphertext` | text          | Encrypted owner copy of the active token so re-sharing reuses the same link; cleared by revocation                |
+| `created_at`             | timestamp     | Required                                                                                                          |
+| `shared_at`              | timestamp     | Nullable                                                                                                          |
 
 **`quote_item`**
 
-| Field         | Type          | Rules                                          |
-| ------------- | ------------- | ---------------------------------------------- |
-| `id`          | UUID          | Primary key                                    |
-| `quote_id`    | UUID          | Required quote reference                       |
-| `description` | text          | Required and length-limited                    |
-| `quantity`    | decimal(10,2) | Greater than zero                              |
-| `unit_label`  | text          | Controlled length; examples: service, hour, m² |
-| `unit_price`  | decimal(12,2) | Zero or greater                                |
-| `line_total`  | decimal(12,2) | Server-calculated                              |
-| `sort_order`  | smallint      | Required and deterministic                     |
+| Field         | Type          | Rules                                                                                             |
+| ------------- | ------------- | ------------------------------------------------------------------------------------------------- |
+| `id`          | UUID          | Primary key                                                                                       |
+| `quote_id`    | UUID          | Required quote reference                                                                          |
+| `description` | text          | Required and length-limited                                                                       |
+| `quantity`    | decimal(12,3) | Greater than zero; three decimals so measured units such as `1.5 m²` or `0.125 t` are not rounded |
+| `unit`        | text          | Controlled length; examples: service, hour, m²                                                    |
+| `unit_price`  | decimal(14,2) | Zero or greater                                                                                   |
+| `line_total`  | decimal(14,2) | Server-calculated                                                                                 |
+| `sort_order`  | smallint      | Required and deterministic                                                                        |
 
 #### 5. Explicitly not in MVP
 
@@ -722,7 +728,7 @@ The owner may continue editing a shared quote. Its `shared` status, original `sh
 
 #### 1. Summary
 
-Gives a small Berufe operations team one place to approve identity-verification requests and moderate profiles, portfolios, and professional relationships.
+Gives a small Berufe operations team one place to approve identity-verification requests and moderate profiles and portfolios.
 
 #### 2. Why we need it
 
@@ -735,7 +741,7 @@ The public promise depends on accurate evidence and controlled content. With onl
 3. The reviewer sees only the information required for that review. The existing content-preview block retrieves regenerated profile-photo and portfolio images through authenticated, no-store Rails responses and records the administrator, target, request, and access time without returning a storage key or permanent private URL.
 4. They approve, reject with a private reason, or hide previously approved content.
 5. Every admin decision is recorded in an audit trail.
-6. Public pages never show pending or rejected content.
+6. Pending profile content, profile photos, and portfolio items are public without a moderation badge. Rejected or hidden content is removed immediately. Verification evidence remains private and its label appears only after approval. Professional relationships are outside this queue and become public through recipient acceptance.
 
 Public pages expose a visible Berufe support/report contact. The founding-cohort operations team records and handles reports through the documented manual support process; an in-product reporting workflow is deferred.
 
@@ -743,15 +749,15 @@ Public pages expose a visible Berufe support/report contact. The founding-cohort
 
 **`moderation_action`**
 
-| Field           | Type      | Rules                                                                            |
-| --------------- | --------- | -------------------------------------------------------------------------------- |
-| `id`            | UUID      | Primary key                                                                      |
-| `target_type`   | enum      | `profile`, `portfolio_item`, `professional_relationship`, `verification_request` |
-| `target_id`     | UUID      | ID in target feature                                                             |
-| `action`        | enum      | `approved`, `rejected`, `hidden`, `restored`                                     |
-| `reason`        | text      | Private; required for rejection/hide                                             |
-| `admin_user_id` | UUID      | Foreign reference to admin account                                               |
-| `created_at`    | timestamp | Required                                                                         |
+| Field           | Type      | Rules                                                                         |
+| --------------- | --------- | ----------------------------------------------------------------------------- |
+| `id`            | UUID      | Primary key                                                                   |
+| `target_type`   | enum      | `profile_revision`, `profile_photo`, `portfolio_item`, `verification_request` |
+| `target_id`     | UUID      | ID in target feature                                                          |
+| `action`        | enum      | `approved`, `rejected`, `hidden`, `restored`                                  |
+| `reason`        | text      | Private; required for rejection/hide                                          |
+| `admin_user_id` | UUID      | Foreign reference to admin account                                            |
+| `created_at`    | timestamp | Required                                                                      |
 
 **`moderation_media_access_event`**
 

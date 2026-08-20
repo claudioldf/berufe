@@ -46,12 +46,13 @@ const photoStatus = computed(() => {
 
   const current = props.photo?.current;
   if (!current) return "JPEG ou PNG, até 10 MB.";
-  if (current.status === "pending_review") return "Foto em análise.";
-  if (current.status === "approved") return "Foto aprovada.";
+  if (current.status === "pending_review")
+    return "Foto salva e aguardando revisão.";
+  if (current.status === "approved") return "Foto revisada.";
   if (current.status === "rejected")
     return current.rejectionReason || "Foto recusada. Selecione outra imagem.";
   if (current.status === "hidden") return "Foto oculta pela moderação.";
-  return "Selecione outra foto para análise.";
+  return "Selecione outra foto.";
 });
 
 function openPhotoPicker() {
@@ -88,7 +89,7 @@ function selectPhoto(event: Event) {
         <UIcon name="i-lucide-user-round" />
       </div>
       <div>
-        <strong>Foto profissional <em>Opcional</em></strong>
+        <strong>Foto profissional <em>Obrigatória</em></strong>
         <p
           :class="{
             'profile-photo-control__error': selectionError || props.photoError,
@@ -145,11 +146,27 @@ function selectPhoto(event: Event) {
         />
       </DesignSystemFormField>
       <DesignSystemFormField
+        id="profile-birthdate"
+        v-slot="field"
+        label="Data de nascimento"
+        hint="Dado privado, usado somente para sua conta e conferência de identidade."
+        required
+      >
+        <input
+          :id="field.controlId"
+          v-model="form.birthdate"
+          name="birthdate"
+          required
+          type="date"
+          autocomplete="bday"
+          :aria-describedby="field.describedBy"
+        />
+      </DesignSystemFormField>
+      <DesignSystemFormField
         id="profile-whatsapp"
         v-slot="field"
-        label="WhatsApp profissional"
-        hint="O número não aparece como texto público."
-        required
+        label="WhatsApp profissional (opcional)"
+        hint="O número não aparece como texto público, mas possibilita que os clientes entrem em contato com você."
       >
         <div class="phone-field">
           <em aria-hidden="true">+55</em>
@@ -157,7 +174,6 @@ function selectPhoto(event: Event) {
             :id="field.controlId"
             v-model="form.whatsapp"
             name="whatsapp"
-            required
             type="tel"
             inputmode="tel"
             autocomplete="tel"
@@ -168,18 +184,17 @@ function selectPhoto(event: Event) {
       <DesignSystemFormField
         id="profile-headline"
         class="editor-grid__full"
-        label="Frase de apresentação"
-        required
+        label="Frase de apresentação (opcional)"
       >
         <template #label>
-          Frase de apresentação <em>{{ form.headline.length }}/120</em>
+          Frase de apresentação (opcional)
+          <em>{{ form.headline.length }}/120</em>
         </template>
         <template #default="field">
           <input
             :id="field.controlId"
             v-model="form.headline"
             name="headline"
-            required
             maxlength="120"
             autocomplete="off"
             :aria-describedby="field.describedBy"
@@ -189,18 +204,17 @@ function selectPhoto(event: Event) {
       <DesignSystemFormField
         id="profile-bio"
         class="editor-grid__full"
-        label="Conte um pouco sobre seu trabalho"
-        required
+        label="Conte um pouco sobre seu trabalho (opcional)"
       >
         <template #label>
-          Conte um pouco sobre seu trabalho <em>{{ form.bio.length }}/500</em>
+          Conte um pouco sobre seu trabalho (opcional)
+          <em>{{ form.bio.length }}/500</em>
         </template>
         <template #default="field">
           <textarea
             :id="field.controlId"
             v-model="form.bio"
             name="bio"
-            required
             maxlength="500"
             :aria-describedby="field.describedBy"
           />

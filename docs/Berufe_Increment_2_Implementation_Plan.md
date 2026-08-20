@@ -119,7 +119,7 @@ The professional workspace response is the single authenticated projection used 
 - No Pinia store is introduced for this server-owned workflow.
 - Authenticated Increment 2 surfaces stop using fake profile, portfolio, verification, and moderation data once their corresponding story is delivered.
 - Unrelated mock dashboard sections, including later quote and professional-relationship work, remain untouched until their increments.
-- The current relationship example is not returned by the Increment 2 moderation API because accepted professional relationships belong to Increment 4.
+- The current relationship example is not returned by the Increment 2 moderation API because relationship creation and recipient confirmation belong to Increment 4.
 
 ## 6. Verification and launch gate for the increment
 

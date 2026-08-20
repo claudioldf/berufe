@@ -52,13 +52,13 @@ Stories are implemented serially in their documented dependency order:
 - Existing page order, cards, portfolio modal, social links, disclaimer, support contact, share action, and mobile contact action remain the UI source of truth.
 - Services, profiles, evidence labels, portfolio counts, relationship counts, and relationship entries shown as real are backed by Rails records.
 - Verification presentation is conditional. The verified avatar treatment and identity label are rendered only from an approved identity verification.
-- The existing relationship creation/confirmation/moderation UI belongs to S042, S043, and S046 in Increment 4 and is not wired in this increment.
+- The existing relationship creation, recipient confirmation, and public presentation UI belongs to S042, S043, and S046 in Increment 4 and is not wired in this increment.
 
 ### Local and test demonstration data
 
 - `apps/web/data/professionals.json` becomes local/test seed input only. It is not a runtime frontend data source.
 - The demo seed uses the existing media processing, attachment, publication, verification, and moderation paths instead of creating public storage pointers directly.
-- Demo relationships are accepted and have an effective approved moderation action so the existing relationship presentation can be exercised locally and in tests.
+- Demo relationships are recipient-accepted so the existing relationship presentation can be exercised locally and in tests without an admin decision.
 - The demo seed is idempotent and refuses to run in preview, staging, integration, or production environments. Production contains only genuine records.
 - Docker Compose mounts the seed data and source images read-only. CI may use repository paths inside the API build context.
 
@@ -73,7 +73,7 @@ Rails defines one reusable publicly eligible professional relation and uses it f
 
 Approved portfolio evidence requires an approved, non-deleted portfolio item and a currently publicly eligible parent. Approved identity evidence requires an approved identity verification. Pending, rejected, hidden, deleted, expired, or suspended evidence contributes no label, item, or count.
 
-Increment 3 adds the relationship read-model foundation needed by the existing public mockups. A relationship is directional, cannot target the same profile, and has a unique initiator/recipient/type combination. It is public only when accepted and its latest effective moderation action is approved or restored. Both endpoint profiles and accounts must remain public and active. Public counts use distinct relationship IDs across initiator and recipient roles. Relationship creation, response, and moderation operations remain deferred to Increment 4.
+Increment 3 adds the relationship read-model foundation needed by the existing public mockups. A relationship is directional, cannot target the same profile, and has a unique initiator/recipient/type combination. It is public when the recipient accepts it and both endpoint profiles and accounts remain public and active. Public counts use distinct relationship IDs across initiator and recipient roles. Relationship creation and response operations remain deferred to Increment 4; relationships are not moderation targets.
 
 ## 5. Story implementation
 
@@ -90,7 +90,7 @@ Increment 3 adds the relationship read-model foundation needed by the existing p
 
 - Add `POST /api/v1/public/professional-searches` with a service term and optional active Joinville neighborhood.
 - Resolve an active service by exact stable slug, normalized name, or a controlled spelling alias. An unmatched term returns no professionals and at most three safe related active-service suggestions.
-- Return only the safe card projection: profile UUID and slug, public name, approved photo URL, matching/primary service, coverage, precise labels, approved portfolio/relationship counts, and approved snapshot review time. Never return a phone number.
+- Return only the safe card projection: profile UUID and slug, public name, approved photo URL, matching/primary service, coverage, precise labels, approved portfolio counts, accepted relationship counts, and approved snapshot review time. Never return a phone number.
 - Use indexed PostgreSQL joins for service and coverage. No external search engine is introduced.
 
 ### S034 — Record privacy-friendly search aggregates
@@ -103,7 +103,7 @@ Increment 3 adds the relationship read-model foundation needed by the existing p
 ### S035 — Show transparent, deterministic results
 
 - Wire the existing Finder controls and cards to the typed public-search operation.
-- Rank in Rails by selected service, explicit selected-neighborhood coverage, identity verification, approved portfolio evidence, approved visible relationship evidence, approved snapshot review time descending, and profile UUID ascending.
+- Rank in Rails by selected service, explicit selected-neighborhood coverage, identity verification, approved portfolio evidence, recipient-accepted visible relationship evidence, approved snapshot review time descending, and profile UUID ascending.
 - Carry signed search-event and service context in result-to-profile and result-to-WhatsApp links.
 - Show only evidence included in the safe projection. No numeric trust score or unapproved evidence influences presentation or order.
 
@@ -153,7 +153,7 @@ Each story adds focused Rails request/model/service/query tests and behavior-foc
 - parent revalidation for profile and portfolio media;
 - event-persistence failure suppression, sensitive-input handling, signed-token expiry/context/retry behavior, and search-level boolean idempotency;
 - São Paulo local metric dates, non-negative counters, source-total invariant, bot filtering, bounded duplicate suppression, generic non-public responses, and allowlisted redirects;
-- demo-seed idempotency, real media/moderation paths, public relationships, and refusal outside local/test;
+- demo-seed idempotency, real media/moderation paths, directly accepted public relationships, and refusal outside local/test;
 - home, Finder, and profile rendering from typed API responses, preserved query/context links, 90-day recency behavior, conditional verification, and absence of phone data;
 - a Playwright API-backed public journey that exercises search, profile open, and the WhatsApp redirect without navigating to the external service.
 

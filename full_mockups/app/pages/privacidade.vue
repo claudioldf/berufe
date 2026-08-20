@@ -115,8 +115,8 @@ useSeoMeta({
         <table class="legal-table">
           <thead><tr><th>Classificação</th><th>Exemplos</th><th>Quem acessa</th></tr></thead>
           <tbody>
-            <tr><td><strong>Público</strong></td><td>Perfil aprovado, serviços, região, foto, portfólio, selos, recomendações e relações aprovadas.</td><td>Qualquer visitante e, quando aplicável, mecanismos de busca.</td></tr>
-            <tr><td><strong>Privado</strong></td><td>Telefone, rascunhos, dados do cliente no orçamento, denúncias e motivos de moderação.</td><td>Titular, proprietário do registro e equipe autorizada, conforme a necessidade.</td></tr>
+            <tr><td><strong>Público</strong></td><td>Perfil publicado, serviços, região, foto, portfólio, selos, recomendações e relações confirmadas.</td><td>Qualquer visitante e, quando aplicável, mecanismos de busca.</td></tr>
+            <tr><td><strong>Privado</strong></td><td>Telefone, relações pendentes ou recusadas, rascunhos, dados do cliente no orçamento, denúncias e motivos de moderação.</td><td>Titular, proprietário do registro e equipe autorizada, conforme a necessidade.</td></tr>
             <tr><td><strong>Por link</strong></td><td>Versão compartilhada de um orçamento e informações destinadas ao cliente.</td><td>Quem tiver o link válido. O conteúdo não deve ser indexado nem entrar em cache compartilhado.</td></tr>
             <tr><td><strong>Restrito</strong></td><td>Documentos de verificação, credenciais, referências de sessão e resumos de tokens.</td><td>Servidor e equipe estritamente autorizada.</td></tr>
           </tbody>

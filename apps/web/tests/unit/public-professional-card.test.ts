@@ -97,6 +97,11 @@ describe("public professional result card", () => {
       professionalId: "ad59e74a-a1aa-47d5-b725-26350f0f2376",
       interactionToken: "signed context",
     });
+    const parsedContactUrl = new URL(contactUrl);
+    expect(parsedContactUrl.searchParams.get("interaction_token")).toBe(
+      "signed context",
+    );
+    expect(parsedContactUrl.searchParams.has("interactionToken")).toBe(false);
     const wrapper = await mountSuspended(ProfessionalCard, {
       props: { professional: professional(), profileUrl, contactUrl },
       global: {
@@ -168,8 +173,9 @@ describe("public professional result card", () => {
     });
 
     expect(url).toBe(
-      "https://api.berufe.test/api/v1/public/professionals/ad59e74a-a1aa-47d5-b725-26350f0f2376/whatsapp?source=public_profile&interactionToken=signed+profile+context",
+      "https://api.berufe.test/api/v1/public/professionals/ad59e74a-a1aa-47d5-b725-26350f0f2376/whatsapp?source=public_profile&interaction_token=signed+profile+context",
     );
+    expect(url).not.toContain("interactionToken");
     expect(url).not.toContain("wa.me");
   });
 });

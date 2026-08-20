@@ -4,6 +4,12 @@ import type { OnboardingChecklistItem } from "~/types";
 defineProps<{
   readiness: number;
   items: OnboardingChecklistItem[];
+  canPublish: boolean;
+  publishing: boolean;
+}>();
+
+defineEmits<{
+  publish: [];
 }>();
 </script>
 
@@ -39,6 +45,19 @@ defineProps<{
         <UIcon name="i-lucide-chevron-right" />
       </NuxtLink>
     </div>
+    <footer v-if="canPublish" class="checklist-card__footer">
+      <UButton
+        type="button"
+        color="primary"
+        icon="i-lucide-megaphone"
+        block
+        :loading="publishing"
+        :disabled="publishing"
+        @click="$emit('publish')"
+      >
+        Publicar perfil
+      </UButton>
+    </footer>
   </DesignSystemSurfaceCard>
 </template>
 
@@ -133,6 +152,11 @@ defineProps<{
   }
   &__items > a > svg {
     color: #84958f;
+  }
+  &__footer {
+    margin-top: 8px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
   }
 }
 </style>

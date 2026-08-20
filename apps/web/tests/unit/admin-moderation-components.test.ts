@@ -14,6 +14,10 @@ const photo: ModerationQueueItem = {
   age: "há 3h",
   details: "Foto enviada para análise.",
   preview: "Imagem privada",
+  currentlyPublic: true,
+  fallbackAvailable: true,
+  changes: [],
+  claimedBirthdate: null,
   hasMedia: true,
   verificationFileId: null,
 };

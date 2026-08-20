@@ -23,15 +23,21 @@ const {
   serviceInput,
   neighborhoodInput,
   serviceQuery,
+  hasSearchTerm,
   selectedService,
   selectedNeighborhood,
   results,
+  totalCount,
+  hasMoreResults,
+  loadingMore,
+  loadMoreResults,
   relatedServices,
   interaction,
+  isSearching,
   error: searchError,
   submitSearch,
 } = await useProfessionalSearch({ services, neighborhoods });
-if (searchError.value) {
+if (hasSearchTerm.value && searchError.value) {
   throw createError({
     statusCode: 503,
     statusMessage: "Busca temporariamente indisponível.",
@@ -87,19 +93,21 @@ function announceContact() {
   <div class="finder">
     <section class="finder__masthead">
       <DesignSystemContainer class="finder__masthead-inner">
-        <div class="finder__breadcrumbs">
-          <NuxtLink to="/">Início</NuxtLink
-          ><UIcon name="i-lucide-chevron-right" />
-          <span>Encontrar profissional</span>
-        </div>
         <DesignSystemEyebrow>Profissionais</DesignSystemEyebrow>
         <h1>
-          <template v-if="selectedService">
+          <template v-if="!hasSearchTerm">
+            Encontre profissionais <em>em Joinville</em>
+          </template>
+          <template v-else-if="selectedService">
             {{ selectedService.name }} <em>em Joinville</em>
           </template>
           <template v-else>Vamos tentar <em>de outro jeito</em></template>
         </h1>
-        <p>
+        <p v-if="!hasSearchTerm">
+          Conte qual serviço você precisa e, se quiser, escolha um bairro para
+          refinar a busca.
+        </p>
+        <p v-else>
           {{
             selectedService?.description ??
             "Não encontramos esse termo no catálogo de serviços residenciais."
@@ -117,7 +125,11 @@ function announceContact() {
     </section>
 
     <DesignSystemPageSection class="finder__content">
-      <DesignSystemContainer class="finder__layout">
+      <DesignSystemContainer v-if="!hasSearchTerm">
+        <PublicProfessionalSearchPrompt />
+      </DesignSystemContainer>
+
+      <DesignSystemContainer v-else class="finder__layout">
         <aside class="finder__aside">
           <p>Filtros</p>
           <div class="filter-block">
@@ -141,64 +153,92 @@ function announceContact() {
         </aside>
 
         <div class="finder__results">
-          <div class="results-heading">
-            <div>
-              <strong
-                >{{ results.length }}
-                {{
-                  results.length === 1
-                    ? "profissional encontrado"
-                    : "profissionais encontrados"
-                }}</strong
-              >
-              <span v-if="selectedNeighborhood?.code !== 'all'"
-                >Atendendo {{ selectedNeighborhood?.name }}</span
-              >
-              <span v-else>Em Joinville</span>
-            </div>
-            <span class="results-heading__order"
-              ><UIcon name="i-lucide-info" /> Ordem por relevância</span
-            >
-          </div>
-
-          <div v-if="results.length" class="results-list">
-            <PublicProfessionalCard
-              v-for="professional in results"
-              :key="professional.id"
-              :professional="professional"
-              :profile-url="profileUrl(professional)"
-              :contact-url="contactUrl(professional)"
-              @contact="announceContact"
-            />
-          </div>
-
-          <DesignSystemSurfaceCard v-else class="empty-results">
-            <span class="empty-results__icon"
-              ><UIcon name="i-lucide-search-x"
-            /></span>
-            <h2>Ainda não temos esse encaixe.</h2>
-            <p>
-              Tente mudar o bairro ou explore um serviço próximo. A Berufe não
-              transforma sua busca em pedido de orçamento.
-            </p>
-            <div class="empty-results__suggestions">
-              <NuxtLink
-                v-for="service in relatedServices"
-                :key="service.id"
-                :to="`/encontrar?servico=${service.slug}&bairro=${selectedNeighborhood?.code ?? 'all'}`"
-              >
-                <UIcon :name="service.icon" /> {{ service.name }}
-              </NuxtLink>
-            </div>
+          <DesignSystemSurfaceCard
+            v-if="isSearching"
+            class="search-loading"
+            role="status"
+            aria-live="polite"
+          >
+            <UIcon name="i-lucide-loader-circle" aria-hidden="true" />
+            <strong>Buscando profissionais...</strong>
           </DesignSystemSurfaceCard>
 
-          <div class="finder__principle">
-            <UIcon name="i-lucide-heart-handshake" />
-            <div>
-              <strong>Você decide com quem falar.</strong>
-              <p>Na Berufe, seu contato só chega a quem você escolher.</p>
+          <template v-else>
+            <div class="results-heading">
+              <div>
+                <strong
+                  >{{ totalCount }}
+                  {{
+                    totalCount === 1
+                      ? "profissional encontrado"
+                      : "profissionais encontrados"
+                  }}</strong
+                >
+                <span v-if="selectedNeighborhood?.code !== 'all'"
+                  >Atendendo {{ selectedNeighborhood?.name }}</span
+                >
+                <span v-else>Em Joinville</span>
+              </div>
+              <span class="results-heading__order"
+                ><UIcon name="i-lucide-info" /> Ordem por relevância</span
+              >
             </div>
-          </div>
+
+            <div v-if="results.length" class="results-list">
+              <PublicProfessionalCard
+                v-for="professional in results"
+                :key="professional.id"
+                :professional="professional"
+                :profile-url="profileUrl(professional)"
+                :contact-url="contactUrl(professional)"
+                @contact="announceContact"
+              />
+            </div>
+
+            <div v-if="hasMoreResults" class="results-more">
+              <UButton
+                color="neutral"
+                variant="outline"
+                :loading="loadingMore"
+                @click="loadMoreResults"
+                >Carregar mais profissionais</UButton
+              >
+              <p aria-live="polite">
+                Mostrando {{ results.length }} de {{ totalCount }}.
+              </p>
+            </div>
+
+            <DesignSystemSurfaceCard
+              v-if="!results.length"
+              class="empty-results"
+            >
+              <span class="empty-results__icon"
+                ><UIcon name="i-lucide-search-x"
+              /></span>
+              <h2>Não encontramos um <br />profissional na sua região.</h2>
+              <p>
+                Tente buscar em outra região próxima ou por outro serviço de que
+                precise.
+              </p>
+              <div class="empty-results__suggestions">
+                <NuxtLink
+                  v-for="service in relatedServices"
+                  :key="service.id"
+                  :to="`/encontrar?servico=${service.slug}&bairro=${selectedNeighborhood?.code ?? 'all'}`"
+                >
+                  <UIcon :name="service.icon" /> {{ service.name }}
+                </NuxtLink>
+              </div>
+            </DesignSystemSurfaceCard>
+
+            <div class="finder__principle">
+              <UIcon name="i-lucide-heart-handshake" />
+              <div>
+                <strong>Você decide com quem falar.</strong>
+                <p>Na Berufe, seu contato só chega a quem você escolher.</p>
+              </div>
+            </div>
+          </template>
         </div>
       </DesignSystemContainer>
     </DesignSystemPageSection>
@@ -328,9 +368,44 @@ function announceContact() {
     font-weight: 800;
   }
 }
+.results-more {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  & p {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 0.82rem;
+  }
+}
 .results-list {
   display: grid;
   gap: 14px;
+}
+.search-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 230px;
+  color: var(--color-brand);
+
+  & > svg {
+    font-size: 1.4rem;
+    animation: search-loading-spin 1s linear infinite;
+  }
+}
+@keyframes search-loading-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .search-loading > svg {
+    animation: none;
+  }
 }
 .finder {
   &__results {

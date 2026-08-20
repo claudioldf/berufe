@@ -30,17 +30,17 @@ export function mapAdminCatalog(data: AdminCatalogData): AdminCatalog {
       name: service.name,
       identifier: service.slug,
       description: service.description,
-      category: service.categorySlug,
-      active: service.isActive,
+      category: service.category_slug,
+      active: service.is_active,
     })),
     neighborhoods: data.neighborhoods.map((neighborhood) => ({
       id: neighborhood.code,
       name: neighborhood.name,
       identifier: neighborhood.code,
       description: "",
-      stateCode: neighborhood.stateCode,
+      stateCode: neighborhood.state_code,
       city: neighborhood.city,
-      active: neighborhood.isActive,
+      active: neighborhood.is_active,
     })),
   };
 }

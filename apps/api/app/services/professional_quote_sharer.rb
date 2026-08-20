@@ -10,22 +10,12 @@ class ProfessionalQuoteSharer
   def call(quote:, method:, now: Time.current)
     raise InvalidMethod unless method.to_s.in?(METHODS)
 
-    token = QuoteShareToken.issue(quote.id)
-    token_digest = QuoteShareToken.digest(token)
-    share_url = "#{ENV.fetch("WEB_ORIGIN").delete_suffix("/")}/orcamento/#{token}"
-
+    token = nil
     quote.with_lock do
       raise Unavailable unless publicly_eligible?(quote.professional_id)
 
-      if quote.draft?
-        quote.update!(
-          status: "shared",
-          share_token_hash: token_digest,
-          shared_at: now
-        )
-      elsif quote.share_token_hash != token_digest
-        raise Unavailable
-      end
+      token = quote.draft? ? issue_first_token!(quote, now) : active_token(quote)
+      raise Unavailable unless token
 
       ProfessionalDailyMetric.increment_quote_shares!(
         professional_id: quote.professional_id,
@@ -33,6 +23,7 @@ class ProfessionalQuoteSharer
       )
     end
 
+    share_url = "#{ENV.fetch("WEB_ORIGIN").delete_suffix("/")}/orcamento/#{token}"
     Result.new(
       quote: quote.reload,
       share_url:,
@@ -41,6 +32,22 @@ class ProfessionalQuoteSharer
   end
 
   private
+
+  def issue_first_token!(quote, now)
+    token = QuoteShareToken.issue
+    quote.update!(
+      status: "shared",
+      share_token_hash: QuoteShareToken.digest(token),
+      share_token_ciphertext: QuoteShareToken.encrypt(token),
+      shared_at: now
+    )
+    token
+  end
+
+  # S051: re-sharing reuses the link the customer may already hold.
+  def active_token(quote)
+    QuoteShareToken.decrypt(quote.share_token_ciphertext)
+  end
 
   def publicly_eligible?(profile_id)
     ProfessionalProfile.publicly_eligible.exists?(id: profile_id)

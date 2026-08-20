@@ -12,6 +12,7 @@ import { ApiRequestError } from "~/services/api/errors";
 import {
   createProfessionalQuote,
   fetchProfessionalQuote,
+  revokeProfessionalQuoteShare,
   shareProfessionalQuote,
   updateProfessionalQuote,
 } from "~/services/api/professional-quotes";
@@ -49,6 +50,7 @@ const saveError = shallowRef("");
 const sharingMethod = shallowRef<QuoteShareMethod | null>(null);
 const shareError = shallowRef("");
 const shareUrl = shallowRef("");
+const revoking = shallowRef(false);
 const quote = computed(() => editor.data.value?.quote ?? null);
 const professional = computed<QuoteProfessional | null>(() => {
   const workspace = editor.data.value?.workspace;
@@ -65,11 +67,7 @@ const professional = computed<QuoteProfessional | null>(() => {
 });
 const shareEnabled = computed(() => {
   const workspace = editor.data.value?.workspace;
-  return Boolean(
-    quote.value?.id &&
-    workspace?.profile.status === "published" &&
-    workspace.profile.hasPublishedRevision,
-  );
+  return Boolean(quote.value?.id && workspace?.profile.isPublic);
 });
 
 function createEmptyQuote(): Quote {
@@ -168,6 +166,31 @@ async function shareQuote(method: QuoteShareMethod) {
     sharingMethod.value = null;
   }
 }
+
+async function revokeShare() {
+  const quoteId = quote.value?.id;
+  if (!quoteId || revoking.value) return;
+  revoking.value = true;
+  shareError.value = "";
+  try {
+    const revoked = await revokeProfessionalQuoteShare(client, quoteId);
+    if (editor.data.value) {
+      editor.data.value = { ...editor.data.value, quote: revoked };
+    }
+    shareUrl.value = "";
+    showToast({
+      title: "Link revogado",
+      description: "O link anterior deixou de abrir este orçamento.",
+    });
+  } catch (error) {
+    shareError.value =
+      error instanceof ApiRequestError
+        ? error.message
+        : "Não foi possível revogar o link. Tente novamente.";
+  } finally {
+    revoking.value = false;
+  }
+}
 </script>
 
 <template>
@@ -214,8 +237,10 @@ async function shareQuote(method: QuoteShareMethod) {
         :share-error="shareError"
         :share-url="shareUrl"
         :share-enabled="shareEnabled"
+        :revoking="revoking"
         @save="saveQuote"
         @share="shareQuote"
+        @revoke="revokeShare"
       />
     </DesignSystemContainer>
   </div>

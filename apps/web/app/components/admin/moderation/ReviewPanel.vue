@@ -9,6 +9,7 @@ const props = defineProps<{
   mediaError?: string;
   evidenceLoading?: boolean;
   mutating?: boolean;
+  identityMatchConfirmed?: boolean;
 }>();
 const emit = defineEmits<{
   approve: [];
@@ -17,6 +18,7 @@ const emit = defineEmits<{
   restore: [];
   openEvidence: [];
   note: [value: string];
+  identityMatch: [value: boolean];
 }>();
 
 function toggleVisibility() {
@@ -63,6 +65,24 @@ function toggleVisibility() {
     <div class="moderation__review-block">
       <span>Contexto da análise</span>
       <p>{{ item.details }}</p>
+      <p>
+        <strong>{{
+          item.currentlyPublic ? "Está público agora" : "Não está público"
+        }}</strong>
+        <template v-if="item.fallbackAvailable">
+          · há conteúdo revisado para rollback
+        </template>
+      </p>
+    </div>
+    <div v-if="item.changes.length" class="moderation__review-block">
+      <span>Alterações desde a última revisão</span>
+      <ul>
+        <li v-for="change in item.changes" :key="change.field">
+          <strong>{{ change.field }}</strong
+          >: {{ change.before ?? "—" }} →
+          {{ change.after ?? "—" }}
+        </li>
+      </ul>
     </div>
     <div class="moderation__preview" :class="{ 'has-image': mediaUrl }">
       <img
@@ -108,6 +128,23 @@ function toggleVisibility() {
         Abrir documento
       </UButton>
     </div>
+    <label
+      v-if="item.type === 'Verificação'"
+      class="moderation__identity-match"
+    >
+      <input
+        type="checkbox"
+        :checked="props.identityMatchConfirmed"
+        @change="
+          $emit('identityMatch', ($event.target as HTMLInputElement).checked)
+        "
+      />
+      <span>
+        Confirmo que a identidade e a data de nascimento
+        <strong>{{ item.claimedBirthdate ?? "não informada" }}</strong>
+        correspondem ao perfil.
+      </span>
+    </label>
     <DesignSystemFormField
       id="moderation-note"
       class="moderation__note"
@@ -139,9 +176,13 @@ function toggleVisibility() {
         color="primary"
         icon="i-lucide-check"
         :loading="mutating"
+        :disabled="
+          mutating ||
+          (item.type === 'Verificação' && !props.identityMatchConfirmed)
+        "
         @click="$emit('approve')"
       >
-        Aprovar e publicar
+        Marcar como revisado
       </UButton>
     </footer>
   </section>

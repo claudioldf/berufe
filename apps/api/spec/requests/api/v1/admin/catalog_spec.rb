@@ -18,7 +18,7 @@ RSpec.describe "Administrator catalog management", type: :request, openapi: true
     expect(response).to have_http_status(:ok)
     expect(response.headers.fetch("Cache-Control")).to eq("no-store")
     expect(response.parsed_body.dig("data", "services").pluck("slug")).to eq(%w[eletricista pintor])
-    expect(response.parsed_body.dig("data", "services").last.fetch("isActive")).to be(false)
+    expect(response.parsed_body.dig("data", "services").last.fetch("is_active")).to be(false)
     expect(response.parsed_body.dig("data", "neighborhoods").pluck("code")).to eq(%w[america atiradores])
     expect(response.parsed_body.to_json).not_to include("Toda Joinville", '"code":"all"')
     assert_api_conform(status: 200)
@@ -29,7 +29,7 @@ RSpec.describe "Administrator catalog management", type: :request, openapi: true
       params: {
         name: "Encanador",
         slug: "encanador",
-        categorySlug: "instalacoes",
+        category_slug: "instalacoes",
         description: "Instalações e reparos hidráulicos."
       },
       session: admin_session,
@@ -52,7 +52,7 @@ RSpec.describe "Administrator catalog management", type: :request, openapi: true
       "/api/v1/admin/catalog/services/#{created_service.id}",
       params: {
         name: "Encanador residencial",
-        categorySlug: "acabamentos",
+        category_slug: "acabamentos",
         description: "Reparos hidráulicos residenciais."
       },
       session: admin_session,
@@ -76,7 +76,7 @@ RSpec.describe "Administrator catalog management", type: :request, openapi: true
     mutate(
       :patch,
       "/api/v1/admin/catalog/services/#{created_service.id}",
-      params: {isActive: false},
+      params: {is_active: false},
       session: admin_session,
       request_id: "catalog-service-deactivate"
     )
@@ -100,7 +100,7 @@ RSpec.describe "Administrator catalog management", type: :request, openapi: true
     mutate(
       :post,
       "/api/v1/admin/catalog/neighborhoods",
-      params: {name: "Santo Antônio", code: "santo-antonio", stateCode: "SC", city: "Joinville"},
+      params: {name: "Santo Antônio", code: "santo-antonio", state_code: "SC", city: "Joinville"},
       session: admin_session,
       request_id: "catalog-neighborhood-create"
     )
@@ -112,7 +112,7 @@ RSpec.describe "Administrator catalog management", type: :request, openapi: true
     mutate(
       :patch,
       "/api/v1/admin/catalog/neighborhoods/santo-antonio",
-      params: {name: "Santo Antônio", stateCode: "SC", city: "Joinville", isActive: false},
+      params: {name: "Santo Antônio", state_code: "SC", city: "Joinville", is_active: false},
       session: admin_session,
       request_id: "catalog-neighborhood-deactivate"
     )
@@ -199,7 +199,7 @@ RSpec.describe "Administrator catalog management", type: :request, openapi: true
     mutate(
       :post,
       "/api/v1/admin/catalog/services",
-      params: valid_service_params.merge(categorySlug: "categoria-inexistente"),
+      params: valid_service_params.merge(category_slug: "categoria-inexistente"),
       session: admin_session,
       request_id: "catalog-service-category-missing"
     )
@@ -249,7 +249,7 @@ RSpec.describe "Administrator catalog management", type: :request, openapi: true
     mutate(
       :post,
       "/api/v1/admin/catalog/neighborhoods",
-      params: {name: "América duplicada", code: america.code, stateCode: "SC", city: "Joinville"},
+      params: {name: "América duplicada", code: america.code, state_code: "SC", city: "Joinville"},
       session: admin_session,
       request_id: "catalog-neighborhood-conflict"
     )
@@ -275,7 +275,7 @@ RSpec.describe "Administrator catalog management", type: :request, openapi: true
     mutate(
       :patch,
       "/api/v1/admin/catalog/neighborhoods/#{duplicate_inactive.code}",
-      params: {isActive: true},
+      params: {is_active: true},
       session: admin_session,
       request_id: "catalog-neighborhood-activation-conflict"
     )
@@ -306,7 +306,7 @@ RSpec.describe "Administrator catalog management", type: :request, openapi: true
     mutate(
       :post,
       "/api/v1/admin/catalog/neighborhoods",
-      params: {name: " ", code: "bairro-novo", stateCode: "SC", city: "Joinville"},
+      params: {name: " ", code: "bairro-novo", state_code: "SC", city: "Joinville"},
       session: admin_session,
       request_id: "catalog-neighborhood-invalid"
     )
@@ -345,7 +345,7 @@ RSpec.describe "Administrator catalog management", type: :request, openapi: true
     {
       name: "Encanador",
       slug: "encanador",
-      categorySlug: installations.slug,
+      category_slug: installations.slug,
       description: "Instalações hidráulicas."
     }
   end
@@ -355,7 +355,7 @@ RSpec.describe "Administrator catalog management", type: :request, openapi: true
       {name: "service-create", method: :post, path: "/api/v1/admin/catalog/services", params: valid_service_params, session:},
       {name: "service-update", method: :patch, path: "/api/v1/admin/catalog/services/#{electrician.id}", params: {name: "Eletricista residencial"}, session:},
       {name: "service-order", method: :put, path: "/api/v1/admin/catalog/services/order", params: {ids: [inactive_service.id.to_s, electrician.id.to_s]}, session:},
-      {name: "neighborhood-create", method: :post, path: "/api/v1/admin/catalog/neighborhoods", params: {name: "Santo Antônio", code: "santo-antonio", stateCode: "SC", city: "Joinville"}, session:},
+      {name: "neighborhood-create", method: :post, path: "/api/v1/admin/catalog/neighborhoods", params: {name: "Santo Antônio", code: "santo-antonio", state_code: "SC", city: "Joinville"}, session:},
       {name: "neighborhood-update", method: :patch, path: "/api/v1/admin/catalog/neighborhoods/#{america.code}", params: {name: "América"}, session:},
       {name: "neighborhood-order", method: :put, path: "/api/v1/admin/catalog/neighborhoods/order", params: {codes: [inactive_neighborhood.code, america.code]}, session:}
     ]

@@ -38,7 +38,11 @@ const form = ref<ProfessionalProfileDraft>({
 const error = shallowRef("");
 
 function submit() {
-  const errors = validateOnboardingProfile(form.value);
+  const photoReady = Boolean(
+    props.photo?.hasPublishedPhoto ||
+    ["pending_review", "approved"].includes(props.photo?.current?.status ?? ""),
+  );
+  const errors = validateOnboardingProfile(form.value, photoReady);
   error.value = Object.values(errors).find(Boolean) ?? "";
   if (error.value) return;
   emit("complete", {
@@ -53,8 +57,8 @@ function submit() {
 <template>
   <section aria-labelledby="onboarding-profile-title">
     <header class="onboarding-step-heading">
-      <DesignSystemEyebrow>Etapa 1 de 4</DesignSystemEyebrow>
-      <h2 id="onboarding-profile-title">Conte como você trabalha.</h2>
+      <DesignSystemEyebrow>Etapa 1 de 3</DesignSystemEyebrow>
+      <h2 id="onboarding-profile-title">Conte-nos sobre você.</h2>
       <p>
         Essas informações ajudam clientes a entender rapidamente quem você é e
         como entrar em contato.

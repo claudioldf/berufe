@@ -84,6 +84,19 @@ module Api
           )
         end
 
+        def revoke_share
+          quote = owned_quote!
+          authorize quote, :share?
+          quote = ProfessionalQuoteRevoker.new.call(quote:)
+          render json: quote_response(quote)
+        rescue ProfessionalQuoteRevoker::NotShared
+          render_api_error(
+            code: "quote_not_shared",
+            message: "Este orçamento não possui um link ativo.",
+            status: :unprocessable_entity
+          )
+        end
+
         private
 
         def owned_profile!

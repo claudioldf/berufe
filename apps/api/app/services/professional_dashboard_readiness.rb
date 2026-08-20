@@ -31,17 +31,18 @@ class ProfessionalDashboardReadiness
   def identity_contact_complete?
     revision = profile.working_revision
     phone = revision.whatsapp_e164 || profile.user_account.phone_e164
-    revision.display_name.present? &&
-      revision.headline.present? &&
-      revision.bio.present? &&
-      phone.match?(UserAccount::BRAZILIAN_MOBILE_PATTERN)
+    !!(revision.display_name.present? &&
+      profile.birthdate.present? &&
+      profile.working_photo&.status&.in?(%w[pending_review approved]) &&
+      phone.match?(UserAccount::BRAZILIAN_MOBILE_PATTERN))
   end
 
   def service_coverage_complete?
     revision = profile.working_revision
-    service = revision.professional_profile_services.includes(:service).any? do |selection|
-      selection.service.is_active?
-    end
+    selections = revision.professional_profile_services.includes(service: :category).to_a
+    service = selections.any? &&
+      selections.count(&:is_primary?) == 1 &&
+      selections.all? { |selection| selection.service.is_active? && selection.service.category.is_active? }
     coverage = revision.professional_profile_service_areas.includes(:neighborhood).any? do |area|
       area.city_code == ProfessionalProfileServiceArea::JOINVILLE &&
         (area.neighborhood_code.nil? || area.neighborhood&.is_active?)

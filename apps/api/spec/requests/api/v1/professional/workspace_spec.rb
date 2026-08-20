@@ -46,6 +46,9 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
           "revision_status" => "draft",
           "revision_rejection_reason" => nil,
           "has_published_revision" => false,
+          "is_public" => false,
+          "is_search_eligible" => false,
+          "publication_blockers" => %w[identity photo services coverage],
           "photo" => {
             "current" => nil,
             "has_published_photo" => false,
@@ -56,6 +59,7 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
           "verification" => {"current" => nil},
           "identity" => {
             "display_name" => "Ana Souza",
+            "birthdate" => nil,
             "headline" => "",
             "bio" => "",
             "years_experience" => nil,
@@ -181,6 +185,7 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
       params: {
         identity: {
           display_name: " Ana Souza ",
+          birthdate: "1990-04-12",
           headline: "Elétrica residencial com cuidado.",
           bio: "Instalações e manutenção em Joinville.",
           years_experience: 12,
@@ -195,6 +200,7 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
     expect(response).to have_http_status(:ok)
     expect(response.parsed_body.dig("data", "profile", "identity")).to include(
       "display_name" => "Ana Souza",
+      "birthdate" => "1990-04-12",
       "whatsapp" => "+5547999996202",
       "instagram" => "https://www.instagram.com/ana.obras/",
       "youtube" => "https://www.youtube.com/@AnaObras"
@@ -207,6 +213,7 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
       params: {
         identity: {
           display_name: "Ana Souza",
+          birthdate: "1990-04-12",
           headline: "Elétrica residencial com cuidado.",
           bio: "Instalações e manutenção em Joinville.",
           years_experience: 12,
@@ -228,6 +235,7 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
       params: {
         identity: {
           display_name: "Ana Souza",
+          birthdate: "1990-04-12",
           headline: "Elétrica residencial.",
           bio: "Instalações em Joinville.",
           whatsapp: account.phone_e164,
@@ -283,6 +291,7 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
   def valid_identity
     {
       display_name: "Ana Souza",
+      birthdate: "1990-04-12",
       headline: "Elétrica residencial.",
       bio: "Instalações em Joinville.",
       whatsapp: account.phone_e164,

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, shallowRef } from "vue";
+import { onMounted, shallowRef, watch } from "vue";
 import type { ModerationDecision } from "~/types";
 import { useModerationQueue } from "~/composables/useModerationQueue";
 import { useToast } from "~/composables/useToast";
@@ -34,8 +34,12 @@ const {
 const reasonOpen = shallowRef(false);
 const reason = shallowRef("");
 const reasonAction = shallowRef<"rejected" | "hidden">("rejected");
+const identityMatchConfirmed = shallowRef(false);
 
 onMounted(() => void load().catch(() => undefined));
+watch(selectedId, () => {
+  identityMatchConfirmed.value = false;
+});
 
 function requestReason(action: "rejected" | "hidden") {
   reasonAction.value = action;
@@ -45,7 +49,10 @@ function requestReason(action: "rejected" | "hidden") {
 
 async function decide(action: ModerationDecision, privateReason?: string) {
   try {
-    const item = await recordDecision(action, { reason: privateReason });
+    const item = await recordDecision(action, {
+      reason: privateReason,
+      identityMatchConfirmed: identityMatchConfirmed.value,
+    });
     if (!item) return;
     const titles: Record<ModerationDecision, string> = {
       approved: "Item aprovado",
@@ -59,6 +66,7 @@ async function decide(action: ModerationDecision, privateReason?: string) {
     });
     reasonOpen.value = false;
     reason.value = "";
+    identityMatchConfirmed.value = false;
   } catch (error) {
     showToast({
       title: "Não foi possível registrar a decisão",
@@ -145,7 +153,9 @@ async function openEvidence() {
         :media-error="mediaError"
         :evidence-loading="evidenceLoading"
         :mutating="isMutating"
+        :identity-match-confirmed="identityMatchConfirmed"
         @note="setNote"
+        @identity-match="identityMatchConfirmed = $event"
         @approve="decide('approved')"
         @reject="requestReason('rejected')"
         @hide="requestReason('hidden')"

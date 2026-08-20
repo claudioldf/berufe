@@ -5,11 +5,12 @@ defineEmits<{ review: [] }>();
 <template>
   <DesignSystemSurfaceCard as="section" class="onboarding-success">
     <span><UIcon name="i-lucide-party-popper" /></span>
-    <DesignSystemEyebrow>Perfil 100% completo</DesignSystemEyebrow>
-    <h2>Você concluiu os primeiros passos.</h2>
+    <DesignSystemEyebrow>Perfil publicado</DesignSystemEyebrow>
+    <h2>Seu perfil já pode ser encontrado.</h2>
     <p>
-      Seu perfil tem as informações essenciais, um trabalho no portfólio e a
-      verificação já está marcada como enviada.
+      As informações essenciais estão no ar. Agora você pode adicionar
+      portfólio, relações profissionais e verificação para fortalecer a
+      confiança.
     </p>
     <div>
       <UButton

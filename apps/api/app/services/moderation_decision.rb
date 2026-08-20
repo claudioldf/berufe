@@ -19,8 +19,8 @@ class ModerationDecision
     @publisher = publisher
   end
 
-  def call(target_type:, target_id:, action:, reason: nil, note: nil)
-    normalized = normalize(action:, reason:, note:)
+  def call(target_type:, target_id:, action:, reason: nil, note: nil, identity_match_confirmed: nil)
+    normalized = normalize(action:, reason:, note:, identity_match_confirmed:)
     target = ModerationTargetResolver.new.call(target_type:, target_id:)
     public_keys_to_delete = []
     created_public_keys = []
@@ -53,7 +53,7 @@ class ModerationDecision
 
   attr_reader :context, :publisher
 
-  def normalize(action:, reason:, note:)
+  def normalize(action:, reason:, note:, identity_match_confirmed:)
     normalized_action = action.to_s
     normalized_reason = reason.to_s.squish.presence
     normalized_note = note.to_s.squish.presence
@@ -65,7 +65,12 @@ class ModerationDecision
     errors[:note] = ["use uma nota com até 500 caracteres"] if normalized_note&.length.to_i > 500
     raise Invalid.new(errors) if errors.any?
 
-    {action: normalized_action, reason: normalized_reason, note: normalized_note}
+    {
+      action: normalized_action,
+      reason: normalized_reason,
+      note: normalized_note,
+      identity_match_confirmed: identity_match_confirmed == true || identity_match_confirmed == "true"
+    }
   end
 
   def transition!(target:, target_type:, attributes:, public_keys_to_delete:, created_public_keys:)
@@ -78,8 +83,6 @@ class ModerationDecision
       transition_portfolio!(target, attributes, public_keys_to_delete, created_public_keys)
     when "verification_request"
       transition_verification!(target, attributes)
-    when "professional_relationship"
-      transition_relationship!(target, attributes)
     else
       raise ActiveRecord::RecordNotFound, "moderation target"
     end
@@ -90,23 +93,27 @@ class ModerationDecision
     case attributes[:action]
     when "approved"
       require_status!(revision.status, "pending_review")
-      previous = profile.published_revision
+      raise Conflict, "profile revision is not current" unless profile.published_revision_id == revision.id
+
+      previous = profile.approved_revision
       previous.update!(status: "superseded") if previous && previous != revision
       revision.update!(status: "approved", reviewed_at: Time.current, rejection_reason: nil)
       profile.update!(
-        published_revision: revision,
+        approved_revision: revision,
         working_revision: revision,
         profile_status: "published",
         published_at: profile.published_at || Time.current
       )
     when "rejected"
       require_status!(revision.status, "pending_review")
+      raise Conflict, "profile revision is not current" unless profile.published_revision_id == revision.id
+
       revision.update!(
         status: "rejected",
         reviewed_at: Time.current,
         rejection_reason: attributes[:reason]
       )
-      profile.update!(profile_status: profile.published_revision ? "published" : "draft")
+      profile.update!(published_revision: profile.approved_revision, profile_status: "published")
     when "hidden"
       require_status!(revision.status, "approved")
       raise Conflict, "profile revision is not public" unless profile.published_revision_id == revision.id
@@ -125,29 +132,38 @@ class ModerationDecision
     case attributes[:action]
     when "approved"
       require_status!(photo.status, "pending_review")
+      raise Conflict, "profile photo is not current" unless current_photo_id(profile) == photo.id
+
       public_key = publisher.publish(target: photo, target_type: "profile_photo")
       created_public_keys << public_key
-      previous = profile.published_photo
+      previous = profile.approved_photo
       if previous && previous != photo
         public_keys_to_delete << previous.public_key
         previous.update!(status: "superseded", public_key: nil)
       end
       photo.update!(status: "approved", public_key:, reviewed_at: Time.current, rejection_reason: nil)
-      profile.update!(published_photo: photo, working_photo: photo)
+      profile.update!(approved_photo: photo, working_photo: photo)
     when "rejected"
       require_status!(photo.status, "pending_review")
+      raise Conflict, "profile photo is not current" unless current_photo_id(profile) == photo.id
+
       photo.update!(status: "rejected", reviewed_at: Time.current, rejection_reason: attributes[:reason])
+      profile.update!(published_photo: profile.approved_photo) if profile.profile_status == "published"
     when "hidden"
       require_status!(photo.status, "approved")
+      raise Conflict, "profile photo is not current" unless profile.published_photo_id == photo.id
+
       public_keys_to_delete << photo.public_key
       photo.update!(status: "hidden", public_key: nil, hidden_at: Time.current)
-      profile.update!(published_photo: nil) if profile.published_photo_id == photo.id
+      if profile.published_photo_id == photo.id
+        profile.update!(published_photo: nil, approved_photo: nil)
+      end
     when "restored"
       require_status!(photo.status, "hidden")
       public_key = publisher.publish(target: photo, target_type: "profile_photo")
       created_public_keys << public_key
       photo.update!(status: "approved", public_key:, hidden_at: nil)
-      profile.update!(published_photo: photo)
+      profile.update!(published_photo: photo, approved_photo: photo)
     end
   end
 
@@ -179,12 +195,18 @@ class ModerationDecision
     require_status!(request_record.status, "pending_review")
     case attributes[:action]
     when "approved"
+      unless attributes[:identity_match_confirmed]
+        raise Invalid.new(identity_match_confirmed: ["confirme que a identidade corresponde ao perfil"])
+      end
+      raise Conflict, "identity birthdate is unavailable" if request_record.claimed_birthdate.blank?
+
       request_record.update!(
         status: "approved",
         reviewed_at: Time.current,
         reviewed_by_user_account_id: context.admin_user_id,
         review_note: attributes[:note],
         public_label: IDENTITY_LABEL,
+        identity_match_confirmed_at: Time.current,
         verified_at: Time.current
       )
     when "rejected"
@@ -194,6 +216,7 @@ class ModerationDecision
         reviewed_by_user_account_id: context.admin_user_id,
         review_note: attributes[:reason],
         public_label: nil,
+        identity_match_confirmed_at: nil,
         verified_at: nil
       )
     else
@@ -201,23 +224,12 @@ class ModerationDecision
     end
   end
 
-  def transition_relationship!(relationship, attributes)
-    raise Conflict, "professional relationship is not accepted" unless relationship.status == "accepted"
-
-    latest_action = ProfessionalRelationshipModerationState.latest_action_for(relationship.id)
-    allowed = case attributes[:action]
-    when "approved", "rejected"
-      latest_action.nil?
-    when "hidden"
-      latest_action&.action&.in?(%w[approved restored])
-    when "restored"
-      latest_action&.action == "hidden"
-    end
-    raise Conflict, "professional relationship decision is not allowed" unless allowed
-  end
-
   def require_status!(actual, expected)
     raise Conflict, "moderation target changed" unless actual == expected
+  end
+
+  def current_photo_id(profile)
+    (profile.profile_status == "published") ? profile.published_photo_id : profile.working_photo_id
   end
 
   def cleanup_created_public_keys(public_keys)

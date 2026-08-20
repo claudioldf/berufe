@@ -19,6 +19,7 @@ import {
 function validDraft(): ProfessionalProfileDraft {
   return {
     name: "Marcos Alves",
+    birthdate: "1990-04-12",
     headline: "Elétrica residencial com cuidado e clareza.",
     bio: "Trabalho com instalações, reformas e manutenção residencial.",
     yearsExperience: 11,
@@ -38,10 +39,9 @@ afterEach(() => {
 });
 
 describe("professional onboarding rules", () => {
-  it("validates the four frontend completion areas", () => {
+  it("validates the three frontend completion areas", () => {
     const draft = validDraft();
     expect(Object.values(validateOnboardingProfile(draft))).toEqual([
-      "",
       "",
       "",
       "",
@@ -51,17 +51,11 @@ describe("professional onboarding rules", () => {
 
     const state = createInitialProfessionalOnboardingState();
     state.profile = draft;
-    state.portfolio = {
-      title: "Iluminação da cozinha",
-      service: "Eletricista",
-      description: "Novo circuito e iluminação da bancada.",
-      submittedAt: "2026-08-15T12:00:00.000Z",
-    };
+    state.photoReady = true;
     state.verificationStatus = "submitted";
     state.completion = {
       profile: "2026-08-15T12:00:00.000Z",
       services: "2026-08-15T12:01:00.000Z",
-      portfolio: "2026-08-15T12:02:00.000Z",
       verification: "2026-08-15T12:03:00.000Z",
     };
 
@@ -69,7 +63,6 @@ describe("professional onboarding rules", () => {
     expect(completion).toEqual({
       profile: true,
       services: true,
-      portfolio: true,
       verification: true,
     });
     expect(calculateOnboardingProgress(completion)).toBe(100);
@@ -107,12 +100,6 @@ describe("professional onboarding rules", () => {
         onboarding.value = useProfessionalOnboarding({
           saveIdentity: async (draft) => draft,
           saveSupply: async (draft) => draft,
-          savePortfolio: async (draft) => ({
-            title: draft.title,
-            service: draft.service,
-            description: draft.description,
-            submittedAt: "2026-08-15T12:02:00.000Z",
-          }),
           saveVerification: async () => ({
             submittedAt: "2026-08-15T12:03:00.000Z",
           }),
@@ -130,19 +117,12 @@ describe("professional onboarding rules", () => {
     });
 
     const draft = validDraft();
+    workflow.markPhotoReady();
     await expect(workflow.completeProfile(draft)).resolves.toBe(true);
     await expect(workflow.completeServices(draft)).resolves.toBe(true);
     const file = new File(["private-image-bytes"], "private.jpg", {
       type: "image/jpeg",
     });
-    await expect(
-      workflow.completePortfolio({
-        file,
-        title: "Iluminação da cozinha",
-        service: "Eletricista",
-        description: "",
-      }),
-    ).resolves.toBe(true);
     await expect(workflow.completeVerification(file)).resolves.toBe(true);
 
     const stored = window.localStorage.getItem(

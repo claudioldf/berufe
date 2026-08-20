@@ -84,7 +84,8 @@ module Api
             :years_experience,
             :whatsapp,
             :instagram,
-            :youtube
+            :youtube,
+            :birthdate
           )
         end
 

@@ -116,7 +116,8 @@ Launch with fresh SSR and no Redis or separate cache for 30–50 profiles. Befor
 - OpenAPI 3.1.0 in `apps/contracts/openapi.yaml` is the source of truth for the HTTP boundary. Prefix every product endpoint with `/api/v1`; health and worker probes may remain outside that namespace.
 - Use JSON request and response bodies. Document cookie authentication and the exact-origin requirement for state-changing operations in the contract.
 - Return one stable error envelope containing `code`, a safe `message`, `field_errors` as a map of field names to arrays of safe messages when applicable, and `request_id` as a string.
-- Use pagination and deterministic ordering for lists.
+- Use pagination and deterministic ordering for lists. Public search returns one `PageMeta` object (`page`, `per_page`, `total_count`, `total_pages`); the recorded search event keeps the full match count, not the page size.
+- Name every request and response field in `snake_case`, without exception. It is what Rails serializers produce naturally and what the Feature Plan's data tables use, so the boundary reads the same everywhere. Nuxt keeps `camelCase` for its own domain types and maps at the `app/services/api/` adapter, which is the only place the two conventions meet.
 - Keep private/internal fields out of serializers by default.
 - Allow credentialed CORS only from exact local, stable-staging, and production Nuxt origins. Never use a Vercel preview wildcard.
 - Generate `apps/web/app/services/api/schema.d.ts` from the contract with `openapi-typescript`. Keep `client.ts` and `errors.ts` handwritten; use `openapi-fetch` as the small typed transport rather than creating a workspace package.
@@ -306,7 +307,7 @@ PostgreSQL is the single application database. Rails/Active Record is the only a
 - Enforce exactly one primary service per professional. The primary service is the singular main service shown on the public profile.
 - Represent “All Joinville” as a derived selector backed by a nullable professional service-area reference, never as a managed neighborhood, and prevent duplicate nullable-area rows using a partial unique index or a PostgreSQL `NULLS NOT DISTINCT` constraint.
 - Material edits create or update one private pending profile revision. The previous approved revision remains the complete public snapshot until approval atomically replaces it; rejection keeps that snapshot public and returns the reviewed revision to an editable private state. Public serializers never mix approved and unreviewed fields.
-- Treat professional acceptance as necessary but not sufficient for a public professional relationship. An accepted relationship enters the shared moderation queue; public serializers require both recipient acceptance and an admin approval action, and hiding removes it immediately.
+- Treat recipient acceptance as the complete publication decision for a professional relationship. Public serializers require `status = accepted` and both endpoint profiles/accounts to remain public and active; relationships never enter the moderation queue.
 - Keep product analytics privacy-friendly but source-aware enough to calculate the approved success signals. An anonymous search event may record whether at least one result profile was opened, while professional daily metrics distinguish WhatsApp handoffs originating on profiles from those originating on result cards. Do not create visitor identities to do so.
 - Store meaningful professional actions in one daily aggregate keyed by professional and local product date. Report queries read domain records and aggregates from PostgreSQL, return only admin-authorized summary values, and never serialize raw search events or quote customer details.
 
@@ -432,7 +433,7 @@ Keep Playwright to five release-critical flows:
 1. professional OTP login and profile submission;
 2. admin profile/evidence approval;
 3. public search, profile view, and WhatsApp handoff;
-4. professional-relationship confirmation plus moderation;
+4. professional-relationship request, recipient confirmation, and immediate public presentation;
 5. draft quote creation, secure preview/share, valid customer view, invalid-token denial, and browser print.
 
 Tests use synthetic data and never send real SMS or WhatsApp messages.
@@ -480,7 +481,7 @@ If production breaks: disable the affected flow or credential, assess scope, rec
 1. **Foundation:** monorepo, Dockerfiles and root Compose stack, Nuxt with Nuxt UI, Rails API-only, PostgreSQL, GoodJob, Vercel/Render environments, CI, and security headers.
 2. **Access:** professional Infobip SMS OTP, dedicated admin email/password login, Rails-owned application sessions, abuse controls, roles/policies, and CORS/origin controls.
 3. **Profiles and evidence:** seeded and administrator-maintained service/location catalog, direct R2 uploads, background image processing, profile/portfolio/identity moderation, public serializers, and Nuxt public pages.
-4. **Discovery and trust graph:** Finder and WhatsApp handoff followed by moderated relationships between existing members.
+4. **Discovery and trust graph:** Finder and WhatsApp handoff followed by recipient-confirmed relationships between existing members.
 5. **Dashboard, quotes, and reporting:** profile readiness/sharing, simple quote creation and secure customer sharing, and the aggregate-only administrator growth report.
 6. **Launch:** critical end-to-end tests, database restore test, operational ownership, and launch gate.
 

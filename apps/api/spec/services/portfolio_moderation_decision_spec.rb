@@ -28,6 +28,7 @@ RSpec.describe "Portfolio moderation" do
 
   it "publishes the approved image while preserving service and deterministic order" do
     older = create_item(title: "Trabalho anterior", submitted_at: 1.day.ago)
+    make_profile_publicly_eligible(profile)
 
     decide(item, "approved")
     decide(older, "approved")

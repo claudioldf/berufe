@@ -6,8 +6,7 @@ class ModerationQueueSummaryQuery
       ProfessionalProfileRevision.where(status: "pending_review").minimum(:submitted_at),
       ProfessionalProfilePhoto.where(status: "pending_review").minimum(:submitted_at),
       PortfolioItem.active.where(status: "pending_review").minimum(:submitted_at),
-      VerificationRequest.where(status: "pending_review").minimum(:submitted_at),
-      unreviewed_relationships.minimum(:responded_at)
+      VerificationRequest.where(status: "pending_review").minimum(:submitted_at)
     ].compact
     {
       pending_count: pending_count,
@@ -25,14 +24,6 @@ class ModerationQueueSummaryQuery
     ProfessionalProfileRevision.where(status: "pending_review").count +
       ProfessionalProfilePhoto.where(status: "pending_review").count +
       PortfolioItem.active.where(status: "pending_review").count +
-      VerificationRequest.where(status: "pending_review").count +
-      unreviewed_relationships.count
-  end
-
-  def unreviewed_relationships
-    reviewed_ids = ModerationAction
-      .where(target_type: "professional_relationship")
-      .select(:target_id)
-    ProfessionalRelationship.where(status: "accepted").where.not(id: reviewed_ids)
+      VerificationRequest.where(status: "pending_review").count
   end
 end

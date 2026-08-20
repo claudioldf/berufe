@@ -23,6 +23,10 @@ const data: AdminModerationData = {
       submitted_at: "2026-08-17T12:00:00Z",
       details: "Foto enviada para conferência manual.",
       preview: "Imagem privada",
+      currently_public: true,
+      fallback_available: true,
+      changes: [],
+      claimed_birthdate: null,
       has_media: true,
       verification_file_id: null,
     },
@@ -81,26 +85,6 @@ describe("administrator moderation API", () => {
     ).toBe("há 2d");
   });
 
-  it("maps professional relationships into the existing moderation presentation", () => {
-    const relationshipData: AdminModerationData = {
-      ...data,
-      items: [
-        {
-          ...data.items[0]!,
-          target_type: "professional_relationship",
-          title: "Relação profissional · Beto Lima e Ana Souza",
-          has_media: false,
-        },
-      ],
-    };
-
-    expect(mapAdminModeration(relationshipData).items[0]).toMatchObject({
-      targetType: "professional_relationship",
-      type: "Relação profissional",
-      hasMedia: false,
-    });
-  });
-
   it("uses the generated queue and decision operations with server filters", async () => {
     const client = clientReturning(successfulQueue());
 
@@ -146,6 +130,7 @@ describe("administrator moderation API", () => {
             action: "rejected",
             reason: "A imagem precisa ser substituída.",
             note: "Conferida.",
+            identity_match_confirmed: false,
           },
         },
       },

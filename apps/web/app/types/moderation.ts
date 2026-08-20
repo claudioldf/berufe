@@ -2,8 +2,7 @@ export type ModerationTargetType =
   | "profile_revision"
   | "profile_photo"
   | "portfolio_item"
-  | "verification_request"
-  | "professional_relationship";
+  | "verification_request";
 
 export type ModerationTypeFilter = ModerationTargetType | "all";
 export type ModerationStatus =
@@ -23,6 +22,10 @@ export interface ModerationQueueItem {
   age: string;
   details: string;
   preview: string;
+  currentlyPublic: boolean;
+  fallbackAvailable: boolean;
+  changes: ReadonlyArray<{ field: string; before: unknown; after: unknown }>;
+  claimedBirthdate: string | null;
   hasMedia: boolean;
   verificationFileId: string | null;
 }

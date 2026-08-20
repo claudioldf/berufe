@@ -19,7 +19,7 @@ definePageMeta({
 <template>
   <AdminWorkspace
     title="Fila de moderação"
-    description="Analise perfis, portfólios, identidades e relações profissionais na ordem de chegada."
+    description="Analise perfis, portfólios e identidades na ordem de chegada."
   >
     <AdminModerationQueue />
   </AdminWorkspace>

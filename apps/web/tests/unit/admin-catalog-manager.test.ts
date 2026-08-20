@@ -172,7 +172,7 @@ describe("administrator catalog manager", () => {
     expect(mocks.state!.createService).toHaveBeenCalledWith({
       name: "Encanador",
       slug: "encanador",
-      categorySlug: "instalacoes",
+      category_slug: "instalacoes",
       description: "Reparos hidráulicos.",
     });
     expect(wrapper.find('[role="dialog"]').exists()).toBe(false);
@@ -190,7 +190,7 @@ describe("administrator catalog manager", () => {
       "de83e041-286f-4b50-91fa-61a0ee8c1801",
       {
         name: "Eletricista residencial",
-        categorySlug: "acabamentos",
+        category_slug: "acabamentos",
         description: "Instalações elétricas.",
       },
     );
@@ -199,7 +199,7 @@ describe("administrator catalog manager", () => {
     await flushPromises();
     expect(mocks.state!.updateService).toHaveBeenCalledWith(
       "de83e041-286f-4b50-91fa-61a0ee8c1801",
-      { isActive: false },
+      { is_active: false },
     );
 
     await wrapper
@@ -235,7 +235,7 @@ describe("administrator catalog manager", () => {
     expect(mocks.state!.createNeighborhood).toHaveBeenCalledWith({
       name: "Santo Antônio",
       code: "santo-antonio",
-      stateCode: "SC",
+      state_code: "SC",
       city: "Joinville",
     });
   });
@@ -250,14 +250,14 @@ describe("administrator catalog manager", () => {
     await flushPromises();
     expect(mocks.state!.updateNeighborhood).toHaveBeenCalledWith("america", {
       name: "América Norte",
-      stateCode: "SC",
+      state_code: "SC",
       city: "Joinville",
     });
 
     await buttonWithText(wrapper, "Ativo").trigger("click");
     await flushPromises();
     expect(mocks.state!.updateNeighborhood).toHaveBeenCalledWith("america", {
-      isActive: false,
+      is_active: false,
     });
 
     await wrapper

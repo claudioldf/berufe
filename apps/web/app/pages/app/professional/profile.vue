@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import professionalsData from "@data/professionals.json";
 import type {
   Professional,
   ProfessionalProfileDraft,
@@ -13,7 +12,6 @@ import { ApiRequestError } from "~/services/api/errors";
 const route = useRoute();
 const router = useRouter();
 const { showToast } = useToast();
-const mockProfessional = (professionalsData as Professional[])[0]!;
 const { data: catalog, error: catalogError } = await useCatalogs();
 if (catalogError.value || !catalog.value) {
   throw createError({
@@ -47,49 +45,63 @@ if (workspaceError.value || !workspace.value) {
   });
 }
 const saving = shallowRef(false);
-const professional = computed<Professional>(() => ({
-  ...mockProfessional,
-  id: workspace.value!.profile.id,
-  slug: workspace.value!.profile.publicSlug,
-  name: workspace.value!.profile.identity.name,
-  headline: workspace.value!.profile.identity.headline,
-  bio: workspace.value!.profile.identity.bio,
-  yearsExperience: workspace.value!.profile.identity.yearsExperience,
-  whatsapp: workspace.value!.profile.identity.whatsapp,
-  instagram: workspace.value!.profile.identity.instagram || undefined,
-  youtube: workspace.value!.profile.identity.youtube || undefined,
-  avatar: "",
-  primaryService:
-    workspace.value!.profile.services.find((service) => service.isPrimary)
-      ?.name ?? "",
-  services: workspace.value!.profile.services.map((service) => service.name),
-  serviceNotes: workspace
-    .value!.profile.services.map((service) => service.note)
-    .filter(Boolean),
-  allJoinville: workspace.value!.profile.coverage.allJoinville,
-  neighborhoods: workspace.value!.profile.coverage.neighborhoods.map(
-    (neighborhood) => neighborhood.name,
-  ),
-  portfolio: [],
-  evidence: [
-    { id: "phone-confirmed", label: "Telefone confirmado" },
-    ...(workspace.value!.profile.verification.current?.status === "approved"
-      ? [{ id: "identity-verified", label: "Identidade verificada" }]
-      : []),
-  ],
-}));
+// Every field is derived from the authenticated workspace. Nothing is borrowed
+// from a fixture: the editor must only ever show this professional's own data.
+const professional = computed<Professional>(() => {
+  const profile = workspace.value!.profile;
+  const primary =
+    profile.services.find((service) => service.isPrimary) ??
+    profile.services[0];
+
+  return {
+    id: profile.id,
+    slug: profile.publicSlug,
+    name: profile.identity.name,
+    headline: profile.identity.headline,
+    bio: profile.identity.bio,
+    avatar: profile.photo.publishedImageUrl ?? "",
+    primaryService: primary?.name ?? "",
+    primaryServiceSlug:
+      services.value.find((service) => service.id === primary?.id)?.slug ?? "",
+    services: profile.services.map((service) => service.name),
+    serviceNotes: profile.services.map((service) => service.note),
+    neighborhoods: profile.coverage.neighborhoods.map(
+      (neighborhood) => neighborhood.name,
+    ),
+    allJoinville: profile.coverage.allJoinville,
+    yearsExperience: profile.identity.yearsExperience,
+    evidence: [
+      { id: "phone-confirmed", label: "Telefone confirmado" },
+      ...(profile.verification.current?.status === "approved"
+        ? [{ id: "identity-verified", label: "Identidade verificada" }]
+        : []),
+    ],
+    portfolio: [],
+    relationships: [],
+    updatedAt: "",
+    whatsapp: profile.identity.whatsapp,
+    birthdate: profile.identity.birthdate,
+    instagram: profile.identity.instagram || undefined,
+    youtube: profile.identity.youtube || undefined,
+  };
+});
 const statusLabels = {
   draft: "Rascunho",
   pending_review: "Em análise",
   published: "Publicado",
   suspended: "Suspenso",
 } as const;
-const statusLabel = computed(() =>
-  workspace.value!.profile.hasPublishedRevision &&
-  workspace.value!.profile.revisionStatus === "pending_review"
-    ? "Alterações em análise"
-    : statusLabels[workspace.value!.profile.status],
-);
+const statusLabel = computed(() => {
+  const profile = workspace.value!.profile;
+  if (profile.isPublic && profile.revisionStatus === "pending_review") {
+    return "Publicado · revisão pendente";
+  }
+  if (profile.isPublic) return "Publicado";
+  if (profile.revisionStatus === "rejected") {
+    return "Indisponível após revisão";
+  }
+  return statusLabels[profile.status];
+});
 const tabs = [
   { id: "dados", label: "Dados do perfil", icon: "i-lucide-user-round" },
   { id: "portfolio", label: "Portfólio", icon: "i-lucide-images" },
@@ -144,7 +156,7 @@ async function handlePhoto(file: File) {
     await uploadPhoto(file);
     showToast({
       title: "Foto enviada",
-      description: "Ela aparecerá no perfil depois da análise.",
+      description: "A nova foto já está no perfil e seguirá para revisão.",
     });
   } catch (error) {
     showToast({
@@ -162,7 +174,7 @@ async function handlePhotoRetry() {
     await retryPhoto();
     showToast({
       title: "Foto reenviada",
-      description: "Ela aparecerá no perfil depois da análise.",
+      description: "A nova foto já está no perfil e seguirá para revisão.",
     });
   } catch (error) {
     showToast({
@@ -182,7 +194,7 @@ async function handlePortfolioAdd(
     await createPortfolioItem(draft);
     showToast({
       title: "Trabalho enviado",
-      description: "Ele aparecerá no perfil depois da análise.",
+      description: "O trabalho já está no perfil e seguirá para revisão.",
     });
   } catch (error) {
     showToast({
@@ -245,15 +257,17 @@ async function handleVerificationSubmission(
           <h1>Meu perfil</h1>
           <p>Organize as informações e evidências que clientes verão.</p>
         </div>
-        <span>
-          <DesignSystemStatusDot tone="success" />
+        <div class="workspace-heading__status">
           <span>
-            {{ statusLabel }}
-            <small v-if="workspace?.profile.revisionRejectionReason">
-              {{ workspace?.profile.revisionRejectionReason }}
-            </small>
+            <DesignSystemStatusDot tone="success" />
+            <span>
+              {{ statusLabel }}
+              <small v-if="workspace?.profile.revisionRejectionReason">
+                {{ workspace?.profile.revisionRejectionReason }}
+              </small>
+            </span>
           </span>
-        </span>
+        </div>
       </DesignSystemContainer>
     </section>
     <DesignSystemContainer class="profile-workspace__content">
@@ -341,7 +355,12 @@ async function handleVerificationSubmission(
     color: rgb(255 255 255 / 59%);
     font-size: 0.84rem;
   }
-  &__inner > span {
+  &__status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  &__status > span {
     display: flex;
     align-items: center;
     gap: 6px;
@@ -352,11 +371,11 @@ async function handleVerificationSubmission(
     font-size: 0.84rem;
     font-weight: 850;
   }
-  &__inner > span span,
-  &__inner > span small {
+  &__status > span span,
+  &__status > span small {
     display: block;
   }
-  &__inner > span small {
+  &__status > span small {
     max-width: 320px;
     margin-top: 2px;
     color: rgb(255 255 255 / 72%);
@@ -422,7 +441,7 @@ async function handleVerificationSubmission(
     white-space: nowrap;
   }
   .workspace-heading {
-    &__inner > span {
+    &__status > span {
       display: none;
     }
   }

@@ -11,7 +11,7 @@ const props = withDefaults(
     submitting?: boolean;
   }>(),
   {
-    submitLabel: "Enviar para análise",
+    submitLabel: "Adicionar ao perfil",
     showCancel: false,
     submitting: false,
   },

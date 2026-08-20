@@ -23,8 +23,10 @@ RSpec.describe "Professional profile submission", type: :request, openapi: true 
 
     expect(response).to have_http_status(:ok)
     expect(response.parsed_body.dig("data", "profile")).to include(
-      "profile_status" => "pending_review",
-      "revision_status" => "pending_review"
+      "profile_status" => "published",
+      "revision_status" => "pending_review",
+      "is_public" => true,
+      "is_search_eligible" => true
     )
     expect(profile.reload.working_revision.submitted_at).to be_present
     assert_api_conform(status: 200)
@@ -39,10 +41,9 @@ RSpec.describe "Professional profile submission", type: :request, openapi: true 
     expect(response.parsed_body.dig("error", "code")).to eq("profile_incomplete")
     expect(response.parsed_body.dig("error", "field_errors").keys).to contain_exactly(
       "identity",
+      "photo",
       "services",
-      "coverage",
-      "portfolio",
-      "verification"
+      "coverage"
     )
     assert_api_conform(status: 422)
   end
@@ -84,6 +85,7 @@ RSpec.describe "Professional profile submission", type: :request, openapi: true 
       profile:,
       attributes: {
         display_name: "Ana Souza",
+        birthdate: "1990-04-12",
         headline: "Elétrica residencial.",
         bio: "Instalações e manutenção em Joinville.",
         years_experience: 8,
@@ -98,19 +100,9 @@ RSpec.describe "Professional profile submission", type: :request, openapi: true 
       services: [{service_id: service.id, is_primary: true, note: nil}],
       coverage: {all_joinville: true, neighborhood_codes: []}
     )
-    PortfolioItemCreator.new.call(
+    ProfessionalProfilePhotoAttacher.new.call(
       profile:,
-      attributes: {
-        media_upload_id: processed_upload("portfolio_image").id,
-        service_id: service.id,
-        title: "Cozinha iluminada",
-        description: ""
-      }
-    )
-    VerificationRequestCreator.new.call(
-      profile:,
-      media_upload_id: processed_upload("verification_identity").id,
-      verification_type: "identity"
+      media_upload_id: processed_upload("profile_photo").id
     )
   end
 
@@ -135,20 +127,22 @@ RSpec.describe "Professional profile submission", type: :request, openapi: true 
   end
 
   def processed_upload(purpose)
+    content_type = (purpose == "profile_photo") ? "image/jpeg" : "image/png"
+    extension = (content_type == "image/jpeg") ? "jpg" : "png"
     MediaUpload.create!(
       professional_profile: profile,
       purpose:,
       state: "processed",
-      declared_content_type: "image/png",
+      declared_content_type: content_type,
       declared_byte_size: 120,
-      actual_content_type: "image/png",
-      sanitized_content_type: "image/png",
+      actual_content_type: content_type,
+      sanitized_content_type: content_type,
       actual_byte_size: 120,
       sanitized_byte_size: 100,
       width: 640,
-      height: (purpose == "portfolio_image") ? 380 : 960,
+      height: 960,
       quarantine_key: "quarantine/#{profile.id}/#{SecureRandom.uuid}",
-      sanitized_key: "sanitized/#{profile.id}/#{SecureRandom.uuid}.png",
+      sanitized_key: "sanitized/#{profile.id}/#{SecureRandom.uuid}.#{extension}",
       authorization_expires_at: 5.minutes.from_now,
       uploaded_at: 1.minute.ago,
       processed_at: Time.current

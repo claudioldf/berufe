@@ -19,7 +19,7 @@ const ButtonStub = defineComponent({
 });
 
 describe("relationship request dialog", () => {
-  it("submits only the approved relationship fields from user interaction", async () => {
+  it("submits only the supported relationship fields from user interaction", async () => {
     const wrapper = await mountSuspended(RelationshipRequestDialog, {
       props: {
         open: true,

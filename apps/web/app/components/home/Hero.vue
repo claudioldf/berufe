@@ -53,7 +53,7 @@ onMounted(() => {
     </div>
     <DesignSystemContainer class="hero__inner">
       <div class="hero__copy">
-        <DesignSystemEyebrow>Rede local de confiança</DesignSystemEyebrow>
+        <DesignSystemEyebrow>Rede de confiança</DesignSystemEyebrow>
         <DesignSystemHeading as="h1" variant="display">
           Sua casa em<br /><em>boas mãos.</em>
         </DesignSystemHeading>

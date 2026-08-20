@@ -103,14 +103,12 @@ Rejected, pending, expired, and non-identity verification types do not satisfy a
 Require all of the following:
 
 - `professional_relationships.status = 'accepted'`;
-- the latest effective moderation decision is `approved` or `restored`;
-- no later `hidden` or `rejected` decision is effective;
 - both initiator and recipient accounts are active;
 - both profiles are published.
 
 The relationship counts for both the initiator and recipient. A self-relationship must be prohibited by domain validation. Use a `UNION ALL` of the two endpoints followed by `COUNT(DISTINCT relationship_id)` per professional so a relationship is never double-counted for the same profile.
 
-`professional_relationships.status = 'accepted'` alone is not sufficient, as established by S043 and S046.
+`professional_relationships.status = 'accepted'` is the complete relationship decision. The party eligibility checks remain necessary because a suspended account or unpublished profile cannot contribute public evidence.
 
 #### Valid anonymous search
 
@@ -193,7 +191,7 @@ Without this field, Berufe can show total WhatsApp handoffs and source counts fr
 
 #### Moderation submission time
 
-Every moderation queue projection needs an immutable `submitted_at`. Existing records already provide it for recommendations and verification requests, and `responded_at` is the relationship submission time. Profiles/profile revisions and portfolio items need either an explicit `submitted_at` or a shared moderation-submission record. `updated_at` must not be used for queue age.
+Every moderation queue projection needs an immutable `submitted_at`. Existing records already provide it for recommendations and verification requests. Profiles/profile revisions and portfolio items need either an explicit `submitted_at` or a shared moderation-submission record. `updated_at` must not be used for queue age. Relationships are not queue targets; `responded_at` is used only for relationship funnel reporting.
 
 ### 3.3 Prototype-only data that must not be represented as real
 
@@ -367,19 +365,16 @@ Do not show a percentage change when the previous count is zero. For `since_laun
 
 The measurable production funnel is cohort-based. Its denominator is professional profiles created during the selected period. Later stages show how many of that same cohort have reached each state by report generation time.
 
-| Stage                 | Source and association                          | Condition                                                                                   | Calculation                                     |
-| --------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| Cadastrados           | `professional_profiles` → `user_accounts`       | profile `created_at` in period; account role `professional`; account not a seed/test record | Distinct profile IDs                            |
-| Identidade verificada | cohort → `verification_requests`                | at least one identity request currently `approved`                                          | Distinct cohort profile IDs satisfying `EXISTS` |
-| Perfil enviado        | cohort → moderation submission                  | first profile `submitted_at IS NOT NULL`                                                    | Distinct cohort profile IDs                     |
-| Publicados            | cohort                                          | `published_at IS NOT NULL`                                                                  | Distinct cohort profile IDs                     |
-| Ativados              | cohort → verification, portfolio, relationships | all R004 criteria currently true                                                            | Distinct cohort profile IDs                     |
+| Stage                 | Source and association                          | Condition                                                                                   | Calculation                           |
+| --------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------- |
+| Cadastrados           | `professional_profiles` → `user_accounts`       | profile `created_at` in period; account role `professional`; account not a seed/test record | Distinct profile IDs                  |
+| Publicados            | cohort                                          | `published_at IS NOT NULL`                                                                  | Distinct cohort profile IDs           |
+| Identidade verificada | published cohort → `verification_requests`      | at least one identity request currently `approved` with confirmed identity match            | Distinct published cohort profile IDs |
+| Ativados              | cohort → verification, portfolio, relationships | all R004 criteria currently true                                                            | Distinct cohort profile IDs           |
 
 “Cadastrado” means a successful professional registration that created the one draft profile required by S016. It is not merely an OTP challenge attempt.
 
-“Perfil enviado” is a lifecycle milestone and must use an immutable first submission timestamp, not the current `profile_status`, because an approved profile no longer has `pending_review` status.
-
-The stages should be monotonic for a cohort: registered ≥ verified/submitted; submitted ≥ published; published ≥ activated when activation is defined only for published profiles. Verification can occur before or after submission, so the UI should not imply that verification and submission always happen in that exact order unless onboarding enforces it.
+The stages are monotonic for a cohort: registered ≥ published ≥ identity verified/activated. Identity verification and activation are outcomes within the published cohort; their order relative to one another is not implied.
 
 ### Founding target and prototype “Convidados” stage
 
@@ -391,8 +386,7 @@ The stages should be monotonic for a cohort: registered ≥ verified/submitted; 
 
 For each supported transition return `stage_count / cohort_registered_count`. Also return median elapsed time for:
 
-- registration → first profile submission;
-- first submission → first publication;
+- registration → first publication;
 - first publication → activation.
 
 Elapsed times require immutable milestone timestamps. Do not calculate them from mutable status or `updated_at`.
@@ -401,7 +395,7 @@ Elapsed times require immutable milestone timestamps. Do not calculate them from
 
 - All stages refer to the same registration cohort.
 - The API identifies stages whose data support is unavailable.
-- A rejected submission remains in “Perfil enviado” because the milestone occurred, but not in “Publicados”.
+- A profile whose current content is rejected remains in the historical “Publicados” milestone once first publication occurred, even if it is currently unavailable because no approved fallback exists.
 - A later suspended profile remains in the historical cohort stages but is excluded from the separate current published stock.
 
 **Depends on:** S016, S019–S024, S030, S046.
@@ -432,7 +426,7 @@ Pending, rejected, and hidden portfolio items do not count. The twelve-item uplo
 
 ### Two or more relationships
 
-**Source:** `professional_relationships` through both initiator and recipient associations, plus `moderation_actions` and both parties' accounts/profiles.
+**Source:** `professional_relationships` through both initiator and recipient associations, plus both parties' accounts/profiles.
 
 **Condition:** public relationship scope from §2.4.
 
@@ -716,7 +710,7 @@ W1 indicates whether onboarding leads to a second useful visit. W4 indicates whe
 
 ## R010 — Measure the existing-member relationship funnel
 
-**Story:** As an administrator, I want to see completion and moderation outcomes for existing-member relationships so that I can improve the flow without relaxing authenticity controls.
+**Story:** As an administrator, I want to see response and acceptance outcomes for existing-member relationships so that I can improve the confirmation flow.
 
 The launch row is a cohort funnel: “iniciadas” means created inside the selected period, while later columns show the current outcome of those same records. This avoids dividing unrelated period events.
 
@@ -738,7 +732,7 @@ Expired, revoked, and still-open requests remain only in started. Rejected/hidde
 
 **Completed:** started relationships with `responded_at IS NOT NULL`; this includes accepted and declined responses.
 
-**Approved:** started relationships satisfying the public relationship scope from §2.4.
+**Approved:** started relationships with `status = 'accepted'` that satisfy the party-eligibility portion of the public relationship scope from §2.4. “Approved” means approved by the recipient, not by an administrator.
 
 **Rates:** responded / started; public approved / responded.
 
@@ -760,13 +754,13 @@ Expired/revoked invitations remain in the started cohort but not completed. Invi
 
 - Improve legitimate completion by making requests clear and easy to finish.
 - Treat a rising expiry/open rate as a flow or follow-up problem.
-- Do not maximize approval rate by weakening moderation. Rejection and hiding are safety outcomes, not automatically product failures.
+- Do not maximize approval rate by pressuring recipients. Declines are legitimate user decisions, not automatically product failures.
 
 ### Acceptance criteria
 
 - The visible MVP relationship stages always refer to the same created cohort.
 - A declined relationship is completed but not approved.
-- An accepted but unreviewed relationship is completed but not approved.
+- An accepted relationship is approved without admin review, but it is excluded from public evidence while either party is not publicly eligible.
 - Client-recommendation or invitation rows are omitted entirely until their V2 transactions, associations, privacy rules, and tests are implemented.
 
 **Depends on:** MVP S023, S042–S043, and S046. V2-008–V2-012 apply only if their optional rows are later approved.
@@ -990,23 +984,23 @@ Do not add Redis, a warehouse, event streaming, or an external analytics/search 
 
 ## 5. Metric-to-table reference matrix
 
-| Card/widget               | Primary tables                            | Supporting tables                                                                                               | Metric type                | Additional support                                                     |
-| ------------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------- | -------------------------- | ---------------------------------------------------------------------- |
-| Publicados no período     | `professional_profiles`                   | `user_accounts`                                                                                                 | Flow                       | `published_at`                                                         |
-| Perfis ativados           | `professional_profiles`                   | `verification_requests`, `portfolio_items`, `professional_relationships`, `moderation_actions`, `user_accounts` | Cohort outcome             | `published_at`; effective relationship moderation query                |
-| Buscas com resultado      | `search_events`                           | `services`                                                                                                      | Flow                       | none beyond S034 fields                                                |
-| Contatos iniciados        | `professional_daily_metrics`              | —                                                                                                               | Flow                       | source counters from MVP S037                                          |
-| Profissionais recorrentes | `professional_daily_activities`           | `professional_profiles`, `user_accounts`                                                                        | Flow/current eligible base | new daily activity aggregate                                           |
-| Funil de profissionais    | `professional_profiles`                   | `user_accounts`, `verification_requests`, evidence/relationship tables                                          | Cohort outcome             | first submission and publication timestamps; no founding invite source |
-| Qualidade da oferta       | `professional_profiles`                   | verification, portfolio, relationship, moderation, accounts                                                     | Current stock              | reusable public scopes                                                 |
-| Cobertura da jornada      | `search_events`                           | `professional_daily_metrics`                                                                                    | Flow                       | `profile_opened`; optional search handoff boolean                      |
-| Demanda por serviço       | `search_events`                           | `services`, `service_categories`                                                                                | Flow                       | aggregate-only query                                                   |
-| Gaps de crescimento       | `search_events`                           | services, professional services/areas/profiles/accounts                                                         | Flow + current supply      | privacy threshold for unmatched terms                                  |
-| Ações significativas      | `professional_daily_activities`           | domain tables for reconciliation                                                                                | Flow                       | new daily activity aggregate                                           |
-| Coortes W1/W4             | `professional_profiles`                   | `professional_daily_activities`                                                                                 | Cohort                     | `published_at`                                                         |
-| Relações profissionais    | `professional_relationships`              | moderation, profiles/accounts                                                                                   | Cohort outcome             | response timestamp and public-relationship scope                       |
-| Orçamentos                | `quotes`                                  | `professional_daily_metrics`                                                                                    | Cohort outcome             | existing timestamps/status                                             |
-| Saúde da moderação        | queue target tables, `moderation_actions` | `content_reports`                                                                                               | Current stock + flow       | immutable/versioned submission time                                    |
+| Card/widget               | Primary tables                            | Supporting tables                                                                         | Metric type                | Additional support                                                     |
+| ------------------------- | ----------------------------------------- | ----------------------------------------------------------------------------------------- | -------------------------- | ---------------------------------------------------------------------- |
+| Publicados no período     | `professional_profiles`                   | `user_accounts`                                                                           | Flow                       | `published_at`                                                         |
+| Perfis ativados           | `professional_profiles`                   | `verification_requests`, `portfolio_items`, `professional_relationships`, `user_accounts` | Cohort outcome             | `published_at`; accepted public-relationship query                     |
+| Buscas com resultado      | `search_events`                           | `services`                                                                                | Flow                       | none beyond S034 fields                                                |
+| Contatos iniciados        | `professional_daily_metrics`              | —                                                                                         | Flow                       | source counters from MVP S037                                          |
+| Profissionais recorrentes | `professional_daily_activities`           | `professional_profiles`, `user_accounts`                                                  | Flow/current eligible base | new daily activity aggregate                                           |
+| Funil de profissionais    | `professional_profiles`                   | `user_accounts`, `verification_requests`, evidence/relationship tables                    | Cohort outcome             | first submission and publication timestamps; no founding invite source |
+| Qualidade da oferta       | `professional_profiles`                   | verification, moderated portfolio, accepted relationships, accounts                       | Current stock              | reusable public scopes                                                 |
+| Cobertura da jornada      | `search_events`                           | `professional_daily_metrics`                                                              | Flow                       | `profile_opened`; optional search handoff boolean                      |
+| Demanda por serviço       | `search_events`                           | `services`, `service_categories`                                                          | Flow                       | aggregate-only query                                                   |
+| Gaps de crescimento       | `search_events`                           | services, professional services/areas/profiles/accounts                                   | Flow + current supply      | privacy threshold for unmatched terms                                  |
+| Ações significativas      | `professional_daily_activities`           | domain tables for reconciliation                                                          | Flow                       | new daily activity aggregate                                           |
+| Coortes W1/W4             | `professional_profiles`                   | `professional_daily_activities`                                                           | Cohort                     | `published_at`                                                         |
+| Relações profissionais    | `professional_relationships`              | profiles/accounts                                                                         | Cohort outcome             | response timestamp and accepted public-relationship scope              |
+| Orçamentos                | `quotes`                                  | `professional_daily_metrics`                                                              | Cohort outcome             | existing timestamps/status                                             |
+| Saúde da moderação        | queue target tables, `moderation_actions` | `content_reports`                                                                         | Current stock + flow       | immutable/versioned submission time                                    |
 
 ## 6. Recommended delivery order
 

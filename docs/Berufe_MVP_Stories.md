@@ -454,7 +454,7 @@ Apply these rules whenever they are relevant to the story:
 
 **Acceptance criteria:**
 
-- The admin area lists profile revisions/photos, portfolio items, and identity-verification requests oldest first, with pagination plus type/status/search filters. Accepted professional relationships join this queue in Increment 4.
+- The admin area lists profile revisions/photos, portfolio items, and identity-verification requests oldest first, with pagination plus type/status/search filters. Professional relationships never join this queue.
 - The reviewer sees only fields and files required for the selected decision.
 - The existing review preview loads regenerated profile-photo and portfolio images through authenticated, no-store Rails responses with an immutable admin access record; storage keys and permanent private URLs never reach Nuxt.
 - Approve, reject, hide, and restore actions create immutable `moderation_actions` with actor, target, action, private reason, time, and request ID.
@@ -671,8 +671,8 @@ Apply these rules whenever they are relevant to the story:
 
 **Acceptance criteria:**
 
-- Each card shows photo, name, exact matching service, coverage, precise verification labels, and approved portfolio/relationship counts.
-- Ordering follows the approved sequence: exact service, neighborhood coverage, identity verification, portfolio evidence, professional-relationship evidence, then recent profile update.
+- Each card shows photo, name, exact matching service, coverage, precise verification labels, approved portfolio counts, and confirmed relationship counts.
+- Ordering follows the documented sequence: exact service, neighborhood coverage, identity verification, portfolio evidence, professional-relationship evidence, then recent profile update.
 - The API and UI display no numeric trust score, sponsored rank, availability, or price sort.
 - Ordering is deterministic for equivalent records and covered by request/query tests.
 - Pending, rejected, hidden, or suspended evidence contributes neither labels nor counts.
@@ -685,13 +685,13 @@ Apply these rules whenever they are relevant to the story:
 
 **Status:** DONE
 
-**Story:** As a customer, I want one mobile-first page containing all approved evidence so that I can decide whether to contact a professional.
+**Story:** As a customer, I want one mobile-first page containing all public evidence so that I can decide whether to contact a professional.
 
 **Acceptance criteria:**
 
-- The stable slug route is server-rendered and contains identity/coverage, optional Instagram/YouTube profile links, labels, services/declared experience, portfolio, and professional relationships in the approved order.
+- The stable slug route is server-rendered and contains identity/coverage, optional Instagram/YouTube profile links, labels, services/declared experience, portfolio, and confirmed professional relationships in the documented order.
 - The page distinguishes verified facts, declarations, recommendations, and collaborations.
-- Only approved public serializers feed the route; unknown, draft, hidden, and suspended profiles return the correct non-public response.
+- Only public serializers feed the route; unknown, draft, hidden, and suspended profiles return the correct non-public response.
 - The page includes the verification-not-a-guarantee disclaimer and useful share metadata.
 - Raw phone numbers are not presented as ordinary public text.
 - Only present, approved social links are rendered; each is labeled for its platform, opens as a safe external link in a new tab, and no empty social-links container appears.
@@ -722,7 +722,7 @@ Public profiles also show a visible Berufe support/report contact that routes to
 
 ## 8. Increment 4 — Existing-member professional trust graph
 
-**Increment outcome:** published professionals can represent recommendations and prior collaboration with other Berufe members through controlled, confirmed, moderated relationships.
+**Increment outcome:** published professionals can represent recommendations and prior collaboration with other Berufe members through controlled, recipient-confirmed relationships.
 
 ### S042 — Initiate a relationship with an existing member
 
@@ -752,25 +752,25 @@ Public profiles also show a visible Berufe support/report contact that routes to
 
 - The recipient sees pending relationships on authenticated pages and can accept or decline each once.
 - Only the recipient can respond; the initiator cannot accept for them.
-- Acceptance records response time and submits the exact relationship type and optional context note to the shared moderation queue; it is not public yet.
+- Acceptance records response time and makes the exact relationship type and optional context note publicly eligible immediately while both profiles remain public and active.
 - Declined relationships remain private and do not affect public counts.
 - “Worked together” is never public without confirmation by both parties.
 
 **Depends on:** S042.
 **Covers:** Feature C1 and Feature A6 pending actions.
 
-### S046 — Moderate and display professional trust relationships publicly
+### S046 — Display confirmed professional trust relationships publicly
 
 **Status:** DONE
 
-**Story:** As an admin and customer, I want accepted professional relationships reviewed before publication so that network evidence is controlled and transparent rather than anonymous.
+**Story:** As a customer, I want recipient-accepted professional relationships displayed transparently so that network evidence is attributable rather than anonymous.
 
 **Acceptance criteria:**
 
-- Accepted relationships enter the shared moderation queue, where an admin can approve, reject, hide, or restore them with the same audit rules as other moderated content.
-- Public profiles show only recipient-accepted and admin-approved relationships with author/other professional, exact type, and approved context when present.
-- Result cards count only recipient-accepted, admin-approved, visible relationships.
-- Rejected, hidden, declined, pending, unreviewed, or suspended-party relationships are excluded immediately.
+- Accepted relationships do not enter the shared moderation queue and require no admin decision.
+- Public profiles show only recipient-accepted relationships with author/other professional, exact type, and the submitted context when present.
+- Result cards count only recipient-accepted relationships whose two parties remain public and active.
+- Declined, pending, or non-public-party relationships are excluded immediately.
 - No follower counts, feed, messaging, forum, job board, or generic social graph is added.
 - Public relationship projections are covered by policy and serializer tests.
 
@@ -832,10 +832,11 @@ Public profiles also show a visible Berufe support/report contact that routes to
 **Acceptance criteria:**
 
 - The owner can preview the current quote in the same mobile-first presentation used by the customer page.
-- First share generates a high-entropy token, stores only its hash, and atomically changes status from `draft` to `shared`.
+- First share generates a high-entropy random token unrelated to the quote id, stores its keyed hash for lookup plus an encrypted owner copy for reuse, and atomically changes status from `draft` to `shared`.
 - A valid bearer link returns only the quote and approved professional public identity/labels; it never exposes private profile fields.
 - Sharing and resolving require the owner to remain active and currently published; the identity label appears only when identity verification is actually approved.
-- Malformed, invalid, revoked, or unknown tokens reveal no quote or customer details.
+- The owner can revoke the link. Revocation atomically clears the hash, the encrypted copy, and `shared_at`, returns the quote to `draft`, and is confirmed in the UI because it breaks a link the customer may already hold. Sharing again issues a different token.
+- Malformed, invalid, revoked, or unknown tokens reveal no quote or customer details, and all four return the identical generic not-found envelope.
 - The token remains valid only while the quote is `shared`; `valid_until` describes the commercial offer and is not token expiry.
 - Token-authorized API and Nuxt responses use `Cache-Control: private, no-store` and `noindex`, and never enter shared caches, static generation, logs, analytics payloads, or search indexes.
 - The customer can use browser print. There is no server PDF, acceptance, signature, invoice, or payment flow.
@@ -854,8 +855,8 @@ Public profiles also show a visible Berufe support/report contact that routes to
 - The action opens an explicit WhatsApp deep link with a short message and quote URL, with copy-link fallback.
 - The explicit share action increments `quotes_shared` in the professional's daily aggregate with the same privacy and non-negative counter rules as other MVP aggregates.
 - Berufe does not send, read, or track a WhatsApp message and never claims delivery, acceptance, signature, payment, or completion.
-- Sharing a previously shared quote reuses the active token rather than exposing or persisting another raw token.
-- The initial lifecycle remains only `draft` or `shared`.
+- Sharing a previously shared quote reuses the active token rather than issuing another one; the token is recovered from its encrypted owner copy and is never stored or logged in the clear.
+- The initial lifecycle remains only `draft` or `shared`, with revocation as the only transition back to `draft`.
 
 **Depends on:** S037, S050.
 **Covers:** Features D1 and A6; Infrastructure §11.
@@ -939,7 +940,7 @@ The MVP report includes only implemented launch domains: professional supply and
 
 **Acceptance criteria:**
 
-- Playwright covers: professional Infobip-adapter OTP login/profile submission; admin profile/evidence approval; public search/profile/WhatsApp handoff; existing-member professional relationship confirmation plus moderation; and draft quote creation, secure preview/share, valid customer view, invalid-token denial, and print behavior.
+- Playwright covers: professional Infobip-adapter OTP login/profile submission; admin profile/evidence approval; public search/profile/WhatsApp handoff; existing-member professional relationship request plus recipient confirmation; and draft quote creation, secure preview/share, valid customer view, invalid-token denial, and print behavior.
 - Tests use fake OTP/provider behavior and synthetic files/data.
 - Chromium mobile paths run for release-critical changes; focused WebKit and keyboard smoke checks run before production release.
 - Tests assert user-visible behavior rather than implementation details or snapshot-only output.
@@ -982,6 +983,25 @@ The MVP report includes only implemented launch domains: professional supply and
 
 **Covers:** Infrastructure §§15 and 18; all MVP features.
 
+### S058 — Publish professional content before operational review
+
+**Story:** As a professional, I want valid profile and trust content to go live without waiting for an administrator so that keeping my public presence current has minimal friction.
+
+**Acceptance criteria:**
+
+- First publication occurs from the final onboarding step after the professional submits optional identity evidence or explicitly skips it. Name, processed photo, private birthdate, confirmed-phone contact, exactly one primary service, and valid Joinville coverage are required; portfolio and identity verification are not.
+- A material profile edit creates an immutable pending revision and makes it public atomically. New profile photos and portfolio items also become public while pending. Recipient-accepted professional relationships become public without moderation state. Public APIs never expose content moderation state.
+- Approval marks current moderated content reviewed without changing public visibility. Rejection restores the last approved profile revision or photo; without that fallback the profile is unavailable. Rejected portfolio items are removed from public results.
+- Newer pending revisions/photos supersede older pending items. Relationship requests retain only the recipient-owned `pending`, `accepted`, and `declined` lifecycle.
+- Birthdate is never public. An identity request captures the claimed birthdate, admin approval records explicit identity-match confirmation, and changing birthdate expires pending/approved identity verification and begins evidence cleanup retention.
+- Admin review shows current-public and fallback context, profile changes against the approved fallback, and uses “Marcar como revisado” for approval. Public media uses stable eligibility-checking application URLs so rejection/hiding has immediate effect.
+- The professional workspace returns derived public/search eligibility and actionable publication blockers. Dashboard readiness continues to treat portfolio and approved identity as trust improvements rather than publication gates.
+- The supply funnel is Registered → Published → Identity verified within the published cohort → Activated; activation continues to use approved evidence.
+
+**Depends on:** S019–S031, S043, S046, S047, and R003–R004.
+
+**Covers:** Features A2–A4, A6, C1, and E1; post-publication moderation decision.
+
 ## 12. Increment summary
 
 | Increment               | Stories         | Demonstrable result                                                                                            |
@@ -993,29 +1013,29 @@ The MVP report includes only implemented launch domains: professional supply and
 | 4. Trust graph          | S042–S043, S046 | Approved existing-member trust evidence appears publicly.                                                      |
 | 5. Dashboard and quotes | S047, S049–S051 | Professionals can maintain/share their profile and create/share simple quotes.                                 |
 | 6. Admin reporting      | R001–R014       | Administrators can inspect aggregate MVP growth, utility, and moderation signals.                              |
-| 7. Launch               | S052–S057       | Operations, privacy, recovery, deployment, and critical flows meet the launch gate.                            |
+| 7. Launch               | S052–S058       | Operations, privacy, recovery, deployment, critical flows, and low-friction moderation meet the launch gate.   |
 
 ## 13. Feature coverage matrix
 
-| Feature                                         | Primary stories                         |
-| ----------------------------------------------- | --------------------------------------- |
-| A1 — Professional account and onboarding        | S011–S016                               |
-| A2 — Profile, services, and service area        | S019–S024                               |
-| A3 — Portfolio                                  | S025–S028                               |
-| A4 — Verification and public evidence labels    | S029–S031                               |
-| A6 — Dashboard and profile sharing              | S043, S047                              |
-| B1 — Public home and search                     | S032–S034                               |
-| B2 — Transparent result list                    | S035                                    |
-| B3 — Public professional profile                | S036, S046                              |
-| B4 — Direct WhatsApp contact                    | S037                                    |
-| C1 — Existing-member professional relationships | S042–S043, S046                         |
-| D1 — Quote generator and secure share link      | S049–S051                               |
-| E1 — Verification and moderation queue          | S017, S023–S024, S026, S028, S030, S046 |
-| E2 — Service and location catalog               | S010, S018                              |
-| E3 — Administrator growth report                | R001–R014                               |
+| Feature                                         | Primary stories                               |
+| ----------------------------------------------- | --------------------------------------------- |
+| A1 — Professional account and onboarding        | S011–S016                                     |
+| A2 — Profile, services, and service area        | S019–S024, S058                               |
+| A3 — Portfolio                                  | S025–S028, S058                               |
+| A4 — Verification and public evidence labels    | S029–S031, S058                               |
+| A6 — Dashboard and profile sharing              | S043, S047, S058                              |
+| B1 — Public home and search                     | S032–S034                                     |
+| B2 — Transparent result list                    | S035                                          |
+| B3 — Public professional profile                | S036, S046                                    |
+| B4 — Direct WhatsApp contact                    | S037                                          |
+| C1 — Existing-member professional relationships | S042–S043, S046, S058                         |
+| D1 — Quote generator and secure share link      | S049–S051                                     |
+| E1 — Verification and moderation queue          | S017, S023–S024, S026, S028, S030, S046, S058 |
+| E2 — Service and location catalog               | S010, S018                                    |
+| E3 — Administrator growth report                | R001–R014                                     |
 
 ## 14. Not stories in this MVP
 
 Do not add backlog items for microservices, Redis, external search, graph/vector databases, automated WhatsApp messaging, CAPTCHA, Rack::Attack, Bugsnag performance monitoring/distributed tracing, payment systems, booking, internal chat, maps, native apps, multi-city support, feeds, CRM, server PDF generation or PDF verification uploads, analytics providers, or any item tracked in `Berufe_V2_Stories.md` unless the approved MVP scope changes.
 
-This backlog is complete when S057 passes. Product usage after launch should determine which evidence-triggered MVP 2.0 stories are created next.
+This backlog is complete when S058 passes. Product usage after launch should determine which evidence-triggered MVP 2.0 stories are created next.

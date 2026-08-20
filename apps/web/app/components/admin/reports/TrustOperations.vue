@@ -27,9 +27,9 @@ const oldestPendingExceedsTarget = computed(
         </div>
         <AdminReportsMetricHelp
           title="Relações profissionais"
-          meaning="Acompanha relações iniciadas no período até confirmação entre profissionais e aprovação administrativa."
+          meaning="Acompanha relações iniciadas no período até a resposta e a confirmação do destinatário."
           goal="Transformar conexões reais entre membros existentes em evidências públicas de confiança."
-          reading="Baixa conclusão pode indicar atrito. Aprovação não deve ser maximizada a qualquer custo: a moderação protege autenticidade."
+          reading="Baixa resposta pode indicar atrito. A taxa de aprovação mostra quantos destinatários confirmaram a relação solicitada."
         />
       </header>
       <div class="network-list">

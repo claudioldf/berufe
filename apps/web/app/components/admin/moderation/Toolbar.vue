@@ -18,7 +18,6 @@ const types: { value: ModerationTypeFilter; label: string }[] = [
   { value: "profile_photo", label: "Foto" },
   { value: "portfolio_item", label: "Portfólio" },
   { value: "verification_request", label: "Verificação" },
-  { value: "professional_relationship", label: "Relações" },
 ];
 </script>
 

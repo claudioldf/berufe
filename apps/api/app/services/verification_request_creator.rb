@@ -13,6 +13,7 @@ class VerificationRequestCreator
   def call(profile:, media_upload_id:, verification_type:, now: Time.current)
     profile.with_lock do
       validate_type!(verification_type)
+      raise Invalid.new(birthdate: ["informe sua data de nascimento antes da verificação"]) if profile.birthdate.blank?
       upload = profile.media_uploads.lock.find(media_upload_id)
       existing = VerificationFile.find_by(media_upload_id: upload.id)&.verification_request
       return existing if existing&.professional_profile_id == profile.id
@@ -22,6 +23,7 @@ class VerificationRequestCreator
       request = profile.verification_requests.create!(
         verification_type:,
         status: "pending_review",
+        claimed_birthdate: profile.birthdate,
         submitted_at: now
       )
       request.create_verification_file!(

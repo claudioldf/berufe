@@ -9,9 +9,8 @@ class ProfessionalProfilePhoto < ApplicationRecord
   scope :publicly_visible, -> {
     joins(:professional_profile)
       .merge(ProfessionalProfile.publicly_eligible)
-      .where(status: "approved")
+      .where(status: %w[pending_review approved])
       .where("professional_profiles.published_photo_id = professional_profile_photos.id")
-      .where.not(public_key: nil)
   }
 
   validates :status, inclusion: {in: STATUSES}

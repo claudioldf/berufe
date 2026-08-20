@@ -107,7 +107,7 @@ useSeoMeta({
         <li>não certifica habilidade técnica além do documento especificamente analisado;</li>
         <li>não constitui recomendação, seguro ou garantia do serviço.</li>
       </ul>
-      <p>Perfis, fotos, portfólios, recomendações, relações e verificações podem passar por análise manual. A Berufe pode aprovar, rejeitar, ocultar, restaurar ou solicitar correção segundo critérios consistentes de segurança, clareza, pertinência e conformidade com estes Termos.</p>
+      <p>Perfis, fotos, portfólios, recomendações e verificações podem passar por análise manual. A Berufe pode aprovar, rejeitar, ocultar, restaurar ou solicitar correção segundo critérios consistentes de segurança, clareza, pertinência e conformidade com estes Termos.</p>
       <p>Enquanto uma alteração material estiver pendente, a última versão aprovada poderá permanecer pública. Uma aprovação não impede revisão posterior diante de denúncia, informação nova, expiração, erro ou violação.</p>
     </section>
 
@@ -125,7 +125,7 @@ useSeoMeta({
       <p>A pessoa que recomenda é responsável por sua experiência e opinião. Deve evitar acusações, dados sensíveis, endereço exato, informações de terceiros ou conteúdo ofensivo. A Berufe pode moderar a recomendação e não garante sua publicação.</p>
 
       <h3>7.2. Relações entre profissionais</h3>
-      <p>Profissionais que atendam aos critérios de verificação podem recomendar outro membro ou declarar que trabalharam juntos. A relação depende da confirmação da outra pessoa quando aplicável e de aprovação antes de se tornar pública. Relações não podem ser anônimas, compradas, trocadas por vantagens ou fabricadas.</p>
+      <p>Profissionais que atendam aos critérios de verificação podem recomendar outro membro ou declarar que trabalharam juntos. A relação torna-se pública quando a outra pessoa aceita, desde que ambos os perfis continuem públicos e ativos. Relações não podem ser anônimas, compradas, trocadas por vantagens ou fabricadas.</p>
     </section>
 
     <section id="orcamentos" class="legal-section">

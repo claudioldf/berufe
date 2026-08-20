@@ -82,9 +82,9 @@ class PublicDiscoveryDemoSeed
     ProfessionalProfileSubmitter.new.call(profile:)
     approve_professional(profile:, photo:, portfolio:, verification:)
     profile.reload
-    profile.published_revision.update_column(
-      :reviewed_at,
-      Time.zone.parse("#{attributes.fetch("updatedAt")} 12:00:00")
+    profile.published_revision.update_columns(
+      submitted_at: Time.zone.parse("#{attributes.fetch("updatedAt")} 12:00:00"),
+      reviewed_at: Time.zone.parse("#{attributes.fetch("updatedAt")} 12:00:00")
     )
     profile.reload
   end
@@ -94,6 +94,7 @@ class PublicDiscoveryDemoSeed
       profile:,
       attributes: {
         display_name: attributes.fetch("name"),
+        birthdate: attributes.fetch("birthdate", "1990-01-01"),
         headline: attributes.fetch("headline"),
         bio: attributes.fetch("bio"),
         years_experience: attributes["yearsExperience"],
@@ -198,7 +199,12 @@ class PublicDiscoveryDemoSeed
     portfolio.each do |item|
       decision.call(target_type: "portfolio_item", target_id: item.id, action: "approved")
     end
-    decision.call(target_type: "verification_request", target_id: verification.id, action: "approved")
+    decision.call(
+      target_type: "verification_request",
+      target_id: verification.id,
+      action: "approved",
+      identity_match_confirmed: true
+    )
   end
 
   def seed_relationships(professionals, profiles)
@@ -210,7 +216,7 @@ class PublicDiscoveryDemoSeed
         pair = [initiator.id, recipient.id].sort.push(relationship.fetch("type"))
         next unless seeded_pairs.add?(pair)
 
-        record = ProfessionalRelationship.find_or_create_by!(
+        ProfessionalRelationship.find_or_create_by!(
           initiator_professional: initiator,
           recipient_professional: recipient,
           relationship_type: relationship.fetch("type")
@@ -219,16 +225,6 @@ class PublicDiscoveryDemoSeed
           candidate.context_note = relationship.fetch("note")
           candidate.responded_at = Time.current
         end
-        next if ModerationAction.exists?(target_type: "professional_relationship", target_id: record.id)
-
-        ModerationAction.create!(
-          admin_user: admin_account,
-          target_type: "professional_relationship",
-          target_id: record.id,
-          action: "approved",
-          request_id: "demo-seed-relationship-#{record.id}",
-          created_at: Time.current
-        )
       end
     end
   end

@@ -7,14 +7,31 @@ RSpec.describe ProfessionalQuoteSharer do
 
   it "serializes a concurrent first share into one stable lifecycle and bearer" do
     account = UserAccount.create!(
-      phone_e164: "+5547999997443",
+      phone_e164: "+554799999#{SecureRandom.random_number(10_000).to_s.rjust(4, "0")}",
       role: "professional",
       status: "active"
     )
     profile = ProfessionalProfile.create!(user_account: account, display_name: "Cris Lima")
-    revision = profile.working_revision
-    revision.update!(status: "approved", reviewed_at: Time.current)
-    profile.update!(profile_status: "published", published_revision: revision)
+    category = ServiceCategory.create!(
+      name: "Orçamento concorrente",
+      slug: "orcamento-concorrente-#{SecureRandom.hex(4)}",
+      icon: "i-lucide-wrench",
+      is_active: true,
+      sort_order: 0
+    )
+    service = Service.create!(
+      category:,
+      name: "Serviço concorrente",
+      slug: "servico-concorrente-#{SecureRandom.hex(4)}",
+      icon: "i-lucide-wrench",
+      description: "Serviço usado no teste concorrente.",
+      aliases: [],
+      is_active: true,
+      sort_order: 0
+    )
+    profile.working_revision.professional_profile_services.create!(service:, is_primary: true)
+    profile.working_revision.professional_profile_service_areas.create!(city_code: "Joinville")
+    make_profile_publicly_eligible(profile)
     quote = ProfessionalQuoteWriter.new.call(
       profile:,
       attributes: {
@@ -50,6 +67,7 @@ RSpec.describe ProfessionalQuoteSharer do
     token = URI(urls.first).path.split("/").last
     expect(quote.reload).to be_shared
     expect(quote.share_token_hash).to eq(QuoteShareToken.digest(token))
+    expect(QuoteShareToken.decrypt(quote.share_token_ciphertext)).to eq(token)
     expect(quote.shared_at).to be_present
     expect(ProfessionalDailyMetric.find_by!(professional_id: profile.id).quotes_shared).to eq(2)
   ensure
@@ -60,12 +78,16 @@ RSpec.describe ProfessionalQuoteSharer do
       profile.update_columns(
         working_revision_id: nil,
         published_revision_id: nil,
+        approved_revision_id: nil,
         working_photo_id: nil,
-        published_photo_id: nil
+        published_photo_id: nil,
+        approved_photo_id: nil
       )
       profile.association(:quotes).reset
       profile.destroy!
     end
     account&.destroy!
+    service&.destroy!
+    category&.reload&.destroy!
   end
 end

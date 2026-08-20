@@ -18,3 +18,9 @@
   --color-coral-500: #f8755d;
   --color-coral-600: #df5e48;
 }
+
+@layer utilities {
+  .bg-primary {
+    background-color: var(--ui-primary);
+  }
+}

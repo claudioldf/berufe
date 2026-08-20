@@ -30,10 +30,10 @@ class AdminCatalogSerializer
       id: service.id,
       name: service.name,
       slug: service.slug,
-      categorySlug: service.category.slug,
+      category_slug: service.category.slug,
       description: service.description,
-      isActive: service.is_active,
-      sortOrder: service.sort_order
+      is_active: service.is_active,
+      sort_order: service.sort_order
     }
   end
 
@@ -41,10 +41,10 @@ class AdminCatalogSerializer
     {
       code: neighborhood.code,
       name: neighborhood.name,
-      stateCode: neighborhood.state_code,
+      state_code: neighborhood.state_code,
       city: neighborhood.city_code,
-      isActive: neighborhood.is_active,
-      sortOrder: neighborhood.sort_order
+      is_active: neighborhood.is_active,
+      sort_order: neighborhood.sort_order
     }
   end
 end

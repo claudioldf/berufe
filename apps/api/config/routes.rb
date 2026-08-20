@@ -23,7 +23,10 @@ Rails.application.routes.draw do
         resources :relationships, only: :create
         post "relationships/:id/response", to: "relationships#respond"
         resources :quotes, only: %i[index create show update] do
-          post :share, on: :member
+          member do
+            post :share
+            delete :share, action: :revoke_share
+          end
         end
         resources :media_uploads, only: %i[create show], path: "media-uploads" do
           member do

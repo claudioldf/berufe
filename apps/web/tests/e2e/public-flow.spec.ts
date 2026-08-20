@@ -34,7 +34,30 @@ test("visitor can search, open a profile, and inspect the WhatsApp redirect", as
     page.getByRole("heading", { level: 1, name: /sua casa em boas mãos/i }),
   ).toBeVisible();
 
-  await page.goto("/encontrar?servico=eletricista&bairro=america");
+  await page.goto("/encontrar");
+  await expect(
+    page.getByRole("heading", {
+      level: 1,
+      name: /encontre profissionais em joinville/i,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", {
+      level: 2,
+      name: /comece sua busca por um serviço/i,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(
+      /\d+ (?:profissional encontrado|profissionais encontrados)/i,
+    ),
+  ).toHaveCount(0);
+
+  await page
+    .getByRole("combobox", { name: "O que você precisa?" })
+    .fill("Eletricista");
+  await page.getByRole("button", { name: "Encontrar" }).click();
+  await expect(page).toHaveURL(/\/encontrar\?servico=eletricista&bairro=all$/);
   await expect(
     page.getByText(
       /\d+ (?:profissional encontrado|profissionais encontrados)/i,

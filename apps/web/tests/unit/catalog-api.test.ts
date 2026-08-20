@@ -22,7 +22,7 @@ const catalogData: CatalogData = {
       id: "de83e041-286f-4b50-91fa-61a0ee8c1801",
       name: "Eletricista",
       slug: "eletricista",
-      categorySlug: "instalacoes",
+      category_slug: "instalacoes",
       icon: "i-lucide-zap",
       description: "Instalações elétricas.",
       aliases: ["elétrica"],
@@ -32,7 +32,7 @@ const catalogData: CatalogData = {
     {
       code: "america",
       name: "América",
-      stateCode: "SC",
+      state_code: "SC",
       city: "Joinville",
     },
   ],

@@ -16,7 +16,7 @@ async function shareProfile() {
 function respondRelationship(accepted: boolean) {
   showToast({
     title: accepted ? 'Colaboração confirmada' : 'Solicitação recusada',
-    description: accepted ? 'Agora ela seguirá para moderação.' : 'Essa relação continuará privada.',
+    description: accepted ? 'A relação já pode aparecer nos perfis públicos.' : 'Essa relação continuará privada.',
   })
 }
 </script>

@@ -19,6 +19,7 @@ RSpec.describe ProfessionalDashboardReadiness do
       }
     )
 
+    complete_identity_contact
     profile.working_revision.update!(
       headline: "Elétrica residencial.",
       bio: "Instalações e manutenção em Joinville."
@@ -54,6 +55,7 @@ RSpec.describe ProfessionalDashboardReadiness do
   end
 
   it "does not count inactive supply or hidden, rejected, and deleted work" do
+    complete_identity_contact
     profile.working_revision.update!(headline: "Pintura.", bio: "Pintura residencial em Joinville.")
     service = create_service
     service.update!(is_active: false)
@@ -85,6 +87,11 @@ RSpec.describe ProfessionalDashboardReadiness do
 
   def readiness
     described_class.new(profile.reload).as_json
+  end
+
+  def complete_identity_contact
+    photo = create_public_profile_photo(profile)
+    profile.update!(birthdate: Date.new(1990, 4, 12), working_photo: photo)
   end
 
   def create_service

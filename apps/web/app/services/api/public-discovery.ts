@@ -11,29 +11,44 @@ import type { components } from "~/services/api/schema";
 type ContractProfessionalCard = components["schemas"]["PublicProfessionalCard"];
 type ContractProfessionalProfile =
   components["schemas"]["PublicProfessionalProfile"];
+type ContractVerificationLabel =
+  components["schemas"]["PublicVerificationLabel"];
+
+function mapVerificationLabel(label: ContractVerificationLabel) {
+  return {
+    type: label.type,
+    label: label.label,
+    verifiedAt: label.verified_at,
+  };
+}
 
 export function mapPublicProfessionalCard(
   card: ContractProfessionalCard,
 ): PublicProfessionalCard {
   return {
     id: card.id,
-    slug: card.publicSlug,
-    name: card.displayName,
+    slug: card.public_slug,
+    name: card.display_name,
     headline: card.headline,
-    photoUrl: card.photoUrl,
-    primaryService: card.primaryService,
-    matchingService: card.matchingService,
-    coverage: card.coverage,
-    verificationLabels: card.verificationLabels,
-    portfolioCount: card.portfolioCount,
-    relationshipCount: card.relationshipCount,
-    publicSnapshotUpdatedAt: card.publicSnapshotUpdatedAt,
+    photoUrl: card.photo_url,
+    primaryService: card.primary_service,
+    matchingService: card.matching_service,
+    coverage: {
+      allJoinville: card.coverage.all_joinville,
+      neighborhoods: card.coverage.neighborhoods,
+    },
+    verificationLabels: card.verification_labels.map(mapVerificationLabel),
+    portfolioCount: card.portfolio_count,
+    relationshipCount: card.relationship_count,
+    publicSnapshotUpdatedAt: card.public_snapshot_updated_at,
   };
 }
 
 interface PublicProfessionalSearchInput {
   service: string;
   neighborhoodCode?: string | null;
+  page?: number;
+  perPage?: number;
 }
 
 export async function searchPublicProfessionals(
@@ -45,7 +60,9 @@ export async function searchPublicProfessionals(
     {
       body: {
         service: input.service,
-        neighborhoodCode: input.neighborhoodCode ?? null,
+        neighborhood_code: input.neighborhoodCode ?? null,
+        ...(input.page ? { page: input.page } : {}),
+        ...(input.perPage ? { per_page: input.perPage } : {}),
       },
     },
   );
@@ -59,12 +76,19 @@ export async function searchPublicProfessionals(
   }
 
   return {
-    normalizedTerm: data.data.query.normalizedTerm,
+    normalizedTerm: data.data.query.normalized_term,
     resolvedService: data.data.query.service,
     neighborhood: data.data.query.neighborhood,
     professionals: data.data.professionals.map(mapPublicProfessionalCard),
-    relatedServices: data.data.relatedServices,
-    interaction: data.data.interaction,
+    relatedServices: data.data.related_services,
+    page: data.data.meta.page,
+    perPage: data.data.meta.per_page,
+    totalCount: data.data.meta.total_count,
+    totalPages: data.data.meta.total_pages,
+    interaction: data.data.interaction && {
+      searchEventId: data.data.interaction.search_event_id,
+      token: data.data.interaction.token,
+    },
   };
 }
 
@@ -90,16 +114,16 @@ export function mapPublicProfessionalProfile(
   profile: ContractProfessionalProfile,
 ): PublicProfessionalProfile {
   const primaryService =
-    profile.services.find((service) => service.isPrimary) ??
+    profile.services.find((service) => service.is_primary) ??
     profile.services[0]!;
 
   return {
     id: profile.id,
-    slug: profile.publicSlug,
-    name: profile.displayName,
+    slug: profile.public_slug,
+    name: profile.display_name,
     headline: profile.headline,
     bio: profile.bio,
-    avatar: profile.photoUrl,
+    avatar: profile.photo_url,
     primaryService: primaryService.name,
     primaryServiceSlug: primaryService.slug,
     services: profile.services.map((service) => service.name),
@@ -107,36 +131,34 @@ export function mapPublicProfessionalProfile(
     neighborhoods: profile.coverage.neighborhoods.map(
       (neighborhood) => neighborhood.name,
     ),
-    allJoinville: profile.coverage.allJoinville,
-    yearsExperience: profile.yearsExperience,
-    evidence: profile.verificationLabels.map((label) => ({
+    allJoinville: profile.coverage.all_joinville,
+    yearsExperience: profile.years_experience,
+    evidence: profile.verification_labels.map((label) => ({
       id: label.type,
-      type: label.type,
-      label: label.label,
-      verifiedAt: label.verifiedAt,
+      ...mapVerificationLabel(label),
     })),
     portfolio: profile.portfolio.map((item) => ({
       id: item.id,
       title: item.title,
       service: item.service.name,
       description: item.description,
-      image: item.imageUrl,
+      image: item.image_url,
     })),
     relationships: profile.relationships.map((relationship) => ({
       id: relationship.id,
-      professionalName: relationship.professional.displayName,
-      professionalSlug: relationship.professional.publicSlug,
-      avatar: relationship.professional.photoUrl,
+      professionalName: relationship.professional.display_name,
+      professionalSlug: relationship.professional.public_slug,
+      avatar: relationship.professional.photo_url,
       type: relationship.type,
       direction: relationship.direction,
       note: relationship.note,
     })),
-    updatedAt: profile.publicSnapshotUpdatedAt,
-    ...(profile.socialLinks.instagram
-      ? { instagram: profile.socialLinks.instagram }
+    updatedAt: profile.public_snapshot_updated_at,
+    ...(profile.social_links.instagram
+      ? { instagram: profile.social_links.instagram }
       : {}),
-    ...(profile.socialLinks.youtube
-      ? { youtube: profile.socialLinks.youtube }
+    ...(profile.social_links.youtube
+      ? { youtube: profile.social_links.youtube }
       : {}),
   };
 }
@@ -151,7 +173,7 @@ export async function fetchPublicProfessionalProfile(
     {
       params: {
         path: { slug },
-        query: interactionToken ? { interactionToken } : {},
+        query: interactionToken ? { interaction_token: interactionToken } : {},
       },
     },
   );
@@ -179,7 +201,7 @@ export async function recordPublicProfessionalProfileView(
     "/api/v1/public/professionals/{id}/views",
     {
       params: { path: { id: professionalId } },
-      body: { interactionToken },
+      body: { interaction_token: interactionToken },
     },
   );
   if (error || !response.ok) {

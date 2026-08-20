@@ -11,11 +11,14 @@ class ProfessionalProfileIdentityUpdater
   end
 
   def call(profile:, attributes:)
-    normalized = normalize(attributes)
+    normalized = normalize(profile, attributes)
     validate!(normalized)
     profile.with_lock do
-      revision = ProfessionalProfileRevisionEditor.new.call(profile:)
+      expire_identity_if_birthdate_changed!(profile, normalized.delete(:birthdate))
+      editor = ProfessionalProfileRevisionEditor.new
+      revision = editor.call(profile:)
       revision.update!(normalized)
+      editor.synchronize_review_state!(profile:)
     end
     profile.reload
   rescue BrazilianPhoneNumber::Invalid
@@ -33,18 +36,31 @@ class ProfessionalProfileIdentityUpdater
 
   private
 
-  def normalize(attributes)
+  def normalize(profile, attributes)
     instagram = normalize_social(attributes[:instagram], :instagram)
     youtube = normalize_social(attributes[:youtube], :youtube)
     {
       display_name: attributes[:display_name].to_s.squish,
-      headline: attributes[:headline].to_s.squish,
-      bio: attributes[:bio].to_s.squish,
+      headline: attributes[:headline].to_s.squish.presence,
+      bio: attributes[:bio].to_s.squish.presence,
       years_experience: normalize_experience(attributes[:years_experience]),
-      whatsapp_e164: BrazilianPhoneNumber.normalize(attributes[:whatsapp]),
+      whatsapp_e164: normalize_whatsapp(profile, attributes[:whatsapp]),
       instagram_url: instagram,
-      youtube_url: youtube
+      youtube_url: youtube,
+      birthdate: normalize_birthdate(attributes[:birthdate])
     }
+  end
+
+  def normalize_whatsapp(profile, value)
+    return profile.user_account.phone_e164 if value.blank?
+
+    BrazilianPhoneNumber.normalize(value)
+  end
+
+  def normalize_birthdate(value)
+    Date.iso8601(value.to_s)
+  rescue Date::Error
+    nil
   end
 
   def normalize_social(value, platform)
@@ -62,8 +78,12 @@ class ProfessionalProfileIdentityUpdater
   def validate!(attributes)
     field_errors = {}
     length_error(field_errors, :display_name, attributes[:display_name], 3..70)
-    length_error(field_errors, :headline, attributes[:headline], 1..120)
-    length_error(field_errors, :bio, attributes[:bio], 1..500)
+    length_error(field_errors, :headline, attributes[:headline], 1..120) if attributes[:headline]
+    length_error(field_errors, :bio, attributes[:bio], 1..500) if attributes[:bio]
+    birthdate = attributes[:birthdate]
+    if birthdate.nil? || birthdate > Date.current || birthdate < 120.years.ago.to_date
+      field_errors[:birthdate] = ["informe uma data de nascimento válida"]
+    end
     experience = attributes[:years_experience]
     if !experience.nil? && (!experience.is_a?(Integer) || !experience.between?(0, 70))
       field_errors[:years_experience] = ["deve estar entre 0 e 70"]
@@ -80,5 +100,20 @@ class ProfessionalProfileIdentityUpdater
   def social_error(platform)
     example = (platform == :instagram) ? "@perfil ou instagram.com/perfil" : "@canal ou youtube.com/@canal"
     "informe um perfil válido, como #{example}"
+  end
+
+  def expire_identity_if_birthdate_changed!(profile, birthdate)
+    return profile.update!(birthdate:) if profile.birthdate == birthdate
+
+    now = Time.current
+    profile.verification_requests.identity.where(status: %w[pending_review approved]).update_all(
+      status: "expired",
+      public_label: nil,
+      verified_at: nil,
+      identity_match_confirmed_at: nil,
+      expired_at: now,
+      updated_at: now
+    )
+    profile.update!(birthdate:)
   end
 end

@@ -39,21 +39,21 @@ RSpec.describe "Public professional searches", type: :request, openapi: true do
     profile = create_published_profile
 
     post "/api/v1/public/professional-searches",
-      params: {service: "ELÉTRICA CONTRATADA!", neighborhoodCode: neighborhood.code},
+      params: {service: "ELÉTRICA CONTRATADA!", neighborhood_code: neighborhood.code},
       headers: request_headers("search-200"),
       as: :json
 
     expect(response).to have_http_status(:ok)
     data = response.parsed_body.fetch("data")
-    expect(data.dig("query", "normalizedTerm")).to eq("eletrica contratada")
+    expect(data.dig("query", "normalized_term")).to eq("eletrica contratada")
     expect(data.dig("query", "service", "id")).to eq(electrician.id)
     expect(data.dig("query", "neighborhood", "code")).to eq(neighborhood.code)
     expect(data.fetch("professionals").sole).to include(
       "id" => profile.id,
-      "matchingService" => include("id" => electrician.id),
-      "verificationLabels" => include(include("type" => "phone", "label" => "Telefone confirmado"))
+      "matching_service" => include("id" => electrician.id),
+      "verification_labels" => include(include("type" => "phone", "label" => "Telefone confirmado"))
     )
-    event = SearchEvent.find(data.dig("interaction", "searchEventId"))
+    event = SearchEvent.find(data.dig("interaction", "search_event_id"))
     expect(event).to have_attributes(
       service_id: electrician.id,
       query_text_normalized: "eletrica contratada",
@@ -67,7 +67,7 @@ RSpec.describe "Public professional searches", type: :request, openapi: true do
       search_event_id: event.id,
       service_id: electrician.id
     )
-    expect(response.headers["Cache-Control"]).to eq("no-store")
+    expect(response.headers["Cache-Control"].to_s).not_to include("no-store")
     expect(response.body).not_to include("whatsapp", "+5547")
     assert_api_conform(status: 200)
   end
@@ -85,7 +85,7 @@ RSpec.describe "Public professional searches", type: :request, openapi: true do
     )
 
     post "/api/v1/public/professional-searches",
-      params: {service: "dedetização", neighborhoodCode: nil},
+      params: {service: "dedetização", neighborhood_code: nil},
       headers: request_headers("search-unmatched"),
       as: :json
 
@@ -93,8 +93,8 @@ RSpec.describe "Public professional searches", type: :request, openapi: true do
     data = response.parsed_body.fetch("data")
     expect(data.dig("query", "service")).to be_nil
     expect(data.fetch("professionals")).to eq([])
-    expect(data.fetch("relatedServices").pluck("id")).not_to include(inactive.id)
-    expect(SearchEvent.find(data.dig("interaction", "searchEventId"))).to have_attributes(
+    expect(data.fetch("related_services").pluck("id")).not_to include(inactive.id)
+    expect(SearchEvent.find(data.dig("interaction", "search_event_id"))).to have_attributes(
       service_id: nil,
       query_text_normalized: "dedetizacao",
       result_count: 0
@@ -109,7 +109,7 @@ RSpec.describe "Public professional searches", type: :request, openapi: true do
       as: :json
 
     expect(response).to have_http_status(:ok)
-    event = SearchEvent.find(response.parsed_body.dig("data", "interaction", "searchEventId"))
+    event = SearchEvent.find(response.parsed_body.dig("data", "interaction", "search_event_id"))
     expect(event.query_text_normalized).to be_nil
     expect(event.service_id).to be_nil
     expect(response.body).not_to include("ana@example.com")
@@ -130,7 +130,7 @@ RSpec.describe "Public professional searches", type: :request, openapi: true do
     )
 
     post "/api/v1/public/professional-searches",
-      params: {service: electrician.slug, neighborhoodCode: neighborhood.code},
+      params: {service: electrician.slug, neighborhood_code: neighborhood.code},
       headers: request_headers("search-ranking"),
       as: :json
 
@@ -148,7 +148,7 @@ RSpec.describe "Public professional searches", type: :request, openapi: true do
     allow(Rails.logger).to receive(:error)
 
     post "/api/v1/public/professional-searches",
-      params: {service: electrician.slug, neighborhoodCode: neighborhood.code},
+      params: {service: electrician.slug, neighborhood_code: neighborhood.code},
       headers: request_headers("search-event-failed"),
       as: :json
 
@@ -171,11 +171,11 @@ RSpec.describe "Public professional searches", type: :request, openapi: true do
       sort_order: 1
     )
     post "/api/v1/public/professional-searches",
-      params: {service: electrician.slug, neighborhoodCode: inactive.code},
+      params: {service: electrician.slug, neighborhood_code: inactive.code},
       headers: request_headers("search-422"),
       as: :json
     expect(response).to have_http_status(:unprocessable_entity)
-    expect(response.parsed_body.dig("error", "field_errors", "neighborhoodCode")).to be_present
+    expect(response.parsed_body.dig("error", "field_errors", "neighborhood_code")).to be_present
     assert_api_conform(status: 422)
 
     post "/api/v1/public/professional-searches",
@@ -204,6 +204,54 @@ RSpec.describe "Public professional searches", type: :request, openapi: true do
     assert_api_conform(status: 503)
   end
 
+  it "returns one bounded page while the search event records every match" do
+    25.times do |index|
+      create_published_profile(
+        phone: format("+554799999%04d", 7600 + index),
+        name: "Profissional Paginado #{index}"
+      )
+    end
+
+    post "/api/v1/public/professional-searches",
+      params: {service: electrician.slug, neighborhood_code: neighborhood.code},
+      headers: request_headers("search-page-1"),
+      as: :json
+
+    expect(response).to have_http_status(:ok)
+    data = response.parsed_body.fetch("data")
+    expect(data.fetch("professionals").length).to eq(20)
+    expect(data.fetch("meta")).to eq(
+      "page" => 1,
+      "per_page" => 20,
+      "total_count" => 25,
+      "total_pages" => 2
+    )
+    expect(SearchEvent.find(data.dig("interaction", "search_event_id")).result_count).to eq(25)
+    assert_api_conform(status: 200)
+
+    first_page_ids = data.fetch("professionals").pluck("id")
+    post "/api/v1/public/professional-searches",
+      params: {service: electrician.slug, neighborhood_code: neighborhood.code, page: 2},
+      headers: request_headers("search-page-2"),
+      as: :json
+
+    expect(response).to have_http_status(:ok)
+    second_page = response.parsed_body.fetch("data")
+    expect(second_page.fetch("professionals").length).to eq(5)
+    expect(second_page.fetch("professionals").pluck("id")).not_to include(*first_page_ids)
+    expect(second_page.dig("meta", "page")).to eq(2)
+    assert_api_conform(status: 200)
+
+    # The contract already rejects these bounds, so this only proves Rails does
+    # not depend on that and refuses them itself.
+    post "/api/v1/public/professional-searches",
+      params: {service: electrician.slug, page: 0, per_page: 51},
+      headers: request_headers("search-page-invalid"),
+      as: :json
+    expect(response).to have_http_status(:unprocessable_entity)
+    expect(response.parsed_body.dig("error", "field_errors").keys).to contain_exactly("page", "per_page")
+  end
+
   private
 
   def request_headers(request_id)
@@ -229,8 +277,6 @@ RSpec.describe "Public professional searches", type: :request, openapi: true do
       city_code: "Joinville",
       neighborhood: (neighborhood unless all_city)
     )
-    revision.update!(status: "approved", reviewed_at:)
-    profile.update!(profile_status: "published", published_revision: revision)
-    profile
+    make_profile_publicly_eligible(profile, revision:, reviewed_at:)
   end
 end

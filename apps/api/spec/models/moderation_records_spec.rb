@@ -42,6 +42,13 @@ RSpec.describe "Moderation audit records" do
     )
     expect(invalid).not_to be_valid
     expect(invalid.errors[:reason]).to be_present
+
+    relationship_action = invalid.dup
+    relationship_action.action = "approved"
+    relationship_action.reason = nil
+    relationship_action.target_type = "professional_relationship"
+    expect(relationship_action).not_to be_valid
+    expect(relationship_action.errors[:target_type]).to be_present
   end
 
   it "keeps private-media access events immutable and administrator-owned" do

@@ -36,7 +36,7 @@ module Api
         private
 
         def decision_params
-          params.require(:decision).permit(:action, :reason, :note)
+          params.require(:decision).permit(:action, :reason, :note, :identity_match_confirmed)
         end
       end
     end

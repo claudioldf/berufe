@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import type { Neighborhood, Service } from "~/types";
 
 withDefaults(
@@ -18,6 +19,7 @@ const emit = defineEmits<{
 
 const service = defineModel<string>("service", { default: "" });
 const neighborhood = defineModel<string>("neighborhood", { default: "all" });
+const canSubmit = computed(() => service.value.trim().length > 0);
 
 function submit() {
   const normalizedService = service.value.trim();
@@ -51,6 +53,7 @@ function submit() {
           name="service"
           type="search"
           autocomplete="off"
+          required
           placeholder="Ex.: eletricista, pintura…"
           :ui="{
             base: 'p-0 border-0 ring-0 shadow-none bg-transparent focus-visible:outline-none focus-visible:ring-0',
@@ -116,7 +119,12 @@ function submit() {
       </label>
     </div>
 
-    <UButton type="submit" color="primary" class="service-search__button">
+    <UButton
+      type="submit"
+      color="primary"
+      class="service-search__button"
+      :disabled="!canSubmit"
+    >
       <span>Encontrar</span>
       <UIcon name="i-lucide-arrow-right" />
     </UButton>

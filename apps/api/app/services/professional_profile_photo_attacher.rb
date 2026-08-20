@@ -29,7 +29,9 @@ class ProfessionalProfilePhotoAttacher
         submitted_at: now
       )
       upload.update!(state: "attached", attached_at: now)
-      profile.update!(working_photo: photo)
+      pointers = {working_photo: photo}
+      pointers[:published_photo] = photo if profile.profile_status == "published"
+      profile.update!(pointers)
       photo
     end
   rescue ActiveRecord::RecordInvalid => error

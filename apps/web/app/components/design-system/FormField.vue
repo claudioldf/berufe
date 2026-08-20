@@ -39,27 +39,29 @@ defineSlots<{
 
 <template>
   <label class="form-field" :for="controlId">
-    <span class="form-field__label">
-      <slot name="label">{{ label }}</slot>
-      <span v-if="required" class="form-field__required">Obrigatório</span>
-    </span>
-    <slot
-      :control-id="controlId"
-      :described-by="describedBy"
-      :invalid="Boolean(error)"
-      :required="required"
-    />
-    <small
-      v-if="error"
-      :id="errorId"
-      class="form-field__error"
-      aria-live="polite"
-    >
-      {{ error }}
-    </small>
-    <small v-else-if="hint" :id="hintId" class="form-field__hint">
-      {{ hint }}
-    </small>
+    <div class="form-field__inner">
+      <span class="form-field__label">
+        <slot name="label">{{ label }}</slot>
+        <span v-if="required" class="form-field__required">Obrigatório</span>
+      </span>
+      <slot
+        :control-id="controlId"
+        :described-by="describedBy"
+        :invalid="Boolean(error)"
+        :required="required"
+      />
+      <small
+        v-if="error"
+        :id="errorId"
+        class="form-field__error"
+        aria-live="polite"
+      >
+        {{ error }}
+      </small>
+      <small v-else-if="hint" :id="hintId" class="form-field__hint">
+        {{ hint }}
+      </small>
+    </div>
   </label>
 </template>
 
@@ -70,6 +72,12 @@ defineSlots<{
   color: var(--ink);
   font-size: 0.82rem;
   font-weight: 800;
+
+  &__inner {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
 
   &__label {
     display: flex;
@@ -88,11 +96,13 @@ defineSlots<{
   & :slotted(select),
   & :slotted(textarea) {
     width: 100%;
-    padding: 11px 12px;
+    height: 3rem;
+    padding: 12px 12px;
     border: 1px solid var(--line);
     border-radius: var(--radius-md);
     background: var(--color-surface);
     color: var(--ink);
+    outline: none;
     transition:
       border-color var(--motion-fast) ease,
       box-shadow var(--motion-fast) ease;

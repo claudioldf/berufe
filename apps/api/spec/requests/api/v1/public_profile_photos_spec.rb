@@ -6,10 +6,7 @@ RSpec.describe "Public profile photos", type: :request, openapi: true do
   let(:account) { UserAccount.create!(phone_e164: "+5547999997301", role: "professional", status: "active") }
   let(:profile) do
     record = ProfessionalProfile.create!(user_account: account, display_name: "Ana Fotógrafa")
-    revision = record.working_revision
-    revision.update!(status: "approved", reviewed_at: Time.current)
-    record.update!(profile_status: "published", published_revision: revision)
-    record
+    make_profile_publicly_eligible(record)
   end
   let(:storage) { instance_double(LocalDiskStorage) }
 
@@ -19,8 +16,7 @@ RSpec.describe "Public profile photos", type: :request, openapi: true do
   end
 
   it "serves only the current approved photo for an eligible parent" do
-    photo = create_photo
-    profile.update!(published_photo: photo)
+    photo = profile.published_photo
     allow(storage).to receive(:read).with(scope: :public, key: photo.public_key).and_return("jpeg-photo")
 
     get "/api/v1/public/profile-photos/#{photo.id}/image", headers: {"X-Request-Id" => "photo-200"}
@@ -36,6 +32,19 @@ RSpec.describe "Public profile photos", type: :request, openapi: true do
     assert_api_conform(status: 200)
   end
 
+  it "serves the current pending photo from private storage without caching it" do
+    photo = create_photo
+    profile.update!(working_photo: photo, published_photo: photo)
+    allow(storage).to receive(:read).with(scope: :private, key: photo.private_key).and_return("pending-photo")
+
+    get "/api/v1/public/profile-photos/#{photo.id}/image", headers: {"X-Request-Id" => "photo-pending"}
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to eq("pending-photo")
+    expect(response.headers.fetch("Cache-Control")).to eq("no-store")
+    assert_api_conform(status: 200)
+  end
+
   it "denies a photo that is not the current pointer or whose parent becomes unavailable" do
     photo = create_photo
 
@@ -44,7 +53,7 @@ RSpec.describe "Public profile photos", type: :request, openapi: true do
     expect(storage).not_to have_received(:read)
     assert_api_conform(status: 404)
 
-    profile.update!(published_photo: photo)
+    profile.update!(working_photo: photo, published_photo: photo)
     account.update!(status: "suspended")
     get "/api/v1/public/profile-photos/#{photo.id}/image", headers: {"X-Request-Id" => "photo-suspended"}
     expect(response).to have_http_status(:not_found)
@@ -52,8 +61,7 @@ RSpec.describe "Public profile photos", type: :request, openapi: true do
   end
 
   it "returns the generic not-found response when the public object is unavailable" do
-    photo = create_photo
-    profile.update!(published_photo: photo)
+    photo = profile.published_photo
     allow(storage).to receive(:read).and_raise(Errno::ENOENT)
 
     get "/api/v1/public/profile-photos/#{photo.id}/image", headers: {"X-Request-Id" => "photo-missing"}
@@ -86,15 +94,15 @@ RSpec.describe "Public profile photos", type: :request, openapi: true do
     )
     profile.profile_photos.create!(
       media_upload: upload,
-      status: "approved",
+      status: "pending_review",
       private_key: upload.sanitized_key,
-      public_key: "moderation/profile_photo/#{SecureRandom.uuid}.jpg",
+      public_key: nil,
       content_type: "image/jpeg",
       byte_size: 100,
       width: 640,
       height: 960,
       submitted_at: 1.minute.ago,
-      reviewed_at: Time.current
+      reviewed_at: nil
     )
   end
 end

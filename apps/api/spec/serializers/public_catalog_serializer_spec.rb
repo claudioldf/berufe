@@ -42,12 +42,12 @@ RSpec.describe PublicCatalogSerializer do
         id: service.id,
         name: "Eletricista",
         slug: "eletricista",
-        categorySlug: "instalacoes",
+        category_slug: "instalacoes",
         icon: "i-lucide-zap",
         description: "Instalações elétricas.",
         aliases: ["elétrica"]
       }],
-      neighborhoods: [{code: "america", name: "América", stateCode: "SC", city: "Joinville"}]
+      neighborhoods: [{code: "america", name: "América", state_code: "SC", city: "Joinville"}]
     )
     expect(serialized.to_json).not_to include(
       "is_active",

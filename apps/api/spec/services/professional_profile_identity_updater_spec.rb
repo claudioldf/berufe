@@ -15,6 +15,7 @@ RSpec.describe ProfessionalProfileIdentityUpdater do
       profile:,
       attributes: {
         display_name: "  Ana   Souza  ",
+        birthdate: "1990-04-12",
         headline: "  Elétrica residencial com cuidado. ",
         bio: "  Instalações e manutenção   em Joinville. ",
         years_experience: "12",
@@ -33,6 +34,7 @@ RSpec.describe ProfessionalProfileIdentityUpdater do
       "instagram_url" => "https://www.instagram.com/ana.obras/",
       "youtube_url" => "https://www.youtube.com/@AnaObras"
     )
+    expect(result.birthdate).to eq(Date.new(1990, 4, 12))
   end
 
   it "returns actionable field errors without partially updating" do
@@ -41,6 +43,7 @@ RSpec.describe ProfessionalProfileIdentityUpdater do
         profile:,
         attributes: {
           display_name: "A",
+          birthdate: "not-a-date",
           headline: "",
           bio: "",
           years_experience: 71,
@@ -55,5 +58,41 @@ RSpec.describe ProfessionalProfileIdentityUpdater do
 
     expect(profile.reload.display_name).to eq("Ana Souza")
     expect(profile.headline).to be_nil
+  end
+
+  it "expires identity verification when the private birthdate changes" do
+    profile.update!(birthdate: Date.new(1990, 4, 12))
+    request_record = profile.verification_requests.create!(
+      verification_type: "identity",
+      status: "approved",
+      claimed_birthdate: Date.new(1990, 4, 12),
+      identity_match_confirmed_at: 1.day.ago,
+      submitted_at: 2.days.ago,
+      reviewed_at: 1.day.ago,
+      verified_at: 1.day.ago,
+      public_label: ModerationDecision::IDENTITY_LABEL
+    )
+
+    described_class.new.call(
+      profile:,
+      attributes: {
+        display_name: "Ana Souza",
+        birthdate: "1991-05-13",
+        headline: "",
+        bio: "",
+        years_experience: nil,
+        whatsapp: "",
+        instagram: "",
+        youtube: ""
+      }
+    )
+
+    expect(request_record.reload).to have_attributes(
+      status: "expired",
+      public_label: nil,
+      verified_at: nil,
+      identity_match_confirmed_at: nil
+    )
+    expect(request_record.expired_at).to be_present
   end
 end

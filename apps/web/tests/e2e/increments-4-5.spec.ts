@@ -123,16 +123,10 @@ test("published professional creates, previews, securely shares, and live-edits 
   ).toBeVisible();
 });
 
-test("existing members confirm a relationship before an admin publishes its honest direction", async ({
+test("existing members publish a relationship by confirming it together", async ({
   page,
 }, testInfo) => {
   test.setTimeout(90_000);
-  const adminEmail = process.env.ADMIN_AUTH_EMAIL;
-  const adminPassword = process.env.ADMIN_AUTH_PASSWORD;
-  test.skip(
-    !adminEmail || !adminPassword,
-    "Administrator test credentials are required for moderation.",
-  );
   const mobile = testInfo.project.name.startsWith("mobile");
   const initiator = mobile
     ? { phone: "47999996666", name: "Diego Fernandes" }
@@ -179,21 +173,6 @@ test("existing members confirm a relationship before an admin publishes its hone
   await pending.getByRole("button", { name: "Confirmar" }).click();
   expect((await responseRequest).status()).toBe(200);
   await signOut(page);
-
-  await page.goto("/app/admin/login");
-  await page.getByRole("textbox", { name: "E-mail" }).fill(adminEmail!);
-  await page.locator('input[name="password"]').fill(adminPassword!);
-  await page.getByRole("button", { name: "Entrar" }).click();
-  await page.waitForURL(/\/app\/admin$/);
-  await page.getByRole("button", { name: "Relações" }).click();
-  await page.getByLabel("Buscar na fila").fill(note);
-  const moderationResponse = page.waitForResponse(
-    (response) =>
-      response.url().includes("/decisions") &&
-      response.request().method() === "POST",
-  );
-  await page.getByRole("button", { name: "Aprovar e publicar" }).click();
-  expect((await moderationResponse).status()).toBe(200);
 
   await page.goto(`/profissionais/${recipient.slug}`);
   await expect(page.getByText(note)).toBeVisible();

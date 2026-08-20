@@ -29,7 +29,7 @@ Stories are implemented serially in dependency and deployment order:
 | ----- | ------ | --------------------------------------------------------------------------------------- |
 | S042  | DONE   | An eligible professional can send a private relationship request from a public profile. |
 | S043  | DONE   | The recipient can accept or decline once from authenticated workspace data.             |
-| S046  | DONE   | Accepted relationships use the shared moderation queue and honest public direction.     |
+| S046  | DONE   | Recipient-accepted relationships expose honest public direction without admin review.   |
 | S047  | DONE   | The professional dashboard is fully backed by the authenticated Rails workspace.        |
 | S049  | DONE   | Quotes are private, owner-scoped, server-calculated, persistent, and live-editable.     |
 | S050  | DONE   | Published professionals can expose quotes through stable, digest-only bearer links.     |
@@ -80,8 +80,8 @@ S047 and S049 are delivered consecutively so the dashboard quote action and rece
 - Add `POST /api/v1/professional/relationships` and `POST /api/v1/professional/relationships/{id}/response` with authenticated owner/recipient policy checks and transactional state changes.
 - Add `professional_daily_activities`, unique by professional and São Paulo product date, with non-negative `profile_updates`, `evidence_creations`, `relationship_interactions`, and `quotes_created` counters. Increment relationship interactions on successful request/response mutations.
 - Extend the professional workspace with current profile identity, relationship eligibility, and pending inbound requests.
-- Add `professional_relationship` to the existing moderation resolver, queue, filters, audit transitions, OpenAPI enum, and generated web types. Moderation actions remain append-only; they do not rewrite the accepted relationship status.
-- Public relationship queries require accepted status, latest effective `approved` or `restored` moderation action, and both parties to remain active and published. Public projections include direction so recommendation authorship is explicit.
+- Keep `pending`, `accepted`, and `declined` as the complete recipient-owned relationship lifecycle. Relationships never enter the moderation resolver, queue, filters, audit transitions, or moderation contract enums.
+- Public relationship queries require accepted status and both parties to remain active and published. Public projections include direction so recommendation authorship is explicit.
 
 ### S047 — professional workspace
 
@@ -111,15 +111,15 @@ Increments 4 and 5 add these OpenAPI operations and regenerate the committed Nux
 - `POST /api/v1/professional/quotes/{id}/share`
 - `POST /api/v1/shared-quotes/resolve`
 
-The existing admin moderation operations remain stable while their target enum expands to professional relationships.
+The existing admin moderation operations remain stable and do not accept professional relationships as targets.
 
 ## 6. Verification and completion gate
 
 Each story adds focused Rails model/service/request/contract tests and behavior-focused Vitest coverage for changed Vue surfaces before an atomic story commit. Required combined coverage includes:
 
-- relationship eligibility, self/duplicate/race behavior, recipient-only one-time response, moderation transitions, direction, exclusion rules, counts, and daily activity;
+- relationship eligibility, self/duplicate/race behavior, recipient-only one-time response, immediate accepted visibility, direction, exclusion rules, counts, and daily activity;
 - all dashboard readiness states, owner isolation, pending/rejected/empty states, profile-share fallback, and removal of runtime fixtures;
 - quote validation, decimal arithmetic, item order, concurrent numbering, ownership, live shared edits, stable token reproduction, digest-only persistence, generic invalid-token behavior, publication gates, cache controls, logging/privacy boundaries, and share counters;
-- API-backed Playwright journeys for relationship request/confirmation/moderation and quote creation/share/customer view/live update without external WhatsApp navigation.
+- API-backed Playwright journeys for relationship request/direct recipient confirmation and quote creation/share/customer view/live update without external WhatsApp navigation.
 
 The combined increment closes only after OpenAPI-generated types are current; full Rails and Nuxt tests, coverage, lint, type-check, and production builds pass; required browser journeys pass at supported sizes; and the working tree is clean.
