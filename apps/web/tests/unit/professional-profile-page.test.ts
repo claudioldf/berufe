@@ -78,6 +78,7 @@ function workspace() {
         id: "2cc1bdc4-e2d1-452b-8e76-241931a32bc9",
         publicSlug: "beto-lima",
         status: "published" as const,
+        presentationType: "self_service" as const,
         isPublic: true,
         isSearchEligible: true,
         publicationBlockers: [],
@@ -186,12 +187,14 @@ describe("professional profile editor page", () => {
         relationshipType: "recommendation",
         contextNote: "Executamos uma reforma juntos.",
         status: "accepted",
+        source: "existing_profile",
         createdAt: "2026-08-17T12:00:00Z",
         respondedAt: "2026-08-18T12:00:00Z",
         initiator: {
           id: currentWorkspace.data.value.profile.id,
           publicSlug: "beto-lima",
           displayName: "Beto Lima",
+          profileType: "self_service",
           photoUrl: null,
           profileAvailable: true,
         },
@@ -199,6 +202,7 @@ describe("professional profile editor page", () => {
           id: "f39d4810-f28d-4977-b5e5-387131d12942",
           publicSlug: "ana-souza",
           displayName: "Ana Souza",
+          profileType: "self_service",
           photoUrl: null,
           profileAvailable: true,
         },
@@ -221,6 +225,11 @@ describe("professional profile editor page", () => {
     expect(manager.props("ownerId")).toBe(
       currentWorkspace.data.value.profile.id,
     );
+    manager.vm.$emit("add");
+    await wrapper.vm.$nextTick();
+    expect(
+      wrapper.getComponent({ name: "RelationshipCreateDialog" }).props("open"),
+    ).toBe(true);
 
     manager.vm.$emit(
       "respond",

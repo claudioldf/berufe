@@ -24,6 +24,8 @@ const result: PublicProfessionalProfileResult = {
     id: "ad59e74a-a1aa-47d5-b725-26350f0f2376",
     slug: "ana-souza",
     name: "Ana Souza",
+    profileType: "self_service",
+    claimed: true,
     headline: "Elétrica residencial.",
     bio: "Instalações residenciais.",
     avatar: null,
@@ -110,7 +112,43 @@ describe("public profile page", () => {
     expect(mocks.recordView).toHaveBeenCalledOnce();
   });
 
-  it("shows the existing relationship action only to an eligible different professional", async () => {
+  it("selects the simplified public layout for an external profile", async () => {
+    const externalResult: PublicProfessionalProfileResult = {
+      ...result,
+      professional: {
+        ...result.professional,
+        slug: "carla-pinturas",
+        name: "Carla Pinturas",
+        profileType: "external",
+        claimed: false,
+        headline: null,
+        bio: null,
+        primaryService: null,
+        primaryServiceSlug: null,
+        services: [],
+        serviceNotes: [],
+        neighborhoods: [],
+        yearsExperience: null,
+        evidence: [],
+      },
+    };
+    mocks.fetchProfile.mockResolvedValue(externalResult);
+
+    const wrapper = await mountSuspended(PublicProfilePage, {
+      shallow: true,
+      route: "/profissionais/carla-pinturas",
+    });
+    await flushPromises();
+
+    const external = wrapper.getComponent({ name: "ProfileExternalProfile" });
+    expect(external.props("professional")).toEqual(externalResult.professional);
+    expect(wrapper.findComponent({ name: "ProfileHero" }).exists()).toBe(false);
+    expect(wrapper.findComponent({ name: "ProfileDetails" }).exists()).toBe(
+      false,
+    );
+  });
+
+  it("keeps relationship requests out of the public profile", async () => {
     useState("application-session-status", () => "unknown").value =
       "authenticated";
     useState<CurrentAccount | null>(
@@ -120,7 +158,10 @@ describe("public profile page", () => {
       id: "0f1f76eb-ce21-4e39-83c8-acfc255101f1",
       role: "professional",
       status: "active",
+      registered: true,
+      verified: true,
       registrationCompleted: true,
+      registrationDisplayName: "Outra profissional",
       professionalProfileId: "fc34e59b-0915-45c1-b0ea-29015578264a",
       relationshipEligible: true,
     };
@@ -132,28 +173,12 @@ describe("public profile page", () => {
     });
     await flushPromises();
 
-    const details = wrapper.getComponent({ name: "ProfileDetails" });
-    expect(details.props("canRequestRelationship")).toBe(true);
-    details.vm.$emit("requestRelationship");
-    await wrapper.vm.$nextTick();
+    expect(wrapper.getComponent({ name: "ProfileDetails" }).exists()).toBe(
+      true,
+    );
     expect(
-      wrapper
-        .getComponent({ name: "ProfileRelationshipRequestDialog" })
-        .props("open"),
-    ).toBe(true);
-
-    useState<CurrentAccount | null>(
-      "application-session-account",
-      () => null,
-    ).value = {
-      id: "0f1f76eb-ce21-4e39-83c8-acfc255101f1",
-      role: "professional",
-      status: "active",
-      registrationCompleted: true,
-      professionalProfileId: result.professional.id,
-      relationshipEligible: true,
-    };
-    await wrapper.vm.$nextTick();
-    expect(details.props("canRequestRelationship")).toBe(false);
+      wrapper.findComponent({ name: "RelationshipCreateDialog" }).exists(),
+    ).toBe(false);
+    expect(wrapper.text()).not.toContain("Solicitar relação profissional");
   });
 });

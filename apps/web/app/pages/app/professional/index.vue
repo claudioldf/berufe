@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { OnboardingChecklistItem } from "~/types";
 import { useProfessionalWorkspace } from "~/composables/useProfessionalWorkspace";
+import { useApplicationSession } from "~/composables/useApplicationSession";
+import { useCatalogs } from "~/composables/useCatalogs";
 import { useShare } from "~/composables/useShare";
 import { useToast } from "~/composables/useToast";
 import { formatCurrency, formatDateTime } from "~/utils/formatters";
@@ -20,7 +22,21 @@ interface PendingItem {
 const runtimeConfig = useRuntimeConfig();
 const { share } = useShare();
 const { showToast } = useToast();
+const { account } = useApplicationSession();
+const { data: relationshipCatalog } = await useCatalogs();
 const professionalWorkspace = await useProfessionalWorkspace();
+const relationshipOpen = shallowRef(false);
+const relationshipServices = computed(
+  () => relationshipCatalog.value?.services ?? [],
+);
+const relationshipNeighborhoods = computed(() =>
+  (relationshipCatalog.value?.neighborhoods ?? []).filter(
+    (item) => item.code !== "all",
+  ),
+);
+const relationshipEligible = computed(
+  () => account.value?.relationshipEligible ?? false,
+);
 const workspace = computed(() => professionalWorkspace.data.value);
 const professionalFirstName = computed(
   () =>
@@ -87,8 +103,10 @@ const progress = computed(
 );
 const canPublish = computed(() => {
   const profile = workspace.value?.profile;
+  if (!profile) return false;
+
   return (
-    profile?.status === "draft" &&
+    !profile.hasPublishedRevision &&
     profile.revisionStatus === "draft" &&
     profile.publicationBlockers.length === 0
   );
@@ -105,6 +123,16 @@ const dashboardStatus = computed(() => {
     };
   }
   if (profile.isPublic) {
+    if (profile.presentationType === "external") {
+      return {
+        title: "Seu perfil básico está publicado",
+        description:
+          "Complete os dados para publicar sua versão profissional completa.",
+        icon: "i-lucide-user-round-check",
+        tone: "published",
+        publicAvailable: true,
+      };
+    }
     return {
       title: "Seu perfil está publicado",
       description: "Clientes já podem encontrar e entrar em contato com você.",
@@ -477,11 +505,11 @@ async function respondRelationship(id: string, accepted: boolean) {
               ><strong>Ver verificações</strong
               ><small>{{ verificationDescription }}</small></NuxtLink
             >
-            <NuxtLink to="/encontrar"
-              ><span><UIcon name="i-lucide-handshake" /></span
+            <button type="button" @click="relationshipOpen = true">
+              <span><UIcon name="i-lucide-handshake" /></span
               ><strong>Adicionar relação</strong
-              ><small>Profissional já cadastrado</small></NuxtLink
-            >
+              ><small>Na Berufe ou pelo telefone</small>
+            </button>
           </div>
         </DesignSystemSurfaceCard>
       </div>
@@ -597,6 +625,12 @@ async function respondRelationship(id: string, accepted: boolean) {
         </DesignSystemSurfaceCard>
       </section>
     </DesignSystemContainer>
+    <RelationshipCreateDialog
+      v-model:open="relationshipOpen"
+      :services="relationshipServices"
+      :neighborhoods="relationshipNeighborhoods"
+      :eligible="relationshipEligible"
+    />
   </div>
 </template>
 

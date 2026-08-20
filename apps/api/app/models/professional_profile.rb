@@ -2,6 +2,7 @@
 
 class ProfessionalProfile < ApplicationRecord
   STATUSES = %w[draft pending_review published suspended].freeze
+  CREATION_SOURCES = %w[self_service external].freeze
   INITIAL_REVISION_FIELDS = %i[
     display_name headline bio years_experience whatsapp_e164 instagram_url youtube_url
   ].freeze
@@ -56,12 +57,14 @@ class ProfessionalProfile < ApplicationRecord
   validates :years_experience, numericality: {only_integer: true, in: 0..70}, allow_nil: true, on: :create
   validates :whatsapp_e164, format: {with: UserAccount::BRAZILIAN_MOBILE_PATTERN}, allow_nil: true, on: :create
   validates :profile_status, inclusion: {in: STATUSES}
+  validates :creation_source, inclusion: {in: CREATION_SOURCES}
   validate :birthdate_is_plausible
   validates :public_slug, format: {with: /\A[a-z0-9]+(?:-[a-z0-9]+)*\z/}, uniqueness: true
   validate :initial_social_urls_are_canonical, on: :create
   validate :revision_pointers_belong_to_profile
   validate :photo_pointers_belong_to_profile
   validate :published_at_is_immutable, on: :update
+  validate :creation_source_is_immutable, on: :update
 
   before_validation :normalize_initial_fields, on: :create
   before_validation :assign_public_slug, on: :create
@@ -70,6 +73,7 @@ class ProfessionalProfile < ApplicationRecord
   scope :publicly_eligible, -> {
     joins(:user_account, :published_revision, :published_photo)
       .where(profile_status: "published", user_accounts: {status: "active"})
+      .where(professional_profile_revisions: {profile_type: "self_service"})
       .where.not(birthdate: nil)
       .where(professional_profile_revisions: {status: %w[pending_review approved]})
       .where(professional_profile_photos: {status: %w[pending_review approved]})
@@ -102,9 +106,49 @@ class ProfessionalProfile < ApplicationRecord
       SQL
   }
 
+  scope :externally_eligible, -> {
+    joins(:user_account, :published_revision)
+      .where(
+        profile_status: "published",
+        creation_source: "external",
+        user_accounts: {status: "active"},
+        professional_profile_revisions: {
+          profile_type: "external",
+          status: %w[pending_review approved]
+        }
+      )
+      .where.not(external_published_at: nil)
+      .where(<<~SQL.squish)
+        user_accounts.registered_at IS NOT NULL OR EXISTS (
+          SELECT 1
+          FROM professional_relationships external_relationships
+          WHERE external_relationships.recipient_professional_id = professional_profiles.id
+            AND external_relationships.source = 'external_phone'
+            AND external_relationships.contact_publication_attested_at IS NOT NULL
+            AND external_relationships.deleted_at IS NULL
+            AND external_relationships.status IN ('pending', 'accepted')
+        )
+      SQL
+  }
+
+  scope :publicly_viewable, -> {
+    where(id: publicly_eligible.select(:id)).or(where(id: externally_eligible.select(:id)))
+  }
+
+  scope :publicly_searchable, -> {
+    publicly_viewable
+      .where(<<~SQL.squish)
+        EXISTS (
+          SELECT 1
+          FROM professional_profile_services searchable_services
+          WHERE searchable_services.professional_profile_revision_id = professional_profiles.published_revision_id
+        )
+      SQL
+  }
+
   def publication_blockers
-    revision = (profile_status == "published") ? published_revision : working_revision
-    photo = (profile_status == "published") ? published_photo : working_photo
+    revision = working_revision
+    photo = working_photo
     blockers = []
     blockers << "identity" unless revision&.display_name.present? && birthdate.present? && user_account.phone_e164.present?
     blockers << "photo" unless photo&.status&.in?(%w[pending_review approved])
@@ -114,15 +158,41 @@ class ProfessionalProfile < ApplicationRecord
   end
 
   def publicly_available?
+    external_presentation? ? externally_available? : self_service_publicly_available?
+  end
+
+  def self_service_publicly_available?
     profile_status == "published" &&
       user_account.active? &&
+      published_revision&.self_service? &&
       published_revision&.status&.in?(%w[pending_review approved]) &&
       published_photo&.status&.in?(%w[pending_review approved]) &&
-      publication_blockers.empty?
+      self_service_publication_blockers.empty?
   end
 
   def search_eligible?
-    publicly_available?
+    publicly_available? && published_revision.professional_profile_services.exists?
+  end
+
+  def external_presentation?
+    published_revision&.external? == true
+  end
+
+  def externally_available?
+    return false unless profile_status == "published" && creation_source == "external"
+    return false unless user_account.active? && external_published_at.present?
+    return false unless published_revision&.external? && published_revision.status.in?(%w[pending_review approved])
+    return true if user_account.registered?
+
+    received_relationships.active
+      .where(source: "external_phone", status: %w[pending accepted])
+      .where.not(contact_publication_attested_at: nil)
+      .exists?
+  end
+
+  def has_self_service_publication?
+    published_revision&.self_service? == true &&
+      published_revision.status.in?(%w[pending_review approved])
   end
 
   INITIAL_REVISION_FIELDS.each do |field|
@@ -154,6 +224,7 @@ class ProfessionalProfile < ApplicationRecord
     revision = revisions.create!(
       version: 1,
       status: "draft",
+      profile_type: "self_service",
       **INITIAL_REVISION_FIELDS.index_with { |field| instance_variable_get("@#{field}") }
     )
     update_column(:working_revision_id, revision.id)
@@ -183,6 +254,12 @@ class ProfessionalProfile < ApplicationRecord
     errors.add(:published_at, :readonly)
   end
 
+  def creation_source_is_immutable
+    return unless will_save_change_to_creation_source?
+
+    errors.add(:creation_source, :readonly)
+  end
+
   def birthdate_is_plausible
     return if birthdate.blank?
     return if birthdate.between?(120.years.ago.to_date, Date.current)
@@ -197,6 +274,17 @@ class ProfessionalProfile < ApplicationRecord
     selections.any? &&
       selections.count(&:is_primary?) == 1 &&
       selections.all? { |selection| selection.service.is_active? && selection.service.category.is_active? }
+  end
+
+  def self_service_publication_blockers
+    revision = published_revision
+    photo = published_photo
+    blockers = []
+    blockers << "identity" unless revision&.display_name.present? && birthdate.present? && user_account.phone_e164.present?
+    blockers << "photo" unless photo&.status&.in?(%w[pending_review approved])
+    blockers << "services" unless revision_services_complete?(revision)
+    blockers << "coverage" unless revision_coverage_complete?(revision)
+    blockers
   end
 
   def revision_coverage_complete?(revision)

@@ -88,6 +88,8 @@ export interface Professional {
 export interface PublicProfessionalCard {
   id: string;
   slug: string;
+  profileType: "self_service" | "external";
+  claimed: boolean;
   name: string;
   headline: string | null;
   photoUrl: string | null;
@@ -142,12 +144,14 @@ export interface PublicProfessionalSearchResult {
 export interface PublicProfessionalProfile {
   id: string;
   slug: string;
+  profileType: "self_service" | "external";
+  claimed: boolean;
   name: string;
   headline: string | null;
   bio: string | null;
   avatar: string | null;
-  primaryService: string;
-  primaryServiceSlug: string;
+  primaryService: string | null;
+  primaryServiceSlug: string | null;
   services: string[];
   serviceNotes: Array<string | null>;
   neighborhoods: string[];
@@ -191,6 +195,7 @@ export interface ProfessionalRelationshipParty {
   id: string;
   publicSlug: string;
   displayName: string;
+  profileType: "self_service" | "external";
   photoUrl: string | null;
   profileAvailable: boolean;
 }
@@ -200,6 +205,7 @@ export interface ProfessionalRelationship {
   relationshipType: ProfessionalRelationshipType;
   contextNote: string | null;
   status: "pending" | "accepted" | "declined";
+  source: "existing_profile" | "external_phone";
   createdAt: string;
   respondedAt: string | null;
   initiator: ProfessionalRelationshipParty;
@@ -292,6 +298,7 @@ export interface ProfessionalWorkspace {
     id: string;
     publicSlug: string;
     status: ProfessionalProfileStatus;
+    presentationType: "self_service" | "external";
     isPublic: boolean;
     isSearchEligible: boolean;
     publicationBlockers: Array<"identity" | "photo" | "services" | "coverage">;

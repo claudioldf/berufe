@@ -60,6 +60,21 @@ RSpec.describe ProfessionalRelationship do
     expect(accepted_without_response.errors[:responded_at]).to be_present
   end
 
+  it "requires a recorded attestation for phone-created relationships" do
+    relationship = described_class.new(
+      initiator_professional: initiator,
+      recipient_professional: recipient,
+      relationship_type: "recommendation",
+      source: "external_phone"
+    )
+
+    expect(relationship).not_to be_valid
+    expect(relationship.errors[:contact_publication_attested_at]).to be_present
+
+    relationship.contact_publication_attested_at = Time.current
+    expect(relationship).to be_valid
+  end
+
   private
 
   def create_profile(phone, name)

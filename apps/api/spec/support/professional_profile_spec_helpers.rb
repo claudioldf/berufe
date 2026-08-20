@@ -2,6 +2,10 @@
 
 module ProfessionalProfileSpecHelpers
   def make_profile_publicly_eligible(profile, revision: profile.working_revision, reviewed_at: Time.current)
+    profile.user_account.update_columns(
+      phone_verified_at: profile.user_account.phone_verified_at || reviewed_at,
+      registered_at: profile.user_account.registered_at || reviewed_at
+    )
     ensure_public_supply(revision)
     revision.update!(
       status: "approved",

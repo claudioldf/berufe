@@ -6,12 +6,16 @@ import ProfessionalDashboardPage from "@app/pages/app/professional/index.vue";
 
 const mocks = vi.hoisted(() => ({
   useWorkspace: vi.fn(),
+  useCatalogs: vi.fn(),
   showToast: vi.fn(),
   share: vi.fn(),
 }));
 
 vi.mock("@app/composables/useProfessionalWorkspace", () => ({
   useProfessionalWorkspace: mocks.useWorkspace,
+}));
+vi.mock("@app/composables/useCatalogs", () => ({
+  useCatalogs: mocks.useCatalogs,
 }));
 vi.mock("@app/composables/useToast", () => ({
   useToast: () => ({ showToast: mocks.showToast }),
@@ -63,12 +67,14 @@ function workspace(options: { pending?: boolean; failed?: boolean } = {}) {
           relationshipType: "worked_together",
           contextNote: "Atuamos juntos em uma obra.",
           status: "pending",
+          source: "existing_profile",
           createdAt: "2026-08-17T12:00:00Z",
           respondedAt: null,
           initiator: {
             id: "f39d4810-f28d-4977-b5e5-387131d12942",
             publicSlug: "ana-souza",
             displayName: "Ana Souza",
+            profileType: "self_service" as const,
             photoUrl: null,
             profileAvailable: false,
           },
@@ -76,6 +82,7 @@ function workspace(options: { pending?: boolean; failed?: boolean } = {}) {
             id: "2cc1bdc4-e2d1-452b-8e76-241931a32bc9",
             publicSlug: "beto-lima",
             displayName: "Beto Lima",
+            profileType: "self_service" as const,
             photoUrl: null,
             profileAvailable: false,
           },
@@ -86,6 +93,7 @@ function workspace(options: { pending?: boolean; failed?: boolean } = {}) {
         id: "2cc1bdc4-e2d1-452b-8e76-241931a32bc9",
         publicSlug: "beto-lima",
         status: "published",
+        presentationType: "self_service" as const,
         isPublic: true,
         isSearchEligible: true,
         publicationBlockers: [],
@@ -136,6 +144,39 @@ function workspace(options: { pending?: boolean; failed?: boolean } = {}) {
 describe("professional dashboard", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.useCatalogs.mockResolvedValue({
+      data: ref({
+        categories: [],
+        services: [],
+        neighborhoods: [
+          {
+            code: "all",
+            name: "Toda Joinville",
+            stateCode: "SC",
+            city: "Joinville",
+          },
+        ],
+      }),
+      error: shallowRef(null),
+    });
+  });
+
+  it("opens the shared relationship dialog from the quick action", async () => {
+    mocks.useWorkspace.mockResolvedValue(workspace());
+    const wrapper = await mountSuspended(
+      ProfessionalDashboardPage,
+      mountOptions,
+    );
+
+    const add = wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("Adicionar relação"));
+    expect(add).toBeDefined();
+    await add!.trigger("click");
+
+    expect(
+      wrapper.getComponent({ name: "RelationshipCreateDialog" }).props("open"),
+    ).toBe(true);
   });
 
   it("renders real inbound workspace data and confirms through Rails before success feedback", async () => {

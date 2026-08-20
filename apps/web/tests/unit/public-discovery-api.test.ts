@@ -17,6 +17,8 @@ type ContractProfessionalProfile =
 const contractCard: ContractProfessionalCard = {
   id: "ad59e74a-a1aa-47d5-b725-26350f0f2376",
   public_slug: "ana-souza",
+  profile_type: "self_service",
+  claimed: true,
   display_name: "Ana Souza",
   headline: "Elétrica residencial.",
   photo_url:
@@ -50,6 +52,8 @@ const contractCard: ContractProfessionalCard = {
 const contractProfile: ContractProfessionalProfile = {
   id: contractCard.id,
   public_slug: "ana-souza",
+  profile_type: "self_service",
+  claimed: true,
   display_name: "Ana Souza",
   headline: "Elétrica residencial.",
   bio: "Instalações e reparos em Joinville.",
@@ -117,6 +121,8 @@ describe("public discovery API", () => {
     expect(card).toEqual({
       id: contractCard.id,
       slug: "ana-souza",
+      profileType: "self_service",
+      claimed: true,
       name: "Ana Souza",
       headline: "Elétrica residencial.",
       photoUrl: contractCard.photo_url,
@@ -266,6 +272,8 @@ describe("public discovery API", () => {
     expect(mapPublicProfessionalProfile(contractProfile)).toEqual({
       id: contractProfile.id,
       slug: "ana-souza",
+      profileType: "self_service",
+      claimed: true,
       name: "Ana Souza",
       headline: "Elétrica residencial.",
       bio: "Instalações e reparos em Joinville.",

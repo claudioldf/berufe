@@ -5,7 +5,10 @@ export interface CurrentAccount {
   id: string;
   role: "professional" | "admin";
   status: "active";
+  registered: boolean;
+  verified: boolean;
   registrationCompleted: boolean;
+  registrationDisplayName: string | null;
   professionalProfileId: string | null;
   relationshipEligible: boolean;
 }
@@ -41,7 +44,10 @@ export async function getCurrentApplicationSession(
       id: data.data.account.id,
       role: data.data.account.role,
       status: data.data.account.status,
+      registered: data.data.account.registered,
+      verified: data.data.account.verified,
       registrationCompleted: data.data.account.registration_completed,
+      registrationDisplayName: data.data.account.registration_display_name,
       professionalProfileId: data.data.account.professional_profile_id,
       relationshipEligible: data.data.account.relationship_eligible,
     },

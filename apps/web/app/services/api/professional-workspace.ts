@@ -50,6 +50,7 @@ export function mapProfessionalWorkspace(
       id: data.profile.id,
       publicSlug: data.profile.public_slug,
       status: data.profile.profile_status,
+      presentationType: data.profile.presentation_type,
       isPublic: data.profile.is_public,
       isSearchEligible: data.profile.is_search_eligible,
       publicationBlockers: data.profile.publication_blockers,

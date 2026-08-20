@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { computed, onMounted, shallowRef } from "vue";
-import { useApplicationSession } from "~/composables/useApplicationSession";
-import { useProfessionalRelationships } from "~/composables/useProfessionalRelationships";
 import { useShare } from "~/composables/useShare";
 import { useToast } from "~/composables/useToast";
 import { useApiClient } from "~/services/api/client";
@@ -11,7 +9,6 @@ import {
   recordPublicProfessionalProfileView,
 } from "~/services/api/public-discovery";
 import { buildPublicProfileWhatsAppUrl } from "~/utils/publicProfiles";
-import type { ProfessionalRelationshipRequestInput } from "~/services/api/professional-relationships";
 
 interface SocialLink {
   platform: "instagram" | "youtube";
@@ -23,13 +20,6 @@ interface SocialLink {
 const route = useRoute();
 const client = useApiClient();
 const runtimeConfig = useRuntimeConfig();
-const { account, restoreSession } = useApplicationSession();
-const {
-  isSubmitting: relationshipSubmitting,
-  error: relationshipError,
-  requestRelationship,
-  clearError: clearRelationshipError,
-} = useProfessionalRelationships();
 const { share } = useShare();
 const { showToast } = useToast();
 const requestedSlug = computed(() =>
@@ -65,15 +55,8 @@ if (profileError.value || !profileResult.value) {
 const professional = computed(() => profileResult.value!.professional);
 const activePortfolio = shallowRef(0);
 const portfolioOpen = shallowRef(false);
-const relationshipOpen = shallowRef(false);
 const selectedPortfolio = computed(
   () => professional.value?.portfolio[activePortfolio.value],
-);
-const canRequestRelationship = computed(
-  () =>
-    account.value?.role === "professional" &&
-    account.value.relationshipEligible &&
-    account.value.professionalProfileId !== professional.value.id,
 );
 const supportEmailUrl = computed(() => {
   const subject = encodeURIComponent(
@@ -90,6 +73,8 @@ const contactUrl = computed(() => {
   });
 });
 const resultsUrl = computed(() => {
+  if (!professional.value.primaryServiceSlug) return "/encontrar";
+
   const query = new URLSearchParams({
     servico: String(
       route.query.servico ?? professional.value.primaryServiceSlug,
@@ -128,11 +113,15 @@ const canonicalUrl = computed(
 );
 useSeoMeta({
   title: () =>
-    `${professional.value.name} — ${professional.value.primaryService}`,
+    professional.value.primaryService
+      ? `${professional.value.name} — ${professional.value.primaryService}`
+      : `${professional.value.name} — profissional em Joinville`,
   description: () =>
     professional.value.headline ?? professional.value.bio ?? undefined,
   ogTitle: () =>
-    `${professional.value.name} — ${professional.value.primaryService}`,
+    professional.value.primaryService
+      ? `${professional.value.name} — ${professional.value.primaryService}`
+      : `${professional.value.name} — profissional em Joinville`,
   ogDescription: () =>
     professional.value.headline ?? professional.value.bio ?? undefined,
   ogImage: () => professional.value.avatar ?? undefined,
@@ -145,7 +134,6 @@ useHead(() => ({
 }));
 
 onMounted(() => {
-  void restoreSession().catch(() => false);
   void recordPublicProfessionalProfileView(
     client,
     professional.value.id,
@@ -168,75 +156,57 @@ function openPortfolio(index: number) {
 async function shareProfile() {
   await share({
     title: `${professional.value.name} na Berufe`,
-    text: `Veja o perfil de ${professional.value.name}, ${professional.value.primaryService.toLocaleLowerCase("pt-BR")} em Joinville.`,
+    text: professional.value.primaryService
+      ? `Veja o perfil de ${professional.value.name}, ${professional.value.primaryService.toLocaleLowerCase("pt-BR")} em Joinville.`
+      : `Veja o perfil profissional de ${professional.value.name} em Joinville.`,
     url: canonicalUrl.value,
   });
-}
-
-function openRelationshipRequest() {
-  clearRelationshipError();
-  relationshipOpen.value = true;
-}
-
-async function submitRelationship(input: ProfessionalRelationshipRequestInput) {
-  try {
-    await requestRelationship(input);
-    clearNuxtData("professional-workspace");
-    relationshipOpen.value = false;
-    showToast({
-      title: "Solicitação enviada",
-      description:
-        "A relação será exibida quando o outro profissional confirmar.",
-    });
-  } catch {
-    // The dialog keeps the normalized API error visible for a retry.
-  }
 }
 </script>
 
 <template>
   <div v-if="professional" class="profile-page">
-    <ProfileHero
+    <ProfileExternalProfile
+      v-if="professional.profileType === 'external'"
       :professional="professional"
-      :social-links="socialLinks"
       :contact-url="contactUrl"
-      :results-url="resultsUrl"
+      :support-email-url="supportEmailUrl"
       @contact="announceContact"
       @share="shareProfile"
     />
-    <ProfileEvidenceStrip :evidence="professional.evidence" />
-
-    <DesignSystemContainer class="profile-content">
-      <ProfileDetails
+    <template v-else>
+      <ProfileHero
         :professional="professional"
-        :can-request-relationship="canRequestRelationship"
-        :support-email-url="supportEmailUrl"
-        @request-relationship="openRelationshipRequest"
-        @view-portfolio="openPortfolio"
+        :social-links="socialLinks"
+        :contact-url="contactUrl"
+        :results-url="resultsUrl"
+        @contact="announceContact"
+        @share="shareProfile"
       />
-      <ProfileSidebar
+      <ProfileEvidenceStrip :evidence="professional.evidence" />
+
+      <DesignSystemContainer class="profile-content">
+        <ProfileDetails
+          :professional="professional"
+          :support-email-url="supportEmailUrl"
+          @view-portfolio="openPortfolio"
+        />
+        <ProfileSidebar
+          :professional="professional"
+          :contact-url="contactUrl"
+          @contact="announceContact"
+        />
+      </DesignSystemContainer>
+
+      <ProfileMobileContact
         :professional="professional"
         :contact-url="contactUrl"
         @contact="announceContact"
       />
-    </DesignSystemContainer>
-
-    <ProfileMobileContact
-      :professional="professional"
-      :contact-url="contactUrl"
-      @contact="announceContact"
-    />
-
-    <ProfileRelationshipRequestDialog
-      v-model:open="relationshipOpen"
-      :recipient-professional-id="professional.id"
-      :recipient-name="professional.name"
-      :submitting="relationshipSubmitting"
-      :error="relationshipError"
-      @submit="submitRelationship"
-    />
+    </template>
 
     <UModal
+      v-if="professional.profileType === 'self_service'"
       v-model:open="portfolioOpen"
       :title="selectedPortfolio?.title"
       :description="selectedPortfolio?.service"

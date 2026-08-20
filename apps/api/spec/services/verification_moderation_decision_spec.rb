@@ -12,7 +12,14 @@ RSpec.describe "Identity-verification moderation" do
       status: "active"
     )
   end
-  let(:account) { UserAccount.create!(phone_e164: "+5547999998209", role: "professional", status: "active") }
+  let(:account) do
+    UserAccount.create!(
+      phone_e164: "+5547999998209",
+      role: "professional",
+      status: "active",
+      phone_verified_at: Time.current
+    )
+  end
   let(:profile) { ProfessionalProfile.create!(user_account: account, display_name: "Ana Souza") }
   let(:context) { AdminActionContext.new(admin_user_id: admin.id, request_id: "verification-moderation") }
   let(:request_record) { create_request }

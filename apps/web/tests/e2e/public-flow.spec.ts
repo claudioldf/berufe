@@ -1,10 +1,36 @@
 import { expect, test } from "@playwright/test";
 
+async function waitForNuxtHydration(page: import("@playwright/test").Page) {
+  await page.waitForFunction(() =>
+    Boolean(
+      (
+        document.querySelector("#__nuxt") as Element & {
+          __vue_app__?: unknown;
+        }
+      )?.__vue_app__,
+    ),
+  );
+}
+
+async function fillServiceSearch(
+  page: import("@playwright/test").Page,
+  service: string,
+) {
+  const input = page.getByRole("combobox", { name: "O que você precisa?" });
+  const submit = page.getByRole("button", { name: "Encontrar" });
+
+  await expect(async () => {
+    await input.fill(service);
+    await expect(submit).toBeEnabled({ timeout: 1_000 });
+  }).toPass({ timeout: 10_000 });
+}
+
 async function completeProfessionalSignIn(
   page: import("@playwright/test").Page,
   phone: string,
 ) {
   await page.goto("/app/professional/login");
+  await waitForNuxtHydration(page);
   await page.getByLabel("Celular com DDD").fill(phone);
   await page.getByRole("button", { name: "Receber código" }).click();
   await page.getByLabel("Código de 6 dígitos").fill("123456");
@@ -14,9 +40,11 @@ async function completeProfessionalSignIn(
   await page.getByRole("button", { name: "Criar meu perfil" }).click();
 }
 
+const runPhoneSegment = (Math.floor(Math.random() * 900) + 100).toString();
+
 function syntheticPhone(projectName: string, sequence: number) {
   const projectDigit = projectName.startsWith("mobile") ? "2" : "1";
-  return `479${projectDigit}111${sequence.toString().padStart(4, "0")}`;
+  return `479${projectDigit}${runPhoneSegment}${sequence.toString().padStart(4, "0")}`;
 }
 
 test("visitor can search, open a profile, and inspect the WhatsApp redirect", async ({
@@ -35,6 +63,7 @@ test("visitor can search, open a profile, and inspect the WhatsApp redirect", as
   ).toBeVisible();
 
   await page.goto("/encontrar");
+  await waitForNuxtHydration(page);
   await expect(
     page.getByRole("heading", {
       level: 1,
@@ -53,9 +82,7 @@ test("visitor can search, open a profile, and inspect the WhatsApp redirect", as
     ),
   ).toHaveCount(0);
 
-  await page
-    .getByRole("combobox", { name: "O que você precisa?" })
-    .fill("Eletricista");
+  await fillServiceSearch(page, "Eletricista");
   await page.getByRole("button", { name: "Encontrar" }).click();
   await expect(page).toHaveURL(/\/encontrar\?servico=eletricista&bairro=all$/);
   await expect(
@@ -117,12 +144,12 @@ test("an incomplete professional sees onboarding and can skip it", async ({
     page.getByRole("progressbar", { name: "Progresso do perfil" }),
   ).toHaveAttribute("aria-valuenow", "0");
 
-  await page.getByRole("link", { name: "Pular por agora" }).click();
+  await page.getByRole("link", { name: "Fazer depois" }).click();
   await expect(page).toHaveURL(/\/app\/professional$/);
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Marcos");
 });
 
-test("professional can reach 100% and retain frontend progress", async ({
+test("professional completes onboarding and retains the published state", async ({
   page,
 }, testInfo) => {
   await completeProfessionalSignIn(
@@ -130,12 +157,19 @@ test("professional can reach 100% and retain frontend progress", async ({
     syntheticPhone(testInfo.project.name, 2),
   );
 
+  await page.getByLabel("Data de nascimento").fill("1990-04-12");
   await page
     .getByLabel("Frase de apresentação")
     .fill("Elétrica residencial com cuidado e clareza.");
   await page
     .getByLabel("Conte um pouco sobre seu trabalho")
     .fill("Trabalho com instalações e manutenção elétrica residencial.");
+  await page
+    .locator(".profile-photo-control__input")
+    .setInputFiles("public/images/professional-marcos-alves-electrician.jpg");
+  await expect(
+    page.getByText(/Foto salva e aguardando revisão|Foto revisada/),
+  ).toBeVisible({ timeout: 30_000 });
   await page.getByRole("button", { name: "Salvar e continuar" }).click();
 
   await expect(
@@ -146,36 +180,41 @@ test("professional can reach 100% and retain frontend progress", async ({
   await page.getByRole("button", { name: "Salvar e continuar" }).click();
 
   await expect(
-    page.getByRole("heading", { name: "Mostre um trabalho bem feito." }),
+    page.getByRole("heading", { name: "Quer verificar sua identidade?" }),
   ).toBeVisible();
-  await page.locator('input[name="portfolio-image"]').setInputFiles({
-    name: "cozinha.jpg",
-    mimeType: "image/jpeg",
-    buffer: Buffer.from("portfolio-mock"),
-  });
-  await page.getByLabel("Título do trabalho").fill("Iluminação da cozinha");
-  await page.getByRole("button", { name: "Salvar e continuar" }).click();
-
-  await expect(
-    page.getByRole("heading", { name: "Finalize com sua identidade." }),
-  ).toBeVisible();
-  await page.locator('input[name="identity-document"]').setInputFiles({
-    name: "documento.png",
-    mimeType: "image/png",
-    buffer: Buffer.from("identity-mock"),
-  });
+  await page
+    .locator('input[name="identity-document"]')
+    .setInputFiles("public/images/professional-marcos-alves-electrician.jpg");
   await page.getByRole("button", { name: "Enviar e concluir" }).click();
+  await expect(page.getByText("Verificação enviada")).toBeVisible();
+  await expect(page.getByText("100% completo", { exact: true })).toBeVisible();
 
-  await expect(page.getByText("Perfil 100% completo")).toBeVisible();
+  const publishResponse = page.waitForResponse(
+    (response) =>
+      response.url().endsWith("/api/v1/professional/profile/submission") &&
+      response.request().method() === "POST",
+  );
+  await page.getByRole("button", { name: "Publicar perfil" }).click();
+  expect((await publishResponse).status()).toBe(200);
+
   await expect(
     page.getByRole("heading", {
-      name: "Você concluiu os primeiros passos.",
+      name: "Seu perfil já pode ser encontrado.",
     }),
   ).toBeVisible();
 
   await page.reload();
-  await expect(page.getByText("Perfil 100% completo")).toBeVisible();
+  await expect(
+    page.getByRole("heading", {
+      name: "Seu perfil já pode ser encontrado.",
+    }),
+  ).toBeVisible();
 
+  if ((page.viewportSize()?.width ?? 0) <= 720) {
+    await page.getByRole("button", { name: "Abrir menu" }).click();
+  }
+  await page.getByRole("button", { name: "Sair" }).click();
+  await expect(page).toHaveURL(/\/app\/professional\/login$/);
   await completeProfessionalSignIn(
     page,
     syntheticPhone(testInfo.project.name, 3),

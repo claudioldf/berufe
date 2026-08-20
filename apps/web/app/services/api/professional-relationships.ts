@@ -10,8 +10,33 @@ export type {
   ProfessionalRelationshipType,
 } from "~/types";
 
+export interface ProfessionalRelationshipCandidate {
+  id: string;
+  publicSlug: string;
+  displayName: string;
+  profileType: "self_service" | "external";
+  photoUrl: string | null;
+}
+
+export type ProfessionalRelationshipTarget =
+  | {
+      type: "profile";
+      professionalProfileId: string;
+    }
+  | {
+      type: "phone";
+      name: string;
+      phone: string;
+      serviceIds: string[];
+      coverage: {
+        allJoinville: boolean;
+        neighborhoodCodes: string[];
+      };
+      contactPublicationAttested: true;
+    };
+
 export interface ProfessionalRelationshipRequestInput {
-  recipientProfessionalId: string;
+  target: ProfessionalRelationshipTarget;
   relationshipType: ProfessionalRelationshipType;
   contextNote?: string | null;
 }
@@ -23,22 +48,20 @@ interface ContractRelationship {
   relationship_type: ProfessionalRelationshipType;
   context_note: string | null;
   status: "pending" | "accepted" | "declined";
+  source: "existing_profile" | "external_phone";
   created_at: string;
   responded_at: string | null;
-  initiator: {
-    id: string;
-    public_slug: string;
-    display_name: string;
-    photo_url: string | null;
-    profile_available: boolean;
-  };
-  recipient: {
-    id: string;
-    public_slug: string;
-    display_name: string;
-    photo_url: string | null;
-    profile_available: boolean;
-  };
+  initiator: ContractRelationshipParty;
+  recipient: ContractRelationshipParty;
+}
+
+interface ContractRelationshipParty {
+  id: string;
+  public_slug: string;
+  display_name: string;
+  profile_type: "self_service" | "external";
+  photo_url: string | null;
+  profile_available: boolean;
 }
 
 export function mapProfessionalRelationship(
@@ -49,49 +72,84 @@ export function mapProfessionalRelationship(
     relationshipType: relationship.relationship_type,
     contextNote: relationship.context_note,
     status: relationship.status,
+    source: relationship.source,
     createdAt: relationship.created_at,
     respondedAt: relationship.responded_at,
-    initiator: {
-      id: relationship.initiator.id,
-      publicSlug: relationship.initiator.public_slug,
-      displayName: relationship.initiator.display_name,
-      photoUrl: relationship.initiator.photo_url,
-      profileAvailable: relationship.initiator.profile_available,
-    },
-    recipient: {
-      id: relationship.recipient.id,
-      publicSlug: relationship.recipient.public_slug,
-      displayName: relationship.recipient.display_name,
-      photoUrl: relationship.recipient.photo_url,
-      profileAvailable: relationship.recipient.profile_available,
-    },
+    initiator: mapParty(relationship.initiator),
+    recipient: mapParty(relationship.recipient),
   };
+}
+
+function mapParty(party: ContractRelationshipParty) {
+  return {
+    id: party.id,
+    publicSlug: party.public_slug,
+    displayName: party.display_name,
+    profileType: party.profile_type,
+    photoUrl: party.photo_url,
+    profileAvailable: party.profile_available,
+  };
+}
+
+function requestError(error: unknown, response: Response) {
+  return new ApiRequestError(
+    normalizeApiError(error, response.headers.get("X-Request-Id") ?? "client"),
+  );
+}
+
+export async function searchProfessionalRelationshipCandidates(
+  client: BerufeApiClient,
+  query: string,
+): Promise<ProfessionalRelationshipCandidate[]> {
+  const { data, error, response } = await client.GET(
+    "/api/v1/professional/relationship-candidates",
+    { params: { query: { query } } },
+  );
+  if (error || !data) throw requestError(error, response);
+
+  return data.data.candidates.map((candidate) => ({
+    id: candidate.id,
+    publicSlug: candidate.public_slug,
+    displayName: candidate.display_name,
+    profileType: candidate.profile_type,
+    photoUrl: candidate.photo_url,
+  }));
 }
 
 export async function createProfessionalRelationship(
   client: BerufeApiClient,
   input: ProfessionalRelationshipRequestInput,
 ): Promise<ProfessionalRelationship> {
+  const target =
+    input.target.type === "profile"
+      ? {
+          type: "profile" as const,
+          professional_profile_id: input.target.professionalProfileId,
+        }
+      : {
+          type: "phone" as const,
+          name: input.target.name.trim(),
+          phone: input.target.phone,
+          service_ids: input.target.serviceIds,
+          coverage: {
+            all_joinville: input.target.coverage.allJoinville,
+            neighborhood_codes: input.target.coverage.neighborhoodCodes,
+          },
+          contact_publication_attested: input.target.contactPublicationAttested,
+        };
   const { data, error, response } = await client.POST(
     "/api/v1/professional/relationships",
     {
       body: {
         relationship: {
-          recipient_professional_id: input.recipientProfessionalId,
+          target,
           relationship_type: input.relationshipType,
           context_note: input.contextNote?.trim() || null,
         },
       },
     },
   );
-  if (error || !data) {
-    throw new ApiRequestError(
-      normalizeApiError(
-        error,
-        response.headers.get("X-Request-Id") ?? "client",
-      ),
-    );
-  }
+  if (error || !data) throw requestError(error, response);
 
   return mapProfessionalRelationship(data.data.relationship);
 }
@@ -108,14 +166,7 @@ export async function respondProfessionalRelationship(
       body: { response: responseValue },
     },
   );
-  if (error || !data) {
-    throw new ApiRequestError(
-      normalizeApiError(
-        error,
-        response.headers.get("X-Request-Id") ?? "client",
-      ),
-    );
-  }
+  if (error || !data) throw requestError(error, response);
 
   return mapProfessionalRelationship(data.data.relationship);
 }

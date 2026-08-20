@@ -3,7 +3,9 @@ import { useApiClient } from "~/services/api/client";
 import { ApiRequestError } from "~/services/api/errors";
 import {
   createProfessionalRelationship,
+  searchProfessionalRelationshipCandidates,
   type ProfessionalRelationship,
+  type ProfessionalRelationshipCandidate,
   type ProfessionalRelationshipRequestInput,
 } from "~/services/api/professional-relationships";
 
@@ -11,6 +13,7 @@ interface ProfessionalRelationshipDependencies {
   create?: (
     input: ProfessionalRelationshipRequestInput,
   ) => Promise<ProfessionalRelationship>;
+  search?: (query: string) => Promise<ProfessionalRelationshipCandidate[]>;
 }
 
 export function useProfessionalRelationships(
@@ -19,10 +22,45 @@ export function useProfessionalRelationships(
   const client = useApiClient();
   const isSubmitting = shallowRef(false);
   const error = shallowRef("");
+  const candidates = shallowRef<ProfessionalRelationshipCandidate[]>([]);
+  const isSearching = shallowRef(false);
+  let latestSearch = 0;
   const create =
     dependencies.create ??
     ((input: ProfessionalRelationshipRequestInput) =>
       createProfessionalRelationship(client, input));
+  const search =
+    dependencies.search ??
+    ((query: string) =>
+      searchProfessionalRelationshipCandidates(client, query));
+
+  async function searchCandidates(query: string) {
+    const normalized = query.trim();
+    const searchId = ++latestSearch;
+    if (normalized.length < 2) {
+      candidates.value = [];
+      isSearching.value = false;
+      return [];
+    }
+
+    isSearching.value = true;
+    try {
+      const result = await search(normalized);
+      if (searchId === latestSearch) candidates.value = result;
+      return result;
+    } catch (failure) {
+      if (searchId === latestSearch) {
+        candidates.value = [];
+        error.value =
+          failure instanceof ApiRequestError
+            ? failure.message
+            : "Não foi possível buscar profissionais agora.";
+      }
+      throw failure;
+    } finally {
+      if (searchId === latestSearch) isSearching.value = false;
+    }
+  }
 
   async function requestRelationship(
     input: ProfessionalRelationshipRequestInput,
@@ -48,9 +86,19 @@ export function useProfessionalRelationships(
     error.value = "";
   }
 
+  function clearCandidates() {
+    latestSearch += 1;
+    candidates.value = [];
+    isSearching.value = false;
+  }
+
   return {
     isSubmitting: readonly(isSubmitting),
     error: readonly(error),
+    candidates: readonly(candidates),
+    isSearching: readonly(isSearching),
+    searchCandidates,
+    clearCandidates,
     requestRelationship,
     clearError,
   };

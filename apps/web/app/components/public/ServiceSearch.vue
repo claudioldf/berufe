@@ -43,6 +43,7 @@ function submit() {
         <span>O que você precisa?</span>
         <UInputMenu
           v-model="service"
+          v-model:search-term="service"
           class="service-search__input"
           mode="autocomplete"
           :items="services"

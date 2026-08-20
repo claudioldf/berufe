@@ -44,4 +44,19 @@ RSpec.describe ProfessionalProfile, type: :model do
     expect(profile).not_to be_valid
     expect(profile.errors).to include(:headline, :bio, :years_experience, :instagram_url, :youtube_url)
   end
+
+  it "keeps the creation source immutable" do
+    account = UserAccount.create!(phone_e164: "+5547999995004", role: "professional", status: "active")
+    profile = described_class.create!(
+      user_account: account,
+      display_name: "Ana Externa",
+      creation_source: "external",
+      external_published_at: Time.current
+    )
+
+    profile.creation_source = "self_service"
+
+    expect(profile).not_to be_valid
+    expect(profile.errors[:creation_source]).to be_present
+  end
 end

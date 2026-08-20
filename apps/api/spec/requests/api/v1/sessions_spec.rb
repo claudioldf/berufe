@@ -23,7 +23,10 @@ RSpec.describe "Application sessions", type: :request, openapi: true do
           "id" => account.id,
           "role" => "professional",
           "status" => "active",
+          "registered" => false,
+          "verified" => false,
           "registration_completed" => false,
+          "registration_display_name" => nil,
           "professional_profile_id" => nil,
           "relationship_eligible" => false
         },
@@ -63,7 +66,10 @@ RSpec.describe "Application sessions", type: :request, openapi: true do
       "id" => account.id,
       "role" => "admin",
       "status" => "active",
+      "registered" => false,
+      "verified" => false,
       "registration_completed" => false,
+      "registration_display_name" => nil,
       "professional_profile_id" => nil,
       "relationship_eligible" => false
     )
@@ -81,6 +87,13 @@ RSpec.describe "Application sessions", type: :request, openapi: true do
       submitted_at: 1.day.ago,
       verified_at: Time.current
     )
+    account.update!(
+      phone_verified_at: Time.current,
+      registered_at: Time.current,
+      terms_accepted_at: Time.current,
+      terms_version: LegalDocumentVersions::TERMS,
+      privacy_notice_version: LegalDocumentVersions::PRIVACY_NOTICE
+    )
     _application_session, session_token = ApplicationSession.issue!(user_account: account)
 
     get_current_session(session_token:, request_id: "session-relationship-eligibility")
@@ -88,6 +101,9 @@ RSpec.describe "Application sessions", type: :request, openapi: true do
     expect(response).to have_http_status(:ok)
     expect(response.parsed_body.dig("data", "account")).to include(
       "professional_profile_id" => profile.id,
+      "registered" => true,
+      "verified" => true,
+      "registration_display_name" => "Ana Elegível",
       "relationship_eligible" => true
     )
     assert_api_conform(status: 200)

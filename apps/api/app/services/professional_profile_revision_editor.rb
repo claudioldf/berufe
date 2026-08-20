@@ -5,7 +5,7 @@ class ProfessionalProfileRevisionEditor
   # save receives a new revision so an admin can never approve stale content.
   def call(profile:)
     revision = profile.working_revision
-    return revision if revision&.status == "draft" && profile.profile_status != "published"
+    return revision if revision&.status == "draft"
 
     source = revision&.rejected? ? revision : (profile.published_revision || revision)
     raise ActiveRecord::RecordNotFound, "professional profile revision" unless source
@@ -23,6 +23,7 @@ class ProfessionalProfileRevisionEditor
   def synchronize_review_state!(profile:)
     revision = profile.working_revision
     return revision unless revision && profile.profile_status == "published"
+    return revision if revision.self_service? && profile.published_revision&.external?
 
     source = @source_revision || profile.published_revision
     if source && !source.rejected? && revision != source && revision.material_snapshot == source.material_snapshot
@@ -53,6 +54,7 @@ class ProfessionalProfileRevisionEditor
     revision = profile.revisions.create!(
       version: profile.revisions.maximum(:version).to_i + 1,
       status: "draft",
+      profile_type: source.profile_type,
       display_name: source.display_name,
       headline: source.headline,
       bio: source.bio,

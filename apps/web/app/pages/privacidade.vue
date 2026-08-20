@@ -26,8 +26,8 @@ useSeoMeta({
     eyebrow="Privacidade desde o primeiro dado"
     title="Política de Privacidade"
     description="Explicamos quais dados fazem parte da Berufe, por que precisamos deles e como os protegemos."
-    version="0.2 · minuta do MVP"
-    updated-at="13 de agosto de 2026"
+    version="0.3 · minuta do MVP"
+    updated-at="20 de agosto de 2026"
     :sections="sections"
   >
     <div class="legal-lead">
@@ -48,9 +48,9 @@ useSeoMeta({
       <p>
         Esta Política abrange o cadastro e acesso de profissionais, perfil
         público, catálogo de serviços, busca, portfólio, verificação de
-        identidade, relações entre profissionais, moderação, compartilhamento de
-        perfil, criação e compartilhamento de orçamentos e contato pelo
-        WhatsApp.
+        identidade, relações entre profissionais, perfis básicos criados por
+        indicação, moderação, compartilhamento de perfil, criação e
+        compartilhamento de orçamentos e contato pelo WhatsApp.
       </p>
       <p>
         A razão social, o CNPJ, o endereço e o canal oficial de privacidade
@@ -89,6 +89,14 @@ useSeoMeta({
         cadastrados.
       </p>
       <p>
+        Um profissional com identidade aprovada também pode fornecer nome,
+        telefone profissional, serviços e área de atendimento de uma pessoa que
+        ainda não usa a Berufe. Registramos quem fez a indicação e quando
+        confirmou ter autorização para compartilhar esses dados. Criamos uma
+        conta não registrada e não verificada e um perfil básico, que o titular
+        pode reivindicar confirmando o próprio telefone e concluindo o cadastro.
+      </p>
+      <p>
         A verificação do MVP aceita somente imagem JPEG ou PNG de documento
         oficial com foto. O arquivo é privado, validado e regenerado antes da
         análise, acessado apenas por administradores autorizados e nunca exibido
@@ -123,7 +131,10 @@ useSeoMeta({
         <li>criar, revisar, publicar e manter perfis e portfólios;</li>
         <li>conferir identidade e moderar o conteúdo submetido;</li>
         <li>permitir busca por serviço e região com ordenação explicável;</li>
-        <li>confirmar e publicar relações aceitas entre profissionais;</li>
+        <li>
+          criar perfis básicos por indicação, permitir sua reivindicação e
+          confirmar relações entre profissionais;
+        </li>
         <li>
           abrir o compartilhamento de perfil ou o contato solicitado pela
           pessoa;
@@ -154,9 +165,10 @@ useSeoMeta({
             <tr>
               <td><strong>Público</strong></td>
               <td>
-                Perfil aprovado, serviços, região, foto, experiência declarada,
-                portfólio, selos específicos e relações aceitas entre perfis
-                públicos e ativos.
+                Perfil completo publicado ou perfil básico por indicação, nome,
+                serviços, região, foto, experiência declarada, portfólio, selos
+                específicos e relações aceitas entre perfis públicos e ativos,
+                conforme o tipo de perfil.
               </td>
               <td>
                 Qualquer visitante e, quando aplicável, mecanismos de busca.
@@ -165,9 +177,10 @@ useSeoMeta({
             <tr>
               <td><strong>Privado</strong></td>
               <td>
-                Telefone, sessão, conteúdo pendente, relações pendentes ou
+                Número de telefone em texto, sessão, relações pendentes ou
                 recusadas, rascunhos, dados de cliente em orçamentos e motivos
-                de moderação.
+                de moderação. O telefone profissional pode ser usado pelo botão
+                de WhatsApp sem ser escrito na página pública.
               </td>
               <td>Titular e equipe autorizada, conforme a necessidade.</td>
             </tr>
@@ -194,6 +207,12 @@ useSeoMeta({
         Conteúdo novo ou materialmente alterado permanece indisponível enquanto
         aguarda aprovação. Conteúdo rejeitado, oculto ou ligado a uma conta
         suspensa não aparece publicamente.
+      </p>
+      <p>
+        Um perfil básico por indicação permanece disponível enquanto houver uma
+        indicação ativa com autorização registrada ou depois que o titular
+        concluir o cadastro. Uma relação pendente nunca é exibida no perfil
+        público.
       </p>
     </section>
 

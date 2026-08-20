@@ -56,6 +56,8 @@ RSpec.describe "Phone OTP verification", type: :request, openapi: true do
     )
     expect(account.phone_e164).to eq("+5547999991111")
     expect(account.role).to eq("professional")
+    expect(account.phone_verified_at).to eq(now)
+    expect(account.registered_at).to be_nil
     expect(account.last_login_at).to eq(now)
     expect(session.user_account).to eq(account)
     expect(session.authentication_method).to eq("sms_otp")
@@ -88,6 +90,8 @@ RSpec.describe "Phone OTP verification", type: :request, openapi: true do
 
     expect(ApplicationSession.last.user_account).to eq(account)
     expect(UserAccount.find_by(id: account.id)).to eq(account)
+    expect(account.reload.phone_verified_at).to be_present
+    expect(account.registered_at).to be_nil
   end
 
   it "uses one generic outcome for malformed, unknown, expired, consumed, and incorrect codes" do

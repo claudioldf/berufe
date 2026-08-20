@@ -6,6 +6,7 @@ import type {
   VerificationSubmission,
 } from "~/types";
 import { useCatalogs } from "~/composables/useCatalogs";
+import { useApplicationSession } from "~/composables/useApplicationSession";
 import { useToast } from "~/composables/useToast";
 import { ApiRequestError } from "~/services/api/errors";
 import type { ProfessionalRelationshipResponse } from "~/services/api/professional-relationships";
@@ -13,6 +14,7 @@ import type { ProfessionalRelationshipResponse } from "~/services/api/profession
 const route = useRoute();
 const router = useRouter();
 const { showToast } = useToast();
+const { account } = useApplicationSession();
 const { data: catalog, error: catalogError } = await useCatalogs();
 if (catalogError.value || !catalog.value) {
   throw createError({
@@ -51,6 +53,10 @@ if (workspaceError.value || !workspace.value) {
   });
 }
 const saving = shallowRef(false);
+const relationshipOpen = shallowRef(false);
+const relationshipEligible = computed(
+  () => account.value?.relationshipEligible ?? false,
+);
 // Every field is derived from the authenticated workspace. Nothing is borrowed
 // from a fixture: the editor must only ever show this professional's own data.
 const professional = computed<Professional>(() => {
@@ -366,6 +372,7 @@ async function handleRelationshipRemove(id: string) {
         :responding-id="relationshipRespondingId"
         :removing-id="relationshipRemovingId"
         :error="relationshipError"
+        @add="relationshipOpen = true"
         @respond="handleRelationshipResponse"
         @remove="handleRelationshipRemove"
       />
@@ -378,6 +385,12 @@ async function handleRelationshipRemove(id: string) {
         @submitted="handleVerificationSubmission"
       />
     </DesignSystemContainer>
+    <RelationshipCreateDialog
+      v-model:open="relationshipOpen"
+      :services="services"
+      :neighborhoods="neighborhoods"
+      :eligible="relationshipEligible"
+    />
   </div>
 </template>
 

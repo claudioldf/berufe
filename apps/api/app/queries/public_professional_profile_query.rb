@@ -3,7 +3,7 @@
 class PublicProfessionalProfileQuery
   def call(slug:)
     ProfessionalProfile
-      .publicly_eligible
+      .publicly_viewable
       .includes(
         :published_photo,
         :verification_requests,

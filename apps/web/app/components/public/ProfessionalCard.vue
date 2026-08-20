@@ -21,6 +21,16 @@ const hasVerifiedIdentity = computed(() =>
 const wasUpdatedRecently = computed(() =>
   isRecentPublicSnapshot(props.professional.publicSnapshotUpdatedAt),
 );
+const coverageLabel = computed(() => {
+  if (props.professional.coverage.allJoinville) return "Atende toda Joinville";
+  if (props.professional.coverage.neighborhoods.length) {
+    return `Atende ${props.professional.coverage.neighborhoods
+      .slice(0, 3)
+      .map((neighborhood) => neighborhood.name)
+      .join(", ")}`;
+  }
+  return "Joinville · área não informada";
+});
 </script>
 
 <template>
@@ -41,7 +51,10 @@ const wasUpdatedRecently = computed(() =>
 
     <div class="professional-card__body">
       <div class="professional-card__topline">
-        <span v-if="professional.matchingService"
+        <span v-if="professional.profileType === 'external'"
+          ><UIcon name="i-lucide-user-round-plus" /> Perfil por indicação</span
+        >
+        <span v-else-if="professional.matchingService"
           ><UIcon name="i-lucide-sparkles" />
           {{ professional.matchingService.name }}</span
         >
@@ -55,14 +68,7 @@ const wasUpdatedRecently = computed(() =>
       </p>
       <p class="professional-card__coverage">
         <UIcon name="i-lucide-map-pin" />
-        {{
-          professional.coverage.allJoinville
-            ? "Atende toda Joinville"
-            : `Atende ${professional.coverage.neighborhoods
-                .slice(0, 3)
-                .map((neighborhood) => neighborhood.name)
-                .join(", ")}`
-        }}
+        {{ coverageLabel }}
       </p>
 
       <div class="professional-card__evidence">

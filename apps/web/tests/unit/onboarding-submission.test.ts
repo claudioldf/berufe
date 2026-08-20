@@ -24,6 +24,7 @@ function completeWorkspace(): ProfessionalWorkspace {
       id: "23a94f5e-1429-4ec7-bbc4-a6f805d5182d",
       publicSlug: "ana-souza",
       status: "draft",
+      presentationType: "self_service",
       isPublic: false,
       isSearchEligible: false,
       publicationBlockers: [],
@@ -164,5 +165,57 @@ describe("professional onboarding submission", () => {
     });
     await nextTick();
     expect(wrapper.find("[data-success]").exists()).toBe(true);
+  });
+
+  it("keeps a published external profile in onboarding", async () => {
+    const workspace = completeWorkspace();
+    workspace.profile.status = "published";
+    workspace.profile.presentationType = "external";
+    workspace.profile.isPublic = true;
+    workspace.profile.identity.birthdate = "";
+    workspace.profile.photo.current = null;
+    const wrapper = mount(Wizard, {
+      props: {
+        services: [
+          {
+            id: workspace.profile.services[0]!.id,
+            name: "Eletricista",
+            slug: "eletricista",
+            category: "Instalações",
+            icon: "i-lucide-zap",
+            description: "Instalações elétricas.",
+            aliases: [],
+          },
+        ],
+        neighborhoods: [],
+        workspace,
+        saveIdentity: vi.fn(),
+        saveSupply: vi.fn(),
+        saveVerification: vi.fn(),
+        uploadPhoto: vi.fn(),
+        retryPhoto: vi.fn(),
+        submitProfile: vi.fn(),
+      },
+      global: {
+        stubs: {
+          DesignSystemContainer: { template: "<div><slot /></div>" },
+          DesignSystemSurfaceCard: { template: "<section><slot /></section>" },
+          DesignSystemEyebrow: { template: "<span><slot /></span>" },
+          OnboardingProgress: true,
+          OnboardingProfileStep: {
+            template: "<div data-profile-step>Complete seu perfil</div>",
+          },
+          OnboardingServicesStep: true,
+          OnboardingVerificationStep: VerificationStepStub,
+          OnboardingSuccess: SuccessStub,
+          UButton: { template: "<button><slot /></button>" },
+          UIcon: true,
+        },
+      },
+    });
+    await flushPromises();
+
+    expect(wrapper.find("[data-success]").exists()).toBe(false);
+    expect(wrapper.find(".onboarding-workspace").exists()).toBe(true);
   });
 });

@@ -20,6 +20,7 @@ Rails.application.routes.draw do
         put "profile/photo", to: "profile_photos#update"
         resources :portfolio_items, only: %i[create destroy], path: "portfolio-items"
         resources :verification_requests, only: :create, path: "verification-requests"
+        resources :relationship_candidates, only: :index, path: "relationship-candidates"
         resources :relationships, only: %i[create destroy]
         post "relationships/:id/response", to: "relationships#respond"
         resources :quotes, only: %i[index create show update] do

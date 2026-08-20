@@ -67,6 +67,7 @@ class PublicDiscoveryDemoSeed
     account = UserAccount.find_or_create_by!(phone_e164: "+#{attributes.fetch("whatsapp")}") do |record|
       record.role = "professional"
       record.status = "active"
+      record.phone_verified_at = Time.current
     end
     profile = ProfessionalRegistration.new.call(
       user_account: account,

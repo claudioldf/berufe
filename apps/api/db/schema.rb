@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_20_110000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_20_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -406,6 +406,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_20_110000) do
     t.text "headline"
     t.text "instagram_url"
     t.uuid "professional_profile_id", null: false
+    t.text "profile_type", default: "self_service", null: false
     t.text "rejection_reason"
     t.datetime "reviewed_at"
     t.text "status", default: "draft", null: false
@@ -415,12 +416,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_20_110000) do
     t.text "whatsapp_e164"
     t.integer "years_experience"
     t.text "youtube_url"
+    t.index ["professional_profile_id", "profile_type"], name: "idx_profile_revisions_one_working_per_type", unique: true, where: "(status = ANY (ARRAY['draft'::text, 'pending_review'::text]))"
     t.index ["professional_profile_id", "version"], name: "idx_profile_revisions_unique_version", unique: true
     t.index ["professional_profile_id"], name: "idx_on_professional_profile_id_7926e53c9d"
-    t.index ["professional_profile_id"], name: "idx_profile_revisions_one_working", unique: true, where: "(status = ANY (ARRAY['draft'::text, 'pending_review'::text]))"
     t.check_constraint "bio IS NULL OR char_length(btrim(bio)) >= 1 AND char_length(btrim(bio)) <= 500", name: "professional_profile_revisions_bio_length"
     t.check_constraint "char_length(btrim(display_name)) >= 3 AND char_length(btrim(display_name)) <= 70", name: "professional_profile_revisions_display_name_length"
     t.check_constraint "headline IS NULL OR char_length(btrim(headline)) >= 1 AND char_length(btrim(headline)) <= 120", name: "professional_profile_revisions_headline_length"
+    t.check_constraint "profile_type = ANY (ARRAY['self_service'::text, 'external'::text])", name: "professional_profile_revisions_known_profile_type"
     t.check_constraint "status = ANY (ARRAY['draft'::text, 'pending_review'::text, 'approved'::text, 'rejected'::text, 'superseded'::text])", name: "professional_profile_revisions_known_status"
     t.check_constraint "whatsapp_e164 IS NULL OR whatsapp_e164 ~ '^\\+55[1-9][1-9]9[0-9]{8}$'::text", name: "professional_profile_revisions_whatsapp_format"
     t.check_constraint "years_experience IS NULL OR years_experience >= 0 AND years_experience <= 70", name: "professional_profile_revisions_experience_range"
@@ -458,6 +460,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_20_110000) do
     t.uuid "approved_revision_id"
     t.date "birthdate"
     t.datetime "created_at", null: false
+    t.text "creation_source", default: "self_service", null: false
+    t.datetime "external_published_at"
     t.text "profile_status", default: "draft", null: false
     t.text "public_slug", null: false
     t.datetime "published_at"
@@ -469,6 +473,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_20_110000) do
     t.uuid "working_revision_id"
     t.index ["approved_photo_id"], name: "index_professional_profiles_on_approved_photo_id", unique: true
     t.index ["approved_revision_id"], name: "index_professional_profiles_on_approved_revision_id", unique: true
+    t.index ["creation_source"], name: "index_professional_profiles_on_creation_source"
+    t.index ["external_published_at"], name: "index_professional_profiles_on_external_published_at"
     t.index ["profile_status"], name: "index_professional_profiles_on_profile_status"
     t.index ["public_slug"], name: "index_professional_profiles_on_public_slug", unique: true
     t.index ["published_at"], name: "index_professional_profiles_on_published_at"
@@ -477,11 +483,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_20_110000) do
     t.index ["user_account_id"], name: "index_professional_profiles_on_user_account_id", unique: true
     t.index ["working_photo_id"], name: "index_professional_profiles_on_working_photo_id", unique: true
     t.index ["working_revision_id"], name: "index_professional_profiles_on_working_revision_id", unique: true
+    t.check_constraint "creation_source = 'external'::text OR external_published_at IS NULL", name: "professional_profiles_external_publication_source"
+    t.check_constraint "creation_source = ANY (ARRAY['self_service'::text, 'external'::text])", name: "professional_profiles_known_creation_source"
     t.check_constraint "profile_status = ANY (ARRAY['draft'::text, 'pending_review'::text, 'published'::text, 'suspended'::text])", name: "professional_profiles_known_status"
     t.check_constraint "public_slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'::text", name: "professional_profiles_public_slug_format"
   end
 
   create_table "professional_relationships", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "contact_publication_attested_at"
     t.text "context_note"
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
@@ -489,6 +498,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_20_110000) do
     t.uuid "recipient_professional_id", null: false
     t.text "relationship_type", null: false
     t.datetime "responded_at"
+    t.text "source", default: "existing_profile", null: false
     t.text "status", default: "pending", null: false
     t.datetime "updated_at", null: false
     t.index ["initiator_professional_id", "recipient_professional_id", "relationship_type"], name: "idx_professional_relationships_unique_direction", unique: true, where: "(deleted_at IS NULL)"
@@ -496,9 +506,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_20_110000) do
     t.index ["initiator_professional_id"], name: "index_professional_relationships_on_initiator_professional_id"
     t.index ["recipient_professional_id", "status"], name: "idx_professional_relationships_recipient_status"
     t.index ["recipient_professional_id"], name: "index_professional_relationships_on_recipient_professional_id"
+    t.index ["source"], name: "index_professional_relationships_on_source"
     t.check_constraint "context_note IS NULL OR char_length(btrim(context_note)) >= 1 AND char_length(btrim(context_note)) <= 300", name: "professional_relationships_context_length"
     t.check_constraint "initiator_professional_id <> recipient_professional_id", name: "professional_relationships_distinct_profiles"
     t.check_constraint "relationship_type = ANY (ARRAY['recommendation'::text, 'worked_together'::text])", name: "professional_relationships_known_type"
+    t.check_constraint "source = 'existing_profile'::text OR contact_publication_attested_at IS NOT NULL", name: "professional_relationships_external_attestation"
+    t.check_constraint "source = ANY (ARRAY['existing_profile'::text, 'external_phone'::text])", name: "professional_relationships_known_source"
     t.check_constraint "status = 'pending'::text AND responded_at IS NULL OR (status = ANY (ARRAY['accepted'::text, 'declined'::text])) AND responded_at IS NOT NULL", name: "professional_relationships_response_state"
     t.check_constraint "status = ANY (ARRAY['pending'::text, 'accepted'::text, 'declined'::text])", name: "professional_relationships_known_status"
   end
@@ -632,7 +645,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_20_110000) do
     t.datetime "last_login_at"
     t.text "password_digest"
     t.text "phone_e164"
+    t.datetime "phone_verified_at"
     t.text "privacy_notice_version"
+    t.datetime "registered_at"
     t.text "role", default: "professional", null: false
     t.text "status", default: "active", null: false
     t.datetime "terms_accepted_at"
@@ -640,9 +655,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_20_110000) do
     t.datetime "updated_at", null: false
     t.index ["email"], name: "index_user_accounts_on_email", unique: true
     t.index ["phone_e164"], name: "index_user_accounts_on_phone_e164", unique: true
+    t.index ["phone_verified_at"], name: "index_user_accounts_on_phone_verified_at"
+    t.index ["registered_at"], name: "index_user_accounts_on_registered_at"
     t.index ["role", "status"], name: "index_user_accounts_on_role_and_status"
     t.check_constraint "email IS NULL OR email = lower(email) AND email = btrim(email)", name: "user_accounts_normalized_email"
     t.check_constraint "phone_e164 ~ '^\\+55[1-9][1-9]9[0-9]{8}$'::text", name: "user_accounts_brazilian_mobile_phone"
+    t.check_constraint "registered_at IS NULL OR phone_verified_at IS NOT NULL", name: "user_accounts_registration_requires_verified_phone"
     t.check_constraint "role = 'professional'::text AND phone_e164 IS NOT NULL AND email IS NULL AND password_digest IS NULL OR role = 'admin'::text AND phone_e164 IS NULL AND email IS NOT NULL AND email <> ''::text AND password_digest IS NOT NULL AND password_digest <> ''::text", name: "user_accounts_role_credentials"
     t.check_constraint "role = ANY (ARRAY['professional'::text, 'admin'::text])", name: "user_accounts_known_role"
     t.check_constraint "status = ANY (ARRAY['active'::text, 'suspended'::text])", name: "user_accounts_known_status"

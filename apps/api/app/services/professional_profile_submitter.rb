@@ -42,11 +42,12 @@ class ProfessionalProfileSubmitter
   private
 
   def already_published?(profile)
-    profile.profile_status == "published" && profile.publicly_available?
+    profile.has_self_service_publication? && profile.self_service_publicly_available?
   end
 
   def validate_state!(profile, revision)
-    return if profile.profile_status != "suspended" && revision.status.in?(%w[draft pending_review])
+    return if profile.profile_status != "suspended" && revision.self_service? &&
+      revision.status.in?(%w[draft pending_review])
 
     raise Invalid.new(base: ["o perfil não está disponível para envio"])
   end

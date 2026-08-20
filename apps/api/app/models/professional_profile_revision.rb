@@ -2,6 +2,7 @@
 
 class ProfessionalProfileRevision < ApplicationRecord
   STATUSES = %w[draft pending_review approved rejected superseded].freeze
+  PROFILE_TYPES = %w[self_service external].freeze
   # The fields that reach the public projection. Only a change to one of these
   # is a "material edit" in Feature Plan A2 §3.8, so only these send an already
   # published profile back to moderation.
@@ -16,6 +17,7 @@ class ProfessionalProfileRevision < ApplicationRecord
 
   validates :version, numericality: {only_integer: true, greater_than: 0}, uniqueness: {scope: :professional_profile_id}
   validates :status, inclusion: {in: STATUSES}
+  validates :profile_type, inclusion: {in: PROFILE_TYPES}
   validates :display_name, length: {in: 3..70}
   validates :headline, length: {in: 1..120}, allow_nil: true
   validates :bio, length: {in: 1..500}, allow_nil: true
@@ -29,6 +31,10 @@ class ProfessionalProfileRevision < ApplicationRecord
 
   STATUSES.each do |known_status|
     define_method("#{known_status}?") { status == known_status }
+  end
+
+  PROFILE_TYPES.each do |known_type|
+    define_method("#{known_type}?") { profile_type == known_type }
   end
 
   def editable?

@@ -71,7 +71,9 @@ const firstIncompleteIndex = computed(() =>
   ),
 );
 const isSubmitted = computed(
-  () => props.workspace.profile.status === "published",
+  () =>
+    props.workspace.profile.status === "published" &&
+    props.workspace.profile.presentationType === "self_service",
 );
 const professionalName = computed(
   () => state.value.profile.name.trim().split(" ")[0] || "profissional",

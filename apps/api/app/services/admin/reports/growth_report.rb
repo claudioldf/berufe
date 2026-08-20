@@ -158,7 +158,9 @@ module Admin
       end
 
       def supply
-        cohort = ProfessionalProfile.where(created_at: period.start_at...period.end_at)
+        cohort = ProfessionalProfile
+          .joins(:user_account)
+          .where(user_accounts: {registered_at: period.start_at...period.end_at})
         ids = cohort.pluck(:id)
         published = cohort.where.not(published_at: nil).pluck(:id)
         verified = criteria(published)[:identity].length

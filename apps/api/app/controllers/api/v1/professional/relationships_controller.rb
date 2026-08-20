@@ -82,10 +82,17 @@ module Api
 
         def relationship_params
           params.require(:relationship).permit(
-            :recipient_professional_id,
             :relationship_type,
-            :context_note
-          ).to_h.symbolize_keys
+            :context_note,
+            target: [
+              :type,
+              :professional_profile_id,
+              :name,
+              :phone,
+              :contact_publication_attested,
+              {service_ids: [], coverage: [:all_joinville, {neighborhood_codes: []}]}
+            ]
+          ).to_h.deep_symbolize_keys
         end
 
         def owned_profile!

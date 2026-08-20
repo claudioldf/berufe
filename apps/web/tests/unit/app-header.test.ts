@@ -31,7 +31,10 @@ async function mountHeader(route: string) {
       id: "23a94f5e-1429-4ec7-bbc4-a6f805d5182d",
       role,
       status: "active",
+      registered: role === "professional",
+      verified: role === "professional",
       registrationCompleted: true,
+      registrationDisplayName: null,
       professionalProfileId: "fc34e59b-0915-45c1-b0ea-29015578264a",
       relationshipEligible: true,
     };
@@ -73,7 +76,7 @@ describe("application header", () => {
 
     expect(wrapper.text()).toContain("Encontrar profissional");
     expect(wrapper.text()).toContain("Como funciona");
-    expect(wrapper.text()).toContain("Para profissionais");
+    expect(wrapper.text()).toContain("Sou um profissional");
     expect(wrapper.text()).toContain("Entrar");
     expect(wrapper.find(".logout-stub").exists()).toBe(false);
   });

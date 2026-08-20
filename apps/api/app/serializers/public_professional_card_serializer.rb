@@ -15,6 +15,8 @@ class PublicProfessionalCardSerializer
     {
       id: profile.id,
       public_slug: profile.public_slug,
+      profile_type: revision.profile_type,
+      claimed: profile.user_account.registered?,
       display_name: revision.display_name,
       headline: revision.headline,
       photo_url: public_photo_url,
@@ -52,7 +54,8 @@ class PublicProfessionalCardSerializer
   end
 
   def verification_labels(verification)
-    labels = [{type: "phone", label: "Telefone confirmado", verified_at: nil}]
+    labels = []
+    labels << {type: "phone", label: "Telefone confirmado", verified_at: nil} if verification[:phone_confirmed]
     if verification[:identity]
       labels << {
         type: "identity",

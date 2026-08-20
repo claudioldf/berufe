@@ -3,6 +3,7 @@
 class ProfessionalRelationship < ApplicationRecord
   TYPES = %w[recommendation worked_together].freeze
   STATUSES = %w[pending accepted declined].freeze
+  SOURCES = %w[existing_profile external_phone].freeze
 
   belongs_to :initiator_professional, class_name: "ProfessionalProfile"
   belongs_to :recipient_professional, class_name: "ProfessionalProfile"
@@ -11,6 +12,7 @@ class ProfessionalRelationship < ApplicationRecord
 
   validates :relationship_type, inclusion: {in: TYPES}
   validates :status, inclusion: {in: STATUSES}
+  validates :source, inclusion: {in: SOURCES}
   validates :context_note, length: {in: 1..300}, allow_nil: true
   validates :relationship_type,
     uniqueness: {
@@ -19,6 +21,7 @@ class ProfessionalRelationship < ApplicationRecord
     }
   validate :profiles_are_distinct
   validate :response_matches_status
+  validate :external_source_has_attestation
 
   before_validation :normalize_context_note
 
@@ -41,5 +44,11 @@ class ProfessionalRelationship < ApplicationRecord
     elsif responded_at.blank?
       errors.add(:responded_at, :blank)
     end
+  end
+
+  def external_source_has_attestation
+    return unless source == "external_phone" && contact_publication_attested_at.blank?
+
+    errors.add(:contact_publication_attested_at, :blank)
   end
 end

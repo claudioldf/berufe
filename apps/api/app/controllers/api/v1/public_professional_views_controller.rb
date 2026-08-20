@@ -8,7 +8,7 @@ module Api
       before_action :prevent_caching
 
       def create
-        profile = ProfessionalProfile.publicly_eligible.find(params[:id])
+        profile = ProfessionalProfile.publicly_viewable.find(params[:id])
         interaction = PublicProfileInteractionToken.new.verify(params.require(:interaction_token))
         raise InvalidInteraction unless interaction&.professional_id == profile.id
 
