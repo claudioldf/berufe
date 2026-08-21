@@ -15,6 +15,7 @@ module Api
             search: params[:search],
             status: params[:status],
             scheduled_on: params[:scheduled_on],
+            customer_id: params[:customer_id],
             sort: params[:sort],
             direction: params[:direction],
             page: params[:page],

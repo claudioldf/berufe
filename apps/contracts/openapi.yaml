@@ -1372,6 +1372,104 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorResponse" }
+  /api/v1/professional/customers:
+    get:
+      operationId: listProfessionalCustomers
+      summary: List customers owned by the authenticated professional
+      tags: [Professional quotes]
+      security:
+        - applicationSession: []
+      parameters:
+        - $ref: "#/components/parameters/ProfessionalCustomerSearch"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Owner-scoped customers ordered by normalized name.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProfessionalCustomerListResponse" }
+        "401":
+          description: An active session is required.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Professional registration has not created a profile yet.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "422":
+          description: One or more customer index parameters are invalid.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+  /api/v1/professional/customers/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      operationId: getProfessionalCustomer
+      summary: Read one customer owned by the authenticated professional
+      tags: [Professional quotes]
+      security:
+        - applicationSession: []
+      responses:
+        "200":
+          description: The owner-scoped customer and quote summary.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProfessionalCustomerResponse" }
+        "401":
+          description: An active session is required.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: The customer does not exist or belongs to another professional.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+    patch:
+      operationId: updateProfessionalCustomer
+      summary: Update canonical contact details for one owned customer
+      description: Existing quote snapshots remain unchanged. Changing the normalized email clears its verification.
+      tags: [Professional quotes]
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProfessionalCustomerWriteRequest" }
+      responses:
+        "200":
+          description: The normalized customer contact was updated.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProfessionalCustomerResponse" }
+        "401":
+          description: An active session is required.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403":
+          description: The exact browser origin or professional ownership is invalid.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: The customer does not exist or belongs to another professional.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "422":
+          description: One or more customer fields are invalid.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
   /api/v1/professional/service-jobs:
     get:
       operationId: listProfessionalServiceJobs
@@ -1526,6 +1624,7 @@ paths:
         - $ref: "#/components/parameters/ProfessionalQuoteSearch"
         - $ref: "#/components/parameters/ProfessionalQuoteStatus"
         - $ref: "#/components/parameters/ProfessionalQuoteScheduledOn"
+        - $ref: "#/components/parameters/ProfessionalQuoteCustomerId"
         - $ref: "#/components/parameters/ProfessionalQuoteSort"
         - $ref: "#/components/parameters/SortDirection"
         - $ref: "#/components/parameters/Page"
@@ -2820,6 +2919,20 @@ components:
       schema:
         type: string
         maxLength: 100
+    ProfessionalCustomerSearch:
+      name: search
+      in: query
+      description: Accent-insensitive search by customer name, email, or WhatsApp digits.
+      schema:
+        type: string
+        maxLength: 100
+    ProfessionalQuoteCustomerId:
+      name: customer_id
+      in: query
+      description: Return only quotes associated with this owner-scoped customer.
+      schema:
+        type: string
+        format: uuid
     ProfessionalQuoteStatus:
       name: status
       in: query
@@ -3999,6 +4112,64 @@ components:
               maxItems: 10
               items: { $ref: "#/components/schemas/ProfessionalCustomerCandidate" }
         request_id: { $ref: "#/components/schemas/RequestId" }
+    ProfessionalCustomer:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - name
+        - whatsapp_e164
+        - email
+        - email_verified
+        - quote_count
+        - last_quote_at
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, minLength: 1, maxLength: 80 }
+        whatsapp_e164: { type: string, pattern: "^\\+55[1-9][0-9]9[0-9]{8}$" }
+        email: { type: [string, "null"], format: email, maxLength: 254 }
+        email_verified: { type: boolean }
+        quote_count: { type: integer, minimum: 0 }
+        last_quote_at: { type: [string, "null"], format: date-time }
+    ProfessionalCustomerListResponse:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [customers, meta]
+          properties:
+            customers:
+              type: array
+              items: { $ref: "#/components/schemas/ProfessionalCustomer" }
+            meta: { $ref: "#/components/schemas/PageMeta" }
+        request_id: { $ref: "#/components/schemas/RequestId" }
+    ProfessionalCustomerResponse:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [customer]
+          properties:
+            customer: { $ref: "#/components/schemas/ProfessionalCustomer" }
+        request_id: { $ref: "#/components/schemas/RequestId" }
+    ProfessionalCustomerWriteRequest:
+      type: object
+      additionalProperties: false
+      required: [customer]
+      properties:
+        customer:
+          type: object
+          additionalProperties: false
+          properties:
+            name: { type: string, minLength: 1, maxLength: 80 }
+            whatsapp_e164: { type: string, pattern: "^\\+55[1-9][0-9]9[0-9]{8}$" }
+            email: { type: [string, "null"], format: email, maxLength: 254 }
     CustomerRecommendationResolveRequest:
       type: object
       additionalProperties: false

@@ -36,8 +36,11 @@ Customer and client mean the same entity in this product.
   association on the quote.
 - If the professional does not select an existing result, saving creates a new
   customer from the typed name, required phone, and optional email.
-- Updating an existing customer through a quote clears prior email verification
-  when the email changes.
+- The professional can search the lean customer directory, edit canonical
+  contact details, review the customer's quote history, and start a prefilled
+  quote. Customers are still created only through the quote flow.
+- Updating an existing customer through a quote or the directory clears prior
+  email verification when the normalized email changes.
 
 The quote also stores name, phone, and email snapshots. Service execution,
 WhatsApp handoff, and recommendation delivery use those snapshots so later
@@ -112,6 +115,8 @@ por e-mail".
 ### Professional
 
 - Customer autocomplete in the quote builder.
+- Customer directory and detail pages with contact editing, quote history, and
+  prefilled new-quote handoff.
 - Quote decision states and optimistic revision handling.
 - Recent services on the professional dashboard.
 - Service list and detail pages with completion and cancellation actions.
@@ -124,7 +129,8 @@ por e-mail".
 
 ### API and operations
 
-- Owner-scoped customer candidate endpoint.
+- Owner-scoped customer candidate and paginated directory endpoints, including
+  canonical contact editing and per-customer quote history.
 - Professional service list/detail/completion/cancellation endpoints.
 - Token-authenticated quote decision and completion endpoints.
 - Token-authenticated recommendation resolution and submission endpoints.
@@ -143,8 +149,8 @@ loop:
 - Quote templates, typed labor/material reporting, and catalog attribution.
 - Quote or service attachments and before/after job-photo authorization.
 - Scope-change ledgers after approval; the MVP keeps the approved quote immutable.
-- Customer directory screens, customer merging, campaigns, or other generic CRM
-  behavior.
+- Customer merging, notes, tags, campaigns, reminders, or other generic CRM
+  behavior beyond the lean customer directory.
 - Automated WhatsApp messages or provider webhooks.
 - Star ratings, recommendation moderation, replies, or abuse tooling beyond the
   existing bearer, origin, length, and consent controls.

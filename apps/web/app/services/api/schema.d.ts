@@ -547,6 +547,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/professional/customers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List customers owned by the authenticated professional */
+        get: operations["listProfessionalCustomers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/professional/customers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** Read one customer owned by the authenticated professional */
+        get: operations["getProfessionalCustomer"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update canonical contact details for one owned customer
+         * @description Existing quote snapshots remain unchanged. Changing the normalized email clears its verification.
+         */
+        patch: operations["updateProfessionalCustomer"];
+        trace?: never;
+    };
     "/api/v1/professional/service-jobs": {
         parameters: {
             query?: never;
@@ -1566,6 +1606,39 @@ export interface components {
             };
             request_id: components["schemas"]["RequestId"];
         };
+        ProfessionalCustomer: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            whatsapp_e164: string;
+            /** Format: email */
+            email: string | null;
+            email_verified: boolean;
+            quote_count: number;
+            /** Format: date-time */
+            last_quote_at: string | null;
+        };
+        ProfessionalCustomerListResponse: {
+            data: {
+                customers: components["schemas"]["ProfessionalCustomer"][];
+                meta: components["schemas"]["PageMeta"];
+            };
+            request_id: components["schemas"]["RequestId"];
+        };
+        ProfessionalCustomerResponse: {
+            data: {
+                customer: components["schemas"]["ProfessionalCustomer"];
+            };
+            request_id: components["schemas"]["RequestId"];
+        };
+        ProfessionalCustomerWriteRequest: {
+            customer: {
+                name?: string;
+                whatsapp_e164?: string;
+                /** Format: email */
+                email?: string | null;
+            };
+        };
         CustomerRecommendationResolveRequest: {
             token: string;
         };
@@ -2462,6 +2535,10 @@ export interface components {
         ModerationPageSize: number;
         /** @description Accent-insensitive search by quote number, customer, or service. */
         ProfessionalQuoteSearch: string;
+        /** @description Accent-insensitive search by customer name, email, or WhatsApp digits. */
+        ProfessionalCustomerSearch: string;
+        /** @description Return only quotes associated with this owner-scoped customer. */
+        ProfessionalQuoteCustomerId: string;
         /** @description Quote workflow status; defaults to all statuses. */
         ProfessionalQuoteStatus: "all" | "draft" | "shared" | "change_requested" | "approved" | "declined";
         /** @description Exact combined service date. */
@@ -3801,6 +3878,162 @@ export interface operations {
             };
         };
     };
+    listProfessionalCustomers: {
+        parameters: {
+            query?: {
+                /** @description Accent-insensitive search by customer name, email, or WhatsApp digits. */
+                search?: components["parameters"]["ProfessionalCustomerSearch"];
+                /** @description One-based result page. */
+                page?: components["parameters"]["Page"];
+                /** @description Result count per page. */
+                per_page?: components["parameters"]["PageSize"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Owner-scoped customers ordered by normalized name. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalCustomerListResponse"];
+                };
+            };
+            /** @description An active session is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Professional registration has not created a profile yet. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description One or more customer index parameters are invalid. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getProfessionalCustomer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The owner-scoped customer and quote summary. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalCustomerResponse"];
+                };
+            };
+            /** @description An active session is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The customer does not exist or belongs to another professional. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    updateProfessionalCustomer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfessionalCustomerWriteRequest"];
+            };
+        };
+        responses: {
+            /** @description The normalized customer contact was updated. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalCustomerResponse"];
+                };
+            };
+            /** @description An active session is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The exact browser origin or professional ownership is invalid. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The customer does not exist or belongs to another professional. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description One or more customer fields are invalid. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     listProfessionalServiceJobs: {
         parameters: {
             query?: never;
@@ -4012,6 +4245,8 @@ export interface operations {
                 status?: components["parameters"]["ProfessionalQuoteStatus"];
                 /** @description Exact combined service date. */
                 scheduled_on?: components["parameters"]["ProfessionalQuoteScheduledOn"];
+                /** @description Return only quotes associated with this owner-scoped customer. */
+                customer_id?: components["parameters"]["ProfessionalQuoteCustomerId"];
                 /** @description Quote table column used for deterministic ordering. */
                 sort?: components["parameters"]["ProfessionalQuoteSort"];
                 /** @description Sort direction for the selected column. */

@@ -72,6 +72,7 @@ export type QuoteSortDirection = "asc" | "desc";
 
 export interface QuoteListFilters {
   search: string;
+  customerId?: string;
   status: Quote["status"] | "all";
   scheduledOn: string;
   sort: QuoteSortKey;

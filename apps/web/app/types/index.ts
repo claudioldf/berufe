@@ -1,4 +1,5 @@
 export * from "./catalog";
+export * from "./customer";
 export * from "./moderation";
 export * from "./onboarding";
 export * from "./professional";

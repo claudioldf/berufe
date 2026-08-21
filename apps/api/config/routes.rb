@@ -22,6 +22,7 @@ Rails.application.routes.draw do
         resources :verification_requests, only: :create, path: "verification-requests"
         resources :relationship_candidates, only: :index, path: "relationship-candidates"
         resources :customer_candidates, only: :index, path: "customer-candidates"
+        resources :customers, only: %i[index show update]
         resources :relationships, only: %i[create destroy]
         post "relationships/:id/response", to: "relationships#respond"
         resources :quotes, only: %i[index create show update] do
