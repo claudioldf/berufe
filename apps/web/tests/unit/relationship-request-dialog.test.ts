@@ -244,7 +244,12 @@ describe("relationship create dialog", () => {
       .get(`input[value="cc1e5dfa-36a2-4f13-b37c-d1a3f9d25460"]`)
       .setValue(true);
     await wrapper.get('input[value="all_joinville"]').setValue(true);
-    await wrapper.get('input[name="external-contact-consent"]').setValue(true);
+    expect(
+      wrapper.find('input[name="external-contact-consent"]').exists(),
+    ).toBe(false);
+    expect(wrapper.text()).not.toContain(
+      "Confirmo que posso compartilhar estes dados profissionais",
+    );
     await wrapper.get("select").setValue("worked_together");
     await wrapper.get("textarea").setValue("Executamos uma reforma juntos.");
     await wrapper

@@ -12,7 +12,6 @@ const coverageMode = defineModel<ExternalCoverageMode>("coverageMode", {
 const neighborhoodCodes = defineModel<string[]>("neighborhoodCodes", {
   required: true,
 });
-const attested = defineModel<boolean>("attested", { required: true });
 
 defineProps<{
   name: string;
@@ -90,18 +89,6 @@ defineProps<{
         </label>
       </div>
     </fieldset>
-
-    <label class="external-professional-details__consent">
-      <input
-        v-model="attested"
-        name="external-contact-consent"
-        type="checkbox"
-      />
-      <span>
-        Confirmo que posso compartilhar estes dados profissionais para criar o
-        perfil básico e enviar a solicitação.
-      </span>
-    </label>
   </div>
 </template>
 
@@ -148,8 +135,7 @@ defineProps<{
   }
 
   &__options label,
-  &__radios label,
-  &__consent {
+  &__radios label {
     display: flex;
     align-items: flex-start;
     gap: 8px;
@@ -167,12 +153,6 @@ defineProps<{
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
-  }
-
-  &__consent {
-    padding: 12px;
-    border: 1px solid var(--line);
-    border-radius: 10px;
   }
 }
 

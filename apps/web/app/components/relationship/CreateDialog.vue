@@ -33,7 +33,6 @@ const externalPhone = shallowRef("");
 const externalServiceIds = shallowRef<string[]>([]);
 const externalCoverageMode = shallowRef<ExternalCoverageMode>("not_informed");
 const externalNeighborhoodCodes = shallowRef<string[]>([]);
-const externalAttested = shallowRef(false);
 const validationError = shallowRef("");
 const normalizedName = computed(() => searchQuery.value.trim());
 const noteLength = computed(() => contextNote.value.length);
@@ -131,7 +130,6 @@ function reset() {
   externalServiceIds.value = [];
   externalCoverageMode.value = "not_informed";
   externalNeighborhoodCodes.value = [];
-  externalAttested.value = false;
   validationError.value = "";
   relationships.clearCandidates();
   relationships.clearError();
@@ -190,11 +188,6 @@ async function submit() {
     ) {
       validationError.value =
         'Selecione ao menos um bairro ou marque "Não sei".';
-      return;
-    }
-    if (!externalAttested.value) {
-      validationError.value =
-        "Confirme que pode compartilhar os dados profissionais.";
       return;
     }
     target = {
@@ -291,7 +284,6 @@ async function submit() {
             v-model:service-ids="externalServiceIds"
             v-model:coverage-mode="externalCoverageMode"
             v-model:neighborhood-codes="externalNeighborhoodCodes"
-            v-model:attested="externalAttested"
             :name="normalizedName"
             :services="services"
             :neighborhoods="neighborhoods"

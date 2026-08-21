@@ -323,9 +323,6 @@ test("an indicated professional claims the external profile and publishes the co
   await dialog.getByRole("button", { name: "Continuar", exact: true }).click();
   await dialog.getByLabel("Celular com DDD").fill(externalPhone);
   await dialog.getByLabel(externalService.name, { exact: true }).check();
-  await dialog
-    .getByLabel(/Confirmo que posso compartilhar estes dados profissionais/)
-    .check();
   await dialog.getByLabel("Contexto").fill(note);
   const createResponsePromise = page.waitForResponse(
     (response) =>
