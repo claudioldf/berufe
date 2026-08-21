@@ -141,6 +141,52 @@ describe("relationship create dialog", () => {
     }
   });
 
+  it("shows candidate loading inside the professional name input", async () => {
+    mocks.state.isSearching.value = true;
+    const wrapper = await mountDialog();
+    const search = wrapper.get('input[name="professional-search"]');
+
+    expect(search.attributes("aria-busy")).toBe("true");
+    expect(wrapper.find(".professional-lookup__loader").exists()).toBe(true);
+    expect(wrapper.find(".professional-lookup__feedback").exists()).toBe(false);
+    expect(wrapper.get(".professional-lookup__status").text()).toBe(
+      "Buscando profissionais",
+    );
+  });
+
+  it("requires a choice when the candidate search returns suggestions", async () => {
+    mocks.state.searchedQuery.value = "Beto Lima";
+    mocks.state.candidates.value = [
+      {
+        id: createdRelationship.recipient.id,
+        publicSlug: createdRelationship.recipient.publicSlug,
+        displayName: createdRelationship.recipient.displayName,
+        profileType: "self_service",
+        photoUrl: null,
+      },
+    ];
+    const wrapper = await mountDialog();
+    await wrapper
+      .get('input[name="professional-search"]')
+      .setValue("Beto Lima");
+    const continueButton = wrapper
+      .findAll("footer button")
+      .find((button) => button.text().includes("Continuar"))!;
+
+    expect(continueButton.attributes("disabled")).toBeDefined();
+    expect(wrapper.text()).toContain("Não encontrei essa pessoa");
+    expect(wrapper.text()).toContain("Continuar informando o telefone");
+
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("Não encontrei essa pessoa"))!
+      .trigger("click");
+
+    expect(continueButton.attributes("disabled")).toBeUndefined();
+    await continueButton.trigger("click");
+    expect(wrapper.find('input[name="external-phone"]').exists()).toBe(true);
+  });
+
   it("removes the upfront mode choice and creates an external target on the second step", async () => {
     mocks.state.searchedQuery.value = "Beto Lima";
     const wrapper = await mountDialog();

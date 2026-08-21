@@ -27,6 +27,7 @@ const relationshipType =
 const contextNote = shallowRef("");
 const searchQuery = shallowRef("");
 const selectedProfessionalId = shallowRef<string | null>(null);
+const externalProfessionalSelected = shallowRef(false);
 const externalPhone = shallowRef("");
 const externalServiceIds = shallowRef<string[]>([]);
 const externalCoverageMode = shallowRef<ExternalCoverageMode>("not_informed");
@@ -49,7 +50,10 @@ const selectedCandidate = computed(() =>
 const canContinue = computed(
   () =>
     Boolean(selectedProfessionalId.value) ||
-    (normalizedName.value.length >= 3 && searchSettled.value),
+    (normalizedName.value.length >= 3 &&
+      searchSettled.value &&
+      (relationships.candidates.value.length === 0 ||
+        externalProfessionalSelected.value)),
 );
 const externalTarget = computed(
   () => step.value === "details" && !selectedProfessionalId.value,
@@ -65,6 +69,7 @@ const error = computed(
 
 watch([open, searchQuery], ([isOpen, query], _, onCleanup) => {
   selectedProfessionalId.value = null;
+  externalProfessionalSelected.value = false;
   step.value = "lookup";
   validationError.value = "";
   relationships.clearError();
@@ -79,7 +84,7 @@ watch([open, searchQuery], ([isOpen, query], _, onCleanup) => {
   onCleanup(() => window.clearTimeout(timer));
 });
 
-watch(selectedProfessionalId, () => {
+watch([selectedProfessionalId, externalProfessionalSelected], () => {
   validationError.value = "";
   relationships.clearError();
 });
@@ -98,6 +103,7 @@ function reset() {
   contextNote.value = "";
   searchQuery.value = "";
   selectedProfessionalId.value = null;
+  externalProfessionalSelected.value = false;
   externalPhone.value = "";
   externalServiceIds.value = [];
   externalCoverageMode.value = "not_informed";
@@ -227,6 +233,7 @@ async function submit() {
           v-if="step === 'lookup'"
           v-model:query="searchQuery"
           v-model:selected-id="selectedProfessionalId"
+          v-model:external-selected="externalProfessionalSelected"
           :candidates="relationships.candidates.value"
           :searching="relationships.isSearching.value"
           :search-settled="searchSettled"
