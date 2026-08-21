@@ -222,7 +222,7 @@ describe("relationship create dialog", () => {
     expect(wrapper.text()).toContain(
       "Qual o serviço esse profissional oferece?",
     );
-    expect(wrapper.text()).toContain("Qual região ele atende?");
+    expect(wrapper.text()).toContain("Qual região esse profissional atende?");
     expect(wrapper.text()).toContain("Não sei");
     await wrapper
       .get('input[name="external-phone"]')

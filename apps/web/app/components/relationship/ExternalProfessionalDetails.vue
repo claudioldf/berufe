@@ -60,7 +60,7 @@ defineProps<{
     </fieldset>
 
     <fieldset class="external-professional-details__fieldset">
-      <legend>Qual região ele atende? <small>Opcional</small></legend>
+      <legend>Qual região esse profissional atende? <small>Opcional</small></legend>
       <div class="external-professional-details__radios">
         <label>
           <input v-model="coverageMode" type="radio" value="not_informed" />
