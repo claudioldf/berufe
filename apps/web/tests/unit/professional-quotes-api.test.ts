@@ -2,6 +2,7 @@ import type { BerufeApiClient } from "@app/services/api/client";
 import {
   createProfessionalQuote,
   fetchProfessionalQuote,
+  fetchProfessionalQuotes,
   mapProfessionalQuote,
   shareProfessionalQuote,
   updateProfessionalQuote,
@@ -104,6 +105,66 @@ describe("professional quote API", () => {
         { description: "Material", quantity: 0.333, lineTotal: 3.33 },
         { description: "Serviço", quantity: 1, lineTotal: 10 },
       ],
+    });
+  });
+
+  it("lists every owner-scoped quote in the API order", async () => {
+    const olderQuote: ContractQuote = {
+      ...contractQuote,
+      id: "b1a906f4-339f-48c2-b70f-6174144701d4",
+      quote_number: 6,
+      customer_name: "Bruno Lima",
+      customer: { ...contractQuote.customer, name: "Bruno Lima" },
+    };
+    const client = {
+      GET: vi.fn().mockResolvedValue({
+        data: {
+          data: {
+            quotes: [contractQuote, olderQuote],
+            meta: {
+              page: 2,
+              per_page: 10,
+              total_count: 12,
+              total_pages: 2,
+            },
+          },
+          request_id: "quote-list",
+        },
+        error: undefined,
+        response: new Response(null),
+      }),
+    } as unknown as BerufeApiClient;
+    const filters = {
+      search: "Ana",
+      status: "draft" as const,
+      scheduledOn: "2026-08-22",
+      sort: "customer" as const,
+      direction: "asc" as const,
+      page: 2,
+      perPage: 10,
+    };
+
+    await expect(
+      fetchProfessionalQuotes(client, filters),
+    ).resolves.toMatchObject({
+      quotes: [
+        { number: 7, customerName: "Ana Paula" },
+        { number: 6, customerName: "Bruno Lima" },
+      ],
+      meta: { page: 2, perPage: 10, totalCount: 12, totalPages: 2 },
+    });
+    expect(client.GET).toHaveBeenCalledWith("/api/v1/professional/quotes", {
+      params: {
+        query: {
+          search: "Ana",
+          status: "draft",
+          scheduled_on: "2026-08-22",
+          sort: "customer",
+          direction: "asc",
+          page: 2,
+          per_page: 10,
+        },
+      },
     });
   });
 

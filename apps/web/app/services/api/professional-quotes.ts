@@ -1,13 +1,31 @@
 import type { BerufeApiClient } from "~/services/api/client";
 import { ApiRequestError, normalizeApiError } from "~/services/api/errors";
 import type { components } from "~/services/api/schema";
-import type { Quote, QuoteDraft, QuoteShareMethod } from "~/types";
+import type {
+  Quote,
+  QuoteDraft,
+  QuoteListFilters,
+  QuotePage,
+  QuoteShareMethod,
+} from "~/types";
 import {
   formatBrazilianMobilePhone,
   normalizeBrazilianMobilePhone,
 } from "~/utils/brazilian-phone";
 
 type ContractQuote = components["schemas"]["ProfessionalQuote"];
+
+export function defaultProfessionalQuoteListFilters(): QuoteListFilters {
+  return {
+    search: "",
+    status: "all",
+    scheduledOn: "",
+    sort: "updated",
+    direction: "desc",
+    page: 1,
+    perPage: 20,
+  };
+}
 
 function requestError(error: unknown, response: Response) {
   return new ApiRequestError(
@@ -65,6 +83,39 @@ export function mapProfessionalQuote(quote: ContractQuote): Quote {
       lineTotal: Number(item.line_total),
       sortOrder: item.sort_order,
     })),
+  };
+}
+
+export async function fetchProfessionalQuotes(
+  client: BerufeApiClient,
+  filters: QuoteListFilters,
+): Promise<QuotePage> {
+  const { data, error, response } = await client.GET(
+    "/api/v1/professional/quotes",
+    {
+      params: {
+        query: {
+          search: filters.search || undefined,
+          status: filters.status,
+          scheduled_on: filters.scheduledOn || undefined,
+          sort: filters.sort,
+          direction: filters.direction,
+          page: filters.page,
+          per_page: filters.perPage,
+        },
+      },
+    },
+  );
+  if (error || !data) throw requestError(error, response);
+
+  return {
+    quotes: data.data.quotes.map(mapProfessionalQuote),
+    meta: {
+      page: data.data.meta.page,
+      perPage: data.data.meta.per_page,
+      totalCount: data.data.meta.total_count,
+      totalPages: data.data.meta.total_pages,
+    },
   };
 }
 

@@ -430,10 +430,10 @@ async function respondRelationship(
             <h2>Orçamentos recentes.</h2>
           </div>
           <UButton
-            to="/app/professional/quotes/new"
+            to="/app/professional/quotes"
             variant="link"
             trailing-icon="i-lucide-arrow-right"
-            >Criar orçamento</UButton
+            >Ver todos</UButton
           >
         </div>
         <DesignSystemSurfaceCard class="quotes-table">

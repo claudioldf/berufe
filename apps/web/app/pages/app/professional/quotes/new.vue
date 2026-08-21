@@ -220,8 +220,8 @@ async function revokeShare() {
   <div class="quote-workspace">
     <section class="quote-workspace__heading">
       <DesignSystemContainer class="quote-workspace__heading-inner">
-        <NuxtLink to="/app/professional"
-          ><UIcon name="i-lucide-arrow-left" /> Voltar ao painel</NuxtLink
+        <NuxtLink to="/app/professional/quotes"
+          ><UIcon name="i-lucide-arrow-left" /> Voltar aos orçamentos</NuxtLink
         >
         <div>
           <div>

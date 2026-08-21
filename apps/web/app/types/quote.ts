@@ -66,3 +66,28 @@ export interface QuoteProfessional {
 
 export type QuoteDraft = Quote;
 export type QuoteShareMethod = "whatsapp" | "copy";
+export type QuoteSortKey =
+  "number" | "customer" | "total" | "status" | "updated";
+export type QuoteSortDirection = "asc" | "desc";
+
+export interface QuoteListFilters {
+  search: string;
+  status: Quote["status"] | "all";
+  scheduledOn: string;
+  sort: QuoteSortKey;
+  direction: QuoteSortDirection;
+  page: number;
+  perPage: number;
+}
+
+export interface QuotePageMeta {
+  page: number;
+  perPage: number;
+  totalCount: number;
+  totalPages: number;
+}
+
+export interface QuotePage {
+  quotes: Quote[];
+  meta: QuotePageMeta;
+}
