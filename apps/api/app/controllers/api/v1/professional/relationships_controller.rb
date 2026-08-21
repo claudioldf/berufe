@@ -25,13 +25,13 @@ module Api
         rescue ProfessionalRelationshipRequester::Duplicate
           render_api_error(
             code: "relationship_conflict",
-            message: "Esta solicitação de relação já existe.",
+            message: "Esta solicitação de conexão já existe.",
             status: :conflict
           )
         rescue ProfessionalRelationshipRequester::Invalid => error
           render_api_error(
             code: "validation_failed",
-            message: "Revise os dados da relação profissional.",
+            message: "Revise os dados da solicitação de conexão.",
             status: :unprocessable_entity,
             field_errors: error.field_errors
           )
@@ -58,7 +58,7 @@ module Api
         rescue ProfessionalRelationshipResponder::Invalid => error
           render_api_error(
             code: "validation_failed",
-            message: "Revise a resposta da relação profissional.",
+            message: "Revise a resposta à solicitação de conexão.",
             status: :unprocessable_entity,
             field_errors: error.field_errors
           )

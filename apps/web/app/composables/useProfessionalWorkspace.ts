@@ -305,7 +305,7 @@ export async function useProfessionalWorkspace() {
       relationshipError.value =
         error instanceof ApiRequestError
           ? error.message
-          : "Não foi possível responder à solicitação agora. Tente novamente.";
+          : "Não foi possível responder à solicitação de conexão agora. Tente novamente.";
       throw error;
     } finally {
       relationshipRespondingId.value = null;
@@ -330,7 +330,7 @@ export async function useProfessionalWorkspace() {
       relationshipError.value =
         error instanceof ApiRequestError
           ? error.message
-          : "Não foi possível remover a relação agora. Tente novamente.";
+          : "Não foi possível remover a conexão agora. Tente novamente.";
       throw error;
     } finally {
       relationshipRemovingId.value = null;

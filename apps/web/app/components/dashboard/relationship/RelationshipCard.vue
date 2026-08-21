@@ -24,7 +24,7 @@ const otherProfessional = computed(() =>
   outgoing.value ? props.relationship.recipient : props.relationship.initiator,
 );
 const statusLabel = computed(() => {
-  if (props.relationship.status === "accepted") return "Confirmada";
+  if (props.relationship.status === "accepted") return "Vocês estão conectados";
   return outgoing.value ? "Aguardando confirmação" : "Aguardando sua resposta";
 });
 const relationshipLabel = computed(() => {
@@ -37,8 +37,8 @@ const relationshipLabel = computed(() => {
 });
 const removalLabel = computed(() =>
   props.relationship.status === "pending"
-    ? "Cancelar solicitação"
-    : "Remover relação",
+    ? "Cancelar solicitação de conexão"
+    : "Remover conexão",
 );
 </script>
 
@@ -105,7 +105,7 @@ const removalLabel = computed(() =>
             :loading="responding"
             :disabled="disabled"
             @click="emit('respond', relationship.id, 'accepted')"
-            >Confirmar</UButton
+            >Conectar</UButton
           >
         </template>
         <UButton

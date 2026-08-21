@@ -87,7 +87,7 @@ describe("professional relationships API", () => {
       error: {
         error: {
           code: "relationship_conflict",
-          message: "Esta solicitação de relação já existe.",
+          message: "Esta solicitação de conexão já existe.",
           request_id: "relationship-conflict",
         },
       },

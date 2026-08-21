@@ -122,7 +122,7 @@ describe("public professional result card", () => {
     expect(wrapper.text()).toContain("Telefone confirmado");
     expect(wrapper.text()).toContain("Identidade verificada");
     expect(wrapper.text()).toContain("3 trabalhos");
-    expect(wrapper.text()).toContain("2 relações profissionais");
+    expect(wrapper.text()).toContain("2 conexões profissionais");
     expect(wrapper.text()).toContain("Atualizado recentemente");
     expect(wrapper.find("[data-avatar-fallback]").exists()).toBe(true);
     expect(wrapper.findAll(`a[href="${profileUrl}"]`)).toHaveLength(3);
@@ -132,6 +132,10 @@ describe("public professional result card", () => {
     expect(wrapper.emitted("contact")?.[0]).toEqual([
       wrapper.props("professional"),
     ]);
+    await wrapper.setProps({
+      professional: professional({ relationshipCount: 1 }),
+    });
+    expect(wrapper.text()).toContain("1 conexão profissional");
     expect(wrapper.text()).not.toMatch(/pontua|preço|disponível|patrocinad/i);
   });
 

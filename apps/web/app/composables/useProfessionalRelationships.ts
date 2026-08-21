@@ -84,7 +84,7 @@ export function useProfessionalRelationships(
       error.value =
         failure instanceof ApiRequestError
           ? failure.message
-          : "Não foi possível enviar a solicitação agora. Tente novamente.";
+          : "Não foi possível enviar a solicitação de conexão agora. Tente novamente.";
       throw failure;
     } finally {
       isSubmitting.value = false;

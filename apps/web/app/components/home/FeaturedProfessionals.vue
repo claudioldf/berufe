@@ -1,7 +1,16 @@
 <script setup lang="ts">
 import type { PublicProfessionalCard } from "~/types";
+import { formatCountLabel } from "~/utils/text";
 
 defineProps<{ professionals: PublicProfessionalCard[] }>();
+
+function connectionCountLabel(count: number) {
+  return formatCountLabel(
+    count,
+    "conexão profissional",
+    "conexões profissionais",
+  );
+}
 </script>
 
 <template>
@@ -70,7 +79,7 @@ defineProps<{ professionals: PublicProfessionalCard[] }>();
               <UIcon name="i-lucide-badge-check" /> Identidade verificada
             </span>
             <span>
-              {{ professional.relationshipCount }} relações profissionais
+              {{ connectionCountLabel(professional.relationshipCount) }}
             </span>
           </div>
         </NuxtLink>

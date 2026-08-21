@@ -19,7 +19,7 @@ const links = computed(() => {
   if (isProfessional.value) {
     return [
       { label: "Visão geral", to: "/app/professional" },
-      { label: "Meu perfil", to: "/app/professional/profile" },
+      { label: "Gerenciar", to: "/app/professional/profile" },
       { label: "Orçamentos", to: "/app/professional/quotes/new" },
     ];
   }

@@ -254,7 +254,7 @@ describe("relationship create dialog", () => {
     await wrapper.get("textarea").setValue("Executamos uma reforma juntos.");
     await wrapper
       .findAll("footer button")
-      .find((button) => button.text().includes("Enviar solicitação"))!
+      .find((button) => button.text().includes("Conectar"))!
       .trigger("click");
 
     expect(mocks.requestRelationship).toHaveBeenCalledWith({
@@ -271,7 +271,7 @@ describe("relationship create dialog", () => {
     });
     expect(wrapper.emitted("created")?.at(-1)).toEqual([createdRelationship]);
     expect(mocks.showToast).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "Solicitação enviada" }),
+      expect.objectContaining({ title: "Solicitação de conexão enviada" }),
     );
   });
 
@@ -297,7 +297,7 @@ describe("relationship create dialog", () => {
       .trigger("click");
     await wrapper
       .findAll("footer button")
-      .find((button) => button.text().includes("Enviar solicitação"))!
+      .find((button) => button.text().includes("Conectar"))!
       .trigger("click");
 
     expect(wrapper.find('input[name="external-phone"]').exists()).toBe(false);
@@ -317,7 +317,11 @@ describe("relationship create dialog", () => {
     expect(wrapper.get('[role="alert"]').text()).toContain(
       "conclua seu cadastro, confirme o telefone e tenha a identidade aprovada",
     );
-    expect(wrapper.text()).not.toContain("Enviar solicitação");
+    expect(
+      wrapper
+        .findAll("footer button")
+        .some((button) => button.text().trim() === "Conectar"),
+    ).toBe(false);
     expect(mocks.requestRelationship).not.toHaveBeenCalled();
   });
 });

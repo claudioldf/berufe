@@ -214,12 +214,10 @@ const dashboardStatus = computed(() => {
 });
 const verificationDescription = computed(() => {
   const status = workspace.value?.profile.verification.current?.status;
-  if (status === "approved") return "Identidade aprovada";
-  if (status === "pending_review") return "Identidade em análise";
-  if (status === "rejected" || status === "expired") {
-    return "Reenvie sua identidade";
-  }
-  return "Enviar identidade";
+  if (status === "approved") return "Perfeito! Sua identidade foi verificada e aprovada pela nossa equipe.";
+  if (status === "pending_review") return "Seus documentos estão em análise. Em breve, avisaremos você por aqui.";
+  if (status === "rejected" || status === "expired") return "Reenvie sua identidade";
+  return "Seus documentos estão em análise. Em breve, avisaremos você por aqui.";
 });
 const pendingItems = computed<PendingItem[]>(() => {
   const data = workspace.value;
@@ -390,10 +388,12 @@ async function respondRelationship(id: string, accepted: boolean) {
       accepted ? "accepted" : "declined",
     );
     showToast({
-      title: accepted ? "Colaboração confirmada" : "Solicitação recusada",
+      title: accepted
+        ? "Vocês estão conectados"
+        : "Solicitação de conexão recusada",
       description: accepted
-        ? "A relação já pode aparecer nos perfis públicos."
-        : "Essa relação continuará privada.",
+        ? "A conexão já pode aparecer nos perfis públicos."
+        : "A solicitação de conexão recusada não aparecerá publicamente.",
     });
   } catch {
     // The pending section keeps the normalized API error visible for retry.
@@ -476,7 +476,10 @@ async function respondRelationship(id: string, accepted: boolean) {
         /></NuxtLink>
       </section>
 
-      <section v-if="pendingItems.length" class="dashboard-section pending-section">
+      <section
+        v-if="pendingItems.length"
+        class="dashboard-section pending-section"
+      >
         <div class="dashboard-section__heading">
           <div>
             <DesignSystemEyebrow>Precisa de atenção</DesignSystemEyebrow>
@@ -533,7 +536,7 @@ async function respondRelationship(id: string, accepted: boolean) {
                   Boolean(professionalWorkspace.relationshipRespondingId.value)
                 "
                 @click="respondRelationship(item.id, true)"
-                >Confirmar</UButton
+                >Conectar</UButton
               >
             </div>
           </article>
@@ -557,13 +560,13 @@ async function respondRelationship(id: string, accepted: boolean) {
             <NuxtLink to="/app/professional/profile">
               <span><UIcon name="i-lucide-pencil" /></span>
               <strong>Editar perfil</strong>
-              <small>Dados e serviços</small></NuxtLink
+              <small>Edite seus dados, serviços e região que atende.</small></NuxtLink
             >
             <NuxtLink to="/app/professional/profile?tab=portfolio">
               <span><UIcon name="i-lucide-image-plus" /></span>
               <strong>Novo trabalho</strong>
-              <small>Adicionar ao portfólio</small></NuxtLink
-            >
+              <small>Demonstre seus trabalhos já feitos e aumente sua credibilidade.</small>
+            </NuxtLink>
             <NuxtLink to="/app/professional/profile?tab=verificacoes">
               <span><UIcon name="i-lucide-id-card" /></span>
               <strong>Ver verificações</strong>
@@ -571,8 +574,8 @@ async function respondRelationship(id: string, accepted: boolean) {
             >
             <button type="button" @click="relationshipOpen = true">
               <span><UIcon name="i-lucide-handshake" /></span>
-              <strong>Adicionar relação</strong>
-              <small>Amplie sua rede de confiança</small>
+              <strong>Recomendar um profissional</strong>
+              <small>Amplie sua rede e fortaleça sua credibilidade. Quem compartilha, cresce.</small>
             </button>
           </div>
         </DesignSystemSurfaceCard>

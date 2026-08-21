@@ -58,7 +58,7 @@ function retentionWidth(value: number | null, size: number) {
             >
             <AdminReportsMetricHelp
               title="Ações significativas"
-              meaning="Conta profissionais distintos que atualizaram perfil, criaram evidência, interagiram com relações ou geraram orçamento."
+              meaning="Conta profissionais distintos que atualizaram perfil, criaram evidência, interagiram com conexões ou geraram orçamento."
               goal="Aumentar profissionais ativos, recorrentes e a quantidade de semanas em que geram valor."
               reading="Uma pessoa pode realizar mais de um tipo de ação, então as barras não devem ser somadas. Login isolado não conta."
             />
@@ -92,7 +92,7 @@ function retentionWidth(value: number | null, size: number) {
             <AdminReportsMetricHelp
               title="Coortes de retenção W1/W4"
               meaning="Agrupa profissionais pela semana de primeira publicação e mostra quantos voltaram com ação útil após uma e quatro semanas."
-              goal="Melhorar retenção W1 e W4 à medida que relações e orçamentos se tornam hábitos."
+              goal="Melhorar retenção W1 e W4 à medida que conexões e orçamentos se tornam hábitos."
               reading="— significa que a coorte ainda não amadureceu. Com poucos profissionais, compare n/N, não apenas percentuais."
             />
           </div>

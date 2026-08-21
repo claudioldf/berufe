@@ -75,7 +75,7 @@ const funnel = computed(() =>
         </div>
         <AdminReportsMetricHelp
           title="Qualidade da oferta"
-          meaning="Decompõe identidade aprovada, três ou mais trabalhos e duas ou mais relações confirmadas."
+          meaning="Decompõe identidade aprovada, três ou mais trabalhos e duas ou mais conexões confirmadas."
           goal="Fazer os profissionais publicados avançarem nos três critérios, mantendo cada evidência compreensível."
           reading="Cada linha usa a mesma base publicada. Perfil ativado conta somente quem cumpre os três critérios ao mesmo tempo."
         />
@@ -108,7 +108,7 @@ const funnel = computed(() =>
         <UIcon name="i-lucide-lightbulb" />
         <p>
           <strong>Ativação significa evidência real.</strong> Identidade
-          aprovada, três trabalhos e duas relações confirmadas.
+          aprovada, três trabalhos e duas conexões confirmadas.
         </p>
       </aside>
     </DesignSystemSurfaceCard>

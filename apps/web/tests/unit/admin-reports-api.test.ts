@@ -115,7 +115,7 @@ const data: ApiReport = {
     funnels: [
       {
         key: "relationships",
-        label: "Relações profissionais",
+        label: "Conexões profissionais",
         started: 3,
         responded: 2,
         approved: 1,

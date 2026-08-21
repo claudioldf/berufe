@@ -13,3 +13,11 @@ export function toIdentifier(value: string) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 }
+
+export function formatCountLabel(
+  count: number,
+  singular: string,
+  plural: string,
+) {
+  return `${count} ${count === 1 ? singular : plural}`;
+}
