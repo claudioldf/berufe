@@ -55,6 +55,7 @@ RSpec.describe "Professional quotes", type: :request, openapi: true do
     patch "/api/v1/professional/quotes/#{quote.id}",
       params: quote_body(
         customer_name: "Cliente atualizado",
+        revision: quote.lock_version,
         discount_amount: 0,
         items: [{description: "Diagnóstico", quantity: 2, unit: "hora", unit_price: 75}]
       ),
@@ -90,7 +91,7 @@ RSpec.describe "Professional quotes", type: :request, openapi: true do
     )
 
     patch "/api/v1/professional/quotes/#{quote.id}",
-      params: quote_body(customer_name: "Conteúdo mais recente"),
+      params: quote_body(customer_name: "Conteúdo mais recente", revision: quote.lock_version),
       headers: session_headers(request_id: "quote-shared-update", origin: true),
       as: :json
 
@@ -123,6 +124,7 @@ RSpec.describe "Professional quotes", type: :request, openapi: true do
     item_ids = quote.quote_items.ids
     patch "/api/v1/professional/quotes/#{quote.id}",
       params: quote_body(
+        revision: quote.lock_version,
         discount_amount: 1_000,
         items: [{description: "Substituição", quantity: 1, unit: "hora", unit_price: 20}]
       ),
@@ -161,7 +163,9 @@ RSpec.describe "Professional quotes", type: :request, openapi: true do
     5.times do |index|
       ProfessionalQuoteWriter.new.call(
         profile:,
-        attributes: quote_attributes.merge(customer_name: "Cliente #{index}")
+        attributes: quote_attributes.merge(
+          customer: quote_attributes[:customer].merge(name: "Cliente #{index}")
+        )
       )
     end
     get "/api/v1/professional/workspace",
@@ -245,11 +249,16 @@ RSpec.describe "Professional quotes", type: :request, openapi: true do
   end
 
   def quote_body(**overrides)
+    customer_name = overrides.delete(:customer_name)
     attributes = quote_attributes.merge(overrides)
+    customer = attributes[:customer].merge(name: customer_name || attributes.dig(:customer, :name))
     {
       quote: {
-        customer_name: attributes[:customer_name],
+        **attributes.slice(:revision),
+        customer:,
         service_description: attributes[:service_description],
+        service_address: attributes[:service_address],
+        scheduled_on: attributes[:scheduled_on],
         discount_amount: attributes[:discount_amount],
         valid_until: attributes[:valid_until],
         notes: attributes[:notes],
@@ -260,8 +269,15 @@ RSpec.describe "Professional quotes", type: :request, openapi: true do
 
   def quote_attributes
     {
-      customer_name: "Ana Paula",
+      customer: {
+        id: nil,
+        name: "Ana Paula",
+        whatsapp_e164: "+5547999912031",
+        email: "ana.paula@example.com"
+      },
       service_description: "Iluminação da cozinha",
+      service_address: "Rua das Flores, 100",
+      scheduled_on: "2026-08-27",
       discount_amount: 40,
       valid_until: "2026-08-30",
       notes: "Materiais definidos com a cliente.",

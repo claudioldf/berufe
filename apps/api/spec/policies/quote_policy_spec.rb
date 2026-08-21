@@ -45,7 +45,7 @@ RSpec.describe QuotePolicy do
     persisted = ProfessionalQuoteWriter.new.call(
       profile:,
       attributes: {
-        customer_name: "Cliente",
+        customer: {id: nil, name: "Cliente", whatsapp_e164: "+5547999912021", email: nil},
         service_description: "Serviço",
         discount_amount: 0,
         items: [{description: "Item", quantity: 1, unit: "serviço", unit_price: 10}]
@@ -55,7 +55,7 @@ RSpec.describe QuotePolicy do
     ProfessionalQuoteWriter.new.call(
       profile: other_profile,
       attributes: {
-        customer_name: "Outro cliente",
+        customer: {id: nil, name: "Outro cliente", whatsapp_e164: "+5547999912022", email: nil},
         service_description: "Outro serviço",
         discount_amount: 0,
         items: [{description: "Item", quantity: 1, unit: "serviço", unit_price: 10}]

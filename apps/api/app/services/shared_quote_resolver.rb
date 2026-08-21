@@ -11,8 +11,9 @@ class SharedQuoteResolver
     # The digest is a keyed HMAC of a 256-bit random token, so matching it is
     # the whole authentication. A revoked quote has no digest left to match.
     quote = Quote
-      .includes(:quote_items)
-      .find_by(status: "shared", share_token_hash: QuoteShareToken.digest(token))
+      .includes(:quote_items, service_job: :customer_recommendation_request)
+      .where.not(status: "draft")
+      .find_by(share_token_hash: QuoteShareToken.digest(token))
     raise NotFound unless quote
 
     professional = ProfessionalProfile

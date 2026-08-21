@@ -36,7 +36,8 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
               "approved_identity" => false
             }
           },
-          "recent_quotes" => []
+          "recent_quotes" => [],
+          "recent_service_jobs" => []
         },
         "pending_relationships" => [],
         "relationships" => [],

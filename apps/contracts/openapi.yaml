@@ -1344,6 +1344,176 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/professional/customer-candidates:
+    get:
+      operationId: listProfessionalCustomerCandidates
+      summary: Search customers owned by the authenticated professional
+      tags: [Professional quotes]
+      security:
+        - applicationSession: []
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema: { type: string, maxLength: 200 }
+      responses:
+        "200":
+          description: Up to ten owner-scoped matching customers.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProfessionalCustomerCandidateListResponse" }
+        "401":
+          description: An active session is required.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "422":
+          description: The search query is invalid.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+  /api/v1/professional/service-jobs:
+    get:
+      operationId: listProfessionalServiceJobs
+      summary: List the authenticated professional's services
+      tags: [Professional services]
+      security:
+        - applicationSession: []
+      responses:
+        "200":
+          description: Services ordered by recent activity.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProfessionalServiceJobListResponse" }
+        "401":
+          description: An active session is required.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+  /api/v1/professional/service-jobs/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      operationId: getProfessionalServiceJob
+      summary: Read one owned service
+      tags: [Professional services]
+      security:
+        - applicationSession: []
+      responses:
+        "200":
+          description: The owned service.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProfessionalServiceJobResponse" }
+        "401":
+          description: An active session is required.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: The service does not exist or is owned by another professional.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+  /api/v1/professional/service-jobs/{id}/completion-request:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      operationId: requestProfessionalServiceCompletion
+      summary: Ask the customer to confirm completion
+      tags: [Professional services]
+      security:
+        - applicationSession: []
+      responses:
+        "200":
+          description: The direct WhatsApp completion handoff.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProfessionalCompletionRequestResponse" }
+        "401":
+          description: An active session is required.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403":
+          description: The origin or owner is invalid.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: The service does not exist.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "409":
+          description: Completion cannot be requested in the current state.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+  /api/v1/professional/service-jobs/{id}/cancel:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      operationId: cancelProfessionalServiceJob
+      summary: Cancel one unfinished service
+      tags: [Professional services]
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [cancellation]
+              properties:
+                cancellation:
+                  type: object
+                  additionalProperties: false
+                  required: [reason]
+                  properties:
+                    reason: { type: [string, "null"], maxLength: 2000 }
+      responses:
+        "200":
+          description: The cancelled service.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProfessionalServiceJobResponse" }
+        "401":
+          description: An active session is required.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403":
+          description: The origin or owner is invalid.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: The service does not exist.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "409":
+          description: The service can no longer be cancelled.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "422":
+          description: The cancellation reason is invalid.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
   /api/v1/professional/quotes:
     get:
       operationId: listProfessionalQuotes
@@ -1538,6 +1708,15 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "422":
           description: Quote fields, items, or monetary constraints are invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: The quote is approved or the supplied revision is stale.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
@@ -1752,6 +1931,144 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/shared-quotes/decisions:
+    post:
+      operationId: decideSharedQuote
+      summary: Approve, decline, or request a change through the quote bearer
+      tags: [Shared quotes]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SharedQuoteDecisionRequest" }
+      responses:
+        "200":
+          description: The customer decision was recorded idempotently.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SharedQuoteResponse" }
+        "403":
+          description: The exact configured Nuxt origin is required.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: The bearer is not available.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "409":
+          description: The quote changed or cannot receive this transition.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "410":
+          description: The quote validity ended before approval.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "422":
+          description: Terms or decision fields are invalid.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+  /api/v1/shared-quotes/completions:
+    post:
+      operationId: completeSharedQuoteService
+      summary: Confirm completion or report an issue through the quote bearer
+      tags: [Shared quotes]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SharedQuoteCompletionRequest" }
+      responses:
+        "200":
+          description: The completion response was recorded.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SharedQuoteResponse" }
+        "403":
+          description: The exact configured Nuxt origin is required.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: The bearer is not available.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "409":
+          description: The service cannot receive this transition.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "422":
+          description: The issue response is invalid.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+  /api/v1/customer-recommendations/resolve:
+    post:
+      operationId: resolveCustomerRecommendation
+      summary: Resolve an emailed recommendation bearer
+      tags: [Customer recommendations]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CustomerRecommendationResolveRequest" }
+      responses:
+        "200":
+          description: The open invitation context.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CustomerRecommendationResolveResponse" }
+        "403":
+          description: The exact configured Nuxt origin is required.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Generic response for invalid, used, or expired links.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+  /api/v1/customer-recommendations:
+    post:
+      operationId: createCustomerRecommendation
+      summary: Publish one recommendation from an emailed bearer
+      tags: [Customer recommendations]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CustomerRecommendationWriteRequest" }
+      responses:
+        "201":
+          description: The recommendation was published immediately.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CustomerRecommendationResponse" }
+        "403":
+          description: The exact configured Nuxt origin is required.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Generic response for invalid, used, or expired links.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "422":
+          description: The recommendation or consent fields are invalid.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
   /api/v1/professional/profile:
     patch:
       operationId: updateProfessionalProfile
@@ -3177,469 +3494,512 @@ components:
     ProfessionalDashboardSummary:
       type: object
       additionalProperties: false
-      required:
-        - local_date
-        - readiness
-        - recent_quotes
+      required: [local_date, readiness, recent_quotes, recent_service_jobs]
       properties:
-        local_date:
-          type: string
-          format: date
+        local_date: { type: string, format: date }
         readiness:
           $ref: "#/components/schemas/ProfessionalDashboardReadiness"
         recent_quotes:
           type: array
           maxItems: 5
-          items:
-            $ref: "#/components/schemas/ProfessionalQuoteSummary"
+          items: { $ref: "#/components/schemas/ProfessionalQuoteSummary" }
+        recent_service_jobs:
+          type: array
+          maxItems: 5
+          items: { $ref: "#/components/schemas/ProfessionalServiceJob" }
     ProfessionalDashboardReadiness:
       type: object
       additionalProperties: false
-      required:
-        - percentage
-        - steps
+      required: [percentage, steps]
       properties:
-        percentage:
-          type: integer
-          minimum: 0
-          maximum: 100
-          multipleOf: 25
+        percentage: { type: integer, minimum: 0, maximum: 100, multipleOf: 25 }
         steps:
           type: object
           additionalProperties: false
-          required:
-            - identity_contact
-            - service_coverage
-            - reviewable_portfolio
-            - approved_identity
+          required: [identity_contact, service_coverage, reviewable_portfolio, approved_identity]
           properties:
-            identity_contact:
-              type: boolean
-            service_coverage:
-              type: boolean
-            reviewable_portfolio:
-              type: boolean
-            approved_identity:
-              type: boolean
+            identity_contact: { type: boolean }
+            service_coverage: { type: boolean }
+            reviewable_portfolio: { type: boolean }
+            approved_identity: { type: boolean }
+    QuoteStatus:
+      type: string
+      enum: [draft, shared, change_requested, approved, declined]
+    ServiceJobStatus:
+      type: string
+      enum: [approved, completion_requested, completion_issue, completed, cancelled]
+    RecommendationRequestStatus:
+      type: string
+      enum: [open, completed, expired]
     ProfessionalQuoteSummary:
       type: object
       additionalProperties: false
-      required:
-        - id
-        - quote_number
-        - customer_name
-        - service_description
-        - total_amount
-        - status
-        - created_at
+      required: [id, quote_number, revision, customer_name, service_description, total_amount, status, service_job_status, created_at]
       properties:
-        id:
-          type: string
-          format: uuid
-        quote_number:
-          type: integer
-          minimum: 1
-        customer_name:
-          type: string
-          minLength: 1
-          maxLength: 80
-        service_description:
-          type: string
-          minLength: 1
-          maxLength: 160
-        total_amount:
-          type: string
-          pattern: "^[0-9]+\\.[0-9]{2}$"
-        status:
-          type: string
-          enum:
-            - draft
-            - shared
-        created_at:
-          type: string
-          format: date-time
+        id: { type: string, format: uuid }
+        quote_number: { type: integer, minimum: 1 }
+        revision: { type: integer, minimum: 0 }
+        customer_name: { type: string, minLength: 1, maxLength: 80 }
+        service_description: { type: string, minLength: 1, maxLength: 160 }
+        total_amount: { $ref: "#/components/schemas/MoneyAmount" }
+        status: { $ref: "#/components/schemas/QuoteStatus" }
+        service_job_status:
+          oneOf:
+            - $ref: "#/components/schemas/ServiceJobStatus"
+            - type: "null"
+        created_at: { type: string, format: date-time }
     ProfessionalQuoteWriteRequest:
       type: object
       additionalProperties: false
-      required:
-        - quote
+      required: [quote]
       properties:
         quote:
           type: object
           additionalProperties: false
-          required:
-            - customer_name
-            - service_description
-            - discount_amount
-            - valid_until
-            - notes
-            - items
+          required: [customer, service_description, service_address, scheduled_on, discount_amount, valid_until, notes, items]
           properties:
-            customer_name:
-              type: string
-              minLength: 1
-              maxLength: 80
-            service_description:
-              type: string
-              minLength: 1
-              maxLength: 160
-            discount_amount:
-              type: number
-              minimum: 0
-            valid_until:
-              type:
-                - string
-                - "null"
-              format: date
+            revision: { type: integer, minimum: 0 }
+            customer: { $ref: "#/components/schemas/ProfessionalQuoteCustomerInput" }
+            service_description: { type: string, minLength: 1, maxLength: 160 }
+            service_address:
+              type: [string, "null"]
+              maxLength: 240
+            scheduled_on: { type: [string, "null"], format: date }
+            discount_amount: { type: number, minimum: 0 }
+            valid_until: { type: [string, "null"], format: date }
             notes:
-              type:
-                - string
-                - "null"
+              type: [string, "null"]
               maxLength: 700
             items:
               type: array
               minItems: 1
               maxItems: 20
-              items:
-                $ref: "#/components/schemas/ProfessionalQuoteItemInput"
+              items: { $ref: "#/components/schemas/ProfessionalQuoteItemInput" }
+    ProfessionalQuoteCustomerInput:
+      type: object
+      additionalProperties: false
+      required: [id, name, whatsapp_e164, email]
+      properties:
+        id: { type: [string, "null"], format: uuid }
+        name: { type: string, minLength: 1, maxLength: 80 }
+        whatsapp_e164: { type: string, pattern: "^\\+55[1-9][0-9]9[0-9]{8}$" }
+        email: { type: [string, "null"], format: email, maxLength: 254 }
     ProfessionalQuoteItemInput:
       type: object
       additionalProperties: false
-      required:
-        - description
-        - quantity
-        - unit
-        - unit_price
+      required: [description, quantity, unit, unit_price]
       properties:
-        description:
-          type: string
-          minLength: 1
-          maxLength: 160
-        quantity:
-          type: number
-          exclusiveMinimum: 0
-        unit:
-          type: string
-          minLength: 1
-          maxLength: 20
-        unit_price:
-          type: number
-          minimum: 0
+        description: { type: string, minLength: 1, maxLength: 160 }
+        quantity: { type: number, exclusiveMinimum: 0 }
+        unit: { type: string, minLength: 1, maxLength: 20 }
+        unit_price: { type: number, minimum: 0 }
     ProfessionalQuoteListResponse:
       type: object
       additionalProperties: false
-      required:
-        - data
-        - request_id
+      required: [data, request_id]
       properties:
         data:
           type: object
           additionalProperties: false
-          required:
-            - quotes
+          required: [quotes]
           properties:
             quotes:
               type: array
-              items:
-                $ref: "#/components/schemas/ProfessionalQuote"
-        request_id:
-          $ref: "#/components/schemas/RequestId"
+              items: { $ref: "#/components/schemas/ProfessionalQuote" }
+        request_id: { $ref: "#/components/schemas/RequestId" }
     ProfessionalQuoteResponse:
       type: object
       additionalProperties: false
-      required:
-        - data
-        - request_id
+      required: [data, request_id]
       properties:
         data:
           type: object
           additionalProperties: false
-          required:
-            - quote
+          required: [quote]
           properties:
-            quote:
-              $ref: "#/components/schemas/ProfessionalQuote"
-        request_id:
-          $ref: "#/components/schemas/RequestId"
+            quote: { $ref: "#/components/schemas/ProfessionalQuote" }
+        request_id: { $ref: "#/components/schemas/RequestId" }
     ProfessionalQuoteShareResponse:
       type: object
       additionalProperties: false
-      required:
-        - data
-        - request_id
+      required: [data, request_id]
       properties:
         data:
           type: object
           additionalProperties: false
-          required:
-            - quote
-            - share_url
-            - whatsapp_url
+          required: [quote, share_url, whatsapp_url]
           properties:
-            quote:
-              $ref: "#/components/schemas/ProfessionalQuote"
-            share_url:
-              type: string
-              format: uri
-              pattern: "/orcamento/bq_[A-Za-z0-9_-]{43}$"
-            whatsapp_url:
-              type: string
-              format: uri
-              pattern: "^https://wa\\.me/\\?text="
-        request_id:
-          $ref: "#/components/schemas/RequestId"
+            quote: { $ref: "#/components/schemas/ProfessionalQuote" }
+            share_url: { type: string, format: uri, pattern: "/orcamento/bq_[A-Za-z0-9_-]{43}$" }
+            whatsapp_url: { type: string, format: uri, pattern: "^https://wa\\.me/55[1-9][0-9]9[0-9]{8}\\?text=" }
+        request_id: { $ref: "#/components/schemas/RequestId" }
     ProfessionalQuoteShareRequest:
       type: object
       additionalProperties: false
-      required:
-        - share
+      required: [share]
       properties:
         share:
           type: object
           additionalProperties: false
-          required:
-            - method
+          required: [method]
           properties:
-            method:
-              type: string
-              enum:
-                - copy
-                - whatsapp
+            method: { type: string, enum: [copy, whatsapp] }
     SharedQuoteResolveRequest:
       type: object
       additionalProperties: false
-      required:
-        - token
+      required: [token]
       properties:
-        token:
-          type: string
-          maxLength: 200
+        token: { type: string, maxLength: 200 }
+    SharedQuoteDecisionRequest:
+      type: object
+      additionalProperties: false
+      required: [token, decision]
+      properties:
+        token: { type: string, maxLength: 200 }
+        decision:
+          type: object
+          additionalProperties: false
+          required: [kind, revision, terms_accepted, message]
+          properties:
+            kind: { type: string, enum: [approve, request_change, decline] }
+            revision: { type: integer, minimum: 0 }
+            terms_accepted: { type: boolean }
+            message: { type: [string, "null"], maxLength: 700 }
+    SharedQuoteCompletionRequest:
+      type: object
+      additionalProperties: false
+      required: [token, completion]
+      properties:
+        token: { type: string, maxLength: 200 }
+        completion:
+          type: object
+          additionalProperties: false
+          required: [kind, message]
+          properties:
+            kind: { type: string, enum: [confirm, report_issue] }
+            message: { type: [string, "null"], maxLength: 700 }
     SharedQuoteResponse:
       type: object
       additionalProperties: false
-      required:
-        - data
-        - request_id
+      required: [data, request_id]
       properties:
         data:
           type: object
           additionalProperties: false
-          required:
-            - quote
-            - professional
+          required: [quote, professional]
           properties:
-            quote:
-              $ref: "#/components/schemas/SharedQuote"
-            professional:
-              $ref: "#/components/schemas/SharedQuoteProfessional"
-        request_id:
-          $ref: "#/components/schemas/RequestId"
+            quote: { $ref: "#/components/schemas/SharedQuote" }
+            professional: { $ref: "#/components/schemas/SharedQuoteProfessional" }
+        request_id: { $ref: "#/components/schemas/RequestId" }
     SharedQuote:
       type: object
       additionalProperties: false
-      required:
-        - quote_number
-        - customer_name
-        - service_description
-        - valid_until
-        - notes
-        - subtotal_amount
-        - discount_amount
-        - total_amount
-        - items
+      required: [quote_number, revision, status, customer_name, service_description, service_address, scheduled_on, valid_until, notes, subtotal_amount, discount_amount, total_amount, customer_decision_message, service_job, items]
       properties:
-        quote_number:
-          type: integer
-          minimum: 1
-        customer_name:
-          type: string
-          minLength: 1
-          maxLength: 80
-        service_description:
-          type: string
-          minLength: 1
-          maxLength: 160
-        valid_until:
-          type:
-            - string
-            - "null"
-          format: date
-        notes:
-          type:
-            - string
-            - "null"
-          maxLength: 700
-        subtotal_amount:
-          $ref: "#/components/schemas/MoneyAmount"
-        discount_amount:
-          $ref: "#/components/schemas/MoneyAmount"
-        total_amount:
-          $ref: "#/components/schemas/MoneyAmount"
+        quote_number: { type: integer, minimum: 1 }
+        revision: { type: integer, minimum: 0 }
+        status: { $ref: "#/components/schemas/QuoteStatus" }
+        customer_name: { type: string, minLength: 1, maxLength: 80 }
+        service_description: { type: string, minLength: 1, maxLength: 160 }
+        service_address: { type: [string, "null"], maxLength: 240 }
+        scheduled_on: { type: [string, "null"], format: date }
+        valid_until: { type: [string, "null"], format: date }
+        notes: { type: [string, "null"], maxLength: 700 }
+        subtotal_amount: { $ref: "#/components/schemas/MoneyAmount" }
+        discount_amount: { $ref: "#/components/schemas/MoneyAmount" }
+        total_amount: { $ref: "#/components/schemas/MoneyAmount" }
+        customer_decision_message: { type: [string, "null"], maxLength: 700 }
+        service_job:
+          oneOf:
+            - $ref: "#/components/schemas/SharedQuoteServiceJob"
+            - type: "null"
         items:
           type: array
           minItems: 1
           maxItems: 20
-          items:
-            $ref: "#/components/schemas/SharedQuoteItem"
+          items: { $ref: "#/components/schemas/SharedQuoteItem" }
+    SharedQuoteServiceJob:
+      type: object
+      additionalProperties: false
+      required: [status, completion_requested_at, completion_issue_message, completed_at, recommendation_available]
+      properties:
+        status: { $ref: "#/components/schemas/ServiceJobStatus" }
+        completion_requested_at: { type: [string, "null"], format: date-time }
+        completion_issue_message: { type: [string, "null"], maxLength: 700 }
+        completed_at: { type: [string, "null"], format: date-time }
+        recommendation_available: { type: boolean }
     SharedQuoteItem:
       type: object
       additionalProperties: false
-      required:
-        - description
-        - quantity
-        - unit
-        - unit_price
-        - line_total
-        - sort_order
+      required: [description, quantity, unit, unit_price, line_total, sort_order]
       properties:
-        description:
-          type: string
-          minLength: 1
-          maxLength: 160
-        quantity:
-          type: string
-          pattern: "^[0-9]+(?:\\.[0-9]{1,3})?$"
-        unit:
-          type: string
-          minLength: 1
-          maxLength: 20
-        unit_price:
-          $ref: "#/components/schemas/MoneyAmount"
-        line_total:
-          $ref: "#/components/schemas/MoneyAmount"
-        sort_order:
-          type: integer
-          minimum: 0
+        description: { type: string, minLength: 1, maxLength: 160 }
+        quantity: { type: string, pattern: "^[0-9]+(?:\\.[0-9]{1,3})?$" }
+        unit: { type: string, minLength: 1, maxLength: 20 }
+        unit_price: { $ref: "#/components/schemas/MoneyAmount" }
+        line_total: { $ref: "#/components/schemas/MoneyAmount" }
+        sort_order: { type: integer, minimum: 0 }
     SharedQuoteProfessional:
       type: object
       additionalProperties: false
-      required:
-        - display_name
-        - photo_url
-        - primary_service
-        - identity_verified
+      required: [display_name, photo_url, primary_service, identity_verified]
       properties:
-        display_name:
-          type: string
-          minLength: 3
-          maxLength: 70
-        photo_url:
-          type:
-            - string
-            - "null"
-          format: uri
-        primary_service:
-          type:
-            - string
-            - "null"
-          minLength: 1
-          maxLength: 80
-        identity_verified:
-          type: boolean
+        display_name: { type: string, minLength: 3, maxLength: 70 }
+        photo_url: { type: [string, "null"], format: uri }
+        primary_service: { type: [string, "null"], minLength: 1, maxLength: 80 }
+        identity_verified: { type: boolean }
     ProfessionalQuote:
       type: object
       additionalProperties: false
-      required:
-        - id
-        - quote_number
-        - customer_name
-        - service_description
-        - valid_until
-        - notes
-        - status
-        - subtotal_amount
-        - discount_amount
-        - total_amount
-        - shared_at
-        - created_at
-        - updated_at
-        - items
+      required: [id, quote_number, revision, customer, customer_name, customer_phone_e164, customer_email, service_description, service_address, scheduled_on, valid_until, notes, status, subtotal_amount, discount_amount, total_amount, shared_at, customer_decided_at, customer_decision_message, change_requests, service_job, created_at, updated_at, items]
       properties:
-        id:
-          type: string
-          format: uuid
-        quote_number:
-          type: integer
-          minimum: 1
-        customer_name:
-          type: string
-          minLength: 1
-          maxLength: 80
-        service_description:
-          type: string
-          minLength: 1
-          maxLength: 160
-        valid_until:
-          type:
-            - string
-            - "null"
-          format: date
-        notes:
-          type:
-            - string
-            - "null"
-          maxLength: 700
-        status:
-          type: string
-          enum:
-            - draft
-            - shared
-        subtotal_amount:
-          $ref: "#/components/schemas/MoneyAmount"
-        discount_amount:
-          $ref: "#/components/schemas/MoneyAmount"
-        total_amount:
-          $ref: "#/components/schemas/MoneyAmount"
-        shared_at:
-          type:
-            - string
-            - "null"
-          format: date-time
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
+        id: { type: string, format: uuid }
+        quote_number: { type: integer, minimum: 1 }
+        revision: { type: integer, minimum: 0 }
+        customer: { $ref: "#/components/schemas/ProfessionalQuoteCustomer" }
+        customer_name: { type: string, minLength: 1, maxLength: 80 }
+        customer_phone_e164: { type: string, pattern: "^\\+55[1-9][0-9]9[0-9]{8}$" }
+        customer_email: { type: [string, "null"], format: email, maxLength: 254 }
+        service_description: { type: string, minLength: 1, maxLength: 160 }
+        service_address: { type: [string, "null"], maxLength: 240 }
+        scheduled_on: { type: [string, "null"], format: date }
+        valid_until: { type: [string, "null"], format: date }
+        notes: { type: [string, "null"], maxLength: 700 }
+        status: { $ref: "#/components/schemas/QuoteStatus" }
+        subtotal_amount: { $ref: "#/components/schemas/MoneyAmount" }
+        discount_amount: { $ref: "#/components/schemas/MoneyAmount" }
+        total_amount: { $ref: "#/components/schemas/MoneyAmount" }
+        shared_at: { type: [string, "null"], format: date-time }
+        customer_decided_at: { type: [string, "null"], format: date-time }
+        customer_decision_message: { type: [string, "null"], maxLength: 700 }
+        change_requests:
+          type: array
+          items: { $ref: "#/components/schemas/ProfessionalQuoteChangeRequest" }
+        service_job:
+          oneOf:
+            - $ref: "#/components/schemas/ProfessionalQuoteServiceJob"
+            - type: "null"
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
         items:
           type: array
           minItems: 1
           maxItems: 20
-          items:
-            $ref: "#/components/schemas/ProfessionalQuoteItem"
+          items: { $ref: "#/components/schemas/ProfessionalQuoteItem" }
+    ProfessionalQuoteCustomer:
+      type: object
+      additionalProperties: false
+      required: [id, name, whatsapp_e164, email]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, minLength: 1, maxLength: 80 }
+        whatsapp_e164: { type: string, pattern: "^\\+55[1-9][0-9]9[0-9]{8}$" }
+        email: { type: [string, "null"], format: email, maxLength: 254 }
+    ProfessionalQuoteChangeRequest:
+      type: object
+      additionalProperties: false
+      required: [id, revision, message, requested_at]
+      properties:
+        id: { type: string, format: uuid }
+        revision: { type: integer, minimum: 0 }
+        message: { type: string, minLength: 1, maxLength: 700 }
+        requested_at: { type: string, format: date-time }
+    ProfessionalQuoteServiceJob:
+      type: object
+      additionalProperties: false
+      required: [id, status, completion_requested_at, completion_issue_message, completed_at, cancelled_at, recommendation_request_status]
+      properties:
+        id: { type: string, format: uuid }
+        status: { $ref: "#/components/schemas/ServiceJobStatus" }
+        completion_requested_at: { type: [string, "null"], format: date-time }
+        completion_issue_message: { type: [string, "null"], maxLength: 700 }
+        completed_at: { type: [string, "null"], format: date-time }
+        cancelled_at: { type: [string, "null"], format: date-time }
+        recommendation_request_status:
+          oneOf:
+            - $ref: "#/components/schemas/RecommendationRequestStatus"
+            - type: "null"
     ProfessionalQuoteItem:
       type: object
       additionalProperties: false
-      required:
-        - id
-        - description
-        - quantity
-        - unit
-        - unit_price
-        - line_total
-        - sort_order
+      required: [id, description, quantity, unit, unit_price, line_total, sort_order]
       properties:
-        id:
-          type: string
-          format: uuid
-        description:
-          type: string
-          minLength: 1
-          maxLength: 160
-        quantity:
-          type: string
-          pattern: "^[0-9]+(?:\\.[0-9]{1,3})?$"
-        unit:
-          type: string
-          minLength: 1
-          maxLength: 20
-        unit_price:
-          $ref: "#/components/schemas/MoneyAmount"
-        line_total:
-          $ref: "#/components/schemas/MoneyAmount"
-        sort_order:
-          type: integer
-          minimum: 0
+        id: { type: string, format: uuid }
+        description: { type: string, minLength: 1, maxLength: 160 }
+        quantity: { type: string, pattern: "^[0-9]+(?:\\.[0-9]{1,3})?$" }
+        unit: { type: string, minLength: 1, maxLength: 20 }
+        unit_price: { $ref: "#/components/schemas/MoneyAmount" }
+        line_total: { $ref: "#/components/schemas/MoneyAmount" }
+        sort_order: { type: integer, minimum: 0 }
+    ProfessionalServiceJob:
+      type: object
+      additionalProperties: false
+      required: [id, status, quote, completion_requested_at, completion_issue_at, completion_issue_message, completed_at, cancelled_at, cancellation_reason, recommendation_request_status, created_at, updated_at]
+      properties:
+        id: { type: string, format: uuid }
+        status: { $ref: "#/components/schemas/ServiceJobStatus" }
+        quote: { $ref: "#/components/schemas/ProfessionalServiceJobQuote" }
+        completion_requested_at: { type: [string, "null"], format: date-time }
+        completion_issue_at: { type: [string, "null"], format: date-time }
+        completion_issue_message: { type: [string, "null"], maxLength: 700 }
+        completed_at: { type: [string, "null"], format: date-time }
+        cancelled_at: { type: [string, "null"], format: date-time }
+        cancellation_reason: { type: [string, "null"], maxLength: 700 }
+        recommendation_request_status:
+          oneOf:
+            - $ref: "#/components/schemas/RecommendationRequestStatus"
+            - type: "null"
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    ProfessionalServiceJobQuote:
+      type: object
+      additionalProperties: false
+      required: [id, quote_number, customer_name, customer_phone_e164, customer_email, service_description, service_address, scheduled_on, total_amount]
+      properties:
+        id: { type: string, format: uuid }
+        quote_number: { type: integer, minimum: 1 }
+        customer_name: { type: string, minLength: 1, maxLength: 80 }
+        customer_phone_e164: { type: string, pattern: "^\\+55[1-9][0-9]9[0-9]{8}$" }
+        customer_email: { type: [string, "null"], format: email, maxLength: 254 }
+        service_description: { type: string, minLength: 1, maxLength: 160 }
+        service_address: { type: [string, "null"], maxLength: 240 }
+        scheduled_on: { type: [string, "null"], format: date }
+        total_amount: { $ref: "#/components/schemas/MoneyAmount" }
+    ProfessionalServiceJobResponse:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [service_job]
+          properties:
+            service_job: { $ref: "#/components/schemas/ProfessionalServiceJob" }
+        request_id: { $ref: "#/components/schemas/RequestId" }
+    ProfessionalServiceJobListResponse:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [service_jobs]
+          properties:
+            service_jobs:
+              type: array
+              items: { $ref: "#/components/schemas/ProfessionalServiceJob" }
+        request_id: { $ref: "#/components/schemas/RequestId" }
+    ProfessionalCompletionRequestResponse:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [service_job, share_url, whatsapp_url]
+          properties:
+            service_job: { $ref: "#/components/schemas/ProfessionalServiceJob" }
+            share_url: { type: string, format: uri }
+            whatsapp_url: { type: string, format: uri }
+        request_id: { $ref: "#/components/schemas/RequestId" }
+    ProfessionalCustomerCandidate:
+      type: object
+      additionalProperties: false
+      required: [id, name, whatsapp_e164, email, email_verified]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, minLength: 1, maxLength: 80 }
+        whatsapp_e164: { type: string, pattern: "^\\+55[1-9][0-9]9[0-9]{8}$" }
+        email: { type: [string, "null"], format: email, maxLength: 254 }
+        email_verified: { type: boolean }
+    ProfessionalCustomerCandidateListResponse:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [customers]
+          properties:
+            customers:
+              type: array
+              maxItems: 10
+              items: { $ref: "#/components/schemas/ProfessionalCustomerCandidate" }
+        request_id: { $ref: "#/components/schemas/RequestId" }
+    CustomerRecommendationResolveRequest:
+      type: object
+      additionalProperties: false
+      required: [token]
+      properties:
+        token: { type: string, maxLength: 200 }
+    CustomerRecommendationWriteRequest:
+      type: object
+      additionalProperties: false
+      required: [token, recommendation]
+      properties:
+        token: { type: string, maxLength: 200 }
+        recommendation:
+          type: object
+          additionalProperties: false
+          required: [display_name, recommendation_text, service_confirmed, publication_consent]
+          properties:
+            display_name: { type: string, minLength: 1, maxLength: 80 }
+            recommendation_text: { type: string, minLength: 1, maxLength: 700 }
+            service_confirmed: { type: boolean }
+            publication_consent: { type: boolean }
+    CustomerRecommendationRequest:
+      type: object
+      additionalProperties: false
+      required: [customer_name, service_description, professional, expires_at]
+      properties:
+        customer_name: { type: string, minLength: 1, maxLength: 80 }
+        service_description: { type: string, minLength: 1, maxLength: 160 }
+        professional:
+          type: object
+          additionalProperties: false
+          required: [display_name, public_slug]
+          properties:
+            display_name: { type: string, minLength: 3, maxLength: 70 }
+            public_slug: { type: string }
+        expires_at: { type: string, format: date-time }
+    CustomerRecommendationResolveResponse:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [recommendation_request]
+          properties:
+            recommendation_request: { $ref: "#/components/schemas/CustomerRecommendationRequest" }
+        request_id: { $ref: "#/components/schemas/RequestId" }
+    CustomerRecommendation:
+      type: object
+      additionalProperties: false
+      required: [id, display_name, recommendation_text, submitted_at, verification_label]
+      properties:
+        id: { type: string, format: uuid }
+        display_name: { type: string, minLength: 1, maxLength: 80 }
+        recommendation_text: { type: string, minLength: 1, maxLength: 700 }
+        submitted_at: { type: string, format: date-time }
+        verification_label: { type: string, const: "Link enviado por e-mail" }
+    CustomerRecommendationResponse:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [recommendation]
+          properties:
+            recommendation: { $ref: "#/components/schemas/CustomerRecommendation" }
+        request_id: { $ref: "#/components/schemas/RequestId" }
     MoneyAmount:
       type: string
       pattern: "^[0-9]+\\.[0-9]{2}$"
@@ -5409,6 +5769,8 @@ components:
         - services
         - coverage
         - verification_labels
+        - evidence_summary
+        - customer_recommendations
         - portfolio
         - relationships
         - social_links
@@ -5464,6 +5826,13 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PublicVerificationLabel"
+        evidence_summary:
+          $ref: "#/components/schemas/PublicProfessionalEvidenceSummary"
+        customer_recommendations:
+          type: array
+          maxItems: 20
+          items:
+            $ref: "#/components/schemas/PublicCustomerRecommendation"
         portfolio:
           type: array
           maxItems: 12
@@ -5480,6 +5849,24 @@ components:
             - string
             - "null"
           format: date-time
+    PublicProfessionalEvidenceSummary:
+      type: object
+      additionalProperties: false
+      required: [completed_services, recommendations, worked_together_professionals]
+      properties:
+        completed_services: { type: integer, minimum: 0 }
+        recommendations: { type: integer, minimum: 0 }
+        worked_together_professionals: { type: integer, minimum: 0 }
+    PublicCustomerRecommendation:
+      type: object
+      additionalProperties: false
+      required: [id, display_name, recommendation_text, submitted_at, verification_label]
+      properties:
+        id: { type: string, format: uuid }
+        display_name: { type: string, minLength: 1, maxLength: 80 }
+        recommendation_text: { type: string, minLength: 1, maxLength: 700 }
+        submitted_at: { type: string, format: date-time }
+        verification_label: { type: string, const: "Link enviado por e-mail" }
     PublicProfessionalProfileService:
       type: object
       additionalProperties: false

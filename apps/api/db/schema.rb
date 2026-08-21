@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_20_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_21_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -82,6 +82,56 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_20_120000) do
     t.check_constraint "jsonb_typeof(change_data) = 'object'::text", name: "catalog_change_events_change_data_object"
     t.check_constraint "request_id ~ '^[A-Za-z0-9._-]{1,100}$'::text", name: "catalog_change_events_request_id_format"
     t.check_constraint "target_identifier <> ''::text", name: "catalog_change_events_target_present"
+  end
+
+  create_table "customer_recommendation_requests", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.string "email_fingerprint", limit: 64, null: false
+    t.datetime "expires_at", null: false
+    t.datetime "sent_at"
+    t.uuid "service_job_id", null: false
+    t.string "status", limit: 16, default: "open", null: false
+    t.text "token_ciphertext"
+    t.string "token_hash", limit: 64, null: false
+    t.datetime "updated_at", null: false
+    t.index ["service_job_id"], name: "idx_recommendation_requests_unique_job", unique: true
+    t.index ["status", "expires_at"], name: "idx_recommendation_requests_status_expiry"
+    t.index ["token_hash"], name: "idx_recommendation_requests_unique_token", unique: true
+    t.check_constraint "status::text = ANY (ARRAY['open'::character varying, 'completed'::character varying, 'expired'::character varying]::text[])", name: "customer_recommendation_requests_known_status"
+  end
+
+  create_table "customer_recommendations", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.uuid "customer_id", null: false
+    t.string "display_name", limit: 80, null: false
+    t.string "email_fingerprint", limit: 64, null: false
+    t.datetime "email_verified_at", null: false
+    t.datetime "publication_authorized_at", null: false
+    t.text "recommendation_text", null: false
+    t.datetime "service_confirmed_at", null: false
+    t.uuid "service_job_id", null: false
+    t.datetime "submitted_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["customer_id"], name: "index_customer_recommendations_on_customer_id"
+    t.index ["service_job_id"], name: "idx_customer_recommendations_unique_job", unique: true
+    t.check_constraint "char_length(btrim(display_name::text)) >= 1 AND char_length(btrim(display_name::text)) <= 80", name: "customer_recommendations_display_name_length"
+    t.check_constraint "char_length(btrim(recommendation_text)) >= 1 AND char_length(btrim(recommendation_text)) <= 700", name: "customer_recommendations_text_length"
+  end
+
+  create_table "customers", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "email", limit: 254
+    t.datetime "email_verified_at"
+    t.string "name", limit: 80, null: false
+    t.uuid "professional_id", null: false
+    t.datetime "updated_at", null: false
+    t.string "whatsapp_e164", limit: 14, null: false
+    t.index ["id", "professional_id"], name: "index_customers_on_id_and_professional", unique: true
+    t.index ["professional_id", "name"], name: "index_customers_on_professional_and_name"
+    t.index ["professional_id"], name: "index_customers_on_professional_id"
+    t.check_constraint "char_length(btrim(name::text)) >= 1 AND char_length(btrim(name::text)) <= 80", name: "customers_name_length"
+    t.check_constraint "whatsapp_e164::text ~ '^\\+55[1-9][0-9]9[0-9]{8}$'::text", name: "customers_brazilian_mobile"
   end
 
   create_table "good_job_batches", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -516,6 +566,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_20_120000) do
     t.check_constraint "status = ANY (ARRAY['pending'::text, 'accepted'::text, 'declined'::text])", name: "professional_relationships_known_status"
   end
 
+  create_table "quote_change_requests", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "message", null: false
+    t.uuid "quote_id", null: false
+    t.datetime "requested_at", null: false
+    t.integer "requested_revision", null: false
+    t.datetime "updated_at", null: false
+    t.index ["quote_id", "requested_at", "id"], name: "index_quote_change_requests_on_quote_and_requested_at", order: { requested_at: :desc, id: :desc }
+    t.index ["quote_id", "requested_revision"], name: "index_quote_change_requests_on_quote_and_revision", unique: true
+    t.index ["quote_id"], name: "index_quote_change_requests_on_quote_id"
+    t.check_constraint "char_length(btrim(message)) >= 1 AND char_length(btrim(message)) <= 700", name: "quote_change_requests_message_length"
+    t.check_constraint "requested_revision >= 0", name: "quote_change_requests_nonnegative_revision"
+  end
+
   create_table "quote_items", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "description", limit: 160, null: false
     t.decimal "line_total", precision: 14, scale: 2, null: false
@@ -533,28 +597,41 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_20_120000) do
 
   create_table "quotes", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.datetime "customer_decided_at"
+    t.text "customer_decision_message"
+    t.string "customer_email", limit: 254
+    t.uuid "customer_id", null: false
     t.string "customer_name", limit: 80, null: false
+    t.string "customer_phone_e164", limit: 14, null: false
     t.decimal "discount_amount", precision: 14, scale: 2, default: "0.0", null: false
+    t.integer "lock_version", default: 0, null: false
     t.text "notes"
     t.uuid "professional_id", null: false
     t.integer "quote_number", null: false
+    t.date "scheduled_on"
+    t.string "service_address", limit: 240
     t.string "service_description", limit: 160, null: false
     t.text "share_token_ciphertext"
     t.string "share_token_hash", limit: 64
     t.datetime "shared_at"
     t.string "status", limit: 16, default: "draft", null: false
     t.decimal "subtotal_amount", precision: 14, scale: 2, default: "0.0", null: false
+    t.datetime "terms_accepted_at"
     t.decimal "total_amount", precision: 14, scale: 2, default: "0.0", null: false
     t.datetime "updated_at", null: false
     t.date "valid_until"
+    t.index ["customer_id", "professional_id"], name: "index_quotes_on_customer_and_professional"
+    t.index ["customer_id"], name: "index_quotes_on_customer_id"
     t.index ["professional_id", "created_at", "id"], name: "index_quotes_on_professional_and_recent", order: { created_at: :desc, id: :desc }
     t.index ["professional_id", "quote_number"], name: "index_quotes_on_professional_id_and_quote_number", unique: true
     t.index ["professional_id"], name: "index_quotes_on_professional_id"
     t.index ["share_token_hash"], name: "index_quotes_on_share_token_hash", unique: true
+    t.check_constraint "customer_decision_message IS NULL OR char_length(btrim(customer_decision_message)) >= 1 AND char_length(btrim(customer_decision_message)) <= 700", name: "quotes_customer_decision_message_length"
+    t.check_constraint "customer_phone_e164::text ~ '^\\+55[1-9][0-9]9[0-9]{8}$'::text", name: "quotes_customer_brazilian_mobile"
     t.check_constraint "discount_amount <= subtotal_amount AND total_amount = (subtotal_amount - discount_amount)", name: "quotes_consistent_totals"
     t.check_constraint "quote_number > 0", name: "quotes_positive_number"
-    t.check_constraint "status::text = 'draft'::text AND share_token_hash IS NULL AND share_token_ciphertext IS NULL AND shared_at IS NULL OR status::text = 'shared'::text AND share_token_hash IS NOT NULL AND share_token_ciphertext IS NOT NULL AND shared_at IS NOT NULL", name: "quotes_consistent_share_state"
-    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying::text, 'shared'::character varying::text])", name: "quotes_known_status"
+    t.check_constraint "status::text = 'draft'::text AND share_token_hash IS NULL AND share_token_ciphertext IS NULL AND shared_at IS NULL OR status::text <> 'draft'::text AND share_token_hash IS NOT NULL AND share_token_ciphertext IS NOT NULL AND shared_at IS NOT NULL", name: "quotes_consistent_share_state"
+    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying, 'shared'::character varying, 'change_requested'::character varying, 'approved'::character varying, 'declined'::character varying]::text[])", name: "quotes_known_status"
     t.check_constraint "subtotal_amount >= 0::numeric AND discount_amount >= 0::numeric AND total_amount >= 0::numeric", name: "quotes_nonnegative_amounts"
   end
 
@@ -613,6 +690,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_20_120000) do
     t.check_constraint "btrim(name) <> ''::text", name: "service_categories_name_present"
     t.check_constraint "slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'::text", name: "service_categories_slug_format"
     t.check_constraint "sort_order >= 0", name: "service_categories_sort_order_nonnegative"
+  end
+
+  create_table "service_jobs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.text "cancellation_reason"
+    t.datetime "cancelled_at"
+    t.datetime "completed_at"
+    t.datetime "completion_issue_at"
+    t.text "completion_issue_message"
+    t.datetime "completion_requested_at"
+    t.datetime "created_at", null: false
+    t.uuid "quote_id", null: false
+    t.string "status", limit: 24, default: "approved", null: false
+    t.datetime "updated_at", null: false
+    t.index ["quote_id"], name: "index_service_jobs_on_quote_id", unique: true
+    t.index ["status", "updated_at"], name: "index_service_jobs_on_status_and_updated_at"
+    t.check_constraint "cancellation_reason IS NULL OR char_length(btrim(cancellation_reason)) >= 1 AND char_length(btrim(cancellation_reason)) <= 700", name: "service_jobs_cancellation_reason_length"
+    t.check_constraint "completion_issue_message IS NULL OR char_length(btrim(completion_issue_message)) >= 1 AND char_length(btrim(completion_issue_message)) <= 700", name: "service_jobs_completion_issue_message_length"
+    t.check_constraint "status::text = ANY (ARRAY['approved'::character varying, 'completion_requested'::character varying, 'completion_issue'::character varying, 'completed'::character varying, 'cancelled'::character varying]::text[])", name: "service_jobs_known_status"
   end
 
   create_table "services", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -726,6 +821,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_20_120000) do
   add_foreign_key "admin_access_events", "user_accounts", column: "admin_user_id"
   add_foreign_key "application_sessions", "user_accounts"
   add_foreign_key "catalog_change_events", "user_accounts", column: "admin_user_id"
+  add_foreign_key "customer_recommendation_requests", "service_jobs"
+  add_foreign_key "customer_recommendations", "customers"
+  add_foreign_key "customer_recommendations", "service_jobs"
+  add_foreign_key "customers", "professional_profiles", column: "professional_id"
   add_foreign_key "media_uploads", "professional_profiles"
   add_foreign_key "moderation_actions", "user_accounts", column: "admin_user_id"
   add_foreign_key "moderation_media_access_events", "user_accounts", column: "admin_user_id"
@@ -750,12 +849,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_20_120000) do
   add_foreign_key "professional_profiles", "user_accounts"
   add_foreign_key "professional_relationships", "professional_profiles", column: "initiator_professional_id"
   add_foreign_key "professional_relationships", "professional_profiles", column: "recipient_professional_id"
+  add_foreign_key "quote_change_requests", "quotes", on_delete: :cascade
   add_foreign_key "quote_items", "quotes", on_delete: :cascade
+  add_foreign_key "quotes", "customers", column: ["customer_id", "professional_id"], primary_key: ["id", "professional_id"], name: "quotes_customer_owned_by_professional"
   add_foreign_key "quotes", "professional_profiles", column: "professional_id"
   add_foreign_key "search_daily_rollups", "neighborhoods", column: "neighborhood_code", primary_key: "code"
   add_foreign_key "search_daily_rollups", "services"
   add_foreign_key "search_events", "neighborhoods", column: "neighborhood_code", primary_key: "code"
   add_foreign_key "search_events", "services"
+  add_foreign_key "service_jobs", "quotes"
   add_foreign_key "services", "service_categories", column: "category_id"
   add_foreign_key "verification_file_access_events", "user_accounts", column: "admin_user_id"
   add_foreign_key "verification_file_access_events", "verification_files"

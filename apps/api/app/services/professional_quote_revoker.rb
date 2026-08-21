@@ -8,13 +8,16 @@ class ProfessionalQuoteRevoker
 
   def call(quote:)
     quote.with_lock do
-      raise NotShared unless quote.shared?
+      raise NotShared if quote.draft? || quote.approved?
 
       quote.update!(
         status: "draft",
         share_token_hash: nil,
         share_token_ciphertext: nil,
-        shared_at: nil
+        shared_at: nil,
+        customer_decided_at: nil,
+        customer_decision_message: nil,
+        terms_accepted_at: nil
       )
     end
     quote.reload

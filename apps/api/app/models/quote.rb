@@ -1,16 +1,22 @@
 # frozen_string_literal: true
 
 class Quote < ApplicationRecord
-  STATUSES = %w[draft shared].freeze
+  STATUSES = %w[draft shared change_requested approved declined].freeze
   MAX_ITEMS = 20
   MONEY_SCALE = 2
 
   belongs_to :professional, class_name: "ProfessionalProfile", inverse_of: :quotes
+  belongs_to :customer, inverse_of: :quotes
+  has_one :service_job, dependent: :restrict_with_exception
   has_many :quote_items,
     -> { order(:sort_order, :id) },
     inverse_of: :quote,
     dependent: :destroy,
     autosave: true
+  has_many :quote_change_requests,
+    -> { order(requested_at: :desc, id: :desc) },
+    inverse_of: :quote,
+    dependent: :destroy
 
   scope :newest_first, -> { order(created_at: :desc, id: :desc) }
 
@@ -18,8 +24,12 @@ class Quote < ApplicationRecord
     numericality: {only_integer: true, greater_than: 0},
     uniqueness: {scope: :professional_id}
   validates :customer_name, length: {in: 1..80}
+  validates :customer_phone_e164, presence: true, format: {with: UserAccount::BRAZILIAN_MOBILE_PATTERN}
+  validates :customer_email, length: {maximum: 254}, format: {with: URI::MailTo::EMAIL_REGEXP}, allow_nil: true
   validates :service_description, length: {in: 1..160}
+  validates :service_address, length: {maximum: 240}, allow_nil: true
   validates :notes, length: {maximum: 700}, allow_nil: true
+  validates :customer_decision_message, length: {in: 1..700}, allow_nil: true
   validates :status, inclusion: {in: STATUSES}
   validates :subtotal_amount, :discount_amount, :total_amount,
     numericality: {greater_than_or_equal_to: 0}
@@ -27,6 +37,8 @@ class Quote < ApplicationRecord
   validate :has_valid_item_count
   validate :discount_does_not_exceed_subtotal
   validate :share_state_matches_status
+  validate :customer_belongs_to_professional
+  validate :approved_content_is_immutable, on: :update
 
   before_validation :normalize_text
   before_validation :recalculate_totals
@@ -39,8 +51,14 @@ class Quote < ApplicationRecord
 
   def normalize_text
     self.customer_name = customer_name.to_s.squish
+    self.customer_email = customer_email.to_s.strip.downcase.presence
+    self.customer_phone_e164 = BrazilianPhoneNumber.normalize(customer_phone_e164)
     self.service_description = service_description.to_s.squish
+    self.service_address = service_address.to_s.squish.presence
     self.notes = notes.to_s.squish.presence
+    self.customer_decision_message = customer_decision_message.to_s.squish.presence
+  rescue BrazilianPhoneNumber::Invalid
+    errors.add(:customer_phone_e164, "não é um celular brasileiro válido")
   end
 
   def recalculate_totals
@@ -78,5 +96,19 @@ class Quote < ApplicationRecord
     elsif share_token_hash.blank? || share_token_ciphertext.blank? || shared_at.blank?
       errors.add(:status, :invalid)
     end
+  end
+
+  def customer_belongs_to_professional
+    return unless customer && professional_id
+    return if customer.professional_id == professional_id
+
+    errors.add(:customer, :invalid)
+  end
+
+  def approved_content_is_immutable
+    return unless status_in_database == "approved"
+    return unless changes_to_save.except("updated_at", "lock_version").any?
+
+    errors.add(:base, "um orçamento aprovado não pode ser alterado")
   end
 end

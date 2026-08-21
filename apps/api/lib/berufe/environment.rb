@@ -54,6 +54,16 @@ module Berufe
       R2_PUBLIC_BUCKET
       R2_PRIVATE_BUCKET
     ].freeze
+    SMTP_REQUIRED = %w[
+      SMTP_ADDRESS
+      SMTP_PORT
+      SMTP_DOMAIN
+      SMTP_USERNAME
+      SMTP_PASSWORD
+      SMTP_AUTHENTICATION
+      SMTP_STARTTLS
+      MAIL_FROM
+    ].freeze
 
     DEFAULTS = {
       "development" => {
@@ -123,6 +133,7 @@ module Berufe
       required.concat(LOCAL_STORAGE_REQUIRED) if media_storage_adapter == "local"
       required.concat(R2_REQUIRED) if media_storage_adapter == "r2"
       required.concat(DEPLOYMENT_SECRET_REQUIRED) if %w[staging integration production].include?(name)
+      required.concat(SMTP_REQUIRED) if %w[staging integration production].include?(name)
       required << "BUGSNAG_API_KEY" if name == "production"
       required
     end

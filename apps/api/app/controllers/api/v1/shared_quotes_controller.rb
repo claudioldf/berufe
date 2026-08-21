@@ -24,6 +24,76 @@ module Api
         )
       end
 
+      def decide
+        decision = params.require(:decision).permit(:kind, :revision, :terms_accepted, :message)
+        result = SharedQuoteDecisionRecorder.new.call(
+          token: params[:token],
+          decision: decision[:kind],
+          revision: decision[:revision],
+          terms_accepted: decision[:terms_accepted],
+          message: decision[:message]
+        )
+        resolved = result[:resolved]
+        render json: {
+          data: SharedQuoteSerializer.new(
+            quote: resolved.quote,
+            professional: resolved.professional
+          ),
+          request_id: Current.request_id
+        }
+      rescue SharedQuoteResolver::NotFound
+        render_shared_quote_not_found
+      rescue SharedQuoteDecisionRecorder::Invalid => error
+        render_api_error(
+          code: "validation_failed",
+          message: "Revise sua resposta.",
+          status: :unprocessable_entity,
+          field_errors: error.field_errors
+        )
+      rescue SharedQuoteDecisionRecorder::Stale
+        render_api_error(
+          code: "quote_stale",
+          message: "Este orçamento mudou. Atualize a página antes de responder.",
+          status: :conflict
+        )
+      rescue SharedQuoteDecisionRecorder::Expired
+        render_api_error(
+          code: "quote_expired",
+          message: "A validade deste orçamento terminou.",
+          status: :gone
+        )
+      rescue SharedQuoteDecisionRecorder::Unavailable
+        render_transition_unavailable
+      end
+
+      def complete
+        completion = params.require(:completion).permit(:kind, :message)
+        result = SharedQuoteCompletionResponder.new.call(
+          token: params[:token],
+          response: completion[:kind],
+          message: completion[:message]
+        )
+        resolved = result.resolved
+        render json: {
+          data: SharedQuoteSerializer.new(
+            quote: resolved.quote,
+            professional: resolved.professional
+          ),
+          request_id: Current.request_id
+        }
+      rescue SharedQuoteResolver::NotFound
+        render_shared_quote_not_found
+      rescue SharedQuoteCompletionResponder::Invalid => error
+        render_api_error(
+          code: "validation_failed",
+          message: "Revise sua resposta.",
+          status: :unprocessable_entity,
+          field_errors: error.field_errors
+        )
+      rescue SharedQuoteCompletionResponder::Unavailable
+        render_transition_unavailable
+      end
+
       private
 
       def protect_bearer_response
@@ -37,6 +107,14 @@ module Api
           code: "not_found",
           message: "Orçamento não encontrado.",
           status: :not_found
+        )
+      end
+
+      def render_transition_unavailable
+        render_api_error(
+          code: "quote_transition_unavailable",
+          message: "Esta ação não está mais disponível.",
+          status: :conflict
         )
       end
     end

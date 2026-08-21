@@ -12,7 +12,12 @@ module Api
           authorize Quote, :index?
           quotes = policy_scope(Quote)
             .where(professional: profile)
-            .includes(:quote_items)
+            .includes(
+              :quote_items,
+              :customer,
+              :quote_change_requests,
+              service_job: :customer_recommendation_request
+            )
             .newest_first
           render json: {
             data: {quotes: quotes.map { |quote| ProfessionalQuoteSerializer.new(quote) }},
@@ -52,6 +57,10 @@ module Api
           render json: quote_response(quote)
         rescue ProfessionalQuoteWriter::Invalid => error
           render_quote_errors(error)
+        rescue ProfessionalQuoteWriter::Locked
+          render_quote_locked
+        rescue ProfessionalQuoteWriter::Stale
+          render_quote_stale
         end
 
         def share
@@ -113,11 +122,14 @@ module Api
 
         def quote_params
           params.require(:quote).permit(
-            :customer_name,
             :service_description,
+            :service_address,
+            :scheduled_on,
             :discount_amount,
             :valid_until,
             :notes,
+            :revision,
+            customer: %i[id name whatsapp_e164 email],
             items: %i[description quantity unit unit_price]
           )
         end
@@ -135,6 +147,22 @@ module Api
             message: "Revise os dados do orçamento.",
             status: :unprocessable_entity,
             field_errors: error.field_errors
+          )
+        end
+
+        def render_quote_locked
+          render_api_error(
+            code: "quote_locked",
+            message: "Um orçamento aprovado não pode mais ser alterado.",
+            status: :conflict
+          )
+        end
+
+        def render_quote_stale
+          render_api_error(
+            code: "quote_stale",
+            message: "Este orçamento mudou. Atualize a página antes de continuar.",
+            status: :conflict
           )
         end
       end

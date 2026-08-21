@@ -30,7 +30,15 @@ RSpec.describe Berufe::Environment do
       "INFOBIP_SENDER" => "Berufe",
       "INFOBIP_CREDENTIAL_SCOPE" => (name == "production") ? "production" : "integration",
       "INFOBIP_TEST_NUMBERS" => (name == "production") ? "" : "+5547999999999",
-      "LOCAL_STORAGE_ROOT" => "/tmp/berufe"
+      "LOCAL_STORAGE_ROOT" => "/tmp/berufe",
+      "SMTP_ADDRESS" => "smtp.example.com",
+      "SMTP_PORT" => "587",
+      "SMTP_DOMAIN" => "berufe.com.br",
+      "SMTP_USERNAME" => "smtp-user",
+      "SMTP_PASSWORD" => "smtp-secret",
+      "SMTP_AUTHENTICATION" => "plain",
+      "SMTP_STARTTLS" => "true",
+      "MAIL_FROM" => "Berufe <nao-responda@berufe.com.br>"
     )
     if media_storage == "r2"
       environment.merge!(
@@ -176,6 +184,13 @@ RSpec.describe Berufe::Environment do
 
     expect { described_class.load!(environment:, rails_environment: "production") }
       .to raise_error(described_class::InvalidConfiguration, /PRODUCT_LAUNCH_DATE must be an ISO date/)
+  end
+
+  it "requires recommendation email delivery in deployed environments" do
+    environment = production_environment.merge("SMTP_PASSWORD" => "")
+
+    expect { described_class.load!(environment:, rails_environment: "production") }
+      .to raise_error(described_class::InvalidConfiguration, /SMTP_PASSWORD/)
   end
 
   it "reports variable names without leaking their values" do

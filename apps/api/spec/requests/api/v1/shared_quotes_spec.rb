@@ -44,7 +44,12 @@ RSpec.describe "Shared quotes", type: :request, openapi: true do
     ProfessionalQuoteWriter.new.call(
       profile:,
       attributes: {
-        customer_name: "Ana Paula",
+        customer: {
+          id: nil,
+          name: "Ana Paula",
+          whatsapp_e164: "+5547999912041",
+          email: "ana.paula@example.com"
+        },
         service_description: "Iluminação da cozinha",
         discount_amount: 40,
         valid_until: "2026-01-01",
@@ -78,7 +83,7 @@ RSpec.describe "Shared quotes", type: :request, openapi: true do
     )
     expect(quote.attributes.to_json).not_to include(token)
     expect(response.headers.fetch("Cache-Control")).to eq("no-store")
-    expect(URI(whatsapp_url)).to have_attributes(host: "wa.me", path: "/")
+    expect(URI(whatsapp_url)).to have_attributes(host: "wa.me", path: "/5547999912041")
     whatsapp_message = URI.decode_www_form(URI(whatsapp_url).query).to_h.fetch("text")
     expect(whatsapp_message).to include("orçamento #1", first_url)
     expect(whatsapp_message).not_to include("Ana Paula")
@@ -102,15 +107,21 @@ RSpec.describe "Shared quotes", type: :request, openapi: true do
       "X-Robots-Tag" => "noindex, nofollow"
     )
     data = response.parsed_body.fetch("data")
-    expect(data.fetch("quote")).to eq(
+    expect(data.fetch("quote")).to include(
       "quote_number" => 1,
+      "revision" => quote.reload.lock_version,
+      "status" => "shared",
       "customer_name" => "Ana Paula",
       "service_description" => "Iluminação da cozinha",
+      "service_address" => nil,
+      "scheduled_on" => nil,
       "valid_until" => "2026-01-01",
       "notes" => "Materiais definidos com a cliente.",
       "subtotal_amount" => "840.00",
       "discount_amount" => "40.00",
       "total_amount" => "800.00",
+      "customer_decision_message" => nil,
+      "service_job" => nil,
       "items" => [
         {
           "description" => "Instalação",
@@ -162,7 +173,12 @@ RSpec.describe "Shared quotes", type: :request, openapi: true do
     draft = ProfessionalQuoteWriter.new.call(
       profile:,
       attributes: {
-        customer_name: "Outro cliente",
+        customer: {
+          id: nil,
+          name: "Outro cliente",
+          whatsapp_e164: "+5547999912042",
+          email: nil
+        },
         service_description: "Outro serviço",
         discount_amount: 0,
         items: [{description: "Item", quantity: 1, unit: "serviço", unit_price: 10}]
@@ -253,7 +269,12 @@ RSpec.describe "Shared quotes", type: :request, openapi: true do
     other_quote = ProfessionalQuoteWriter.new.call(
       profile: other_profile,
       attributes: {
-        customer_name: "Outro cliente",
+        customer: {
+          id: nil,
+          name: "Outro cliente",
+          whatsapp_e164: "+5547999912043",
+          email: nil
+        },
         service_description: "Outro serviço",
         discount_amount: 0,
         items: [{description: "Item", quantity: 1, unit: "serviço", unit_price: 10}]

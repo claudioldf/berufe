@@ -35,6 +35,11 @@ class ProfessionalProfile < ApplicationRecord
     foreign_key: :professional_id,
     inverse_of: :professional,
     dependent: :restrict_with_exception
+  has_many :customers,
+    foreign_key: :professional_id,
+    inverse_of: :professional,
+    dependent: :restrict_with_exception
+  has_many :service_jobs, through: :quotes
   has_many :initiated_relationships,
     class_name: "ProfessionalRelationship",
     foreign_key: :initiator_professional_id,

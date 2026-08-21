@@ -23,7 +23,12 @@ RSpec.describe "Professional quote numbering" do
           ProfessionalQuoteWriter.new.call(
             profile: owned_profile,
             attributes: {
-              customer_name: "Cliente #{index}",
+              customer: {
+                id: nil,
+                name: "Cliente #{index}",
+                whatsapp_e164: "+55479999120#{index.to_s.rjust(2, "0")}",
+                email: nil
+              },
               service_description: "Serviço concorrente",
               discount_amount: 0,
               valid_until: nil,
@@ -45,6 +50,7 @@ RSpec.describe "Professional quote numbering" do
   ensure
     if profile
       Quote.where(professional_id: profile.id).delete_all
+      Customer.where(professional_id: profile.id).delete_all
       ProfessionalDailyActivity.where(professional_id: profile.id).delete_all
       profile.update_columns(
         working_revision_id: nil,
