@@ -4,7 +4,6 @@ import type { Neighborhood, Service } from "~/types";
 export type ExternalCoverageMode =
   "not_informed" | "all_joinville" | "neighborhoods";
 
-const name = defineModel<string>("name", { required: true });
 const phone = defineModel<string>("phone", { required: true });
 const serviceIds = defineModel<string[]>("serviceIds", { required: true });
 const coverageMode = defineModel<ExternalCoverageMode>("coverageMode", {
@@ -13,60 +12,46 @@ const coverageMode = defineModel<ExternalCoverageMode>("coverageMode", {
 const neighborhoodCodes = defineModel<string[]>("neighborhoodCodes", {
   required: true,
 });
-const attested = defineModel<boolean>("attested", { required: true });
 
 defineProps<{
+  name: string;
   services: Service[];
   neighborhoods: Neighborhood[];
 }>();
 </script>
 
 <template>
-  <div class="external-professional-form">
-    <p class="external-professional-form__intro">
-      Criaremos um perfil básico para que o profissional possa confirmar a
-      relação e completar os dados depois.
-    </p>
+  <div class="external-professional-details">
+    <!-- <p class="external-professional-details__intro">
+      Informe o telefone de <strong>{{ name }}</strong
+      >. Se ainda não houver uma conta com esse número, criaremos um perfil
+      básico para que o profissional possa confirmar a relação e completar os
+      dados depois.
+    </p> -->
 
-    <div class="external-professional-form__identity">
-      <DesignSystemFormField
-        id="external-professional-name"
-        label="Nome profissional"
-        required
-      >
-        <input
-          id="external-professional-name"
-          v-model="name"
-          name="external-name"
-          type="text"
-          autocomplete="name"
-          minlength="3"
-          maxlength="70"
-          required
-        />
-      </DesignSystemFormField>
-      <DesignSystemFormField
+    <DesignSystemFormField
+      id="external-professional-phone"
+      label="Celular com DDD"
+      hint="O número não será exibido publicamente"
+      required
+    >
+      <input
         id="external-professional-phone"
-        label="Celular com DDD"
-        hint="O número não será exibido publicamente"
+        v-model="phone"
+        name="external-phone"
+        type="tel"
+        inputmode="tel"
+        autocomplete="tel-national"
+        placeholder="(47) 99999-9999"
         required
-      >
-        <input
-          id="external-professional-phone"
-          v-model="phone"
-          name="external-phone"
-          type="tel"
-          inputmode="tel"
-          autocomplete="tel-national"
-          placeholder="(47) 99999-9999"
-          required
-        />
-      </DesignSystemFormField>
-    </div>
+      />
+    </DesignSystemFormField>
 
-    <fieldset class="external-professional-form__fieldset">
-      <legend>Serviços <small>Opcional</small></legend>
-      <div class="external-professional-form__options">
+    <fieldset class="external-professional-details__fieldset">
+      <legend>
+        Qual o serviço esse profissional oferece? <small>Opcional</small>
+      </legend>
+      <div class="external-professional-details__options">
         <label v-for="service in services" :key="service.id">
           <input v-model="serviceIds" type="checkbox" :value="service.id" />
           <span>{{ service.name }}</span>
@@ -74,12 +59,12 @@ defineProps<{
       </div>
     </fieldset>
 
-    <fieldset class="external-professional-form__fieldset">
-      <legend>Área de atendimento <small>Opcional</small></legend>
-      <div class="external-professional-form__radios">
+    <fieldset class="external-professional-details__fieldset">
+      <legend>Qual região esse profissional atende? <small>Opcional</small></legend>
+      <div class="external-professional-details__radios">
         <label>
           <input v-model="coverageMode" type="radio" value="not_informed" />
-          Não informada
+          Não sei
         </label>
         <label>
           <input v-model="coverageMode" type="radio" value="all_joinville" />
@@ -92,7 +77,7 @@ defineProps<{
       </div>
       <div
         v-if="coverageMode === 'neighborhoods'"
-        class="external-professional-form__options external-professional-form__options--neighborhoods"
+        class="external-professional-details__options external-professional-details__options--neighborhoods"
       >
         <label v-for="neighborhood in neighborhoods" :key="neighborhood.code">
           <input
@@ -104,23 +89,11 @@ defineProps<{
         </label>
       </div>
     </fieldset>
-
-    <label class="external-professional-form__consent">
-      <input
-        v-model="attested"
-        name="external-contact-consent"
-        type="checkbox"
-      />
-      <span>
-        Confirmo que posso compartilhar estes dados profissionais para criar o
-        perfil básico e enviar a solicitação.
-      </span>
-    </label>
   </div>
 </template>
 
 <style scoped lang="scss">
-.external-professional-form {
+.external-professional-details {
   display: grid;
   gap: 18px;
 
@@ -132,12 +105,6 @@ defineProps<{
     color: var(--color-brand-strong);
     font-size: 0.82rem;
     line-height: 1.5;
-  }
-
-  &__identity {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
   }
 
   &__fieldset {
@@ -161,21 +128,29 @@ defineProps<{
 
   &__options {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 7px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
     max-height: 180px;
     overflow: auto;
   }
 
+  &__options label {
+    padding: 2px 0;
+  }
+
   &__options label,
-  &__radios label,
-  &__consent {
+  &__radios label {
     display: flex;
     align-items: flex-start;
     gap: 8px;
     font-size: 0.82rem;
     line-height: 1.4;
     cursor: pointer;
+
+    input[type="checkbox"],
+    input[type="radio"] {
+      margin-top: 3px;
+    }
   }
 
   &__radios {
@@ -183,17 +158,10 @@ defineProps<{
     flex-wrap: wrap;
     gap: 12px;
   }
-
-  &__consent {
-    padding: 12px;
-    border: 1px solid var(--line);
-    border-radius: 10px;
-  }
 }
 
 @media (width <= 620px) {
-  .external-professional-form__identity,
-  .external-professional-form__options {
+  .external-professional-details__options {
     grid-template-columns: 1fr;
   }
 }

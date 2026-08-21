@@ -476,45 +476,7 @@ async function respondRelationship(id: string, accepted: boolean) {
         /></NuxtLink>
       </section>
 
-      <div class="dashboard-grid">
-        <DashboardChecklist
-          :readiness="progress"
-          :items="checklist"
-          :can-publish="canPublish"
-          :publishing="professionalWorkspace.submissionSaving.value"
-          @publish="publishProfile"
-        />
-
-        <DesignSystemSurfaceCard as="section" class="actions-card">
-          <header>
-            <span>Ações rápidas</span><small>Fortaleça seu perfil</small>
-          </header>
-          <div class="actions-card__grid">
-            <NuxtLink to="/app/professional/profile"
-              ><span><UIcon name="i-lucide-pencil" /></span
-              ><strong>Editar perfil</strong
-              ><small>Dados e serviços</small></NuxtLink
-            >
-            <NuxtLink to="/app/professional/profile?tab=portfolio"
-              ><span><UIcon name="i-lucide-image-plus" /></span
-              ><strong>Novo trabalho</strong
-              ><small>Adicionar ao portfólio</small></NuxtLink
-            >
-            <NuxtLink to="/app/professional/profile?tab=verificacoes"
-              ><span><UIcon name="i-lucide-id-card" /></span
-              ><strong>Ver verificações</strong
-              ><small>{{ verificationDescription }}</small></NuxtLink
-            >
-            <button type="button" @click="relationshipOpen = true">
-              <span><UIcon name="i-lucide-handshake" /></span
-              ><strong>Adicionar relação</strong
-              ><small>Na Berufe ou pelo telefone</small>
-            </button>
-          </div>
-        </DesignSystemSurfaceCard>
-      </div>
-
-      <section class="dashboard-section pending-section">
+      <section v-if="pendingItems.length" class="dashboard-section pending-section">
         <div class="dashboard-section__heading">
           <div>
             <DesignSystemEyebrow>Precisa de atenção</DesignSystemEyebrow>
@@ -577,6 +539,44 @@ async function respondRelationship(id: string, accepted: boolean) {
           </article>
         </div>
       </section>
+
+      <div class="dashboard-grid">
+        <DashboardChecklist
+          :readiness="progress"
+          :items="checklist"
+          :can-publish="canPublish"
+          :publishing="professionalWorkspace.submissionSaving.value"
+          @publish="publishProfile"
+        />
+
+        <DesignSystemSurfaceCard as="section" class="actions-card">
+          <header>
+            <span>Ações rápidas</span><small>Fortaleça seu perfil</small>
+          </header>
+          <div class="actions-card__grid">
+            <NuxtLink to="/app/professional/profile">
+              <span><UIcon name="i-lucide-pencil" /></span>
+              <strong>Editar perfil</strong>
+              <small>Dados e serviços</small></NuxtLink
+            >
+            <NuxtLink to="/app/professional/profile?tab=portfolio">
+              <span><UIcon name="i-lucide-image-plus" /></span>
+              <strong>Novo trabalho</strong>
+              <small>Adicionar ao portfólio</small></NuxtLink
+            >
+            <NuxtLink to="/app/professional/profile?tab=verificacoes">
+              <span><UIcon name="i-lucide-id-card" /></span>
+              <strong>Ver verificações</strong>
+              <small>{{ verificationDescription }}</small></NuxtLink
+            >
+            <button type="button" @click="relationshipOpen = true">
+              <span><UIcon name="i-lucide-handshake" /></span>
+              <strong>Adicionar relação</strong>
+              <small>Amplie sua rede de confiança</small>
+            </button>
+          </div>
+        </DesignSystemSurfaceCard>
+      </div>
 
       <section class="dashboard-section quotes-section">
         <div class="dashboard-section__heading">
@@ -818,6 +818,7 @@ async function respondRelationship(id: string, accepted: boolean) {
   }
   &__grid a > span,
   &__grid button > span {
+    align-self: center;
     grid-row: 1 / 3;
     display: grid;
     place-items: center;

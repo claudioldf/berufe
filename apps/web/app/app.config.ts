@@ -17,5 +17,14 @@ export default defineAppConfig({
         size: "lg",
       },
     },
+    modal: {
+      variants: {
+        overlay: {
+          true: {
+            overlay: "bg-elevated/95",
+          },
+        },
+      },
+    },
   },
 });

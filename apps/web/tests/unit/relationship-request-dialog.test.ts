@@ -11,8 +11,10 @@ const mocks = vi.hoisted(() => ({
   state: {
     isSubmitting: { value: false },
     error: { value: "" },
+    searchError: { value: "" },
     candidates: { value: [] },
     isSearching: { value: false },
+    searchedQuery: { value: "" },
   },
 }));
 
@@ -105,29 +107,149 @@ async function mountDialog(eligible = true) {
   });
 }
 
+async function enterProfessionalNameAndFinishSearch(
+  wrapper: Awaited<ReturnType<typeof mountDialog>>,
+  name: string,
+) {
+  vi.useFakeTimers();
+  try {
+    await wrapper.get('input[name="professional-search"]').setValue(name);
+    await vi.advanceTimersByTimeAsync(500);
+  } finally {
+    vi.useRealTimers();
+  }
+}
+
 describe("relationship create dialog", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.state.isSubmitting.value = false;
     mocks.state.error.value = "";
+    mocks.state.searchError.value = "";
+    mocks.state.candidates.value = [];
+    mocks.state.isSearching.value = false;
+    mocks.state.searchedQuery.value = "";
     mocks.requestRelationship.mockResolvedValue(createdRelationship);
+    mocks.searchCandidates.mockResolvedValue([]);
   });
 
-  it("creates an external target with normalized phone, optional supply, and explicit attestation", async () => {
+  it("waits until typing pauses before requesting professional suggestions", async () => {
     const wrapper = await mountDialog();
+    vi.useFakeTimers();
+
+    try {
+      const search = wrapper.get('input[name="professional-search"]');
+      await search.setValue("B");
+      expect(search.attributes("aria-busy")).toBe("true");
+      expect(wrapper.find(".professional-lookup__loader").exists()).toBe(true);
+      await vi.advanceTimersByTimeAsync(300);
+      await search.setValue("Beto");
+      await vi.advanceTimersByTimeAsync(499);
+
+      expect(mocks.searchCandidates).not.toHaveBeenCalled();
+      expect(search.attributes("aria-busy")).toBe("true");
+
+      await vi.advanceTimersByTimeAsync(1);
+      expect(mocks.searchCandidates).toHaveBeenCalledOnce();
+      expect(mocks.searchCandidates).toHaveBeenCalledWith("Beto");
+      expect(search.attributes("aria-busy")).toBe("false");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("shows candidate loading inside the professional name input", async () => {
+    mocks.state.isSearching.value = true;
+    const wrapper = await mountDialog();
+    const search = wrapper.get('input[name="professional-search"]');
+
+    expect(search.attributes("type")).toBe("text");
+    expect(search.attributes("placeholder")).toBe(
+      "Digite o nome do profissional aqui...",
+    );
+    expect(search.attributes("aria-busy")).toBe("true");
+    expect(wrapper.find(".professional-lookup__loader").exists()).toBe(true);
+    expect(wrapper.find(".professional-lookup__feedback").exists()).toBe(false);
+    expect(wrapper.get(".professional-lookup__status").text()).toBe(
+      "Buscando profissionais",
+    );
+  });
+
+  it("requires a choice when the candidate search returns suggestions", async () => {
+    mocks.state.searchedQuery.value = "Beto Lima";
+    mocks.state.candidates.value = [
+      {
+        id: createdRelationship.recipient.id,
+        publicSlug: createdRelationship.recipient.publicSlug,
+        displayName: createdRelationship.recipient.displayName,
+        profileType: "self_service",
+        photoUrl: null,
+      },
+    ];
+    const wrapper = await mountDialog();
+    await enterProfessionalNameAndFinishSearch(wrapper, "Beto Lima");
+    const continueButton = wrapper
+      .findAll("footer button")
+      .find((button) => button.text().includes("Continuar"))!;
+
+    expect(continueButton.attributes("disabled")).toBeDefined();
+    expect(wrapper.text()).toContain("Não encontrei a pessoa na lista");
+    expect(wrapper.text()).toContain("Continuar informando o telefone");
+
     await wrapper
       .findAll("button")
-      .find((button) => button.text().includes("Adicionar pelo telefone"))!
+      .find((button) =>
+        button.text().includes("Não encontrei a pessoa na lista"),
+      )!
       .trigger("click");
-    await wrapper.get('input[name="external-name"]').setValue("Beto Lima");
+
+    expect(continueButton.attributes("disabled")).toBeUndefined();
+    await continueButton.trigger("click");
+    expect(wrapper.find('input[name="external-phone"]').exists()).toBe(true);
+  });
+
+  it("removes the upfront mode choice and creates an external target on the second step", async () => {
+    mocks.state.searchedQuery.value = "Beto Lima";
+    const wrapper = await mountDialog();
+    expect(wrapper.text()).not.toContain("Já está na Berufe");
+    expect(wrapper.text()).not.toContain("Adicionar pelo telefone");
+
+    await enterProfessionalNameAndFinishSearch(wrapper, "Beto Lima");
+    await wrapper
+      .findAll("footer button")
+      .find((button) => button.text().includes("Continuar"))!
+      .trigger("click");
+    expect(wrapper.text()).toContain(
+      "Qual o serviço esse profissional oferece?",
+    );
+    expect(wrapper.text()).toContain("Qual região esse profissional atende?");
+    expect(wrapper.text()).toContain("Não sei");
     await wrapper
       .get('input[name="external-phone"]')
       .setValue("(47) 99999-1234");
     await wrapper
+      .findAll("footer button")
+      .find((button) => button.text().includes("Voltar"))!
+      .trigger("click");
+    expect(wrapper.find('input[name="external-phone"]').exists()).toBe(false);
+    await wrapper
+      .findAll("footer button")
+      .find((button) => button.text().includes("Continuar"))!
+      .trigger("click");
+    expect(
+      wrapper.get<HTMLInputElement>('input[name="external-phone"]').element
+        .value,
+    ).toBe("(47) 99999-1234");
+    await wrapper
       .get(`input[value="cc1e5dfa-36a2-4f13-b37c-d1a3f9d25460"]`)
       .setValue(true);
     await wrapper.get('input[value="all_joinville"]').setValue(true);
-    await wrapper.get('input[name="external-contact-consent"]').setValue(true);
+    expect(
+      wrapper.find('input[name="external-contact-consent"]').exists(),
+    ).toBe(false);
+    expect(wrapper.text()).not.toContain(
+      "Confirmo que posso compartilhar estes dados profissionais",
+    );
     await wrapper.get("select").setValue("worked_together");
     await wrapper.get("textarea").setValue("Executamos uma reforma juntos.");
     await wrapper
@@ -151,6 +273,42 @@ describe("relationship create dialog", () => {
     expect(mocks.showToast).toHaveBeenCalledWith(
       expect.objectContaining({ title: "Solicitação enviada" }),
     );
+  });
+
+  it("continues with a selected Berufe professional without asking for a phone", async () => {
+    mocks.state.candidates.value = [
+      {
+        id: createdRelationship.recipient.id,
+        publicSlug: createdRelationship.recipient.publicSlug,
+        displayName: createdRelationship.recipient.displayName,
+        profileType: "self_service",
+        photoUrl: null,
+      },
+    ];
+    const wrapper = await mountDialog();
+    await enterProfessionalNameAndFinishSearch(wrapper, "Beto Lima");
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("Beto Lima"))!
+      .trigger("click");
+    await wrapper
+      .findAll("footer button")
+      .find((button) => button.text().includes("Continuar"))!
+      .trigger("click");
+    await wrapper
+      .findAll("footer button")
+      .find((button) => button.text().includes("Enviar solicitação"))!
+      .trigger("click");
+
+    expect(wrapper.find('input[name="external-phone"]').exists()).toBe(false);
+    expect(mocks.requestRelationship).toHaveBeenCalledWith({
+      target: {
+        type: "profile",
+        professionalProfileId: createdRelationship.recipient.id,
+      },
+      relationshipType: "recommendation",
+      contextNote: "",
+    });
   });
 
   it("blocks submission when the account is not eligible", async () => {

@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 async function waitForNuxtHydration(page: Page) {
   await page.waitForFunction(() =>
@@ -31,6 +31,17 @@ async function clickQuoteAction(page: Page, name: string) {
     return;
   }
   await action.click();
+}
+
+async function expectActionAtCardBottom(card: Locator, name: string) {
+  const cardBox = await card.boundingBox();
+  const actionBox = await card.getByRole("button", { name }).boundingBox();
+
+  expect(cardBox).not.toBeNull();
+  expect(actionBox).not.toBeNull();
+  expect(
+    cardBox!.y + cardBox!.height - (actionBox!.y + actionBox!.height),
+  ).toBeLessThanOrEqual(20);
 }
 
 test("published professional creates, previews, securely shares, and live-edits a quote", async ({
@@ -162,9 +173,21 @@ test("existing members publish a relationship by confirming it together", async 
     name: "Adicionar relação profissional",
   });
   await requestDialog.getByLabel("Nome do profissional").fill(recipient.name);
+  const continueButton = requestDialog.getByRole("button", {
+    name: "Continuar",
+    exact: true,
+  });
+  await expect(
+    requestDialog.getByRole("button", {
+      name: /Não encontrei a pessoa na lista.*Continuar informando o telefone/,
+    }),
+  ).toBeVisible();
+  await expect(continueButton).toBeDisabled();
   await requestDialog
     .getByRole("button", { name: new RegExp(recipient.name) })
     .click();
+  await expect(continueButton).toBeEnabled();
+  await continueButton.click();
   await requestDialog.getByLabel("Contexto").fill(note);
   const requestResponse = page.waitForResponse(
     (response) =>
@@ -179,6 +202,7 @@ test("existing members publish a relationship by confirming it together", async 
   const outbound = page.locator(".relationship-card").filter({ hasText: note });
   await expect(outbound).toContainText("Aguardando confirmação");
   await expect(outbound).toContainText(recipient.name);
+  await expectActionAtCardBottom(outbound, "Cancelar solicitação");
 
   const recipientContext = await browser.newContext({
     baseURL: new URL(page.url()).origin,
@@ -213,6 +237,7 @@ test("existing members publish a relationship by confirming it together", async 
   await page.goto("/app/professional/profile?tab=relacoes");
   const accepted = page.locator(".relationship-card").filter({ hasText: note });
   await expect(accepted).toContainText("Confirmada");
+  await expectActionAtCardBottom(accepted, "Remover relação");
   await accepted.getByRole("button", { name: "Remover relação" }).click();
   const removeDialog = page.getByRole("dialog", { name: "Remover relação" });
   const removeResponse = page.waitForResponse(
@@ -239,6 +264,9 @@ test("existing members publish a relationship by confirming it together", async 
     .fill(recipient.name);
   await replacementDialog
     .getByRole("button", { name: new RegExp(recipient.name) })
+    .click();
+  await replacementDialog
+    .getByRole("button", { name: "Continuar", exact: true })
     .click();
   await replacementDialog.getByLabel("Contexto").fill(replacementNote);
   const replacementResponse = page.waitForResponse(
@@ -304,13 +332,10 @@ test("an indicated professional claims the external profile and publishes the co
   const dialog = page.getByRole("dialog", {
     name: "Adicionar relação profissional",
   });
-  await dialog.getByRole("button", { name: "Adicionar pelo telefone" }).click();
-  await dialog.getByLabel("Nome profissional").fill(externalName);
+  await dialog.getByLabel("Nome do profissional").fill(externalName);
+  await dialog.getByRole("button", { name: "Continuar", exact: true }).click();
   await dialog.getByLabel("Celular com DDD").fill(externalPhone);
   await dialog.getByLabel(externalService.name, { exact: true }).check();
-  await dialog
-    .getByLabel(/Confirmo que posso compartilhar estes dados profissionais/)
-    .check();
   await dialog.getByLabel("Contexto").fill(note);
   const createResponsePromise = page.waitForResponse(
     (response) =>

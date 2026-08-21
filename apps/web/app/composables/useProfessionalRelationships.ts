@@ -22,8 +22,10 @@ export function useProfessionalRelationships(
   const client = useApiClient();
   const isSubmitting = shallowRef(false);
   const error = shallowRef("");
+  const searchError = shallowRef("");
   const candidates = shallowRef<ProfessionalRelationshipCandidate[]>([]);
   const isSearching = shallowRef(false);
+  const searchedQuery = shallowRef("");
   let latestSearch = 0;
   const create =
     dependencies.create ??
@@ -40,18 +42,25 @@ export function useProfessionalRelationships(
     if (normalized.length < 2) {
       candidates.value = [];
       isSearching.value = false;
+      searchedQuery.value = "";
+      searchError.value = "";
       return [];
     }
 
     isSearching.value = true;
+    searchError.value = "";
     try {
       const result = await search(normalized);
-      if (searchId === latestSearch) candidates.value = result;
+      if (searchId === latestSearch) {
+        candidates.value = result;
+        searchedQuery.value = normalized;
+      }
       return result;
     } catch (failure) {
       if (searchId === latestSearch) {
         candidates.value = [];
-        error.value =
+        searchedQuery.value = normalized;
+        searchError.value =
           failure instanceof ApiRequestError
             ? failure.message
             : "Não foi possível buscar profissionais agora.";
@@ -90,13 +99,17 @@ export function useProfessionalRelationships(
     latestSearch += 1;
     candidates.value = [];
     isSearching.value = false;
+    searchedQuery.value = "";
+    searchError.value = "";
   }
 
   return {
     isSubmitting: readonly(isSubmitting),
     error: readonly(error),
+    searchError: readonly(searchError),
     candidates: readonly(candidates),
     isSearching: readonly(isSearching),
+    searchedQuery: readonly(searchedQuery),
     searchCandidates,
     clearCandidates,
     requestRelationship,
