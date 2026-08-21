@@ -3,6 +3,7 @@ import { mount } from "@vue/test-utils";
 import { defineComponent, ref, shallowRef } from "vue";
 import DashboardChecklist from "@app/components/dashboard/DashboardChecklist.vue";
 import ProfessionalDashboardPage from "@app/pages/app/professional/index.vue";
+import type { ProfessionalRelationship } from "~/types";
 
 const mocks = vi.hoisted(() => ({
   useWorkspace: vi.fn(),
@@ -38,14 +39,51 @@ const mountOptions = {
   shallow: true,
   global: {
     renderStubDefaultSlot: true,
-    stubs: { UButton: ButtonStub },
+    stubs: {
+      UButton: ButtonStub,
+      DashboardActivitySections: false,
+    },
   },
 } as const;
+
+const owner = {
+  id: "2cc1bdc4-e2d1-452b-8e76-241931a32bc9",
+  publicSlug: "beto-lima",
+  displayName: "Beto Lima",
+  profileType: "self_service" as const,
+  photoUrl: null,
+  profileAvailable: false,
+};
+const otherProfessional = {
+  id: "f39d4810-f28d-4977-b5e5-387131d12942",
+  publicSlug: "ana-souza",
+  displayName: "Ana Souza",
+  profileType: "self_service" as const,
+  photoUrl: null,
+  profileAvailable: false,
+};
+
+function pendingRelationship(
+  direction: "incoming" | "outgoing" = "incoming",
+): ProfessionalRelationship {
+  return {
+    id: "d25c64fa-3e6a-4e56-adc9-85bdac0045cb",
+    relationshipType: "worked_together",
+    contextNote: "Atuamos juntos em uma obra.",
+    status: "pending",
+    source: "existing_profile",
+    createdAt: "2026-08-17T12:00:00Z",
+    respondedAt: null,
+    initiator: direction === "outgoing" ? owner : otherProfessional,
+    recipient: direction === "outgoing" ? otherProfessional : owner,
+  };
+}
 
 function workspace(options: { pending?: boolean; failed?: boolean } = {}) {
   const respondToRelationship = vi
     .fn()
     .mockResolvedValue({ status: "accepted" });
+  const inboundRelationship = pendingRelationship();
   return {
     data: ref({
       dashboard: {
@@ -61,34 +99,8 @@ function workspace(options: { pending?: boolean; failed?: boolean } = {}) {
         },
         recentQuotes: [],
       },
-      pendingRelationships: [
-        {
-          id: "d25c64fa-3e6a-4e56-adc9-85bdac0045cb",
-          relationshipType: "worked_together",
-          contextNote: "Atuamos juntos em uma obra.",
-          status: "pending",
-          source: "existing_profile",
-          createdAt: "2026-08-17T12:00:00Z",
-          respondedAt: null,
-          initiator: {
-            id: "f39d4810-f28d-4977-b5e5-387131d12942",
-            publicSlug: "ana-souza",
-            displayName: "Ana Souza",
-            profileType: "self_service" as const,
-            photoUrl: null,
-            profileAvailable: false,
-          },
-          recipient: {
-            id: "2cc1bdc4-e2d1-452b-8e76-241931a32bc9",
-            publicSlug: "beto-lima",
-            displayName: "Beto Lima",
-            profileType: "self_service" as const,
-            photoUrl: null,
-            profileAvailable: false,
-          },
-        },
-      ],
-      relationships: [],
+      pendingRelationships: [inboundRelationship],
+      relationships: [inboundRelationship],
       profile: {
         id: "2cc1bdc4-e2d1-452b-8e76-241931a32bc9",
         publicSlug: "beto-lima",
@@ -169,8 +181,9 @@ describe("professional dashboard", () => {
     );
 
     const add = wrapper
+      .get(".actions-card")
       .findAll("button")
-      .find((button) => button.text().includes("Adicionar relação"));
+      .find((button) => button.text().includes("Recomendar um profissional"));
     expect(add).toBeDefined();
     await add!.trigger("click");
 
@@ -204,8 +217,8 @@ describe("professional dashboard", () => {
     );
     expect(mocks.showToast).toHaveBeenCalledWith(
       expect.objectContaining({
-        title: "Colaboração confirmada",
-        description: "A relação já pode aparecer nos perfis públicos.",
+        title: "Vocês estão conectados",
+        description: "A conexão já pode aparecer nos perfis públicos.",
       }),
     );
 
@@ -221,7 +234,48 @@ describe("professional dashboard", () => {
     );
   });
 
-  it("shows safe loading, empty, and failure feedback in the existing pending section", async () => {
+  it("shows outbound pending connections without recipient response actions", async () => {
+    const currentWorkspace = workspace();
+    currentWorkspace.data.value.pendingRelationships = [];
+    currentWorkspace.data.value.relationships = [
+      pendingRelationship("outgoing"),
+    ];
+    mocks.useWorkspace.mockResolvedValue(currentWorkspace);
+
+    const wrapper = await mountSuspended(
+      ProfessionalDashboardPage,
+      mountOptions,
+    );
+
+    const relationshipRow = wrapper
+      .findAll("article")
+      .find((article) =>
+        article.text().includes("Você trabalhou com Ana Souza"),
+      );
+    expect(relationshipRow).toBeDefined();
+    expect(relationshipRow!.text()).toContain("Aguardando confirmação");
+    expect(relationshipRow!.text()).toContain("Enviado em");
+    expect(relationshipRow!.findAll("button")).toHaveLength(0);
+  });
+
+  it("places activity sections after quick actions and before tools", async () => {
+    mocks.useWorkspace.mockResolvedValue(workspace());
+    const wrapper = await mountSuspended(
+      ProfessionalDashboardPage,
+      mountOptions,
+    );
+
+    const visibleText = wrapper.text();
+    const quickActionsIndex = visibleText.indexOf("Ações rápidas");
+    const activityIndex = visibleText.indexOf("Para resolver.");
+    const toolsIndex = visibleText.indexOf("Ferramentas");
+
+    expect(quickActionsIndex).toBeGreaterThanOrEqual(0);
+    expect(activityIndex).toBeGreaterThan(quickActionsIndex);
+    expect(toolsIndex).toBeGreaterThan(activityIndex);
+  });
+
+  it("shows safe loading and failure feedback and hides empty activity sections", async () => {
     const pendingWorkspace = workspace({ pending: true });
     mocks.useWorkspace.mockResolvedValue(pendingWorkspace);
     const loading = await mountSuspended(
@@ -232,6 +286,7 @@ describe("professional dashboard", () => {
 
     const failedWorkspace = workspace({ failed: true });
     failedWorkspace.data.value.pendingRelationships = [];
+    failedWorkspace.data.value.relationships = [];
     mocks.useWorkspace.mockResolvedValue(failedWorkspace);
     const failed = await mountSuspended(
       ProfessionalDashboardPage,
@@ -242,9 +297,7 @@ describe("professional dashboard", () => {
 
     failedWorkspace.error.value = null;
     await failed.vm.$nextTick();
-    expect(failed.text()).toContain(
-      "Nenhuma pendência precisa da sua atenção agora.",
-    );
+    expect(failed.find(".dashboard-activity").exists()).toBe(false);
     expect(failed.text()).toContain("Nenhum orçamento criado ainda.");
   });
 

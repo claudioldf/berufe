@@ -59,7 +59,7 @@ onMounted(() => {
         </DesignSystemHeading>
         <p class="hero__lead">
           Encontre profissionais de reforma e manutenção com evidências claras,
-          trabalhos reais e relações profissionais confirmadas.
+          trabalhos reais e conexões profissionais confirmadas.
         </p>
         <PublicServiceSearch
           :services="services"

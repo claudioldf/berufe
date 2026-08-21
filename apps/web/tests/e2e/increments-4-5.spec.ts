@@ -167,10 +167,10 @@ test("existing members publish a relationship by confirming it together", async 
   await page.goto("/app/professional");
   await page
     .locator(".actions-card")
-    .getByRole("button", { name: /Adicionar relação/ })
+    .getByRole("button", { name: /Conectar/ })
     .click();
   const requestDialog = page.getByRole("dialog", {
-    name: "Adicionar relação profissional",
+    name: "Conectar com um profissional",
   });
   await requestDialog.getByLabel("Nome do profissional").fill(recipient.name);
   const continueButton = requestDialog.getByRole("button", {
@@ -195,14 +195,22 @@ test("existing members publish a relationship by confirming it together", async 
       response.request().method() === "POST",
   );
   await requestDialog
-    .getByRole("button", { name: "Enviar solicitação" })
+    .getByRole("button", { name: "Conectar", exact: true })
     .click();
   expect((await requestResponse).status()).toBe(201);
   await page.goto("/app/professional/profile?tab=relacoes");
   const outbound = page.locator(".relationship-card").filter({ hasText: note });
   await expect(outbound).toContainText("Aguardando confirmação");
   await expect(outbound).toContainText(recipient.name);
-  await expectActionAtCardBottom(outbound, "Cancelar solicitação");
+  await expectActionAtCardBottom(outbound, "Cancelar solicitação de conexão");
+
+  await page.goto("/app/professional");
+  const ongoingSection = page.locator(".activity-section--ongoing");
+  await expect(ongoingSection).toContainText("Acompanhamentos.");
+  const outboundOverview = ongoingSection
+    .locator("article")
+    .filter({ hasText: recipient.name });
+  await expect(outboundOverview).toContainText("Aguardando confirmação");
 
   const recipientContext = await browser.newContext({
     baseURL: new URL(page.url()).origin,
@@ -210,8 +218,12 @@ test("existing members publish a relationship by confirming it together", async 
   const recipientPage = await recipientContext.newPage();
   await signInExistingProfessional(recipientPage, recipient.phone);
   await recipientPage.goto("/app/professional");
-  const overviewPending = recipientPage
-    .locator(".pending-list article")
+  const attentionSection = recipientPage.locator(
+    ".activity-section--attention",
+  );
+  await expect(attentionSection).toContainText("Para resolver.");
+  const overviewPending = attentionSection
+    .locator("article")
     .filter({ hasText: initiator.name });
   await expect(overviewPending).toContainText("Aguardando sua resposta");
 
@@ -225,7 +237,7 @@ test("existing members publish a relationship by confirming it together", async 
       response.url().endsWith("/response") &&
       response.request().method() === "POST",
   );
-  await pending.getByRole("button", { name: "Confirmar" }).click();
+  await pending.getByRole("button", { name: "Conectar" }).click();
   expect((await responseRequest).status()).toBe(200);
 
   await recipientPage.goto(`/profissionais/${recipient.slug}`);
@@ -236,16 +248,16 @@ test("existing members publish a relationship by confirming it together", async 
 
   await page.goto("/app/professional/profile?tab=relacoes");
   const accepted = page.locator(".relationship-card").filter({ hasText: note });
-  await expect(accepted).toContainText("Confirmada");
-  await expectActionAtCardBottom(accepted, "Remover relação");
-  await accepted.getByRole("button", { name: "Remover relação" }).click();
-  const removeDialog = page.getByRole("dialog", { name: "Remover relação" });
+  await expect(accepted).toContainText("Vocês estão conectados");
+  await expectActionAtCardBottom(accepted, "Remover conexão");
+  await accepted.getByRole("button", { name: "Remover conexão" }).click();
+  const removeDialog = page.getByRole("dialog", { name: "Remover conexão" });
   const removeResponse = page.waitForResponse(
     (response) =>
       response.url().includes("/api/v1/professional/relationships/") &&
       response.request().method() === "DELETE",
   );
-  await removeDialog.getByRole("button", { name: "Remover relação" }).click();
+  await removeDialog.getByRole("button", { name: "Remover conexão" }).click();
   expect((await removeResponse).status()).toBe(200);
   await expect(accepted).toHaveCount(0);
 
@@ -253,11 +265,11 @@ test("existing members publish a relationship by confirming it together", async 
   await page.goto("/app/professional/profile?tab=relacoes");
   await page
     .locator(".relationship-manager")
-    .getByRole("button", { name: "Adicionar relação" })
+    .getByRole("button", { name: "Conectar" })
     .first()
     .click();
   const replacementDialog = page.getByRole("dialog", {
-    name: "Adicionar relação profissional",
+    name: "Conectar com um profissional",
   });
   await replacementDialog
     .getByLabel("Nome do profissional")
@@ -275,7 +287,7 @@ test("existing members publish a relationship by confirming it together", async 
       response.request().method() === "POST",
   );
   await replacementDialog
-    .getByRole("button", { name: "Enviar solicitação" })
+    .getByRole("button", { name: "Conectar", exact: true })
     .click();
   expect((await replacementResponse).status()).toBe(201);
 
@@ -326,11 +338,11 @@ test("an indicated professional claims the external profile and publishes the co
   await page.goto("/app/professional/profile?tab=relacoes");
   await page
     .locator(".relationship-manager")
-    .getByRole("button", { name: "Adicionar relação" })
+    .getByRole("button", { name: "Conectar" })
     .first()
     .click();
   const dialog = page.getByRole("dialog", {
-    name: "Adicionar relação profissional",
+    name: "Conectar com um profissional",
   });
   await dialog.getByLabel("Nome do profissional").fill(externalName);
   await dialog.getByRole("button", { name: "Continuar", exact: true }).click();
@@ -342,7 +354,7 @@ test("an indicated professional claims the external profile and publishes the co
       response.url().endsWith("/api/v1/professional/relationships") &&
       response.request().method() === "POST",
   );
-  await dialog.getByRole("button", { name: "Enviar solicitação" }).click();
+  await dialog.getByRole("button", { name: "Conectar", exact: true }).click();
   const createResponse = await createResponsePromise;
   expect(createResponse.status()).toBe(201);
   const createPayload = await createResponse.json();
@@ -421,7 +433,7 @@ test("an indicated professional claims the external profile and publishes the co
       response.url().endsWith("/response") &&
       response.request().method() === "POST",
   );
-  await pending.getByRole("button", { name: "Confirmar" }).click();
+  await pending.getByRole("button", { name: "Conectar" }).click();
   expect((await acceptResponsePromise).status()).toBe(200);
 
   await recipientPage.goto(`/profissionais/${externalProfile.public_slug}`);

@@ -64,7 +64,7 @@ const externalTarget = computed(
 const modalDescription = computed(() =>
   step.value === "lookup"
     ? "Encontre o profissional pelo nome. Se ele ainda não estiver na Berufe, você poderá informar o telefone na próxima etapa."
-    : "Revise o profissional e conte qual é a relação entre vocês.",
+    : "Revise o profissional e conte como vocês se conhecem.",
 );
 const error = computed(
   () => validationError.value || relationships.error.value,
@@ -215,9 +215,9 @@ async function submit() {
     emit("created", relationship);
     open.value = false;
     showToast({
-      title: "Solicitação enviada",
+      title: "Solicitação de conexão enviada",
       description:
-        "A relação será exibida quando o outro profissional confirmar.",
+        "A conexão aparecerá nos perfis quando o outro profissional confirmar.",
     });
   } catch {
     // The normalized API error remains visible in the dialog.
@@ -228,7 +228,7 @@ async function submit() {
 <template>
   <UModal
     v-model:open="open"
-    title="Adicionar relação profissional"
+    title="Conectar com um profissional"
     :description="modalDescription"
     :ui="{ content: 'sm:max-w-2xl' }"
   >
@@ -240,8 +240,8 @@ async function submit() {
       >
         <UIcon name="i-lucide-shield-alert" aria-hidden="true" />
         <p>
-          Para adicionar relações, conclua seu cadastro, confirme o telefone e
-          tenha a identidade aprovada.
+          Para se conectar com outros profissionais, conclua seu cadastro,
+          confirme o telefone e tenha a identidade aprovada.
         </p>
       </div>
       <form v-else class="relationship-create-dialog" @submit.prevent="submit">
@@ -292,7 +292,7 @@ async function submit() {
           <div class="relationship-create-dialog__context">
             <DesignSystemFormField
               id="relationship-type"
-              label="Tipo de relação"
+              label="Como vocês se conhecem?"
               required
             >
               <select
@@ -318,7 +318,7 @@ async function submit() {
                 name="relationship-context"
                 maxlength="300"
                 autocomplete="off"
-                placeholder="Conte brevemente o contexto dessa relação…"
+                placeholder="Conte brevemente como vocês se conhecem…"
               />
             </DesignSystemFormField>
           </div>
@@ -361,7 +361,7 @@ async function submit() {
         :disabled="relationships.isSubmitting.value"
         @click="submit"
       >
-        Enviar solicitação
+        Conectar
       </UButton>
     </template>
   </UModal>

@@ -43,7 +43,7 @@
             <div>
               <strong>Compare evidências reais</strong>
               <p>
-                Veja a identidade verificada, o portfólio e as relações
+                Veja a identidade verificada, o portfólio e as conexões
                 profissionais.
               </p>
             </div>

@@ -8,7 +8,7 @@ const sections: LegalDocumentSection[] = [
   { id: "papel", label: "Papel da Berufe" },
   { id: "perfis", label: "Perfis e conteúdo" },
   { id: "verificacao", label: "Verificação e moderação" },
-  { id: "relacoes", label: "Relações profissionais" },
+  { id: "relacoes", label: "Conexões profissionais" },
   { id: "busca", label: "Busca e contato" },
   { id: "orcamentos", label: "Orçamentos" },
   { id: "conduta", label: "Conduta e suspensão" },
@@ -25,7 +25,7 @@ useSeoMeta({
 
 <template>
   <LegalDocument
-    eyebrow="Relações claras começam por regras claras"
+    eyebrow="Uma rede de confiança começa por regras claras"
     title="Termos de Uso"
     description="Estas regras explicam o papel da Berufe, o que esperamos de cada pessoa e os limites do MVP."
     version="0.3 · minuta do MVP"
@@ -49,7 +49,7 @@ useSeoMeta({
       <p>
         O MVP oferece cadastro e acesso de profissionais, perfis públicos,
         catálogo de serviços, busca por serviço e área, portfólio, verificação
-        de identidade, relações entre profissionais, perfis básicos criados por
+        de identidade, conexões entre profissionais, perfis básicos criados por
         indicação, moderação manual, compartilhamento de perfil, orçamento
         simples e contato direto pelo WhatsApp.
       </p>
@@ -135,19 +135,19 @@ useSeoMeta({
     </section>
 
     <section id="relacoes" class="legal-section">
-      <h2>6. Relações profissionais</h2>
+      <h2>6. Conexões profissionais</h2>
       <p>
         Somente profissionais com cadastro concluído, telefone confirmado e
-        identidade aprovada podem iniciar uma relação. O destinatário pode ser
-        encontrado na Berufe ou indicado por nome e telefone profissional. A
-        plataforma não permite relação consigo mesmo nem duplicata do mesmo
-        tipo.
+        identidade aprovada podem enviar uma solicitação de conexão. O
+        destinatário pode ser encontrado na Berufe ou indicado por nome e
+        telefone profissional. A plataforma não permite conexão consigo mesmo
+        nem solicitações duplicadas do mesmo tipo.
       </p>
       <p>
-        O destinatário pode aceitar ou recusar. A relação aceita pode aparecer
-        nos perfis públicos assim que for confirmada, desde que ambos os perfis
-        continuem públicos e ativos. A recomendação profissional identifica seu
-        autor e não pode ser anônima.
+        O destinatário pode aceitar ou recusar. A conexão confirmada pode
+        aparecer nos perfis públicos, desde que ambos os perfis continuem
+        públicos e ativos. A recomendação profissional identifica seu autor e
+        não pode ser anônima.
       </p>
       <p>
         A solicitação pendente não aparece publicamente. O perfil básico criado
@@ -164,7 +164,7 @@ useSeoMeta({
       <h2>7. Busca, compartilhamento e WhatsApp</h2>
       <p>
         A ordem dos resultados considera correspondência do serviço, cobertura,
-        identidade verificada, portfólio, relações profissionais confirmadas e
+        identidade verificada, portfólio, conexões profissionais confirmadas e
         atualização do perfil. Não há compra de posição, nota oculta nem
         garantia de destaque.
       </p>
@@ -202,7 +202,8 @@ useSeoMeta({
       <p>É proibido:</p>
       <ul>
         <li>
-          informar identidade, experiência, serviço, relação ou trabalho falsos;
+          fornecer informações falsas sobre identidade, experiência, serviço,
+          conexão ou trabalho;
         </li>
         <li>publicar imagem, marca ou texto sem autorização;</li>
         <li>

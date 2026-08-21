@@ -101,6 +101,9 @@ RSpec.describe "Professional relationship requests", type: :request, openapi: tr
       as: :json
 
     expect(response).to have_http_status(:unprocessable_entity)
+    expect(response.parsed_body.dig("error", "message")).to eq(
+      "Revise os dados da solicitação de conexão."
+    )
     expect(response.parsed_body.dig("error", "field_errors")).to be_present
     assert_api_conform(status: 422)
 
@@ -129,6 +132,9 @@ RSpec.describe "Professional relationship requests", type: :request, openapi: tr
 
     expect(response).to have_http_status(:conflict)
     expect(response.parsed_body.dig("error", "code")).to eq("relationship_conflict")
+    expect(response.parsed_body.dig("error", "message")).to eq(
+      "Esta solicitação de conexão já existe."
+    )
     expect(ProfessionalRelationship.count).to eq(1)
     expect(ProfessionalDailyActivity.sole.relationship_interactions).to eq(1)
     assert_api_conform(status: 409)

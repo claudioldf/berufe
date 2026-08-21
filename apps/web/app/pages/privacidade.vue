@@ -48,7 +48,7 @@ useSeoMeta({
       <p>
         Esta Política abrange o cadastro e acesso de profissionais, perfil
         público, catálogo de serviços, busca, portfólio, verificação de
-        identidade, relações entre profissionais, perfis básicos criados por
+        identidade, conexões entre profissionais, perfis básicos criados por
         indicação, moderação, compartilhamento de perfil, criação e
         compartilhamento de orçamentos e contato pelo WhatsApp.
       </p>
@@ -85,7 +85,7 @@ useSeoMeta({
       <p>
         O profissional pode fornecer nome de exibição, foto, apresentação,
         experiência declarada, WhatsApp, serviços, bairros atendidos, imagens e
-        descrições de portfólio e relações com outros profissionais já
+        descrições de portfólio e conexões com outros profissionais já
         cadastrados.
       </p>
       <p>
@@ -133,7 +133,7 @@ useSeoMeta({
         <li>permitir busca por serviço e região com ordenação explicável;</li>
         <li>
           criar perfis básicos por indicação, permitir sua reivindicação e
-          confirmar relações entre profissionais;
+          confirmar conexões entre profissionais;
         </li>
         <li>
           abrir o compartilhamento de perfil ou o contato solicitado pela
@@ -167,8 +167,8 @@ useSeoMeta({
               <td>
                 Perfil completo publicado ou perfil básico por indicação, nome,
                 serviços, região, foto, experiência declarada, portfólio, selos
-                específicos e relações aceitas entre perfis públicos e ativos,
-                conforme o tipo de perfil.
+                específicos e conexões confirmadas entre perfis públicos e
+                ativos, conforme o tipo de perfil.
               </td>
               <td>
                 Qualquer visitante e, quando aplicável, mecanismos de busca.
@@ -177,10 +177,11 @@ useSeoMeta({
             <tr>
               <td><strong>Privado</strong></td>
               <td>
-                Número de telefone em texto, sessão, relações pendentes ou
-                recusadas, rascunhos, dados de cliente em orçamentos e motivos
-                de moderação. O telefone profissional pode ser usado pelo botão
-                de WhatsApp sem ser escrito na página pública.
+                Número de telefone em texto, sessão, solicitações de conexão
+                pendentes ou recusadas, rascunhos, dados de cliente em
+                orçamentos e motivos de moderação. O telefone profissional pode
+                ser usado pelo botão de WhatsApp sem ser escrito na página
+                pública.
               </td>
               <td>Titular e equipe autorizada, conforme a necessidade.</td>
             </tr>
@@ -211,8 +212,8 @@ useSeoMeta({
       <p>
         Um perfil básico por indicação permanece disponível enquanto houver uma
         indicação ativa com autorização registrada ou depois que o titular
-        concluir o cadastro. Uma relação pendente nunca é exibida no perfil
-        público.
+        concluir o cadastro. Uma solicitação de conexão pendente nunca é exibida
+        no perfil público.
       </p>
     </section>
 

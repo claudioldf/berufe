@@ -21,6 +21,11 @@ const hasVerifiedIdentity = computed(() =>
 const wasUpdatedRecently = computed(() =>
   isRecentPublicSnapshot(props.professional.publicSnapshotUpdatedAt),
 );
+const connectionCountNoun = computed(() =>
+  props.professional.relationshipCount === 1
+    ? "conexão profissional"
+    : "conexões profissionais",
+);
 const coverageLabel = computed(() => {
   if (props.professional.coverage.allJoinville) return "Atende toda Joinville";
   if (props.professional.coverage.neighborhoods.length) {
@@ -85,8 +90,8 @@ const coverageLabel = computed(() => {
           ><strong>{{ professional.portfolioCount }}</strong> trabalhos</span
         >
         <span
-          ><strong>{{ professional.relationshipCount }}</strong> relações
-          profissionais</span
+          ><strong>{{ professional.relationshipCount }}</strong>
+          {{ connectionCountNoun }}</span
         >
       </div>
 

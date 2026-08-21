@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { normalizeSocialProfile } from "~/utils/socialProfiles";
-import { normalizeSearchText, toIdentifier } from "~/utils/text";
+import {
+  formatCountLabel,
+  normalizeSearchText,
+  toIdentifier,
+} from "~/utils/text";
 
 describe("text utilities", () => {
   it("normalizes accents and casing for search", () => {
@@ -11,6 +15,12 @@ describe("text utilities", () => {
 
   it("creates stable catalog identifiers", () => {
     expect(toIdentifier("Jardim Iririú / Norte")).toBe("jardim-iririu-norte");
+  });
+
+  it("formats singular and plural count labels", () => {
+    expect(formatCountLabel(1, "conexão", "conexões")).toBe("1 conexão");
+    expect(formatCountLabel(0, "conexão", "conexões")).toBe("0 conexões");
+    expect(formatCountLabel(2, "conexão", "conexões")).toBe("2 conexões");
   });
 });
 

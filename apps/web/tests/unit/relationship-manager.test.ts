@@ -114,7 +114,7 @@ describe("professional relationship manager", () => {
       .find((card) => card.text().includes("Ana Souza recomendou você"));
     const confirm = inboundCard!
       .findAll("button")
-      .find((button) => button.text().includes("Confirmar"));
+      .find((button) => button.text().includes("Conectar"));
     await confirm!.trigger("click");
 
     expect(wrapper.emitted("respond")?.[0]).toEqual([
@@ -133,15 +133,19 @@ describe("professional relationship manager", () => {
     expect(wrapper.text()).toContain("Você recomendou Ana Souza");
     await wrapper
       .findAll("button")
-      .find((button) => button.text().includes("Cancelar solicitação"))!
+      .find((button) =>
+        button.text().includes("Cancelar solicitação de conexão"),
+      )!
       .trigger("click");
 
     const dialog = wrapper.get('[role="dialog"]');
-    expect(dialog.text()).toContain("Cancelar solicitação");
-    expect(dialog.text()).toContain("solicitar novamente no futuro");
+    expect(dialog.text()).toContain("Cancelar solicitação de conexão");
+    expect(dialog.text()).toContain("se conectar novamente no futuro");
     await dialog
       .findAll("button")
-      .find((button) => button.text().includes("Cancelar solicitação"))!
+      .find((button) =>
+        button.text().includes("Cancelar solicitação de conexão"),
+      )!
       .trigger("click");
 
     expect(wrapper.emitted("remove")?.[0]).toEqual([outbound.id]);
@@ -152,18 +156,18 @@ describe("professional relationship manager", () => {
       props: {
         relationships: [],
         ownerId,
-        error: "Não foi possível remover a relação agora.",
+        error: "Não foi possível remover a conexão agora.",
       },
       global,
     });
 
     expect(wrapper.get('[role="alert"]').text()).toContain(
-      "Não foi possível remover a relação agora.",
+      "Não foi possível remover a conexão agora.",
     );
     expect(wrapper.text()).toContain("Sua rede começa com uma colaboração.");
     const add = wrapper
       .findAll("button")
-      .find((button) => button.text().includes("Adicionar relação"));
+      .find((button) => button.text().includes("Conectar"));
     expect(add).toBeDefined();
     await add!.trigger("click");
     expect(wrapper.emitted("add")?.at(-1)).toEqual([]);

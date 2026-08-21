@@ -5,19 +5,8 @@ import { useApplicationSession } from "~/composables/useApplicationSession";
 import { useCatalogs } from "~/composables/useCatalogs";
 import { useShare } from "~/composables/useShare";
 import { useToast } from "~/composables/useToast";
+import type { ProfessionalRelationshipResponse } from "~/services/api/professional-relationships";
 import { formatCurrency, formatDateTime } from "~/utils/formatters";
-
-type PendingItemType =
-  "profile" | "photo" | "portfolio" | "verification" | "relationship";
-
-interface PendingItem {
-  id: string;
-  type: PendingItemType;
-  title: string;
-  status: string;
-  detail: string;
-  sortAt: string;
-}
 
 const runtimeConfig = useRuntimeConfig();
 const { share } = useShare();
@@ -214,124 +203,13 @@ const dashboardStatus = computed(() => {
 });
 const verificationDescription = computed(() => {
   const status = workspace.value?.profile.verification.current?.status;
-  if (status === "approved") return "Identidade aprovada";
-  if (status === "pending_review") return "Identidade em análise";
-  if (status === "rejected" || status === "expired") {
+  if (status === "approved")
+    return "Perfeito! Sua identidade foi verificada e aprovada pela nossa equipe.";
+  if (status === "pending_review")
+    return "Seus documentos estão em análise. Em breve, avisaremos você por aqui.";
+  if (status === "rejected" || status === "expired")
     return "Reenvie sua identidade";
-  }
-  return "Enviar identidade";
-});
-const pendingItems = computed<PendingItem[]>(() => {
-  const data = workspace.value;
-  if (!data) return [];
-
-  const items: PendingItem[] = [];
-  const profile = data.profile;
-  if (profile.revisionStatus === "pending_review") {
-    items.push({
-      id: `profile-${profile.id}`,
-      type: "profile",
-      title: "Perfil profissional",
-      status: "Em análise",
-      detail: profile.isPublic
-        ? "As alterações já estão públicas e aguardam revisão."
-        : "Perfil enviado para conferência da equipe.",
-      sortAt: "",
-    });
-  } else if (profile.revisionStatus === "rejected") {
-    items.push({
-      id: `profile-${profile.id}`,
-      type: "profile",
-      title: "Perfil profissional",
-      status: "Precisa de ajustes",
-      detail: `${profile.revisionRejectionReason ?? "Revise os dados informados."} Edite e envie novamente.`,
-      sortAt: "",
-    });
-  }
-
-  const photo = profile.photo.current;
-  if (photo?.status === "pending_review") {
-    items.push({
-      id: photo.id,
-      type: "photo",
-      title: "Foto do perfil",
-      status: "Em análise",
-      detail: `${profile.isPublic ? "Já está pública · " : ""}Enviada em ${formatDateTime(photo.submittedAt)}`,
-      sortAt: photo.submittedAt,
-    });
-  } else if (photo?.status === "rejected" || photo?.status === "hidden") {
-    items.push({
-      id: photo.id,
-      type: "photo",
-      title: "Foto do perfil",
-      status: photo.status === "hidden" ? "Oculta" : "Precisa de ajustes",
-      detail: `${photo.rejectionReason ?? "A foto não pode ser exibida."} Envie uma nova foto.`,
-      sortAt: photo.submittedAt,
-    });
-  }
-
-  for (const item of profile.portfolioItems) {
-    if (item.status === "pending_review") {
-      items.push({
-        id: item.id,
-        type: "portfolio",
-        title: item.title,
-        status: "Em análise",
-        detail: `${profile.isPublic ? "Já está público · " : ""}Enviado em ${formatDateTime(item.submittedAt)}`,
-        sortAt: item.submittedAt,
-      });
-    } else if (item.status === "rejected" || item.status === "hidden") {
-      items.push({
-        id: item.id,
-        type: "portfolio",
-        title: item.title,
-        status: item.status === "hidden" ? "Oculto" : "Precisa de ajustes",
-        detail: `${item.rejectionReason ?? "O trabalho não pode ser exibido."} Adicione um novo trabalho.`,
-        sortAt: item.submittedAt,
-      });
-    }
-  }
-
-  const verification = profile.verification.current;
-  if (verification?.status === "pending_review") {
-    items.push({
-      id: verification.id,
-      type: "verification",
-      title: "Verificação de identidade",
-      status: "Em análise",
-      detail: `Enviada em ${formatDateTime(verification.submittedAt)}`,
-      sortAt: verification.submittedAt,
-    });
-  } else if (
-    verification?.status === "rejected" ||
-    verification?.status === "expired"
-  ) {
-    items.push({
-      id: verification.id,
-      type: "verification",
-      title: "Verificação de identidade",
-      status:
-        verification.status === "expired" ? "Expirada" : "Precisa de ajustes",
-      detail: `${verification.rejectionReason ?? "A evidência precisa ser substituída."} Envie uma nova evidência.`,
-      sortAt: verification.submittedAt,
-    });
-  }
-
-  items.push(
-    ...data.pendingRelationships.map((relationship) => ({
-      id: relationship.id,
-      type: "relationship" as const,
-      title:
-        relationship.relationshipType === "worked_together"
-          ? `${relationship.initiator.displayName} trabalhou com você`
-          : `${relationship.initiator.displayName} recomendou você`,
-      status: "Aguardando sua resposta",
-      detail: `Recebido em ${formatDateTime(relationship.createdAt)}`,
-      sortAt: relationship.createdAt,
-    })),
-  );
-
-  return items.sort((left, right) => right.sortAt.localeCompare(left.sortAt));
+  return "Seus documentos estão em análise. Em breve, avisaremos você por aqui.";
 });
 const recentQuotes = computed(
   () => workspace.value?.dashboard.recentQuotes ?? [],
@@ -373,30 +251,24 @@ async function publishProfile() {
   }
 }
 
-function pendingIcon(type: PendingItemType) {
-  return {
-    profile: "i-lucide-user-round",
-    photo: "i-lucide-image",
-    portfolio: "i-lucide-image",
-    verification: "i-lucide-id-card",
-    relationship: "i-lucide-handshake",
-  }[type];
-}
-
-async function respondRelationship(id: string, accepted: boolean) {
+async function respondRelationship(
+  id: string,
+  response: ProfessionalRelationshipResponse,
+) {
   try {
-    await professionalWorkspace.respondToRelationship(
-      id,
-      accepted ? "accepted" : "declined",
-    );
+    await professionalWorkspace.respondToRelationship(id, response);
     showToast({
-      title: accepted ? "Colaboração confirmada" : "Solicitação recusada",
-      description: accepted
-        ? "A relação já pode aparecer nos perfis públicos."
-        : "Essa relação continuará privada.",
+      title:
+        response === "accepted"
+          ? "Vocês estão conectados"
+          : "Solicitação de conexão recusada",
+      description:
+        response === "accepted"
+          ? "A conexão já pode aparecer nos perfis públicos."
+          : "A solicitação de conexão recusada não aparecerá publicamente.",
     });
   } catch {
-    // The pending section keeps the normalized API error visible for retry.
+    // The actionable activity section keeps the normalized API error visible.
   }
 }
 </script>
@@ -476,70 +348,6 @@ async function respondRelationship(id: string, accepted: boolean) {
         /></NuxtLink>
       </section>
 
-      <section v-if="pendingItems.length" class="dashboard-section pending-section">
-        <div class="dashboard-section__heading">
-          <div>
-            <DesignSystemEyebrow>Precisa de atenção</DesignSystemEyebrow>
-            <h2>Pendências e análises.</h2>
-          </div>
-          <span>{{ pendingItems.length }} itens</span>
-        </div>
-        <p v-if="pendingItems.length === 0" class="pending-list__feedback">
-          Nenhuma pendência precisa da sua atenção agora.
-        </p>
-        <p
-          v-if="professionalWorkspace.relationshipError.value"
-          class="pending-list__feedback pending-list__feedback--error"
-          role="alert"
-        >
-          {{ professionalWorkspace.relationshipError.value }}
-        </p>
-        <div class="pending-list">
-          <article v-for="item in pendingItems" :key="item.id">
-            <span class="pending-list__icon"
-              ><UIcon :name="pendingIcon(item.type)"
-            /></span>
-            <div>
-              <strong>{{ item.title }}</strong
-              ><small>{{ item.detail }}</small>
-            </div>
-            <span class="pending-list__status">{{ item.status }}</span>
-            <div
-              v-if="item.type === 'relationship'"
-              class="pending-list__actions"
-            >
-              <UButton
-                size="sm"
-                color="neutral"
-                variant="ghost"
-                :loading="
-                  professionalWorkspace.relationshipRespondingId.value ===
-                  item.id
-                "
-                :disabled="
-                  Boolean(professionalWorkspace.relationshipRespondingId.value)
-                "
-                @click="respondRelationship(item.id, false)"
-                >Recusar</UButton
-              >
-              <UButton
-                size="sm"
-                color="primary"
-                :loading="
-                  professionalWorkspace.relationshipRespondingId.value ===
-                  item.id
-                "
-                :disabled="
-                  Boolean(professionalWorkspace.relationshipRespondingId.value)
-                "
-                @click="respondRelationship(item.id, true)"
-                >Confirmar</UButton
-              >
-            </div>
-          </article>
-        </div>
-      </section>
-
       <div class="dashboard-grid">
         <DashboardChecklist
           :readiness="progress"
@@ -557,13 +365,18 @@ async function respondRelationship(id: string, accepted: boolean) {
             <NuxtLink to="/app/professional/profile">
               <span><UIcon name="i-lucide-pencil" /></span>
               <strong>Editar perfil</strong>
-              <small>Dados e serviços</small></NuxtLink
+              <small
+                >Edite seus dados, serviços e região que atende.</small
+              ></NuxtLink
             >
             <NuxtLink to="/app/professional/profile?tab=portfolio">
               <span><UIcon name="i-lucide-image-plus" /></span>
               <strong>Novo trabalho</strong>
-              <small>Adicionar ao portfólio</small></NuxtLink
-            >
+              <small
+                >Demonstre seus trabalhos já feitos e aumente sua
+                credibilidade.</small
+              >
+            </NuxtLink>
             <NuxtLink to="/app/professional/profile?tab=verificacoes">
               <span><UIcon name="i-lucide-id-card" /></span>
               <strong>Ver verificações</strong>
@@ -571,12 +384,22 @@ async function respondRelationship(id: string, accepted: boolean) {
             >
             <button type="button" @click="relationshipOpen = true">
               <span><UIcon name="i-lucide-handshake" /></span>
-              <strong>Adicionar relação</strong>
-              <small>Amplie sua rede de confiança</small>
+              <strong>Recomendar um profissional</strong>
+              <small
+                >Amplie sua rede e fortaleça sua credibilidade. Quem
+                compartilha, cresce.</small
+              >
             </button>
           </div>
         </DesignSystemSurfaceCard>
       </div>
+
+      <DashboardActivitySections
+        :workspace="workspace"
+        :responding-id="professionalWorkspace.relationshipRespondingId.value"
+        :relationship-error="professionalWorkspace.relationshipError.value"
+        @respond="respondRelationship"
+      />
 
       <section class="dashboard-section quotes-section">
         <div class="dashboard-section__heading">
@@ -837,63 +660,6 @@ async function respondRelationship(id: string, accepted: boolean) {
     font-size: 0.84rem;
   }
 }
-.pending-list {
-  display: grid;
-  gap: 8px;
-  & article {
-    display: grid;
-    grid-template-columns: auto 1fr auto auto;
-    align-items: center;
-    gap: 12px;
-    padding: 13px 16px;
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    background: white;
-  }
-  &__icon {
-    display: grid;
-    place-items: center;
-    width: 38px;
-    height: 38px;
-    border-radius: 11px;
-    background: var(--color-accent-tint);
-    color: #be553f;
-  }
-  & strong,
-  & small {
-    display: block;
-  }
-  & strong {
-    font-size: 0.82rem;
-  }
-  & small {
-    margin-top: 3px;
-    color: var(--ink-soft);
-    font-size: 0.82rem;
-  }
-  &__status {
-    padding: 5px 8px;
-    border-radius: 7px;
-    background: #fff7dd;
-    color: #926916;
-    font-size: 0.82rem;
-    font-weight: 850;
-  }
-  &__actions {
-    display: flex;
-    gap: 5px;
-  }
-  &__feedback {
-    margin: 0 0 12px;
-    color: var(--ink-soft);
-    font-size: 0.86rem;
-
-    &--error {
-      color: var(--color-danger);
-      font-weight: 700;
-    }
-  }
-}
 .quotes-table {
   overflow: hidden;
   &__head,
@@ -981,14 +747,6 @@ async function respondRelationship(id: string, accepted: boolean) {
   .status-banner__action {
     grid-column: 2;
     justify-self: start;
-  }
-  .pending-list {
-    & article {
-      grid-template-columns: auto 1fr auto;
-    }
-    &__actions {
-      grid-column: 2 / -1;
-    }
   }
   .quotes-table {
     &__head {

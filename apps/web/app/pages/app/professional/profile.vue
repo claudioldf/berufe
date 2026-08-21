@@ -117,7 +117,7 @@ const statusLabel = computed(() => {
 const tabs = [
   { id: "dados", label: "Dados do perfil", icon: "i-lucide-user-round" },
   { id: "portfolio", label: "Portfólio", icon: "i-lucide-images" },
-  { id: "relacoes", label: "Relações", icon: "i-lucide-handshake" },
+  { id: "relacoes", label: "Minha rede", icon: "i-lucide-handshake" },
   { id: "verificacoes", label: "Verificações", icon: "i-lucide-shield-check" },
 ];
 const activeTab = computed(() =>
@@ -267,12 +267,12 @@ async function handleRelationshipResponse(
     showToast({
       title:
         response === "accepted"
-          ? "Colaboração confirmada"
-          : "Solicitação recusada",
+          ? "Vocês estão conectados"
+          : "Solicitação de conexão recusada",
       description:
         response === "accepted"
-          ? "A relação já pode aparecer nos perfis públicos."
-          : "Essa relação continuará privada.",
+          ? "A conexão já pode aparecer nos perfis públicos."
+          : "A solicitação de conexão recusada não aparecerá publicamente.",
     });
   } catch {
     // The relationship manager keeps the normalized API error visible.
@@ -288,10 +288,12 @@ async function handleRelationshipRemove(id: string) {
   try {
     await removeRelationship(id);
     showToast({
-      title: cancelling ? "Solicitação cancelada" : "Relação removida",
+      title: cancelling
+        ? "Solicitação de conexão cancelada"
+        : "Conexão removida",
       description: cancelling
-        ? "Você poderá enviar uma nova solicitação no futuro."
-        : "A relação não aparece mais nos perfis públicos.",
+        ? "Você poderá enviar uma nova solicitação de conexão no futuro."
+        : "A conexão não aparece mais nos perfis públicos.",
     });
   } catch {
     // The relationship manager keeps the normalized API error visible.

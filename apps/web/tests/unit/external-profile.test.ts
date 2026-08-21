@@ -69,7 +69,7 @@ describe("external public profile", () => {
     );
     expect(wrapper.text()).toContain("Pintura");
     expect(wrapper.text()).toContain(
-      "Nenhuma relação foi confirmada publicamente ainda",
+      "Nenhuma conexão profissional foi confirmada publicamente ainda",
     );
     expect(wrapper.get(`a[href="${contactUrl}"]`).text()).toContain(
       "Conversar no WhatsApp",

@@ -43,7 +43,7 @@ const cards = computed<SummaryCard[]>(() => [
     tone: "purple",
     help: {
       meaning:
-        "Perfis publicados com identidade aprovada, pelo menos três trabalhos no portfólio e duas relações profissionais confirmadas.",
+        "Perfis publicados com identidade aprovada, pelo menos três trabalhos no portfólio e duas conexões profissionais confirmadas.",
       goal: "Aumentar a parcela de publicados que cumpre todos os critérios de ativação, sem criar uma nota de confiança opaca.",
       reading:
         "O numerador mostra ativados e o denominador, publicados. Consulte Qualidade da oferta para saber qual critério falta.",

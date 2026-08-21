@@ -179,6 +179,6 @@ describe("public profile page", () => {
     expect(
       wrapper.findComponent({ name: "RelationshipCreateDialog" }).exists(),
     ).toBe(false);
-    expect(wrapper.text()).not.toContain("Solicitar relação profissional");
+    expect(wrapper.text()).not.toContain("Conectar");
   });
 });
