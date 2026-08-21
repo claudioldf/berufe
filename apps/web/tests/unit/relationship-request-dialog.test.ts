@@ -117,6 +117,28 @@ describe("relationship create dialog", () => {
     mocks.state.isSearching.value = false;
     mocks.state.searchedQuery.value = "";
     mocks.requestRelationship.mockResolvedValue(createdRelationship);
+    mocks.searchCandidates.mockResolvedValue([]);
+  });
+
+  it("waits until typing pauses before requesting professional suggestions", async () => {
+    const wrapper = await mountDialog();
+    vi.useFakeTimers();
+
+    try {
+      const search = wrapper.get('input[name="professional-search"]');
+      await search.setValue("Be");
+      await vi.advanceTimersByTimeAsync(300);
+      await search.setValue("Beto");
+      await vi.advanceTimersByTimeAsync(499);
+
+      expect(mocks.searchCandidates).not.toHaveBeenCalled();
+
+      await vi.advanceTimersByTimeAsync(1);
+      expect(mocks.searchCandidates).toHaveBeenCalledOnce();
+      expect(mocks.searchCandidates).toHaveBeenCalledWith("Beto");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("removes the upfront mode choice and creates an external target on the second step", async () => {
@@ -124,7 +146,6 @@ describe("relationship create dialog", () => {
     const wrapper = await mountDialog();
     expect(wrapper.text()).not.toContain("Já está na Berufe");
     expect(wrapper.text()).not.toContain("Adicionar pelo telefone");
-    expect(wrapper.text()).toContain("Etapa 1 de 2");
 
     await wrapper
       .get('input[name="professional-search"]')
@@ -133,7 +154,6 @@ describe("relationship create dialog", () => {
       .findAll("footer button")
       .find((button) => button.text().includes("Continuar"))!
       .trigger("click");
-    expect(wrapper.text()).toContain("Etapa 2 de 2");
     await wrapper
       .get('input[name="external-phone"]')
       .setValue("(47) 99999-1234");

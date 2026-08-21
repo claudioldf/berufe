@@ -21,7 +21,6 @@ const selectedCandidate = computed(() =>
     <DesignSystemFormField
       id="relationship-professional-search"
       label="Nome do profissional"
-      hint="Digite pelo menos 2 caracteres"
       required
     >
       <input
@@ -99,12 +98,6 @@ const selectedCandidate = computed(() =>
         telefone.
       </p>
     </div>
-    <p
-      v-else-if="searchSettled && query.trim().length >= 3"
-      class="professional-lookup__feedback"
-    >
-      Nenhum perfil encontrado. Continue para informar o telefone.
-    </p>
     <p
       v-else-if="searchSettled && query.trim().length === 2"
       class="professional-lookup__feedback"

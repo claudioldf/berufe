@@ -7,6 +7,8 @@ import { normalizeBrazilianMobilePhone } from "~/utils/brazilian-phone";
 import type { ExternalCoverageMode } from "./ExternalProfessionalDetails.vue";
 import type { ProfessionalRelationshipType } from "~/services/api/professional-relationships";
 
+const CANDIDATE_SEARCH_DEBOUNCE_MS = 500;
+
 const open = defineModel<boolean>("open", { required: true });
 const props = defineProps<{
   services: Service[];
@@ -73,7 +75,7 @@ watch([open, searchQuery], ([isOpen, query], _, onCleanup) => {
 
   const timer = window.setTimeout(() => {
     void relationships.searchCandidates(normalized).catch(() => undefined);
-  }, 250);
+  }, CANDIDATE_SEARCH_DEBOUNCE_MS);
   onCleanup(() => window.clearTimeout(timer));
 });
 
@@ -221,10 +223,6 @@ async function submit() {
         </p>
       </div>
       <form v-else class="relationship-create-dialog" @submit.prevent="submit">
-        <p class="relationship-create-dialog__step">
-          {{ step === "lookup" ? "Etapa 1 de 2" : "Etapa 2 de 2" }}
-        </p>
-
         <RelationshipProfessionalLookup
           v-if="step === 'lookup'"
           v-model:query="searchQuery"
@@ -351,15 +349,6 @@ async function submit() {
 .relationship-create-dialog {
   display: grid;
   gap: 20px;
-
-  &__step {
-    margin: 0;
-    color: var(--color-brand-strong);
-    font-size: 0.75rem;
-    font-weight: 900;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
 
   &__target {
     display: grid;
