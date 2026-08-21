@@ -9,7 +9,7 @@ const emit = defineEmits<{ dirty: [] }>();
   <DesignSystemSurfaceCard as="section" class="builder-card">
     <header>
       <div>
-        <span>03</span>
+        <span>04</span>
         <div>
           <h2>Observações</h2>
           <p>Detalhes de prazo, materiais ou condições.</p>

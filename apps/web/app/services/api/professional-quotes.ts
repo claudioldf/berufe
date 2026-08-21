@@ -1,9 +1,31 @@
 import type { BerufeApiClient } from "~/services/api/client";
 import { ApiRequestError, normalizeApiError } from "~/services/api/errors";
 import type { components } from "~/services/api/schema";
-import type { Quote, QuoteDraft, QuoteShareMethod } from "~/types";
+import type {
+  Quote,
+  QuoteDraft,
+  QuoteListFilters,
+  QuotePage,
+  QuoteShareMethod,
+} from "~/types";
+import {
+  formatBrazilianMobilePhone,
+  normalizeBrazilianMobilePhone,
+} from "~/utils/brazilian-phone";
 
 type ContractQuote = components["schemas"]["ProfessionalQuote"];
+
+export function defaultProfessionalQuoteListFilters(): QuoteListFilters {
+  return {
+    search: "",
+    status: "all",
+    scheduledOn: "",
+    sort: "updated",
+    direction: "desc",
+    page: 1,
+    perPage: 20,
+  };
+}
 
 function requestError(error: unknown, response: Response) {
   return new ApiRequestError(
@@ -15,8 +37,14 @@ export function mapProfessionalQuote(quote: ContractQuote): Quote {
   return {
     id: quote.id,
     number: quote.quote_number,
+    revision: quote.revision,
+    customerId: quote.customer.id,
     customerName: quote.customer_name,
+    customerPhone: formatBrazilianMobilePhone(quote.customer_phone_e164),
+    customerEmail: quote.customer_email ?? "",
     serviceDescription: quote.service_description,
+    serviceAddress: quote.service_address ?? "",
+    scheduledOn: quote.scheduled_on ?? "",
     validUntil: quote.valid_until ?? "",
     discount: Number(quote.discount_amount),
     notes: quote.notes ?? "",
@@ -26,6 +54,26 @@ export function mapProfessionalQuote(quote: ContractQuote): Quote {
     sharedAt: quote.shared_at,
     createdAt: quote.created_at,
     updatedAt: quote.updated_at,
+    customerDecisionMessage: quote.customer_decision_message ?? "",
+    changeRequests: quote.change_requests.map((request) => ({
+      id: request.id,
+      revision: request.revision,
+      message: request.message,
+      requestedAt: request.requested_at,
+    })),
+    serviceJob: quote.service_job
+      ? {
+          id: quote.service_job.id,
+          status: quote.service_job.status,
+          completionRequestedAt: quote.service_job.completion_requested_at,
+          completionIssueMessage:
+            quote.service_job.completion_issue_message ?? "",
+          completedAt: quote.service_job.completed_at,
+          cancelledAt: quote.service_job.cancelled_at,
+          recommendationAvailable:
+            quote.service_job.recommendation_request_status === "open",
+        }
+      : null,
     items: quote.items.map((item) => ({
       id: item.id,
       description: item.description,
@@ -38,11 +86,54 @@ export function mapProfessionalQuote(quote: ContractQuote): Quote {
   };
 }
 
+export async function fetchProfessionalQuotes(
+  client: BerufeApiClient,
+  filters: QuoteListFilters,
+): Promise<QuotePage> {
+  const { data, error, response } = await client.GET(
+    "/api/v1/professional/quotes",
+    {
+      params: {
+        query: {
+          search: filters.search || undefined,
+          status: filters.status,
+          scheduled_on: filters.scheduledOn || undefined,
+          sort: filters.sort,
+          direction: filters.direction,
+          page: filters.page,
+          per_page: filters.perPage,
+        },
+      },
+    },
+  );
+  if (error || !data) throw requestError(error, response);
+
+  return {
+    quotes: data.data.quotes.map(mapProfessionalQuote),
+    meta: {
+      page: data.data.meta.page,
+      perPage: data.data.meta.per_page,
+      totalCount: data.data.meta.total_count,
+      totalPages: data.data.meta.total_pages,
+    },
+  };
+}
+
 function writeBody(quote: QuoteDraft) {
   return {
     quote: {
-      customer_name: quote.customerName,
+      ...(quote.id ? { revision: quote.revision } : {}),
+      customer: {
+        id: quote.customerId,
+        name: quote.customerName,
+        whatsapp_e164:
+          normalizeBrazilianMobilePhone(quote.customerPhone) ??
+          quote.customerPhone,
+        email: quote.customerEmail.trim() || null,
+      },
       service_description: quote.serviceDescription,
+      service_address: quote.serviceAddress.trim() || null,
+      scheduled_on: quote.scheduledOn || null,
       discount_amount: Number(quote.discount),
       valid_until: quote.validUntil || null,
       notes: quote.notes || null,

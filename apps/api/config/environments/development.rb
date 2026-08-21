@@ -47,6 +47,11 @@ Rails.application.configure do
   # Highlight code that triggered redirect in logs.
   config.action_dispatch.verbose_redirect_logs = true
 
+  config.action_mailer.delivery_method = :file
+  config.action_mailer.file_settings = {location: Rails.root.join("tmp/mails")}
+  config.action_mailer.perform_deliveries = true
+  config.action_mailer.raise_delivery_errors = true
+
   # Raises error for missing translations.
   # config.i18n.raise_on_missing_translations = true
 

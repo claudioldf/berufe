@@ -20,7 +20,7 @@ const links = computed(() => {
     return [
       { label: "Visão geral", to: "/app/professional" },
       { label: "Gerenciar", to: "/app/professional/profile" },
-      { label: "Orçamentos", to: "/app/professional/quotes/new" },
+      { label: "Orçamentos", to: "/app/professional/quotes" },
     ];
   }
   if (isAdmin.value) {
@@ -46,6 +46,9 @@ function isLinkActive(to: string) {
   }
   if (to === "/app/admin/catalog") {
     return route.path === "/app/admin/catalog";
+  }
+  if (to === "/app/professional/quotes") {
+    return route.path === to || route.path.startsWith(`${to}/`);
   }
   return route.path === to;
 }

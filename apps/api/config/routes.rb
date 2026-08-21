@@ -21,12 +21,19 @@ Rails.application.routes.draw do
         resources :portfolio_items, only: %i[create destroy], path: "portfolio-items"
         resources :verification_requests, only: :create, path: "verification-requests"
         resources :relationship_candidates, only: :index, path: "relationship-candidates"
+        resources :customer_candidates, only: :index, path: "customer-candidates"
         resources :relationships, only: %i[create destroy]
         post "relationships/:id/response", to: "relationships#respond"
         resources :quotes, only: %i[index create show update] do
           member do
             post :share
             delete :share, action: :revoke_share
+          end
+        end
+        resources :service_jobs, only: %i[index show], path: "service-jobs" do
+          member do
+            post :request_completion, path: "completion-request"
+            post :cancel
           end
         end
         resources :media_uploads, only: %i[create show], path: "media-uploads" do
@@ -39,6 +46,10 @@ Rails.application.routes.draw do
       end
       resource :session, only: %i[show destroy]
       post "shared-quotes/resolve", to: "shared_quotes#resolve"
+      post "shared-quotes/decisions", to: "shared_quotes#decide"
+      post "shared-quotes/completions", to: "shared_quotes#complete"
+      post "customer-recommendations/resolve", to: "customer_recommendations#resolve"
+      post "customer-recommendations", to: "customer_recommendations#create"
       namespace :admin do
         resource :session, only: :create
         resource :catalog, only: :show

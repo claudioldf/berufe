@@ -55,7 +55,7 @@ RSpec.describe ProfessionalQuoteWriter do
       described_class.new.call(
         profile:,
         quote:,
-        attributes: valid_attributes.merge(items: [])
+        attributes: valid_attributes.merge(revision: quote.lock_version, items: [])
       )
     end.to raise_error(described_class::Invalid)
     expect(quote.reload.quote_items.ids).to eq(original_item_ids)
@@ -77,7 +77,8 @@ RSpec.describe ProfessionalQuoteWriter do
       profile:,
       quote:,
       attributes: valid_attributes.merge(
-        customer_name: "Cliente atualizado",
+        revision: quote.lock_version,
+        customer: valid_attributes[:customer].merge(name: "Cliente atualizado"),
         items: [
           {description: "Serviço atualizado", quantity: "2", unit: "hora", unit_price: "25.00"}
         ]
@@ -98,7 +99,12 @@ RSpec.describe ProfessionalQuoteWriter do
 
   def valid_attributes
     {
-      customer_name: "  Ana Paula  ",
+      customer: {
+        id: nil,
+        name: "  Ana Paula  ",
+        whatsapp_e164: "(47) 99991-2011",
+        email: "ana.cliente@example.com"
+      },
       service_description: "  Iluminação da cozinha  ",
       valid_until: Date.new(2026, 8, 30),
       discount_amount: "1.33",

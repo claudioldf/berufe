@@ -86,8 +86,9 @@ describe("application header", () => {
 
     expect(wrapper.classes()).toContain("header--workspace");
     expect(wrapper.text()).toContain("Visão geral");
-    expect(wrapper.text()).toContain("Meu perfil");
+    expect(wrapper.text()).toContain("Gerenciar");
     expect(wrapper.text()).toContain("Orçamentos");
+    expect(wrapper.get('a[href="/app/professional/quotes"]')).toBeDefined();
     expect(wrapper.findAll(".logout-stub")).toHaveLength(1);
 
     const menu = wrapper.get(".header__menu");
@@ -97,6 +98,14 @@ describe("application header", () => {
     expect(wrapper.findAll(".logout-stub")).toHaveLength(2);
     await wrapper.get(".header__mobile-nav a").trigger("click");
     expect(wrapper.find(".header__mobile-nav").exists()).toBe(false);
+  });
+
+  it("keeps the quotes navigation active across list and editor routes", async () => {
+    const wrapper = await mountHeader("/app/professional/quotes/new");
+
+    expect(
+      wrapper.get('a[href="/app/professional/quotes"]').classes(),
+    ).toContain("header__link--active");
   });
 
   it("renders the same approved action without changing existing admin links", async () => {

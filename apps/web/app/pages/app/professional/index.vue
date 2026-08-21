@@ -214,6 +214,23 @@ const verificationDescription = computed(() => {
 const recentQuotes = computed(
   () => workspace.value?.dashboard.recentQuotes ?? [],
 );
+const recentServices = computed(
+  () => workspace.value?.dashboard.recentServiceJobs ?? [],
+);
+const quoteStatusLabel = {
+  draft: "Rascunho",
+  shared: "Aguardando cliente",
+  change_requested: "Alteração solicitada",
+  approved: "Aprovado",
+  declined: "Recusado",
+} as const;
+const serviceStatusLabel = {
+  approved: "Aprovado",
+  completion_requested: "Aguardando cliente",
+  completion_issue: "Pendência",
+  completed: "Concluído",
+  cancelled: "Cancelado",
+} as const;
 
 definePageMeta({ layout: "workspace" });
 
@@ -382,6 +399,11 @@ async function respondRelationship(
               <strong>Ver verificações</strong>
               <small>{{ verificationDescription }}</small></NuxtLink
             >
+            <NuxtLink to="/app/professional/services">
+              <span><UIcon name="i-lucide-clipboard-check" /></span>
+              <strong>Acompanhar serviços</strong>
+              <small>Conclua os trabalhos aprovados com o cliente.</small>
+            </NuxtLink>
             <button type="button" @click="relationshipOpen = true">
               <span><UIcon name="i-lucide-handshake" /></span>
               <strong>Recomendar um profissional</strong>
@@ -408,10 +430,10 @@ async function respondRelationship(
             <h2>Orçamentos recentes.</h2>
           </div>
           <UButton
-            to="/app/professional/quotes/new"
+            to="/app/professional/quotes"
             variant="link"
             trailing-icon="i-lucide-arrow-right"
-            >Criar orçamento</UButton
+            >Ver todos</UButton
           >
         </div>
         <DesignSystemSurfaceCard class="quotes-table">
@@ -434,7 +456,7 @@ async function respondRelationship(
             >
             <span
               ><em :class="quote.status">{{
-                quote.status === "shared" ? "Compartilhado" : "Rascunho"
+                quoteStatusLabel[quote.status]
               }}</em></span
             >
             <span
@@ -445,6 +467,49 @@ async function respondRelationship(
           <p v-if="recentQuotes.length === 0" class="quotes-table__empty">
             Nenhum orçamento criado ainda.
           </p>
+        </DesignSystemSurfaceCard>
+      </section>
+
+      <section
+        v-if="recentServices.length"
+        class="dashboard-section quotes-section"
+      >
+        <div class="dashboard-section__heading">
+          <div>
+            <DesignSystemEyebrow>Execução</DesignSystemEyebrow>
+            <h2>Serviços em andamento.</h2>
+          </div>
+          <UButton
+            to="/app/professional/services"
+            variant="link"
+            trailing-icon="i-lucide-arrow-right"
+            >Ver todos</UButton
+          >
+        </div>
+        <DesignSystemSurfaceCard class="quotes-table">
+          <NuxtLink
+            v-for="service in recentServices"
+            :key="service.id"
+            :to="`/app/professional/services/${service.id}`"
+          >
+            <span>
+              <strong>#{{ service.quote.number }}</strong>
+              <small>{{ service.quote.serviceDescription }}</small>
+            </span>
+            <span>{{ service.quote.customerName }}</span>
+            <span
+              ><strong>{{ formatCurrency(service.quote.total) }}</strong></span
+            >
+            <span
+              ><em :class="service.status">{{
+                serviceStatusLabel[service.status]
+              }}</em></span
+            >
+            <span
+              >{{ formatDateTime(service.updatedAt) }}
+              <UIcon name="i-lucide-chevron-right"
+            /></span>
+          </NuxtLink>
         </DesignSystemSurfaceCard>
       </section>
     </DesignSystemContainer>

@@ -142,6 +142,21 @@ export function mapPublicProfessionalProfile(
       id: label.type,
       ...mapVerificationLabel(label),
     })),
+    evidenceSummary: {
+      completedServices: profile.evidence_summary.completed_services,
+      recommendations: profile.evidence_summary.recommendations,
+      workedTogetherProfessionals:
+        profile.evidence_summary.worked_together_professionals,
+    },
+    customerRecommendations: profile.customer_recommendations.map(
+      (recommendation) => ({
+        id: recommendation.id,
+        displayName: recommendation.display_name,
+        text: recommendation.recommendation_text,
+        submittedAt: recommendation.submitted_at,
+        verificationLabel: recommendation.verification_label,
+      }),
+    ),
     portfolio: profile.portfolio.map((item) => ({
       id: item.id,
       title: item.title,

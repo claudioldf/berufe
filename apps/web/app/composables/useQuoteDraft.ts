@@ -13,7 +13,7 @@ export function useQuoteDraft(initialQuote: MaybeRefOrGetter<Quote>) {
   const previewOpen = shallowRef(false);
   const shareOpen = shallowRef(false);
   const isSaved = shallowRef(true);
-  const isShared = shallowRef(toValue(initialQuote).status === "shared");
+  const isShared = shallowRef(toValue(initialQuote).status !== "draft");
 
   const subtotal = computed(() => quoteSubtotal(quote.value));
   const total = computed(() => quoteTotal(quote.value));
@@ -27,7 +27,7 @@ export function useQuoteDraft(initialQuote: MaybeRefOrGetter<Quote>) {
   function reset() {
     quote.value = cloneQuote(toValue(initialQuote));
     isSaved.value = true;
-    isShared.value = toValue(initialQuote).status === "shared";
+    isShared.value = toValue(initialQuote).status !== "draft";
     previewOpen.value = false;
     shareOpen.value = false;
   }

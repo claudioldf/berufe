@@ -530,6 +530,97 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/professional/customer-candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search customers owned by the authenticated professional */
+        get: operations["listProfessionalCustomerCandidates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/professional/service-jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the authenticated professional's services */
+        get: operations["listProfessionalServiceJobs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/professional/service-jobs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** Read one owned service */
+        get: operations["getProfessionalServiceJob"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/professional/service-jobs/{id}/completion-request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ask the customer to confirm completion */
+        post: operations["requestProfessionalServiceCompletion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/professional/service-jobs/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel one unfinished service */
+        post: operations["cancelProfessionalServiceJob"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/professional/quotes": {
         parameters: {
             query?: never;
@@ -601,6 +692,74 @@ export interface paths {
         put?: never;
         /** Resolve one bearer-private shared quote without a customer account */
         post: operations["resolveSharedQuote"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/shared-quotes/decisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve, decline, or request a change through the quote bearer */
+        post: operations["decideSharedQuote"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/shared-quotes/completions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm completion or report an issue through the quote bearer */
+        post: operations["completeSharedQuoteService"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/customer-recommendations/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resolve an emailed recommendation bearer */
+        post: operations["resolveCustomerRecommendation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/customer-recommendations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Publish one recommendation from an emailed bearer */
+        post: operations["createCustomerRecommendation"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1103,6 +1262,7 @@ export interface components {
             local_date: string;
             readiness: components["schemas"]["ProfessionalDashboardReadiness"];
             recent_quotes: components["schemas"]["ProfessionalQuoteSummary"][];
+            recent_service_jobs: components["schemas"]["ProfessionalServiceJob"][];
         };
         ProfessionalDashboardReadiness: {
             percentage: number;
@@ -1113,28 +1273,47 @@ export interface components {
                 approved_identity: boolean;
             };
         };
+        /** @enum {string} */
+        QuoteStatus: "draft" | "shared" | "change_requested" | "approved" | "declined";
+        /** @enum {string} */
+        ServiceJobStatus: "approved" | "completion_requested" | "completion_issue" | "completed" | "cancelled";
+        /** @enum {string} */
+        RecommendationRequestStatus: "open" | "completed" | "expired";
         ProfessionalQuoteSummary: {
             /** Format: uuid */
             id: string;
             quote_number: number;
+            revision: number;
             customer_name: string;
             service_description: string;
-            total_amount: string;
-            /** @enum {string} */
-            status: "draft" | "shared";
+            total_amount: components["schemas"]["MoneyAmount"];
+            status: components["schemas"]["QuoteStatus"];
+            service_job_status: components["schemas"]["ServiceJobStatus"] | null;
             /** Format: date-time */
             created_at: string;
         };
         ProfessionalQuoteWriteRequest: {
             quote: {
-                customer_name: string;
+                revision?: number;
+                customer: components["schemas"]["ProfessionalQuoteCustomerInput"];
                 service_description: string;
+                service_address: string | null;
+                /** Format: date */
+                scheduled_on: string | null;
                 discount_amount: number;
                 /** Format: date */
                 valid_until: string | null;
                 notes: string | null;
                 items: components["schemas"]["ProfessionalQuoteItemInput"][];
             };
+        };
+        ProfessionalQuoteCustomerInput: {
+            /** Format: uuid */
+            id: string | null;
+            name: string;
+            whatsapp_e164: string;
+            /** Format: email */
+            email: string | null;
         };
         ProfessionalQuoteItemInput: {
             description: string;
@@ -1145,6 +1324,7 @@ export interface components {
         ProfessionalQuoteListResponse: {
             data: {
                 quotes: components["schemas"]["ProfessionalQuote"][];
+                meta: components["schemas"]["PageMeta"];
             };
             request_id: components["schemas"]["RequestId"];
         };
@@ -1173,6 +1353,24 @@ export interface components {
         SharedQuoteResolveRequest: {
             token: string;
         };
+        SharedQuoteDecisionRequest: {
+            token: string;
+            decision: {
+                /** @enum {string} */
+                kind: "approve" | "request_change" | "decline";
+                revision: number;
+                terms_accepted: boolean;
+                message: string | null;
+            };
+        };
+        SharedQuoteCompletionRequest: {
+            token: string;
+            completion: {
+                /** @enum {string} */
+                kind: "confirm" | "report_issue";
+                message: string | null;
+            };
+        };
         SharedQuoteResponse: {
             data: {
                 quote: components["schemas"]["SharedQuote"];
@@ -1182,15 +1380,31 @@ export interface components {
         };
         SharedQuote: {
             quote_number: number;
+            revision: number;
+            status: components["schemas"]["QuoteStatus"];
             customer_name: string;
             service_description: string;
+            service_address: string | null;
+            /** Format: date */
+            scheduled_on: string | null;
             /** Format: date */
             valid_until: string | null;
             notes: string | null;
             subtotal_amount: components["schemas"]["MoneyAmount"];
             discount_amount: components["schemas"]["MoneyAmount"];
             total_amount: components["schemas"]["MoneyAmount"];
+            customer_decision_message: string | null;
+            service_job: components["schemas"]["SharedQuoteServiceJob"] | null;
             items: components["schemas"]["SharedQuoteItem"][];
+        };
+        SharedQuoteServiceJob: {
+            status: components["schemas"]["ServiceJobStatus"];
+            /** Format: date-time */
+            completion_requested_at: string | null;
+            completion_issue_message: string | null;
+            /** Format: date-time */
+            completed_at: string | null;
+            recommendation_available: boolean;
         };
         SharedQuoteItem: {
             description: string;
@@ -1211,23 +1425,64 @@ export interface components {
             /** Format: uuid */
             id: string;
             quote_number: number;
+            revision: number;
+            customer: components["schemas"]["ProfessionalQuoteCustomer"];
             customer_name: string;
+            customer_phone_e164: string;
+            /** Format: email */
+            customer_email: string | null;
             service_description: string;
+            service_address: string | null;
+            /** Format: date */
+            scheduled_on: string | null;
             /** Format: date */
             valid_until: string | null;
             notes: string | null;
-            /** @enum {string} */
-            status: "draft" | "shared";
+            status: components["schemas"]["QuoteStatus"];
             subtotal_amount: components["schemas"]["MoneyAmount"];
             discount_amount: components["schemas"]["MoneyAmount"];
             total_amount: components["schemas"]["MoneyAmount"];
             /** Format: date-time */
             shared_at: string | null;
             /** Format: date-time */
+            customer_decided_at: string | null;
+            customer_decision_message: string | null;
+            change_requests: components["schemas"]["ProfessionalQuoteChangeRequest"][];
+            service_job: components["schemas"]["ProfessionalQuoteServiceJob"] | null;
+            /** Format: date-time */
             created_at: string;
             /** Format: date-time */
             updated_at: string;
             items: components["schemas"]["ProfessionalQuoteItem"][];
+        };
+        ProfessionalQuoteCustomer: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            whatsapp_e164: string;
+            /** Format: email */
+            email: string | null;
+        };
+        ProfessionalQuoteChangeRequest: {
+            /** Format: uuid */
+            id: string;
+            revision: number;
+            message: string;
+            /** Format: date-time */
+            requested_at: string;
+        };
+        ProfessionalQuoteServiceJob: {
+            /** Format: uuid */
+            id: string;
+            status: components["schemas"]["ServiceJobStatus"];
+            /** Format: date-time */
+            completion_requested_at: string | null;
+            completion_issue_message: string | null;
+            /** Format: date-time */
+            completed_at: string | null;
+            /** Format: date-time */
+            cancelled_at: string | null;
+            recommendation_request_status: components["schemas"]["RecommendationRequestStatus"] | null;
         };
         ProfessionalQuoteItem: {
             /** Format: uuid */
@@ -1238,6 +1493,122 @@ export interface components {
             unit_price: components["schemas"]["MoneyAmount"];
             line_total: components["schemas"]["MoneyAmount"];
             sort_order: number;
+        };
+        ProfessionalServiceJob: {
+            /** Format: uuid */
+            id: string;
+            status: components["schemas"]["ServiceJobStatus"];
+            quote: components["schemas"]["ProfessionalServiceJobQuote"];
+            /** Format: date-time */
+            completion_requested_at: string | null;
+            /** Format: date-time */
+            completion_issue_at: string | null;
+            completion_issue_message: string | null;
+            /** Format: date-time */
+            completed_at: string | null;
+            /** Format: date-time */
+            cancelled_at: string | null;
+            cancellation_reason: string | null;
+            recommendation_request_status: components["schemas"]["RecommendationRequestStatus"] | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        ProfessionalServiceJobQuote: {
+            /** Format: uuid */
+            id: string;
+            quote_number: number;
+            customer_name: string;
+            customer_phone_e164: string;
+            /** Format: email */
+            customer_email: string | null;
+            service_description: string;
+            service_address: string | null;
+            /** Format: date */
+            scheduled_on: string | null;
+            total_amount: components["schemas"]["MoneyAmount"];
+        };
+        ProfessionalServiceJobResponse: {
+            data: {
+                service_job: components["schemas"]["ProfessionalServiceJob"];
+            };
+            request_id: components["schemas"]["RequestId"];
+        };
+        ProfessionalServiceJobListResponse: {
+            data: {
+                service_jobs: components["schemas"]["ProfessionalServiceJob"][];
+            };
+            request_id: components["schemas"]["RequestId"];
+        };
+        ProfessionalCompletionRequestResponse: {
+            data: {
+                service_job: components["schemas"]["ProfessionalServiceJob"];
+                /** Format: uri */
+                share_url: string;
+                /** Format: uri */
+                whatsapp_url: string;
+            };
+            request_id: components["schemas"]["RequestId"];
+        };
+        ProfessionalCustomerCandidate: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            whatsapp_e164: string;
+            /** Format: email */
+            email: string | null;
+            email_verified: boolean;
+        };
+        ProfessionalCustomerCandidateListResponse: {
+            data: {
+                customers: components["schemas"]["ProfessionalCustomerCandidate"][];
+            };
+            request_id: components["schemas"]["RequestId"];
+        };
+        CustomerRecommendationResolveRequest: {
+            token: string;
+        };
+        CustomerRecommendationWriteRequest: {
+            token: string;
+            recommendation: {
+                display_name: string;
+                recommendation_text: string;
+                service_confirmed: boolean;
+                publication_consent: boolean;
+            };
+        };
+        CustomerRecommendationRequest: {
+            customer_name: string;
+            service_description: string;
+            professional: {
+                display_name: string;
+                public_slug: string;
+            };
+            /** Format: date-time */
+            expires_at: string;
+        };
+        CustomerRecommendationResolveResponse: {
+            data: {
+                recommendation_request: components["schemas"]["CustomerRecommendationRequest"];
+            };
+            request_id: components["schemas"]["RequestId"];
+        };
+        CustomerRecommendation: {
+            /** Format: uuid */
+            id: string;
+            display_name: string;
+            recommendation_text: string;
+            /** Format: date-time */
+            submitted_at: string;
+            /** @constant */
+            verification_label: "Link enviado por e-mail";
+        };
+        CustomerRecommendationResponse: {
+            data: {
+                recommendation: components["schemas"]["CustomerRecommendation"];
+            };
+            request_id: components["schemas"]["RequestId"];
         };
         MoneyAmount: string;
         ProfessionalWorkspaceProfile: {
@@ -1803,11 +2174,28 @@ export interface components {
             services: components["schemas"]["PublicProfessionalProfileService"][];
             coverage: components["schemas"]["PublicProfessionalCoverage"];
             verification_labels: components["schemas"]["PublicVerificationLabel"][];
+            evidence_summary: components["schemas"]["PublicProfessionalEvidenceSummary"];
+            customer_recommendations: components["schemas"]["PublicCustomerRecommendation"][];
             portfolio: components["schemas"]["PublicProfessionalPortfolioItem"][];
             relationships: components["schemas"]["PublicProfessionalRelationship"][];
             social_links: components["schemas"]["PublicProfessionalSocialLinks"];
             /** Format: date-time */
             public_snapshot_updated_at: string | null;
+        };
+        PublicProfessionalEvidenceSummary: {
+            completed_services: number;
+            recommendations: number;
+            worked_together_professionals: number;
+        };
+        PublicCustomerRecommendation: {
+            /** Format: uuid */
+            id: string;
+            display_name: string;
+            recommendation_text: string;
+            /** Format: date-time */
+            submitted_at: string;
+            /** @constant */
+            verification_label: "Link enviado por e-mail";
         };
         PublicProfessionalProfileService: {
             /** Format: uuid */
@@ -2072,6 +2460,16 @@ export interface components {
         ModerationSearch: string;
         /** @description Moderation result count per page. */
         ModerationPageSize: number;
+        /** @description Accent-insensitive search by quote number, customer, or service. */
+        ProfessionalQuoteSearch: string;
+        /** @description Quote workflow status; defaults to all statuses. */
+        ProfessionalQuoteStatus: "all" | "draft" | "shared" | "change_requested" | "approved" | "declined";
+        /** @description Exact combined service date. */
+        ProfessionalQuoteScheduledOn: string;
+        /** @description Quote table column used for deterministic ordering. */
+        ProfessionalQuoteSort: "number" | "customer" | "total" | "status" | "updated";
+        /** @description Sort direction for the selected column. */
+        SortDirection: "asc" | "desc";
         ModerationTargetType: components["schemas"]["ModerationTargetType"];
         ModerationMediaTargetType: "profile_photo" | "portfolio_item";
         ModerationTargetId: string;
@@ -3363,7 +3761,47 @@ export interface operations {
             };
         };
     };
-    listProfessionalQuotes: {
+    listProfessionalCustomerCandidates: {
+        parameters: {
+            query: {
+                query: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Up to ten owner-scoped matching customers. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalCustomerCandidateListResponse"];
+                };
+            };
+            /** @description An active session is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The search query is invalid. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    listProfessionalServiceJobs: {
         parameters: {
             query?: never;
             header?: never;
@@ -3372,7 +3810,224 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Owned quotes ordered newest first. */
+            /** @description Services ordered by recent activity. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalServiceJobListResponse"];
+                };
+            };
+            /** @description An active session is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getProfessionalServiceJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The owned service. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalServiceJobResponse"];
+                };
+            };
+            /** @description An active session is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The service does not exist or is owned by another professional. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    requestProfessionalServiceCompletion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The direct WhatsApp completion handoff. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalCompletionRequestResponse"];
+                };
+            };
+            /** @description An active session is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The origin or owner is invalid. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The service does not exist. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Completion cannot be requested in the current state. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    cancelProfessionalServiceJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    cancellation: {
+                        reason: string | null;
+                    };
+                };
+            };
+        };
+        responses: {
+            /** @description The cancelled service. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalServiceJobResponse"];
+                };
+            };
+            /** @description An active session is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The origin or owner is invalid. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The service does not exist. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The service can no longer be cancelled. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The cancellation reason is invalid. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    listProfessionalQuotes: {
+        parameters: {
+            query?: {
+                /** @description Accent-insensitive search by quote number, customer, or service. */
+                search?: components["parameters"]["ProfessionalQuoteSearch"];
+                /** @description Quote workflow status; defaults to all statuses. */
+                status?: components["parameters"]["ProfessionalQuoteStatus"];
+                /** @description Exact combined service date. */
+                scheduled_on?: components["parameters"]["ProfessionalQuoteScheduledOn"];
+                /** @description Quote table column used for deterministic ordering. */
+                sort?: components["parameters"]["ProfessionalQuoteSort"];
+                /** @description Sort direction for the selected column. */
+                direction?: components["parameters"]["SortDirection"];
+                /** @description One-based result page. */
+                page?: components["parameters"]["Page"];
+                /** @description Result count per page. */
+                per_page?: components["parameters"]["PageSize"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Filtered, sorted, and paginated owned quotes. */
             200: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
@@ -3394,6 +4049,16 @@ export interface operations {
             };
             /** @description Professional registration has not created a profile yet. */
             404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description One or more quote index parameters are invalid. */
+            422: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
@@ -3562,6 +4227,16 @@ export interface operations {
             };
             /** @description The quote does not exist or belongs to another professional. */
             404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The quote is approved or the supplied revision is stale. */
+            409: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
@@ -3770,6 +4445,228 @@ export interface operations {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
                     "Cache-Control"?: "private, no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    decideSharedQuote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SharedQuoteDecisionRequest"];
+            };
+        };
+        responses: {
+            /** @description The customer decision was recorded idempotently. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SharedQuoteResponse"];
+                };
+            };
+            /** @description The exact configured Nuxt origin is required. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The bearer is not available. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The quote changed or cannot receive this transition. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The quote validity ended before approval. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Terms or decision fields are invalid. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    completeSharedQuoteService: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SharedQuoteCompletionRequest"];
+            };
+        };
+        responses: {
+            /** @description The completion response was recorded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SharedQuoteResponse"];
+                };
+            };
+            /** @description The exact configured Nuxt origin is required. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The bearer is not available. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The service cannot receive this transition. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The issue response is invalid. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    resolveCustomerRecommendation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustomerRecommendationResolveRequest"];
+            };
+        };
+        responses: {
+            /** @description The open invitation context. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerRecommendationResolveResponse"];
+                };
+            };
+            /** @description The exact configured Nuxt origin is required. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Generic response for invalid, used, or expired links. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    createCustomerRecommendation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustomerRecommendationWriteRequest"];
+            };
+        };
+        responses: {
+            /** @description The recommendation was published immediately. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerRecommendationResponse"];
+                };
+            };
+            /** @description The exact configured Nuxt origin is required. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Generic response for invalid, used, or expired links. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The recommendation or consent fields are invalid. */
+            422: {
+                headers: {
                     [name: string]: unknown;
                 };
                 content: {

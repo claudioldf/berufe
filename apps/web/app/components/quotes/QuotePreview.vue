@@ -48,8 +48,11 @@ function itemTotal(index: number) {
       <div>
         <strong>{{ professional.name }}</strong
         ><span>{{ professional.primaryService }} · Joinville</span
-        ><small v-if="professional.identityVerified"
-          ><UIcon name="i-lucide-badge-check" /> Identidade verificada</small
+        ><small
+          v-if="professional.identityVerified"
+          class="quote-preview__verification"
+          ><UIcon name="i-lucide-badge-check" size="1rem" /> Identidade
+          verificada</small
         >
       </div>
     </section>
@@ -66,6 +69,16 @@ function itemTotal(index: number) {
     <section class="quote-preview__service">
       <span>Serviço</span>
       <h1>{{ quote.serviceDescription || "Descrição do serviço" }}</h1>
+      <dl v-if="quote.scheduledOn || quote.serviceAddress">
+        <div v-if="quote.scheduledOn">
+          <dt>Data combinada</dt>
+          <dd>{{ formatDate(quote.scheduledOn) }}</dd>
+        </div>
+        <div v-if="quote.serviceAddress">
+          <dt>Local</dt>
+          <dd>{{ quote.serviceAddress }}</dd>
+        </div>
+      </dl>
     </section>
     <section class="quote-preview__items">
       <div class="quote-preview__item quote-preview__item--head">
@@ -183,6 +196,12 @@ function itemTotal(index: number) {
     font-size: 0.82rem;
     font-weight: 850;
   }
+  &__professional &__verification {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+  }
   &__intro {
     display: grid;
     grid-template-columns: 1fr auto;
@@ -218,6 +237,24 @@ function itemTotal(index: number) {
     font-size: 1.3rem;
     font-weight: 500;
     line-height: 1.25;
+  }
+  &__service dl {
+    display: grid;
+    gap: 7px;
+    margin: 12px 0 0;
+  }
+  &__service dl > div {
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    gap: 8px;
+    font-size: 0.82rem;
+  }
+  &__service dt {
+    color: var(--ink-soft);
+    font-weight: 800;
+  }
+  &__service dd {
+    margin: 0;
   }
   &__items {
     padding: 0 22px;
@@ -299,10 +336,6 @@ function itemTotal(index: number) {
   }
   & > footer small {
     color: var(--ink-soft);
-  }
-  &--customer {
-    max-width: 720px;
-    margin: 0 auto;
   }
   &--customer &__service h1 {
     font-size: 1.65rem;

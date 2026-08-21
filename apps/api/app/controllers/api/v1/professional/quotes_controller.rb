@@ -10,14 +10,37 @@ module Api
         def index
           profile = owned_profile!
           authorize Quote, :index?
-          quotes = policy_scope(Quote)
-            .where(professional: profile)
-            .includes(:quote_items)
-            .newest_first
+          result = ProfessionalQuoteIndexQuery.new.call(
+            scope: policy_scope(Quote).where(professional: profile),
+            search: params[:search],
+            status: params[:status],
+            scheduled_on: params[:scheduled_on],
+            sort: params[:sort],
+            direction: params[:direction],
+            page: params[:page],
+            per_page: params[:per_page]
+          )
+          quotes = result.quotes
+            .includes(
+              :quote_items,
+              :customer,
+              :quote_change_requests,
+              service_job: :customer_recommendation_request
+            )
           render json: {
-            data: {quotes: quotes.map { |quote| ProfessionalQuoteSerializer.new(quote) }},
+            data: {
+              quotes: quotes.map { |quote| ProfessionalQuoteSerializer.new(quote) },
+              meta: result.meta
+            },
             request_id: Current.request_id
           }
+        rescue ProfessionalQuoteIndexQuery::Invalid => error
+          render_api_error(
+            code: "validation_failed",
+            message: "Revise os filtros dos orçamentos.",
+            status: :unprocessable_entity,
+            field_errors: error.field_errors
+          )
         end
 
         def create
@@ -52,6 +75,10 @@ module Api
           render json: quote_response(quote)
         rescue ProfessionalQuoteWriter::Invalid => error
           render_quote_errors(error)
+        rescue ProfessionalQuoteWriter::Locked
+          render_quote_locked
+        rescue ProfessionalQuoteWriter::Stale
+          render_quote_stale
         end
 
         def share
@@ -113,11 +140,14 @@ module Api
 
         def quote_params
           params.require(:quote).permit(
-            :customer_name,
             :service_description,
+            :service_address,
+            :scheduled_on,
             :discount_amount,
             :valid_until,
             :notes,
+            :revision,
+            customer: %i[id name whatsapp_e164 email],
             items: %i[description quantity unit unit_price]
           )
         end
@@ -135,6 +165,22 @@ module Api
             message: "Revise os dados do orçamento.",
             status: :unprocessable_entity,
             field_errors: error.field_errors
+          )
+        end
+
+        def render_quote_locked
+          render_api_error(
+            code: "quote_locked",
+            message: "Um orçamento aprovado não pode mais ser alterado.",
+            status: :conflict
+          )
+        end
+
+        def render_quote_stale
+          render_api_error(
+            code: "quote_stale",
+            message: "Este orçamento mudou. Atualize a página antes de continuar.",
+            status: :conflict
           )
         end
       end

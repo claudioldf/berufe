@@ -45,6 +45,8 @@ class PublicProfessionalProfileSerializer
         end.sort_by { |area| [area[:name], area[:code]] }
       },
       verification_labels: verification_labels(verification),
+      evidence_summary: public_evidence_summary,
+      customer_recommendations: public_customer_recommendations,
       portfolio: public_portfolio,
       relationships: public_relationships,
       social_links: {
@@ -109,6 +111,50 @@ class PublicProfessionalProfileSerializer
       )
       .order(responded_at: :desc, id: :desc)
       .map { |relationship| serialize_relationship(relationship) }
+  end
+
+  def public_evidence_summary
+    {
+      completed_services: completed_service_jobs.count,
+      recommendations: public_recommendation_records.count,
+      worked_together_professionals: accepted_worked_together_professional_ids.count
+    }
+  end
+
+  def public_customer_recommendations
+    public_recommendation_records.limit(20).map do |recommendation|
+      {
+        id: recommendation.id,
+        display_name: recommendation.display_name,
+        recommendation_text: recommendation.recommendation_text,
+        submitted_at: recommendation.submitted_at.iso8601,
+        verification_label: "Link enviado por e-mail"
+      }
+    end
+  end
+
+  def completed_service_jobs
+    ServiceJob.joins(:quote).where(status: "completed", quotes: {professional_id: profile.id})
+  end
+
+  def public_recommendation_records
+    CustomerRecommendation
+      .joins(service_job: :quote)
+      .where(quotes: {professional_id: profile.id})
+      .order(submitted_at: :desc, id: :desc)
+  end
+
+  def accepted_worked_together_professional_ids
+    ProfessionalRelationship
+      .active
+      .where(status: "accepted", relationship_type: "worked_together")
+      .where(
+        "initiator_professional_id = :id OR recipient_professional_id = :id",
+        id: profile.id
+      )
+      .pluck(:initiator_professional_id, :recipient_professional_id)
+      .map { |initiator_id, recipient_id| (initiator_id == profile.id) ? recipient_id : initiator_id }
+      .uniq
   end
 
   def serialize_relationship(relationship)

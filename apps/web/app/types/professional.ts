@@ -1,3 +1,5 @@
+import type { ProfessionalServiceJob } from "./service-job";
+
 export interface Service {
   id: string;
   name: string;
@@ -163,6 +165,18 @@ export interface PublicProfessionalProfile {
       verifiedAt: string | null;
     }
   >;
+  evidenceSummary: {
+    completedServices: number;
+    recommendations: number;
+    workedTogetherProfessionals: number;
+  };
+  customerRecommendations: Array<{
+    id: string;
+    displayName: string;
+    text: string;
+    submittedAt: string;
+    verificationLabel: "Link enviado por e-mail";
+  }>;
   portfolio: Array<{
     id: string;
     title: string;
@@ -285,12 +299,15 @@ export interface ProfessionalWorkspace {
     recentQuotes: Array<{
       id: string;
       number: number;
+      revision: number;
       customerName: string;
       serviceDescription: string;
       total: number;
-      status: "draft" | "shared";
+      status: "draft" | "shared" | "change_requested" | "approved" | "declined";
+      serviceJobStatus: ProfessionalServiceJob["status"] | null;
       createdAt: string;
     }>;
+    recentServiceJobs: ProfessionalServiceJob[];
   };
   pendingRelationships: ProfessionalRelationship[];
   relationships: ProfessionalRelationship[];

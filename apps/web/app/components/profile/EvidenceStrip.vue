@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import type { PublicProfessionalProfile } from "~/types";
 
-defineProps<{ evidence: PublicProfessionalProfile["evidence"] }>();
+defineProps<{
+  evidence: PublicProfessionalProfile["evidence"];
+  summary: PublicProfessionalProfile["evidenceSummary"];
+}>();
 </script>
 
 <template>
@@ -25,6 +28,53 @@ defineProps<{ evidence: PublicProfessionalProfile["evidence"] }>();
           :evidence="item"
         />
       </div>
+      <dl class="evidence-strip__outcomes">
+        <div>
+          <dt>{{ summary.completedServices }}</dt>
+          <dd>serviços concluídos</dd>
+        </div>
+        <div>
+          <dt>{{ summary.recommendations }}</dt>
+          <dd>recomendações</dd>
+        </div>
+        <div>
+          <dt>{{ summary.workedTogetherProfessionals }}</dt>
+          <dd>profissionais parceiros</dd>
+        </div>
+      </dl>
     </DesignSystemContainer>
   </section>
 </template>
+
+<style scoped lang="scss">
+.evidence-strip__outcomes {
+  display: flex;
+  gap: 18px;
+  margin: 0;
+}
+
+.evidence-strip__outcomes > div {
+  min-width: 80px;
+  text-align: center;
+}
+
+.evidence-strip__outcomes dt {
+  color: var(--color-brand);
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.evidence-strip__outcomes dd {
+  margin: 1px 0 0;
+  color: var(--ink-soft);
+  font-size: 0.72rem;
+}
+
+@media (width <= 850px) {
+  .evidence-strip__outcomes {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+</style>

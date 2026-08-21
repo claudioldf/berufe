@@ -12,9 +12,10 @@ RSpec.describe ProfessionalQuoteSharer do
       status: "active"
     )
     profile = ProfessionalProfile.create!(user_account: account, display_name: "Cris Lima")
+    category_suffix = SecureRandom.hex(4)
     category = ServiceCategory.create!(
-      name: "Orçamento concorrente",
-      slug: "orcamento-concorrente-#{SecureRandom.hex(4)}",
+      name: "Orçamento concorrente #{category_suffix}",
+      slug: "orcamento-concorrente-#{category_suffix}",
       icon: "i-lucide-wrench",
       is_active: true,
       sort_order: 0
@@ -35,7 +36,12 @@ RSpec.describe ProfessionalQuoteSharer do
     quote = ProfessionalQuoteWriter.new.call(
       profile:,
       attributes: {
-        customer_name: "Cliente",
+        customer: {
+          id: nil,
+          name: "Cliente",
+          whatsapp_e164: "+5547999912012",
+          email: nil
+        },
         service_description: "Serviço concorrente",
         discount_amount: 0,
         items: [{description: "Item", quantity: 1, unit: "serviço", unit_price: 10}]
@@ -73,6 +79,7 @@ RSpec.describe ProfessionalQuoteSharer do
   ensure
     if profile
       Quote.where(professional_id: profile.id).delete_all
+      Customer.where(professional_id: profile.id).delete_all
       ProfessionalDailyActivity.where(professional_id: profile.id).delete_all
       ProfessionalDailyMetric.where(professional_id: profile.id).delete_all
       profile.update_columns(
@@ -84,6 +91,7 @@ RSpec.describe ProfessionalQuoteSharer do
         approved_photo_id: nil
       )
       profile.association(:quotes).reset
+      profile.association(:customers).reset
       profile.destroy!
     end
     account&.destroy!

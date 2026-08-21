@@ -2,16 +2,29 @@
 
 The deployment environment is selected with `BERUFE_ENV`. Rails refuses to boot when its environment/adapters do not match this matrix or a required variable is blank.
 
-| `BERUFE_ENV` | SMS OTP    | Media storage | Intended use                                      |
-| ------------ | ---------- | ------------- | ------------------------------------------------- |
-| `local`      | Infobip    | local disk    | Docker Compose development with allowlisted SMS   |
-| `test`       | fake       | local disk    | automated tests with synthetic data               |
-| `preview`    | Infobip    | local disk    | isolated pull-request previews with allowlisted SMS |
-| `staging`    | Infobip    | R2            | stable staging with allowlisted SMS               |
-| `integration` | Infobip    | R2            | restricted-provider checks                        |
-| `production` | Infobip    | R2            | live service                                      |
+| `BERUFE_ENV`  | SMS OTP | Media storage | Intended use                                        |
+| ------------- | ------- | ------------- | --------------------------------------------------- |
+| `local`       | Infobip | local disk    | Docker Compose development with allowlisted SMS     |
+| `test`        | fake    | local disk    | automated tests with synthetic data                 |
+| `preview`     | Infobip | local disk    | isolated pull-request previews with allowlisted SMS |
+| `staging`     | Infobip | R2            | stable staging with allowlisted SMS                 |
+| `integration` | Infobip | R2            | restricted-provider checks                          |
+| `production`  | Infobip | R2            | live service                                        |
 
 Only values prefixed `NUXT_PUBLIC_` are exposed through Nuxt's public runtime configuration. Database, Infobip, R2, Rails, and Bugsnag credentials are server-only and belong in the relevant hosting platform's secret store.
+
+## Recommendation email prerequisite
+
+When a client confirms completion, the worker sends a personal recommendation
+link to the email snapshot stored on the approved quote. Staging, integration,
+and production refuse to boot without `SMTP_ADDRESS`, `SMTP_PORT`,
+`SMTP_DOMAIN`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_AUTHENTICATION`,
+`SMTP_STARTTLS`, and `MAIL_FROM`.
+
+The `default` GoodJob queue must be running. Delivery is retry-safe, the job
+argument contains only the recommendation-request UUID, and the bearer link is
+unavailable until SMTP delivery succeeds. Local development writes messages to
+`apps/api/tmp/mails`; automated tests use Action Mailer's test adapter.
 
 ## Infobip production prerequisite
 

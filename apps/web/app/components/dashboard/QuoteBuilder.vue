@@ -25,6 +25,7 @@ const emit = defineEmits<{
   revoke: [];
 }>();
 const revokeOpen = shallowRef(false);
+const locked = computed(() => props.initialQuote.status === "approved");
 
 function confirmRevoke() {
   revokeOpen.value = false;
@@ -58,27 +59,49 @@ function save() {
 <template>
   <div class="quote-builder">
     <div class="quote-builder__form">
-      <DashboardQuoteCustomerFields v-model="quote" @dirty="markDirty" />
-      <DashboardQuoteLineItemsEditor
-        v-model="quote"
-        :subtotal="subtotal"
-        @add="addItem"
-        @remove="removeItem"
-        @dirty="markDirty"
+      <DesignSystemSurfaceCard v-if="locked" class="quote-builder__locked">
+        <UIcon name="i-lucide-lock-keyhole" />
+        <div>
+          <strong>Orçamento aprovado</strong>
+          <p>
+            Os dados aprovados ficam preservados. Acompanhe a execução na área
+            de serviços.
+          </p>
+        </div>
+        <UButton
+          v-if="initialQuote.serviceJob?.id"
+          :to="`/app/professional/services/${initialQuote.serviceJob.id}`"
+          >Ver serviço</UButton
+        >
+      </DesignSystemSurfaceCard>
+      <DashboardQuoteChangeRequests
+        v-if="initialQuote.changeRequests.length"
+        :requests="initialQuote.changeRequests"
       />
-      <DashboardQuoteNotesField v-model="quote" @dirty="markDirty" />
-      <DashboardQuoteSaveBar
-        :saved="isSaved"
-        :shared="isShared"
-        :valid="isValid"
-        :saving="saving"
-        :error="saveError"
-        :share-enabled="shareEnabled ?? false"
-        @preview="previewOpen = true"
-        @save="save"
-        @share="shareOpen = true"
-      />
-      <div v-if="isShared" class="quote-builder__revoke">
+      <template v-if="!locked">
+        <DashboardQuoteCustomerFields v-model="quote" @dirty="markDirty" />
+        <DashboardQuoteServiceFields v-model="quote" @dirty="markDirty" />
+        <DashboardQuoteLineItemsEditor
+          v-model="quote"
+          :subtotal="subtotal"
+          @add="addItem"
+          @remove="removeItem"
+          @dirty="markDirty"
+        />
+        <DashboardQuoteNotesField v-model="quote" @dirty="markDirty" />
+        <DashboardQuoteSaveBar
+          :saved="isSaved"
+          :shared="isShared"
+          :valid="isValid"
+          :saving="saving"
+          :error="saveError"
+          :share-enabled="shareEnabled ?? false"
+          @preview="previewOpen = true"
+          @save="save"
+          @share="shareOpen = true"
+        />
+      </template>
+      <div v-if="isShared && !locked" class="quote-builder__revoke">
         <p>
           O link ativo continua abrindo este orçamento para quem o recebeu.
           Revogue para que ele pare de funcionar imediatamente.
@@ -193,6 +216,25 @@ function save() {
   grid-template-columns: minmax(0, 1.25fr) minmax(330px, 0.75fr);
   gap: 24px;
   align-items: start;
+}
+
+.quote-builder__locked {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 18px;
+}
+
+.quote-builder__locked > svg {
+  color: var(--color-brand);
+  font-size: 1.4rem;
+}
+
+.quote-builder__locked p {
+  margin: 3px 0 0;
+  color: var(--ink-soft);
+  font-size: 0.84rem;
 }
 
 @media (width <= 1000px) {

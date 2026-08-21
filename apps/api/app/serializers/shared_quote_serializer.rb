@@ -10,13 +10,19 @@ class SharedQuoteSerializer
     {
       quote: {
         quote_number: quote.quote_number,
+        revision: quote.lock_version,
+        status: quote.status,
         customer_name: quote.customer_name,
         service_description: quote.service_description,
+        service_address: quote.service_address,
+        scheduled_on: quote.scheduled_on&.iso8601,
         valid_until: quote.valid_until&.iso8601,
         notes: quote.notes,
         subtotal_amount: money(quote.subtotal_amount),
         discount_amount: money(quote.discount_amount),
         total_amount: money(quote.total_amount),
+        customer_decision_message: quote.customer_decision_message,
+        service_job: serialized_service_job,
         items: quote.quote_items.map do |item|
           {
             description: item.description,
@@ -59,5 +65,18 @@ class SharedQuoteSerializer
 
   def decimal(value)
     value.to_d.to_s("F").sub(/\.?0+\z/, "")
+  end
+
+  def serialized_service_job
+    job = quote.service_job
+    return unless job
+
+    {
+      status: job.status,
+      completion_requested_at: job.completion_requested_at&.iso8601,
+      completion_issue_message: job.completion_issue_message,
+      completed_at: job.completed_at&.iso8601,
+      recommendation_available: job.customer_recommendation_request&.status == "open"
+    }
   end
 end

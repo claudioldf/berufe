@@ -50,7 +50,16 @@ class ProfessionalWorkspaceSerializer
       readiness: ProfessionalDashboardReadiness.new(profile).as_json,
       recent_quotes: profile.quotes.newest_first.limit(5).map do |quote|
         ProfessionalQuoteSummarySerializer.new(quote).as_json
-      end
+      end,
+      recent_service_jobs: ServiceJob
+        .joins(:quote)
+        .where(quotes: {professional_id: profile.id})
+        .includes(:customer_recommendation_request, :quote)
+        .order(updated_at: :desc, id: :desc)
+        .limit(5)
+        .map do |service_job|
+          ProfessionalServiceJobSerializer.new(service_job).as_json
+        end
     }
   end
 
