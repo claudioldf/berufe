@@ -4,7 +4,7 @@ import { useProfessionalRelationships } from "~/composables/useProfessionalRelat
 import { useToast } from "~/composables/useToast";
 import type { Neighborhood, ProfessionalRelationship, Service } from "~/types";
 import { normalizeBrazilianMobilePhone } from "~/utils/brazilian-phone";
-import type { ExternalCoverageMode } from "./ExternalProfessionalForm.vue";
+import type { ExternalCoverageMode } from "./ExternalProfessionalDetails.vue";
 import type { ProfessionalRelationshipType } from "~/services/api/professional-relationships";
 
 const open = defineModel<boolean>("open", { required: true });
@@ -19,59 +19,83 @@ const emit = defineEmits<{
 
 const { showToast } = useToast();
 const relationships = useProfessionalRelationships();
-const mode = shallowRef<"existing" | "external">("existing");
+const step = shallowRef<"lookup" | "details">("lookup");
 const relationshipType =
   shallowRef<ProfessionalRelationshipType>("recommendation");
 const contextNote = shallowRef("");
 const searchQuery = shallowRef("");
 const selectedProfessionalId = shallowRef<string | null>(null);
-const externalName = shallowRef("");
 const externalPhone = shallowRef("");
 const externalServiceIds = shallowRef<string[]>([]);
 const externalCoverageMode = shallowRef<ExternalCoverageMode>("not_informed");
 const externalNeighborhoodCodes = shallowRef<string[]>([]);
 const externalAttested = shallowRef(false);
 const validationError = shallowRef("");
+const normalizedName = computed(() => searchQuery.value.trim());
 const noteLength = computed(() => contextNote.value.length);
+const searchSettled = computed(
+  () =>
+    normalizedName.value.length >= 2 &&
+    relationships.searchedQuery.value === normalizedName.value &&
+    !relationships.isSearching.value,
+);
+const selectedCandidate = computed(() =>
+  relationships.candidates.value.find(
+    (candidate) => candidate.id === selectedProfessionalId.value,
+  ),
+);
+const canContinue = computed(
+  () =>
+    Boolean(selectedProfessionalId.value) ||
+    (normalizedName.value.length >= 3 && searchSettled.value),
+);
+const externalTarget = computed(
+  () => step.value === "details" && !selectedProfessionalId.value,
+);
+const modalDescription = computed(() =>
+  step.value === "lookup"
+    ? "Encontre o profissional pelo nome. Se ele ainda não estiver na Berufe, você poderá informar o telefone na próxima etapa."
+    : "Revise o profissional e conte qual é a relação entre vocês.",
+);
 const error = computed(
   () => validationError.value || relationships.error.value,
 );
 
-watch(
-  [open, mode, searchQuery],
-  ([isOpen, selectedMode, query], _, onCleanup) => {
-    if (!isOpen || selectedMode !== "existing" || query.trim().length < 2) {
-      relationships.clearCandidates();
-      return;
-    }
+watch([open, searchQuery], ([isOpen, query], _, onCleanup) => {
+  selectedProfessionalId.value = null;
+  step.value = "lookup";
+  validationError.value = "";
+  relationships.clearError();
+  relationships.clearCandidates();
 
-    const timer = window.setTimeout(() => {
-      void relationships.searchCandidates(query).catch(() => undefined);
-    }, 250);
-    onCleanup(() => window.clearTimeout(timer));
-  },
-);
+  const normalized = query.trim();
+  if (!isOpen || normalized.length < 2) return;
+
+  const timer = window.setTimeout(() => {
+    void relationships.searchCandidates(normalized).catch(() => undefined);
+  }, 250);
+  onCleanup(() => window.clearTimeout(timer));
+});
+
+watch(selectedProfessionalId, () => {
+  validationError.value = "";
+  relationships.clearError();
+});
 
 watch(externalCoverageMode, (selectedMode) => {
   if (selectedMode !== "neighborhoods") externalNeighborhoodCodes.value = [];
 });
 
 watch(open, (isOpen) => {
-  if (isOpen) {
-    validationError.value = "";
-    relationships.clearError();
-    return;
-  }
-  reset();
+  if (!isOpen) reset();
 });
 
 function reset() {
-  mode.value = "existing";
+  step.value = "lookup";
   relationshipType.value = "recommendation";
   contextNote.value = "";
   searchQuery.value = "";
   selectedProfessionalId.value = null;
-  externalName.value = "";
   externalPhone.value = "";
   externalServiceIds.value = [];
   externalCoverageMode.value = "not_informed";
@@ -82,30 +106,46 @@ function reset() {
   relationships.clearError();
 }
 
-function selectMode(nextMode: "existing" | "external") {
-  mode.value = nextMode;
+function continueToDetails() {
+  validationError.value = "";
+  relationships.clearError();
+  if (!canContinue.value) {
+    validationError.value =
+      normalizedName.value.length < 3
+        ? "Informe o nome profissional para continuar."
+        : "Aguarde a busca terminar para continuar.";
+    return;
+  }
+
+  step.value = "details";
+}
+
+function returnToLookup() {
+  step.value = "lookup";
   validationError.value = "";
   relationships.clearError();
 }
 
 async function submit() {
-  if (relationships.isSubmitting.value || !props.eligible) return;
+  if (
+    step.value !== "details" ||
+    relationships.isSubmitting.value ||
+    !props.eligible
+  ) {
+    return;
+  }
 
   validationError.value = "";
   relationships.clearError();
   let target;
-  if (mode.value === "existing") {
-    if (!selectedProfessionalId.value) {
-      validationError.value = "Selecione um profissional para continuar.";
-      return;
-    }
+  if (selectedProfessionalId.value) {
     target = {
       type: "profile" as const,
       professionalProfileId: selectedProfessionalId.value,
     };
   } else {
     const normalizedPhone = normalizeBrazilianMobilePhone(externalPhone.value);
-    if (externalName.value.trim().length < 3) {
+    if (normalizedName.value.length < 3) {
       validationError.value = "Informe o nome profissional.";
       return;
     }
@@ -128,7 +168,7 @@ async function submit() {
     }
     target = {
       type: "phone" as const,
-      name: externalName.value.trim(),
+      name: normalizedName.value,
       phone: normalizedPhone,
       serviceIds: externalServiceIds.value,
       coverage: {
@@ -165,7 +205,7 @@ async function submit() {
   <UModal
     v-model:open="open"
     title="Adicionar relação profissional"
-    description="Encontre alguém na Berufe ou adicione um contato profissional pelo telefone."
+    :description="modalDescription"
     :ui="{ content: 'sm:max-w-2xl' }"
   >
     <template #body>
@@ -181,78 +221,88 @@ async function submit() {
         </p>
       </div>
       <form v-else class="relationship-create-dialog" @submit.prevent="submit">
-        <div
-          class="relationship-create-dialog__modes"
-          aria-label="Como adicionar o profissional"
-        >
-          <button
-            type="button"
-            :aria-pressed="mode === 'existing'"
-            @click="selectMode('existing')"
-          >
-            Já está na Berufe
-          </button>
-          <button
-            type="button"
-            :aria-pressed="mode === 'external'"
-            @click="selectMode('external')"
-          >
-            Adicionar pelo telefone
-          </button>
-        </div>
+        <p class="relationship-create-dialog__step">
+          {{ step === "lookup" ? "Etapa 1 de 2" : "Etapa 2 de 2" }}
+        </p>
 
-        <RelationshipExistingProfessionalForm
-          v-if="mode === 'existing'"
+        <RelationshipProfessionalLookup
+          v-if="step === 'lookup'"
           v-model:query="searchQuery"
           v-model:selected-id="selectedProfessionalId"
           :candidates="relationships.candidates.value"
           :searching="relationships.isSearching.value"
-        />
-        <RelationshipExternalProfessionalForm
-          v-else
-          v-model:name="externalName"
-          v-model:phone="externalPhone"
-          v-model:service-ids="externalServiceIds"
-          v-model:coverage-mode="externalCoverageMode"
-          v-model:neighborhood-codes="externalNeighborhoodCodes"
-          v-model:attested="externalAttested"
-          :services="services"
-          :neighborhoods="neighborhoods"
+          :search-settled="searchSettled"
+          :search-error="relationships.searchError.value"
         />
 
-        <div class="relationship-create-dialog__context">
-          <DesignSystemFormField
-            id="relationship-type"
-            label="Tipo de relação"
-            required
-          >
-            <select
+        <template v-else>
+          <div class="relationship-create-dialog__target">
+            <DesignSystemAvatar
+              :name="selectedCandidate?.displayName ?? normalizedName"
+              :src="selectedCandidate?.photoUrl ?? undefined"
+              size="sm"
+              shape="rounded"
+            />
+            <span>
+              <small>
+                {{
+                  externalTarget
+                    ? "Contato profissional"
+                    : "Profissional selecionado"
+                }}
+              </small>
+              <strong>{{
+                selectedCandidate?.displayName ?? normalizedName
+              }}</strong>
+            </span>
+          </div>
+
+          <RelationshipExternalProfessionalDetails
+            v-if="externalTarget"
+            v-model:phone="externalPhone"
+            v-model:service-ids="externalServiceIds"
+            v-model:coverage-mode="externalCoverageMode"
+            v-model:neighborhood-codes="externalNeighborhoodCodes"
+            v-model:attested="externalAttested"
+            :name="normalizedName"
+            :services="services"
+            :neighborhoods="neighborhoods"
+          />
+
+          <div class="relationship-create-dialog__context">
+            <DesignSystemFormField
               id="relationship-type"
-              v-model="relationshipType"
-              name="relationship-type"
+              label="Tipo de relação"
               required
             >
-              <option value="recommendation">
-                Recomendo este profissional
-              </option>
-              <option value="worked_together">Trabalhamos juntos</option>
-            </select>
-          </DesignSystemFormField>
-          <DesignSystemFormField
-            id="relationship-context"
-            label="Contexto"
-            :hint="`${noteLength}/300 · Opcional`"
-          >
-            <textarea
+              <select
+                id="relationship-type"
+                v-model="relationshipType"
+                name="relationship-type"
+                required
+              >
+                <option value="recommendation">
+                  Recomendo este profissional
+                </option>
+                <option value="worked_together">Trabalhamos juntos</option>
+              </select>
+            </DesignSystemFormField>
+            <DesignSystemFormField
               id="relationship-context"
-              v-model="contextNote"
-              name="relationship-context"
-              maxlength="300"
-              autocomplete="off"
-              placeholder="Conte brevemente o contexto dessa relação…"
-            />
-          </DesignSystemFormField>
-        </div>
+              label="Contexto"
+              :hint="`${noteLength}/300 · Opcional`"
+            >
+              <textarea
+                id="relationship-context"
+                v-model="contextNote"
+                name="relationship-context"
+                maxlength="300"
+                autocomplete="off"
+                placeholder="Conte brevemente o contexto dessa relação…"
+              />
+            </DesignSystemFormField>
+          </div>
+        </template>
 
         <p v-if="error" class="relationship-create-dialog__error" role="alert">
           {{ error }}
@@ -261,6 +311,7 @@ async function submit() {
     </template>
     <template #footer>
       <UButton
+        v-if="step === 'lookup'"
         color="neutral"
         variant="ghost"
         :disabled="relationships.isSubmitting.value"
@@ -269,7 +320,23 @@ async function submit() {
         Cancelar
       </UButton>
       <UButton
-        v-if="eligible"
+        v-else
+        color="neutral"
+        variant="ghost"
+        :disabled="relationships.isSubmitting.value"
+        @click="returnToLookup"
+      >
+        Voltar
+      </UButton>
+      <UButton
+        v-if="eligible && step === 'lookup'"
+        :disabled="!canContinue || relationships.isSearching.value"
+        @click="continueToDetails"
+      >
+        Continuar
+      </UButton>
+      <UButton
+        v-else-if="eligible"
         :loading="relationships.isSubmitting.value"
         :disabled="relationships.isSubmitting.value"
         @click="submit"
@@ -285,30 +352,35 @@ async function submit() {
   display: grid;
   gap: 20px;
 
-  &__modes {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 5px;
-    padding: 4px;
-    border-radius: 12px;
-    background: var(--color-surface-canvas);
-  }
-
-  &__modes button {
-    min-height: 42px;
-    border: 0;
-    border-radius: 9px;
-    background: transparent;
-    color: var(--ink-soft);
-    font-size: 0.82rem;
-    font-weight: 800;
-    cursor: pointer;
-  }
-
-  &__modes button[aria-pressed="true"] {
-    background: white;
+  &__step {
+    margin: 0;
     color: var(--color-brand-strong);
-    box-shadow: var(--shadow-xs);
+    font-size: 0.75rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  &__target {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 10px;
+    padding: 11px;
+    border: 1px solid var(--color-brand);
+    border-radius: 12px;
+    background: var(--mint);
+  }
+
+  &__target strong,
+  &__target small {
+    display: block;
+  }
+
+  &__target small {
+    margin-bottom: 2px;
+    color: var(--ink-soft);
+    font-size: 0.76rem;
   }
 
   &__context {
@@ -342,7 +414,6 @@ async function submit() {
 }
 
 @media (width <= 620px) {
-  .relationship-create-dialog__modes,
   .relationship-create-dialog__context {
     grid-template-columns: 1fr;
   }

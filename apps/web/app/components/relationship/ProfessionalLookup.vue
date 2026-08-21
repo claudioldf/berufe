@@ -1,16 +1,23 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import type { ProfessionalRelationshipCandidate } from "~/services/api/professional-relationships";
 
 const query = defineModel<string>("query", { required: true });
 const selectedId = defineModel<string | null>("selectedId", { required: true });
-defineProps<{
+const props = defineProps<{
   candidates: readonly ProfessionalRelationshipCandidate[];
   searching: boolean;
+  searchSettled: boolean;
+  searchError: string;
 }>();
+
+const selectedCandidate = computed(() =>
+  props.candidates.find((candidate) => candidate.id === selectedId.value),
+);
 </script>
 
 <template>
-  <div class="existing-professional-form">
+  <div class="professional-lookup">
     <DesignSystemFormField
       id="relationship-professional-search"
       label="Nome do profissional"
@@ -24,26 +31,49 @@ defineProps<{
         type="search"
         autocomplete="off"
         placeholder="Ex.: Rafael Oliveira"
+        minlength="2"
+        maxlength="70"
+        required
       />
     </DesignSystemFormField>
 
     <p
       v-if="searching"
-      class="existing-professional-form__feedback"
+      class="professional-lookup__feedback"
       aria-live="polite"
     >
       Buscando profissionais…
     </p>
+    <p
+      v-else-if="searchError"
+      class="professional-lookup__warning"
+      role="status"
+    >
+      {{ searchError }} Você ainda pode continuar e informar o telefone.
+    </p>
+
+    <div v-if="selectedCandidate" class="professional-lookup__selection">
+      <DesignSystemAvatar
+        :name="selectedCandidate.displayName"
+        :src="selectedCandidate.photoUrl ?? undefined"
+        size="sm"
+        shape="rounded"
+      />
+      <span>
+        <small>Profissional selecionado</small>
+        <strong>{{ selectedCandidate.displayName }}</strong>
+      </span>
+      <button type="button" @click="selectedId = null">Trocar</button>
+    </div>
     <div
       v-else-if="candidates.length"
-      class="existing-professional-form__results"
+      class="professional-lookup__results"
       aria-label="Profissionais encontrados"
     >
       <button
         v-for="candidate in candidates"
         :key="candidate.id"
         type="button"
-        :aria-pressed="selectedId === candidate.id"
         @click="selectedId = candidate.id"
       >
         <DesignSystemAvatar
@@ -62,34 +92,48 @@ defineProps<{
             }}
           </small>
         </span>
-        <UIcon
-          :name="
-            selectedId === candidate.id
-              ? 'i-lucide-circle-check'
-              : 'i-lucide-circle'
-          "
-          aria-hidden="true"
-        />
+        <UIcon name="i-lucide-circle" aria-hidden="true" />
       </button>
+      <p class="professional-lookup__guidance">
+        Se não for nenhum deles, continue sem selecionar para informar o
+        telefone.
+      </p>
     </div>
     <p
-      v-else-if="query.trim().length >= 2"
-      class="existing-professional-form__feedback"
+      v-else-if="searchSettled && query.trim().length >= 3"
+      class="professional-lookup__feedback"
     >
-      Nenhum profissional encontrado. Você pode adicioná-lo pelo telefone.
+      Nenhum perfil encontrado. Continue para informar o telefone.
+    </p>
+    <p
+      v-else-if="searchSettled && query.trim().length === 2"
+      class="professional-lookup__feedback"
+    >
+      Continue digitando o nome completo.
     </p>
   </div>
 </template>
 
 <style scoped lang="scss">
-.existing-professional-form {
+.professional-lookup {
   display: grid;
   gap: 12px;
 
-  &__feedback {
+  &__feedback,
+  &__warning,
+  &__guidance {
     margin: 0;
     color: var(--ink-soft);
     font-size: 0.84rem;
+    line-height: 1.45;
+  }
+
+  &__warning {
+    color: var(--color-warning-strong);
+  }
+
+  &__guidance {
+    text-align: center;
   }
 
   &__results {
@@ -97,7 +141,8 @@ defineProps<{
     gap: 8px;
   }
 
-  &__results button {
+  &__results > button,
+  &__selection {
     display: grid;
     grid-template-columns: auto 1fr auto;
     align-items: center;
@@ -109,21 +154,36 @@ defineProps<{
     background: white;
     color: var(--ink);
     text-align: left;
+  }
+
+  &__results > button {
     cursor: pointer;
   }
 
-  &__results button[aria-pressed="true"] {
+  &__selection {
     border-color: var(--color-brand);
     background: var(--mint);
   }
 
+  &__selection > button {
+    border: 0;
+    background: transparent;
+    color: var(--color-brand-strong);
+    font-size: 0.78rem;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  &__selection strong,
+  &__selection small,
   &__results strong,
   &__results small {
     display: block;
   }
 
+  &__selection small,
   &__results small {
-    margin-top: 2px;
+    margin-bottom: 2px;
     color: var(--ink-soft);
     font-size: 0.76rem;
   }

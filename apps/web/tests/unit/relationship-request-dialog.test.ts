@@ -11,8 +11,10 @@ const mocks = vi.hoisted(() => ({
   state: {
     isSubmitting: { value: false },
     error: { value: "" },
+    searchError: { value: "" },
     candidates: { value: [] },
     isSearching: { value: false },
+    searchedQuery: { value: "" },
   },
 }));
 
@@ -110,19 +112,44 @@ describe("relationship create dialog", () => {
     vi.clearAllMocks();
     mocks.state.isSubmitting.value = false;
     mocks.state.error.value = "";
+    mocks.state.searchError.value = "";
+    mocks.state.candidates.value = [];
+    mocks.state.isSearching.value = false;
+    mocks.state.searchedQuery.value = "";
     mocks.requestRelationship.mockResolvedValue(createdRelationship);
   });
 
-  it("creates an external target with normalized phone, optional supply, and explicit attestation", async () => {
+  it("removes the upfront mode choice and creates an external target on the second step", async () => {
+    mocks.state.searchedQuery.value = "Beto Lima";
     const wrapper = await mountDialog();
+    expect(wrapper.text()).not.toContain("Já está na Berufe");
+    expect(wrapper.text()).not.toContain("Adicionar pelo telefone");
+    expect(wrapper.text()).toContain("Etapa 1 de 2");
+
     await wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("Adicionar pelo telefone"))!
+      .get('input[name="professional-search"]')
+      .setValue("Beto Lima");
+    await wrapper
+      .findAll("footer button")
+      .find((button) => button.text().includes("Continuar"))!
       .trigger("click");
-    await wrapper.get('input[name="external-name"]').setValue("Beto Lima");
+    expect(wrapper.text()).toContain("Etapa 2 de 2");
     await wrapper
       .get('input[name="external-phone"]')
       .setValue("(47) 99999-1234");
+    await wrapper
+      .findAll("footer button")
+      .find((button) => button.text().includes("Voltar"))!
+      .trigger("click");
+    expect(wrapper.find('input[name="external-phone"]').exists()).toBe(false);
+    await wrapper
+      .findAll("footer button")
+      .find((button) => button.text().includes("Continuar"))!
+      .trigger("click");
+    expect(
+      wrapper.get<HTMLInputElement>('input[name="external-phone"]').element
+        .value,
+    ).toBe("(47) 99999-1234");
     await wrapper
       .get(`input[value="cc1e5dfa-36a2-4f13-b37c-d1a3f9d25460"]`)
       .setValue(true);
@@ -151,6 +178,44 @@ describe("relationship create dialog", () => {
     expect(mocks.showToast).toHaveBeenCalledWith(
       expect.objectContaining({ title: "Solicitação enviada" }),
     );
+  });
+
+  it("continues with a selected Berufe professional without asking for a phone", async () => {
+    mocks.state.candidates.value = [
+      {
+        id: createdRelationship.recipient.id,
+        publicSlug: createdRelationship.recipient.publicSlug,
+        displayName: createdRelationship.recipient.displayName,
+        profileType: "self_service",
+        photoUrl: null,
+      },
+    ];
+    const wrapper = await mountDialog();
+    await wrapper
+      .get('input[name="professional-search"]')
+      .setValue("Beto Lima");
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("Beto Lima"))!
+      .trigger("click");
+    await wrapper
+      .findAll("footer button")
+      .find((button) => button.text().includes("Continuar"))!
+      .trigger("click");
+    await wrapper
+      .findAll("footer button")
+      .find((button) => button.text().includes("Enviar solicitação"))!
+      .trigger("click");
+
+    expect(wrapper.find('input[name="external-phone"]').exists()).toBe(false);
+    expect(mocks.requestRelationship).toHaveBeenCalledWith({
+      target: {
+        type: "profile",
+        professionalProfileId: createdRelationship.recipient.id,
+      },
+      relationshipType: "recommendation",
+      contextNote: "",
+    });
   });
 
   it("blocks submission when the account is not eligible", async () => {

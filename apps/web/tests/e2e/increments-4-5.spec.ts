@@ -165,6 +165,7 @@ test("existing members publish a relationship by confirming it together", async 
   await requestDialog
     .getByRole("button", { name: new RegExp(recipient.name) })
     .click();
+  await requestDialog.getByRole("button", { name: "Continuar" }).click();
   await requestDialog.getByLabel("Contexto").fill(note);
   const requestResponse = page.waitForResponse(
     (response) =>
@@ -240,6 +241,7 @@ test("existing members publish a relationship by confirming it together", async 
   await replacementDialog
     .getByRole("button", { name: new RegExp(recipient.name) })
     .click();
+  await replacementDialog.getByRole("button", { name: "Continuar" }).click();
   await replacementDialog.getByLabel("Contexto").fill(replacementNote);
   const replacementResponse = page.waitForResponse(
     (response) =>
@@ -304,8 +306,8 @@ test("an indicated professional claims the external profile and publishes the co
   const dialog = page.getByRole("dialog", {
     name: "Adicionar relação profissional",
   });
-  await dialog.getByRole("button", { name: "Adicionar pelo telefone" }).click();
-  await dialog.getByLabel("Nome profissional").fill(externalName);
+  await dialog.getByLabel("Nome do profissional").fill(externalName);
+  await dialog.getByRole("button", { name: "Continuar" }).click();
   await dialog.getByLabel("Celular com DDD").fill(externalPhone);
   await dialog.getByLabel(externalService.name, { exact: true }).check();
   await dialog

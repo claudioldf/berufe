@@ -120,5 +120,25 @@ describe("professional relationship workflow", () => {
     expect(search).toHaveBeenNthCalledWith(2, "Beto");
     expect(workflow.candidates.value).toEqual([latest]);
     expect(workflow.isSearching.value).toBe(false);
+    expect(workflow.searchedQuery.value).toBe("Beto");
+    expect(workflow.searchError.value).toBe("");
+  });
+
+  it("keeps search failures separate so the phone step remains available", async () => {
+    const failure = new ApiRequestError({
+      code: "search_unavailable",
+      message: "A busca está indisponível.",
+      fieldErrors: {},
+      requestId: "search-failure",
+    });
+    const workflow = useProfessionalRelationships({
+      search: vi.fn().mockRejectedValue(failure),
+    });
+
+    await expect(workflow.searchCandidates("Beto Lima")).rejects.toBe(failure);
+
+    expect(workflow.searchError.value).toBe("A busca está indisponível.");
+    expect(workflow.error.value).toBe("");
+    expect(workflow.searchedQuery.value).toBe("Beto Lima");
   });
 });

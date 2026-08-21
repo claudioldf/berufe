@@ -4,7 +4,6 @@ import type { Neighborhood, Service } from "~/types";
 export type ExternalCoverageMode =
   "not_informed" | "all_joinville" | "neighborhoods";
 
-const name = defineModel<string>("name", { required: true });
 const phone = defineModel<string>("phone", { required: true });
 const serviceIds = defineModel<string[]>("serviceIds", { required: true });
 const coverageMode = defineModel<ExternalCoverageMode>("coverageMode", {
@@ -16,57 +15,42 @@ const neighborhoodCodes = defineModel<string[]>("neighborhoodCodes", {
 const attested = defineModel<boolean>("attested", { required: true });
 
 defineProps<{
+  name: string;
   services: Service[];
   neighborhoods: Neighborhood[];
 }>();
 </script>
 
 <template>
-  <div class="external-professional-form">
-    <p class="external-professional-form__intro">
-      Criaremos um perfil básico para que o profissional possa confirmar a
-      relação e completar os dados depois.
+  <div class="external-professional-details">
+    <p class="external-professional-details__intro">
+      Informe o telefone de <strong>{{ name }}</strong
+      >. Se ainda não houver uma conta com esse número, criaremos um perfil
+      básico para que o profissional possa confirmar a relação e completar os
+      dados depois.
     </p>
 
-    <div class="external-professional-form__identity">
-      <DesignSystemFormField
-        id="external-professional-name"
-        label="Nome profissional"
-        required
-      >
-        <input
-          id="external-professional-name"
-          v-model="name"
-          name="external-name"
-          type="text"
-          autocomplete="name"
-          minlength="3"
-          maxlength="70"
-          required
-        />
-      </DesignSystemFormField>
-      <DesignSystemFormField
+    <DesignSystemFormField
+      id="external-professional-phone"
+      label="Celular com DDD"
+      hint="O número não será exibido publicamente"
+      required
+    >
+      <input
         id="external-professional-phone"
-        label="Celular com DDD"
-        hint="O número não será exibido publicamente"
+        v-model="phone"
+        name="external-phone"
+        type="tel"
+        inputmode="tel"
+        autocomplete="tel-national"
+        placeholder="(47) 99999-9999"
         required
-      >
-        <input
-          id="external-professional-phone"
-          v-model="phone"
-          name="external-phone"
-          type="tel"
-          inputmode="tel"
-          autocomplete="tel-national"
-          placeholder="(47) 99999-9999"
-          required
-        />
-      </DesignSystemFormField>
-    </div>
+      />
+    </DesignSystemFormField>
 
-    <fieldset class="external-professional-form__fieldset">
+    <fieldset class="external-professional-details__fieldset">
       <legend>Serviços <small>Opcional</small></legend>
-      <div class="external-professional-form__options">
+      <div class="external-professional-details__options">
         <label v-for="service in services" :key="service.id">
           <input v-model="serviceIds" type="checkbox" :value="service.id" />
           <span>{{ service.name }}</span>
@@ -74,9 +58,9 @@ defineProps<{
       </div>
     </fieldset>
 
-    <fieldset class="external-professional-form__fieldset">
+    <fieldset class="external-professional-details__fieldset">
       <legend>Área de atendimento <small>Opcional</small></legend>
-      <div class="external-professional-form__radios">
+      <div class="external-professional-details__radios">
         <label>
           <input v-model="coverageMode" type="radio" value="not_informed" />
           Não informada
@@ -92,7 +76,7 @@ defineProps<{
       </div>
       <div
         v-if="coverageMode === 'neighborhoods'"
-        class="external-professional-form__options external-professional-form__options--neighborhoods"
+        class="external-professional-details__options external-professional-details__options--neighborhoods"
       >
         <label v-for="neighborhood in neighborhoods" :key="neighborhood.code">
           <input
@@ -105,7 +89,7 @@ defineProps<{
       </div>
     </fieldset>
 
-    <label class="external-professional-form__consent">
+    <label class="external-professional-details__consent">
       <input
         v-model="attested"
         name="external-contact-consent"
@@ -120,7 +104,7 @@ defineProps<{
 </template>
 
 <style scoped lang="scss">
-.external-professional-form {
+.external-professional-details {
   display: grid;
   gap: 18px;
 
@@ -132,12 +116,6 @@ defineProps<{
     color: var(--color-brand-strong);
     font-size: 0.82rem;
     line-height: 1.5;
-  }
-
-  &__identity {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
   }
 
   &__fieldset {
@@ -192,8 +170,7 @@ defineProps<{
 }
 
 @media (width <= 620px) {
-  .external-professional-form__identity,
-  .external-professional-form__options {
+  .external-professional-details__options {
     grid-template-columns: 1fr;
   }
 }
