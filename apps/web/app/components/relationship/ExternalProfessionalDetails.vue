@@ -22,12 +22,12 @@ defineProps<{
 
 <template>
   <div class="external-professional-details">
-    <p class="external-professional-details__intro">
+    <!-- <p class="external-professional-details__intro">
       Informe o telefone de <strong>{{ name }}</strong
       >. Se ainda não houver uma conta com esse número, criaremos um perfil
       básico para que o profissional possa confirmar a relação e completar os
       dados depois.
-    </p>
+    </p> -->
 
     <DesignSystemFormField
       id="external-professional-phone"
@@ -128,10 +128,14 @@ defineProps<{
 
   &__options {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 7px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
     max-height: 180px;
     overflow: auto;
+  }
+
+  &__options label {
+    padding: 2px 0;
   }
 
   &__options label,
