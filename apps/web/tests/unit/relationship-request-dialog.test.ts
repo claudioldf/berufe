@@ -164,6 +164,9 @@ describe("relationship create dialog", () => {
     const search = wrapper.get('input[name="professional-search"]');
 
     expect(search.attributes("type")).toBe("text");
+    expect(search.attributes("placeholder")).toBe(
+      "Digite o nome do profissional aqui...",
+    );
     expect(search.attributes("aria-busy")).toBe("true");
     expect(wrapper.find(".professional-lookup__loader").exists()).toBe(true);
     expect(wrapper.find(".professional-lookup__feedback").exists()).toBe(false);
@@ -216,6 +219,11 @@ describe("relationship create dialog", () => {
       .findAll("footer button")
       .find((button) => button.text().includes("Continuar"))!
       .trigger("click");
+    expect(wrapper.text()).toContain(
+      "Qual o serviço esse profissional oferece?",
+    );
+    expect(wrapper.text()).toContain("Qual região ele atende?");
+    expect(wrapper.text()).toContain("Não sei");
     await wrapper
       .get('input[name="external-phone"]')
       .setValue("(47) 99999-1234");

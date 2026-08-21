@@ -49,7 +49,9 @@ defineProps<{
     </DesignSystemFormField>
 
     <fieldset class="external-professional-details__fieldset">
-      <legend>Serviços <small>Opcional</small></legend>
+      <legend>
+        Qual o serviço esse profissional oferece? <small>Opcional</small>
+      </legend>
       <div class="external-professional-details__options">
         <label v-for="service in services" :key="service.id">
           <input v-model="serviceIds" type="checkbox" :value="service.id" />
@@ -59,11 +61,11 @@ defineProps<{
     </fieldset>
 
     <fieldset class="external-professional-details__fieldset">
-      <legend>Área de atendimento <small>Opcional</small></legend>
+      <legend>Qual região ele atende? <small>Opcional</small></legend>
       <div class="external-professional-details__radios">
         <label>
           <input v-model="coverageMode" type="radio" value="not_informed" />
-          Não informada
+          Não sei
         </label>
         <label>
           <input v-model="coverageMode" type="radio" value="all_joinville" />

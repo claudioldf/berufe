@@ -48,7 +48,7 @@ function clearSelection() {
           name="professional-search"
           type="text"
           autocomplete="off"
-          placeholder="Ex.: Rafael Oliveira"
+          placeholder="Digite o nome do profissional aqui..."
           minlength="2"
           maxlength="70"
           required

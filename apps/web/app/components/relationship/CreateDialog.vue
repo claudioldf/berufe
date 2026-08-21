@@ -189,7 +189,7 @@ async function submit() {
       externalNeighborhoodCodes.value.length === 0
     ) {
       validationError.value =
-        "Selecione ao menos um bairro ou marque a área como não informada.";
+        'Selecione ao menos um bairro ou marque "Não sei".';
       return;
     }
     if (!externalAttested.value) {
@@ -404,7 +404,7 @@ async function submit() {
 
   &__context {
     display: grid;
-    grid-template-columns: minmax(190px, 0.7fr) 1.3fr;
+    grid-template-columns: 1fr;
     gap: 12px;
     padding-top: 18px;
     border-top: 1px solid var(--line);
@@ -429,12 +429,6 @@ async function submit() {
   &__eligibility p {
     margin: 0;
     line-height: 1.5;
-  }
-}
-
-@media (width <= 620px) {
-  .relationship-create-dialog__context {
-    grid-template-columns: 1fr;
   }
 }
 </style>
