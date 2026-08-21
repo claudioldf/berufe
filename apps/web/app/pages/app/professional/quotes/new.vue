@@ -67,15 +67,35 @@ const professional = computed<QuoteProfessional | null>(() => {
 });
 const shareEnabled = computed(() => {
   const workspace = editor.data.value?.workspace;
-  return Boolean(quote.value?.id && workspace?.profile.isPublic);
+  return Boolean(
+    quote.value?.id &&
+    quote.value.status !== "approved" &&
+    workspace?.profile.isPublic,
+  );
+});
+const quoteStatusLabel = computed(() => {
+  const labels = {
+    draft: "Rascunho",
+    shared: "Aguardando cliente",
+    change_requested: "Alteração solicitada",
+    approved: "Aprovado",
+    declined: "Recusado",
+  } as const;
+  return quote.value ? labels[quote.value.status] : "Rascunho";
 });
 
 function createEmptyQuote(): Quote {
   return {
     id: null,
     number: null,
+    revision: 0,
+    customerId: null,
     customerName: "",
+    customerPhone: "",
+    customerEmail: "",
     serviceDescription: "",
+    serviceAddress: "",
+    scheduledOn: "",
     validUntil: "",
     discount: 0,
     notes: "",
@@ -85,6 +105,9 @@ function createEmptyQuote(): Quote {
     sharedAt: null,
     createdAt: null,
     updatedAt: null,
+    customerDecisionMessage: "",
+    changeRequests: [],
+    serviceJob: null,
     items: [
       {
         id: globalThis.crypto.randomUUID(),
@@ -210,12 +233,7 @@ async function revokeShare() {
             </h1>
             <p>Crie, revise e compartilhe um link seguro com seu cliente.</p>
           </div>
-          <span
-            ><DesignSystemStatusDot />
-            {{
-              quote?.status === "shared" ? "Compartilhado" : "Rascunho"
-            }}</span
-          >
+          <span><DesignSystemStatusDot /> {{ quoteStatusLabel }}</span>
         </div>
       </DesignSystemContainer>
     </section>

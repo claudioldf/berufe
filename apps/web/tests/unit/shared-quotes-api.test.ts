@@ -7,13 +7,19 @@ type SharedProfessional = components["schemas"]["SharedQuoteProfessional"];
 
 const quote: SharedQuote = {
   quote_number: 12,
+  revision: 2,
+  status: "shared",
   customer_name: "Ana Paula",
   service_description: "Iluminação da cozinha",
+  service_address: "Rua das Flores, 10",
+  scheduled_on: "2026-08-22",
   valid_until: "2026-01-01",
   notes: "Materiais definidos.",
   subtotal_amount: "13.33",
   discount_amount: "1.33",
   total_amount: "12.00",
+  customer_decision_message: null,
+  service_job: null,
   items: [
     {
       description: "Material",
@@ -58,8 +64,14 @@ describe("shared quote API", () => {
       quote: {
         id: null,
         number: 12,
+        revision: 2,
+        customerId: null,
         customerName: "Ana Paula",
+        customerPhone: "",
+        customerEmail: "",
         serviceDescription: "Iluminação da cozinha",
+        serviceAddress: "Rua das Flores, 10",
+        scheduledOn: "2026-08-22",
         validUntil: "2026-01-01",
         discount: 1.33,
         notes: "Materiais definidos.",
@@ -69,6 +81,9 @@ describe("shared quote API", () => {
         sharedAt: null,
         createdAt: null,
         updatedAt: null,
+        customerDecisionMessage: "",
+        changeRequests: [],
+        serviceJob: null,
         items: [
           {
             id: "shared-12-0",

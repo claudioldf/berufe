@@ -66,6 +66,16 @@ function itemTotal(index: number) {
     <section class="quote-preview__service">
       <span>Serviço</span>
       <h1>{{ quote.serviceDescription || "Descrição do serviço" }}</h1>
+      <dl v-if="quote.scheduledOn || quote.serviceAddress">
+        <div v-if="quote.scheduledOn">
+          <dt>Data combinada</dt>
+          <dd>{{ formatDate(quote.scheduledOn) }}</dd>
+        </div>
+        <div v-if="quote.serviceAddress">
+          <dt>Local</dt>
+          <dd>{{ quote.serviceAddress }}</dd>
+        </div>
+      </dl>
     </section>
     <section class="quote-preview__items">
       <div class="quote-preview__item quote-preview__item--head">
@@ -218,6 +228,24 @@ function itemTotal(index: number) {
     font-size: 1.3rem;
     font-weight: 500;
     line-height: 1.25;
+  }
+  &__service dl {
+    display: grid;
+    gap: 7px;
+    margin: 12px 0 0;
+  }
+  &__service dl > div {
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    gap: 8px;
+    font-size: 0.82rem;
+  }
+  &__service dt {
+    color: var(--ink-soft);
+    font-weight: 800;
+  }
+  &__service dd {
+    margin: 0;
   }
   &__items {
     padding: 0 22px;

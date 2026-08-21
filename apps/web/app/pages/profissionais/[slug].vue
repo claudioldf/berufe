@@ -183,7 +183,10 @@ async function shareProfile() {
         @contact="announceContact"
         @share="shareProfile"
       />
-      <ProfileEvidenceStrip :evidence="professional.evidence" />
+      <ProfileEvidenceStrip
+        :evidence="professional.evidence"
+        :summary="professional.evidenceSummary"
+      />
 
       <DesignSystemContainer class="profile-content">
         <ProfileDetails
@@ -197,6 +200,10 @@ async function shareProfile() {
           @contact="announceContact"
         />
       </DesignSystemContainer>
+
+      <ProfileCustomerRecommendations
+        :recommendations="professional.customerRecommendations"
+      />
 
       <ProfileMobileContact
         :professional="professional"

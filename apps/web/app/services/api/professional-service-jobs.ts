@@ -1,0 +1,100 @@
+import type { BerufeApiClient } from "~/services/api/client";
+import { ApiRequestError, normalizeApiError } from "~/services/api/errors";
+import type { components } from "~/services/api/schema";
+import type { ProfessionalServiceJob } from "~/types";
+import { formatBrazilianMobilePhone } from "~/utils/brazilian-phone";
+
+type ContractServiceJob = components["schemas"]["ProfessionalServiceJob"];
+
+function requestError(error: unknown, response: Response) {
+  return new ApiRequestError(
+    normalizeApiError(error, response.headers.get("X-Request-Id") ?? "client"),
+  );
+}
+
+export function mapProfessionalServiceJob(
+  job: ContractServiceJob,
+): ProfessionalServiceJob {
+  return {
+    id: job.id,
+    status: job.status,
+    quote: {
+      id: job.quote.id,
+      number: job.quote.quote_number,
+      customerName: job.quote.customer_name,
+      customerPhone: formatBrazilianMobilePhone(job.quote.customer_phone_e164),
+      customerEmail: job.quote.customer_email ?? "",
+      serviceDescription: job.quote.service_description,
+      serviceAddress: job.quote.service_address ?? "",
+      scheduledOn: job.quote.scheduled_on ?? "",
+      total: Number(job.quote.total_amount),
+    },
+    completionRequestedAt: job.completion_requested_at,
+    completionIssueAt: job.completion_issue_at,
+    completionIssueMessage: job.completion_issue_message ?? "",
+    completedAt: job.completed_at,
+    cancelledAt: job.cancelled_at,
+    cancellationReason: job.cancellation_reason ?? "",
+    recommendationRequestStatus: job.recommendation_request_status,
+    createdAt: job.created_at,
+    updatedAt: job.updated_at,
+  };
+}
+
+export async function fetchProfessionalServiceJobs(
+  client: BerufeApiClient,
+): Promise<ProfessionalServiceJob[]> {
+  const { data, error, response } = await client.GET(
+    "/api/v1/professional/service-jobs",
+  );
+  if (error || !data) throw requestError(error, response);
+  return data.data.service_jobs.map(mapProfessionalServiceJob);
+}
+
+export async function fetchProfessionalServiceJob(
+  client: BerufeApiClient,
+  id: string,
+): Promise<ProfessionalServiceJob> {
+  const { data, error, response } = await client.GET(
+    "/api/v1/professional/service-jobs/{id}",
+    { params: { path: { id } } },
+  );
+  if (error || !data) throw requestError(error, response);
+  return mapProfessionalServiceJob(data.data.service_job);
+}
+
+export async function requestProfessionalServiceCompletion(
+  client: BerufeApiClient,
+  id: string,
+): Promise<{
+  serviceJob: ProfessionalServiceJob;
+  shareUrl: string;
+  whatsappUrl: string;
+}> {
+  const { data, error, response } = await client.POST(
+    "/api/v1/professional/service-jobs/{id}/completion-request",
+    { params: { path: { id } } },
+  );
+  if (error || !data) throw requestError(error, response);
+  return {
+    serviceJob: mapProfessionalServiceJob(data.data.service_job),
+    shareUrl: data.data.share_url,
+    whatsappUrl: data.data.whatsapp_url,
+  };
+}
+
+export async function cancelProfessionalServiceJob(
+  client: BerufeApiClient,
+  id: string,
+  reason: string,
+): Promise<ProfessionalServiceJob> {
+  const { data, error, response } = await client.POST(
+    "/api/v1/professional/service-jobs/{id}/cancel",
+    {
+      params: { path: { id } },
+      body: { cancellation: { reason: reason.trim() || null } },
+    },
+  );
+  if (error || !data) throw requestError(error, response);
+  return mapProfessionalServiceJob(data.data.service_job);
+}

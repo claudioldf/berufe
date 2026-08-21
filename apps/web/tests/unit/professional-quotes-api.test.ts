@@ -13,8 +13,19 @@ type ContractQuote = components["schemas"]["ProfessionalQuote"];
 const contractQuote: ContractQuote = {
   id: "50e943de-3761-41cf-95c6-1fd12d6d3802",
   quote_number: 7,
+  revision: 0,
+  customer: {
+    id: "a3f42858-40bc-4bda-bb66-35f32eece27c",
+    name: "Ana Paula",
+    whatsapp_e164: "+5547999991111",
+    email: "ana@example.com",
+  },
   customer_name: "Ana Paula",
+  customer_phone_e164: "+5547999991111",
+  customer_email: "ana@example.com",
   service_description: "Adequação elétrica",
+  service_address: "Rua das Flores, 10",
+  scheduled_on: "2026-08-22",
   valid_until: "2026-08-25",
   notes: "Materiais a definir.",
   status: "draft",
@@ -22,6 +33,17 @@ const contractQuote: ContractQuote = {
   discount_amount: "1.33",
   total_amount: "12.00",
   shared_at: null,
+  customer_decided_at: null,
+  customer_decision_message: null,
+  change_requests: [
+    {
+      id: "51bf6ec3-b1f8-47f0-9aae-27f9c9a157d8",
+      revision: 2,
+      message: "Trocar uma luminária de lugar.",
+      requested_at: "2026-08-18T12:00:30Z",
+    },
+  ],
+  service_job: null,
   created_at: "2026-08-18T12:00:00Z",
   updated_at: "2026-08-18T12:01:00Z",
   items: [
@@ -64,9 +86,20 @@ describe("professional quote API", () => {
     expect(mapProfessionalQuote(contractQuote)).toMatchObject({
       id: contractQuote.id,
       number: 7,
+      revision: 0,
+      customerId: contractQuote.customer.id,
+      customerPhone: "(47) 99999-1111",
+      customerEmail: "ana@example.com",
       subtotal: 13.33,
       discount: 1.33,
       total: 12,
+      changeRequests: [
+        {
+          revision: 2,
+          message: "Trocar uma luminária de lugar.",
+          requestedAt: "2026-08-18T12:00:30Z",
+        },
+      ],
       items: [
         { description: "Material", quantity: 0.333, lineTotal: 3.33 },
         { description: "Serviço", quantity: 1, lineTotal: 10 },
@@ -77,6 +110,7 @@ describe("professional quote API", () => {
   it("creates a quote without sending browser-calculated totals", async () => {
     const client = clientReturning("POST");
     const draft = mapProfessionalQuote(contractQuote);
+    draft.id = null;
     draft.subtotal = 9999;
     draft.total = 1;
     draft.items[0]!.lineTotal = 777;
@@ -90,8 +124,15 @@ describe("professional quote API", () => {
     expect(client.POST).toHaveBeenCalledWith("/api/v1/professional/quotes", {
       body: {
         quote: {
-          customer_name: "Ana Paula",
+          customer: {
+            id: contractQuote.customer.id,
+            name: "Ana Paula",
+            whatsapp_e164: "+5547999991111",
+            email: "ana@example.com",
+          },
           service_description: "Adequação elétrica",
+          service_address: "Rua das Flores, 10",
+          scheduled_on: "2026-08-22",
           discount_amount: 1.33,
           valid_until: "2026-08-25",
           notes: "Materiais a definir.",

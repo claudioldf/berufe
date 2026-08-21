@@ -11,8 +11,14 @@ import {
 const source: Quote = {
   id: "0fd22016-3021-46cc-8e31-a83e2f2d9180",
   number: 1043,
+  revision: 0,
+  customerId: "a3f42858-40bc-4bda-bb66-35f32eece27c",
   customerName: "Ana Paula",
+  customerPhone: "(47) 99999-1111",
+  customerEmail: "ana@example.com",
   serviceDescription: "Adequação elétrica",
+  serviceAddress: "Rua das Flores, 10",
+  scheduledOn: "2026-08-22",
   validUntil: "2026-08-25",
   discount: 75,
   notes: "Materiais a definir.",
@@ -22,6 +28,9 @@ const source: Quote = {
   sharedAt: null,
   createdAt: "2026-08-18T12:00:00Z",
   updatedAt: "2026-08-18T12:00:00Z",
+  customerDecisionMessage: "",
+  changeRequests: [],
+  serviceJob: null,
   items: [
     {
       id: "9e918053-d334-45e2-ae6c-3eeb28240438",

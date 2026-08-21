@@ -6,8 +6,14 @@ import type { Quote, QuoteProfessional } from "~/types";
 const quote: Quote = {
   id: "4ec62fe9-f61a-4df0-967f-628cd9a05486",
   number: 12,
+  revision: 0,
+  customerId: "a3f42858-40bc-4bda-bb66-35f32eece27c",
   customerName: "Ana Paula",
+  customerPhone: "(47) 99999-1111",
+  customerEmail: "ana@example.com",
   serviceDescription: "Iluminação da cozinha",
+  serviceAddress: "Rua das Flores, 10",
+  scheduledOn: "2026-08-22",
   validUntil: "2026-08-25",
   discount: 0,
   notes: "",
@@ -17,6 +23,9 @@ const quote: Quote = {
   sharedAt: null,
   createdAt: "2026-08-18T12:00:00Z",
   updatedAt: "2026-08-18T12:00:00Z",
+  customerDecisionMessage: "",
+  changeRequests: [],
+  serviceJob: null,
   items: [
     {
       id: "0cfa24cf-dd67-4ff5-b0ea-e9812fa97766",
@@ -61,6 +70,8 @@ describe("quote share controls", () => {
       global: {
         stubs: {
           DashboardQuoteCustomerFields: true,
+          DashboardQuoteServiceFields: true,
+          DashboardQuoteChangeRequests: true,
           DashboardQuoteLineItemsEditor: true,
           DashboardQuoteNotesField: true,
           DashboardQuoteSaveBar: true,
@@ -103,6 +114,8 @@ describe("quote share controls", () => {
       global: {
         stubs: {
           DashboardQuoteCustomerFields: true,
+          DashboardQuoteServiceFields: true,
+          DashboardQuoteChangeRequests: true,
           DashboardQuoteLineItemsEditor: true,
           DashboardQuoteNotesField: true,
           DashboardQuoteSaveBar: true,

@@ -86,7 +86,7 @@ describe("application header", () => {
 
     expect(wrapper.classes()).toContain("header--workspace");
     expect(wrapper.text()).toContain("Visão geral");
-    expect(wrapper.text()).toContain("Meu perfil");
+    expect(wrapper.text()).toContain("Gerenciar");
     expect(wrapper.text()).toContain("Orçamentos");
     expect(wrapper.findAll(".logout-stub")).toHaveLength(1);
 

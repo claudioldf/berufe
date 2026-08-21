@@ -1,8 +1,10 @@
 import type { Quote, QuoteItem } from "~/types";
+import { normalizeBrazilianMobilePhone } from "~/utils/brazilian-phone";
 
 export function cloneQuote(quote: Quote): Quote {
   return {
     ...quote,
+    changeRequests: quote.changeRequests.map((request) => ({ ...request })),
     items: quote.items.map((item) => ({ ...item })),
   };
 }
@@ -23,6 +25,9 @@ export function isQuoteValid(quote: Quote) {
   const subtotal = quoteSubtotal(quote);
   return (
     quote.customerName.trim().length > 0 &&
+    Boolean(normalizeBrazilianMobilePhone(quote.customerPhone)) &&
+    (!quote.customerEmail.trim() ||
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(quote.customerEmail.trim())) &&
     quote.serviceDescription.trim().length > 0 &&
     quote.items.length > 0 &&
     quote.items.every(

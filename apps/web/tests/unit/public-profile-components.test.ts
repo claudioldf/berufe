@@ -60,6 +60,12 @@ function professional(
         verifiedAt: "2026-08-16T12:00:00Z",
       },
     ],
+    evidenceSummary: {
+      completedServices: 3,
+      recommendations: 1,
+      workedTogetherProfessionals: 2,
+    },
+    customerRecommendations: [],
     portfolio: [
       {
         id: "b9029f26-f2c1-4001-9696-cf34d7259999",
@@ -188,7 +194,10 @@ describe("public profile components", () => {
       global: { stubs: globalStubs },
     });
     const evidence = await mountSuspended(EvidenceStrip, {
-      props: { evidence: profile.evidence },
+      props: {
+        evidence: profile.evidence,
+        summary: profile.evidenceSummary,
+      },
       global: { stubs: globalStubs },
     });
 
@@ -202,6 +211,7 @@ describe("public profile components", () => {
     expect(details.text()).toContain("não garante a execução");
     expect(evidence.text()).toContain("Telefone confirmado");
     expect(evidence.text()).toContain("Identidade verificada");
+    expect(evidence.text()).toContain("3serviços concluídos");
   });
 
   it("names who authored each professional recommendation", async () => {

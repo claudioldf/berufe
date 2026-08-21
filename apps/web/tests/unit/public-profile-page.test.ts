@@ -44,6 +44,12 @@ const result: PublicProfessionalProfileResult = {
         verifiedAt: null,
       },
     ],
+    evidenceSummary: {
+      completedServices: 0,
+      recommendations: 0,
+      workedTogetherProfessionals: 0,
+    },
+    customerRecommendations: [],
     portfolio: [],
     relationships: [],
     updatedAt: "2026-08-17T12:00:00Z",

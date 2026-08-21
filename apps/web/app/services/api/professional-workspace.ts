@@ -8,6 +8,7 @@ import type { BerufeApiClient } from "~/services/api/client";
 import { ApiRequestError, normalizeApiError } from "~/services/api/errors";
 import type { components } from "~/services/api/schema";
 import { mapProfessionalRelationship } from "~/services/api/professional-relationships";
+import { mapProfessionalServiceJob } from "~/services/api/professional-service-jobs";
 
 type ContractWorkspace = components["schemas"]["ProfessionalWorkspaceData"];
 
@@ -35,12 +36,17 @@ export function mapProfessionalWorkspace(
       recentQuotes: data.dashboard.recent_quotes.map((quote) => ({
         id: quote.id,
         number: quote.quote_number,
+        revision: quote.revision,
         customerName: quote.customer_name,
         serviceDescription: quote.service_description,
         total: Number(quote.total_amount),
         status: quote.status,
+        serviceJobStatus: quote.service_job_status,
         createdAt: quote.created_at,
       })),
+      recentServiceJobs: data.dashboard.recent_service_jobs.map(
+        mapProfessionalServiceJob,
+      ),
     },
     pendingRelationships: data.pending_relationships.map(
       mapProfessionalRelationship,

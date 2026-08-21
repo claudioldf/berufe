@@ -16,7 +16,7 @@ const emit = defineEmits<{
   <DesignSystemSurfaceCard as="section" class="builder-card">
     <header>
       <div>
-        <span>02</span>
+        <span>03</span>
         <div>
           <h2>Itens do orçamento</h2>
           <p>Os totais abaixo são uma prévia da interface.</p>

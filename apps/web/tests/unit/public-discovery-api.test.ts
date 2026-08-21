@@ -77,6 +77,20 @@ const contractProfile: ContractProfessionalProfile = {
   ],
   coverage: contractCard.coverage,
   verification_labels: contractCard.verification_labels,
+  evidence_summary: {
+    completed_services: 3,
+    recommendations: 1,
+    worked_together_professionals: 2,
+  },
+  customer_recommendations: [
+    {
+      id: "8f4c75ae-8450-4b07-873f-29ca65d540e7",
+      display_name: "Marina Costa",
+      recommendation_text: "Serviço cuidadoso e entregue no prazo.",
+      submitted_at: "2026-08-18T12:00:00Z",
+      verification_label: "Link enviado por e-mail",
+    },
+  ],
   portfolio: [
     {
       id: "b9029f26-f2c1-4001-9696-cf34d7259999",
@@ -291,6 +305,20 @@ describe("public discovery API", () => {
         label: label.label,
         verifiedAt: label.verified_at,
       })),
+      evidenceSummary: {
+        completedServices: 3,
+        recommendations: 1,
+        workedTogetherProfessionals: 2,
+      },
+      customerRecommendations: [
+        {
+          id: "8f4c75ae-8450-4b07-873f-29ca65d540e7",
+          displayName: "Marina Costa",
+          text: "Serviço cuidadoso e entregue no prazo.",
+          submittedAt: "2026-08-18T12:00:00Z",
+          verificationLabel: "Link enviado por e-mail",
+        },
+      ],
       portfolio: [
         {
           id: "b9029f26-f2c1-4001-9696-cf34d7259999",
