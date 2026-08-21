@@ -28,6 +28,7 @@ const contextNote = shallowRef("");
 const searchQuery = shallowRef("");
 const selectedProfessionalId = shallowRef<string | null>(null);
 const externalProfessionalSelected = shallowRef(false);
+const candidateSearchPending = shallowRef(false);
 const externalPhone = shallowRef("");
 const externalServiceIds = shallowRef<string[]>([]);
 const externalCoverageMode = shallowRef<ExternalCoverageMode>("not_informed");
@@ -41,6 +42,9 @@ const searchSettled = computed(
     normalizedName.value.length >= 2 &&
     relationships.searchedQuery.value === normalizedName.value &&
     !relationships.isSearching.value,
+);
+const candidateSearchLoading = computed(
+  () => candidateSearchPending.value || relationships.isSearching.value,
 );
 const selectedCandidate = computed(() =>
   relationships.candidates.value.find(
@@ -66,20 +70,38 @@ const modalDescription = computed(() =>
 const error = computed(
   () => validationError.value || relationships.error.value,
 );
+let candidateSearchAttempt = 0;
 
 watch([open, searchQuery], ([isOpen, query], _, onCleanup) => {
+  const searchAttempt = ++candidateSearchAttempt;
   selectedProfessionalId.value = null;
   externalProfessionalSelected.value = false;
+  candidateSearchPending.value = false;
   step.value = "lookup";
   validationError.value = "";
   relationships.clearError();
   relationships.clearCandidates();
 
   const normalized = query.trim();
-  if (!isOpen || normalized.length < 2) return;
+  if (!isOpen || normalized.length === 0) return;
 
+  candidateSearchPending.value = true;
   const timer = window.setTimeout(() => {
-    void relationships.searchCandidates(normalized).catch(() => undefined);
+    if (normalized.length < 2) {
+      if (searchAttempt === candidateSearchAttempt) {
+        candidateSearchPending.value = false;
+      }
+      return;
+    }
+
+    void relationships
+      .searchCandidates(normalized)
+      .catch(() => undefined)
+      .finally(() => {
+        if (searchAttempt === candidateSearchAttempt) {
+          candidateSearchPending.value = false;
+        }
+      });
   }, CANDIDATE_SEARCH_DEBOUNCE_MS);
   onCleanup(() => window.clearTimeout(timer));
 });
@@ -104,6 +126,7 @@ function reset() {
   searchQuery.value = "";
   selectedProfessionalId.value = null;
   externalProfessionalSelected.value = false;
+  candidateSearchPending.value = false;
   externalPhone.value = "";
   externalServiceIds.value = [];
   externalCoverageMode.value = "not_informed";
@@ -235,7 +258,7 @@ async function submit() {
           v-model:selected-id="selectedProfessionalId"
           v-model:external-selected="externalProfessionalSelected"
           :candidates="relationships.candidates.value"
-          :searching="relationships.isSearching.value"
+          :searching="candidateSearchLoading"
           :search-settled="searchSettled"
           :search-error="relationships.searchError.value"
         />
@@ -335,7 +358,7 @@ async function submit() {
       </UButton>
       <UButton
         v-if="eligible && step === 'lookup'"
-        :disabled="!canContinue || relationships.isSearching.value"
+        :disabled="!canContinue || candidateSearchLoading"
         @click="continueToDetails"
       >
         Continuar

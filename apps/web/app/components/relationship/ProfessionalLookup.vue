@@ -46,7 +46,7 @@ function clearSelection() {
           id="relationship-professional-search"
           v-model="query"
           name="professional-search"
-          type="search"
+          type="text"
           autocomplete="off"
           placeholder="Ex.: Rafael Oliveira"
           minlength="2"

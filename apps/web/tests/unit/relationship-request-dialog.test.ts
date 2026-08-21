@@ -107,6 +107,19 @@ async function mountDialog(eligible = true) {
   });
 }
 
+async function enterProfessionalNameAndFinishSearch(
+  wrapper: Awaited<ReturnType<typeof mountDialog>>,
+  name: string,
+) {
+  vi.useFakeTimers();
+  try {
+    await wrapper.get('input[name="professional-search"]').setValue(name);
+    await vi.advanceTimersByTimeAsync(500);
+  } finally {
+    vi.useRealTimers();
+  }
+}
+
 describe("relationship create dialog", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -126,16 +139,20 @@ describe("relationship create dialog", () => {
 
     try {
       const search = wrapper.get('input[name="professional-search"]');
-      await search.setValue("Be");
+      await search.setValue("B");
+      expect(search.attributes("aria-busy")).toBe("true");
+      expect(wrapper.find(".professional-lookup__loader").exists()).toBe(true);
       await vi.advanceTimersByTimeAsync(300);
       await search.setValue("Beto");
       await vi.advanceTimersByTimeAsync(499);
 
       expect(mocks.searchCandidates).not.toHaveBeenCalled();
+      expect(search.attributes("aria-busy")).toBe("true");
 
       await vi.advanceTimersByTimeAsync(1);
       expect(mocks.searchCandidates).toHaveBeenCalledOnce();
       expect(mocks.searchCandidates).toHaveBeenCalledWith("Beto");
+      expect(search.attributes("aria-busy")).toBe("false");
     } finally {
       vi.useRealTimers();
     }
@@ -146,6 +163,7 @@ describe("relationship create dialog", () => {
     const wrapper = await mountDialog();
     const search = wrapper.get('input[name="professional-search"]');
 
+    expect(search.attributes("type")).toBe("text");
     expect(search.attributes("aria-busy")).toBe("true");
     expect(wrapper.find(".professional-lookup__loader").exists()).toBe(true);
     expect(wrapper.find(".professional-lookup__feedback").exists()).toBe(false);
@@ -166,9 +184,7 @@ describe("relationship create dialog", () => {
       },
     ];
     const wrapper = await mountDialog();
-    await wrapper
-      .get('input[name="professional-search"]')
-      .setValue("Beto Lima");
+    await enterProfessionalNameAndFinishSearch(wrapper, "Beto Lima");
     const continueButton = wrapper
       .findAll("footer button")
       .find((button) => button.text().includes("Continuar"))!;
@@ -193,9 +209,7 @@ describe("relationship create dialog", () => {
     expect(wrapper.text()).not.toContain("Já está na Berufe");
     expect(wrapper.text()).not.toContain("Adicionar pelo telefone");
 
-    await wrapper
-      .get('input[name="professional-search"]')
-      .setValue("Beto Lima");
+    await enterProfessionalNameAndFinishSearch(wrapper, "Beto Lima");
     await wrapper
       .findAll("footer button")
       .find((button) => button.text().includes("Continuar"))!
@@ -257,9 +271,7 @@ describe("relationship create dialog", () => {
       },
     ];
     const wrapper = await mountDialog();
-    await wrapper
-      .get('input[name="professional-search"]')
-      .setValue("Beto Lima");
+    await enterProfessionalNameAndFinishSearch(wrapper, "Beto Lima");
     await wrapper
       .findAll("button")
       .find((button) => button.text().includes("Beto Lima"))!
