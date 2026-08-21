@@ -136,6 +136,8 @@ const removalLabel = computed(() =>
   background: white;
 
   &__content {
+    display: flex;
+    flex-direction: column;
     min-width: 0;
   }
 
@@ -206,7 +208,8 @@ const removalLabel = computed(() =>
     display: flex;
     justify-content: flex-end;
     gap: 6px;
-    margin-top: 12px;
+    margin-top: auto;
+    padding-top: 12px;
   }
 }
 

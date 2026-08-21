@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 async function waitForNuxtHydration(page: Page) {
   await page.waitForFunction(() =>
@@ -31,6 +31,17 @@ async function clickQuoteAction(page: Page, name: string) {
     return;
   }
   await action.click();
+}
+
+async function expectActionAtCardBottom(card: Locator, name: string) {
+  const cardBox = await card.boundingBox();
+  const actionBox = await card.getByRole("button", { name }).boundingBox();
+
+  expect(cardBox).not.toBeNull();
+  expect(actionBox).not.toBeNull();
+  expect(
+    cardBox!.y + cardBox!.height - (actionBox!.y + actionBox!.height),
+  ).toBeLessThanOrEqual(20);
 }
 
 test("published professional creates, previews, securely shares, and live-edits a quote", async ({
@@ -191,6 +202,7 @@ test("existing members publish a relationship by confirming it together", async 
   const outbound = page.locator(".relationship-card").filter({ hasText: note });
   await expect(outbound).toContainText("Aguardando confirmação");
   await expect(outbound).toContainText(recipient.name);
+  await expectActionAtCardBottom(outbound, "Cancelar solicitação");
 
   const recipientContext = await browser.newContext({
     baseURL: new URL(page.url()).origin,
@@ -225,6 +237,7 @@ test("existing members publish a relationship by confirming it together", async 
   await page.goto("/app/professional/profile?tab=relacoes");
   const accepted = page.locator(".relationship-card").filter({ hasText: note });
   await expect(accepted).toContainText("Confirmada");
+  await expectActionAtCardBottom(accepted, "Remover relação");
   await accepted.getByRole("button", { name: "Remover relação" }).click();
   const removeDialog = page.getByRole("dialog", { name: "Remover relação" });
   const removeResponse = page.waitForResponse(
