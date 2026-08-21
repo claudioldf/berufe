@@ -15,7 +15,7 @@ class PublicVerificationSerializer
       .first
 
     {
-      phone_confirmed: true,
+      phone_confirmed: profile.user_account.phone_verified?,
       identity: approved_identity && {
         label: approved_identity.public_label,
         verified_at: approved_identity.verified_at.iso8601

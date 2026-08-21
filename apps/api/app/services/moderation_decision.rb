@@ -98,12 +98,14 @@ class ModerationDecision
       previous = profile.approved_revision
       previous.update!(status: "superseded") if previous && previous != revision
       revision.update!(status: "approved", reviewed_at: Time.current, rejection_reason: nil)
-      profile.update!(
+      profile_attributes = {
         approved_revision: revision,
-        working_revision: revision,
-        profile_status: "published",
-        published_at: profile.published_at || Time.current
-      )
+        profile_status: "published"
+      }
+      profile_attributes[:working_revision] = revision unless
+        revision.external? && profile.working_revision&.self_service?
+      profile_attributes[:published_at] = profile.published_at || Time.current if revision.self_service?
+      profile.update!(profile_attributes)
     when "rejected"
       require_status!(revision.status, "pending_review")
       raise Conflict, "profile revision is not current" unless profile.published_revision_id == revision.id
@@ -113,7 +115,19 @@ class ModerationDecision
         reviewed_at: Time.current,
         rejection_reason: attributes[:reason]
       )
-      profile.update!(published_revision: profile.approved_revision, profile_status: "published")
+      fallback = profile.approved_revision
+      fallback ||= profile.revisions
+        .where(profile_type: "external", status: %w[pending_review approved])
+        .where.not(id: revision.id)
+        .order(version: :desc)
+        .first
+      profile_attributes = {
+        published_revision: fallback,
+        profile_status: "published"
+      }
+      profile_attributes[:working_revision] = revision unless
+        revision.external? && profile.working_revision&.self_service?
+      profile.update!(profile_attributes)
     when "hidden"
       require_status!(revision.status, "approved")
       raise Conflict, "profile revision is not public" unless profile.published_revision_id == revision.id

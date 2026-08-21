@@ -20,6 +20,8 @@ class PublicProfessionalProfileSerializer
     {
       id: profile.id,
       public_slug: profile.public_slug,
+      profile_type: revision.profile_type,
+      claimed: profile.user_account.registered?,
       display_name: revision.display_name,
       headline: revision.headline,
       bio: revision.bio,
@@ -58,7 +60,8 @@ class PublicProfessionalProfileSerializer
   attr_reader :profile
 
   def verification_labels(verification)
-    labels = [{type: "phone", label: "Telefone confirmado", verified_at: nil}]
+    labels = []
+    labels << {type: "phone", label: "Telefone confirmado", verified_at: nil} if verification[:phone_confirmed]
     if verification[:identity]
       labels << {
         type: "identity",
@@ -77,6 +80,8 @@ class PublicProfessionalProfileSerializer
   end
 
   def public_portfolio
+    return [] if profile.external_presentation?
+
     profile.portfolio_items
       .select { |item| item.status.in?(%w[pending_review approved]) && item.deleted_at.nil? }
       .sort_by { |item| [-item.submitted_at.to_f, item.id] }

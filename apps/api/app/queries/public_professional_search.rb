@@ -105,7 +105,7 @@ class PublicProfessionalSearch
 
   def matching_professionals(service, neighborhood)
     relation = ProfessionalProfile
-      .publicly_eligible
+      .publicly_searchable
       .joins(published_revision: :professional_profile_services)
       .where(professional_profile_services: {service_id: service.id})
     neighborhood ? relation.where(coverage_sql, neighborhood.code) : relation
@@ -129,6 +129,7 @@ class PublicProfessionalSearch
 
   def ranking_order(neighborhood)
     [
+      external_profile_order,
       explicit_neighborhood_order(neighborhood),
       approved_identity_order,
       approved_portfolio_order,
@@ -136,6 +137,10 @@ class PublicProfessionalSearch
       Arel.sql("professional_profile_revisions.reviewed_at DESC NULLS LAST"),
       Arel.sql("professional_profiles.id ASC")
     ].compact
+  end
+
+  def external_profile_order
+    Arel.sql("CASE WHEN professional_profile_revisions.profile_type = 'external' THEN 1 ELSE 0 END ASC")
   end
 
   def explicit_neighborhood_order(neighborhood)

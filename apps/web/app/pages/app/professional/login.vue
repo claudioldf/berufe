@@ -47,6 +47,9 @@ async function continueAuthenticatedFlow() {
   if (currentAccount.registrationCompleted) {
     await enterProfessionalWorkspace();
   } else {
+    if (currentAccount.registrationDisplayName) {
+      name.value = currentAccount.registrationDisplayName;
+    }
     resumeRegistration();
   }
 }

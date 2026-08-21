@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
 module LegalDocumentVersions
-  TERMS = "0.2"
-  PRIVACY_NOTICE = "0.2"
+  TERMS = "0.3"
+  PRIVACY_NOTICE = "0.3"
 end

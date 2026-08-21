@@ -9,7 +9,7 @@ export interface CompleteProfessionalRegistrationInput {
 export interface CompletedProfessionalRegistration {
   id: string;
   displayName: string;
-  profileStatus: "draft";
+  profileStatus: "draft" | "published";
 }
 
 export async function completeProfessionalRegistration(

@@ -6,7 +6,7 @@ module Api
       before_action :prevent_caching
 
       def show
-        profile = ProfessionalProfile.publicly_eligible.find(params[:id])
+        profile = ProfessionalProfile.publicly_viewable.find(params[:id])
         interaction = PublicWhatsappInteractionResolver.new.call(
           profile:,
           source: params[:source],

@@ -28,8 +28,8 @@ useSeoMeta({
     eyebrow="Relações claras começam por regras claras"
     title="Termos de Uso"
     description="Estas regras explicam o papel da Berufe, o que esperamos de cada pessoa e os limites do MVP."
-    version="0.2 · minuta do MVP"
-    updated-at="13 de agosto de 2026"
+    version="0.3 · minuta do MVP"
+    updated-at="20 de agosto de 2026"
     :sections="sections"
   >
     <div class="legal-lead">
@@ -49,9 +49,9 @@ useSeoMeta({
       <p>
         O MVP oferece cadastro e acesso de profissionais, perfis públicos,
         catálogo de serviços, busca por serviço e área, portfólio, verificação
-        de identidade, relações entre profissionais já cadastrados, moderação
-        manual, compartilhamento de perfil, orçamento simples e contato direto
-        pelo WhatsApp.
+        de identidade, relações entre profissionais, perfis básicos criados por
+        indicação, moderação manual, compartilhamento de perfil, orçamento
+        simples e contato direto pelo WhatsApp.
       </p>
       <p>
         Quem não concordar com estes Termos não deve criar conta nem continuar
@@ -103,6 +103,13 @@ useSeoMeta({
         portfólio aceitam apenas os formatos e limites indicados e permanecem
         privadas até a aprovação.
       </p>
+      <p>
+        Um profissional elegível pode indicar alguém que ainda não usa a Berufe.
+        Nesse caso, ele deve ter autorização para compartilhar o nome e o
+        telefone profissional e responde pela exatidão dos serviços e da área
+        opcionalmente informados. A Berufe cria um perfil básico identificado
+        como perfil por indicação, sem foto, apresentação ou portfólio.
+      </p>
     </section>
 
     <section id="verificacao" class="legal-section">
@@ -130,15 +137,26 @@ useSeoMeta({
     <section id="relacoes" class="legal-section">
       <h2>6. Relações profissionais</h2>
       <p>
-        Somente profissionais com identidade aprovada podem iniciar uma relação
-        com outro membro já cadastrado. A plataforma não permite relação consigo
-        mesmo nem duplicata do mesmo tipo.
+        Somente profissionais com cadastro concluído, telefone confirmado e
+        identidade aprovada podem iniciar uma relação. O destinatário pode ser
+        encontrado na Berufe ou indicado por nome e telefone profissional. A
+        plataforma não permite relação consigo mesmo nem duplicata do mesmo
+        tipo.
       </p>
       <p>
         O destinatário pode aceitar ou recusar. A relação aceita pode aparecer
         nos perfis públicos assim que for confirmada, desde que ambos os perfis
         continuem públicos e ativos. A recomendação profissional identifica seu
         autor e não pode ser anônima.
+      </p>
+      <p>
+        A solicitação pendente não aparece publicamente. O perfil básico criado
+        por indicação pode ficar público enquanto existir uma solicitação ativa
+        com autorização registrada; se a última solicitação for cancelada ou
+        recusada antes de o destinatário concluir o cadastro, o perfil deixa de
+        ficar disponível. O titular pode confirmar o telefone, concluir o
+        cadastro e substituir a apresentação básica ao publicar seu perfil
+        completo.
       </p>
     </section>
 

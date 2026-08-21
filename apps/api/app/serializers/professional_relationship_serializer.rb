@@ -11,6 +11,7 @@ class ProfessionalRelationshipSerializer
       relationship_type: relationship.relationship_type,
       context_note: relationship.context_note,
       status: relationship.status,
+      source: relationship.source,
       created_at: relationship.created_at,
       responded_at: relationship.responded_at,
       initiator: profile_summary(relationship.initiator_professional),
@@ -29,6 +30,7 @@ class ProfessionalRelationshipSerializer
       id: profile.id,
       public_slug: profile.public_slug,
       display_name: display_revision.display_name,
+      profile_type: display_revision.profile_type,
       photo_url: if profile_available && profile.published_photo
                    PublicProfilePhotoImageUrl.call(profile.published_photo)
                  end,

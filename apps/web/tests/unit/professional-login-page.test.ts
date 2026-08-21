@@ -22,6 +22,7 @@ const mocks = vi.hoisted(() => ({
         account: Ref<{
           role: "professional" | "admin";
           registrationCompleted: boolean;
+          registrationDisplayName?: string | null;
         } | null>;
         step: Ref<number>;
         phone: Ref<string>;
@@ -124,12 +125,14 @@ describe("professional login page", () => {
     mocks.state!.account.value = {
       role: "professional",
       registrationCompleted: false,
+      registrationDisplayName: "Carla Pinturas",
     };
     mocks.restoreSession.mockResolvedValue(true);
 
     await mountPage();
 
     expect(mocks.resumeRegistration).toHaveBeenCalledOnce();
+    expect(mocks.state!.name.value).toBe("Carla Pinturas");
     expect(mocks.replace).not.toHaveBeenCalledWith(
       "/app/professional/onboarding",
     );

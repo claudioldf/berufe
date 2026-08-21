@@ -8,6 +8,7 @@ const other = {
   id: "f39d4810-f28d-4977-b5e5-387131d12942",
   publicSlug: "ana-souza",
   displayName: "Ana Souza",
+  profileType: "self_service" as const,
   photoUrl: "https://api.example.test/ana.jpg",
   profileAvailable: true,
 };
@@ -15,6 +16,7 @@ const owner = {
   id: ownerId,
   publicSlug: "beto-lima",
   displayName: "Beto Lima",
+  profileType: "self_service" as const,
   photoUrl: null,
   profileAvailable: true,
 };
@@ -27,6 +29,7 @@ function relationship(
     relationshipType: "recommendation",
     contextNote: "Executamos uma reforma juntos.",
     status: "pending",
+    source: "existing_profile",
     createdAt: "2026-08-17T12:00:00Z",
     respondedAt: null,
     initiator: other,
@@ -158,10 +161,11 @@ describe("professional relationship manager", () => {
       "Não foi possível remover a relação agora.",
     );
     expect(wrapper.text()).toContain("Sua rede começa com uma colaboração.");
-    expect(
-      wrapper
-        .findAll("button")
-        .some((button) => button.attributes("data-to") === "/encontrar"),
-    ).toBe(true);
+    const add = wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("Adicionar relação"));
+    expect(add).toBeDefined();
+    await add!.trigger("click");
+    expect(wrapper.emitted("add")?.at(-1)).toEqual([]);
   });
 });

@@ -1111,7 +1111,7 @@ paths:
   /api/v1/professional/relationships:
     post:
       operationId: createProfessionalRelationship
-      summary: Request a professional relationship with a published Berufe member
+      summary: Request a relationship with an existing or externally added professional
       tags:
         - Professional relationships
       security:
@@ -1154,7 +1154,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "404":
-          description: Registration is incomplete or the selected recipient is not currently published.
+          description: Registration is incomplete or the selected profile target is not public.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
@@ -1172,7 +1172,50 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "422":
-          description: The relationship type, recipient, or optional context note is invalid.
+          description: The relationship type, target, consent, or optional context note is invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/professional/relationship-candidates:
+    get:
+      operationId: listProfessionalRelationshipCandidates
+      summary: Find safe public professional summaries by name
+      tags:
+        - Professional relationships
+      security:
+        - applicationSession: []
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema:
+            type: string
+            maxLength: 80
+      responses:
+        "200":
+          description: Matching public professionals excluding the requester.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfessionalRelationshipCandidatesResponse"
+        "401":
+          description: An active Rails application session is required.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: The search query is invalid.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
@@ -3607,6 +3650,7 @@ components:
         - id
         - public_slug
         - profile_status
+        - presentation_type
         - is_public
         - is_search_eligible
         - publication_blockers
@@ -3634,6 +3678,11 @@ components:
             - pending_review
             - published
             - suspended
+        presentation_type:
+          type: string
+          enum:
+            - self_service
+            - external
         is_public:
           type: boolean
         is_search_eligible:
@@ -3690,12 +3739,13 @@ components:
           type: object
           additionalProperties: false
           required:
-            - recipient_professional_id
+            - target
             - relationship_type
           properties:
-            recipient_professional_id:
-              type: string
-              format: uuid
+            target:
+              oneOf:
+                - $ref: "#/components/schemas/ProfessionalRelationshipProfileTarget"
+                - $ref: "#/components/schemas/ProfessionalRelationshipPhoneTarget"
             relationship_type:
               type: string
               enum:
@@ -3707,6 +3757,68 @@ components:
                 - "null"
               minLength: 1
               maxLength: 300
+    ProfessionalRelationshipProfileTarget:
+      type: object
+      additionalProperties: false
+      required:
+        - type
+        - professional_profile_id
+      properties:
+        type:
+          type: string
+          const: profile
+        professional_profile_id:
+          type: string
+          format: uuid
+    ProfessionalRelationshipPhoneTarget:
+      type: object
+      additionalProperties: false
+      required:
+        - type
+        - name
+        - phone
+        - service_ids
+        - coverage
+        - contact_publication_attested
+      properties:
+        type:
+          type: string
+          const: phone
+        name:
+          type: string
+          minLength: 3
+          maxLength: 70
+        phone:
+          type: string
+          minLength: 10
+          maxLength: 24
+        service_ids:
+          type: array
+          uniqueItems: true
+          maxItems: 10
+          items:
+            type: string
+            format: uuid
+        coverage:
+          $ref: "#/components/schemas/ProfessionalRelationshipExternalCoverage"
+        contact_publication_attested:
+          type: boolean
+          const: true
+    ProfessionalRelationshipExternalCoverage:
+      type: object
+      additionalProperties: false
+      required:
+        - all_joinville
+        - neighborhood_codes
+      properties:
+        all_joinville:
+          type: boolean
+        neighborhood_codes:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
     ProfessionalRelationshipResponseRequest:
       type: object
       additionalProperties: false
@@ -3743,6 +3855,7 @@ components:
         - relationship_type
         - context_note
         - status
+        - source
         - created_at
         - responded_at
         - initiator
@@ -3767,6 +3880,11 @@ components:
             - pending
             - accepted
             - declined
+        source:
+          type: string
+          enum:
+            - existing_profile
+            - external_phone
         created_at:
           type: string
           format: date-time
@@ -3785,6 +3903,7 @@ components:
       required:
         - id
         - public_slug
+        - profile_type
         - display_name
         - photo_url
         - profile_available
@@ -3796,6 +3915,11 @@ components:
           type: string
           pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
           maxLength: 100
+        profile_type:
+          type: string
+          enum:
+            - self_service
+            - external
         display_name:
           type: string
           minLength: 3
@@ -3807,6 +3931,56 @@ components:
           format: uri
         profile_available:
           type: boolean
+    ProfessionalRelationshipCandidatesResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required:
+            - candidates
+          properties:
+            candidates:
+              type: array
+              maxItems: 10
+              items:
+                $ref: "#/components/schemas/ProfessionalRelationshipCandidate"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    ProfessionalRelationshipCandidate:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - public_slug
+        - display_name
+        - profile_type
+        - photo_url
+      properties:
+        id:
+          type: string
+          format: uuid
+        public_slug:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        profile_type:
+          type: string
+          enum:
+            - self_service
+            - external
+        display_name:
+          type: string
+          minLength: 3
+          maxLength: 70
+        photo_url:
+          type:
+            - string
+            - "null"
+          format: uri
     ProfessionalWorkspacePhoto:
       type: object
       additionalProperties: false
@@ -4350,7 +4524,10 @@ components:
         - id
         - role
         - status
+        - registered
+        - verified
         - registration_completed
+        - registration_display_name
         - professional_profile_id
         - relationship_eligible
       properties:
@@ -4365,8 +4542,18 @@ components:
         status:
           type: string
           const: active
+        registered:
+          type: boolean
+        verified:
+          type: boolean
         registration_completed:
           type: boolean
+        registration_display_name:
+          type:
+            - string
+            - "null"
+          minLength: 3
+          maxLength: 70
         professional_profile_id:
           type:
             - string
@@ -5056,6 +5243,8 @@ components:
       required:
         - id
         - public_slug
+        - profile_type
+        - claimed
         - display_name
         - headline
         - photo_url
@@ -5073,6 +5262,13 @@ components:
         public_slug:
           type: string
           pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        profile_type:
+          type: string
+          enum:
+            - self_service
+            - external
+        claimed:
+          type: boolean
         display_name:
           type: string
           minLength: 3
@@ -5203,6 +5399,8 @@ components:
       required:
         - id
         - public_slug
+        - profile_type
+        - claimed
         - display_name
         - headline
         - bio
@@ -5222,6 +5420,13 @@ components:
         public_slug:
           type: string
           pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        profile_type:
+          type: string
+          enum:
+            - self_service
+            - external
+        claimed:
+          type: boolean
         display_name:
           type: string
           minLength: 3
@@ -5251,14 +5456,12 @@ components:
           format: uri
         services:
           type: array
-          minItems: 1
           items:
             $ref: "#/components/schemas/PublicProfessionalProfileService"
         coverage:
           $ref: "#/components/schemas/PublicProfessionalCoverage"
         verification_labels:
           type: array
-          minItems: 1
           items:
             $ref: "#/components/schemas/PublicVerificationLabel"
         portfolio:

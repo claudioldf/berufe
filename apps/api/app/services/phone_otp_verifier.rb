@@ -23,13 +23,23 @@ class PhoneOtpVerifier
 
       phone_e164 = challenge.phone_e164
       UserAccount.insert_all(
-        [{phone_e164:, role: "professional", status: "active", created_at: now, updated_at: now}],
+        [{
+          phone_e164:,
+          role: "professional",
+          status: "active",
+          phone_verified_at: now,
+          created_at: now,
+          updated_at: now
+        }],
         unique_by: :index_user_accounts_on_phone_e164
       )
       account = UserAccount.find_by!(phone_e164:)
       raise Invalid unless account.professional?
 
-      account.update!(last_login_at: now)
+      account.update!(
+        phone_verified_at: account.phone_verified_at || now,
+        last_login_at: now
+      )
       session, session_token = ApplicationSession.issue!(user_account: account, now:)
       challenge.update!(consumed_at: now)
 

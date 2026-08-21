@@ -21,6 +21,7 @@ const props = withDefaults(
   },
 );
 const emit = defineEmits<{
+  add: [];
   respond: [id: string, response: ProfessionalRelationshipResponse];
   remove: [id: string];
 }>();
@@ -82,7 +83,7 @@ function confirmRemoval() {
           da Berufe.
         </p>
       </div>
-      <UButton to="/encontrar" color="primary" icon="i-lucide-user-plus"
+      <UButton color="primary" icon="i-lucide-user-plus" @click="emit('add')"
         >Adicionar relação</UButton
       >
     </DesignSystemSurfaceCard>
@@ -117,10 +118,9 @@ function confirmRemoval() {
       <span><UIcon name="i-lucide-handshake" aria-hidden="true" /></span>
       <h3>Sua rede começa com uma colaboração.</h3>
       <p>
-        Encontre um profissional já cadastrado e envie uma solicitação de
-        relação.
+        Encontre um profissional na Berufe ou adicione um contato pelo telefone.
       </p>
-      <UButton to="/encontrar" color="primary">Encontrar profissionais</UButton>
+      <UButton color="primary" @click="emit('add')">Adicionar relação</UButton>
     </DesignSystemSurfaceCard>
 
     <UModal

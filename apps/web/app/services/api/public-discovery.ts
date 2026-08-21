@@ -28,6 +28,8 @@ export function mapPublicProfessionalCard(
   return {
     id: card.id,
     slug: card.public_slug,
+    profileType: card.profile_type,
+    claimed: card.claimed,
     name: card.display_name,
     headline: card.headline,
     photoUrl: card.photo_url,
@@ -115,17 +117,20 @@ export function mapPublicProfessionalProfile(
 ): PublicProfessionalProfile {
   const primaryService =
     profile.services.find((service) => service.is_primary) ??
-    profile.services[0]!;
+    profile.services[0] ??
+    null;
 
   return {
     id: profile.id,
     slug: profile.public_slug,
+    profileType: profile.profile_type,
+    claimed: profile.claimed,
     name: profile.display_name,
     headline: profile.headline,
     bio: profile.bio,
     avatar: profile.photo_url,
-    primaryService: primaryService.name,
-    primaryServiceSlug: primaryService.slug,
+    primaryService: primaryService?.name ?? null,
+    primaryServiceSlug: primaryService?.slug ?? null,
     services: profile.services.map((service) => service.name),
     serviceNotes: profile.services.map((service) => service.note),
     neighborhoods: profile.coverage.neighborhoods.map(

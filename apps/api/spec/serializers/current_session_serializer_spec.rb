@@ -15,7 +15,10 @@ RSpec.describe CurrentSessionSerializer do
         id: account.id,
         role: "professional",
         status: "active",
+        registered: false,
+        verified: false,
         registration_completed: false,
+        registration_display_name: nil,
         professional_profile_id: nil,
         relationship_eligible: false
       },

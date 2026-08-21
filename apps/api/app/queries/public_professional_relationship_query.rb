@@ -21,7 +21,7 @@ class PublicProfessionalRelationshipQuery
   # party column can never carry anything but a real relationship foreign key.
   def self.party_is_public_sql(foreign_key)
     party_column = ProfessionalRelationship.arel_table[foreign_key]
-    eligible = ProfessionalProfile.publicly_eligible
+    eligible = ProfessionalProfile.publicly_viewable
       .where(ProfessionalProfile.arel_table[:id].eq(party_column))
       .select("1")
     Arel::Nodes::Exists.new(eligible.arel)

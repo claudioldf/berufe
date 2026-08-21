@@ -13,10 +13,32 @@ RSpec.describe UserAccount, type: :model do
     expect(account.id).to match(/\A[0-9a-f-]{36}\z/)
     expect(account).not_to be_admin
     expect(account).to be_professional
+    expect(account).not_to be_phone_verified
+    expect(account).not_to be_registered
     expect(account).not_to be_registration_completed
     expect do
       described_class.create!(phone_e164: account.phone_e164, role: "professional", status: "active")
     end.to raise_error(ActiveRecord::RecordInvalid)
+  end
+
+  it "tracks OTP verification and registration separately and prevents registration before verification" do
+    account = described_class.create!(
+      phone_e164: "+5547999994444",
+      role: "professional",
+      status: "active"
+    )
+    account.registered_at = Time.current
+
+    expect(account).not_to be_valid
+    expect(account.errors[:registered_at]).to be_present
+
+    account.phone_verified_at = 1.minute.ago
+    account.terms_accepted_at = Time.current
+    account.terms_version = LegalDocumentVersions::TERMS
+    account.privacy_notice_version = LegalDocumentVersions::PRIVACY_NOTICE
+    expect(account).to be_valid
+    expect(account).to be_phone_verified
+    expect(account).to be_registered
   end
 
   it "requires the acceptance timestamp and both legal document versions as one complete record" do

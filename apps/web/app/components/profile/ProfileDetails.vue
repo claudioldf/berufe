@@ -3,11 +3,9 @@ import type { PublicProfessionalProfile } from "~/types";
 
 defineProps<{
   professional: PublicProfessionalProfile;
-  canRequestRelationship: boolean;
   supportEmailUrl: string;
 }>();
 defineEmits<{
-  requestRelationship: [];
   viewPortfolio: [index: number];
 }>();
 </script>
@@ -119,16 +117,6 @@ defineEmits<{
       <p v-else class="relationships-empty">
         Este profissional ainda não possui relações públicas confirmadas.
       </p>
-      <UButton
-        v-if="canRequestRelationship"
-        class="relationship-request"
-        color="neutral"
-        variant="outline"
-        icon="i-lucide-handshake"
-        @click="$emit('requestRelationship')"
-      >
-        Solicitar relação profissional
-      </UButton>
     </section>
 
     <section class="profile-disclaimer">

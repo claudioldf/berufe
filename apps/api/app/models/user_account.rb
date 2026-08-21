@@ -34,6 +34,7 @@ class UserAccount < ApplicationRecord
   validates :status, inclusion: {in: STATUSES}
   validate :admin_password_is_strong, if: -> { admin? && password.present? }
   validate :legal_acceptance_is_complete
+  validate :registration_requires_phone_verification
 
   def admin?
     role == "admin"
@@ -48,11 +49,19 @@ class UserAccount < ApplicationRecord
   end
 
   def registration_completed?
-    professional? &&
+    registered? &&
       terms_accepted_at.present? &&
       terms_version.present? &&
       privacy_notice_version.present? &&
       professional_profile.present?
+  end
+
+  def registered?
+    professional? && registered_at.present?
+  end
+
+  def phone_verified?
+    professional? && phone_verified_at.present?
   end
 
   def revoke_all_sessions!(now: Time.current)
@@ -86,5 +95,11 @@ class UserAccount < ApplicationRecord
     return if acceptance_values.all?(&:nil?) || acceptance_values.all?(&:present?)
 
     errors.add(:terms_accepted_at, :invalid)
+  end
+
+  def registration_requires_phone_verification
+    return if registered_at.blank? || phone_verified_at.present?
+
+    errors.add(:registered_at, :invalid)
   end
 end

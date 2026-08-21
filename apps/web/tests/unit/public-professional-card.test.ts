@@ -39,6 +39,8 @@ function professional(
   return {
     id: "ad59e74a-a1aa-47d5-b725-26350f0f2376",
     slug: "ana-souza",
+    profileType: "self_service",
+    claimed: true,
     name: "Ana Souza",
     headline: "Elétrica residencial.",
     photoUrl: null,
@@ -177,5 +179,36 @@ describe("public professional result card", () => {
     );
     expect(url).not.toContain("interactionToken");
     expect(url).not.toContain("wa.me");
+  });
+
+  it("identifies external results and uses the missing-area fallback", async () => {
+    const wrapper = await mountSuspended(ProfessionalCard, {
+      props: {
+        professional: professional({
+          profileType: "external",
+          claimed: false,
+          headline: null,
+          photoUrl: null,
+          coverage: { allJoinville: false, neighborhoods: [] },
+          verificationLabels: [],
+          portfolioCount: 0,
+        }),
+        profileUrl: "/profissionais/ana-souza",
+        contactUrl: "https://api.berufe.test/whatsapp",
+      },
+      global: {
+        stubs: {
+          NuxtLink: LinkStub,
+          UButton: ButtonStub,
+          UIcon: true,
+          DesignSystemAvatar: AvatarStub,
+          PublicEvidenceBadge: EvidenceStub,
+        },
+      },
+    });
+
+    expect(wrapper.text()).toContain("Perfil por indicação");
+    expect(wrapper.text()).toContain("Joinville · área não informada");
+    expect(wrapper.text()).not.toContain("Elétrica residencial");
   });
 });

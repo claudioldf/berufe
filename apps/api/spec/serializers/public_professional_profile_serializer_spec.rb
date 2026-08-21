@@ -4,7 +4,12 @@ require "rails_helper"
 
 RSpec.describe PublicProfessionalProfileSerializer do
   let(:account) do
-    UserAccount.create!(phone_e164: "+5547999996601", role: "professional", status: "active")
+    UserAccount.create!(
+      phone_e164: "+5547999996601",
+      role: "professional",
+      status: "active",
+      phone_verified_at: Time.current
+    )
   end
   let(:profile) do
     ProfessionalProfile.create!(

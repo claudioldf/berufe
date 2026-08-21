@@ -465,8 +465,25 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Request a professional relationship with a published Berufe member */
+        /** Request a relationship with an existing or externally added professional */
         post: operations["createProfessionalRelationship"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/professional/relationship-candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Find safe public professional summaries by name */
+        get: operations["listProfessionalRelationshipCandidates"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1229,6 +1246,8 @@ export interface components {
             public_slug: string;
             /** @enum {string} */
             profile_status: "draft" | "pending_review" | "published" | "suspended";
+            /** @enum {string} */
+            presentation_type: "self_service" | "external";
             is_public: boolean;
             is_search_eligible: boolean;
             publication_blockers: ("identity" | "photo" | "services" | "coverage")[];
@@ -1245,12 +1264,31 @@ export interface components {
         };
         ProfessionalRelationshipCreateRequest: {
             relationship: {
-                /** Format: uuid */
-                recipient_professional_id: string;
+                target: components["schemas"]["ProfessionalRelationshipProfileTarget"] | components["schemas"]["ProfessionalRelationshipPhoneTarget"];
                 /** @enum {string} */
                 relationship_type: "recommendation" | "worked_together";
                 context_note?: string | null;
             };
+        };
+        ProfessionalRelationshipProfileTarget: {
+            /** @constant */
+            type: "profile";
+            /** Format: uuid */
+            professional_profile_id: string;
+        };
+        ProfessionalRelationshipPhoneTarget: {
+            /** @constant */
+            type: "phone";
+            name: string;
+            phone: string;
+            service_ids: string[];
+            coverage: components["schemas"]["ProfessionalRelationshipExternalCoverage"];
+            /** @constant */
+            contact_publication_attested: true;
+        };
+        ProfessionalRelationshipExternalCoverage: {
+            all_joinville: boolean;
+            neighborhood_codes: string[];
         };
         ProfessionalRelationshipResponseRequest: {
             /** @enum {string} */
@@ -1270,6 +1308,8 @@ export interface components {
             context_note: string | null;
             /** @enum {string} */
             status: "pending" | "accepted" | "declined";
+            /** @enum {string} */
+            source: "existing_profile" | "external_phone";
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -1281,10 +1321,28 @@ export interface components {
             /** Format: uuid */
             id: string;
             public_slug: string;
+            /** @enum {string} */
+            profile_type: "self_service" | "external";
             display_name: string;
             /** Format: uri */
             photo_url: string | null;
             profile_available: boolean;
+        };
+        ProfessionalRelationshipCandidatesResponse: {
+            data: {
+                candidates: components["schemas"]["ProfessionalRelationshipCandidate"][];
+            };
+            request_id: components["schemas"]["RequestId"];
+        };
+        ProfessionalRelationshipCandidate: {
+            /** Format: uuid */
+            id: string;
+            public_slug: string;
+            /** @enum {string} */
+            profile_type: "self_service" | "external";
+            display_name: string;
+            /** Format: uri */
+            photo_url: string | null;
         };
         ProfessionalWorkspacePhoto: {
             current: components["schemas"]["ProfessionalProfilePhotoSummary"] | null;
@@ -1460,7 +1518,10 @@ export interface components {
             role: "professional" | "admin";
             /** @constant */
             status: "active";
+            registered: boolean;
+            verified: boolean;
             registration_completed: boolean;
+            registration_display_name: string | null;
             /** Format: uuid */
             professional_profile_id: string | null;
             relationship_eligible: boolean;
@@ -1682,6 +1743,9 @@ export interface components {
             /** Format: uuid */
             id: string;
             public_slug: string;
+            /** @enum {string} */
+            profile_type: "self_service" | "external";
+            claimed: boolean;
             display_name: string;
             headline: string | null;
             /** Format: uri */
@@ -1727,6 +1791,9 @@ export interface components {
             /** Format: uuid */
             id: string;
             public_slug: string;
+            /** @enum {string} */
+            profile_type: "self_service" | "external";
+            claimed: boolean;
             display_name: string;
             headline: string | null;
             bio: string | null;
@@ -3099,7 +3166,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Registration is incomplete or the selected recipient is not currently published. */
+            /** @description Registration is incomplete or the selected profile target is not public. */
             404: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
@@ -3119,7 +3186,50 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description The relationship type, recipient, or optional context note is invalid. */
+            /** @description The relationship type, target, consent, or optional context note is invalid. */
+            422: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    listProfessionalRelationshipCandidates: {
+        parameters: {
+            query: {
+                query: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Matching public professionals excluding the requester. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalRelationshipCandidatesResponse"];
+                };
+            };
+            /** @description An active Rails application session is required. */
+            401: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The search query is invalid. */
             422: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
