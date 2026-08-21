@@ -146,7 +146,7 @@ function announceContact() {
             <p>
               Primeiro, consideramos a correspondência exata e o atendimento na
               região. Depois, avaliamos identidade verificada, portfólio e
-              relações profissionais.
+              conexões profissionais.
             </p>
             <span>Relevância e qualidade.</span>
           </div>

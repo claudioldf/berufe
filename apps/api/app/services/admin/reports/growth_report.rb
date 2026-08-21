@@ -179,7 +179,7 @@ module Admin
         activation = [
           ["identity", "Identidade verificada", "documento aprovado", "i-lucide-badge-check"],
           ["portfolio", "3+ trabalhos", "portfólio suficiente", "i-lucide-images"],
-          ["relationships", "2+ relações", "confiança confirmada", "i-lucide-share-2"],
+          ["relationships", "2+ conexões", "confiança confirmada", "i-lucide-share-2"],
           ["all", "Perfil ativado", "cumpre os 3 critérios", "i-lucide-sparkles"]
         ].map do |key, label, description, icon|
           ratio(quality.fetch(key.to_sym).length, quality_ids.length).merge(key:, label:, description:, icon:)
@@ -345,7 +345,7 @@ module Admin
         {
           funnels: [{
             key: "relationships",
-            label: "Relações profissionais",
+            label: "Conexões profissionais",
             started:,
             responded:,
             approved:,

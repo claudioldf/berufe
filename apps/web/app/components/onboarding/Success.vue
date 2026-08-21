@@ -9,7 +9,7 @@ defineEmits<{ review: [] }>();
     <h2>Seu perfil já pode ser encontrado.</h2>
     <p>
       As informações essenciais estão no ar. Agora você pode adicionar
-      portfólio, relações profissionais e verificação para fortalecer a
+      portfólio, conexões profissionais e verificação para fortalecer a
       confiança.
     </p>
     <div>

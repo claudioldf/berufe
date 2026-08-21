@@ -59,7 +59,7 @@ describe("professional relationship workflow", () => {
   it("keeps a normalized API failure visible until the next attempt", async () => {
     const failure = new ApiRequestError({
       code: "relationship_conflict",
-      message: "Esta solicitação de relação já existe.",
+      message: "Esta solicitação de conexão já existe.",
       fieldErrors: {},
       requestId: "relationship-conflict",
     });
@@ -76,7 +76,7 @@ describe("professional relationship workflow", () => {
         relationshipType: "recommendation",
       }),
     ).rejects.toBe(failure);
-    expect(workflow.error.value).toBe("Esta solicitação de relação já existe.");
+    expect(workflow.error.value).toBe("Esta solicitação de conexão já existe.");
 
     workflow.clearError();
     expect(workflow.error.value).toBe("");

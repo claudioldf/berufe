@@ -40,15 +40,15 @@ const selectedOtherProfessional = computed(() => {
 });
 const removalTitle = computed(() =>
   selectedRelationship.value?.status === "pending"
-    ? "Cancelar solicitação"
-    : "Remover relação",
+    ? "Cancelar solicitação de conexão"
+    : "Remover conexão",
 );
 const removalDescription = computed(() => {
   const name =
     selectedOtherProfessional.value?.displayName ?? "este profissional";
   return selectedRelationship.value?.status === "pending"
-    ? `A solicitação enviada para ${name} será cancelada. Você poderá solicitar novamente no futuro.`
-    : `A relação com ${name} deixará de aparecer nos perfis públicos. Você poderá solicitar novamente no futuro.`;
+    ? `A solicitação de conexão enviada para ${name} será cancelada. Você poderá se conectar novamente no futuro.`
+    : `A conexão com ${name} deixará de aparecer nos perfis públicos. Você poderá se conectar novamente no futuro.`;
 });
 
 function requestRemoval(relationship: ProfessionalRelationship) {
@@ -76,15 +76,14 @@ function confirmRemoval() {
   <div class="relationship-manager">
     <DesignSystemSurfaceCard as="section" class="relationship-manager__intro">
       <div>
-        <DesignSystemEyebrow>Sua rede profissional</DesignSystemEyebrow>
-        <h2>Relações</h2>
+        <DesignSystemEyebrow>Rede profissional</DesignSystemEyebrow>
+        <h2>Minha rede</h2>
         <p>
-          Gerencie solicitações e relações confirmadas com outros profissionais
-          da Berufe.
+          Encontre e conecte-se a profissionais que você conhece e recomenda.
         </p>
       </div>
       <UButton color="primary" icon="i-lucide-user-plus" @click="emit('add')"
-        >Adicionar relação</UButton
+        >Conectar</UButton
       >
     </DesignSystemSurfaceCard>
 
@@ -120,7 +119,7 @@ function confirmRemoval() {
       <p>
         Encontre um profissional na Berufe ou adicione um contato pelo telefone.
       </p>
-      <UButton color="primary" @click="emit('add')">Adicionar relação</UButton>
+      <UButton color="primary" @click="emit('add')">Conectar</UButton>
     </DesignSystemSurfaceCard>
 
     <UModal
@@ -134,7 +133,7 @@ function confirmRemoval() {
           variant="ghost"
           :disabled="mutationInProgress"
           @click="removalOpen = false"
-          >Manter relação</UButton
+          >Manter conexão</UButton
         >
         <UButton
           color="error"

@@ -22,14 +22,14 @@ const oldestPendingExceedsTarget = computed(
       <header>
         <div>
           <DesignSystemKicker>Efeito de rede</DesignSystemKicker>
-          <h2>Relações profissionais</h2>
+          <h2>Conexões profissionais</h2>
           <span>Confirmações entre membros que fortalecem cada perfil.</span>
         </div>
         <AdminReportsMetricHelp
-          title="Relações profissionais"
-          meaning="Acompanha relações iniciadas no período até a resposta e a confirmação do destinatário."
+          title="Conexões profissionais"
+          meaning="Acompanha as solicitações de conexão enviadas no período, da resposta à confirmação do destinatário."
           goal="Transformar conexões reais entre membros existentes em evidências públicas de confiança."
-          reading="Baixa resposta pode indicar atrito. A taxa de aprovação mostra quantos destinatários confirmaram a relação solicitada."
+          reading="Baixa resposta pode indicar atrito. A taxa de confirmação mostra quantas solicitações resultaram em conexões confirmadas."
         />
       </header>
       <div class="network-list">
@@ -38,7 +38,7 @@ const oldestPendingExceedsTarget = computed(
           <div class="network-values">
             <span
               ><b>{{ funnel.started }}</b
-              ><small>iniciadas</small></span
+              ><small>enviadas</small></span
             >
             <UIcon name="i-lucide-arrow-right" />
             <span
@@ -48,12 +48,12 @@ const oldestPendingExceedsTarget = computed(
             <UIcon name="i-lucide-arrow-right" />
             <span
               ><b>{{ funnel.approved }}</b
-              ><small>aprovadas</small></span
+              ><small>confirmadas</small></span
             >
           </div>
           <p>
             {{ formatRate(funnel.responseRate.rate, 0) }} de resposta ·
-            {{ formatRate(funnel.approvalRate.rate, 0) }} aprovadas
+            {{ formatRate(funnel.approvalRate.rate, 0) }} confirmadas
           </p>
         </div>
       </div>

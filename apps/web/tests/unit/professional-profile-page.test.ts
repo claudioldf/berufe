@@ -248,7 +248,7 @@ describe("professional profile editor page", () => {
       "d25c64fa-3e6a-4e56-adc9-85bdac0045cb",
     );
     expect(mocks.showToast).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "Relação removida" }),
+      expect.objectContaining({ title: "Conexão removida" }),
     );
   });
 });

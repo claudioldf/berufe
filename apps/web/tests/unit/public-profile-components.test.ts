@@ -195,6 +195,7 @@ describe("public profile components", () => {
     expect(details.text()).toContain("Quadros elétricos");
     expect(details.text()).not.toContain("Serviço residencial");
     expect(details.text()).toContain("Portfólio aprovado");
+    expect(details.text()).toContain("1 conexão confirmada");
     expect(details.text()).toContain("Trabalharam juntos");
     expect(details.text()).toContain("Trabalharam em reformas residenciais.");
     expect(details.text()).toContain("não representam uma verificação");
@@ -237,5 +238,6 @@ describe("public profile components", () => {
 
     expect(details.text()).toContain("Recomendado por Beto Lima");
     expect(details.text()).toContain("Recomendou Carla Luz");
+    expect(details.text()).toContain("2 conexões confirmadas");
   });
 });

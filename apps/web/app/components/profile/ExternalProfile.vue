@@ -76,7 +76,7 @@ const coverageLabel = computed(() => {
           <div class="external-profile__section-heading">
             <div>
               <DesignSystemEyebrow>Rede profissional</DesignSystemEyebrow>
-              <h2>Relações confirmadas.</h2>
+              <h2>Conexões confirmadas.</h2>
             </div>
             <span>{{ professional.relationships.length }}</span>
           </div>
@@ -115,7 +115,7 @@ const coverageLabel = computed(() => {
             </article>
           </div>
           <p v-else class="external-profile__empty">
-            Nenhuma relação foi confirmada publicamente ainda.
+            Nenhuma conexão profissional foi confirmada publicamente ainda.
           </p>
         </DesignSystemSurfaceCard>
       </main>
@@ -144,8 +144,8 @@ const coverageLabel = computed(() => {
               : "Você é este profissional?"
           }}</strong>
           <p>
-            Confirme o telefone para responder às relações e completar seu
-            perfil na Berufe.
+            Confirme o telefone para responder às solicitações de conexão e
+            completar seu perfil na Berufe.
           </p>
           <UButton
             to="/app/professional/login"

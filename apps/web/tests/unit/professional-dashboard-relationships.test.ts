@@ -169,8 +169,9 @@ describe("professional dashboard", () => {
     );
 
     const add = wrapper
+      .get(".actions-card")
       .findAll("button")
-      .find((button) => button.text().includes("Adicionar relação"));
+      .find((button) => button.text().includes("Conectar"));
     expect(add).toBeDefined();
     await add!.trigger("click");
 
@@ -204,8 +205,8 @@ describe("professional dashboard", () => {
     );
     expect(mocks.showToast).toHaveBeenCalledWith(
       expect.objectContaining({
-        title: "Colaboração confirmada",
-        description: "A relação já pode aparecer nos perfis públicos.",
+        title: "Vocês estão conectados",
+        description: "A conexão já pode aparecer nos perfis públicos.",
       }),
     );
 

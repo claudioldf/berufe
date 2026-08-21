@@ -1,13 +1,23 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import type { PublicProfessionalProfile } from "~/types";
+import { formatCountLabel } from "~/utils/text";
 
-defineProps<{
+const props = defineProps<{
   professional: PublicProfessionalProfile;
   supportEmailUrl: string;
 }>();
 defineEmits<{
   viewPortfolio: [index: number];
 }>();
+
+const connectionCountLabel = computed(() =>
+  formatCountLabel(
+    props.professional.relationships.length,
+    "conexão confirmada",
+    "conexões confirmadas",
+  ),
+);
 </script>
 
 <template>
@@ -74,9 +84,7 @@ defineEmits<{
           <DesignSystemEyebrow>Rede profissional</DesignSystemEyebrow>
           <h2>Confiança entre quem faz.</h2>
         </div>
-        <span
-          >{{ professional.relationships.length }} conexões confirmadas</span
-        >
+        <span>{{ connectionCountLabel }}</span>
       </div>
       <div v-if="professional.relationships.length" class="relationships-list">
         <article
@@ -115,7 +123,7 @@ defineEmits<{
         </article>
       </div>
       <p v-else class="relationships-empty">
-        Este profissional ainda não possui relações públicas confirmadas.
+        Este profissional ainda não possui conexões profissionais confirmadas.
       </p>
     </section>
 

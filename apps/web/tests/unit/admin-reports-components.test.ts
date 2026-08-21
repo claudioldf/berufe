@@ -107,7 +107,7 @@ describe("administrator report widgets", () => {
       funnels: [
         {
           key: "relationships",
-          label: "Relações profissionais",
+          label: "Conexões profissionais",
           started: 2,
           responded: 1,
           approved: 0,
