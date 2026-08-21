@@ -409,9 +409,13 @@ async function submitCompletion(kind: "confirm" | "report_issue") {
   }
   &__check {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 8px;
     font-size: 0.84rem;
+  }
+  &__check input {
+    flex: 0 0 auto;
+    margin: 0;
   }
   &__actions {
     display: flex;

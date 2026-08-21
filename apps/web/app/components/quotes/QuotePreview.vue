@@ -48,8 +48,11 @@ function itemTotal(index: number) {
       <div>
         <strong>{{ professional.name }}</strong
         ><span>{{ professional.primaryService }} · Joinville</span
-        ><small v-if="professional.identityVerified"
-          ><UIcon name="i-lucide-badge-check" /> Identidade verificada</small
+        ><small
+          v-if="professional.identityVerified"
+          class="quote-preview__verification"
+          ><UIcon name="i-lucide-badge-check" size="1rem" /> Identidade
+          verificada</small
         >
       </div>
     </section>
@@ -193,6 +196,12 @@ function itemTotal(index: number) {
     font-size: 0.82rem;
     font-weight: 850;
   }
+  &__professional &__verification {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+  }
   &__intro {
     display: grid;
     grid-template-columns: 1fr auto;
@@ -327,10 +336,6 @@ function itemTotal(index: number) {
   }
   & > footer small {
     color: var(--ink-soft);
-  }
-  &--customer {
-    max-width: 720px;
-    margin: 0 auto;
   }
   &--customer &__service h1 {
     font-size: 1.65rem;
