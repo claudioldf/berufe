@@ -10,19 +10,37 @@ module Api
         def index
           profile = owned_profile!
           authorize Quote, :index?
-          quotes = policy_scope(Quote)
-            .where(professional: profile)
+          result = ProfessionalQuoteIndexQuery.new.call(
+            scope: policy_scope(Quote).where(professional: profile),
+            search: params[:search],
+            status: params[:status],
+            scheduled_on: params[:scheduled_on],
+            sort: params[:sort],
+            direction: params[:direction],
+            page: params[:page],
+            per_page: params[:per_page]
+          )
+          quotes = result.quotes
             .includes(
               :quote_items,
               :customer,
               :quote_change_requests,
               service_job: :customer_recommendation_request
             )
-            .newest_first
           render json: {
-            data: {quotes: quotes.map { |quote| ProfessionalQuoteSerializer.new(quote) }},
+            data: {
+              quotes: quotes.map { |quote| ProfessionalQuoteSerializer.new(quote) },
+              meta: result.meta
+            },
             request_id: Current.request_id
           }
+        rescue ProfessionalQuoteIndexQuery::Invalid => error
+          render_api_error(
+            code: "validation_failed",
+            message: "Revise os filtros dos orçamentos.",
+            status: :unprocessable_entity,
+            field_errors: error.field_errors
+          )
         end
 
         def create

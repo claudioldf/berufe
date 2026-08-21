@@ -1522,9 +1522,17 @@ paths:
         - Professional quotes
       security:
         - applicationSession: []
+      parameters:
+        - $ref: "#/components/parameters/ProfessionalQuoteSearch"
+        - $ref: "#/components/parameters/ProfessionalQuoteStatus"
+        - $ref: "#/components/parameters/ProfessionalQuoteScheduledOn"
+        - $ref: "#/components/parameters/ProfessionalQuoteSort"
+        - $ref: "#/components/parameters/SortDirection"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
       responses:
         "200":
-          description: Owned quotes ordered newest first.
+          description: Filtered, sorted, and paginated owned quotes.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
@@ -1543,6 +1551,15 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: Professional registration has not created a profile yet.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: One or more quote index parameters are invalid.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
@@ -2796,6 +2813,57 @@ components:
         minimum: 1
         maximum: 50
         default: 20
+    ProfessionalQuoteSearch:
+      name: search
+      in: query
+      description: Accent-insensitive search by quote number, customer, or service.
+      schema:
+        type: string
+        maxLength: 100
+    ProfessionalQuoteStatus:
+      name: status
+      in: query
+      description: Quote workflow status; defaults to all statuses.
+      schema:
+        type: string
+        default: all
+        enum:
+          - all
+          - draft
+          - shared
+          - change_requested
+          - approved
+          - declined
+    ProfessionalQuoteScheduledOn:
+      name: scheduled_on
+      in: query
+      description: Exact combined service date.
+      schema:
+        type: string
+        format: date
+    ProfessionalQuoteSort:
+      name: sort
+      in: query
+      description: Quote table column used for deterministic ordering.
+      schema:
+        type: string
+        default: updated
+        enum:
+          - number
+          - customer
+          - total
+          - status
+          - updated
+    SortDirection:
+      name: direction
+      in: query
+      description: Sort direction for the selected column.
+      schema:
+        type: string
+        default: desc
+        enum:
+          - asc
+          - desc
     ModerationTargetType:
       name: target_type
       in: path
@@ -3601,11 +3669,12 @@ components:
         data:
           type: object
           additionalProperties: false
-          required: [quotes]
+          required: [quotes, meta]
           properties:
             quotes:
               type: array
               items: { $ref: "#/components/schemas/ProfessionalQuote" }
+            meta: { $ref: "#/components/schemas/PageMeta" }
         request_id: { $ref: "#/components/schemas/RequestId" }
     ProfessionalQuoteResponse:
       type: object

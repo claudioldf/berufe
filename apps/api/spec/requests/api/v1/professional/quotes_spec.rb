@@ -43,6 +43,12 @@ RSpec.describe "Professional quotes", type: :request, openapi: true do
       headers: session_headers(request_id: "quote-list")
     expect(response).to have_http_status(:ok)
     expect(response.parsed_body.dig("data", "quotes").pluck("id")).to eq([quote.id])
+    expect(response.parsed_body.dig("data", "meta")).to eq(
+      "page" => 1,
+      "per_page" => 20,
+      "total_count" => 1,
+      "total_pages" => 1
+    )
     expect(response.headers.fetch("Cache-Control")).to eq("no-store")
     assert_api_conform(status: 200)
 
@@ -76,6 +82,93 @@ RSpec.describe "Professional quotes", type: :request, openapi: true do
     )
     expect(ProfessionalDailyActivity.sole.quotes_created).to eq(1)
     assert_api_conform(status: 200)
+  end
+
+  it "filters, sorts, and paginates the owner-scoped quote index in the database" do
+    low = create_quote(
+      customer: {name: "Álvaro Lima"},
+      service_description: "Pintura interna",
+      scheduled_on: "2026-09-01",
+      discount_amount: 0,
+      items: [{description: "Pintura", quantity: 1, unit: "serviço", unit_price: 100}]
+    )
+    middle = create_quote(
+      customer: {name: "José Silva"},
+      service_description: "Instalação hidráulica",
+      scheduled_on: "2026-09-02",
+      discount_amount: 0,
+      items: [{description: "Instalação", quantity: 1, unit: "serviço", unit_price: 200}]
+    )
+    high = create_quote(
+      customer: {name: "Maria Souza"},
+      service_description: "Revisão elétrica",
+      scheduled_on: "2026-09-01",
+      discount_amount: 0,
+      items: [{description: "Revisão", quantity: 1, unit: "serviço", unit_price: 300}]
+    )
+
+    get "/api/v1/professional/quotes",
+      params: {search: "jose", status: "draft", scheduled_on: "2026-09-02"},
+      headers: session_headers(request_id: "quote-list-filtered")
+
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body.dig("data", "quotes").pluck("id")).to eq([middle.id])
+    expect(response.parsed_body.dig("data", "meta", "total_count")).to eq(1)
+    assert_api_conform(status: 200)
+
+    get "/api/v1/professional/quotes",
+      params: {sort: "total", direction: "desc", page: 2, per_page: 1},
+      headers: session_headers(request_id: "quote-list-paginated")
+
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body.dig("data", "quotes").pluck("id")).to eq([middle.id])
+    expect(response.parsed_body.dig("data", "meta")).to eq(
+      "page" => 2,
+      "per_page" => 1,
+      "total_count" => 3,
+      "total_pages" => 3
+    )
+    expect(response.parsed_body.dig("data", "quotes").pluck("id")).not_to include(low.id, high.id)
+    assert_api_conform(status: 200)
+  end
+
+  it "rejects invalid quote index filters" do
+    get "/api/v1/professional/quotes",
+      params: {
+        search: "x" * 101,
+        status: "waiting",
+        scheduled_on: "not-a-date",
+        sort: "secret",
+        direction: "sideways",
+        page: 0,
+        per_page: 101
+      },
+      headers: session_headers(request_id: "quote-list-invalid")
+
+    expect(response).to have_http_status(:unprocessable_entity)
+    expect(response.parsed_body.dig("error", "field_errors").keys).to contain_exactly(
+      "search",
+      "status",
+      "scheduled_on",
+      "sort",
+      "direction",
+      "page",
+      "per_page"
+    )
+
+    # The contract rejects those malformed query values before validating the
+    # response, so exercise the documented 422 body with a valid request.
+    query = instance_double(ProfessionalQuoteIndexQuery)
+    allow(ProfessionalQuoteIndexQuery).to receive(:new).and_return(query)
+    allow(query).to receive(:call).and_raise(
+      ProfessionalQuoteIndexQuery::Invalid.new(sort: ["use uma coluna de ordenação válida"])
+    )
+    get "/api/v1/professional/quotes",
+      params: {sort: "updated", direction: "desc", page: 1, per_page: 20},
+      headers: session_headers(request_id: "quote-list-invalid-response")
+
+    expect(response).to have_http_status(:unprocessable_entity)
+    assert_api_conform(status: 422)
   end
 
   it "keeps a shared quote's lifecycle stable while owner edits become live" do
@@ -244,8 +337,11 @@ RSpec.describe "Professional quotes", type: :request, openapi: true do
 
   private
 
-  def create_quote
-    ProfessionalQuoteWriter.new.call(profile:, attributes: quote_attributes)
+  def create_quote(**overrides)
+    ProfessionalQuoteWriter.new.call(
+      profile:,
+      attributes: quote_attributes.deep_merge(overrides)
+    )
   end
 
   def quote_body(**overrides)

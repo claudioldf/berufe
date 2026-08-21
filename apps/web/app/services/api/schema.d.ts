@@ -1324,6 +1324,7 @@ export interface components {
         ProfessionalQuoteListResponse: {
             data: {
                 quotes: components["schemas"]["ProfessionalQuote"][];
+                meta: components["schemas"]["PageMeta"];
             };
             request_id: components["schemas"]["RequestId"];
         };
@@ -2459,6 +2460,16 @@ export interface components {
         ModerationSearch: string;
         /** @description Moderation result count per page. */
         ModerationPageSize: number;
+        /** @description Accent-insensitive search by quote number, customer, or service. */
+        ProfessionalQuoteSearch: string;
+        /** @description Quote workflow status; defaults to all statuses. */
+        ProfessionalQuoteStatus: "all" | "draft" | "shared" | "change_requested" | "approved" | "declined";
+        /** @description Exact combined service date. */
+        ProfessionalQuoteScheduledOn: string;
+        /** @description Quote table column used for deterministic ordering. */
+        ProfessionalQuoteSort: "number" | "customer" | "total" | "status" | "updated";
+        /** @description Sort direction for the selected column. */
+        SortDirection: "asc" | "desc";
         ModerationTargetType: components["schemas"]["ModerationTargetType"];
         ModerationMediaTargetType: "profile_photo" | "portfolio_item";
         ModerationTargetId: string;
@@ -3994,14 +4005,29 @@ export interface operations {
     };
     listProfessionalQuotes: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Accent-insensitive search by quote number, customer, or service. */
+                search?: components["parameters"]["ProfessionalQuoteSearch"];
+                /** @description Quote workflow status; defaults to all statuses. */
+                status?: components["parameters"]["ProfessionalQuoteStatus"];
+                /** @description Exact combined service date. */
+                scheduled_on?: components["parameters"]["ProfessionalQuoteScheduledOn"];
+                /** @description Quote table column used for deterministic ordering. */
+                sort?: components["parameters"]["ProfessionalQuoteSort"];
+                /** @description Sort direction for the selected column. */
+                direction?: components["parameters"]["SortDirection"];
+                /** @description One-based result page. */
+                page?: components["parameters"]["Page"];
+                /** @description Result count per page. */
+                per_page?: components["parameters"]["PageSize"];
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Owned quotes ordered newest first. */
+            /** @description Filtered, sorted, and paginated owned quotes. */
             200: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
@@ -4023,6 +4049,16 @@ export interface operations {
             };
             /** @description Professional registration has not created a profile yet. */
             404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description One or more quote index parameters are invalid. */
+            422: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
