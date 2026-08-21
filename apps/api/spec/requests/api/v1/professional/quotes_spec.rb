@@ -130,6 +130,15 @@ RSpec.describe "Professional quotes", type: :request, openapi: true do
     )
     expect(response.parsed_body.dig("data", "quotes").pluck("id")).not_to include(low.id, high.id)
     assert_api_conform(status: 200)
+
+    get "/api/v1/professional/quotes",
+      params: {customer_id: middle.customer_id},
+      headers: session_headers(request_id: "quote-list-customer")
+
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body.dig("data", "quotes").pluck("id")).to eq([middle.id])
+    expect(response.parsed_body.dig("data", "meta", "total_count")).to eq(1)
+    assert_api_conform(status: 200)
   end
 
   it "rejects invalid quote index filters" do
@@ -138,6 +147,7 @@ RSpec.describe "Professional quotes", type: :request, openapi: true do
         search: "x" * 101,
         status: "waiting",
         scheduled_on: "not-a-date",
+        customer_id: "not-a-customer",
         sort: "secret",
         direction: "sideways",
         page: 0,
@@ -150,6 +160,7 @@ RSpec.describe "Professional quotes", type: :request, openapi: true do
       "search",
       "status",
       "scheduled_on",
+      "customer_id",
       "sort",
       "direction",
       "page",

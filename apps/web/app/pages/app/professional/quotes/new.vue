@@ -9,6 +9,7 @@ import { useShare } from "~/composables/useShare";
 import { useToast } from "~/composables/useToast";
 import { useApiClient } from "~/services/api/client";
 import { ApiRequestError } from "~/services/api/errors";
+import { fetchProfessionalCustomer } from "~/services/api/professional-customers";
 import {
   createProfessionalQuote,
   fetchProfessionalQuote,
@@ -33,14 +34,23 @@ const { copyText } = useShare();
 const requestedQuoteId = Array.isArray(route.query.quote)
   ? route.query.quote[0]
   : route.query.quote;
+const requestedCustomerId = requestedQuoteId
+  ? undefined
+  : Array.isArray(route.query.customer)
+    ? route.query.customer[0]
+    : route.query.customer;
 const editor = await useAsyncData(
-  `professional-quote-editor-${requestedQuoteId ?? "new"}`,
+  `professional-quote-editor-${requestedQuoteId ?? `new-${requestedCustomerId ?? "blank"}`}`,
   async () => {
     const [workspace, quote] = await Promise.all([
       fetchProfessionalWorkspace(client),
       requestedQuoteId
         ? fetchProfessionalQuote(client, requestedQuoteId)
-        : Promise.resolve(createEmptyQuote()),
+        : requestedCustomerId
+          ? fetchProfessionalCustomer(client, requestedCustomerId).then(
+              createEmptyQuote,
+            )
+          : Promise.resolve(createEmptyQuote()),
     ]);
     return { workspace, quote };
   },
@@ -84,15 +94,17 @@ const quoteStatusLabel = computed(() => {
   return quote.value ? labels[quote.value.status] : "Rascunho";
 });
 
-function createEmptyQuote(): Quote {
+function createEmptyQuote(
+  customer?: Awaited<ReturnType<typeof fetchProfessionalCustomer>>,
+): Quote {
   return {
     id: null,
     number: null,
     revision: 0,
-    customerId: null,
-    customerName: "",
-    customerPhone: "",
-    customerEmail: "",
+    customerId: customer?.id ?? null,
+    customerName: customer?.name ?? "",
+    customerPhone: customer?.phone ?? "",
+    customerEmail: customer?.email ?? "",
     serviceDescription: "",
     serviceAddress: "",
     scheduledOn: "",

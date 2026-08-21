@@ -96,6 +96,7 @@ export async function fetchProfessionalQuotes(
       params: {
         query: {
           search: filters.search || undefined,
+          customer_id: filters.customerId || undefined,
           status: filters.status,
           scheduled_on: filters.scheduledOn || undefined,
           sort: filters.sort,

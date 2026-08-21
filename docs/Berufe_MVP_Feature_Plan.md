@@ -718,7 +718,8 @@ The owner may continue editing a shared quote. Its `shared` status, original `sh
 - Customer acceptance workflow or electronic signature.
 - Payment, installments, escrow, invoice, or tax document.
 - Expense, margin, or profit calculation.
-- Customer CRM, templates, version history, or reusable customer records.
+- Generic customer CRM features such as notes, tags, merging, reminders, or
+  campaigns; the MVP only reuses canonical contact details and quote history.
 - Contract generation, work orders, scheduling, or financial control.
 - Server-generated PDF; browser print is sufficient initially.
 
