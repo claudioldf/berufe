@@ -1365,8 +1365,22 @@ export interface components {
             data: {
                 quotes: components["schemas"]["ProfessionalQuote"][];
                 meta: components["schemas"]["PageMeta"];
+                summary: components["schemas"]["ProfessionalQuoteCommercialSummary"];
             };
             request_id: components["schemas"]["RequestId"];
+        };
+        ProfessionalQuoteCommercialSummary: {
+            awaiting_response: {
+                count: number;
+                total_amount: components["schemas"]["MoneyAmount"];
+            };
+            changes_requested: {
+                count: number;
+            };
+            approved_this_month: {
+                count: number;
+                total_amount: components["schemas"]["MoneyAmount"];
+            };
         };
         ProfessionalQuoteResponse: {
             data: {

@@ -88,7 +88,21 @@ export interface QuotePageMeta {
   totalPages: number;
 }
 
+export interface QuoteValueSummary {
+  count: number;
+  total: number;
+}
+
+export interface QuoteCommercialSummary {
+  awaitingResponse: QuoteValueSummary;
+  changesRequested: {
+    count: number;
+  };
+  approvedThisMonth: QuoteValueSummary;
+}
+
 export interface QuotePage {
   quotes: Quote[];
   meta: QuotePageMeta;
+  summary: QuoteCommercialSummary;
 }

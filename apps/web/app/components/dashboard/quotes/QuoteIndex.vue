@@ -9,6 +9,7 @@ import type {
 } from "~/types";
 import QuoteFilters from "./QuoteFilters.vue";
 import QuotePagination from "./QuotePagination.vue";
+import QuoteSummary from "./QuoteSummary.vue";
 import QuoteTable from "./QuoteTable.vue";
 
 const props = defineProps<{
@@ -123,6 +124,8 @@ onScopeDispose(clearSearchTimer);
 
 <template>
   <div class="quote-index">
+    <QuoteSummary :summary="props.result.summary" />
+
     <QuoteFilters
       :query="query"
       :status="status"

@@ -676,7 +676,13 @@ The profile helps professionals get discovered; the quote helps them perform a f
 6. The customer can view or print the quote without an account.
 7. The owner can revoke the link at any time. Revocation clears the token, hash, and `shared_at` together and returns the quote to `draft`, so the copy the customer holds stops resolving. Sharing again issues a different link.
 
-The owner may continue editing a shared quote. Its `shared` status, original `shared_at`, and active token remain unchanged, and the customer link resolves the latest saved content. A quote can be shared or resolved only while its owner remains an active, currently published professional. The shared page shows only the quote and the professional's approved public identity and labels, and an identity-verification label appears only when identity approval actually exists. Token-authorized responses are `no-store` and `noindex`, are excluded from shared caches, and reveal nothing for invalid tokens. MVP statuses are only `draft` and `shared`; the commercial validity date is not token expiry, and Berufe does not represent acceptance or payment.
+The owner may continue editing a shared quote. Its `shared` status, original `shared_at`, and active token remain unchanged, and the customer link resolves the latest saved content. A quote can be shared or resolved only while its owner remains an active, currently published professional. The shared page shows only the quote and the professional's approved public identity and labels, and an identity-verification label appears only when identity approval actually exists. Token-authorized responses are `no-store` and `noindex`, are excluded from shared caches, and reveal nothing for invalid tokens. MVP statuses are `draft`, `shared`, `change_requested`, `approved`, and `declined`; the commercial validity date is not token expiry, and Berufe does not represent acceptance as a legal signature or payment.
+
+The professional quote list includes a compact, owner-wide commercial summary:
+the count and value of shared quotes awaiting a response, the count of quotes
+with requested changes, and the count and value approved during the current
+São Paulo calendar month. These aggregates are independent from list filters
+and are explicitly labeled as quote values rather than payments received.
 
 #### 4. Suggested feature-scoped data schema
 
@@ -694,7 +700,7 @@ The owner may continue editing a shared quote. Its `shared` status, original `sh
 | `total_amount`           | decimal(14,2) | Server-calculated as `subtotal_amount - discount_amount`                                                          |
 | `valid_until`            | date          | Nullable                                                                                                          |
 | `notes`                  | text          | Nullable and length-limited                                                                                       |
-| `status`                 | enum          | `draft`, `shared`; revocation returns a shared quote to `draft`                                                   |
+| `status`                 | enum          | `draft`, `shared`, `change_requested`, `approved`, or `declined`; revocation returns a shared quote to `draft`    |
 | `share_token_hash`       | text          | Unique keyed digest; nullable until first share and cleared by revocation; raw token is never stored in the clear |
 | `share_token_ciphertext` | text          | Encrypted owner copy of the active token so re-sharing reuses the same link; cleared by revocation                |
 | `created_at`             | timestamp     | Required                                                                                                          |
@@ -715,7 +721,7 @@ The owner may continue editing a shared quote. Its `shared` status, original `sh
 
 #### 5. Explicitly not in MVP
 
-- Customer acceptance workflow or electronic signature.
+- Electronic signature or contract execution.
 - Payment, installments, escrow, invoice, or tax document.
 - Expense, margin, or profit calculation.
 - Generic customer CRM features such as notes, tags, merging, reminders, or
@@ -865,7 +871,7 @@ The MVP must learn whether it is building enough credible supply and whether dis
 1. An active administrator with a password-authenticated session selects since launch, 30 days, or 7 days.
 2. Rails calculates every metric from PostgreSQL using one time-zone-aware report snapshot and returns aggregates only through one OpenAPI operation.
 3. Nuxt shows counts and `n/N` before percentages, renders zero denominators as unavailable, and explains every definition.
-4. The report covers only implemented MVP domains. Client recommendations, external professional invites, content-report records, and professional-facing analytics remain absent until their V2 stories are approved.
+4. The report covers only implemented MVP domains. Client recommendations, external professional invites, content-report records, and professional-facing analytics beyond the quote-list commercial summary remain absent until their V2 stories are approved.
 5. Low-frequency unmatched search terms are suppressed, private quote/customer data never leaves report queries, and no report response includes visitor-level records.
 
 The complete metric, query, privacy, and test specification is `Berufe_Reports_Stories.md` R001–R014.
@@ -891,7 +897,9 @@ Domain transactions update the aggregate transactionally where practical or thro
 
 - Visitor identity, session replay, attribution profiles, or message content.
 - Third-party analytics, warehouse, Redis, event streaming, or a charting package.
-- Client-recommendation, external-invite, content-report, revenue, payment, hiring, or professional-facing performance widgets.
+- Client-recommendation, external-invite, content-report, revenue, payment,
+  hiring, or professional-facing performance widgets beyond the quote-list
+  commercial summary.
 - Arbitrary report builder, exports, scheduled reports, or custom date ranges.
 
 ## 3. MVP release slices

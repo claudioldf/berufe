@@ -60,6 +60,11 @@ function pageFixture(overrides: Partial<QuotePage> = {}): QuotePage {
   return {
     quotes,
     meta: { page: 1, perPage: 20, totalCount: 3, totalPages: 1 },
+    summary: {
+      awaitingResponse: { count: 2, total: 450 },
+      changesRequested: { count: 1 },
+      approvedThisMonth: { count: 3, total: 900 },
+    },
     ...overrides,
   };
 }
@@ -90,6 +95,48 @@ afterEach(() => {
 });
 
 describe("professional quote index", () => {
+  it("shows the commercial summary without presenting quote values as payments", () => {
+    const wrapper = mountIndex();
+
+    expect(wrapper.get('[aria-label="Aguardando resposta"]').text()).toMatch(
+      /R\$\s*450,00/,
+    );
+    expect(wrapper.get('[aria-label="Aguardando resposta"]').text()).toContain(
+      "2 orçamentos",
+    );
+    expect(wrapper.get('[aria-label="Alterações solicitadas"]').text()).toMatch(
+      /1\s*orçamento para revisar/,
+    );
+    expect(wrapper.get('[aria-label="Aprovados este mês"]').text()).toMatch(
+      /R\$\s*900,00/,
+    );
+    expect(wrapper.text()).toContain(
+      "Valores de orçamentos; não representam pagamentos recebidos.",
+    );
+  });
+
+  it("renders explicit zero states in the commercial summary", () => {
+    const wrapper = mountIndex(
+      pageFixture({
+        summary: {
+          awaitingResponse: { count: 0, total: 0 },
+          changesRequested: { count: 0 },
+          approvedThisMonth: { count: 0, total: 0 },
+        },
+      }),
+    );
+
+    expect(wrapper.get('[aria-label="Aguardando resposta"]').text()).toMatch(
+      /R\$\s*0,00.*0 orçamentos/,
+    );
+    expect(wrapper.get('[aria-label="Alterações solicitadas"]').text()).toMatch(
+      /0\s*orçamentos para revisar/,
+    );
+    expect(wrapper.get('[aria-label="Aprovados este mês"]').text()).toMatch(
+      /R\$\s*0,00.*0 orçamentos/,
+    );
+  });
+
   it("renders the server page and keeps the result summary outside the filter card", () => {
     const wrapper = mountIndex();
 

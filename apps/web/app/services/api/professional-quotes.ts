@@ -117,6 +117,19 @@ export async function fetchProfessionalQuotes(
       totalCount: data.data.meta.total_count,
       totalPages: data.data.meta.total_pages,
     },
+    summary: {
+      awaitingResponse: {
+        count: data.data.summary.awaiting_response.count,
+        total: Number(data.data.summary.awaiting_response.total_amount),
+      },
+      changesRequested: {
+        count: data.data.summary.changes_requested.count,
+      },
+      approvedThisMonth: {
+        count: data.data.summary.approved_this_month.count,
+        total: Number(data.data.summary.approved_this_month.total_amount),
+      },
+    },
   };
 }
 

@@ -49,6 +49,11 @@ RSpec.describe "Professional quotes", type: :request, openapi: true do
       "total_count" => 1,
       "total_pages" => 1
     )
+    expect(response.parsed_body.dig("data", "summary")).to eq(
+      "awaiting_response" => {"count" => 0, "total_amount" => "0.00"},
+      "changes_requested" => {"count" => 0},
+      "approved_this_month" => {"count" => 0, "total_amount" => "0.00"}
+    )
     expect(response.headers.fetch("Cache-Control")).to eq("no-store")
     assert_api_conform(status: 200)
 
@@ -180,6 +185,46 @@ RSpec.describe "Professional quotes", type: :request, openapi: true do
 
     expect(response).to have_http_status(:unprocessable_entity)
     assert_api_conform(status: 422)
+  end
+
+  it "returns an owner-wide commercial summary independently from list filters" do
+    now = Time.current.change(usec: 0)
+    draft = create_quote(
+      customer: {name: "Cliente em rascunho"},
+      discount_amount: 0,
+      items: [{description: "Rascunho", quantity: 1, unit: "serviço", unit_price: 50}]
+    )
+    awaiting = create_quote(
+      customer: {name: "Cliente aguardando"},
+      discount_amount: 0,
+      items: [{description: "Aguardando", quantity: 1, unit: "serviço", unit_price: 125}]
+    )
+    requested = create_quote(
+      customer: {name: "Cliente pediu ajuste"},
+      discount_amount: 0,
+      items: [{description: "Ajuste", quantity: 1, unit: "serviço", unit_price: 225}]
+    )
+    approved = create_quote(
+      customer: {name: "Cliente aprovou"},
+      discount_amount: 0,
+      items: [{description: "Aprovado", quantity: 1, unit: "serviço", unit_price: 325}]
+    )
+    mark_quote(awaiting, status: "shared", now:)
+    mark_quote(requested, status: "change_requested", now:)
+    mark_quote(approved, status: "approved", now:, decided_at: now)
+
+    get "/api/v1/professional/quotes",
+      params: {status: "draft", search: "rascunho"},
+      headers: session_headers(request_id: "quote-list-summary")
+
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body.dig("data", "quotes").pluck("id")).to eq([draft.id])
+    expect(response.parsed_body.dig("data", "summary")).to eq(
+      "awaiting_response" => {"count" => 1, "total_amount" => "125.00"},
+      "changes_requested" => {"count" => 1},
+      "approved_this_month" => {"count" => 1, "total_amount" => "325.00"}
+    )
+    assert_api_conform(status: 200)
   end
 
   it "keeps a shared quote's lifecycle stable while owner edits become live" do
@@ -352,6 +397,17 @@ RSpec.describe "Professional quotes", type: :request, openapi: true do
     ProfessionalQuoteWriter.new.call(
       profile:,
       attributes: quote_attributes.deep_merge(overrides)
+    )
+  end
+
+  def mark_quote(quote, status:, now:, decided_at: nil)
+    quote.update_columns(
+      status:,
+      share_token_hash: Digest::SHA256.hexdigest("quote-summary-#{quote.id}"),
+      share_token_ciphertext: "test-token",
+      shared_at: now - 1.day,
+      customer_decided_at: decided_at,
+      updated_at: now
     )
   end
 

@@ -117,6 +117,8 @@ por e-mail".
 - Customer autocomplete in the quote builder.
 - Customer directory and detail pages with contact editing, quote history, and
   prefilled new-quote handoff.
+- Quote-list commercial summary for awaiting-response value, requested changes,
+  and current-month approvals, explicitly distinguished from payments.
 - Quote decision states and optimistic revision handling.
 - Recent services on the professional dashboard.
 - Service list and detail pages with completion and cancellation actions.
