@@ -94,7 +94,7 @@ function clearSelection() {
       </span>
       <span>
         <small>Adicionar novo contato</small>
-        <strong>Não encontrei essa pessoa</strong>
+        <strong>Não encontrei a pessoa na lista</strong>
       </span>
       <button type="button" @click="clearSelection">Trocar</button>
     </div>
@@ -136,7 +136,7 @@ function clearSelection() {
           <UIcon name="i-lucide-user-round-plus" aria-hidden="true" />
         </span>
         <span>
-          <strong>Não encontrei essa pessoa</strong>
+          <strong>Não encontrei a pessoa na lista</strong>
           <small>Continuar informando o telefone</small>
         </span>
         <UIcon name="i-lucide-circle" aria-hidden="true" />

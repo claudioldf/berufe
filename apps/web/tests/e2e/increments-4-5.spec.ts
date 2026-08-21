@@ -168,7 +168,7 @@ test("existing members publish a relationship by confirming it together", async 
   });
   await expect(
     requestDialog.getByRole("button", {
-      name: /Não encontrei essa pessoa.*Continuar informando o telefone/,
+      name: /Não encontrei a pessoa na lista.*Continuar informando o telefone/,
     }),
   ).toBeVisible();
   await expect(continueButton).toBeDisabled();

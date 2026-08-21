@@ -190,12 +190,14 @@ describe("relationship create dialog", () => {
       .find((button) => button.text().includes("Continuar"))!;
 
     expect(continueButton.attributes("disabled")).toBeDefined();
-    expect(wrapper.text()).toContain("Não encontrei essa pessoa");
+    expect(wrapper.text()).toContain("Não encontrei a pessoa na lista");
     expect(wrapper.text()).toContain("Continuar informando o telefone");
 
     await wrapper
       .findAll("button")
-      .find((button) => button.text().includes("Não encontrei essa pessoa"))!
+      .find((button) =>
+        button.text().includes("Não encontrei a pessoa na lista"),
+      )!
       .trigger("click");
 
     expect(continueButton.attributes("disabled")).toBeUndefined();
