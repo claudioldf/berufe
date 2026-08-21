@@ -156,6 +156,11 @@ defineProps<{
     font-size: 0.82rem;
     line-height: 1.4;
     cursor: pointer;
+
+    input[type="checkbox"],
+    input[type="radio"] {
+      margin-top: 3px;
+    }
   }
 
   &__radios {
