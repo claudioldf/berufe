@@ -204,14 +204,26 @@ test("existing members publish a relationship by confirming it together", async 
   await expect(outbound).toContainText(recipient.name);
   await expectActionAtCardBottom(outbound, "Cancelar solicitação de conexão");
 
+  await page.goto("/app/professional");
+  const ongoingSection = page.locator(".activity-section--ongoing");
+  await expect(ongoingSection).toContainText("Acompanhamentos.");
+  const outboundOverview = ongoingSection
+    .locator("article")
+    .filter({ hasText: recipient.name });
+  await expect(outboundOverview).toContainText("Aguardando confirmação");
+
   const recipientContext = await browser.newContext({
     baseURL: new URL(page.url()).origin,
   });
   const recipientPage = await recipientContext.newPage();
   await signInExistingProfessional(recipientPage, recipient.phone);
   await recipientPage.goto("/app/professional");
-  const overviewPending = recipientPage
-    .locator(".pending-list article")
+  const attentionSection = recipientPage.locator(
+    ".activity-section--attention",
+  );
+  await expect(attentionSection).toContainText("Para resolver.");
+  const overviewPending = attentionSection
+    .locator("article")
     .filter({ hasText: initiator.name });
   await expect(overviewPending).toContainText("Aguardando sua resposta");
 
