@@ -4,6 +4,7 @@ x-api-service: &api-service
   build:
     context: .
     dockerfile: apps/api/Dockerfile
+    target: development
   image: berufe-api:development
   env_file:
     - .env
@@ -22,6 +23,7 @@ services:
   web:
     build:
       context: ./apps/web
+      target: development
     image: berufe-web:development
     env_file:
       - .env
@@ -48,6 +50,16 @@ services:
       timeout: 3s
       retries: 12
       start_period: 20s
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  migrate:
+    <<: *api-service
+    command: bin/rails db:prepare
+    restart: "no"
 
   worker:
     <<: *api-service

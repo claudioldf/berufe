@@ -5,6 +5,44 @@ require "rails_helper"
 RSpec.describe AdminAccountManager do
   let(:service) { described_class.new }
 
+  it "provisions an administrator and records the operator atomically" do
+    now = Time.zone.parse("2026-08-23 12:00:00 UTC")
+
+    expect do
+      account = service.provision!(
+        email: "ADMIN@example.com",
+        password: "a-secure-admin-password",
+        password_confirmation: "a-secure-admin-password",
+        operator_identifier: "ops@example.com",
+        request_id: "production-provision",
+        now:
+      )
+
+      expect(account).to have_attributes(email: "admin@example.com", role: "admin", status: "active")
+    end.to change(UserAccount, :count).by(1).and change(AdminAccessEvent, :count).by(1)
+
+    expect(AdminAccessEvent.last).to have_attributes(
+      action: "provisioned",
+      operator_identifier: "ops@example.com",
+      request_id: "production-provision",
+      created_at: now
+    )
+  end
+
+  it "rolls back administrator provisioning when the audit event is invalid" do
+    expect do
+      service.provision!(
+        email: "admin@example.com",
+        password: "a-secure-admin-password",
+        password_confirmation: "a-secure-admin-password",
+        operator_identifier: "ops@example.com",
+        request_id: "not a valid request id"
+      )
+    end.to raise_error(ArgumentError, "request_id is invalid")
+      .and change(UserAccount, :count).by(0)
+      .and change(AdminAccessEvent, :count).by(0)
+  end
+
   it "resets the password, revokes every session, and records the action atomically" do
     now = Time.zone.parse("2026-08-15 12:00:00 UTC")
     account = provision_admin

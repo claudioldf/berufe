@@ -17,7 +17,10 @@ Rails.application.configure do
   config.good_job.cleanup_preserved_jobs_before_seconds_ago = 14.days.to_i
   config.good_job.cleanup_discarded_jobs = false
   config.good_job.dequeue_query_sort = :scheduled_at
-  config.good_job.on_thread_error = ->(exception) { Rails.error.report(exception) }
+  config.good_job.on_thread_error = lambda do |exception|
+    Rails.error.report(exception)
+    Bugsnag.notify(exception) if defined?(Bugsnag) && Bugsnag.configuration.api_key.present?
+  end
   config.good_job.cron = {
     authentication_records_cleanup: {
       cron: "17 * * * *",

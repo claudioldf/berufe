@@ -41,3 +41,5 @@ group :development, :test do
   # Test application behavior with RSpec
   gem "rspec-rails", "~> 8.0"
 end
+
+gem "bugsnag", "~> 6.30"

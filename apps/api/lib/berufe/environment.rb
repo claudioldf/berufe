@@ -33,10 +33,10 @@ module Berufe
       GOOD_JOB_EXECUTION_MODE
       GOOD_JOB_MAX_THREADS
       GOOD_JOB_QUEUES
-      GOOD_JOB_PROBE_PORT
       WEB_ORIGIN
       API_PUBLIC_URL
     ].freeze
+    EXTERNAL_JOB_REQUIRED = %w[GOOD_JOB_PROBE_PORT].freeze
     FAKE_OTP_REQUIRED = %w[FAKE_SMS_OTP_CODE].freeze
     LOCAL_STORAGE_REQUIRED = %w[LOCAL_STORAGE_ROOT].freeze
     DEPLOYMENT_SECRET_REQUIRED = %w[SECRET_KEY_BASE].freeze
@@ -101,7 +101,7 @@ module Berufe
         end
       end
 
-      required = required_variables(name, sms_otp_adapter, media_storage_adapter)
+      required = required_variables(name, sms_otp_adapter, media_storage_adapter, values)
       missing = required.select { |key| values[key].to_s.strip.empty? }
       errors << "missing required variables: #{missing.sort.join(", ")}" if missing.any?
 
@@ -126,7 +126,7 @@ module Berufe
     end
     private_class_method :parse_product_launch_date
 
-    def self.required_variables(name, sms_otp_adapter, media_storage_adapter)
+    def self.required_variables(name, sms_otp_adapter, media_storage_adapter, values)
       required = (name == "test") ? %w[TEST_DATABASE_URL DB_POOL] : COMMON_REQUIRED.dup
       required.concat(FAKE_OTP_REQUIRED) if sms_otp_adapter == "fake"
       required.concat(INFOBIP_REQUIRED) if sms_otp_adapter == "infobip"
@@ -135,6 +135,7 @@ module Berufe
       required.concat(DEPLOYMENT_SECRET_REQUIRED) if %w[staging integration production].include?(name)
       required.concat(SMTP_REQUIRED) if %w[staging integration production].include?(name)
       required << "BUGSNAG_API_KEY" if name == "production"
+      required.concat(EXTERNAL_JOB_REQUIRED) if name != "test" && values["GOOD_JOB_EXECUTION_MODE"] == "external"
       required
     end
     private_class_method :required_variables
@@ -164,13 +165,23 @@ module Berufe
     def self.validate_job_configuration(name, values, errors)
       return if name == "test"
 
-      expected = {
-        "DB_POOL" => "5",
-        "RAILS_MAX_THREADS" => "5",
-        "GOOD_JOB_EXECUTION_MODE" => "external",
-        "GOOD_JOB_MAX_THREADS" => "2",
-        "GOOD_JOB_QUEUES" => "default"
-      }
+      expected = if name == "production"
+        {
+          "DB_POOL" => "7",
+          "RAILS_MAX_THREADS" => "3",
+          "GOOD_JOB_EXECUTION_MODE" => "async",
+          "GOOD_JOB_MAX_THREADS" => "1",
+          "GOOD_JOB_QUEUES" => "default"
+        }
+      else
+        {
+          "DB_POOL" => "5",
+          "RAILS_MAX_THREADS" => "5",
+          "GOOD_JOB_EXECUTION_MODE" => "external",
+          "GOOD_JOB_MAX_THREADS" => "2",
+          "GOOD_JOB_QUEUES" => "default"
+        }
+      end
       expected.each do |key, value|
         errors << "#{key} must be #{value}" unless values[key] == value
       end

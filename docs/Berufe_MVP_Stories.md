@@ -70,6 +70,7 @@ Apply these rules whenever they are relevant to the story:
 **Acceptance criteria:**
 
 - `docker compose up --build` starts `web`, `api`, `worker`, and `db`.
+- A one-shot migration service successfully prepares the database before the API starts.
 - The API and worker use the same backend image and environment definition.
 - PostgreSQL has a health check and named development volume; dependent services wait for database readiness.
 - Nuxt and Rails source changes reload without rebuilding the entire stack, and the team records that hot reload is comfortable on its supported development machines before retaining the four-service setup.
@@ -88,10 +89,10 @@ Apply these rules whenever they are relevant to the story:
 - Rails validates required environment variables at boot for the selected environment.
 - Development uses local-disk storage and selects the fake SMS-OTP adapter by default. A developer may explicitly select a restricted Infobip profile with allowlisted test numbers through `.env`; adapter selection never falls back at runtime.
 - Production SMS OTP uses Infobip's 2FA API through a purpose-specific adapter. The integration documents application/message-template identifiers, Brazilian sender-registration prerequisites, API-key ownership, delivery limits, challenge verification, and provider-failure behavior.
-- Production credentials are dedicated to Berufe. Stable staging and integration use a separate restricted Infobip application/profile and allowlisted test numbers. Local development uses that restricted profile only when explicitly selected; pull-request previews use the fake adapter and receive no provider credentials.
+- Production credentials are dedicated to Berufe. Any temporary integration environment uses a separate restricted Infobip application/profile and allowlisted test numbers. Local development uses that restricted profile only when explicitly selected; CI uses the fake adapter and receives no provider credentials.
 - Infobip is not Berufe's account, session, authorization, or administrator-password provider.
 - Production-only credentials remain server-side and cannot enter the Nuxt client bundle.
-- Local, pull-request preview, stable staging, and production configuration are clearly separated.
+- Local, test/CI, temporary integration, and production configuration are clearly separated.
 
 **Depends on:** S002.
 **Covers:** Infrastructure §§4, 7.1, 12, and 14.
@@ -116,9 +117,9 @@ Apply these rules whenever they are relevant to the story:
 
 **Acceptance criteria:**
 
-- GoodJob is the Active Job adapter in development, stable staging, and production; ordinary tests use the Rails test adapter unless they specifically exercise GoodJob.
-- GoodJob runs in `external` execution mode outside tests, and the Compose `worker` starts it with `bundle exec good_job start` to process one `default` queue for image sanitization/processing, expired counter/token/file/session cleanup, aggregate maintenance, and nonurgent provider reconciliation. Interactive OTP initiation is explicitly excluded.
-- The API uses `RAILS_MAX_THREADS=5` and `DB_POOL=5`; the worker uses `GOOD_JOB_MAX_THREADS=2` and `DB_POOL=5`. Deployment documentation uses `(API replicas × API pool) + (worker replicas × worker pool) + migration/admin allowance`, reserves 15 connections for one API/worker replica plus administration, selects a plan with at least 20 available connections, and recalculates before scaling.
+- GoodJob is the Active Job adapter in development and production; ordinary tests use the Rails test adapter unless they specifically exercise GoodJob.
+- Local Compose runs GoodJob in `external` mode through `bundle exec good_job start`. Production runs one `async` GoodJob thread inside Rails to process the same `default` queue without a separate service. Interactive OTP initiation is explicitly excluded.
+- Local API/worker defaults remain `RAILS_MAX_THREADS=5`, `GOOD_JOB_MAX_THREADS=2`, and `DB_POOL=5`. Production uses `RAILS_MAX_THREADS=3`, `GOOD_JOB_MAX_THREADS=1`, and `DB_POOL=7`, preserves an administration/migration margin, and recalculates before scaling.
 - GoodJob tables are created through committed Rails migrations in the existing PostgreSQL database.
 - A harmless probe job can be enqueued, processed, failed, retried, and inspected.
 - The worker exposes GoodJob's HTTP running/started/connected probes; the dashboard is mounted only behind an active password-authenticated admin session.
@@ -224,7 +225,7 @@ Apply these rules whenever they are relevant to the story:
 
 - The login page accepts and normalizes Brazilian numbers to E.164.
 - Rails applies a resend cooldown and conservative daily allowances by phone and IP using short-lived PostgreSQL digests/counters.
-- Rails synchronously starts the challenge through a small SMS-OTP adapter. Production uses Infobip; stable staging and integration use restricted Infobip with an explicit allowlist; local development selects fake or restricted Infobip through `.env`; automated tests and pull-request previews use fake delivery. No OTP-delivery job is enqueued.
+- Rails synchronously starts the challenge through a small SMS-OTP adapter. Production uses Infobip; a temporary integration environment uses restricted Infobip with an explicit allowlist; local development selects fake or restricted Infobip through `.env`; automated tests and CI use fake delivery. No OTP-delivery job is enqueued.
 - Infobip owns the OTP value and delivery result. Rails stores a short-lived `otp_challenge` that binds an encrypted normalized phone and encrypted Infobip challenge ID to a separate high-entropy browser token stored only as a digest; it also stores short-lived abuse-control digests/counters.
 - The API contract defines accepted, invalid-phone, rate-limited, provider-unavailable, and delivery-rejected outcomes. Rate-limit responses include `Retry-After` and every failure uses the shared safe error envelope.
 - Responses do not reveal whether an account exists and do not log phone numbers, OTPs, or request bodies.
@@ -250,7 +251,7 @@ Apply these rules whenever they are relevant to the story:
 - Infobip credentials and raw Rails challenge/session tokens never enter browser storage or application logs; no authentication material is stored in `localStorage`.
 - Professional sessions use 7-day idle and 30-day absolute expiry; admin sessions use 30-minute idle and 12-hour absolute expiry. Last-activity persistence is throttled.
 - Invalid, expired, and provider-unavailable results use generic safe messages.
-- The Infobip 2FA implementation remains behind the same small adapter. Production always uses it, stable staging and integration use a restricted allowlisted configuration, local development may explicitly select it, and automated tests and pull-request previews use the fake implementation.
+- The Infobip 2FA implementation remains behind the same small adapter. Production always uses it, a temporary integration environment uses a restricted allowlisted configuration, local development may explicitly select it, and automated tests and CI use the fake implementation.
 - Model/request tests cover token hashing, professional idle and absolute boundaries, throttled activity writes, refusal to authenticate admins by SMS, invalid/expired verification, and safe provider-unavailable behavior.
 
 **Depends on:** S011.
@@ -283,11 +284,11 @@ Apply these rules whenever they are relevant to the story:
 
 **Acceptance criteria:**
 
-- Credentialed CORS uses only exact local, stable-staging, and production Nuxt origins; pull-request previews are absent and no Vercel wildcard is allowed.
+- Credentialed CORS uses only the exact configured local or production Nuxt origin; previews are absent and no wildcard is allowed.
 - Every state-changing request, authenticated or not, requires an exact valid origin; a missing or non-matching `Origin` is refused before the action runs. `SameSite=Lax` on the session cookie is the complementary control, since the browser never attaches it to a cross-site mutation.
 - Nuxt sends credentialed requests through the shared API client and holds no token of its own; the browser supplies the `Origin` header, which page scripts cannot forge.
 - Security headers cover content type, framing, and referrer behavior.
-- Request tests prove exact allowed-origin success; missing origins, malformed origins, Vercel preview origins, and all other cross-origin mutations are rejected on every mutating route, including OTP challenge and verification.
+- Request tests prove exact allowed-origin success; missing origins, malformed origins, preview origins, and all other cross-origin mutations are rejected on every mutating route, including OTP challenge and verification.
 
 **Depends on:** S012.
 **Covers:** Infrastructure §§8 and 12.
@@ -879,7 +880,7 @@ The MVP report includes only implemented launch domains: professional supply and
 
 ### S052 — Add privacy-safe logs, health checks, and error alerts
 
-**Story:** As an operator, I want correlated platform logs and exception alerts so that MVP failures across Vercel, Render, and GoodJob are visible without logging sensitive payloads.
+**Story:** As an operator, I want correlated platform logs and exception alerts so that MVP failures across Railway and GoodJob are visible without logging sensitive payloads.
 
 **Acceptance criteria:**
 
@@ -888,7 +889,7 @@ The MVP report includes only implemented launch domains: professional supply and
 - Separate Bugsnag projects capture Rails/Active Job/GoodJob exceptions and Nuxt browser/SSR exceptions. Production source maps are uploaded privately.
 - Bugsnag is error-only: performance monitoring, distributed tracing, automatic session tracking, user/anonymous identification, and IP collection are disabled. Events include only release, environment, normalized route or job class, request ID, exception, and stack trace.
 - Production unhandled exceptions, terminal job failures, and GoodJob executor/thread failures immediately notify the named operations owner.
-- Health endpoints distinguish Rails readiness and GoodJob running/started/database-connected states without leaking secrets.
+- Health endpoints verify Nuxt and Rails readiness without leaking secrets; local external-worker checks additionally verify GoodJob running/started/database-connected states.
 - Successful GoodJob records are retained for 14 days and reviewed discarded failures for 30 days; unresolved failures are not automatically deleted and cleanup runs daily.
 - The GoodJob dashboard requires an active password-authenticated admin application session. The documented procedure covers inspection, retry, discard review, and escalation.
 - Queue monitoring warns when the oldest runnable job exceeds five minutes and alerts critically at fifteen minutes; operators can also identify failed logins/uploads and old moderation work.
@@ -913,22 +914,22 @@ The MVP report includes only implemented launch domains: professional supply and
 
 **Covers:** Infrastructure §§9, 12, 15, and 18.
 
-### S054 — Configure isolated staging, previews, and production deployments
+### S054 — Configure a lean protected production deployment
 
-**Story:** As a team, we want repeatable separate deployments so that release candidates can be verified without production data.
+**Story:** As a team, we want a repeatable protected deployment so that the MVP can ship without paying for permanent staging infrastructure.
 
 **Acceptance criteria:**
 
-- Nuxt deploys to Vercel and Rails plus the GoodJob worker deploy from the same backend image to Render.
-- Render PostgreSQL is the only production application database; Nuxt cannot connect to it directly.
-- One stable staging Nuxt deployment connects to one stable staging Rails API/worker, PostgreSQL database, R2 configuration, and a restricted Infobip profile limited to allowlisted test numbers.
-- Vercel pull-request previews are mock-only and receive neither a staging API URL nor staging credentials. Credentialed CORS excludes preview origins and contains no wildcard.
-- Production Infobip credentials are absent from stable staging and previews. Any separately approved integration environment uses a restricted Infobip application/message profile and allowlisted test numbers.
-- The Nuxt SSR execution location and Rails/PostgreSQL region are recorded. Rails and PostgreSQL run together in the closest practical Render region.
+- Nuxt, Rails with in-process GoodJob, and managed PostgreSQL run as three Railway services in Virginia.
+- Railway PostgreSQL is the only production application database; Nuxt cannot connect to it directly.
+- CI boots both local integration and production-image smoke stacks; the MVP has no permanent staging or pull-request preview service.
+- Production credentials are absent from CI and local development. Any separately approved temporary integration environment uses a restricted Infobip application/message profile and allowlisted test numbers.
+- Nuxt SSR, Rails, and PostgreSQL run together in the recorded Railway region.
 - Release-like tests from the target Brazilian region show public Rails API p95 ≤ 500 ms and public HTML TTFB p95 ≤ 1.5 seconds.
 - A Rails timeout or outage renders a branded Nuxt `503`/retry state with a request ID. If either latency target fails, launch is blocked until the cause is fixed or a separate change adds 60-second public SWR plus invalidation on approval, hiding, restoration, and suspension.
 - Authenticated, admin, restricted-file, and bearer-token quote responses are never placed in shared caches; quote pages are not statically generated.
-- Migrations run as an explicit release step before dependent code.
+- Migrations and the idempotent catalog seed run as explicit Railway pre-deploy commands before dependent code.
+- GitHub protects `master` and `production`; Railway watches only `production` and waits for required CI checks.
 - Deployment failure preserves the last working version or has a documented forward-fix path.
 
 **Depends on:** S009, S052.

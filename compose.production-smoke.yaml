@@ -1,0 +1,108 @@
+name: berufe-production-smoke
+
+x-api-environment: &api-environment
+  BERUFE_ENV: production
+  RAILS_ENV: production
+  DATABASE_URL: postgresql://berufe:berufe_smoke_only@db:5432/berufe_production
+  SECRET_KEY_BASE: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+  RAILS_MAX_THREADS: "3"
+  DB_POOL: "7"
+  WEB_ORIGIN: https://www.berufe.com.br
+  API_PUBLIC_URL: https://api.berufe.com.br
+  PRODUCT_LAUNCH_DATE: "2026-08-01"
+  SMS_OTP_ADAPTER: infobip
+  INFOBIP_BASE_URL: https://example.api.infobip.com
+  INFOBIP_API_KEY: smoke-only
+  INFOBIP_2FA_APPLICATION_ID: smoke-only
+  INFOBIP_2FA_MESSAGE_ID: smoke-only
+  INFOBIP_SENDER: Berufe
+  INFOBIP_CREDENTIAL_SCOPE: production
+  MEDIA_STORAGE_ADAPTER: r2
+  R2_ENDPOINT: https://smoke-only.r2.cloudflarestorage.com
+  R2_ACCESS_KEY_ID: smoke-only
+  R2_SECRET_ACCESS_KEY: smoke-only
+  R2_PUBLIC_BUCKET: berufe-production-public
+  R2_PRIVATE_BUCKET: berufe-production-private
+  SMTP_ADDRESS: smtp.resend.com
+  SMTP_PORT: "587"
+  SMTP_DOMAIN: berufe.com.br
+  SMTP_USERNAME: resend
+  SMTP_PASSWORD: smoke-only
+  SMTP_AUTHENTICATION: plain
+  SMTP_STARTTLS: "true"
+  MAIL_FROM: Berufe <nao-responda@berufe.com.br>
+  GOOD_JOB_EXECUTION_MODE: async
+  GOOD_JOB_MAX_THREADS: "1"
+  GOOD_JOB_QUEUES: default
+  BUGSNAG_API_KEY: 0123456789abcdef0123456789abcdef
+
+x-api-service: &api-service
+  build:
+    context: .
+    dockerfile: apps/api/Dockerfile
+    target: production
+  image: berufe-api:production-smoke
+  environment: *api-environment
+
+services:
+  db:
+    image: postgres:18.4-bookworm
+    environment:
+      POSTGRES_DB: berufe_production
+      POSTGRES_USER: berufe
+      POSTGRES_PASSWORD: berufe_smoke_only
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U berufe -d berufe_production"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  migrate:
+    <<: *api-service
+    command: ["bin/rails", "db:prepare", "db:seed"]
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    <<: *api-service
+    ports:
+      - "3101:3000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:3000/up"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 20s
+
+  web:
+    build:
+      context: apps/web
+      target: production
+    image: berufe-web:production-smoke
+    environment:
+      NUXT_API_INTERNAL_BASE_URL: http://api:3000
+      NUXT_PUBLIC_API_BASE_URL: https://api.berufe.com.br
+      NUXT_PUBLIC_SITE_URL: https://www.berufe.com.br
+      NUXT_PUBLIC_BUGSNAG_API_KEY: 0123456789abcdef0123456789abcdef
+      RAILWAY_GIT_COMMIT_SHA: production-smoke
+    ports:
+      - "3100:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3000/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
