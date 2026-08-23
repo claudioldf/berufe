@@ -24,7 +24,8 @@ module Api
           status: :unprocessable_entity,
           field_errors: error.field_errors
         )
-      rescue ActiveRecord::ActiveRecordError
+      rescue ActiveRecord::ActiveRecordError => error
+        report_service_error(error)
         render_api_error(
           code: "registration_unavailable",
           message: "Não foi possível concluir seu cadastro agora.",

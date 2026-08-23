@@ -3,6 +3,7 @@ import createClient, {
   type ClientOptions,
   type Middleware,
 } from "openapi-fetch";
+import { apiBugsnagContext, notifyBugsnagError } from "@app/utils/bugsnag";
 import type { paths } from "./schema";
 
 const requestIdPattern = /^[A-Za-z0-9._-]{1,100}$/;
@@ -49,7 +50,22 @@ export function createApiClient(options: ApiClientOptions): BerufeApiClient {
       return request;
     },
   };
-  client.use(requestMiddleware);
+  const errorMiddleware: Middleware = {
+    onResponse({ request, response, schemaPath }) {
+      if (response.status < 500) return;
+
+      notifyBugsnagError(
+        new Error(`API request failed with status ${response.status}`),
+        apiBugsnagContext(request.method, schemaPath),
+      );
+    },
+    onError({ request, schemaPath }) {
+      const error = new Error("API request failed before receiving a response");
+      notifyBugsnagError(error, apiBugsnagContext(request.method, schemaPath));
+      return error;
+    },
+  };
+  client.use(requestMiddleware, errorMiddleware);
 
   return client;
 }

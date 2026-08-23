@@ -16,7 +16,8 @@ module Api
         }
       rescue SharedQuoteResolver::NotFound
         render_shared_quote_not_found
-      rescue ActiveRecord::ActiveRecordError
+      rescue ActiveRecord::ActiveRecordError => error
+        report_service_error(error)
         render_api_error(
           code: "service_unavailable",
           message: "Orçamento temporariamente indisponível.",

@@ -26,7 +26,8 @@ module Api
             message: "Muitas tentativas. Aguarde alguns minutos e tente novamente.",
             status: :too_many_requests
           )
-        rescue ActiveRecord::ActiveRecordError
+        rescue ActiveRecord::ActiveRecordError => error
+          report_service_error(error)
           render_api_error(
             code: "admin_login_unavailable",
             message: "Não foi possível entrar agora. Tente novamente em instantes.",
