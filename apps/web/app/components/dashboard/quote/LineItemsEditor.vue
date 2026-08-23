@@ -19,7 +19,7 @@ const emit = defineEmits<{
         <span>03</span>
         <div>
           <h2>Itens do orçamento</h2>
-          <p>Os totais abaixo são uma prévia da interface.</p>
+          <p>Descreva os itens, as quantidades e os valores.</p>
         </div>
       </div>
       <UButton

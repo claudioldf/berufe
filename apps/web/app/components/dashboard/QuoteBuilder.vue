@@ -64,8 +64,8 @@ function save() {
         <div>
           <strong>Orçamento aprovado</strong>
           <p>
-            Os dados aprovados ficam preservados. Acompanhe a execução na área
-            de serviços.
+            Este orçamento foi aprovado e não pode mais ser alterado. Acompanhe
+            o andamento na área de serviços.
           </p>
         </div>
         <UButton
@@ -103,8 +103,8 @@ function save() {
       </template>
       <div v-if="isShared && !locked" class="quote-builder__revoke">
         <p>
-          O link ativo continua abrindo este orçamento para quem o recebeu.
-          Revogue para que ele pare de funcionar imediatamente.
+          Qualquer pessoa com o link ainda pode abrir este orçamento. Revogue-o
+          para desativar o acesso imediatamente.
         </p>
         <UButton
           color="neutral"
@@ -140,7 +140,7 @@ function save() {
     <UModal
       v-model:open="shareOpen"
       title="Compartilhar orçamento"
-      description="Ao compartilhar, o rascunho ganha um link seguro e muda para compartilhado."
+      description="Ao compartilhar, um link privado será criado e o orçamento passará para “Aguardando resposta”."
     >
       <template #body>
         <div class="share-quote">
@@ -148,8 +148,8 @@ function save() {
           <div>
             <strong>Enviar pelo WhatsApp</strong>
             <p>
-              A Berufe abre o aplicativo com uma mensagem e o link. Não enviamos
-              nem lemos a conversa.
+              A Berufe abre o WhatsApp com uma mensagem pronta e o link. Não
+              enviamos a mensagem nem acessamos a conversa.
             </p>
           </div>
         </div>
@@ -187,7 +187,7 @@ function save() {
     <UModal
       v-model:open="revokeOpen"
       title="Revogar o link do orçamento"
-      description="O link que o cliente já recebeu deixa de abrir este orçamento e não pode ser reativado."
+      description="O link atual deixará de funcionar e não poderá ser reativado."
     >
       <template #body>
         <p class="revoke-quote">

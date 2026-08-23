@@ -199,6 +199,13 @@ RSpec.describe "Quote service loop", type: :request, openapi: true do
     expect(response.parsed_body.dig("data", "whatsapp_url")).to start_with(
       "https://wa.me/5547999912611?"
     )
+    completion_message = URI.decode_www_form(
+      URI(response.parsed_body.dig("data", "whatsapp_url")).query
+    ).to_h.fetch("text")
+    expect(completion_message).to eq(
+      "Olá, Marina Cliente! O trabalho combinado no orçamento #1 foi concluído. " \
+      "Confirme a conclusão por aqui: #{share.share_url}"
+    )
     expect(service_job.reload).to be_completion_requested
     assert_api_conform(status: 200)
 
@@ -406,7 +413,9 @@ RSpec.describe "Quote service loop", type: :request, openapi: true do
         },
         service_description: "Serviço expirado",
         discount_amount: 0,
-        valid_until: Date.current - 1.day,
+        valid_until: Time.current
+          .in_time_zone(ProfessionalDailyActivity::PRODUCT_TIME_ZONE)
+          .to_date - 1.day,
         items: [{description: "Item", quantity: 1, unit: "serviço", unit_price: 10}]
       }
     )
@@ -425,6 +434,10 @@ RSpec.describe "Quote service loop", type: :request, openapi: true do
       headers: public_headers("decision-expired"),
       as: :json
     expect(response).to have_http_status(:gone)
+    expect(response.parsed_body.dig("error", "message")).to eq(
+      "Este orçamento venceu e não pode mais ser aprovado. " \
+      "Fale com o profissional para solicitar uma nova versão."
+    )
     assert_api_conform(status: 410)
 
     approved = SharedQuoteDecisionRecorder.new.call(
@@ -503,6 +516,10 @@ RSpec.describe "Quote service loop", type: :request, openapi: true do
       headers: public_headers("completion-response-unavailable"),
       as: :json
     expect(response).to have_http_status(:conflict)
+    expect(response.parsed_body.dig("error", "message")).to eq(
+      "Esta ação não está mais disponível. " \
+      "Atualize a página para ver o estado atual do orçamento."
+    )
     assert_api_conform(status: 409)
 
     service_job.update!(status: "approved", completion_issue_message: nil)

@@ -52,7 +52,7 @@ async function loadQuotes(filters: QuoteListFilters) {
               >Ferramentas</DesignSystemEyebrow
             >
             <h1>Orçamentos</h1>
-            <p>Encontre, revise e acompanhe o retorno de cada cliente.</p>
+            <p>Encontre, revise e acompanhe as respostas dos clientes.</p>
           </div>
           <UButton
             to="/app/professional/quotes/new"

@@ -86,13 +86,16 @@ const shareEnabled = computed(() => {
 const quoteStatusLabel = computed(() => {
   const labels = {
     draft: "Rascunho",
-    shared: "Aguardando cliente",
+    shared: "Aguardando resposta",
     change_requested: "Alteração solicitada",
     approved: "Aprovado",
     declined: "Recusado",
   } as const;
   return quote.value ? labels[quote.value.status] : "Rascunho";
 });
+const editorTitle = computed(() =>
+  quote.value?.number ? "Orçamento" : "Novo orçamento",
+);
 
 function createEmptyQuote(
   customer?: Awaited<ReturnType<typeof fetchProfessionalCustomer>>,
@@ -150,8 +153,8 @@ async function saveQuote(draft: QuoteDraft) {
       });
     }
     showToast({
-      title: "Rascunho salvo",
-      description: `Orçamento #${saved.number} atualizado.`,
+      title: "Orçamento salvo",
+      description: `As alterações do orçamento #${saved.number} foram salvas.`,
     });
   } catch (error) {
     saveError.value =
@@ -241,9 +244,13 @@ async function revokeShare() {
               >Berufe Ferramentas</DesignSystemEyebrow
             >
             <h1>
-              Novo orçamento <em v-if="quote?.number">#{{ quote.number }}</em>
+              {{ editorTitle }}
+              <em v-if="quote?.number">#{{ quote.number }}</em>
             </h1>
-            <p>Crie, revise e compartilhe um link seguro com seu cliente.</p>
+            <p>
+              Preencha os dados, revise e compartilhe o orçamento com seu
+              cliente.
+            </p>
           </div>
           <span><DesignSystemStatusDot /> {{ quoteStatusLabel }}</span>
         </div>
@@ -254,8 +261,8 @@ async function revokeShare() {
         Carregando orçamento…
       </p>
       <p v-else-if="editor.error.value || !quote || !professional" role="alert">
-        Não foi possível carregar o orçamento. Volte ao painel e tente
-        novamente.
+        Não foi possível carregar o orçamento. Volte à lista de orçamentos e
+        tente novamente.
       </p>
       <DashboardQuoteBuilder
         v-else

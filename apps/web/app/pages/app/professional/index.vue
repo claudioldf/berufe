@@ -219,14 +219,14 @@ const recentServices = computed(
 );
 const quoteStatusLabel = {
   draft: "Rascunho",
-  shared: "Aguardando cliente",
+  shared: "Aguardando resposta",
   change_requested: "Alteração solicitada",
   approved: "Aprovado",
   declined: "Recusado",
 } as const;
 const serviceStatusLabel = {
   approved: "Aprovado",
-  completion_requested: "Aguardando cliente",
+  completion_requested: "Aguardando confirmação",
   completion_issue: "Pendência",
   completed: "Concluído",
   cancelled: "Cancelado",

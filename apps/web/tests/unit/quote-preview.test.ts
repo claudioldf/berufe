@@ -83,10 +83,24 @@ describe("quote customer preview", () => {
     });
 
     expect(unverified.text()).not.toContain("Identidade verificada");
-    expect(unverified.text()).not.toContain(
-      "Identidade profissional conferida",
+    expect(verified.text().match(/Identidade verificada/g)).toHaveLength(2);
+  });
+
+  it("uses clear customer, schedule, and legal copy", () => {
+    const wrapper = mount(QuotePreview, {
+      props: {
+        quote: { ...quote, scheduledOn: "2026-08-22" },
+        professional,
+      },
+      global,
+    });
+
+    expect(wrapper.text()).toContain("Cliente");
+    expect(wrapper.text()).toContain("Data prevista do serviço");
+    expect(wrapper.text()).toContain(
+      "Este orçamento não é um contrato nem um comprovante de pagamento.",
     );
-    expect(verified.text()).toContain("Identidade verificada");
-    expect(verified.text()).toContain("Identidade profissional conferida");
+    expect(wrapper.text()).not.toContain("Preparado para");
+    expect(wrapper.text()).not.toContain("Data combinada");
   });
 });

@@ -57,7 +57,7 @@ function inputValue(event: Event) {
       >
         <option value="all">Todos os status</option>
         <option value="draft">Rascunho</option>
-        <option value="shared">Aguardando cliente</option>
+        <option value="shared">Aguardando resposta</option>
         <option value="change_requested">Alteração solicitada</option>
         <option value="approved">Aprovado</option>
         <option value="declined">Recusado</option>
@@ -65,7 +65,7 @@ function inputValue(event: Event) {
     </label>
 
     <label class="quote-filters__date">
-      <span>Data combinada</span>
+      <span>Data prevista do serviço</span>
       <input
         :value="props.scheduledOn"
         class="quote-filters__date-input"

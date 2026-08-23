@@ -38,7 +38,7 @@ const hasFilters = computed(
 const resultRange = computed(() => {
   const { page: currentPage, perPage, totalCount } = props.result.meta;
   const noun = totalCount === 1 ? "orçamento" : "orçamentos";
-  if (totalCount === 0) return `0 de 0 ${noun}`;
+  if (totalCount === 0) return `0 ${noun}`;
 
   const first = (currentPage - 1) * perPage + 1;
   const last = Math.min(currentPage * perPage, totalCount);

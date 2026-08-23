@@ -148,22 +148,22 @@ async function submitCompletion(kind: "confirm" | "report_issue") {
           <DesignSystemEyebrow>Próximo passo</DesignSystemEyebrow>
           <h2 id="quote-decision-title">Responda ao orçamento</h2>
           <p>
-            A aprovação confirma que você quer seguir com este escopo e valor.
-            Ela não é assinatura jurídica nem pagamento.
+            Ao aprovar, você confirma que está de acordo com o escopo e o valor
+            apresentados. Isso não substitui um contrato nem confirma pagamento.
           </p>
         </div>
         <label>
-          Mensagem para o profissional (obrigatória ao pedir alteração)
+          Mensagem para o profissional (obrigatória para solicitar alterações)
           <textarea
             v-model="decisionMessage"
             maxlength="700"
             rows="3"
-            placeholder="Descreva o ajuste que você precisa"
+            placeholder="Descreva o que você gostaria de alterar"
           />
         </label>
         <label class="shared-quote-page__check">
           <input v-model="termsAccepted" type="checkbox" />
-          Li o escopo, o valor e a validade deste orçamento.
+          Revisei o escopo, o valor e a validade deste orçamento.
         </label>
         <p v-if="actionError" role="alert" class="shared-quote-page__error">
           {{ actionError }}
@@ -174,7 +174,7 @@ async function submitCompletion(kind: "confirm" | "report_issue") {
             variant="outline"
             :disabled="submitting || !decisionMessage.trim()"
             @click="submitDecision('request_change')"
-            >Pedir alteração</UButton
+            >Solicitar alterações</UButton
           >
           <UButton
             color="neutral"
@@ -200,10 +200,10 @@ async function submitCompletion(kind: "confirm" | "report_issue") {
       >
         <UIcon name="i-lucide-message-square-text" />
         <div>
-          <h2>Alteração solicitada</h2>
+          <h2>Solicitação enviada</h2>
           <p>
-            O profissional recebeu seu pedido. Este mesmo link mostrará o
-            orçamento atualizado quando ele compartilhar novamente.
+            O profissional recebeu sua mensagem. Quando uma nova versão for
+            compartilhada, ela aparecerá neste mesmo link.
           </p>
         </div>
       </section>
@@ -215,7 +215,7 @@ async function submitCompletion(kind: "confirm" | "report_issue") {
         <UIcon name="i-lucide-circle-x" />
         <div>
           <h2>Orçamento recusado</h2>
-          <p>Sua resposta foi registrada. Nenhum serviço foi criado.</p>
+          <p>Sua resposta foi registrada. O serviço não foi confirmado.</p>
         </div>
       </section>
 
@@ -245,7 +245,7 @@ async function submitCompletion(kind: "confirm" | "report_issue") {
             variant="outline"
             :disabled="submitting || !completionIssueMessage.trim()"
             @click="submitCompletion('report_issue')"
-            >Ainda há um problema</UButton
+            >Ainda há algo pendente</UButton
           >
           <UButton
             color="primary"
@@ -281,11 +281,11 @@ async function submitCompletion(kind: "confirm" | "report_issue") {
           </h2>
           <h2 v-else>Orçamento aprovado</h2>
           <p v-if="quote.serviceJob?.status === 'completed'">
-            Obrigado. Se houver um e-mail neste orçamento, enviaremos por lá um
-            convite pessoal para recomendar o profissional.
+            Obrigado! Se você informou um e-mail, enviaremos um convite para
+            recomendar o profissional.
           </p>
           <p v-else-if="quote.serviceJob?.status === 'completion_issue'">
-            O profissional poderá resolver a pendência e solicitar uma nova
+            Após resolver a pendência, o profissional poderá solicitar uma nova
             confirmação neste mesmo link.
           </p>
           <p v-else-if="quote.serviceJob?.status === 'cancelled'">
@@ -299,7 +299,7 @@ async function submitCompletion(kind: "confirm" | "report_issue") {
       </section>
       <p class="shared-quote-page__notice">
         <UIcon name="i-lucide-info" /> Este link é privado. A aprovação registra
-        sua decisão, mas não representa assinatura jurídica ou pagamento.
+        sua decisão, mas não substitui um contrato nem confirma pagamento.
       </p>
     </DesignSystemContainer>
   </div>

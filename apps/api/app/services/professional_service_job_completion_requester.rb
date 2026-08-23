@@ -22,7 +22,7 @@ class ProfessionalServiceJobCompletionRequester
     raise Unavailable unless token
 
     share_url = "#{ENV.fetch("WEB_ORIGIN").delete_suffix("/")}/orcamento/#{token}"
-    message = "Olá, #{quote.customer_name}! O serviço do orçamento ##{quote.quote_number} foi concluído. Confirme por aqui: #{share_url}"
+    message = "Olá, #{quote.customer_name}! O trabalho combinado no orçamento ##{quote.quote_number} foi concluído. Confirme a conclusão por aqui: #{share_url}"
     phone = quote.customer_phone_e164.delete_prefix("+")
     Result.new(
       service_job: service_job.reload,

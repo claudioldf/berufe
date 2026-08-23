@@ -12,7 +12,7 @@ const emit = defineEmits<{ dirty: [] }>();
         <span>02</span>
         <div>
           <h2>Serviço</h2>
-          <p>Prazo, escopo e local combinados com o cliente.</p>
+          <p>Defina a validade, a data prevista e os detalhes do serviço.</p>
         </div>
       </div>
     </header>
@@ -27,7 +27,7 @@ const emit = defineEmits<{ dirty: [] }>();
           :aria-describedby="field.describedBy"
         />
       </DesignSystemFormField>
-      <DesignSystemFormField v-slot="field" label="Data combinada">
+      <DesignSystemFormField v-slot="field" label="Data prevista do serviço">
         <input
           :id="field.controlId"
           v-model="quote.scheduledOn"

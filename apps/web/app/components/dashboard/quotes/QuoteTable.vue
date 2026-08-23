@@ -15,7 +15,7 @@ const emit = defineEmits<{
 
 const statusLabel = {
   draft: "Rascunho",
-  shared: "Aguardando cliente",
+  shared: "Aguardando resposta",
   change_requested: "Alteração solicitada",
   approved: "Aprovado",
   declined: "Recusado",
@@ -150,7 +150,7 @@ function sortLabel(column: QuoteSortKey, label: string) {
           {{
             filtered
               ? "Ajuste ou limpe os filtros para ver outros resultados."
-              : "Crie seu primeiro orçamento para acompanhar o retorno do cliente."
+              : "Crie seu primeiro orçamento e acompanhe a resposta do cliente."
           }}
         </p>
       </div>

@@ -111,7 +111,7 @@ describe("professional quote index", () => {
       /R\$\s*900,00/,
     );
     expect(wrapper.text()).toContain(
-      "Valores de orçamentos; não representam pagamentos recebidos.",
+      "Os valores correspondem aos orçamentos e não indicam pagamentos recebidos.",
     );
   });
 
@@ -232,5 +232,17 @@ describe("professional quote index", () => {
     expect(wrapper.emitted("request")?.at(-1)).toEqual([
       expect.objectContaining({ page: 3, perPage: 20 }),
     ]);
+  });
+
+  it("uses a natural result count when no quotes are available", () => {
+    const wrapper = mountIndex(
+      pageFixture({
+        quotes: [],
+        meta: { page: 1, perPage: 20, totalCount: 0, totalPages: 1 },
+      }),
+    );
+
+    expect(wrapper.text()).toContain("0 orçamentos");
+    expect(wrapper.text()).not.toContain("0 de 0 orçamentos");
   });
 });
