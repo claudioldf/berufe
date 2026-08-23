@@ -12,8 +12,8 @@ defineProps<{ requests: QuoteChangeRequest[] }>();
         <UIcon name="i-lucide-message-square-warning" />
       </span>
       <div>
-        <h2>Pedidos de alterações</h2>
-        <p>Histórico dos comentários enviados pelo cliente.</p>
+        <h2>Solicitações de alteração</h2>
+        <p>Histórico das mensagens enviadas pelo cliente.</p>
       </div>
     </header>
     <ol>

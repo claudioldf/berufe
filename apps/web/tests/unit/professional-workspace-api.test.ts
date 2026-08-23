@@ -28,6 +28,20 @@ const workspaceData: WorkspaceData = {
         approved_identity: false,
       },
     },
+    change_requested_quotes: [
+      {
+        id: "23d124e2-9fd7-4278-90b9-9ba6bb6ab809",
+        quote_number: 2,
+        customer_name: "Fadinha 2",
+        service_description: "Instalação de luminárias",
+        latest_change_request: {
+          id: "fc12cf67-8a82-4c83-bcfa-1360461c5c62",
+          revision: 3,
+          message: "Trocar uma luminária de lugar.",
+          requested_at: "2026-08-23T02:29:10Z",
+        },
+      },
+    ],
     recent_quotes: [],
     recent_service_jobs: [],
   },
@@ -100,6 +114,20 @@ describe("professional workspace API", () => {
             approvedIdentity: false,
           },
         },
+        changeRequestedQuotes: [
+          {
+            id: "23d124e2-9fd7-4278-90b9-9ba6bb6ab809",
+            number: 2,
+            customerName: "Fadinha 2",
+            serviceDescription: "Instalação de luminárias",
+            latestChangeRequest: {
+              id: "fc12cf67-8a82-4c83-bcfa-1360461c5c62",
+              revision: 3,
+              message: "Trocar uma luminária de lugar.",
+              requestedAt: "2026-08-23T02:29:10Z",
+            },
+          },
+        ],
         recentQuotes: [],
         recentServiceJobs: [],
       },

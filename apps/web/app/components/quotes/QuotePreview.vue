@@ -58,7 +58,7 @@ function itemTotal(index: number) {
     </section>
     <section class="quote-preview__intro">
       <div>
-        <span>Preparado para</span
+        <span>Cliente</span
         ><strong>{{ quote.customerName || "Nome do cliente" }}</strong>
       </div>
       <div>
@@ -71,7 +71,7 @@ function itemTotal(index: number) {
       <h1>{{ quote.serviceDescription || "Descrição do serviço" }}</h1>
       <dl v-if="quote.scheduledOn || quote.serviceAddress">
         <div v-if="quote.scheduledOn">
-          <dt>Data combinada</dt>
+          <dt>Data prevista do serviço</dt>
           <dd>{{ formatDate(quote.scheduledOn) }}</dd>
         </div>
         <div v-if="quote.serviceAddress">
@@ -117,9 +117,11 @@ function itemTotal(index: number) {
     </section>
     <footer>
       <span v-if="professional.identityVerified"
-        ><UIcon name="i-lucide-shield-check" /> Identidade profissional
-        conferida</span
-      ><small>Este orçamento não representa aceite ou pagamento.</small>
+        ><UIcon name="i-lucide-shield-check" /> Identidade verificada</span
+      ><small
+        >Este orçamento não é um contrato nem um comprovante de
+        pagamento.</small
+      >
     </footer>
   </article>
 </template>

@@ -3,6 +3,7 @@ import type {
   Quote,
   QuoteDraft,
   QuoteProfessional,
+  QuoteSaveIntent,
   QuoteShareMethod,
 } from "~/types";
 import { useQuoteDraft } from "~/composables/useQuoteDraft";
@@ -11,19 +12,20 @@ import { cloneQuote } from "~/utils/quotes";
 const props = defineProps<{
   initialQuote: Quote;
   professional: QuoteProfessional;
-  saving: boolean;
+  savingIntent: QuoteSaveIntent | null;
   saveError: string;
   sharingMethod: QuoteShareMethod | null;
   shareError: string;
-  shareUrl: string;
   shareEnabled?: boolean;
   revoking?: boolean;
 }>();
 const emit = defineEmits<{
   save: [draft: QuoteDraft];
+  prepareShare: [draft: QuoteDraft];
   share: [method: QuoteShareMethod];
   revoke: [];
 }>();
+const shareOpen = defineModel<boolean>("shareOpen", { default: false });
 const revokeOpen = shallowRef(false);
 const locked = computed(() => props.initialQuote.status === "approved");
 
@@ -34,7 +36,6 @@ function confirmRevoke() {
 const {
   quote,
   previewOpen,
-  shareOpen,
   isSaved,
   isShared,
   subtotal,
@@ -44,15 +45,17 @@ const {
   removeItem,
 } = useQuoteDraft(() => props.initialQuote);
 
-watch(
-  () => props.shareUrl,
-  (value) => {
-    if (value) shareOpen.value = false;
-  },
-);
-
 function save() {
   emit("save", cloneQuote(quote.value));
+}
+
+function requestShare() {
+  if (isSaved.value) {
+    shareOpen.value = true;
+    return;
+  }
+
+  emit("prepareShare", cloneQuote(quote.value));
 }
 </script>
 
@@ -64,8 +67,8 @@ function save() {
         <div>
           <strong>Orçamento aprovado</strong>
           <p>
-            Os dados aprovados ficam preservados. Acompanhe a execução na área
-            de serviços.
+            Este orçamento foi aprovado e não pode mais ser alterado. Acompanhe
+            o andamento na área de serviços.
           </p>
         </div>
         <UButton
@@ -93,18 +96,18 @@ function save() {
           :saved="isSaved"
           :shared="isShared"
           :valid="isValid"
-          :saving="saving"
+          :saving-intent="savingIntent"
           :error="saveError"
           :share-enabled="shareEnabled ?? false"
           @preview="previewOpen = true"
           @save="save"
-          @share="shareOpen = true"
+          @share="requestShare"
         />
       </template>
       <div v-if="isShared && !locked" class="quote-builder__revoke">
         <p>
-          O link ativo continua abrindo este orçamento para quem o recebeu.
-          Revogue para que ele pare de funcionar imediatamente.
+          Qualquer pessoa com o link ainda pode abrir este orçamento. Revogue-o
+          para desativar o acesso imediatamente.
         </p>
         <UButton
           color="neutral"
@@ -140,7 +143,7 @@ function save() {
     <UModal
       v-model:open="shareOpen"
       title="Compartilhar orçamento"
-      description="Ao compartilhar, o rascunho ganha um link seguro e muda para compartilhado."
+      description="Escolha como compartilhar o link seguro com seu cliente."
     >
       <template #body>
         <div class="share-quote">
@@ -148,8 +151,8 @@ function save() {
           <div>
             <strong>Enviar pelo WhatsApp</strong>
             <p>
-              A Berufe abre o aplicativo com uma mensagem e o link. Não enviamos
-              nem lemos a conversa.
+              A Berufe abre o WhatsApp com uma mensagem pronta e o link. Não
+              enviamos a mensagem nem acessamos a conversa.
             </p>
           </div>
         </div>
@@ -187,7 +190,7 @@ function save() {
     <UModal
       v-model:open="revokeOpen"
       title="Revogar o link do orçamento"
-      description="O link que o cliente já recebeu deixa de abrir este orçamento e não pode ser reativado."
+      description="O link atual deixará de funcionar e não poderá ser reativado."
     >
       <template #body>
         <p class="revoke-quote">
@@ -304,6 +307,18 @@ function save() {
       grid-column: 1 / -1;
     }
   }
+  .quote-builder__form :where(input, select, textarea):focus {
+    outline: none;
+  }
+  .quote-builder__form :where(input, select, textarea):focus-visible {
+    border-color: var(--color-brand);
+    box-shadow: none;
+  }
+  .quote-builder__form
+    .form-field
+    :where(input, select, textarea):focus-visible {
+    box-shadow: none;
+  }
   .quote-items {
     overflow-x: auto;
   }
@@ -333,6 +348,7 @@ function save() {
       border-radius: 8px;
       background: var(--color-surface-control);
       font-size: 0.84rem;
+      transition: border-color var(--motion-fast) ease;
     }
     & strong {
       text-align: right;
@@ -384,6 +400,10 @@ function save() {
     align-items: center;
     border: 1px solid var(--line);
     border-radius: 8px;
+    transition: border-color var(--motion-fast) ease;
+  }
+  .builder-total label > div:focus-within {
+    border-color: var(--color-brand);
   }
   .builder-total label em {
     padding-left: 8px;
@@ -397,6 +417,9 @@ function save() {
     background: transparent;
     text-align: right;
     font-size: 0.84rem;
+  }
+  .builder-total input:focus-visible {
+    box-shadow: none;
   }
   .quote-builder {
     &__savebar {
@@ -533,11 +556,14 @@ function save() {
         display: grid;
       }
       &__savebar > div {
-        flex-wrap: wrap;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
       &__savebar > div > * {
-        flex: 1;
         justify-content: center;
+      }
+      &__savebar > div > :last-child {
+        grid-column: 1 / -1;
       }
     }
     .builder-card {

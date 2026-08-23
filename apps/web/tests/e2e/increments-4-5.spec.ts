@@ -69,28 +69,23 @@ test("published professional creates, previews, securely shares, and live-edits 
   await page.getByLabel("Quantidade do item 1").fill("2");
   await page.getByLabel("Valor unitário do item 1").fill("125.50");
 
-  const createResponse = page.waitForResponse(
-    (response) =>
-      response.url().endsWith("/api/v1/professional/quotes") &&
-      response.request().method() === "POST",
-  );
-  await clickQuoteAction(page, "Salvar rascunho");
-  expect((await createResponse).status()).toBe(201);
-  await expect(page).toHaveURL(/\/quotes\/new\?quote=[a-f0-9-]+$/);
-  const editorUrl = page.url();
-  await expect(
-    page.locator(".quote-builder__savebar").getByText("Rascunho salvo"),
-  ).toBeVisible();
-
   await clickQuoteAction(page, "Pré-visualizar");
   const preview = page.getByRole("dialog", { name: "Prévia do orçamento" });
   await expect(preview.getByText(customerName)).toBeVisible();
   await page.keyboard.press("Escape");
 
-  await clickQuoteAction(page, "Compartilhar");
+  const createResponse = page.waitForResponse(
+    (response) =>
+      response.url().endsWith("/api/v1/professional/quotes") &&
+      response.request().method() === "POST",
+  );
+  await clickQuoteAction(page, "Salvar e compartilhar");
+  expect((await createResponse).status()).toBe(201);
+  await expect(page).toHaveURL(/\/quotes\/new\?quote=[a-f0-9-]+$/);
   const shareDialog = page.getByRole("dialog", {
     name: "Compartilhar orçamento",
   });
+  await expect(shareDialog).toBeVisible();
   const shareResponse = page.waitForResponse(
     (response) =>
       response.url().endsWith("/share") &&
@@ -98,6 +93,8 @@ test("published professional creates, previews, securely shares, and live-edits 
   );
   await shareDialog.getByRole("button", { name: "Copiar link" }).click();
   const sharePayload = await (await shareResponse).json();
+  await expect(page).toHaveURL(/\/quotes\/new\?quote=[a-f0-9-]+$/);
+  const editorUrl = page.url();
   const sharedPath = new URL(sharePayload.data.share_url).pathname;
   expect(sharedPath).toMatch(/^\/orcamento\/bq_[A-Za-z0-9_-]{43}$/);
   await expect(page.getByText("Compartilhado").first()).toBeVisible();

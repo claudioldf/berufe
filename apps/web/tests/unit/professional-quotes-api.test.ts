@@ -127,6 +127,11 @@ describe("professional quote API", () => {
               total_count: 12,
               total_pages: 2,
             },
+            summary: {
+              awaiting_response: { count: 2, total_amount: "450.00" },
+              changes_requested: { count: 1 },
+              approved_this_month: { count: 3, total_amount: "900.00" },
+            },
           },
           request_id: "quote-list",
         },
@@ -152,6 +157,11 @@ describe("professional quote API", () => {
         { number: 6, customerName: "Bruno Lima" },
       ],
       meta: { page: 2, perPage: 10, totalCount: 12, totalPages: 2 },
+      summary: {
+        awaitingResponse: { count: 2, total: 450 },
+        changesRequested: { count: 1 },
+        approvedThisMonth: { count: 3, total: 900 },
+      },
     });
     expect(client.GET).toHaveBeenCalledWith("/api/v1/professional/quotes", {
       params: {

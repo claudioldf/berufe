@@ -59,7 +59,7 @@ module Api
       rescue SharedQuoteDecisionRecorder::Expired
         render_api_error(
           code: "quote_expired",
-          message: "A validade deste orçamento terminou.",
+          message: "Este orçamento venceu e não pode mais ser aprovado. Fale com o profissional para solicitar uma nova versão.",
           status: :gone
         )
       rescue SharedQuoteDecisionRecorder::Unavailable
@@ -113,7 +113,7 @@ module Api
       def render_transition_unavailable
         render_api_error(
           code: "quote_transition_unavailable",
-          message: "Esta ação não está mais disponível.",
+          message: "Esta ação não está mais disponível. Atualize a página para ver o estado atual do orçamento.",
           status: :conflict
         )
       end

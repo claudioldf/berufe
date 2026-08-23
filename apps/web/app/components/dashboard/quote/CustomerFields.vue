@@ -69,7 +69,7 @@ async function search(query: string, searchId: number) {
     searchError.value =
       error instanceof ApiRequestError
         ? error.message
-        : "Não foi possível buscar seus clientes agora.";
+        : "Não foi possível buscar seus clientes.";
   } finally {
     if (searchId === latestSearch) candidateSearchActive.value = false;
   }
@@ -104,7 +104,7 @@ function markContactDirty() {
         <span>01</span>
         <div>
           <h2>Cliente</h2>
-          <p>Dados de contato salvos neste orçamento.</p>
+          <p>Informe os dados do cliente ou selecione um cadastro existente.</p>
         </div>
       </div>
     </header>
@@ -140,7 +140,7 @@ function markContactDirty() {
           role="status"
           aria-live="polite"
         >
-          Buscando clientes
+          Buscando clientes…
         </span>
         <div
           v-if="candidates.length"
@@ -165,14 +165,15 @@ function markContactDirty() {
           class="customer-lookup__message"
           role="status"
         >
-          {{ searchError }} Você pode continuar e cadastrar o cliente ao salvar.
+          {{ searchError }} Você ainda pode preencher os dados e cadastrar o
+          cliente ao salvar o orçamento.
         </p>
         <p
           v-else-if="searchSettled && !quote.customerId"
           class="customer-lookup__message"
         >
-          Nenhum cliente selecionado. Ao salvar, criaremos um novo cliente com
-          estes dados.
+          Nenhum cliente encontrado. Ao salvar o orçamento, um novo cliente será
+          cadastrado com esses dados.
         </p>
         <p v-if="quote.customerId" class="customer-lookup__selected">
           <UIcon name="i-lucide-circle-check" aria-hidden="true" /> Cliente

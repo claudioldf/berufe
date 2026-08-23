@@ -48,6 +48,7 @@ class ProfessionalWorkspaceSerializer
     {
       local_date: Time.current.in_time_zone(ProfessionalDailyActivity::PRODUCT_TIME_ZONE).to_date.iso8601,
       readiness: ProfessionalDashboardReadiness.new(profile).as_json,
+      change_requested_quotes: serialized_change_requested_quotes,
       recent_quotes: profile.quotes.newest_first.limit(5).map do |quote|
         ProfessionalQuoteSummarySerializer.new(quote).as_json
       end,
@@ -61,6 +62,30 @@ class ProfessionalWorkspaceSerializer
           ProfessionalServiceJobSerializer.new(service_job).as_json
         end
     }
+  end
+
+  def serialized_change_requested_quotes
+    profile.quotes
+      .where(status: "change_requested")
+      .includes(:quote_change_requests)
+      .order(customer_decided_at: :desc, id: :desc)
+      .filter_map do |quote|
+        latest_request = quote.quote_change_requests.first
+        next unless latest_request
+
+        {
+          id: quote.id,
+          quote_number: quote.quote_number,
+          customer_name: quote.customer_name,
+          service_description: quote.service_description,
+          latest_change_request: {
+            id: latest_request.id,
+            revision: latest_request.requested_revision,
+            message: latest_request.message,
+            requested_at: latest_request.requested_at.iso8601
+          }
+        }
+      end
   end
 
   def serialized_pending_relationships

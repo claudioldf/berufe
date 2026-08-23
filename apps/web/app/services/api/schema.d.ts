@@ -1301,6 +1301,7 @@ export interface components {
             /** Format: date */
             local_date: string;
             readiness: components["schemas"]["ProfessionalDashboardReadiness"];
+            change_requested_quotes: components["schemas"]["ProfessionalDashboardChangeRequestedQuote"][];
             recent_quotes: components["schemas"]["ProfessionalQuoteSummary"][];
             recent_service_jobs: components["schemas"]["ProfessionalServiceJob"][];
         };
@@ -1319,6 +1320,14 @@ export interface components {
         ServiceJobStatus: "approved" | "completion_requested" | "completion_issue" | "completed" | "cancelled";
         /** @enum {string} */
         RecommendationRequestStatus: "open" | "completed" | "expired";
+        ProfessionalDashboardChangeRequestedQuote: {
+            /** Format: uuid */
+            id: string;
+            quote_number: number;
+            customer_name: string;
+            service_description: string;
+            latest_change_request: components["schemas"]["ProfessionalQuoteChangeRequest"];
+        };
         ProfessionalQuoteSummary: {
             /** Format: uuid */
             id: string;
@@ -1365,8 +1374,22 @@ export interface components {
             data: {
                 quotes: components["schemas"]["ProfessionalQuote"][];
                 meta: components["schemas"]["PageMeta"];
+                summary: components["schemas"]["ProfessionalQuoteCommercialSummary"];
             };
             request_id: components["schemas"]["RequestId"];
+        };
+        ProfessionalQuoteCommercialSummary: {
+            awaiting_response: {
+                count: number;
+                total_amount: components["schemas"]["MoneyAmount"];
+            };
+            changes_requested: {
+                count: number;
+            };
+            approved_this_month: {
+                count: number;
+                total_amount: components["schemas"]["MoneyAmount"];
+            };
         };
         ProfessionalQuoteResponse: {
             data: {

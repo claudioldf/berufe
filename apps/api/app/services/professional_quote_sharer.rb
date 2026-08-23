@@ -72,7 +72,7 @@ class ProfessionalQuoteSharer
   end
 
   def whatsapp_url(share_url:, quote_number:, phone_e164:)
-    message = "Olá! Segue o orçamento ##{quote_number} pela Berufe: #{share_url}"
+    message = "Olá! Preparei o orçamento ##{quote_number} para você. Confira na Berufe: #{share_url}"
     phone = phone_e164.delete_prefix("+")
     "https://wa.me/#{phone}?#{URI.encode_www_form(text: message)}"
   end

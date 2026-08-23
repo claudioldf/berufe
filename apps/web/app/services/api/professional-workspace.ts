@@ -33,6 +33,20 @@ export function mapProfessionalWorkspace(
           approvedIdentity: data.dashboard.readiness.steps.approved_identity,
         },
       },
+      changeRequestedQuotes: data.dashboard.change_requested_quotes.map(
+        (quote) => ({
+          id: quote.id,
+          number: quote.quote_number,
+          customerName: quote.customer_name,
+          serviceDescription: quote.service_description,
+          latestChangeRequest: {
+            id: quote.latest_change_request.id,
+            revision: quote.latest_change_request.revision,
+            message: quote.latest_change_request.message,
+            requestedAt: quote.latest_change_request.requested_at,
+          },
+        }),
+      ),
       recentQuotes: data.dashboard.recent_quotes.map((quote) => ({
         id: quote.id,
         number: quote.quote_number,

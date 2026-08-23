@@ -36,6 +36,7 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
               "approved_identity" => false
             }
           },
+          "change_requested_quotes" => [],
           "recent_quotes" => [],
           "recent_service_jobs" => []
         },
@@ -157,6 +158,93 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
       "photo_url" => nil,
       "profile_available" => false
     )
+    assert_api_conform(status: 200)
+  end
+
+  it "returns every owner-scoped change request by recency until its quote is shared again" do
+    make_profile_publicly_eligible(profile)
+    other_account = UserAccount.create!(
+      phone_e164: "+5547999996204",
+      role: "professional",
+      status: "active"
+    )
+    other_profile = ProfessionalProfile.create!(
+      user_account: other_account,
+      display_name: "Outro Profissional"
+    )
+    make_profile_publicly_eligible(other_profile)
+
+    older = create_workspace_quote(
+      profile:,
+      customer_name: "Cliente Antiga",
+      customer_phone: "+5547999916201",
+      service_description: "Pintura da sala"
+    )
+    newer = create_workspace_quote(
+      profile:,
+      customer_name: "Cliente Recente",
+      customer_phone: "+5547999916202",
+      service_description: "Instalação elétrica"
+    )
+    other_quote = create_workspace_quote(
+      profile: other_profile,
+      customer_name: "Cliente de outro profissional",
+      customer_phone: "+5547999916203",
+      service_description: "Serviço de outro profissional"
+    )
+    older_requested_at = Time.zone.parse("2026-08-20 10:00:00 UTC")
+    first_newer_request_at = Time.zone.parse("2026-08-20 11:00:00 UTC")
+    latest_newer_request_at = Time.zone.parse("2026-08-20 12:00:00 UTC")
+
+    request_quote_change(older, message: "Usar tinta lavável.", at: older_requested_at)
+    request_quote_change(newer, message: "Primeiro pedido.", at: first_newer_request_at)
+    ProfessionalQuoteSharer.new.call(
+      quote: newer.reload,
+      method: "copy",
+      now: first_newer_request_at + 1.minute
+    )
+    latest_request = request_quote_change(
+      newer,
+      message: "Trocar dois pontos de tomada.",
+      at: latest_newer_request_at
+    )
+    request_quote_change(
+      other_quote,
+      message: "Este alerta pertence a outro profissional.",
+      at: latest_newer_request_at + 1.hour
+    )
+
+    get "/api/v1/professional/workspace",
+      headers: session_headers(request_id: "workspace-quote-change-requests")
+
+    expect(response).to have_http_status(:ok)
+    alerts = response.parsed_body.dig("data", "dashboard", "change_requested_quotes")
+    expect(alerts.pluck("id")).to eq([newer.id, older.id])
+    expect(alerts.first).to include(
+      "quote_number" => newer.quote_number,
+      "customer_name" => "Cliente Recente",
+      "service_description" => "Instalação elétrica",
+      "latest_change_request" => {
+        "id" => latest_request.id,
+        "revision" => latest_request.requested_revision,
+        "message" => "Trocar dois pontos de tomada.",
+        "requested_at" => latest_newer_request_at.iso8601
+      }
+    )
+    assert_api_conform(status: 200)
+
+    ProfessionalQuoteSharer.new.call(
+      quote: newer.reload,
+      method: "copy",
+      now: latest_newer_request_at + 1.minute
+    )
+    get "/api/v1/professional/workspace",
+      headers: session_headers(request_id: "workspace-quote-change-resolved")
+
+    expect(response).to have_http_status(:ok)
+    expect(
+      response.parsed_body.dig("data", "dashboard", "change_requested_quotes").pluck("id")
+    ).to eq([older.id])
     assert_api_conform(status: 200)
   end
 
@@ -333,6 +421,39 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
   def create_relationship_initiator(phone, display_name)
     initiator_account = UserAccount.create!(phone_e164: phone, role: "professional", status: "active")
     ProfessionalProfile.create!(user_account: initiator_account, display_name:)
+  end
+
+  def create_workspace_quote(profile:, customer_name:, customer_phone:, service_description:)
+    ProfessionalQuoteWriter.new.call(
+      profile:,
+      attributes: {
+        customer: {
+          id: nil,
+          name: customer_name,
+          whatsapp_e164: customer_phone,
+          email: nil
+        },
+        service_description:,
+        discount_amount: 0,
+        items: [
+          {description: "Serviço", quantity: 1, unit: "serviço", unit_price: 100}
+        ]
+      }
+    )
+  end
+
+  def request_quote_change(quote, message:, at:)
+    share = ProfessionalQuoteSharer.new.call(quote: quote.reload, method: "copy", now: at - 1.minute)
+    token = URI(share.share_url).path.split("/").last
+    result = SharedQuoteDecisionRecorder.new.call(
+      token:,
+      decision: "request_change",
+      revision: quote.reload.lock_version,
+      terms_accepted: false,
+      message:,
+      now: at
+    )
+    result.fetch(:resolved).quote.quote_change_requests.first
   end
 
   def session_headers(request_id:, origin: false, token: session_token)

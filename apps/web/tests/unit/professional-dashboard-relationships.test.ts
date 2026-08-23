@@ -97,7 +97,9 @@ function workspace(options: { pending?: boolean; failed?: boolean } = {}) {
             approvedIdentity: true,
           },
         },
+        changeRequestedQuotes: [],
         recentQuotes: [],
+        recentServiceJobs: [],
       },
       pendingRelationships: [inboundRelationship],
       relationships: [inboundRelationship],
@@ -206,7 +208,7 @@ describe("professional dashboard", () => {
         article.text().includes("Ana Souza trabalhou com você"),
       );
     expect(relationshipRow).toBeDefined();
-    expect(relationshipRow!.text()).toContain("Aguardando sua resposta");
+    expect(relationshipRow!.text()).not.toContain("Aguardando sua resposta");
 
     const buttons = relationshipRow!.findAll("button");
     await buttons[1]!.trigger("click");

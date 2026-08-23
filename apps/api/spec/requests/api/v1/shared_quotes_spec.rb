@@ -85,7 +85,9 @@ RSpec.describe "Shared quotes", type: :request, openapi: true do
     expect(response.headers.fetch("Cache-Control")).to eq("no-store")
     expect(URI(whatsapp_url)).to have_attributes(host: "wa.me", path: "/5547999912041")
     whatsapp_message = URI.decode_www_form(URI(whatsapp_url).query).to_h.fetch("text")
-    expect(whatsapp_message).to include("orçamento #1", first_url)
+    expect(whatsapp_message).to eq(
+      "Olá! Preparei o orçamento #1 para você. Confira na Berufe: #{first_url}"
+    )
     expect(whatsapp_message).not_to include("Ana Paula")
     expect(ProfessionalDailyMetric.sole.quotes_shared).to eq(1)
     assert_api_conform(status: 200)

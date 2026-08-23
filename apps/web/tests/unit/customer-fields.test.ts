@@ -112,7 +112,7 @@ describe("quote customer fields", () => {
     expect(input.attributes("aria-busy")).toBe("true");
     expect(wrapper.find(".customer-lookup__loader").exists()).toBe(true);
     expect(wrapper.get(".customer-lookup__status").text()).toBe(
-      "Buscando clientes",
+      "Buscando clientes…",
     );
 
     await vi.advanceTimersByTimeAsync(300);
@@ -220,9 +220,7 @@ describe("quote customer fields", () => {
     await flushPromises();
 
     expect(input.attributes("aria-busy")).toBe("false");
-    expect(wrapper.text()).toContain(
-      "Não foi possível buscar seus clientes agora.",
-    );
+    expect(wrapper.text()).toContain("Não foi possível buscar seus clientes.");
     expect(
       wrapper.get('input[name="customerPhone"]').attributes("disabled"),
     ).toBeUndefined();

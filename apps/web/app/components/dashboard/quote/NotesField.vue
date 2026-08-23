@@ -12,14 +12,14 @@ const emit = defineEmits<{ dirty: [] }>();
         <span>04</span>
         <div>
           <h2>Observações</h2>
-          <p>Detalhes de prazo, materiais ou condições.</p>
+          <p>Inclua prazos, materiais ou condições importantes.</p>
         </div>
       </div>
     </header>
     <DesignSystemFormField
       v-slot="field"
       class="builder-notes"
-      label="Observações opcionais"
+      label="Observações (opcional)"
     >
       <textarea
         :id="field.controlId"

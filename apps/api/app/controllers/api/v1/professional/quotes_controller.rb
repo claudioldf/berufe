@@ -10,8 +10,9 @@ module Api
         def index
           profile = owned_profile!
           authorize Quote, :index?
+          scope = policy_scope(Quote).where(professional: profile)
           result = ProfessionalQuoteIndexQuery.new.call(
-            scope: policy_scope(Quote).where(professional: profile),
+            scope:,
             search: params[:search],
             status: params[:status],
             scheduled_on: params[:scheduled_on],
@@ -21,6 +22,7 @@ module Api
             page: params[:page],
             per_page: params[:per_page]
           )
+          summary = ProfessionalQuoteSummaryQuery.new.call(scope:)
           quotes = result.quotes
             .includes(
               :quote_items,
@@ -31,7 +33,8 @@ module Api
           render json: {
             data: {
               quotes: quotes.map { |quote| ProfessionalQuoteSerializer.new(quote) },
-              meta: result.meta
+              meta: result.meta,
+              summary: ProfessionalQuoteCommercialSummarySerializer.new(summary)
             },
             request_id: Current.request_id
           }

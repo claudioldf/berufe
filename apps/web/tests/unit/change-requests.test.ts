@@ -33,7 +33,7 @@ describe("quote change requests", () => {
       },
     });
 
-    expect(wrapper.get("h2").text()).toBe("Pedidos de alterações");
+    expect(wrapper.get("h2").text()).toBe("Solicitações de alteração");
     expect(wrapper.findAll("li").map((item) => item.text())).toEqual([
       expect.stringContaining("Retirar o segundo ponto de luz."),
       expect.stringContaining("Trocar uma luminária de lugar."),

@@ -11,8 +11,7 @@ import {
 export function useQuoteDraft(initialQuote: MaybeRefOrGetter<Quote>) {
   const quote = ref(cloneQuote(toValue(initialQuote)));
   const previewOpen = shallowRef(false);
-  const shareOpen = shallowRef(false);
-  const isSaved = shallowRef(true);
+  const isSaved = shallowRef(Boolean(toValue(initialQuote).id));
   const isShared = shallowRef(toValue(initialQuote).status !== "draft");
 
   const subtotal = computed(() => quoteSubtotal(quote.value));
@@ -26,10 +25,9 @@ export function useQuoteDraft(initialQuote: MaybeRefOrGetter<Quote>) {
 
   function reset() {
     quote.value = cloneQuote(toValue(initialQuote));
-    isSaved.value = true;
+    isSaved.value = Boolean(toValue(initialQuote).id);
     isShared.value = toValue(initialQuote).status !== "draft";
     previewOpen.value = false;
-    shareOpen.value = false;
   }
 
   function markDirty() {
@@ -62,13 +60,11 @@ export function useQuoteDraft(initialQuote: MaybeRefOrGetter<Quote>) {
   function markShared() {
     isShared.value = true;
     isSaved.value = true;
-    shareOpen.value = false;
   }
 
   return {
     quote,
     previewOpen,
-    shareOpen,
     isSaved,
     isShared,
     subtotal,

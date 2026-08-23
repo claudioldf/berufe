@@ -9,6 +9,7 @@ import type {
 } from "~/types";
 import QuoteFilters from "./QuoteFilters.vue";
 import QuotePagination from "./QuotePagination.vue";
+import QuoteSummary from "./QuoteSummary.vue";
 import QuoteTable from "./QuoteTable.vue";
 
 const props = defineProps<{
@@ -37,7 +38,7 @@ const hasFilters = computed(
 const resultRange = computed(() => {
   const { page: currentPage, perPage, totalCount } = props.result.meta;
   const noun = totalCount === 1 ? "orçamento" : "orçamentos";
-  if (totalCount === 0) return `0 de 0 ${noun}`;
+  if (totalCount === 0) return `0 ${noun}`;
 
   const first = (currentPage - 1) * perPage + 1;
   const last = Math.min(currentPage * perPage, totalCount);
@@ -123,6 +124,8 @@ onScopeDispose(clearSearchTimer);
 
 <template>
   <div class="quote-index">
+    <QuoteSummary :summary="props.result.summary" />
+
     <QuoteFilters
       :query="query"
       :status="status"
