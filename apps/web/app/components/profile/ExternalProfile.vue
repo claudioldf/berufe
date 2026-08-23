@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import LegalInlineNotice from "~/components/legal/LegalInlineNotice.vue";
 import type { PublicProfessionalProfile } from "~/types";
 
 const props = defineProps<{
@@ -159,9 +160,18 @@ const coverageLabel = computed(() => {
                 : "Reivindicar perfil"
             }}
           </UButton>
+          <LegalInlineNotice
+            title="Seus dados e suas escolhas"
+            :show-terms="false"
+          >
+            Este perfil foi criado a partir de uma indicação profissional. Você
+            pode reivindicá-lo por SMS ou pedir correção, despublicação e
+            exclusão pelo suporte.
+          </LegalInlineNotice>
         </DesignSystemSurfaceCard>
         <a class="external-profile__support" :href="supportEmailUrl">
-          <UIcon name="i-lucide-flag" /> Informar um problema sobre este perfil
+          <UIcon name="i-lucide-flag" /> Corrigir, despublicar ou excluir este
+          perfil
         </a>
       </aside>
     </DesignSystemContainer>

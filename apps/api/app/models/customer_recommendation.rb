@@ -4,11 +4,14 @@ class CustomerRecommendation < ApplicationRecord
   belongs_to :service_job
   belongs_to :customer
 
+  scope :publication_authorized, -> { where(publication_withdrawn_at: nil) }
+
   validates :display_name, length: {in: 1..80}
   validates :recommendation_text, length: {in: 1..700}
   validates :email_fingerprint, format: {with: /\A[0-9a-f]{64}\z/}
   validates :email_verified_at, :service_confirmed_at, :publication_authorized_at, :submitted_at,
     presence: true
+  validates :privacy_notice_version, presence: true
   validate :customer_matches_service_job
 
   before_validation :normalize_text

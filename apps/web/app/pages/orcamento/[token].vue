@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LegalInlineNotice from "~/components/legal/LegalInlineNotice.vue";
 import { useApiClient } from "~/services/api/client";
 import { ApiRequestError } from "~/services/api/errors";
 import {
@@ -139,6 +140,11 @@ async function submitCompletion(kind: "confirm" | "report_issue") {
         customer-facing
         authoritative-totals
       />
+      <LegalInlineNotice title="Link destinado ao cliente">
+        Este link apresenta dados do cliente, do orçamento e das respostas
+        registradas. Não o encaminhe a terceiros. Aprovar ou responder não
+        substitui contrato, nota fiscal ou pagamento.
+      </LegalInlineNotice>
       <section
         v-if="quote.status === 'shared'"
         class="shared-quote-page__action-card"

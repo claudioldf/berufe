@@ -42,10 +42,25 @@ Rails.application.configure do
       class: "VerificationFileRetentionCleanupJob",
       description: "Delete identity evidence thirty days after a decision"
     },
+    media_retention_cleanup: {
+      cron: "7 3 * * *",
+      class: "MediaRetentionCleanupJob",
+      description: "Delete rejected, replaced, removed, and unattached media after thirty days"
+    },
     search_reporting_retention: {
       cron: "17 4 * * *",
       class: "SearchReportingRetentionJob",
       description: "Roll up anonymous search events and enforce report retention"
+    },
+    customer_recommendation_retention_cleanup: {
+      cron: "13 3 * * *",
+      class: "CustomerRecommendationRetentionCleanupJob",
+      description: "Expire recommendation invitations and remove operational records after thirty days"
+    },
+    lgpd_audit_retention_cleanup: {
+      cron: "29 4 * * *",
+      class: "LgpdAuditRetentionCleanupJob",
+      description: "Remove pseudonymized LGPD records after their five-year retention period"
     }
   }
 end

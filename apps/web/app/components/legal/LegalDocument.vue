@@ -6,6 +6,7 @@ defineProps<{
   title: string;
   description: string;
   version: string;
+  effectiveAt: string;
   updatedAt: string;
   sections: LegalDocumentSection[];
 }>();
@@ -34,24 +35,16 @@ defineSlots<{
             <dd>{{ version }}</dd>
           </div>
           <div>
+            <dt>Vigência</dt>
+            <dd>{{ effectiveAt }}</dd>
+          </div>
+          <div>
             <dt>Última atualização</dt>
             <dd>{{ updatedAt }}</dd>
           </div>
         </dl>
       </DesignSystemContainer>
     </header>
-
-    <div class="legal-document__draft">
-      <DesignSystemContainer class="legal-document__draft-inner">
-        <UIcon name="i-lucide-file-check-2" />
-        <p>
-          <strong>Minuta para revisão.</strong>
-          Este documento reflete o produto planejado e ainda depende de
-          validação jurídica e dos dados oficiais da responsável pela Berufe
-          antes do lançamento com usuários reais.
-        </p>
-      </DesignSystemContainer>
-    </div>
 
     <DesignSystemContainer class="legal-document__layout">
       <aside class="legal-document__aside">
@@ -138,26 +131,6 @@ defineSlots<{
     margin: 5px 0 0;
     font-size: 0.86rem;
     font-weight: 800;
-  }
-  &__draft {
-    border-bottom: 1px solid #d5a99f;
-    background: var(--color-accent-tint);
-    color: #773d32;
-  }
-  &__draft-inner {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    align-items: center;
-    gap: 11px;
-    padding-block: 14px;
-  }
-  &__draft-inner > svg {
-    font-size: 1.25rem;
-  }
-  &__draft p {
-    margin: 0;
-    font-size: 0.84rem;
-    line-height: 1.55;
   }
   &__layout {
     display: grid;

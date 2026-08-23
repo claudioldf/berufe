@@ -57,6 +57,28 @@ RSpec.describe UserAccount, type: :model do
     expect(account).to be_valid
   end
 
+  it "requires the current legal versions before treating registration as complete" do
+    account = described_class.create!(
+      phone_e164: "+5547999993344",
+      role: "professional",
+      status: "active",
+      phone_verified_at: 2.minutes.ago,
+      registered_at: 1.minute.ago,
+      terms_accepted_at: 1.minute.ago,
+      terms_version: "0.3",
+      privacy_notice_version: "0.3"
+    )
+    ProfessionalProfile.create!(user_account: account, display_name: "Ana Souza")
+
+    expect(account.reload).not_to be_registration_completed
+
+    account.update!(
+      terms_version: LegalDocumentVersions::TERMS,
+      privacy_notice_version: LegalDocumentVersions::PRIVACY_NOTICE
+    )
+    expect(account.reload).to be_registration_completed
+  end
+
   it "keeps administrator credentials separate from professional phone credentials" do
     account = described_class.create!(
       email: " ADMIN@EXAMPLE.COM ",

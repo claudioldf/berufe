@@ -51,8 +51,8 @@ class UserAccount < ApplicationRecord
   def registration_completed?
     registered? &&
       terms_accepted_at.present? &&
-      terms_version.present? &&
-      privacy_notice_version.present? &&
+      terms_version == LegalDocumentVersions::TERMS &&
+      privacy_notice_version == LegalDocumentVersions::PRIVACY_NOTICE &&
       professional_profile.present?
   end
 

@@ -32,6 +32,7 @@ class CustomerRecommendationSubmitter
         email_verified_at: now,
         service_confirmed_at: now,
         publication_authorized_at: now,
+        privacy_notice_version: LegalDocumentVersions::PRIVACY_NOTICE,
         submitted_at: now
       )
       request.update!(status: "completed", completed_at: now, token_ciphertext: nil)
