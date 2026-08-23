@@ -225,11 +225,8 @@ useSeoMeta({
       </p>
       <ul>
         <li>
-          <strong>Vercel:</strong> hospedagem e distribuição da aplicação web;
-        </li>
-        <li>
-          <strong>Render e PostgreSQL gerenciado:</strong> API, sessões, tarefas
-          e banco de dados;
+          <strong>Railway e PostgreSQL gerenciado:</strong> hospedagem da
+          aplicação web, API, sessões, tarefas e banco de dados;
         </li>
         <li>
           <strong>Infobip:</strong> telefone, desafio OTP e resultado da
@@ -239,9 +236,10 @@ useSeoMeta({
           <strong>Cloudflare R2:</strong> imagens públicas e evidência privada
           de identidade;
         </li>
+        <li><strong>Resend:</strong> entrega de e-mails transacionais;</li>
         <li>
-          <strong>serviço de monitoramento:</strong> falhas técnicas, sem corpos
-          sensíveis de requisição;
+          <strong>Bugsnag:</strong> falhas técnicas, sem corpos sensíveis de
+          requisição;
         </li>
         <li>
           <strong>autoridades e assessores:</strong> quando uma obrigação válida

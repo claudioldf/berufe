@@ -43,7 +43,14 @@ Every environment except automated test uses Infobip. Local, preview, stable sta
 
 ## Administrator accounts
 
-Administrators do not use professional SMS login or public registration. `AdminSeed` is the only application service allowed to create an administrator. In non-production environments, `db:seed` idempotently creates `ADMIN_AUTH_EMAIL` / `ADMIN_AUTH_PASSWORD`, defaulting to `admin@berufe.com.br` / `@Qwer1234`. The service refuses to run in production and logs a warning instead; there is no production administrator-creation task or API route.
+Administrators do not use professional SMS login or public registration. In non-production environments, `db:seed` idempotently creates `ADMIN_AUTH_EMAIL` / `ADMIN_AUTH_PASSWORD`, defaulting to `admin@berufe.com.br` / `@Qwer1234`. The seed service refuses production execution. Production administrators are created only through the interactive console task below; there is no administrator-creation API route.
+
+Provision the first production administrator from an authenticated Railway shell. The
+password is read from the terminal without echoing and is not placed in shell history:
+
+```bash
+EMAIL=admin@example.com OPERATOR=ops@example.com bin/rake admin:provision
+```
 
 Reset a password with the same operator attribution:
 
@@ -81,19 +88,31 @@ docker compose run --rm -e RAILS_ENV=test -e BERUFE_ENV=test api bin/rails db:dr
 
 Committed Rails migrations are the only supported way to change the schema. Application generators use UUID primary keys, Rails stores time in UTC, and PostgreSQL maps Rails `datetime` columns to `timestamptz`.
 
-## GoodJob worker
+## GoodJob execution
 
-The API enqueues with GoodJob in `external` mode and the dedicated worker processes one `default` queue. That queue is reserved for image sanitization/processing, expired counter/token/file/session cleanup, aggregate maintenance, and nonurgent provider reconciliation. Interactive OTP initiation is synchronous and must never be enqueued.
+Local Compose uses GoodJob in `external` mode with a dedicated worker so worker health and
+failure behavior remain easy to exercise. The MVP production service uses `async` mode and
+runs one GoodJob thread inside the single Rails process. This removes a separately billed
+worker while retaining PostgreSQL-backed durability. The `default` queue is reserved for
+image sanitization/processing, expired counter/token/file/session cleanup, aggregate
+maintenance, and nonurgent provider reconciliation. Interactive OTP initiation is
+synchronous and must never be enqueued.
 
-The database connection budget is:
+The general database connection budget is:
 
 ```text
 (API replicas × API pool) + (worker replicas × worker pool) + migration/admin allowance
 ```
 
-With one API and one worker, reserve 15 connections: five for Rails, five for GoodJob, and five for migrations/administration. Select a managed PostgreSQL plan with at least 20 available connections and recalculate before adding replicas or threads.
+The production MVP sets `RAILS_MAX_THREADS=3`, `GOOD_JOB_MAX_THREADS=1`, and `DB_POOL=7`.
+That gives the single Rails/GoodJob process enough connections plus a small margin. Keep at
+least five additional database connections available for Railway migrations and operator
+access. Recalculate before adding replicas or threads.
 
-The worker exposes `:7001/status`, `:7001/status/started`, and `:7001/status/connected`; Compose requires both started and connected status. The GoodJob dashboard is mounted at `/admin/jobs` only when the request contains an active Rails-owned administrator password session.
+The external worker exposes `:7001/status`, `:7001/status/started`, and
+`:7001/status/connected`; local Compose requires both started and connected status.
+Production instead uses the Rails `/up` health check and observes queue health through the
+administrator-only GoodJob dashboard at `/admin/jobs`.
 
 Every job carries a validated web request ID or a generated correlation UUID. Job implementations must be retry-safe: check current state, use database constraints/transactions or idempotent writes, and treat already-completed work as success. Never place OTPs, phone numbers, raw tokens, signed URLs, customer details, or file contents in job arguments or logs.
 

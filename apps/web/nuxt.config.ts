@@ -23,6 +23,8 @@ export default defineNuxtConfig({
     apiInternalBaseUrl: process.env.NUXT_API_INTERNAL_BASE_URL,
     public: {
       apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL,
+      bugsnagApiKey: process.env.NUXT_PUBLIC_BUGSNAG_API_KEY,
+      releaseVersion: process.env.RAILWAY_GIT_COMMIT_SHA,
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL,
     },
   },

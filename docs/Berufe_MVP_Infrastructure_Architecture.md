@@ -1,7 +1,7 @@
 # Berufe — Lean MVP Infrastructure and Architecture
 
 **Status:** implementation baseline
-**Updated:** August 13, 2026
+**Updated:** August 23, 2026
 **Companions:** _Berufe — MVP Feature Plan_, _Berufe — MVP Implementation Stories_, and _Berufe — V2 Stories_
 
 ## 1. Purpose and scope
@@ -18,11 +18,9 @@ Use two applications and one database:
 
 ```mermaid
 flowchart TD
-    Browser["Browser"] --> Web["Nuxt/Vue + Nuxt UI on Vercel"]
-    Web --> API["Rails API on Render"]
-    API --> DB["PostgreSQL on Render"]
-    API --> Jobs["GoodJob worker"]
-    Jobs --> DB
+    Browser["Browser"] --> Web["Nuxt/Vue + Nuxt UI on Railway"]
+    Web --> API["Rails API + GoodJob on Railway"]
+    API --> DB["PostgreSQL on Railway"]
     API --> Auth["Infobip 2FA SMS API"]
     API --> Files["Cloudflare R2"]
     Browser --> WA["WhatsApp deep link"]
@@ -42,11 +40,11 @@ Frontend and backend live in one monorepo. Local development and integration tes
 | ---------------- | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | Frontend         | Nuxt + Vue + TypeScript                                              | Public SSR pages and authenticated dashboard in one Vue application.                                                              |
 | Frontend UI      | Nuxt UI (`@nuxt/ui`)                                                 | Accessible Vue components and Tailwind-based theming without building a separate design system.                                   |
-| Frontend hosting | Vercel                                                               | Nuxt deployments, CDN, previews, and environment variables.                                                                       |
+| Frontend hosting | Railway                                                              | Nuxt deployment, health checks, and environment variables.                                                                        |
 | Backend          | Rails API-only                                                       | REST JSON API, business logic, authorization, and integrations.                                                                   |
-| Backend hosting  | Render web service                                                   | Managed Rails runtime close to the database.                                                                                      |
-| Worker hosting   | Render background worker                                             | Runs GoodJob from the same backend image as Rails.                                                                                |
-| Database         | Render PostgreSQL                                                    | The single source of truth for accounts and product data.                                                                         |
+| Backend hosting  | Railway service                                                      | Managed Rails runtime close to the database.                                                                                      |
+| Worker hosting   | GoodJob async inside Rails                                           | Runs one durable job thread without a separately billed service.                                                                  |
+| Database         | Railway PostgreSQL                                                   | The single source of truth for accounts and product data.                                                                         |
 | ORM/migrations   | Active Record                                                        | Rails-native models, constraints, transactions, and migrations.                                                                   |
 | Background jobs  | GoodJob                                                              | PostgreSQL-backed Active Job processing without Redis or a separate queue service.                                                |
 | Local runtime    | Docker Compose                                                       | Starts Nuxt, Rails, GoodJob worker, and PostgreSQL consistently from the monorepo.                                                |
@@ -66,8 +64,7 @@ Use supported stable releases of Ruby, Rails, Node, Nuxt, and PostgreSQL. Pin Ru
 
 | Service       | Berufe uses it for                           | Data shared                                                                                                   | If unavailable                                                                                                |
 | ------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| Vercel        | Nuxt hosting and preview deployments         | Web requests and technical logs                                                                               | The website may be unavailable; API/data remain intact.                                                       |
-| Render        | Rails web/worker hosting and PostgreSQL      | API requests, application data, jobs, and technical logs                                                      | The API or background work may pause; frontend shows retry/pending states.                                    |
+| Railway       | Nuxt, Rails/GoodJob, and PostgreSQL hosting  | Web/API requests, application data, jobs, and technical logs                                                  | The site, API, or background work may pause; PostgreSQL remains the source of truth.                          |
 | Infobip       | Professional phone OTP only                  | Phone number, 2FA application/message-template context, challenge ID, delivery state, and verification result | New challenges and verification pause; existing Rails sessions continue until their own expiry or revocation. |
 | Cloudflare R2 | Portfolio and verification files             | Uploaded files and metadata                                                                                   | Upload/view actions pause; database records remain intact.                                                    |
 | GitHub        | Source and CI                                | Source code and test/build output                                                                             | Development/deployment pause; production continues.                                                           |
@@ -93,7 +90,7 @@ Use supported stable releases of Ruby, Rails, Node, Nuxt, and PostgreSQL. Pin Ru
 3. Rails queries indexed PostgreSQL data and returns JSON.
 4. Nuxt produces the page and its title/share metadata.
 
-Launch with fresh SSR and no Redis or separate cache for 30–50 profiles. Before launch, measure the complete Vercel-to-Render path from the target Brazilian region. If the latency budgets in §15 fail, block launch until a separate change adds a 60-second Nuxt/CDN stale-while-revalidate cache with explicit invalidation for approval, hiding, restoration, and suspension. Private dashboard, admin, restricted-file, and token-authorized quote responses must never use a shared cache.
+Launch with fresh SSR and no Redis or separate cache for 30–50 profiles. Before launch, measure the complete Railway path from the target Brazilian region. If the latency budgets in §15 fail, block launch until a separate change adds a 60-second Nuxt/CDN stale-while-revalidate cache with explicit invalidation for approval, hiding, restoration, and suspension. Private dashboard, admin, restricted-file, and token-authorized quote responses must never use a shared cache.
 
 ### Shared quote page
 
@@ -119,7 +116,7 @@ Launch with fresh SSR and no Redis or separate cache for 30–50 profiles. Befor
 - Use pagination and deterministic ordering for lists. Public search returns one `PageMeta` object (`page`, `per_page`, `total_count`, `total_pages`); the recorded search event keeps the full match count, not the page size.
 - Name every request and response field in `snake_case`, without exception. It is what Rails serializers produce naturally and what the Feature Plan's data tables use, so the boundary reads the same everywhere. Nuxt keeps `camelCase` for its own domain types and maps at the `app/services/api/` adapter, which is the only place the two conventions meet.
 - Keep private/internal fields out of serializers by default.
-- Allow credentialed CORS only from exact local, stable-staging, and production Nuxt origins. Never use a Vercel preview wildcard.
+- Allow credentialed CORS only from the exact local or production Nuxt origin. Never use a preview wildcard.
 - Generate `apps/web/app/services/api/schema.d.ts` from the contract with `openapi-typescript`. Keep `client.ts` and `errors.ts` handwritten; use `openapi-fetch` as the small typed transport rather than creating a workspace package.
 - Validate Rails request and response behavior against the same OpenAPI document with `openapi_first`. Contract coverage must identify undocumented operations or important response statuses.
 - An API-changing feature is incomplete until the contract, generated TypeScript, Rails contract tests, and frontend consumer change together.
@@ -213,24 +210,25 @@ Use this minimum root layout:
   docs/
 ```
 
-The Compose stack contains only four services:
+The Compose stack contains four long-running services and one short-lived migration job:
 
-| Service  | Responsibility                                                          |
-| -------- | ----------------------------------------------------------------------- |
-| `web`    | Nuxt development server with source mounted from `apps/web/`.           |
-| `api`    | Rails API server with source mounted from `apps/api/`.                  |
-| `worker` | `bundle exec good_job start` process built from the same backend image. |
-| `db`     | PostgreSQL with a named development volume and health check.            |
+| Service   | Responsibility                                                          |
+| --------- | ----------------------------------------------------------------------- |
+| `web`     | Nuxt development server with source mounted from `apps/web/`.           |
+| `api`     | Rails API server with source mounted from `apps/api/`.                  |
+| `worker`  | `bundle exec good_job start` process built from the same backend image. |
+| `db`      | PostgreSQL with a named development volume and health check.            |
+| `migrate` | Runs `bin/rails db:prepare` once before the API starts.                 |
 
-One command starts the project: `docker compose up --build`. The API and worker share the same image and environment definition. Use health checks so Rails and the worker wait for PostgreSQL readiness; do not rely only on container start order. Keep all four services if source-mounted Nuxt and Rails hot reload remain comfortable on the team's development machines.
+One command starts the project: `docker compose up --build`. The API, worker, and migration job share the same image and environment definition. Use health checks and the successful completion of the migration job so Rails and the worker wait for PostgreSQL readiness and an up-to-date schema; do not rely only on container start order. Keep all four long-running services if source-mounted Nuxt and Rails hot reload remain comfortable on the team's development machines.
 
 The four-service source-mounted setup was validated on 2026-08-15 on macOS 26 arm64: Nuxt's watcher and Rails development reloader both observe host edits without rebuilding either image, with no material delay during ordinary development.
 
 Keep Dockerfiles inside `apps/web/` and `apps/api/`, but keep orchestration at the repository root. There is one Node application, so use pnpm without a workspace and keep generated API types inside the frontend. Commit `.env.example` with names and safe defaults only; never commit real credentials.
 
-Local development uses local-disk storage and selects the fake SMS-OTP adapter by default. A developer may explicitly select a dedicated non-production Infobip profile with an explicit recipient allowlist through `.env`; selection never falls back at runtime. Automated tests and pull-request previews use fake delivery. R2 remains unnecessary for the local stack. Do not add Redis, MinIO, a mail catcher, or other support containers until an implemented feature needs them.
+Local development uses local-disk storage and selects the fake SMS-OTP adapter by default. A developer may explicitly select a dedicated non-production Infobip profile with an explicit recipient allowlist through `.env`; selection never falls back at runtime. Automated tests and CI use fake delivery. R2 remains unnecessary for the local stack. Do not add Redis, MinIO, a mail catcher, or other support containers until an implemented feature needs them.
 
-Docker Compose standardizes local development and CI integration runs; it is not the MVP production orchestrator. Production keeps the Nuxt and Rails deployments separate on Vercel and Render.
+Docker Compose standardizes local development and CI integration runs; it is not the MVP production orchestrator. Production keeps Nuxt and Rails as separate Railway services while Rails runs GoodJob in-process.
 
 ## 8. Authentication and authorization
 
@@ -265,11 +263,11 @@ To control SMS abuse without Rack::Attack or Turnstile, Rails enforces a short r
 
 Use `www.berufe...` and `api.berufe...` under the same parent domain. Requests include credentials, CORS uses an exact origin allowlist, and state-changing requests require an exactly matching `Origin`. Never store authentication material in `localStorage`.
 
-Production always uses a dedicated Infobip API key, 2FA application, and message template. Stable staging and integration use a separate restricted Infobip configuration and may send only to allowlisted test numbers. Local development selects fake delivery by default or the restricted Infobip configuration through `.env`; Vercel pull-request previews and automated tests use fake delivery and receive no provider credentials.
+Production always uses a dedicated Infobip API key, 2FA application, and message template. Any temporary integration environment uses a separate restricted Infobip configuration and may send only to allowlisted test numbers. Local development selects fake delivery by default or the restricted Infobip configuration through `.env`; CI and automated tests use fake delivery and receive no provider credentials.
 
 ### Admin access
 
-- Use a dedicated admin account with a unique normalized email and strong password. `AdminSeed` is the only application service allowed to create one; there is no administrator-creation API or separate provisioning task.
+- Use a dedicated admin account with a unique normalized email and strong password. Production creation is available only through the interactive, audited `admin:provision` task; there is no administrator-creation API.
 - Non-production `db:seed` idempotently creates the configured development admin account. The seed service refuses production execution before reading credentials or writing records and logs a warning.
 - Authenticate admins only through the dedicated email/password route; Infobip and professional SMS login never create an admin session.
 - Store only a BCrypt password digest, use generic failures with conservative database-backed throttling, and audit seed provisioning and manual password resets.
@@ -450,27 +448,27 @@ Use one repository with `apps/web/`, `apps/api/`, and `apps/contracts/`. This ke
 - Rails request tests use `openapi_first` against `apps/contracts/openapi.yaml`; important operations validate request and response variants, and contract coverage fails for unintended omissions.
 - A small repository formatting check may run Prettier over Markdown, JSON, and compatible YAML; it must exclude Ruby, generated files such as `schema.d.ts`, lockfiles, and Rails YAML/ERB files that Prettier cannot safely parse.
 - Playwright runs for release-critical changes and before production release.
-- A stable staging Nuxt deployment uses a stable staging Rails API/worker, PostgreSQL database, R2 configuration, and a restricted Infobip profile with allowlisted test numbers.
-- Vercel pull-request previews are mock-only: they receive no staging API URL or credentials and never mutate the shared staging environment.
-- Production deploys only after checks pass; run Rails migrations as an explicit release step before dependent code.
+- CI boots both the four-service development stack (plus its one-shot migration job) and the production-shaped release images with fake provider credentials.
+- There are no hosted pull-request previews or permanent staging services for the MVP.
+- A protected `production` branch deploys only after checks pass; Railway runs Rails migrations as an explicit pre-deploy step before dependent code.
 
-Use local, pull-request preview, stable staging, and production environments. Local runs through Docker Compose. Local and non-production environments must never use production PostgreSQL, R2 private files, production Infobip credentials/delivery, or copied real-user data.
+Use local, test/CI, and production environments. Local runs through Docker Compose. A temporary integration environment may be approved for a provider check, but must never use production PostgreSQL, R2 private files, production Infobip credentials/delivery, or copied real-user data.
 
 ## 15. Operations needed at launch
 
-- Render monitors Rails health, PostgreSQL connections, GoodJob processing, and database status; Vercel monitors frontend deployment health.
+- Railway monitors Nuxt and Rails health, PostgreSQL connections, GoodJob processing, and database status.
 - Use structured Rails/Nuxt platform logs with request IDs. Accept an inbound request ID only when it matches ASCII `[A-Za-z0-9._-]{1,100}`; otherwise generate a UUID. Nuxt forwards it to Rails, and Rails propagates it into GoodJob jobs and Bugsnag reports.
 - Use Bugsnag for error tracking in Rails, Active Job/GoodJob, Nuxt browser code, and Nuxt SSR. Keep it error-only: do not enable performance monitoring, distributed tracing, automatic session tracking, anonymous/user identification, or IP collection.
 - Configure Bugsnag callbacks and redaction to remove cookies, authorization headers, request parameters/bodies, phone numbers, OTPs, raw Infobip/session/share tokens or challenge secrets, quote customer details, signed URLs, verification-file data, and job arguments. Send only the release, environment, normalized route or job class, request ID, exception, and stack trace needed for diagnosis.
 - Use separate Bugsnag projects for the web application and Rails API/worker. Upload production source maps without publishing them publicly. Production unhandled exceptions, terminal Active Job failures, and GoodJob executor/thread failures notify the named operations owner immediately.
 - Preserve successful GoodJob records for 14 days and reviewed discarded failures for 30 days. Never automatically delete an unresolved failure. Run cleanup daily; document inspection, retry, discard review, and escalation procedures.
-- Protect the GoodJob dashboard with an active password-authenticated admin application session. Enable its dedicated HTTP worker probe and check process running, executor started, and database connected states.
+- Protect the GoodJob dashboard with an active password-authenticated admin application session. In local external-worker mode, use the dedicated probe to check process, executor, and database state. In production async mode, use Rails readiness plus dashboard and queue checks.
 - Warn when the oldest runnable GoodJob is more than five minutes old and alert critically at fifteen minutes. Monitor failed jobs/uploads and the age of the manual moderation queue.
-- Use a paid Render PostgreSQL plan with managed backups; verify its configured retention and complete one restore test before launch.
+- Use Railway managed PostgreSQL; verify the selected plan's backup retention and complete one restore test before launch.
 - Keep Rails migrations and catalog seed data in Git.
 - Assign an owner for deployments, database access, Infobip spend/sender registration, R2 private access, Bugsnag alerts, moderation, and privacy requests.
 
-Before launch, verify the Nuxt SSR execution location and place Rails and PostgreSQL together in the closest practical Render region. Measure the complete public request path from the target Brazilian region under release-like conditions. Public Rails API requests must meet p95 ≤ 500 ms and public HTML time-to-first-byte must meet p95 ≤ 1.5 seconds. A Rails timeout or outage renders a branded Nuxt `503`/retry state with its request ID rather than a blank or partially trusted page. If either budget fails, the release is blocked until the measured cause is fixed or the narrowly scoped 60-second SWR policy in §5 is implemented and its invalidation tests pass.
+Before launch, place Nuxt, Rails, and PostgreSQL together in Railway's Virginia region and measure the complete public request path from the target Brazilian region under release-like conditions. Public Rails API requests must meet p95 ≤ 500 ms and public HTML time-to-first-byte must meet p95 ≤ 1.5 seconds. A Rails timeout or outage renders a branded Nuxt `503`/retry state with its request ID rather than a blank or partially trusted page. If either budget fails, the release is blocked until the measured cause is fixed or the narrowly scoped 60-second SWR policy in §5 is implemented and its invalidation tests pass.
 
 For MVP storage loss, public media can be uploaded again and private evidence can be requested again. Do not build a custom cross-provider backup system yet.
 
@@ -478,7 +476,7 @@ If production breaks: disable the affected flow or credential, assess scope, rec
 
 ## 16. Implementation order
 
-1. **Foundation:** monorepo, Dockerfiles and root Compose stack, Nuxt with Nuxt UI, Rails API-only, PostgreSQL, GoodJob, Vercel/Render environments, CI, and security headers.
+1. **Foundation:** monorepo, Dockerfiles and root Compose stack, Nuxt with Nuxt UI, Rails API-only, PostgreSQL, GoodJob, Railway production, CI, and security headers.
 2. **Access:** professional Infobip SMS OTP, dedicated admin email/password login, Rails-owned application sessions, abuse controls, roles/policies, and CORS/origin controls.
 3. **Profiles and evidence:** seeded and administrator-maintained service/location catalog, direct R2 uploads, background image processing, profile/portfolio/identity moderation, public serializers, and Nuxt public pages.
 4. **Discovery and trust graph:** Finder and WhatsApp handoff followed by recipient-confirmed relationships between existing members.
@@ -526,14 +524,14 @@ Accept real users only when:
 - public Nuxt profile metadata and WhatsApp/copy fallback work on mobile;
 - quote calculation/ownership tests pass, invalid or revoked tokens reveal no customer data, and shared quote responses are read-only, `no-store`, `noindex`, and excluded from static generation;
 - the administrator report is restricted to password-authenticated admins, uses the OpenAPI-generated client, exposes aggregates only, suppresses low-frequency unmatched demand, and passes formula, period, zero-state, and privacy tests;
-- the Vercel-to-Render path meets the public latency budgets, and the Rails-unavailable state is usable;
+- the Railway path meets the public latency budgets, and the Rails-unavailable state is usable;
 - PostgreSQL backup retention is verified and a restore test has succeeded;
 - privacy notice, terms, retention rules, and operational owners are ready;
 - the five critical Playwright flows pass against the release candidate.
 
 ## Final definition
 
-Berufe is developed in one monorepo with `apps/web`, `apps/api`, and the shared OpenAPI 3.1 contract in `apps/contracts`. Nuxt, Rails, GoodJob, and PostgreSQL run locally through Docker Compose. Production deploys Nuxt/Nuxt UI to Vercel and Rails to Render with managed PostgreSQL. Rails owns user identity, administrator credentials, business rules, authorization, opaque application sessions, simple quote/token rules, privacy-safe administrator reporting, moderation, and background jobs; Infobip owns only professional SMS OTP values and delivery. OTP initiation is synchronous. Cloudflare R2 stores sanitized images through a small Rails adapter, verification evidence is JPEG/PNG-only, WhatsApp remains a user-initiated deep link for contact and quote sharing, and Bugsnag provides tightly redacted error tracking. Stable staging is isolated; pull-request previews use mocks only.
+Berufe is developed in one monorepo with `apps/web`, `apps/api`, and the shared OpenAPI 3.1 contract in `apps/contracts`. Nuxt, Rails, GoodJob, and PostgreSQL run locally through Docker Compose. Production deploys Nuxt and Rails as separate Railway services with Railway PostgreSQL; GoodJob runs one async thread inside Rails. Rails owns user identity, administrator credentials, business rules, authorization, opaque application sessions, simple quote/token rules, privacy-safe administrator reporting, moderation, and background jobs; Infobip owns only professional SMS OTP values and delivery. OTP initiation is synchronous. Cloudflare R2 stores sanitized images through a small Rails adapter, verification evidence is JPEG/PNG-only, WhatsApp remains a user-initiated deep link for contact and quote sharing, and Bugsnag provides tightly redacted error tracking. CI supplies the production-shaped release candidate, with no permanent staging or preview service.
 
 ## Implementation references
 
@@ -548,7 +546,7 @@ Berufe is developed in one monorepo with `apps/web`, `apps/api`, and the shared 
 - [Infobip 2FA API](https://www.infobip.com/docs/2fa-service/using-2fa-api)
 - [Infobip Brazil Letter of Authorization guidance](https://www.infobip.com/docs/essentials/latam-registration/brazil-letter-of-authorization-loa-guidelines)
 - [Cloudflare R2 S3 compatibility](https://developers.cloudflare.com/r2/get-started/s3/)
-- [Render PostgreSQL backups](https://render.com/docs/postgresql-backups)
+- [Railway PostgreSQL](https://docs.railway.com/guides/postgresql)
 - [GoodJob](https://github.com/bensheldon/good_job)
 - [Bugsnag for Rails](https://docs.bugsnag.com/platforms/ruby/rails/)
 - [Bugsnag for Vue](https://docs.bugsnag.com/platforms/javascript/vue/)

@@ -24,7 +24,7 @@
     "typecheck": "nuxt typecheck",
     "format": "prettier --write \"app/**/*.{vue,ts,scss,css}\" \"tests/**/*.ts\" \"*.{ts,mjs,json,md}\"",
     "format:check": "prettier --check \"app/**/*.{vue,ts,scss,css}\" \"tests/**/*.ts\" \"*.{ts,mjs,json,md}\"",
-    "format:repo:check": "prettier --check \"../../README.md\" \"../../docs/**/*.md\" \"../../compose.yaml\" \"../../.github/workflows/**/*.yml\" --ignore-path ../../.prettierignore",
+    "format:repo:check": "prettier --check \"../../README.md\" \"../../docs/**/*.md\" \"../../compose.yaml\" \"../../.github/workflows/**/*.yml\" \"../../.railway/**/*.{ts,mjs,json,md}\" --ignore-path ../../.prettierignore",
     "format:styles": "prettier --write \"app/**/*.vue\" \"app/**/*.{css,scss}\"",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -37,6 +37,8 @@
     "check": "pnpm format:check && pnpm lint && pnpm stylelint && pnpm typecheck && pnpm test"
   },
   "dependencies": {
+    "@bugsnag/js": "8.10.0",
+    "@bugsnag/plugin-vue": "8.9.0",
     "@iconify-json/lucide": "1.2.123",
     "@nuxt/ui": "4.10.0",
     "nuxt": "4.5.2",
