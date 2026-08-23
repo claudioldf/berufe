@@ -307,6 +307,13 @@ function requestShare() {
       grid-column: 1 / -1;
     }
   }
+  .quote-builder__form :where(input, select, textarea):focus {
+    outline: none;
+  }
+  .quote-builder__form :where(input, select, textarea):focus-visible {
+    border-color: var(--color-brand);
+    box-shadow: var(--focus-ring);
+  }
   .quote-items {
     overflow-x: auto;
   }
@@ -336,6 +343,9 @@ function requestShare() {
       border-radius: 8px;
       background: var(--color-surface-control);
       font-size: 0.84rem;
+      transition:
+        border-color var(--motion-fast) ease,
+        box-shadow var(--motion-fast) ease;
     }
     & strong {
       text-align: right;
@@ -387,6 +397,13 @@ function requestShare() {
     align-items: center;
     border: 1px solid var(--line);
     border-radius: 8px;
+    transition:
+      border-color var(--motion-fast) ease,
+      box-shadow var(--motion-fast) ease;
+  }
+  .builder-total label > div:focus-within {
+    border-color: var(--color-brand);
+    box-shadow: var(--focus-ring);
   }
   .builder-total label em {
     padding-left: 8px;
@@ -400,6 +417,9 @@ function requestShare() {
     background: transparent;
     text-align: right;
     font-size: 0.84rem;
+  }
+  .builder-total input:focus-visible {
+    box-shadow: none;
   }
   .quote-builder {
     &__savebar {
