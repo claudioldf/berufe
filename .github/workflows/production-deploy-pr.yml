@@ -1,0 +1,155 @@
+name: Production deploy PR
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-deploy-pr
+  cancel-in-progress: false
+
+env:
+  BASE_BRANCH: production
+  HEAD_BRANCH: master
+  MIGRATION_LABEL: db migration
+  PR_TITLE: Production Deploy
+
+jobs:
+  maintain-production-pr:
+    name: Maintain production deploy PR
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out master with release history
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: master
+
+      - name: Create or update the production deploy PR
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PR_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          HEAD_OWNER: ${{ github.repository_owner }}
+          MANAGED_MARKER: "<!-- production-deploy-pr:managed -->"
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${GH_TOKEN}" ]]; then
+            echo "::error::RELEASE_PR_TOKEN is not configured"
+            exit 1
+          fi
+
+          git fetch --no-tags origin \
+            "+refs/heads/${HEAD_BRANCH}:refs/remotes/origin/${HEAD_BRANCH}" \
+            "+refs/heads/${BASE_BRANCH}:refs/remotes/origin/${BASE_BRANCH}"
+
+          mapfile -t open_pr_numbers < <(
+            gh api --paginate --method GET "repos/${GH_REPO}/pulls" \
+              -f state=open \
+              -f base="${BASE_BRANCH}" \
+              -f head="${HEAD_OWNER}:${HEAD_BRANCH}" \
+              -f per_page=100 \
+              --jq '.[].number'
+          )
+
+          if (( ${#open_pr_numbers[@]} > 1 )); then
+            echo "::error::Found multiple open ${HEAD_BRANCH} -> ${BASE_BRANCH} pull requests"
+            exit 1
+          fi
+
+          diff_status=0
+          git diff --quiet \
+            "origin/${BASE_BRANCH}" "origin/${HEAD_BRANCH}" || diff_status=$?
+
+          if (( diff_status > 1 )); then
+            echo "::error::Unable to compare ${BASE_BRANCH} and ${HEAD_BRANCH}"
+            exit "${diff_status}"
+          fi
+
+          if (( diff_status == 0 )); then
+            if (( ${#open_pr_numbers[@]} == 1 )); then
+              pr_number="${open_pr_numbers[0]}"
+              pr_body=$(gh api "repos/${GH_REPO}/pulls/${pr_number}" --jq '.body // ""')
+
+              if [[ "${pr_body}" == *"${MANAGED_MARKER}"* ]]; then
+                gh api --method PATCH "repos/${GH_REPO}/pulls/${pr_number}" \
+                  -f state=closed \
+                  --silent
+                echo "Closed empty managed production deploy PR #${pr_number}"
+              else
+                echo "No deploy diff; leaving unmanaged PR #${pr_number} unchanged"
+              fi
+            else
+              echo "Production already matches master; no pull request needed"
+            fi
+
+            exit 0
+          fi
+
+          if (( ${#open_pr_numbers[@]} == 1 )); then
+            pr_number="${open_pr_numbers[0]}"
+            gh api --method PATCH "repos/${GH_REPO}/pulls/${pr_number}" \
+              -f title="${PR_TITLE}" \
+              --silent
+            echo "Reusing production deploy PR #${pr_number}"
+          else
+            pr_body=$(printf '%s\n' \
+              "${MANAGED_MARKER}" \
+              "" \
+              "This pull request is maintained automatically and contains everything in \`${HEAD_BRANCH}\` that has not been deployed to \`${BASE_BRANCH}\`." \
+              "" \
+              "Merging it triggers the existing production CI and Railway deployment. The merge remains a manual release decision.")
+
+            pr_number=$(gh api --method POST "repos/${GH_REPO}/pulls" \
+              -f title="${PR_TITLE}" \
+              -f body="${pr_body}" \
+              -f head="${HEAD_BRANCH}" \
+              -f base="${BASE_BRANCH}" \
+              --jq '.number')
+            echo "Created production deploy PR #${pr_number}"
+          fi
+
+          if ! gh api "repos/${GH_REPO}/labels/db%20migration" --silent 2>/dev/null; then
+            gh api --method POST "repos/${GH_REPO}/labels" \
+              -f name="${MIGRATION_LABEL}" \
+              -f color=b60205 \
+              -f description="Production deployment includes Rails database migrations" \
+              --silent
+            echo "Created ${MIGRATION_LABEL} label"
+          fi
+
+          changed_files=$(git diff --name-only \
+            "origin/${BASE_BRANCH}" "origin/${HEAD_BRANCH}")
+          current_labels=$(gh api --paginate \
+            "repos/${GH_REPO}/issues/${pr_number}/labels?per_page=100" \
+            --jq '.[].name')
+
+          has_migration=false
+          if grep -Eq '^apps/api/db/migrate/.+\.rb$' <<< "${changed_files}"; then
+            has_migration=true
+          fi
+
+          has_migration_label=false
+          if grep -Fxq "${MIGRATION_LABEL}" <<< "${current_labels}"; then
+            has_migration_label=true
+          fi
+
+          if [[ "${has_migration}" == true && "${has_migration_label}" == false ]]; then
+            gh api --method POST "repos/${GH_REPO}/issues/${pr_number}/labels" \
+              -f "labels[]=${MIGRATION_LABEL}" \
+              --silent
+            echo "Added ${MIGRATION_LABEL} to PR #${pr_number}"
+          elif [[ "${has_migration}" == false && "${has_migration_label}" == true ]]; then
+            gh api --method DELETE \
+              "repos/${GH_REPO}/issues/${pr_number}/labels/db%20migration" \
+              --silent
+            echo "Removed ${MIGRATION_LABEL} from PR #${pr_number}"
+          else
+            echo "${MIGRATION_LABEL} is already synchronized on PR #${pr_number}"
+          fi
