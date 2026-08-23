@@ -22,7 +22,10 @@ usage limit in Railway. A hard limit can stop production, which is an accepted M
 ## Release model
 
 - Feature and deployment work enters `master` through a pull request.
-- A release is a pull request from `master` to the protected `production` branch.
+- A push to `master` automatically creates or updates one `Production Deploy` pull request
+  from `master` to the protected `production` branch. The release merge remains manual.
+- The release workflow adds the `db migration` label whenever the complete deploy diff
+  contains a Rails migration under `apps/api/db/migrate/`.
 - Railway watches only `production` and waits for GitHub CI before deploying.
 - The Rails pre-deploy command runs `db:prepare` and the idempotent catalog seed before a
   new application deployment becomes active.
@@ -36,6 +39,13 @@ Required GitHub checks on both protected branches are:
 - `Frontend checks`
 - `Compose integration`
 - `Production image smoke test`
+
+Store a fine-grained personal access token in the `RELEASE_PR_TOKEN` GitHub Actions secret.
+Restrict it to this repository with only read/write pull-request permission; the workflow
+uses it to create the release PR and maintain its label. Keep all required checks on
+`production`, but disable **Require branches to be up to date before merging** there so the
+recurring direct `master` to `production` PR is mergeable. Keep strict freshness enabled on
+`master`.
 
 ## 1. Railway project
 
@@ -196,9 +206,11 @@ and both Railway domains show valid certificates.
 
 ## 5. First release and verification
 
-Merge the implementation pull request into `master`, then open and merge a release pull
-request from `master` to `production`. Watch all four GitHub checks and both Railway
-deployments. Do not bypass a failed health check or migration.
+Merge the implementation pull request into `master`, wait for the automated
+`Production Deploy` pull request, then review and merge it into `production`. Watch all four
+GitHub checks and both Railway deployments. Do not bypass a failed health check or
+migration. If release-PR automation fails transiently, rerun it through the workflow's
+manual dispatch instead of opening a competing release PR.
 
 From an authenticated Railway shell on `api`, provision the first administrator:
 
