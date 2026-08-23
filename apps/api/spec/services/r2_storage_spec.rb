@@ -18,6 +18,27 @@ RSpec.describe R2Storage do
   let(:client) { instance_double(Aws::S3::Client) }
   let(:presigner) { instance_double(Aws::S3::Presigner) }
 
+  it "uses checksum settings compatible with R2" do
+    expect(Aws::S3::Client).to receive(:new).with(
+      endpoint: "https://account.r2.cloudflarestorage.com",
+      access_key_id: "access-key",
+      secret_access_key: "secret-key",
+      region: "auto",
+      force_path_style: true,
+      request_checksum_calculation: "when_required",
+      response_checksum_validation: "when_required"
+    ).and_return(client)
+    expect(Aws::S3::Presigner).to receive(:new).with(client:).and_return(presigner)
+
+    described_class.new(
+      endpoint: "https://account.r2.cloudflarestorage.com",
+      access_key_id: "access-key",
+      secret_access_key: "secret-key",
+      public_bucket: "public-media",
+      private_bucket: "private-media"
+    )
+  end
+
   it "keeps public and private objects in their configured buckets" do
     expect(client).to receive(:put_object).with(
       bucket: "private-media",
