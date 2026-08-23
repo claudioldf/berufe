@@ -40,7 +40,9 @@ class MediaUploadProcessor
   rescue MediaUploadInspector::Invalid => error
     fail_invalid(upload, code: error.code, storage:)
   rescue => error
-    fail_transient(upload, code: storage_error?(error) ? "storage_unavailable" : "processing_unavailable")
+    failure_code = storage_error?(error) ? "storage_unavailable" : "processing_unavailable"
+    Rails.error.report(error, context: {media_upload_id: upload.id, failure_code:})
+    fail_transient(upload, code: failure_code)
   end
 
   private
@@ -78,6 +80,6 @@ class MediaUploadProcessor
   end
 
   def storage_error?(error)
-    error.is_a?(SystemCallError) || error.class.name.start_with?("Aws::")
+    error.is_a?(SystemCallError) || error.class.name.start_with?("Aws::", "Seahorse::")
   end
 end

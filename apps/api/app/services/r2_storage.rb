@@ -18,7 +18,9 @@ class R2Storage
       access_key_id:,
       secret_access_key:,
       region: "auto",
-      force_path_style: true
+      force_path_style: true,
+      request_checksum_calculation: "when_required",
+      response_checksum_validation: "when_required"
     )
     @presigner = presigner || Aws::S3::Presigner.new(client: @client)
   end

@@ -66,11 +66,16 @@ RSpec.describe MediaUploadProcessor do
     upload = create_upload(content_type: "image/jpeg", byte_size: 10)
     unavailable = instance_double(LocalDiskStorage)
     allow(unavailable).to receive(:read).and_raise(Errno::EIO)
+    allow(Rails.error).to receive(:report)
 
     described_class.new.call(upload:, storage: unavailable)
 
     expect(upload.reload).to have_attributes(state: "failed", failure_code: "storage_unavailable")
     expect(upload).to be_retryable
+    expect(Rails.error).to have_received(:report).with(
+      instance_of(Errno::EIO),
+      context: {media_upload_id: upload.id, failure_code: "storage_unavailable"}
+    )
   end
 
   private
