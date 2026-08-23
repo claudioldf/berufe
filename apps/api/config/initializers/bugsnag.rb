@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require Rails.root.join("lib/berufe/bugsnag_privacy")
+require Rails.root.join("lib/berufe/bugsnag_handled_error_subscriber")
 
 if ENV["BUGSNAG_API_KEY"].present?
   Bugsnag.configure do |config|
@@ -14,4 +15,6 @@ if ENV["BUGSNAG_API_KEY"].present?
     config.redacted_keys += Berufe::BugsnagPrivacy::REDACTED_KEYS
     config.add_on_error(Berufe::BugsnagPrivacy)
   end
+
+  Rails.error.subscribe(Berufe::BugsnagHandledErrorSubscriber.new)
 end

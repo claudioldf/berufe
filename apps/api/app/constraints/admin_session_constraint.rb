@@ -12,7 +12,8 @@ class AdminSessionConstraint
 
     request.env[SESSION_ENV_KEY] = session
     true
-  rescue ActiveRecord::ActiveRecordError
+  rescue ActiveRecord::ActiveRecordError => error
+    Rails.error.report(error)
     false
   end
 end

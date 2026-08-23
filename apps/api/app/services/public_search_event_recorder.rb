@@ -23,6 +23,7 @@ class PublicSearchEventRecorder
 
     Interaction.new(search_event_id: event.id, token:)
   rescue ActiveRecord::ActiveRecordError => error
+    Rails.error.report(error)
     Rails.logger.error(
       "public_search_event_recording_failed class=#{error.class} request_id=#{Current.request_id}"
     )

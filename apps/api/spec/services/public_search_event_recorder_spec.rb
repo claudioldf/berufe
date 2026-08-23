@@ -76,7 +76,9 @@ RSpec.describe PublicSearchEventRecorder do
 
   it "logs only safe diagnostics and suppresses persistence failures" do
     Current.request_id = "search-event-failure"
-    allow(SearchEvent).to receive(:create!).and_raise(ActiveRecord::StatementInvalid, "private database detail")
+    error = ActiveRecord::StatementInvalid.new("private database detail")
+    allow(SearchEvent).to receive(:create!).and_raise(error)
+    allow(Rails.error).to receive(:report)
     allow(Rails.logger).to receive(:error)
 
     interaction = described_class.new.call(
@@ -88,6 +90,7 @@ RSpec.describe PublicSearchEventRecorder do
     )
 
     expect(interaction).to be_nil
+    expect(Rails.error).to have_received(:report).with(error)
     expect(Rails.logger).to have_received(:error).with(
       "public_search_event_recording_failed class=ActiveRecord::StatementInvalid request_id=search-event-failure"
     )

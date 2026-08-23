@@ -12,7 +12,8 @@ module Api
           },
           request_id: Current.request_id
         }
-      rescue ActiveRecord::ActiveRecordError
+      rescue ActiveRecord::ActiveRecordError => error
+        report_service_error(error)
         render_api_error(
           code: "service_unavailable",
           message: "Profissionais temporariamente indisponíveis.",

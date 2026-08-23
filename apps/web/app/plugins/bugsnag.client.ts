@@ -1,53 +1,23 @@
 import Bugsnag from "@bugsnag/js";
-import type { Event } from "@bugsnag/js";
 import BugsnagPluginVue from "@bugsnag/plugin-vue";
-
-const redactedKeys = [
-  /authorization/i,
-  /body/i,
-  /challenge/i,
-  /cookie/i,
-  /customer/i,
-  /email/i,
-  /file/i,
-  /header/i,
-  /otp/i,
-  /param/i,
-  /password/i,
-  /phone/i,
-  /secret/i,
-  /session/i,
-  /signed/i,
-  /token/i,
-  /url/i,
-];
-
-type SerializableBugsnagEvent = {
-  toJSON(): { metaData?: Record<string, unknown> };
-};
-
-function removePrivateDiagnostics(event: Event) {
-  const metadata = (event as unknown as SerializableBugsnagEvent).toJSON()
-    .metaData;
-
-  for (const section of Object.keys(metadata ?? {})) {
-    event.clearMetadata(section);
-  }
-
-  event.setUser();
-  event.breadcrumbs.length = 0;
-  event.request = {};
-  event.response = {
-    statusCode: event.response.statusCode,
-    headers: {},
-  };
-}
+import {
+  bugsnagRedactedKeys,
+  normalizeBugsnagContext,
+  notifyBugsnagError,
+  removePrivateDiagnostics,
+} from "@app/utils/bugsnag";
 
 export default defineNuxtPlugin((nuxtApp) => {
   const config = useRuntimeConfig();
   const apiKey = config.public.bugsnagApiKey;
 
-  if (!apiKey || import.meta.dev) return;
+  if (!apiKey || import.meta.dev || Bugsnag.isStarted()) return;
+  const currentContext = () => {
+    const routeName = nuxtApp.$router.currentRoute.value.name;
+    return normalizeBugsnagContext(
+      routeName ? `nuxt:${String(routeName)}` : "nuxt",
+    );
+  };
 
   Bugsnag.start({
     apiKey,
@@ -57,15 +27,21 @@ export default defineNuxtPlugin((nuxtApp) => {
     enabledBreadcrumbTypes: [],
     generateAnonymousId: false,
     plugins: [new BugsnagPluginVue()],
-    redactedKeys,
+    redactedKeys: bugsnagRedactedKeys,
     releaseStage: "production",
     onError(event) {
       removePrivateDiagnostics(event);
-      event.context =
-        nuxtApp.$router.currentRoute.value.matched.at(-1)?.path ?? "nuxt";
+      event.context = currentContext();
     },
   });
 
   const vuePlugin = Bugsnag.getPlugin("vue");
   if (vuePlugin) nuxtApp.vueApp.use(vuePlugin);
+
+  nuxtApp.hook("app:error", (error) => {
+    notifyBugsnagError(error, currentContext());
+  });
+  nuxtApp.hook("vue:error", (error) => {
+    notifyBugsnagError(error, currentContext());
+  });
 });

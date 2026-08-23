@@ -28,6 +28,7 @@ class PublicProfileViewRecorder
     true
   rescue => error
     release_claim(profile:, interaction:) if claimed
+    Rails.error.report(error)
     logger.error("public_profile_view_recording_failed class=#{error.class}")
     false
   end
@@ -51,6 +52,7 @@ class PublicProfileViewRecorder
       professional_id: profile.id
     )
   rescue => error
+    Rails.error.report(error)
     logger.error("public_profile_view_dedup_release_failed class=#{error.class}")
   end
 end
