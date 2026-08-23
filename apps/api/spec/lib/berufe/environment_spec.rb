@@ -69,7 +69,13 @@ RSpec.describe Berufe::Environment do
   end
 
   def production_environment
-    infobip_environment(name: "production", media_storage: "r2")
+    infobip_environment(name: "production", media_storage: "r2").merge(
+      "DB_POOL" => "7",
+      "RAILS_MAX_THREADS" => "3",
+      "GOOD_JOB_EXECUTION_MODE" => "async",
+      "GOOD_JOB_MAX_THREADS" => "1",
+      "GOOD_JOB_PROBE_PORT" => ""
+    )
   end
 
   it "supports explicit fake and restricted Infobip adapters in local development" do
@@ -105,7 +111,11 @@ RSpec.describe Berufe::Environment do
       "integration" => "r2",
       "production" => "r2"
     }.each do |name, media_storage|
-      environment = infobip_environment(name:, media_storage:)
+      environment = if name == "production"
+        production_environment
+      else
+        infobip_environment(name:, media_storage:)
+      end
       config = described_class.load!(environment:, rails_environment: (name == "production") ? "production" : "development")
 
       expect(config.name).to eq(name)
@@ -170,6 +180,25 @@ RSpec.describe Berufe::Environment do
 
     expect(config.name).to eq("production")
     expect(config.sms_otp_adapter).to eq("infobip")
+  end
+
+  it "uses the economical in-process job budget in production" do
+    config = described_class.load!(environment: production_environment, rails_environment: "production")
+
+    expect(config.name).to eq("production")
+  end
+
+  it "does not require the external worker probe for in-process production jobs" do
+    environment = production_environment.except("GOOD_JOB_PROBE_PORT")
+
+    expect { described_class.load!(environment:, rails_environment: "production") }.not_to raise_error
+  end
+
+  it "requires the worker probe whenever jobs execute externally" do
+    environment = local_environment.except("GOOD_JOB_PROBE_PORT")
+
+    expect { described_class.load!(environment:) }
+      .to raise_error(described_class::InvalidConfiguration, /GOOD_JOB_PROBE_PORT/)
   end
 
   it "keeps the foundation on the documented database and worker budgets" do

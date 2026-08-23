@@ -38,7 +38,15 @@ docker compose exec api bin/check
 
 These are the same non-writing checks used by CI. CI also verifies generated API types,
 Rails boot and migrations, both Docker images, the Nuxt production build, and the complete
-Compose stack.
+Compose stack. The production-image job additionally boots the release images with the
+same environment shape used by Railway.
+
+## Deploy
+
+Production runs as Nuxt, Rails with in-process GoodJob, and PostgreSQL on Railway. The
+release branch is `production`; normal development continues through pull requests into
+`master`. See [the production deployment runbook](docs/PRODUCTION_DEPLOYMENT.md) for the
+automated setup, required secrets, DNS cutover, verification, and rollback procedure.
 
 ## Format
 

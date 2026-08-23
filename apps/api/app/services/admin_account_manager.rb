@@ -1,6 +1,22 @@
 # frozen_string_literal: true
 
 class AdminAccountManager
+  def provision!(email:, password:, password_confirmation:, operator_identifier:, request_id: nil, now: Time.current)
+    operator_identifier = normalized_operator_identifier(operator_identifier)
+
+    UserAccount.transaction do
+      account = UserAccount.create!(
+        email:,
+        password:,
+        password_confirmation:,
+        role: "admin",
+        status: "active"
+      )
+      record_event!(account:, action: "provisioned", operator_identifier:, request_id:, now:)
+      account
+    end
+  end
+
   def reset_password!(email:, password:, password_confirmation:, operator_identifier:, request_id: nil, now: Time.current)
     operator_identifier = normalized_operator_identifier(operator_identifier)
 

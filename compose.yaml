@@ -4,6 +4,7 @@ x-api-service: &api-service
   build:
     context: .
     dockerfile: apps/api/Dockerfile
+    target: development
   image: berufe-api:development
   env_file:
     - .env
@@ -22,6 +23,7 @@ services:
   web:
     build:
       context: ./apps/web
+      target: development
     image: berufe-web:development
     env_file:
       - .env
