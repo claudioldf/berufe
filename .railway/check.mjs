@@ -22,13 +22,15 @@ assert.equal(
 );
 assert.equal(api?.variables?.DATABASE_URL?.resource, "database.Postgres");
 assert.equal(api?.variables?.SECRET_KEY_BASE?.type, "preserve");
+assert.equal(api?.variables?.PORT?.value, "8080");
 assert.equal(web?.source?.rootDirectory, "apps/web");
+assert.equal(web?.variables?.PORT?.value, "8080");
 assert.equal(
   web?.deploy?.multiRegionConfig?.["us-east4-eqdc4a"]?.numReplicas,
   1,
 );
 assert.equal(
   web?.variables?.NUXT_API_INTERNAL_BASE_URL?.value,
-  "http://${{api.RAILWAY_PRIVATE_DOMAIN}}",
+  "http://${{api.RAILWAY_PRIVATE_DOMAIN}}:${{api.PORT}}",
 );
 assert.equal(web?.variables?.NUXT_PUBLIC_BUGSNAG_API_KEY?.type, "preserve");

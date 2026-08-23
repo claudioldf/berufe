@@ -33,6 +33,7 @@ export default defineRailway(() => {
     env: {
       BERUFE_ENV: "production",
       RAILS_ENV: "production",
+      PORT: "8080",
       DATABASE_URL: database.env.DATABASE_URL,
       SECRET_KEY_BASE: preserve(),
       RAILS_MAX_THREADS: "3",
@@ -87,7 +88,9 @@ export default defineRailway(() => {
       },
     },
     env: {
-      NUXT_API_INTERNAL_BASE_URL: "http://${{api.RAILWAY_PRIVATE_DOMAIN}}",
+      PORT: "8080",
+      NUXT_API_INTERNAL_BASE_URL:
+        "http://${{api.RAILWAY_PRIVATE_DOMAIN}}:${{api.PORT}}",
       NUXT_PUBLIC_API_BASE_URL: "https://api.berufe.com.br",
       NUXT_PUBLIC_SITE_URL: "https://www.berufe.com.br",
       NUXT_PUBLIC_BUGSNAG_API_KEY: preserve(),
