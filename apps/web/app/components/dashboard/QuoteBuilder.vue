@@ -312,7 +312,12 @@ function requestShare() {
   }
   .quote-builder__form :where(input, select, textarea):focus-visible {
     border-color: var(--color-brand);
-    box-shadow: var(--focus-ring);
+    box-shadow: none;
+  }
+  .quote-builder__form
+    .form-field
+    :where(input, select, textarea):focus-visible {
+    box-shadow: none;
   }
   .quote-items {
     overflow-x: auto;
@@ -343,9 +348,7 @@ function requestShare() {
       border-radius: 8px;
       background: var(--color-surface-control);
       font-size: 0.84rem;
-      transition:
-        border-color var(--motion-fast) ease,
-        box-shadow var(--motion-fast) ease;
+      transition: border-color var(--motion-fast) ease;
     }
     & strong {
       text-align: right;
@@ -397,13 +400,10 @@ function requestShare() {
     align-items: center;
     border: 1px solid var(--line);
     border-radius: 8px;
-    transition:
-      border-color var(--motion-fast) ease,
-      box-shadow var(--motion-fast) ease;
+    transition: border-color var(--motion-fast) ease;
   }
   .builder-total label > div:focus-within {
     border-color: var(--color-brand);
-    box-shadow: var(--focus-ring);
   }
   .builder-total label em {
     padding-left: 8px;
