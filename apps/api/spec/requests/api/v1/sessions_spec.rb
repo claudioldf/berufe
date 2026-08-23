@@ -260,6 +260,7 @@ RSpec.describe "Application sessions", type: :request, openapi: true do
 
   it "continues authenticating locally while the SMS provider is unavailable" do
     now = Time.zone.parse("2026-08-15 12:00:00 UTC")
+    travel_to(now)
     account = create_account
     _application_session, session_token = ApplicationSession.issue!(user_account: account, now:)
     allow(SmsOtpClient).to receive(:build).and_raise(SmsOtp::ProviderUnavailable)
