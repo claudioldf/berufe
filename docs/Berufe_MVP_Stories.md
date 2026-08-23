@@ -70,6 +70,7 @@ Apply these rules whenever they are relevant to the story:
 **Acceptance criteria:**
 
 - `docker compose up --build` starts `web`, `api`, `worker`, and `db`.
+- A one-shot migration service successfully prepares the database before the API starts.
 - The API and worker use the same backend image and environment definition.
 - PostgreSQL has a health check and named development volume; dependent services wait for database readiness.
 - Nuxt and Rails source changes reload without rebuilding the entire stack, and the team records that hot reload is comfortable on its supported development machines before retaining the four-service setup.

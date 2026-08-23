@@ -159,7 +159,7 @@ jobs:
       - name: Build Rails and Nuxt Dockerfiles
         run: docker compose build api web
 
-      - name: Start the four-service stack
+      - name: Start the development stack
         run: docker compose up --detach --wait
 
       - name: Verify API readiness

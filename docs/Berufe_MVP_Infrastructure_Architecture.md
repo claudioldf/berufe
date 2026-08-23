@@ -210,16 +210,17 @@ Use this minimum root layout:
   docs/
 ```
 
-The Compose stack contains only four services:
+The Compose stack contains four long-running services and one short-lived migration job:
 
-| Service  | Responsibility                                                          |
-| -------- | ----------------------------------------------------------------------- |
-| `web`    | Nuxt development server with source mounted from `apps/web/`.           |
-| `api`    | Rails API server with source mounted from `apps/api/`.                  |
-| `worker` | `bundle exec good_job start` process built from the same backend image. |
-| `db`     | PostgreSQL with a named development volume and health check.            |
+| Service   | Responsibility                                                          |
+| --------- | ----------------------------------------------------------------------- |
+| `web`     | Nuxt development server with source mounted from `apps/web/`.           |
+| `api`     | Rails API server with source mounted from `apps/api/`.                  |
+| `worker`  | `bundle exec good_job start` process built from the same backend image. |
+| `db`      | PostgreSQL with a named development volume and health check.            |
+| `migrate` | Runs `bin/rails db:prepare` once before the API starts.                 |
 
-One command starts the project: `docker compose up --build`. The API and worker share the same image and environment definition. Use health checks so Rails and the worker wait for PostgreSQL readiness; do not rely only on container start order. Keep all four services if source-mounted Nuxt and Rails hot reload remain comfortable on the team's development machines.
+One command starts the project: `docker compose up --build`. The API, worker, and migration job share the same image and environment definition. Use health checks and the successful completion of the migration job so Rails and the worker wait for PostgreSQL readiness and an up-to-date schema; do not rely only on container start order. Keep all four long-running services if source-mounted Nuxt and Rails hot reload remain comfortable on the team's development machines.
 
 The four-service source-mounted setup was validated on 2026-08-15 on macOS 26 arm64: Nuxt's watcher and Rails development reloader both observe host edits without rebuilding either image, with no material delay during ordinary development.
 
@@ -447,7 +448,7 @@ Use one repository with `apps/web/`, `apps/api/`, and `apps/contracts/`. This ke
 - Rails request tests use `openapi_first` against `apps/contracts/openapi.yaml`; important operations validate request and response variants, and contract coverage fails for unintended omissions.
 - A small repository formatting check may run Prettier over Markdown, JSON, and compatible YAML; it must exclude Ruby, generated files such as `schema.d.ts`, lockfiles, and Rails YAML/ERB files that Prettier cannot safely parse.
 - Playwright runs for release-critical changes and before production release.
-- CI boots both the four-service development stack and the production-shaped release images with fake provider credentials.
+- CI boots both the four-service development stack (plus its one-shot migration job) and the production-shaped release images with fake provider credentials.
 - There are no hosted pull-request previews or permanent staging services for the MVP.
 - A protected `production` branch deploys only after checks pass; Railway runs Rails migrations as an explicit pre-deploy step before dependent code.
 
