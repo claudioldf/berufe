@@ -72,6 +72,7 @@ deployment; never commit them or paste them into an issue or chat transcript.
 ```dotenv
 BERUFE_ENV=production
 RAILS_ENV=production
+PORT=8080
 DATABASE_URL=${{Postgres.DATABASE_URL}}
 SECRET_KEY_BASE=<secret: bin/rails secret>
 RAILS_MAX_THREADS=3
@@ -113,14 +114,16 @@ BUGSNAG_API_KEY=<secret Rails project notifier key>
 Set the following `web` variables:
 
 ```dotenv
-NUXT_API_INTERNAL_BASE_URL=http://${{api.RAILWAY_PRIVATE_DOMAIN}}
+PORT=8080
+NUXT_API_INTERNAL_BASE_URL=http://${{api.RAILWAY_PRIVATE_DOMAIN}}:${{api.PORT}}
 NUXT_PUBLIC_API_BASE_URL=https://api.berufe.com.br
 NUXT_PUBLIC_SITE_URL=https://www.berufe.com.br
 NUXT_PUBLIC_BUGSNAG_API_KEY=<web project notifier key>
 ```
 
 The browser notifier key is intentionally public, but the Bugsnag account and management
-credentials are not. Railway supplies `PORT` and `RAILWAY_GIT_COMMIT_SHA` automatically.
+credentials are not. The IaC pins both HTTP listeners to `PORT=8080`; Railway supplies
+`RAILWAY_GIT_COMMIT_SHA` automatically.
 
 ## 2. Cloudflare R2
 
@@ -173,8 +176,8 @@ the domains:
 ```bash
 railway config plan
 railway config apply
-railway domain api.berufe.com.br --service api --port 3000
-railway domain www.berufe.com.br --service web --port 3000
+railway domain api.berufe.com.br --service api --port 8080
+railway domain www.berufe.com.br --service web --port 8080
 ```
 
 ## 4. DNS cutover
