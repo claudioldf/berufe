@@ -1,7 +1,15 @@
 import { createApiClient } from "@app/services/api/client";
+import { notifyBugsnagError } from "@app/utils/bugsnag";
+
+vi.mock("@app/utils/bugsnag", () => ({
+  apiBugsnagContext: (method: string, path: string) =>
+    `api:${method.toUpperCase()}:${path}`,
+  notifyBugsnagError: vi.fn(),
+}));
 
 afterEach(() => {
   window.localStorage.clear();
+  vi.clearAllMocks();
 });
 
 describe("API client", () => {
@@ -85,5 +93,67 @@ describe("API client", () => {
         requireOrigin: true,
       }),
     ).toThrow(/Request origin is required/);
+  });
+
+  it("reports server failures without including the concrete request URL", async () => {
+    const fetch = vi.fn(async () =>
+      Promise.resolve(new Response(null, { status: 503 })),
+    );
+    const client = createApiClient({
+      baseUrl: "http://localhost:3001",
+      fetch,
+    });
+
+    await client.GET("/api/v1/status");
+
+    expect(notifyBugsnagError).toHaveBeenCalledOnce();
+    expect(notifyBugsnagError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "API request failed with status 503",
+      }),
+      "api:GET:/api/v1/status",
+    );
+    expect(
+      JSON.stringify(vi.mocked(notifyBugsnagError).mock.calls),
+    ).not.toContain("localhost");
+  });
+
+  it("does not report expected client errors", async () => {
+    const fetch = vi.fn(async () =>
+      Promise.resolve(new Response(null, { status: 422 })),
+    );
+    const client = createApiClient({
+      baseUrl: "http://localhost:3001",
+      fetch,
+    });
+
+    await client.GET("/api/v1/status");
+
+    expect(notifyBugsnagError).not.toHaveBeenCalled();
+  });
+
+  it("reports and rethrows network failures without exposing fetch diagnostics", async () => {
+    const failure = new TypeError(
+      "fetch failed for http://localhost:3001/private?token=secret",
+    );
+    const fetch = vi.fn(async () => Promise.reject(failure));
+    const client = createApiClient({
+      baseUrl: "http://localhost:3001",
+      fetch,
+    });
+
+    await expect(client.GET("/api/v1/status")).rejects.toThrow(
+      "API request failed before receiving a response",
+    );
+
+    expect(notifyBugsnagError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "API request failed before receiving a response",
+      }),
+      "api:GET:/api/v1/status",
+    );
+    expect(
+      JSON.stringify(vi.mocked(notifyBugsnagError).mock.calls),
+    ).not.toContain("secret");
   });
 });

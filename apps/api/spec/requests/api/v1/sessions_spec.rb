@@ -272,7 +272,9 @@ RSpec.describe "Application sessions", type: :request, openapi: true do
   end
 
   it "returns a safe unavailable response when session persistence fails" do
-    allow(ApplicationSessionAuthenticator).to receive(:new).and_raise(ActiveRecord::ConnectionNotEstablished)
+    error = ActiveRecord::ConnectionNotEstablished.new("private database detail")
+    allow(ApplicationSessionAuthenticator).to receive(:new).and_raise(error)
+    allow(Rails.error).to receive(:report)
 
     get_current_session(session_token: "opaque-session-token", request_id: "session-db-down")
 
@@ -284,6 +286,7 @@ RSpec.describe "Application sessions", type: :request, openapi: true do
         "request_id" => "session-db-down"
       }
     )
+    expect(Rails.error).to have_received(:report).with(error, handled: true, severity: :error)
     assert_api_conform(status: 503)
   end
 

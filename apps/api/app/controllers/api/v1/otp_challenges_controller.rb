@@ -47,7 +47,8 @@ module Api
           message: "Não foi possível enviar o código para este número. Revise-o e tente novamente.",
           status: :unprocessable_content
         )
-      rescue SmsOtp::ProviderUnavailable, ActiveRecord::ActiveRecordError
+      rescue SmsOtp::ProviderUnavailable, ActiveRecord::ActiveRecordError => error
+        report_service_error(error)
         render_api_error(
           code: "otp_provider_unavailable",
           message: "Não foi possível enviar o código agora. Tente novamente em instantes.",

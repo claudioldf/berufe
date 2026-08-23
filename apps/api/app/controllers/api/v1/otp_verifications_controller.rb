@@ -18,7 +18,8 @@ module Api
       rescue PhoneOtpVerifier::Invalid
         render_invalid_verification
       rescue SmsOtp::ProviderUnavailable, SmsOtp::RateLimited, SmsOtp::DeliveryRejected,
-        ActiveSupport::MessageEncryptor::InvalidMessage, ActiveRecord::ActiveRecordError
+        ActiveSupport::MessageEncryptor::InvalidMessage, ActiveRecord::ActiveRecordError => error
+        report_service_error(error)
         render_api_error(
           code: "otp_provider_unavailable",
           message: "Não foi possível confirmar o código agora. Tente novamente em instantes.",

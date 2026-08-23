@@ -32,7 +32,8 @@ module Api
         raise ActiveRecord::RecordNotFound
       rescue ActiveRecord::RecordNotFound
         raise
-      rescue ActiveRecord::ActiveRecordError
+      rescue ActiveRecord::ActiveRecordError => error
+        report_service_error(error)
         render_api_error(
           code: "service_unavailable",
           message: "Perfil temporariamente indisponível.",

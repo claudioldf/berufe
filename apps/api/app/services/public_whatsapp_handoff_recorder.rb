@@ -31,6 +31,7 @@ class PublicWhatsappHandoffRecorder
     true
   rescue => error
     release_claim(profile:, interaction:) if claimed
+    Rails.error.report(error)
     logger.error(
       "public_whatsapp_handoff_recording_failed class=#{error.class} source=#{interaction.source}"
     )
@@ -60,6 +61,7 @@ class PublicWhatsappHandoffRecorder
       professional_id: profile.id
     )
   rescue => error
+    Rails.error.report(error)
     logger.error("public_whatsapp_handoff_dedup_release_failed class=#{error.class}")
   end
 end

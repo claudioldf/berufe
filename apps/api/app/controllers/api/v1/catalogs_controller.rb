@@ -12,7 +12,8 @@ module Api
           data: PublicCatalogSerializer.new(categories:, services:, neighborhoods:),
           request_id: Current.request_id
         }
-      rescue ActiveRecord::ActiveRecordError
+      rescue ActiveRecord::ActiveRecordError => error
+        report_service_error(error)
         render_api_error(
           code: "service_unavailable",
           message: "Catálogo temporariamente indisponível.",

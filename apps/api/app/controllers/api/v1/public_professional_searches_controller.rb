@@ -33,7 +33,8 @@ module Api
           status: :unprocessable_entity,
           field_errors: error.field_errors
         )
-      rescue ActiveRecord::ActiveRecordError
+      rescue ActiveRecord::ActiveRecordError => error
+        report_service_error(error)
         render_api_error(
           code: "service_unavailable",
           message: "Busca temporariamente indisponível.",
