@@ -247,3 +247,22 @@ record a restore-test owner and date. Exporting a backup is not a restore test.
 If a release fails, keep DNS in place, disable the affected provider/flow if necessary,
 merge a forward fix or revert through the normal release PR, and repeat the five critical
 checks. Rotate any credential that may have reached logs or a client bundle.
+
+## 7. LGPD release and support operations
+
+The controller identity, provider register, production regions, contracts, and account
+privacy settings were confirmed by the product owner on 23 August 2026. Reconfirm them
+whenever a provider, region, subprocessor, or purpose changes. The public Terms and Privacy
+Notice are version `1.0`, effective 1 August 2026; changing a material term requires new
+version constants in `LegalDocumentVersions` and a new authenticated acceptance.
+
+Follow [LGPD_OPERATIONS.md](./LGPD_OPERATIONS.md) for rights requests, consent withdrawal,
+erasure, retention checks, incident handling, and evidence. Keep support messages inside the
+authorized support mailbox. Never copy a phone number, customer content, identity file,
+token, or provider credential into a command argument, issue, pull request, application log,
+or Bugsnag event.
+
+Before release, counsel qualified in Brazilian privacy law must review the final public text,
+the legitimate-interest assessment for referred profiles, international-transfer safeguards,
+and the five-year minimum-record retention decision. Record approval in the company's
+controlled legal repository; do not commit privileged advice or signatures here.

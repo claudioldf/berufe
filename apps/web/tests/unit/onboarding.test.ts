@@ -8,8 +8,6 @@ import {
   getOnboardingStepCompletion,
   normalizeBrazilianPhone,
   onboardingImageMaxBytes,
-  parseProfessionalOnboardingState,
-  professionalOnboardingStorageKey,
   useProfessionalOnboarding,
   validateOnboardingImage,
   validateOnboardingProfile,
@@ -68,7 +66,7 @@ describe("professional onboarding rules", () => {
     expect(calculateOnboardingProgress(completion)).toBe(100);
   });
 
-  it("rejects invalid images and stale or malformed browser state", () => {
+  it("rejects invalid images", () => {
     const validFile = new File(["image"], "work.jpg", {
       type: "image/jpeg",
     });
@@ -85,13 +83,9 @@ describe("professional onboarding rules", () => {
     expect(validateOnboardingImage(validFile).valid).toBe(true);
     expect(validateOnboardingImage(invalidType).valid).toBe(false);
     expect(validateOnboardingImage(oversized).valid).toBe(false);
-    expect(parseProfessionalOnboardingState("not-json")).toBeNull();
-    expect(
-      parseProfessionalOnboardingState(JSON.stringify({ version: 2 })),
-    ).toBeNull();
   });
 
-  it("persists submitted progress without persisting uploaded files", async () => {
+  it("keeps submitted progress in memory without browser persistence", async () => {
     const onboarding = shallowRef<
       ReturnType<typeof useProfessionalOnboarding> | undefined
     >();
@@ -125,12 +119,7 @@ describe("professional onboarding rules", () => {
     });
     await expect(workflow.completeVerification(file)).resolves.toBe(true);
 
-    const stored = window.localStorage.getItem(
-      professionalOnboardingStorageKey,
-    )!;
-    expect(stored).not.toContain("private-image-bytes");
-    expect(stored).not.toContain("private.jpg");
-    expect(parseProfessionalOnboardingState(stored)).not.toBeNull();
+    expect(window.localStorage.length).toBe(0);
     expect(workflow.progress.value).toBe(100);
 
     wrapper.unmount();

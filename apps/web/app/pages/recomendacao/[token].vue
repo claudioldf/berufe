@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LegalInlineNotice from "~/components/legal/LegalInlineNotice.vue";
 import { useApiClient } from "~/services/api/client";
 import { ApiRequestError } from "~/services/api/errors";
 import {
@@ -123,6 +124,10 @@ async function submit() {
             required
           />
         </DesignSystemFormField>
+        <LegalInlineNotice title="Publicação com sua autorização">
+          Seu nome e seu texto ficarão públicos no perfil. O e-mail é usado para
+          validar este convite. Você pode retirar a autorização pelo suporte.
+        </LegalInlineNotice>
         <label class="recommendation-page__check">
           <input v-model="serviceConfirmed" type="checkbox" required />
           Confirmo que este serviço foi realizado e concluído.
@@ -145,7 +150,8 @@ async function submit() {
         >
         <small>
           Este convite pessoal foi enviado por e-mail após a sua confirmação de
-          conclusão. Não há nota por estrelas nem revisão prévia da Berufe.
+          conclusão, é válido por 14 dias e só pode ser usado uma vez. Não há
+          nota por estrelas nem revisão prévia da Berufe.
         </small>
       </form>
     </DesignSystemContainer>

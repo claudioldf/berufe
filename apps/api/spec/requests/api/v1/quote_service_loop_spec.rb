@@ -290,7 +290,10 @@ RSpec.describe "Quote service loop", type: :request, openapi: true do
     expect(response).to have_http_status(:created)
     expect(recommendation_request.reload).to be_completed
     expect(quote.customer.reload.email_verified_at).to be_present
-    expect(CustomerRecommendation.sole).to have_attributes(display_name: "Marina")
+    expect(CustomerRecommendation.sole).to have_attributes(
+      display_name: "Marina",
+      privacy_notice_version: LegalDocumentVersions::PRIVACY_NOTICE
+    )
     assert_api_conform(status: 201)
 
     get "/api/v1/public/professionals/#{profile.public_slug}",
@@ -305,6 +308,17 @@ RSpec.describe "Quote service loop", type: :request, openapi: true do
       "display_name" => "Marina",
       "verification_label" => "Link enviado por e-mail"
     )
+    assert_api_conform(status: 200)
+
+    CustomerRecommendationPublicationWithdrawer.new.call(
+      profile_slug: profile.public_slug,
+      email: "marina@example.com"
+    )
+    get "/api/v1/public/professionals/#{profile.public_slug}",
+      headers: {"X-Request-Id" => "recommendation-withdrawn-public-profile"}
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body.dig("data", "professional", "customer_recommendations")).to be_empty
+    expect(response.parsed_body.dig("data", "professional", "evidence_summary", "recommendations")).to eq(0)
     assert_api_conform(status: 200)
   end
 

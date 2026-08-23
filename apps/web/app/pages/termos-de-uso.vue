@@ -3,23 +3,24 @@ import LegalDocument from "~/components/legal/LegalDocument.vue";
 import type { LegalDocumentSection } from "~/types";
 
 const sections: LegalDocumentSection[] = [
-  { id: "objeto", label: "Objeto e aceitação" },
-  { id: "contas", label: "Contas e acesso" },
+  { id: "responsavel", label: "Responsável e aceitação" },
+  { id: "elegibilidade", label: "Elegibilidade e contas" },
   { id: "papel", label: "Papel da Berufe" },
   { id: "perfis", label: "Perfis e conteúdo" },
-  { id: "verificacao", label: "Verificação e moderação" },
-  { id: "relacoes", label: "Conexões profissionais" },
+  { id: "indicacoes", label: "Perfis por indicação" },
+  { id: "moderacao", label: "Verificação e moderação" },
   { id: "busca", label: "Busca e contato" },
-  { id: "orcamentos", label: "Orçamentos" },
-  { id: "conduta", label: "Conduta e suspensão" },
-  { id: "responsabilidade", label: "Responsabilidade" },
+  { id: "orcamentos", label: "Orçamentos e serviços" },
+  { id: "recomendacoes", label: "Recomendações de clientes" },
+  { id: "conduta", label: "Conduta e encerramento" },
+  { id: "responsabilidade", label: "Disponibilidade e responsabilidade" },
   { id: "disposicoes", label: "Disposições finais" },
 ];
 
 useSeoMeta({
   title: "Termos de Uso",
-  description: "Regras de uso da Berufe para profissionais e visitantes.",
-  robots: "noindex, nofollow",
+  description: "Regras vigentes de uso da Berufe.",
+  robots: "index, follow",
 });
 </script>
 
@@ -27,232 +28,245 @@ useSeoMeta({
   <LegalDocument
     eyebrow="Uma rede de confiança começa por regras claras"
     title="Termos de Uso"
-    description="Estas regras explicam o papel da Berufe, o que esperamos de cada pessoa e os limites do MVP."
-    version="0.3 · minuta do MVP"
-    updated-at="20 de agosto de 2026"
+    description="Estas regras explicam como a Berufe funciona, as responsabilidades de cada pessoa e os limites da plataforma."
+    version="1.0"
+    effective-at="1º de agosto de 2026"
+    updated-at="23 de agosto de 2026"
     :sections="sections"
   >
     <div class="legal-lead">
       <p>
-        A Berufe permite que profissionais de reforma e manutenção apresentem
-        seu trabalho e que visitantes encontrem informações aprovadas para
-        decidir com quem conversar.
+        A Berufe é operada por
+        <strong>Rising Consultoria de Software LTDA.</strong>, CNPJ
+        <strong>36.443.360/0001-05</strong>, com sede na Rua Princesa Isabel, nº
+        213 – Sala 1, box 682, Centro, CENTRAL Cowork, Joinville/SC, CEP
+        89201-270.
       </p>
       <p>
-        Ao usar a plataforma, você declara que leu estes Termos e a
-        <NuxtLink to="/privacidade">Política de Privacidade</NuxtLink>.
+        Ao criar uma conta ou usar uma área autenticada, você aceita estes
+        Termos e declara ter lido a
+        <NuxtLink to="/privacidade">Política de Privacidade</NuxtLink>. Dúvidas
+        e solicitações podem ser enviadas para
+        <a href="mailto:suporte@berufe.com.br">suporte@berufe.com.br</a>.
       </p>
     </div>
 
-    <section id="objeto" class="legal-section">
-      <h2>1. Objeto e aceitação</h2>
+    <section id="responsavel" class="legal-section">
+      <h2>1. Responsável, objeto e aceitação</h2>
       <p>
-        O MVP oferece cadastro e acesso de profissionais, perfis públicos,
-        catálogo de serviços, busca por serviço e área, portfólio, verificação
-        de identidade, conexões entre profissionais, perfis básicos criados por
-        indicação, moderação manual, compartilhamento de perfil, orçamento
-        simples e contato direto pelo WhatsApp.
+        A Berufe oferece cadastro de profissionais, perfis públicos, busca por
+        serviço e região, portfólio, verificação de identidade, conexões
+        profissionais, perfis básicos por indicação, contato pelo WhatsApp,
+        orçamentos compartilhados, acompanhamento de serviço e recomendações de
+        clientes.
       </p>
       <p>
-        Quem não concordar com estes Termos não deve criar conta nem continuar
-        usando as áreas autenticadas.
+        Estes Termos se aplicam a profissionais, pessoas indicadas, clientes que
+        recebem orçamentos ou convites e visitantes. Quem não concordar não deve
+        criar conta nem continuar uma ação que exija aceitação.
       </p>
     </section>
 
-    <section id="contas" class="legal-section">
-      <h2>2. Contas e acesso</h2>
+    <section id="elegibilidade" class="legal-section">
+      <h2>2. Elegibilidade, contas e acesso</h2>
       <p>
-        Contas profissionais usam confirmação do telefone por código OTP do
-        Infobip. A confirmação permite que a Berufe crie sua própria sessão de
-        aplicação. O usuário deve manter controle do número e encerrar a sessão
-        em dispositivos compartilhados.
+        A criação e o uso de conta profissional são permitidos somente a pessoas
+        com 18 anos ou mais e capacidade para praticar os atos relacionados ao
+        serviço anunciado. A Berufe pode suspender ou remover uma conta quando
+        identificar que esse requisito não é atendido.
       </p>
       <p>
-        Contas administrativas usam e-mail e senha individuais. É proibido
-        compartilhar acesso, tentar usar a conta de outra pessoa ou contornar
-        limites de segurança.
+        Contas profissionais usam confirmação do telefone por código de uso
+        único enviado pelo Infobip. A confirmação cria uma sessão própria da
+        Berufe; ela não transfere para a Berufe a titularidade do número nem
+        garante a identidade civil da pessoa.
+      </p>
+      <p>
+        Contas administrativas usam e-mail e senha individuais, limites contra
+        tentativas abusivas e sessões de curta duração. Cada pessoa deve
+        proteger seu acesso, encerrar a sessão em dispositivo compartilhado e
+        comunicar suspeitas de uso indevido ao suporte.
       </p>
     </section>
 
     <section id="papel" class="legal-section">
       <h2>3. Papel da Berufe</h2>
       <p>
-        A Berufe organiza e modera informações profissionais. Não é empregadora,
-        representante, prestadora do serviço anunciado, parte da negociação nem
-        garantidora de preço, prazo, segurança ou resultado.
+        A Berufe organiza e apresenta informações profissionais. Não é
+        empregadora, representante, prestadora do serviço anunciado, parte da
+        contratação nem garantidora de preço, prazo, licença, segurança,
+        qualidade ou resultado.
       </p>
       <div class="legal-note">
         <UIcon name="i-lucide-info" />
         <p>
-          <strong>Contato direto:</strong> visitante e profissional combinam
-          escopo e condições fora da plataforma. O MVP não cobra por contatos,
-          não recebe comissão e não processa pagamentos.
+          <strong>Operação gratuita:</strong> nesta versão, a Berufe não cobra
+          pelo cadastro ou contato, não recebe comissão e não processa
+          pagamentos. Uma futura cobrança exigirá informação prévia e aceite das
+          condições aplicáveis.
         </p>
       </div>
     </section>
 
     <section id="perfis" class="legal-section">
-      <h2>4. Perfis, serviços e portfólio</h2>
+      <h2>4. Perfis, serviços e conteúdo</h2>
       <p>
-        O profissional é responsável por manter nome, apresentação, WhatsApp,
-        serviços, área atendida e experiência declarada corretos. Só pode enviar
-        imagens, textos e trabalhos que tenha direito de publicar.
+        O profissional é responsável pela exatidão e atualização do nome,
+        apresentação, experiência, WhatsApp, serviços e área atendida. Deve
+        possuir os direitos e autorizações necessários sobre imagens, marcas,
+        textos, trabalhos e dados de terceiros que enviar.
       </p>
       <p>
-        Serviços devem ser escolhidos no catálogo da Berufe. Imagens de
-        portfólio aceitam apenas os formatos e limites indicados e permanecem
-        privadas até a aprovação.
-      </p>
-      <p>
-        Um profissional elegível pode indicar alguém que ainda não usa a Berufe.
-        Nesse caso, ele deve ter autorização para compartilhar o nome e o
-        telefone profissional e responde pela exatidão dos serviços e da área
-        opcionalmente informados. A Berufe cria um perfil básico identificado
-        como perfil por indicação, sem foto, apresentação ou portfólio.
+        Ao publicar conteúdo, o titular concede à Berufe licença gratuita, não
+        exclusiva e limitada à hospedagem, adaptação técnica e exibição
+        necessárias ao funcionamento da plataforma. A licença termina quando o
+        conteúdo é excluído, ressalvadas cópias temporárias e retenções legais.
       </p>
     </section>
 
-    <section id="verificacao" class="legal-section">
-      <h2>5. Verificação e moderação</h2>
+    <section id="indicacoes" class="legal-section">
+      <h2>5. Perfis criados por indicação</h2>
       <p>
-        No MVP, a verificação manual abrange somente identidade. O selo
-        significa que a equipe conferiu uma evidência específica; não representa
-        licença profissional, certificação técnica, qualidade garantida nem
-        ausência de risco.
+        Um profissional com cadastro, telefone e identidade confirmados pode
+        indicar outro profissional adulto por nome e telefone, com serviços e
+        cobertura opcionais. Quem indica declara que pode compartilhar esses
+        dados profissionais e responde por sua origem e exatidão.
       </p>
       <p>
-        Perfis, fotos, itens de portfólio e solicitações de identidade podem ser
-        aprovados, rejeitados, ocultados ou restaurados. Toda decisão
-        administrativa relevante deve ter responsável, horário e justificativa
-        quando aplicável.
-      </p>
-      <p>
-        Conteúdo novo ou materialmente alterado não fica público antes de ser
-        aprovado. A Berufe pode remover imediatamente conteúdo ou suspender uma
-        conta quando houver risco, fraude, ilegalidade ou violação destes
-        Termos.
+        O perfil básico é identificado como criado por indicação e pode ficar
+        público enquanto houver uma indicação ativa ou depois que o titular
+        concluir o cadastro. O titular pode reivindicá-lo confirmando o telefone
+        por SMS e pode solicitar despublicação ou exclusão pelo canal de
+        suporte.
       </p>
     </section>
 
-    <section id="relacoes" class="legal-section">
-      <h2>6. Conexões profissionais</h2>
+    <section id="moderacao" class="legal-section">
+      <h2>6. Verificação e moderação</h2>
       <p>
-        Somente profissionais com cadastro concluído, telefone confirmado e
-        identidade aprovada podem enviar uma solicitação de conexão. O
-        destinatário pode ser encontrado na Berufe ou indicado por nome e
-        telefone profissional. A plataforma não permite conexão consigo mesmo
-        nem solicitações duplicadas do mesmo tipo.
+        A verificação manual do MVP abrange somente identidade. O selo indica
+        que uma evidência específica foi conferida; não representa licença
+        profissional, certificação técnica, qualidade garantida ou ausência de
+        risco.
       </p>
       <p>
-        O destinatário pode aceitar ou recusar. A conexão confirmada pode
-        aparecer nos perfis públicos, desde que ambos os perfis continuem
-        públicos e ativos. A recomendação profissional identifica seu autor e
-        não pode ser anônima.
+        Perfis, fotos e portfólios elegíveis podem ficar públicos enquanto
+        aguardam revisão. A moderação ocorre também depois da publicação, e a
+        Berufe pode aprovar, rejeitar, ocultar ou restaurar conteúdo. A imagem
+        de documento usada para verificar identidade permanece privada.
       </p>
       <p>
-        A solicitação pendente não aparece publicamente. O perfil básico criado
-        por indicação pode ficar público enquanto existir uma solicitação ativa
-        com autorização registrada; se a última solicitação for cancelada ou
-        recusada antes de o destinatário concluir o cadastro, o perfil deixa de
-        ficar disponível. O titular pode confirmar o telefone, concluir o
-        cadastro e substituir a apresentação básica ao publicar seu perfil
-        completo.
+        Conteúdo ou conta pode ser ocultado ou suspenso imediatamente quando
+        houver indício de fraude, risco, ilegalidade, violação de direitos ou
+        descumprimento destes Termos.
       </p>
     </section>
 
     <section id="busca" class="legal-section">
       <h2>7. Busca, compartilhamento e WhatsApp</h2>
       <p>
-        A ordem dos resultados considera correspondência do serviço, cobertura,
-        identidade verificada, portfólio, conexões profissionais confirmadas e
-        atualização do perfil. Não há compra de posição, nota oculta nem
-        garantia de destaque.
+        A busca primeiro exige correspondência do serviço e da cobertura. Perfis
+        com cadastro próprio precedem os perfis ainda não reivindicados; quando
+        um bairro é escolhido, a cobertura específica precede a cidade inteira.
+        Depois, a ordem considera identidade verificada, portfólio aprovado,
+        conexões confirmadas e a revisão mais recente do perfil. Não há compra
+        de posição, nota oculta nem garantia de destaque.
       </p>
       <p>
-        Compartilhar o perfil ou abrir o WhatsApp depende de ação da pessoa. A
-        Berufe não lê a conversa nem confirma negociação ou contratação.
+        Compartilhar um perfil ou abrir o WhatsApp depende de ação da pessoa. A
+        Berufe não envia, recebe nem lê a conversa realizada no WhatsApp e não
+        confirma que houve negociação ou contratação.
       </p>
     </section>
 
     <section id="orcamentos" class="legal-section">
-      <h2>8. Orçamentos compartilhados</h2>
+      <h2>8. Orçamentos e acompanhamento do serviço</h2>
       <p>
-        O profissional pode criar um orçamento com nome do cliente, descrição,
-        itens, quantidades, valores, desconto, validade e observações. Ele é
-        responsável pela exatidão das informações e pelas condições oferecidas.
+        O profissional pode cadastrar cliente, escopo, itens, quantidades,
+        valores, desconto, endereço, data, validade e observações. Ele responde
+        pela base legal para inserir dados do cliente e pela exatidão da oferta.
       </p>
       <p>
-        O rascunho é privado. Depois do compartilhamento, quem possuir o link
-        válido pode visualizar e imprimir a apresentação. O link deve ser
-        enviado somente ao destinatário e pode ser invalidado pela Berufe ou
-        pelo estado do orçamento.
+        O rascunho é privado. Quem recebe o link pode visualizar e imprimir,
+        aprovar, recusar ou solicitar alterações. A aprovação cria um registro
+        de serviço, e o mesmo link pode registrar pedido de conclusão,
+        pendência, confirmação ou cancelamento.
       </p>
       <div class="legal-note">
         <UIcon name="i-lucide-info" />
         <p>
-          <strong>Limite do recurso:</strong> visualizar ou imprimir não
-          significa aceitar, assinar ou pagar. A Berufe não gera contrato, nota
-          fiscal, cobrança ou garantia.
+          <strong>Limite do recurso:</strong> essas ações registram a
+          manifestação realizada na plataforma, mas não substituem contrato,
+          nota fiscal, cobrança, pagamento ou garantias exigidas entre as
+          partes.
         </p>
       </div>
     </section>
 
+    <section id="recomendacoes" class="legal-section">
+      <h2>9. Recomendações de clientes</h2>
+      <p>
+        Depois da conclusão, um cliente com e-mail informado pode receber um
+        convite pessoal válido por 14 dias. A recomendação só é publicada quando
+        o cliente confirma o serviço e autoriza expressamente a exibição do nome
+        e do texto.
+      </p>
+      <p>
+        Não há nota por estrelas nem revisão prévia. O autor responde pela
+        veracidade e pelos direitos sobre o texto. A autorização de publicação
+        pode ser retirada por
+        <a href="mailto:suporte@berufe.com.br">suporte@berufe.com.br</a>.
+      </p>
+    </section>
+
     <section id="conduta" class="legal-section">
-      <h2>9. Conduta e suspensão</h2>
+      <h2>10. Conduta, suspensão e encerramento</h2>
       <p>É proibido:</p>
       <ul>
+        <li>fornecer informação falsa ou indicar pessoa sem autorização;</li>
+        <li>publicar conteúdo ilegal, discriminatório ou sem direitos;</li>
         <li>
-          fornecer informações falsas sobre identidade, experiência, serviço,
-          conexão ou trabalho;
+          assediar, fraudar, enviar código malicioso ou contornar segurança;
         </li>
-        <li>publicar imagem, marca ou texto sem autorização;</li>
-        <li>
-          assediar pessoas, discriminar, promover atividade ilegal ou enviar
-          conteúdo malicioso;
-        </li>
-        <li>
-          manipular buscas e contagens, automatizar uso abusivo ou contornar
-          segurança;
-        </li>
-        <li>
-          usar dados obtidos na Berufe para spam, revenda de contatos ou
-          finalidade incompatível.
-        </li>
+        <li>manipular buscas, contagens, recomendações ou conexões;</li>
+        <li>usar dados obtidos na Berufe para spam ou revenda de contatos.</li>
       </ul>
       <p>
-        A Berufe pode limitar, ocultar, suspender ou encerrar o acesso de forma
-        proporcional. A suspensão invalida a autorização da conta e suas sessões
-        da aplicação, independentemente da situação do telefone no Infobip.
+        A Berufe pode advertir, limitar, ocultar, suspender ou encerrar acesso
+        de forma compatível com a gravidade e o risco. O titular pode solicitar
+        despublicação e exclusão irreversível dos dados elegíveis pelo suporte.
+        Registros mínimos podem ser preservados quando exigidos por lei,
+        segurança, auditoria ou exercício regular de direitos.
       </p>
     </section>
 
     <section id="responsabilidade" class="legal-section">
-      <h2>10. Disponibilidade e responsabilidade</h2>
+      <h2>11. Disponibilidade e responsabilidade</h2>
       <p>
         A plataforma pode ficar temporariamente indisponível por manutenção,
-        falha de fornecedor ou incidente. A Berufe buscará restaurar o serviço e
-        proteger os dados, mas não promete operação ininterrupta.
+        falha de fornecedor, medida de segurança ou incidente. A Berufe buscará
+        restaurar o serviço, mas não promete operação ininterrupta.
       </p>
       <p>
         Nos limites da lei, a Berufe não responde por declarações, negociações,
-        atrasos, danos ou descumprimentos entre visitantes, profissionais e
-        terceiros. Nada nestes Termos exclui responsabilidade que não possa ser
-        afastada pela legislação.
+        serviços, atrasos ou descumprimentos entre profissionais, clientes e
+        terceiros. Nada nestes Termos afasta responsabilidade ou direito que a
+        legislação não permita excluir.
       </p>
     </section>
 
     <section id="disposicoes" class="legal-section">
-      <h2>11. Privacidade, alterações e lei aplicável</h2>
+      <h2>12. Privacidade, alterações e lei aplicável</h2>
       <p>
-        O tratamento de dados segue a Política de Privacidade. Cada versão
-        destes Termos terá número e data; mudanças relevantes serão destacadas e
-        poderão exigir novo aceite.
+        O tratamento de dados segue a Política de Privacidade. Mudanças
+        relevantes receberão nova versão e poderão exigir novo aceite antes da
+        continuidade do uso autenticado.
       </p>
       <p>
-        A legislação brasileira é aplicável, sem afastar direitos obrigatórios
-        do consumidor e regras de competência legal. Esta minuta não deve reger
-        uma operação real: a versão 1.0 deverá incluir a identificação completa
-        da responsável, canais oficiais e revisão jurídica antes do lançamento.
+        Aplicam-se as leis brasileiras. Direitos obrigatórios do consumidor e
+        regras legais de competência permanecem preservados. Antes de medida
+        judicial, as pessoas podem buscar solução pelo canal de suporte, sem
+        prejuízo do acesso aos órgãos competentes.
       </p>
     </section>
   </LegalDocument>

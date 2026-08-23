@@ -24,7 +24,7 @@ interface ProfessionalOnboardingDependencies {
   saveVerification?: (file: File) => Promise<{ submittedAt: string }>;
 }
 
-export const professionalOnboardingStorageKey =
+const legacyProfessionalOnboardingStorageKey =
   "berufe:professional-onboarding:v2";
 export const onboardingImageMaxBytes = 10 * 1024 * 1024;
 
@@ -84,107 +84,6 @@ export function createInitialProfessionalOnboardingState(): ProfessionalOnboardi
     verificationStatus: "not_started",
     completion: createEmptyCompletionState(),
   };
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
-function isNullableString(value: unknown): value is string | null {
-  return value === null || typeof value === "string";
-}
-
-function parseProfileDraft(value: unknown): ProfessionalProfileDraft | null {
-  if (!isRecord(value)) return null;
-  const stringKeys = [
-    "name",
-    "birthdate",
-    "headline",
-    "bio",
-    "whatsapp",
-    "instagram",
-    "youtube",
-    "primaryService",
-  ] as const;
-  if (stringKeys.some((key) => typeof value[key] !== "string")) return null;
-  if (typeof value.yearsExperience !== "number") return null;
-  if (typeof value.allJoinville !== "boolean") return null;
-  if (!Array.isArray(value.selectedServices)) return null;
-  if (!Array.isArray(value.selectedNeighborhoods)) return null;
-  if (!value.selectedServices.every((item) => typeof item === "string")) {
-    return null;
-  }
-  if (!value.selectedNeighborhoods.every((item) => typeof item === "string")) {
-    return null;
-  }
-
-  return {
-    name: value.name as string,
-    birthdate: value.birthdate as string,
-    headline: value.headline as string,
-    bio: value.bio as string,
-    yearsExperience: value.yearsExperience,
-    whatsapp: value.whatsapp as string,
-    instagram: value.instagram as string,
-    youtube: value.youtube as string,
-    selectedServices: [...(value.selectedServices as string[])],
-    serviceNotes: isRecord(value.serviceNotes)
-      ? Object.fromEntries(
-          Object.entries(value.serviceNotes).filter(
-            (entry): entry is [string, string] => typeof entry[1] === "string",
-          ),
-        )
-      : {},
-    primaryService: value.primaryService as string,
-    allJoinville: value.allJoinville,
-    selectedNeighborhoods: [...(value.selectedNeighborhoods as string[])],
-  };
-}
-
-export function parseProfessionalOnboardingState(
-  raw: string,
-): ProfessionalOnboardingState | null {
-  try {
-    const value: unknown = JSON.parse(raw);
-    if (!isRecord(value) || value.version !== 2) return null;
-    if (typeof value.initialized !== "boolean") return null;
-    const profile = parseProfileDraft(value.profile);
-    if (!profile || !isRecord(value.completion)) return null;
-
-    const completion = value.completion;
-    const completionKeys: OnboardingStepId[] = [
-      "profile",
-      "services",
-      "verification",
-    ];
-    if (completionKeys.some((key) => !isNullableString(completion[key]))) {
-      return null;
-    }
-
-    if (
-      value.verificationStatus !== "not_started" &&
-      value.verificationStatus !== "submitted" &&
-      value.verificationStatus !== "skipped"
-    ) {
-      return null;
-    }
-    if (typeof value.photoReady !== "boolean") return null;
-
-    return {
-      version: 2,
-      initialized: value.initialized,
-      profile,
-      photoReady: value.photoReady,
-      verificationStatus: value.verificationStatus,
-      completion: {
-        profile: completion.profile as string | null,
-        services: completion.services as string | null,
-        verification: completion.verification as string | null,
-      },
-    };
-  } catch {
-    return null;
-  }
 }
 
 export function normalizeBrazilianPhone(phone: string) {
@@ -317,22 +216,13 @@ export function useProfessionalOnboarding(
 
   function persist() {
     if (!import.meta.client) return;
-    window.localStorage.setItem(
-      professionalOnboardingStorageKey,
-      JSON.stringify(state.value),
-    );
+    window.localStorage.removeItem(legacyProfessionalOnboardingStorageKey);
   }
 
   function hydrate() {
     if (hydrated.value) return;
     if (import.meta.client) {
-      const stored = window.localStorage.getItem(
-        professionalOnboardingStorageKey,
-      );
-      if (stored) {
-        const parsed = parseProfessionalOnboardingState(stored);
-        state.value = parsed ?? createInitialProfessionalOnboardingState();
-      }
+      window.localStorage.removeItem(legacyProfessionalOnboardingStorageKey);
     }
     hydrated.value = true;
   }
@@ -534,7 +424,7 @@ export function useProfessionalOnboarding(
     state.value = createInitialProfessionalOnboardingState();
     hydrated.value = true;
     if (import.meta.client) {
-      window.localStorage.removeItem(professionalOnboardingStorageKey);
+      window.localStorage.removeItem(legacyProfessionalOnboardingStorageKey);
     }
   }
 
