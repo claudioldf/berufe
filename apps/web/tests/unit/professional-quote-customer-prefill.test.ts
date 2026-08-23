@@ -59,8 +59,20 @@ const ContainerStub = defineComponent({
 });
 const QuoteBuilderStub = defineComponent({
   name: "DashboardQuoteBuilder",
-  props: { initialQuote: { type: Object, required: true } },
-  template: "<div />",
+  props: {
+    initialQuote: { type: Object, required: true },
+    shareOpen: Boolean,
+    saveError: { type: String, default: "" },
+  },
+  emits: ["prepareShare"],
+  template: `
+    <div>
+      <button class="prepare-share" @click="$emit('prepareShare', initialQuote)">
+        Prepare share
+      </button>
+      <p class="save-error">{{ saveError }}</p>
+    </div>
+  `,
 });
 const existingQuote: Quote = {
   id: quoteId,
@@ -162,5 +174,97 @@ describe("new quote customer prefill", () => {
         .getComponent({ name: "DashboardQuoteBuilder" })
         .props("initialQuote"),
     ).toMatchObject({ id: quoteId, customerName: "Cliente do orçamento" });
+  });
+
+  it("creates a new quote before opening the share dialog", async () => {
+    mocks.createQuote.mockResolvedValue(existingQuote);
+    const wrapper = await mountSuspended(ProfessionalQuotePage, {
+      shallow: true,
+      route: "/app/professional/quotes/new",
+      global: {
+        renderStubDefaultSlot: true,
+        stubs: {
+          DesignSystemContainer: ContainerStub,
+          DashboardQuoteBuilder: QuoteBuilderStub,
+        },
+      },
+    });
+    await flushPromises();
+
+    await wrapper.get(".prepare-share").trigger("click");
+    await flushPromises();
+
+    expect(mocks.createQuote).toHaveBeenCalledTimes(1);
+    expect(mocks.shareQuote).not.toHaveBeenCalled();
+    expect(
+      wrapper
+        .getComponent({ name: "DashboardQuoteBuilder" })
+        .props("shareOpen"),
+    ).toBe(true);
+  });
+
+  it("updates an edited quote before reopening share options", async () => {
+    const updatedQuote = {
+      ...existingQuote,
+      revision: 1,
+      updatedAt: "2026-08-18T12:02:00Z",
+    };
+    mocks.updateQuote.mockResolvedValue(updatedQuote);
+    const wrapper = await mountSuspended(ProfessionalQuotePage, {
+      shallow: true,
+      route: `/app/professional/quotes/new?quote=${quoteId}`,
+      global: {
+        renderStubDefaultSlot: true,
+        stubs: {
+          DesignSystemContainer: ContainerStub,
+          DashboardQuoteBuilder: QuoteBuilderStub,
+        },
+      },
+    });
+    await flushPromises();
+
+    await wrapper.get(".prepare-share").trigger("click");
+    await flushPromises();
+
+    expect(mocks.updateQuote).toHaveBeenCalledWith(
+      mocks.client,
+      quoteId,
+      expect.objectContaining({ id: quoteId }),
+    );
+    expect(mocks.shareQuote).not.toHaveBeenCalled();
+    expect(
+      wrapper
+        .getComponent({ name: "DashboardQuoteBuilder" })
+        .props("shareOpen"),
+    ).toBe(true);
+  });
+
+  it("keeps share options closed when saving fails", async () => {
+    mocks.createQuote.mockRejectedValue(new Error("offline"));
+    const wrapper = await mountSuspended(ProfessionalQuotePage, {
+      shallow: true,
+      route: "/app/professional/quotes/new",
+      global: {
+        renderStubDefaultSlot: true,
+        stubs: {
+          DesignSystemContainer: ContainerStub,
+          DashboardQuoteBuilder: QuoteBuilderStub,
+        },
+      },
+    });
+    await flushPromises();
+
+    await wrapper.get(".prepare-share").trigger("click");
+    await flushPromises();
+
+    expect(mocks.shareQuote).not.toHaveBeenCalled();
+    expect(
+      wrapper
+        .getComponent({ name: "DashboardQuoteBuilder" })
+        .props("shareOpen"),
+    ).toBe(false);
+    expect(wrapper.get(".save-error").text()).toBe(
+      "Não foi possível salvar o orçamento. Tente novamente.",
+    );
   });
 });

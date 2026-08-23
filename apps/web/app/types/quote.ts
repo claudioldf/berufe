@@ -66,6 +66,7 @@ export interface QuoteProfessional {
 
 export type QuoteDraft = Quote;
 export type QuoteShareMethod = "whatsapp" | "copy";
+export type QuoteSaveIntent = "draft" | "share";
 export type QuoteSortKey =
   "number" | "customer" | "total" | "status" | "updated";
 export type QuoteSortDirection = "asc" | "desc";

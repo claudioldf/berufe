@@ -3,6 +3,7 @@ import type {
   Quote,
   QuoteDraft,
   QuoteProfessional,
+  QuoteSaveIntent,
   QuoteShareMethod,
 } from "~/types";
 import { useShare } from "~/composables/useShare";
@@ -55,11 +56,11 @@ const editor = await useAsyncData(
     return { workspace, quote };
   },
 );
-const saving = shallowRef(false);
+const savingIntent = shallowRef<QuoteSaveIntent | null>(null);
 const saveError = shallowRef("");
 const sharingMethod = shallowRef<QuoteShareMethod | null>(null);
 const shareError = shallowRef("");
-const shareUrl = shallowRef("");
+const shareOpen = shallowRef(false);
 const revoking = shallowRef(false);
 const quote = computed(() => editor.data.value?.quote ?? null);
 const professional = computed<QuoteProfessional | null>(() => {
@@ -78,7 +79,7 @@ const professional = computed<QuoteProfessional | null>(() => {
 const shareEnabled = computed(() => {
   const workspace = editor.data.value?.workspace;
   return Boolean(
-    quote.value?.id &&
+    quote.value &&
     quote.value.status !== "approved" &&
     workspace?.profile.isPublic,
   );
@@ -96,6 +97,19 @@ const quoteStatusLabel = computed(() => {
 const editorTitle = computed(() =>
   quote.value?.number ? "Orçamento" : "Novo orçamento",
 );
+
+watch(shareOpen, (open) => {
+  const quoteId = quote.value?.id;
+  const routeQuoteId = Array.isArray(route.query.quote)
+    ? route.query.quote[0]
+    : route.query.quote;
+  if (open || !quoteId || routeQuoteId === quoteId) return;
+
+  void router.replace({
+    path: "/app/professional/quotes/new",
+    query: { quote: quoteId },
+  });
+});
 
 function createEmptyQuote(
   customer?: Awaited<ReturnType<typeof fetchProfessionalCustomer>>,
@@ -137,9 +151,12 @@ function createEmptyQuote(
   };
 }
 
-async function saveQuote(draft: QuoteDraft) {
-  if (saving.value || !editor.data.value) return;
-  saving.value = true;
+async function persistQuote(
+  draft: QuoteDraft,
+  intent: QuoteSaveIntent,
+): Promise<Quote | null> {
+  if (savingIntent.value || !editor.data.value) return null;
+  savingIntent.value = intent;
   saveError.value = "";
   try {
     const saved = draft.id
@@ -147,23 +164,48 @@ async function saveQuote(draft: QuoteDraft) {
       : await createProfessionalQuote(client, draft);
     editor.data.value = { ...editor.data.value, quote: saved };
     if (!draft.id) {
-      await router.replace({
+      const location = {
         path: "/app/professional/quotes/new",
         query: { quote: saved.id },
-      });
+      };
+      if (intent === "share" && import.meta.client) {
+        // Keep the assigned quote URL without remounting this page before the
+        // share dialog opens. The watcher above syncs Vue Router on close.
+        window.history.replaceState(
+          window.history.state,
+          "",
+          router.resolve(location).href,
+        );
+      } else {
+        await router.replace(location);
+      }
     }
-    showToast({
-      title: "Orçamento salvo",
-      description: `As alterações do orçamento #${saved.number} foram salvas.`,
-    });
+    return saved;
   } catch (error) {
     saveError.value =
       error instanceof ApiRequestError
         ? error.message
         : "Não foi possível salvar o orçamento. Tente novamente.";
+    return null;
   } finally {
-    saving.value = false;
+    savingIntent.value = null;
   }
+}
+
+async function saveQuote(draft: QuoteDraft) {
+  const saved = await persistQuote(draft, "draft");
+  if (!saved) return;
+
+  showToast({
+    title: "Orçamento salvo",
+    description: `As alterações do orçamento #${saved.number} foram salvas.`,
+  });
+}
+
+async function prepareShare(draft: QuoteDraft) {
+  shareError.value = "";
+  const saved = await persistQuote(draft, "share");
+  if (saved) shareOpen.value = true;
 }
 
 async function shareQuote(method: QuoteShareMethod) {
@@ -176,13 +218,12 @@ async function shareQuote(method: QuoteShareMethod) {
   if (handoffWindow) handoffWindow.opener = null;
   sharingMethod.value = method;
   shareError.value = "";
-  shareUrl.value = "";
   try {
     const result = await shareProfessionalQuote(client, quoteId, method);
     if (editor.data.value) {
       editor.data.value = { ...editor.data.value, quote: result.quote };
     }
-    shareUrl.value = result.shareUrl;
+    shareOpen.value = false;
     if (method === "copy") {
       await copyText(result.shareUrl, "Link do orçamento copiado");
     } else if (handoffWindow) {
@@ -215,7 +256,6 @@ async function revokeShare() {
     if (editor.data.value) {
       editor.data.value = { ...editor.data.value, quote: revoked };
     }
-    shareUrl.value = "";
     showToast({
       title: "Link revogado",
       description: "O link anterior deixou de abrir este orçamento.",
@@ -266,16 +306,17 @@ async function revokeShare() {
       </p>
       <DashboardQuoteBuilder
         v-else
+        v-model:share-open="shareOpen"
         :initial-quote="quote"
         :professional="professional"
-        :saving="saving"
+        :saving-intent="savingIntent"
         :save-error="saveError"
         :sharing-method="sharingMethod"
         :share-error="shareError"
-        :share-url="shareUrl"
         :share-enabled="shareEnabled"
         :revoking="revoking"
         @save="saveQuote"
+        @prepare-share="prepareShare"
         @share="shareQuote"
         @revoke="revokeShare"
       />

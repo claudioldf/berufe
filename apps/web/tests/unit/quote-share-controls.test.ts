@@ -53,6 +53,11 @@ const ButtonStub = defineComponent({
   template:
     '<button :disabled="disabled" @click="$emit(\'click\')"><slot /></button>',
 });
+const SaveBarStub = defineComponent({
+  emits: ["share"],
+  template:
+    '<button class="request-share" @click="$emit(\'share\')">Share</button>',
+});
 
 describe("quote share controls", () => {
   it("keeps copy and WhatsApp as explicit user-selected actions", async () => {
@@ -60,11 +65,10 @@ describe("quote share controls", () => {
       props: {
         initialQuote: quote,
         professional,
-        saving: false,
+        savingIntent: null,
         saveError: "",
         sharingMethod: null,
         shareError: "",
-        shareUrl: "",
         shareEnabled: true,
       },
       global: {
@@ -104,11 +108,10 @@ describe("quote share controls", () => {
           sharedAt: "2026-08-18T13:00:00Z",
         },
         professional,
-        saving: false,
+        savingIntent: null,
         saveError: "",
         sharingMethod: null,
         shareError: "",
-        shareUrl: "",
         shareEnabled: true,
       },
       global: {
@@ -144,5 +147,76 @@ describe("quote share controls", () => {
     expect(confirm).toHaveLength(1);
     await confirm[0]!.trigger("click");
     expect(wrapper.emitted("revoke")).toHaveLength(1);
+  });
+
+  it("saves a new or edited quote before opening share options", async () => {
+    const draft = { ...quote, id: null, number: null };
+    const wrapper = mount(QuoteBuilder, {
+      props: {
+        initialQuote: draft,
+        professional,
+        savingIntent: null,
+        saveError: "",
+        sharingMethod: null,
+        shareError: "",
+        shareEnabled: true,
+      },
+      global: {
+        stubs: {
+          DashboardQuoteCustomerFields: true,
+          DashboardQuoteServiceFields: true,
+          DashboardQuoteChangeRequests: true,
+          DashboardQuoteLineItemsEditor: true,
+          DashboardQuoteNotesField: true,
+          DashboardQuoteSaveBar: SaveBarStub,
+          QuotesQuotePreview: true,
+          UModal: ModalStub,
+          UButton: ButtonStub,
+          UIcon: true,
+        },
+      },
+    });
+
+    await wrapper.get(".request-share").trigger("click");
+
+    expect(wrapper.emitted("prepareShare")?.[0]?.[0]).toMatchObject({
+      id: null,
+      customerName: quote.customerName,
+    });
+    expect(wrapper.emitted("update:shareOpen")).toBeUndefined();
+  });
+
+  it("opens share options immediately for an unchanged saved quote", async () => {
+    const wrapper = mount(QuoteBuilder, {
+      props: {
+        initialQuote: quote,
+        professional,
+        shareOpen: false,
+        savingIntent: null,
+        saveError: "",
+        sharingMethod: null,
+        shareError: "",
+        shareEnabled: true,
+      },
+      global: {
+        stubs: {
+          DashboardQuoteCustomerFields: true,
+          DashboardQuoteServiceFields: true,
+          DashboardQuoteChangeRequests: true,
+          DashboardQuoteLineItemsEditor: true,
+          DashboardQuoteNotesField: true,
+          DashboardQuoteSaveBar: SaveBarStub,
+          QuotesQuotePreview: true,
+          UModal: ModalStub,
+          UButton: ButtonStub,
+          UIcon: true,
+        },
+      },
+    });
+
+    await wrapper.get(".request-share").trigger("click");
+
+    expect(wrapper.emitted("prepareShare")).toBeUndefined();
+    expect(wrapper.emitted("update:shareOpen")).toEqual([[true]]);
   });
 });

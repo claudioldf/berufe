@@ -82,6 +82,18 @@ describe("quote utilities", () => {
 });
 
 describe("quote draft state", () => {
+  it("starts a new quote as unsaved", () => {
+    const draft = useQuoteDraft({
+      ...source,
+      id: null,
+      number: null,
+      createdAt: null,
+      updatedAt: null,
+    });
+
+    expect(draft.isSaved.value).toBe(false);
+  });
+
   it("owns item mutations and saved/shared state", () => {
     const draft = useQuoteDraft(source);
     expect(draft.isSaved.value).toBe(true);

@@ -3,6 +3,7 @@ import type {
   Quote,
   QuoteDraft,
   QuoteProfessional,
+  QuoteSaveIntent,
   QuoteShareMethod,
 } from "~/types";
 import { useQuoteDraft } from "~/composables/useQuoteDraft";
@@ -11,19 +12,20 @@ import { cloneQuote } from "~/utils/quotes";
 const props = defineProps<{
   initialQuote: Quote;
   professional: QuoteProfessional;
-  saving: boolean;
+  savingIntent: QuoteSaveIntent | null;
   saveError: string;
   sharingMethod: QuoteShareMethod | null;
   shareError: string;
-  shareUrl: string;
   shareEnabled?: boolean;
   revoking?: boolean;
 }>();
 const emit = defineEmits<{
   save: [draft: QuoteDraft];
+  prepareShare: [draft: QuoteDraft];
   share: [method: QuoteShareMethod];
   revoke: [];
 }>();
+const shareOpen = defineModel<boolean>("shareOpen", { default: false });
 const revokeOpen = shallowRef(false);
 const locked = computed(() => props.initialQuote.status === "approved");
 
@@ -34,7 +36,6 @@ function confirmRevoke() {
 const {
   quote,
   previewOpen,
-  shareOpen,
   isSaved,
   isShared,
   subtotal,
@@ -44,15 +45,17 @@ const {
   removeItem,
 } = useQuoteDraft(() => props.initialQuote);
 
-watch(
-  () => props.shareUrl,
-  (value) => {
-    if (value) shareOpen.value = false;
-  },
-);
-
 function save() {
   emit("save", cloneQuote(quote.value));
+}
+
+function requestShare() {
+  if (isSaved.value) {
+    shareOpen.value = true;
+    return;
+  }
+
+  emit("prepareShare", cloneQuote(quote.value));
 }
 </script>
 
@@ -93,12 +96,12 @@ function save() {
           :saved="isSaved"
           :shared="isShared"
           :valid="isValid"
-          :saving="saving"
+          :saving-intent="savingIntent"
           :error="saveError"
           :share-enabled="shareEnabled ?? false"
           @preview="previewOpen = true"
           @save="save"
-          @share="shareOpen = true"
+          @share="requestShare"
         />
       </template>
       <div v-if="isShared && !locked" class="quote-builder__revoke">
@@ -140,7 +143,7 @@ function save() {
     <UModal
       v-model:open="shareOpen"
       title="Compartilhar orçamento"
-      description="Ao compartilhar, um link privado será criado e o orçamento passará para “Aguardando resposta”."
+      description="Escolha como compartilhar o link seguro com seu cliente."
     >
       <template #body>
         <div class="share-quote">
@@ -533,11 +536,14 @@ function save() {
         display: grid;
       }
       &__savebar > div {
-        flex-wrap: wrap;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
       &__savebar > div > * {
-        flex: 1;
         justify-content: center;
+      }
+      &__savebar > div > :last-child {
+        grid-column: 1 / -1;
       }
     }
     .builder-card {
