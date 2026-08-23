@@ -296,6 +296,18 @@ export interface ProfessionalWorkspace {
         approvedIdentity: boolean;
       };
     };
+    changeRequestedQuotes: Array<{
+      id: string;
+      number: number;
+      customerName: string;
+      serviceDescription: string;
+      latestChangeRequest: {
+        id: string;
+        revision: number;
+        message: string;
+        requestedAt: string;
+      };
+    }>;
     recentQuotes: Array<{
       id: string;
       number: number;

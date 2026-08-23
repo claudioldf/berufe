@@ -61,7 +61,9 @@ function workspace(): ProfessionalWorkspace {
           approvedIdentity: true,
         },
       },
+      changeRequestedQuotes: [],
       recentQuotes: [],
+      recentServiceJobs: [],
     },
     pendingRelationships: [],
     relationships: [],
@@ -104,10 +106,11 @@ const ButtonStub = defineComponent({
   props: {
     disabled: { type: Boolean, default: false },
     loading: { type: Boolean, default: false },
+    to: { type: String, default: "" },
   },
   emits: ["click"],
   template:
-    '<button type="button" :disabled="disabled" :data-loading="loading" @click="$emit(\'click\')"><slot /></button>',
+    '<a v-if="to" :href="to"><slot /></a><button v-else type="button" :disabled="disabled" :data-loading="loading" @click="$emit(\'click\')"><slot /></button>',
 });
 
 const mountOptions = {
@@ -148,11 +151,11 @@ describe("dashboard activity sections", () => {
     expect(attention.text()).toContain("Ação necessária");
     expect(attention.text()).toContain("Para resolver.");
     expect(attention.text()).toContain("Ana Souza recomendou você");
-    expect(attention.text()).toContain("Aguardando sua resposta");
+    expect(attention.text()).not.toContain("Aguardando sua resposta");
     expect(attention.text()).toContain("Não foi possível responder agora.");
     expect(attention.text()).not.toContain("Caio Costa");
     expect(ongoing.text()).toContain("Avisos");
-    expect(ongoing.text()).toContain("Acompanhamentos.");
+    expect(ongoing.text()).toContain("Para acompanhar.");
     expect(ongoing.text()).toContain("Você recomendou Caio Costa");
     expect(ongoing.text()).toContain("Aguardando confirmação");
     expect(ongoing.findAll("button")).toHaveLength(0);
@@ -219,11 +222,80 @@ describe("dashboard activity sections", () => {
       "A apresentação precisa de mais detalhes.",
     );
     expect(attention.text()).toContain("Instalação rejeitada");
-    expect(attention.text()).toContain("Expirada");
+    expect(attention.text()).toContain("Verificação de identidade");
+    expect(attention.text()).not.toContain("Expirada");
     expect(attention.text()).not.toContain("Instalação em análise");
     expect(ongoing.text()).toContain("Foto do perfil");
     expect(ongoing.text()).toContain("Instalação em análise");
     expect(ongoing.text()).not.toContain("Instalação rejeitada");
+  });
+
+  it("shows every requested quote change with its latest message and review link", async () => {
+    const currentWorkspace = workspace();
+    currentWorkspace.dashboard.changeRequestedQuotes = [
+      {
+        id: "newer-quote-id",
+        number: 23,
+        customerName: "Marina Cliente",
+        serviceDescription: "Instalação de luminárias",
+        latestChangeRequest: {
+          id: "newer-request-id",
+          revision: 4,
+          message:
+            "Trocar duas luminárias e revisar a posição dos interruptores.",
+          requestedAt: "2026-08-19T14:00:00Z",
+        },
+      },
+      {
+        id: "older-quote-id",
+        number: 19,
+        customerName: "Paulo Cliente",
+        serviceDescription: "Pintura interna",
+        latestChangeRequest: {
+          id: "older-request-id",
+          revision: 2,
+          message: "Usar tinta lavável.",
+          requestedAt: "2026-08-18T14:00:00Z",
+        },
+      },
+    ];
+    currentWorkspace.relationships = [
+      relationship(
+        "incoming",
+        "incoming-id",
+        otherProfessional("ana-id", "Ana Souza"),
+      ),
+    ];
+
+    const wrapper = await mountSuspended(DashboardActivitySections, {
+      ...mountOptions,
+      props: { workspace: currentWorkspace },
+    });
+
+    const attention = wrapper.get(".activity-section--attention");
+    const items = attention.findAll("article");
+    expect(items).toHaveLength(3);
+    expect(items.map((item) => item.get("strong").text())).toEqual([
+      "Orçamento #23 · Marina Cliente",
+      "Orçamento #19 · Paulo Cliente",
+      "Ana Souza recomendou você",
+    ]);
+    expect(items[0]!.text()).not.toContain("Alteração solicitada");
+    expect(items[0]!.text()).toContain(
+      "Trocar duas luminárias e revisar a posição dos interruptores.",
+    );
+    expect(items[1]!.text()).toContain("Usar tinta lavável.");
+    expect(
+      attention.findAll("a").map((link) => link.attributes("href")),
+    ).toEqual([
+      "/app/professional/quotes/new?quote=newer-quote-id",
+      "/app/professional/quotes/new?quote=older-quote-id",
+    ]);
+    expect(
+      attention
+        .findAll("a")
+        .every((link) => link.text() === "Revisar orçamento"),
+    ).toBe(true);
   });
 
   it("uses the full width for one group and hides the container when empty", async () => {

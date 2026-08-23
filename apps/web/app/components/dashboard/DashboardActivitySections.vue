@@ -5,7 +5,7 @@ import type { ProfessionalRelationshipResponse } from "~/services/api/profession
 import { formatDateTime } from "~/utils/formatters";
 
 type ActivityItemType =
-  "profile" | "photo" | "portfolio" | "verification" | "relationship";
+  "profile" | "photo" | "portfolio" | "verification" | "relationship" | "quote";
 
 interface ActivityItem {
   id: string;
@@ -15,6 +15,7 @@ interface ActivityItem {
   detail: string;
   sortAt: string;
   responseRequired?: boolean;
+  to?: string;
 }
 
 interface ActivitySection {
@@ -43,6 +44,19 @@ const sections = computed<ActivitySection[]>(() => {
   const attention: ActivityItem[] = [];
   const ongoing: ActivityItem[] = [];
   const profile = props.workspace.profile;
+
+  for (const quote of props.workspace.dashboard.changeRequestedQuotes) {
+    const request = quote.latestChangeRequest;
+    attention.push({
+      id: quote.id,
+      type: "quote",
+      title: `Orçamento #${quote.number} · ${quote.customerName}`,
+      status: "Alteração solicitada",
+      detail: `“${request.message}” · Solicitado em ${formatDateTime(request.requestedAt)}`,
+      sortAt: request.requestedAt,
+      to: `/app/professional/quotes/new?quote=${quote.id}`,
+    });
+  }
 
   if (profile.revisionStatus === "pending_review") {
     ongoing.push({
@@ -174,7 +188,7 @@ const sections = computed<ActivitySection[]>(() => {
     {
       id: "ongoing",
       eyebrow: "Avisos",
-      title: "Acompanhamentos.",
+      title: "Para acompanhar.",
       items: ongoing,
     },
   ];
@@ -189,6 +203,7 @@ function activityIcon(type: ActivityItemType) {
     portfolio: "i-lucide-image",
     verification: "i-lucide-id-card",
     relationship: "i-lucide-handshake",
+    quote: "i-lucide-message-square-warning",
   }[type];
 }
 </script>
@@ -226,17 +241,38 @@ function activityIcon(type: ActivityItemType) {
       </p>
 
       <div class="activity-list">
-        <article v-for="item in section.items" :key="`${item.type}-${item.id}`">
+        <article
+          v-for="item in section.items"
+          :key="`${item.type}-${item.id}`"
+          :class="{ 'activity-list__item--link': item.to }"
+        >
           <span class="activity-list__icon">
-            <UIcon :name="activityIcon(item.type)" />
+            <UIcon :name="activityIcon(item.type)" aria-hidden="true" />
           </span>
           <div class="activity-list__content">
             <strong>{{ item.title }}</strong>
             <small>{{ item.detail }}</small>
           </div>
-          <span class="activity-list__status">{{ item.status }}</span>
-          <div v-if="item.responseRequired" class="activity-list__actions">
+          <span v-if="section.id === 'ongoing'" class="activity-list__status">
+            {{ item.status }}
+          </span>
+          <div
+            v-if="item.responseRequired || item.to"
+            class="activity-list__actions"
+            :class="{ 'activity-list__actions--link': item.to }"
+          >
             <UButton
+              v-if="item.to"
+              :to="item.to"
+              size="sm"
+              color="primary"
+              variant="soft"
+              trailing-icon="i-lucide-arrow-right"
+            >
+              Revisar orçamento
+            </UButton>
+            <UButton
+              v-if="item.responseRequired"
               size="sm"
               color="neutral"
               variant="ghost"
@@ -247,6 +283,7 @@ function activityIcon(type: ActivityItemType) {
               Recusar
             </UButton>
             <UButton
+              v-if="item.responseRequired"
               size="sm"
               color="primary"
               :loading="respondingId === item.id"
@@ -346,6 +383,7 @@ function activityIcon(type: ActivityItemType) {
     margin-top: 3px;
     color: var(--ink-soft);
     font-size: 0.82rem;
+    overflow-wrap: anywhere;
   }
 
   &__status {
@@ -363,6 +401,12 @@ function activityIcon(type: ActivityItemType) {
     display: flex;
     justify-content: flex-end;
     gap: 5px;
+  }
+
+  &__actions--link {
+    grid-row: 1;
+    grid-column: 3;
+    place-self: center end;
   }
 
   &__feedback {
@@ -405,6 +449,16 @@ function activityIcon(type: ActivityItemType) {
     &__actions {
       grid-column: 2;
       justify-self: start;
+    }
+
+    &__item--link {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+    }
+
+    &__item--link &__actions--link {
+      grid-row: 1;
+      grid-column: 3;
+      place-self: center end;
     }
   }
 }
