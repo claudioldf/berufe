@@ -39,24 +39,35 @@ Required GitHub checks on both protected branches are:
 
 ## 1. Railway project
 
-Create one project named `berufe-production`, connect this GitHub repository, and add an
-empty service named `api`, an empty service named `web`, and Railway PostgreSQL.
+Create and link one project named `berufe-production`. The committed
+`.railway/railway.ts` defines the `api`, `web`, and managed PostgreSQL resources, connects
+both applications to this repository's `production` branch, and defines their non-secret
+variables, health checks, and Virginia replicas.
 
-Configure the services as follows:
+For a first setup, create and link the project plus two empty service shells before
+applying IaC. This lets secrets be configured before a source can deploy:
 
-| Setting        | `api`                      | `web`                      |
-| -------------- | -------------------------- | -------------------------- |
-| Source branch  | `production`               | `production`               |
-| Root directory | `/`                        | `/apps/web`                |
-| Config file    | `/deploy/railway/api.json` | `/deploy/railway/web.json` |
-| Wait for CI    | enabled                    | enabled                    |
-| Public domain  | `api.berufe.com.br`        | `www.berufe.com.br`        |
+```bash
+railway init --name berufe-production
+railway add --service api
+railway add --service web
+npm ci --prefix .railway
+railway config plan
+```
 
-The committed Railway files select the production Dockerfile targets, health checks,
-restart behavior, watch paths, migration commands, and one Virginia replica.
+The initial plan is read-only. With the two empty shells present, it must propose one
+database addition, updates to `api` and `web`, and no destructive changes. Do not apply it
+until the preserved variables below exist, Sections 2–3 are complete, and the intended
+release commit is already green on the protected `production` branch.
 
-Set the following `api` variables. Values marked secret must be entered directly in
-Railway and never committed or pasted into an issue or chat transcript.
+Railway IaC cannot register a new custom domain or express the **Wait for CI** switch. The
+switch appears only after a GitHub source is connected, so the first IaC apply must target
+a release commit whose GitHub checks already passed. Immediately after that apply, enable
+Wait for CI for both services before any later push to `production`.
+
+The IaC file manages the following `api` variable names. Values marked secret or
+account-specific use `preserve()` and must be entered directly in Railway before the first
+deployment; never commit them or paste them into an issue or chat transcript.
 
 ```dotenv
 BERUFE_ENV=production
@@ -152,6 +163,19 @@ Create separate Bugsnag projects named `berufe-api-production` and
 `berufe-web-production`. Disable session tracking and user/IP collection in project
 settings as defense in depth. Configure the operations owner to receive immediate alerts
 for new unhandled production errors.
+
+Enter every `preserve()` value in the empty Railway service shells and rerun the plan.
+Apply only when it contains the intended database creation, service updates, and no
+destructive changes. Applying connects the already-green `production` sources and starts
+the first deployment. Then immediately enable Wait for CI on both services and register
+the domains:
+
+```bash
+railway config plan
+railway config apply
+railway domain api.berufe.com.br --service api --port 3000
+railway domain www.berufe.com.br --service web --port 3000
+```
 
 ## 4. DNS cutover
 

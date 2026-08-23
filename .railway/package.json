@@ -1,0 +1,14 @@
+{
+  "name": "berufe-railway-iac",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "check": "node --experimental-strip-types check.mjs"
+  },
+  "devDependencies": {
+    "railway": "3.10.0"
+  }
+}

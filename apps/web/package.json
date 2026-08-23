@@ -24,7 +24,7 @@
     "typecheck": "nuxt typecheck",
     "format": "prettier --write \"app/**/*.{vue,ts,scss,css}\" \"tests/**/*.ts\" \"*.{ts,mjs,json,md}\"",
     "format:check": "prettier --check \"app/**/*.{vue,ts,scss,css}\" \"tests/**/*.ts\" \"*.{ts,mjs,json,md}\"",
-    "format:repo:check": "prettier --check \"../../README.md\" \"../../docs/**/*.md\" \"../../compose.yaml\" \"../../.github/workflows/**/*.yml\" --ignore-path ../../.prettierignore",
+    "format:repo:check": "prettier --check \"../../README.md\" \"../../docs/**/*.md\" \"../../compose.yaml\" \"../../.github/workflows/**/*.yml\" \"../../.railway/**/*.{ts,mjs,json,md}\" --ignore-path ../../.prettierignore",
     "format:styles": "prettier --write \"app/**/*.vue\" \"app/**/*.{css,scss}\"",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
