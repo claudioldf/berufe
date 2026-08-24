@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, shallowRef, watch } from "vue";
-import LegalInlineNotice from "~/components/legal/LegalInlineNotice.vue";
 import { useProfessionalRelationships } from "~/composables/useProfessionalRelationships";
 import { useToast } from "~/composables/useToast";
 import type { Neighborhood, ProfessionalRelationship, Service } from "~/types";
@@ -315,16 +314,6 @@ async function submit() {
             :services="services"
             :neighborhoods="neighborhoods"
           />
-
-          <LegalInlineNotice
-            v-if="externalTarget"
-            title="Perfil público criado por indicação"
-          >
-            Ao continuar, um perfil básico com nome, serviços e cobertura pode
-            ser publicado imediatamente. Confirme que pode compartilhar o
-            telefone profissional. O titular poderá reivindicar o perfil por SMS
-            ou pedir correção e remoção ao suporte.
-          </LegalInlineNotice>
 
           <div class="relationship-create-dialog__context">
             <DesignSystemFormField
