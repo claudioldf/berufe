@@ -241,7 +241,7 @@ watch(
         class="onboarding-loading"
         aria-live="polite"
       >
-        <UIcon name="i-lucide-circle-dot" />
+        <UIcon name="i-lucide-circle-dot" aria-hidden="true" />
         <p>Preparando suas etapas…</p>
       </DesignSystemSurfaceCard>
 
@@ -358,8 +358,9 @@ watch(
   padding: 28px;
 }
 
-.onboarding-panel:focus {
-  outline: none;
+.onboarding-panel:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 4px;
 }
 
 :deep() {
@@ -460,18 +461,20 @@ watch(
   color: var(--ink-soft);
 }
 
-@media (width <= 900px) {
+@media (width <= 1100px) {
+  .onboarding-hero {
+    &__inner {
+      display: grid;
+      place-items: start;
+    }
+  }
+
   .onboarding-workspace {
     grid-template-columns: 1fr;
   }
 }
 
-@media (width <= 650px) {
-  .onboarding-hero {
-    &__inner {
-      display: grid;
-    }
-  }
+@media (width <= 700px) {
   .onboarding-panel {
     padding: 20px;
   }

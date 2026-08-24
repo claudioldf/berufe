@@ -44,7 +44,10 @@ defineEmits<{ select: [stepId: OnboardingStepId] }>();
         @click="$emit('select', step.id)"
       >
         <span>
-          <UIcon :name="completion[step.id] ? 'i-lucide-check' : step.icon" />
+          <UIcon
+            :name="completion[step.id] ? 'i-lucide-check' : step.icon"
+            aria-hidden="true"
+          />
         </span>
         <span>
           <small>Etapa {{ index + 1 }}</small>
@@ -164,16 +167,16 @@ defineEmits<{ select: [stepId: OnboardingStepId] }>();
   }
 }
 
-@media (width <= 900px) {
+@media (width <= 1100px) {
   .onboarding-progress {
     position: static;
   }
   .onboarding-progress nav {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
-@media (width <= 650px) {
+@media (width <= 700px) {
   .onboarding-progress nav {
     grid-template-columns: 1fr;
   }

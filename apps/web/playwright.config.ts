@@ -3,6 +3,7 @@ import { defineConfig, devices } from "@playwright/test";
 const serverPort = process.env.PLAYWRIGHT_PORT ?? "4173";
 const baseUrl =
   process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${serverPort}`;
+const tabletResponsiveSpec = /tablet-responsive\.spec\.ts/;
 
 export default defineConfig({
   testDir: "tests/e2e",
@@ -17,11 +18,24 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
+      testIgnore: tabletResponsiveSpec,
       use: { ...devices["Desktop Chrome"] },
     },
     {
       name: "mobile-chromium",
+      testIgnore: tabletResponsiveSpec,
       use: { ...devices["Pixel 7"] },
+    },
+    {
+      name: "tablet-chromium",
+      testMatch: tabletResponsiveSpec,
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1024, height: 1366 },
+        deviceScaleFactor: 2,
+        hasTouch: true,
+        isMobile: true,
+      },
     },
   ],
   webServer: {

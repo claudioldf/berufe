@@ -517,11 +517,11 @@ async function respondRelationship(
     color: var(--color-danger);
   }
 }
-@media (width <= 900px) {
+@media (width <= 1100px) {
   .dashboard-layout {
     grid-template-columns: 1fr;
     grid-template-rows: auto;
-    gap: 40px;
+    gap: 32px;
   }
   .status-banner,
   .dashboard-operational,
@@ -529,15 +529,34 @@ async function respondRelationship(
     grid-row: auto;
     grid-column: 1;
   }
+  .dashboard-operational {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 40px;
+  }
+  .dashboard-sidebar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
-@media (width <= 700px) {
+
+@media (width <= 900px) {
   .dashboard-welcome {
     &__inner {
       display: grid;
+      place-items: start;
     }
     &__actions {
       flex-wrap: wrap;
     }
+  }
+}
+
+@media (width <= 700px) {
+  .dashboard-layout,
+  .dashboard-operational {
+    gap: 28px;
+  }
+  .dashboard-sidebar {
+    grid-template-columns: 1fr;
   }
 }
 </style>

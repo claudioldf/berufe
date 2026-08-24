@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import LegalInlineNotice from "~/components/legal/LegalInlineNotice.vue";
-
 const name = defineModel<string>("name", { required: true });
 const accepted = defineModel<boolean>("accepted", { required: true });
 defineProps<{ error: string; loading: boolean }>();
@@ -43,11 +41,6 @@ defineEmits<{ submit: [] }>();
           vigentes.
         </span>
       </label>
-      <LegalInlineNotice title="Registro legal">
-        Guardamos a data, a versão dos Termos aceita e a versão do aviso de
-        privacidade apresentada. A conta profissional é destinada somente a
-        pessoas com 18 anos ou mais.
-      </LegalInlineNotice>
       <p
         v-if="error"
         id="registration-step-error"
