@@ -19,6 +19,27 @@ const page = shallowRef(props.result.meta.page);
 let searchTimer: ReturnType<typeof setTimeout> | undefined;
 
 const filtered = computed(() => query.value.trim().length > 0);
+const firstUseEmpty = computed(
+  () =>
+    props.result.meta.totalCount === 0 &&
+    !filtered.value &&
+    !props.loading &&
+    !props.error,
+);
+const emptyStateBenefits = [
+  "Contatos organizados automaticamente",
+  "Histórico de propostas por cliente",
+  "Conversas mais fáceis de retomar",
+];
+const emptyStateVisual = {
+  icon: "i-lucide-contact-round",
+  title: "Sua carteira",
+  caption: "Clientes ligados aos orçamentos",
+  metaLabel: "Organização",
+  metaValue: "Tudo em um lugar",
+  badge: "Pronto para continuar",
+  badgeIcon: "i-lucide-users-round",
+};
 const resultRange = computed(() => {
   const { page: currentPage, perPage, totalCount } = props.result.meta;
   const noun = totalCount === 1 ? "cliente" : "clientes";
@@ -71,48 +92,60 @@ onScopeDispose(clearSearchTimer);
 
 <template>
   <div class="customer-directory">
-    <DesignSystemSurfaceCard as="section" class="customer-directory__search">
-      <label for="customer-search">Buscar clientes</label>
-      <div>
-        <UIcon name="i-lucide-search" aria-hidden="true" />
-        <input
-          id="customer-search"
-          name="customerSearch"
-          type="search"
-          maxlength="100"
-          autocomplete="off"
-          placeholder="Nome, WhatsApp ou e-mail"
-          :value="query"
-          @input="setQuery(($event.target as HTMLInputElement).value)"
-        />
-        <button
-          v-if="filtered"
-          type="button"
-          aria-label="Limpar busca"
-          @click="clearSearch"
-        >
-          <UIcon name="i-lucide-x" aria-hidden="true" />
-        </button>
-      </div>
-    </DesignSystemSurfaceCard>
+    <DesignSystemFeatureEmptyState
+      v-if="firstUseEmpty"
+      eyebrow="Relacionamentos que viram recorrência"
+      title="Cada orçamento começa a construir sua carteira."
+      description="Ao criar uma proposta, o cliente entra automaticamente na sua agenda com contato e histórico para você atender melhor hoje e no próximo serviço."
+      :items="emptyStateBenefits"
+      cta-label="Criar meu primeiro orçamento"
+      cta-to="/app/professional/quotes/new"
+      :visual="emptyStateVisual"
+    />
+    <template v-else>
+      <DesignSystemSurfaceCard as="section" class="customer-directory__search">
+        <label for="customer-search">Buscar clientes</label>
+        <div>
+          <UIcon name="i-lucide-search" aria-hidden="true" />
+          <input
+            id="customer-search"
+            name="customerSearch"
+            type="search"
+            maxlength="100"
+            autocomplete="off"
+            placeholder="Nome, WhatsApp ou e-mail"
+            :value="query"
+            @input="setQuery(($event.target as HTMLInputElement).value)"
+          />
+          <button
+            v-if="filtered"
+            type="button"
+            aria-label="Limpar busca"
+            @click="clearSearch"
+          >
+            <UIcon name="i-lucide-x" aria-hidden="true" />
+          </button>
+        </div>
+      </DesignSystemSurfaceCard>
 
-    <div class="customer-directory__summary">
-      <p role="status" aria-live="polite">{{ resultRange }}</p>
-    </div>
-    <p v-if="error" class="customer-directory__error" role="alert">
-      {{ error }}
-    </p>
-    <CustomerList
-      :customers="result.customers"
-      :filtered="filtered"
-      :loading="loading"
-    />
-    <CustomerPagination
-      :page="result.meta.page"
-      :total-pages="result.meta.totalPages"
-      :loading="loading"
-      @page="setPage"
-    />
+      <div class="customer-directory__summary">
+        <p role="status" aria-live="polite">{{ resultRange }}</p>
+      </div>
+      <p v-if="error" class="customer-directory__error" role="alert">
+        {{ error }}
+      </p>
+      <CustomerList
+        :customers="result.customers"
+        :filtered="filtered"
+        :loading="loading"
+      />
+      <CustomerPagination
+        :page="result.meta.page"
+        :total-pages="result.meta.totalPages"
+        :loading="loading"
+        @page="setPage"
+      />
+    </template>
   </div>
 </template>
 

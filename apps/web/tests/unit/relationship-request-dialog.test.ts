@@ -45,10 +45,11 @@ const ButtonStub = defineComponent({
   props: {
     disabled: { type: Boolean, default: false },
     loading: { type: Boolean, default: false },
+    to: { type: String, default: "" },
   },
   emits: ["click"],
   template:
-    '<button type="button" :disabled="disabled" @click="$emit(\'click\')"><slot /></button>',
+    '<button type="button" :disabled="disabled" :data-to="to" @click="$emit(\'click\')"><slot /></button>',
 });
 
 const createdRelationship = {
@@ -213,6 +214,9 @@ describe("relationship create dialog", () => {
     const wrapper = await mountDialog();
     expect(wrapper.text()).not.toContain("Já está na Berufe");
     expect(wrapper.text()).not.toContain("Adicionar pelo telefone");
+    expect(wrapper.text()).toContain(
+      "Boas conexões tornam seu perfil mais forte.",
+    );
 
     await enterProfessionalNameAndFinishSearch(wrapper, "Beto Lima");
     await wrapper
@@ -314,9 +318,25 @@ describe("relationship create dialog", () => {
   it("blocks submission when the account is not eligible", async () => {
     const wrapper = await mountDialog(false);
 
-    expect(wrapper.get('[role="alert"]').text()).toContain(
+    const alert = wrapper.get('[role="alert"]');
+    expect(alert.text()).toContain(
       "conclua seu cadastro, confirme o telefone e tenha a identidade aprovada",
     );
+    expect(alert.text()).toContain(
+      "Prepare seu perfil para criar conexões reais.",
+    );
+    expect(alert.text()).toContain(
+      "Recomendações confirmadas fortalecem os dois perfis",
+    );
+    expect(
+      alert.find(".relationship-create-dialog__eligibility-icon").exists(),
+    ).toBe(true);
+    expect(
+      alert
+        .findAll("button")
+        .find((button) => button.text().includes("Concluir meu perfil"))
+        ?.attributes("data-to"),
+    ).toBe("/app/professional/profile?tab=verificacoes");
     expect(
       wrapper
         .findAll("footer button")
