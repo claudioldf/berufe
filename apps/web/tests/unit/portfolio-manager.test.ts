@@ -1,5 +1,6 @@
 import { mount } from "@vue/test-utils";
 import PortfolioManager from "~/components/dashboard/PortfolioManager.vue";
+import PortfolioUploadForm from "~/components/dashboard/portfolio/UploadForm.vue";
 import type { ProfessionalPortfolioItem } from "~/types";
 
 const rejectedItem: ProfessionalPortfolioItem = {
@@ -14,6 +15,28 @@ const rejectedItem: ProfessionalPortfolioItem = {
 };
 
 describe("professional portfolio manager", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("previews a selected image in the add-work form", async () => {
+    vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:portfolio-preview");
+    const wrapper = mount(PortfolioUploadForm, {
+      props: { serviceOptions: ["Eletricista"] },
+    });
+    const file = new File(["portfolio photo"], "cozinha.png", {
+      type: "image/png",
+    });
+    const input = wrapper.get('input[name="portfolio-image"]');
+    Object.defineProperty(input.element, "files", { value: [file] });
+
+    await input.trigger("change");
+
+    const preview = wrapper.get('img[alt="Prévia de cozinha.png"]');
+    expect(preview.attributes("src")).toBe("blob:portfolio-preview");
+    expect(wrapper.text()).toContain("cozinha.png");
+  });
+
   it("explains the value of a portfolio and opens the first upload", async () => {
     const wrapper = mount(PortfolioManager, {
       props: { items: [], serviceOptions: ["Eletricista"] },

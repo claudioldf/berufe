@@ -4,6 +4,7 @@ import type {
   ProfessionalProfileDraft,
   ProfessionalProfilePhotoState,
 } from "~/types";
+import { useImagePreview } from "~/composables/useImagePreview";
 import { validateOnboardingImage } from "~/composables/useProfessionalOnboarding";
 
 const form = defineModel<ProfessionalProfileDraft>({ required: true });
@@ -31,6 +32,11 @@ const emit = defineEmits<{
 const photoInput = useTemplateRef<HTMLInputElement>("photo-input");
 const selectionError = shallowRef("");
 const photoRemovalOpen = shallowRef(false);
+const {
+  previewUrl: selectedPhotoPreview,
+  setPreviewFile,
+  clearPreview,
+} = useImagePreview();
 const photoBusy = computed(() => props.photoUploading || props.photoRemoving);
 const canRetry = computed(
   () =>
@@ -39,6 +45,9 @@ const canRetry = computed(
 );
 const hasPhoto = computed(() =>
   Boolean(props.photo?.current || props.photo?.hasPublishedPhoto),
+);
+const visiblePhotoUrl = computed(
+  () => selectedPhotoPreview.value || props.photo?.publishedImageUrl || "",
 );
 const photoStatus = computed(() => {
   if (props.photoUploading) return "Enviando e processando foto…";
@@ -75,6 +84,7 @@ function openPhotoPicker() {
 
 function confirmPhotoRemoval() {
   photoRemovalOpen.value = false;
+  clearPreview();
   emit("photoRemove");
 }
 
@@ -86,6 +96,7 @@ function selectPhoto(event: Event) {
 
   const validation = validateOnboardingImage(file);
   selectionError.value = validation.error;
+  setPreviewFile(validation.valid ? file : null);
   if (validation.valid) emit("photoSelect", file);
 }
 </script>
@@ -103,8 +114,15 @@ function selectPhoto(event: Event) {
       <em>Obrigatório</em>
     </header>
     <div class="profile-photo-control">
-      <div class="profile-photo-control__avatar" aria-hidden="true">
-        <UIcon name="i-lucide-user-round" />
+      <div class="profile-photo-control__avatar">
+        <img
+          v-if="visiblePhotoUrl"
+          :src="visiblePhotoUrl"
+          alt="Prévia da foto profissional"
+          width="72"
+          height="72"
+        />
+        <UIcon v-else name="i-lucide-user-round" aria-hidden="true" />
       </div>
       <div>
         <strong>Foto profissional <em>Obrigatória</em></strong>
@@ -120,6 +138,7 @@ function selectPhoto(event: Event) {
       <input
         ref="photo-input"
         class="profile-photo-control__input"
+        name="profile-photo"
         type="file"
         accept="image/jpeg,image/png"
         :disabled="photoBusy"
@@ -315,12 +334,19 @@ function selectPhoto(event: Event) {
   &__avatar {
     display: grid;
     place-items: center;
-    width: 48px;
-    height: 48px;
+    overflow: hidden;
+    width: 72px;
+    height: 72px;
     border-radius: 50%;
     background: white;
     color: var(--color-brand);
     font-size: 1.35rem;
+  }
+
+  &__avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 
   & strong {

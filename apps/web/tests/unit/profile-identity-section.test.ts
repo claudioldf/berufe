@@ -54,6 +54,30 @@ const global = {
 };
 
 describe("professional profile identity photo control", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("shows the selected profile photo before it finishes uploading", async () => {
+    vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:profile-preview");
+    const wrapper = await mountSuspended(IdentitySection, {
+      props: { modelValue: { ...draft } },
+      global,
+    });
+    const file = new File(["profile photo"], "profile.png", {
+      type: "image/png",
+    });
+    const input = wrapper.get('input[name="profile-photo"]');
+    Object.defineProperty(input.element, "files", { value: [file] });
+
+    await input.trigger("change");
+
+    expect(
+      wrapper.get('img[alt="Prévia da foto profissional"]').attributes("src"),
+    ).toBe("blob:profile-preview");
+    expect(wrapper.emitted("photoSelect")?.[0]).toEqual([file]);
+  });
+
   it("confirms removal before emitting the destructive action", async () => {
     const wrapper = await mountSuspended(IdentitySection, {
       props: {

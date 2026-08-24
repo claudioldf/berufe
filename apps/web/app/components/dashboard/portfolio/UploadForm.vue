@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { reactive, shallowRef, watch } from "vue";
 import type { PortfolioItemDraft } from "~/types";
+import { useImagePreview } from "~/composables/useImagePreview";
 import { validateOnboardingImage } from "~/composables/useProfessionalOnboarding";
 
 const props = withDefaults(
@@ -26,6 +27,7 @@ const title = shallowRef("");
 const service = shallowRef("");
 const description = shallowRef("");
 const errors = reactive({ file: "", title: "", service: "" });
+const { previewUrl, setPreviewFile, clearPreview } = useImagePreview();
 
 watch(
   () => props.serviceOptions,
@@ -37,10 +39,13 @@ watch(
 
 function selectFile(event: Event) {
   file.value = (event.target as HTMLInputElement).files?.[0] ?? null;
-  errors.file = validateOnboardingImage(file.value).error;
+  const validation = validateOnboardingImage(file.value);
+  errors.file = validation.error;
+  setPreviewFile(validation.valid ? file.value : null);
 }
 
 function reset() {
+  clearPreview();
   file.value = null;
   title.value = "";
   service.value = props.serviceOptions[0] ?? "";
@@ -48,6 +53,11 @@ function reset() {
   errors.file = "";
   errors.title = "";
   errors.service = "";
+}
+
+function cancel() {
+  reset();
+  emit("cancel");
 }
 
 function submit() {
@@ -72,7 +82,16 @@ function submit() {
 <template>
   <form class="portfolio-upload" @submit.prevent="submit">
     <label class="portfolio-upload__drop">
-      <UIcon :name="file ? 'i-lucide-file-check-2' : 'i-lucide-cloud-upload'" />
+      <img
+        v-if="previewUrl"
+        class="portfolio-upload__preview"
+        :src="previewUrl"
+        :alt="`Prévia de ${file?.name ?? 'foto do trabalho'}`"
+      />
+      <UIcon
+        v-else
+        :name="file ? 'i-lucide-file-check-2' : 'i-lucide-cloud-upload'"
+      />
       <strong>{{ file ? file.name : "Selecione uma foto do trabalho" }}</strong>
       <small>JPG ou PNG · até 10 MB</small>
       <input
@@ -156,7 +175,7 @@ function submit() {
         color="neutral"
         variant="ghost"
         :disabled="props.submitting"
-        @click="$emit('cancel')"
+        @click="cancel"
       >
         Cancelar
       </UButton>
@@ -204,6 +223,12 @@ function submit() {
     inset: 0;
     opacity: 0;
     cursor: pointer;
+  }
+  &__preview {
+    width: 100%;
+    max-height: 260px;
+    border-radius: 10px;
+    object-fit: cover;
   }
   &__error {
     margin: -6px 0 0;
