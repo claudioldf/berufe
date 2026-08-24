@@ -51,6 +51,22 @@ RSpec.describe R2Storage do
       .to eq("quarantine/image.jpg")
   end
 
+  it "returns downloaded object bytes with binary encoding" do
+    payload = "\xFF\xD8\xFF\xE0".dup.force_encoding(Encoding::UTF_8)
+    response = instance_double(
+      Aws::S3::Types::GetObjectOutput,
+      body: StringIO.new(payload)
+    )
+    expect(client).to receive(:get_object)
+      .with(bucket: "private-media", key: "quarantine/image.jpg")
+      .and_return(response)
+
+    body = storage.read(scope: :private, key: "quarantine/image.jpg")
+
+    expect(body.bytes).to eq(payload.bytes)
+    expect(body.encoding).to eq(Encoding::BINARY)
+  end
+
   it "rejects unknown storage scopes before calling R2" do
     expect { storage.delete(scope: :unknown, key: "image.jpg") }
       .to raise_error(ArgumentError, "invalid storage scope")

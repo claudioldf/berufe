@@ -33,7 +33,7 @@ class R2Storage
   end
 
   def read(scope:, key:)
-    @client.get_object(bucket: bucket_for(scope), key:).body.read
+    @client.get_object(bucket: bucket_for(scope), key:).body.read.b
   end
 
   def delete(scope:, key:)
