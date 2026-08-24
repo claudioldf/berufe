@@ -48,6 +48,7 @@ export function mapPublicProfessionalCard(
 
 interface PublicProfessionalSearchInput {
   service: string;
+  professionalName?: string | null;
   neighborhoodCode?: string | null;
   page?: number;
   perPage?: number;
@@ -62,6 +63,9 @@ export async function searchPublicProfessionals(
     {
       body: {
         service: input.service,
+        ...(input.professionalName
+          ? { professional_name: input.professionalName }
+          : {}),
         neighborhood_code: input.neighborhoodCode ?? null,
         ...(input.page ? { page: input.page } : {}),
         ...(input.perPage ? { per_page: input.perPage } : {}),
@@ -79,6 +83,7 @@ export async function searchPublicProfessionals(
 
   return {
     normalizedTerm: data.data.query.normalized_term,
+    professionalName: data.data.query.professional_name,
     resolvedService: data.data.query.service,
     neighborhood: data.data.query.neighborhood,
     professionals: data.data.professionals.map(mapPublicProfessionalCard),

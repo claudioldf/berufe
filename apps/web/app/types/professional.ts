@@ -129,6 +129,7 @@ export interface PublicServiceSuggestion {
 
 export interface PublicProfessionalSearchResult {
   normalizedTerm: string;
+  professionalName: string | null;
   resolvedService: PublicServiceSuggestion | null;
   neighborhood: { code: string; name: string } | null;
   professionals: PublicProfessionalCard[];

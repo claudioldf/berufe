@@ -1,5 +1,10 @@
 import { computed, shallowRef, watch } from "vue";
-import type { Neighborhood, PublicProfessionalCard, Service } from "~/types";
+import type {
+  Neighborhood,
+  PublicProfessionalCard,
+  Service,
+  ServiceSearchPayload,
+} from "~/types";
 import { searchPublicProfessionals } from "~/services/api/public-discovery";
 import { useApiClient } from "~/services/api/client";
 import { findService } from "~/utils/services";
@@ -16,6 +21,7 @@ export async function useProfessionalSearch(
   const route = useRoute();
   const router = useRouter();
   const client = useApiClient();
+  const professionalNameInput = shallowRef("");
   const serviceInput = shallowRef("");
   const neighborhoodInput = shallowRef("all");
   // Pages after the first are appended here; the async data always holds page 1.
@@ -24,6 +30,9 @@ export async function useProfessionalSearch(
   const loadingMore = shallowRef(false);
 
   const serviceQuery = computed(() => String(route.query.servico ?? "").trim());
+  const professionalNameQuery = computed(() =>
+    String(route.query.nome ?? "").trim(),
+  );
   const hasSearchTerm = computed(() => serviceQuery.value.length > 0);
   const neighborhoodCode = computed(() => String(route.query.bairro ?? "all"));
   const selectedNeighborhood = computed(
@@ -40,6 +49,7 @@ export async function useProfessionalSearch(
     () =>
       searchPublicProfessionals(client, {
         service: serviceQuery.value,
+        professionalName: professionalNameQuery.value || null,
         neighborhoodCode:
           effectiveNeighborhoodCode.value === "all"
             ? null
@@ -50,15 +60,18 @@ export async function useProfessionalSearch(
     },
   );
 
-  watch([serviceQuery, effectiveNeighborhoodCode], () => {
-    resetPaging();
-    if (!hasSearchTerm.value) {
-      clear();
-      return;
-    }
+  watch(
+    [serviceQuery, professionalNameQuery, effectiveNeighborhoodCode],
+    () => {
+      resetPaging();
+      if (!hasSearchTerm.value) {
+        clear();
+        return;
+      }
 
-    void refresh();
-  });
+      void refresh();
+    },
+  );
 
   function resetPaging() {
     additionalResults.value = [];
@@ -75,6 +88,8 @@ export async function useProfessionalSearch(
     if (!result) return null;
     if (
       result.normalizedTerm !== normalizeSearchText(serviceQuery.value) ||
+      normalizeSearchText(result.professionalName ?? "") !==
+        normalizeSearchText(professionalNameQuery.value) ||
       (result.neighborhood?.code ?? "all") !== effectiveNeighborhoodCode.value
     ) {
       return null;
@@ -115,6 +130,7 @@ export async function useProfessionalSearch(
       const nextPage = loadedPage.value + 1;
       const page = await searchPublicProfessionals(client, {
         service: serviceQuery.value,
+        professionalName: professionalNameQuery.value || null,
         neighborhoodCode:
           effectiveNeighborhoodCode.value === "all"
             ? null
@@ -139,25 +155,25 @@ export async function useProfessionalSearch(
   );
 
   watch(
-    [serviceQuery, neighborhoodCode],
+    [serviceQuery, professionalNameQuery, neighborhoodCode],
     () => {
+      professionalNameInput.value = professionalNameQuery.value;
       serviceInput.value = selectedService.value?.name ?? serviceQuery.value;
       neighborhoodInput.value = effectiveNeighborhoodCode.value;
     },
     { immediate: true },
   );
 
-  async function submitSearch(payload: {
-    service: string;
-    neighborhood: string;
-  }) {
+  async function submitSearch(payload: ServiceSearchPayload) {
     const serviceTerm = payload.service.trim();
     if (!serviceTerm) return;
 
     const service = findService(options.services, serviceTerm);
+    const professionalName = payload.professionalName.trim();
     await router.push({
       path: "/encontrar",
       query: {
+        ...(professionalName ? { nome: professionalName } : {}),
         servico: service?.slug ?? serviceTerm,
         bairro: payload.neighborhood,
       },
@@ -165,8 +181,10 @@ export async function useProfessionalSearch(
   }
 
   return {
+    professionalNameInput,
     serviceInput,
     neighborhoodInput,
+    professionalNameQuery,
     serviceQuery,
     hasSearchTerm,
     neighborhoodCode,

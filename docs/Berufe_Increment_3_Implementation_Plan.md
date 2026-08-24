@@ -88,7 +88,7 @@ Increment 3 adds the relationship read-model foundation needed by the existing p
 
 ### S033 — Search published professionals
 
-- Add `POST /api/v1/public/professional-searches` with a service term and optional active Joinville neighborhood.
+- Add `POST /api/v1/public/professional-searches` with a service term, optional published professional name, and optional active Joinville neighborhood.
 - Resolve an active service by exact stable slug, normalized name, or a controlled spelling alias. An unmatched term returns no professionals and at most three safe related active-service suggestions.
 - Return only the safe card projection: profile UUID and slug, public name, approved photo URL, matching/primary service, coverage, precise labels, approved portfolio counts, accepted relationship counts, and approved snapshot review time. Never return a phone number.
 - Use indexed PostgreSQL joins for service and coverage. No external search engine is introduced.

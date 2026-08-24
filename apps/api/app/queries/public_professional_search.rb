@@ -8,6 +8,7 @@ class PublicProfessionalSearch
 
   Result = Data.define(
     :normalized_term,
+    :professional_name,
     :service,
     :neighborhood,
     :professionals,
@@ -35,14 +36,19 @@ class PublicProfessionalSearch
     @related_services = related_services
   end
 
-  def call(term:, neighborhood_code: nil, page: 1, per_page: DEFAULT_PER_PAGE)
+  def call(term:, professional_name: nil, neighborhood_code: nil, page: 1, per_page: DEFAULT_PER_PAGE)
     validate_term!(term)
+    normalized_professional_name = normalize_professional_name(professional_name)
     resolution = resolver.call(term)
     validate_normalized_term!(resolution.normalized_term)
     neighborhood = resolve_neighborhood(neighborhood_code)
     normalized_page, normalized_per_page = normalize_pagination(page, per_page)
 
-    matches = resolution.service ? matching_professionals(resolution.service, neighborhood) : ProfessionalProfile.none
+    matches = if resolution.service
+      matching_professionals(resolution.service, neighborhood, normalized_professional_name)
+    else
+      ProfessionalProfile.none
+    end
     # The event records how many professionals matched, not how many this page
     # returned, so the count is taken before the window is applied.
     total_count = matches.count(:id)
@@ -54,6 +60,7 @@ class PublicProfessionalSearch
 
     Result.new(
       normalized_term: resolution.normalized_term,
+      professional_name: normalized_professional_name,
       service: resolution.service,
       neighborhood:,
       professionals: page_of(matches, neighborhood, normalized_page, normalized_per_page),
@@ -80,6 +87,21 @@ class PublicProfessionalSearch
     raise InvalidInput, {service: ["é obrigatório"]}
   end
 
+  def normalize_professional_name(professional_name)
+    return if professional_name.nil?
+    unless professional_name.is_a?(String)
+      raise InvalidInput, {professional_name: ["deve ser um texto"]}
+    end
+
+    normalized = professional_name.squish
+    return if normalized.blank?
+    if normalized.length > 70
+      raise InvalidInput, {professional_name: ["deve ter no máximo 70 caracteres"]}
+    end
+
+    normalized
+  end
+
   def normalize_pagination(page, per_page)
     normalized_page = Integer(page.to_s.presence || 1, exception: false)
     normalized_per_page = Integer(per_page.to_s.presence || DEFAULT_PER_PAGE, exception: false)
@@ -103,12 +125,16 @@ class PublicProfessionalSearch
     )
   end
 
-  def matching_professionals(service, neighborhood)
+  def matching_professionals(service, neighborhood, professional_name)
     relation = ProfessionalProfile
       .publicly_searchable
       .joins(published_revision: :professional_profile_services)
       .where(professional_profile_services: {service_id: service.id})
-    neighborhood ? relation.where(coverage_sql, neighborhood.code) : relation
+    relation = relation.where(coverage_sql, neighborhood.code) if neighborhood
+    return relation unless professional_name
+
+    pattern = "%#{ActiveRecord::Base.sanitize_sql_like(professional_name)}%"
+    relation.where("professional_profile_revisions.display_name ILIKE ?", pattern)
   end
 
   def page_of(relation, neighborhood, page, per_page)

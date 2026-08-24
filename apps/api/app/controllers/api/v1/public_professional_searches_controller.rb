@@ -10,6 +10,7 @@ module Api
         term = params.require(:service)
         result = PublicProfessionalSearch.new.call(
           term:,
+          professional_name: params[:professional_name],
           neighborhood_code: params[:neighborhood_code],
           page: params[:page],
           per_page: params[:per_page]

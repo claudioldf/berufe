@@ -83,6 +83,30 @@ RSpec.describe PublicProfessionalSearch do
     expect(unmatched.related_services.length).to be_between(1, 3)
   end
 
+  it "optionally filters matching professionals by a case-insensitive partial public name" do
+    ana = create_published_profile(
+      "+5547999997407",
+      "Ana da Silva",
+      services: [electrician],
+      all_city: true
+    )
+    create_published_profile(
+      "+5547999997408",
+      "Beto da Silva",
+      services: [electrician],
+      all_city: true
+    )
+
+    result = described_class.new.call(
+      term: electrician.slug,
+      professional_name: "  ANA da  ",
+      neighborhood_code: "all"
+    )
+
+    expect(result.professional_name).to eq("ANA da")
+    expect(result.professionals).to contain_exactly(ana)
+  end
+
   it "rejects blank, oversized, non-text, and inactive neighborhood input" do
     inactive = Neighborhood.create!(
       code: "inativo-busca",
@@ -99,6 +123,10 @@ RSpec.describe PublicProfessionalSearch do
       .to raise_error(described_class::InvalidInput)
     expect { described_class.new.call(term: 123) }
       .to raise_error(described_class::InvalidInput)
+    expect { described_class.new.call(term: electrician.slug, professional_name: "x" * 71) }
+      .to raise_error(described_class::InvalidInput) do |error|
+        expect(error.field_errors).to have_key(:professional_name)
+      end
     expect { described_class.new.call(term: electrician.slug, neighborhood_code: inactive.code) }
       .to raise_error(described_class::InvalidInput) do |error|
         expect(error.field_errors).to have_key(:neighborhood_code)

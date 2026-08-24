@@ -314,7 +314,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Search publicly eligible professionals by service and optional Joinville neighborhood */
+        /** Search publicly eligible professionals by service, optional name, and Joinville neighborhood */
         post: operations["searchPublicProfessionals"];
         delete?: never;
         options?: never;
@@ -2170,6 +2170,7 @@ export interface components {
         };
         PublicProfessionalSearchRequest: {
             service: string;
+            professional_name?: string | null;
             neighborhood_code?: string | null;
             /** @description One-based page of matching professionals; defaults to 1. */
             page?: number;
@@ -2183,6 +2184,7 @@ export interface components {
         PublicProfessionalSearchData: {
             query: {
                 normalized_term: string;
+                professional_name: string | null;
                 service: components["schemas"]["PublicServiceSuggestion"] | null;
                 neighborhood: components["schemas"]["PublicProfessionalNeighborhoodSummary"] | null;
             };
@@ -3253,7 +3255,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description The service term or optional neighborhood is malformed or unavailable. */
+            /** @description The service term, optional professional name, or optional neighborhood is malformed or unavailable. */
             422: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];

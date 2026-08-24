@@ -102,6 +102,33 @@ RSpec.describe "Public professional searches", type: :request, openapi: true do
     assert_api_conform(status: 200)
   end
 
+  it "filters by public professional name without retaining that name in the search event" do
+    profile = create_published_profile
+    create_published_profile(
+      phone: "+5547999997504",
+      name: "Beto Contratado"
+    )
+
+    post "/api/v1/public/professional-searches",
+      params: {
+        service: electrician.slug,
+        professional_name: "  ana contratada ",
+        neighborhood_code: neighborhood.code
+      },
+      headers: request_headers("search-name"),
+      as: :json
+
+    expect(response).to have_http_status(:ok)
+    data = response.parsed_body.fetch("data")
+    expect(data.dig("query", "professional_name")).to eq("ana contratada")
+    expect(data.fetch("professionals").pluck("id")).to eq([profile.id])
+    expect(SearchEvent.find(data.dig("interaction", "search_event_id"))).to have_attributes(
+      query_text_normalized: PublicSearchText.normalize(electrician.slug),
+      result_count: 1
+    )
+    assert_api_conform(status: 200)
+  end
+
   it "does not retain sensitive search text" do
     post "/api/v1/public/professional-searches",
       params: {service: "ana@example.com"},

@@ -633,12 +633,13 @@ Apply these rules whenever they are relevant to the story:
 
 **Status:** DONE
 
-**Story:** As a customer, I want to filter professionals by service and neighborhood so that results match what I need and where I live.
+**Story:** As a customer, I want to filter professionals by service, public name, and neighborhood so that results match who I am looking for, what I need, and where I live.
 
 **Acceptance criteria:**
 
 - When an active service is selected or a known spelling variation resolves to one, the public API returns only published professionals offering that service and serving the selected neighborhood or all Joinville.
-- A selected/resolved service is required to return professionals; an unmatched term returns no professionals plus safe related-service suggestions. Neighborhood is the only optional profile filter.
+- An optional professional-name filter matches a case-insensitive part of the published display name without storing that name in the anonymous search event.
+- A selected/resolved service is required to return professionals; an unmatched term returns no professionals plus safe related-service suggestions. Professional name and neighborhood are optional profile filters.
 - Indexed PostgreSQL queries meet the agreed small-catalog response target without an external search engine.
 - Common known spelling variations are normalized in application code.
 - No-result responses suggest a related active service or changing the neighborhood; they never create a lead.

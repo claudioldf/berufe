@@ -1,22 +1,27 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { Neighborhood, Service } from "~/types";
+import type { Neighborhood, Service, ServiceSearchPayload } from "~/types";
 
 withDefaults(
   defineProps<{
     services: Service[];
     neighborhoods: Neighborhood[];
     compact?: boolean;
+    showProfessionalName?: boolean;
   }>(),
   {
     compact: false,
+    showProfessionalName: false,
   },
 );
 
 const emit = defineEmits<{
-  submit: [payload: { service: string; neighborhood: string }];
+  submit: [payload: ServiceSearchPayload];
 }>();
 
+const professionalName = defineModel<string>("professionalName", {
+  default: "",
+});
 const service = defineModel<string>("service", { default: "" });
 const neighborhood = defineModel<string>("neighborhood", { default: "all" });
 const canSubmit = computed(() => service.value.trim().length > 0);
@@ -25,6 +30,7 @@ function submit() {
   const normalizedService = service.value.trim();
   if (!normalizedService) return;
   emit("submit", {
+    professionalName: professionalName.value.trim(),
     service: normalizedService,
     neighborhood: neighborhood.value,
   });
@@ -37,10 +43,41 @@ function submit() {
     :class="{ 'service-search--compact': compact }"
     @submit.prevent="submit"
   >
+    <div
+      v-if="showProfessionalName"
+      class="service-search__field service-search__field--professional"
+    >
+      <UIcon name="i-lucide-user-search" />
+      <label>
+        <span>O que você precisa?</span>
+        <UInput
+          v-model="professionalName"
+          class="service-search__input"
+          name="professional_name"
+          type="search"
+          autocomplete="off"
+          maxlength="70"
+          placeholder="Ex.: preciso de um pintor para pintar 3 quartos no bairro América em Joinville"
+          :ui="{
+            base: 'p-0 border-0 ring-0 shadow-none bg-transparent focus-visible:outline-none focus-visible:ring-0',
+          }"
+        />
+      </label>
+    </div>
+
+    <div
+      v-if="showProfessionalName"
+      class="service-search__or-divider"
+      role="separator"
+      aria-label="Ou"
+    >
+      <span aria-hidden="true">OU</span>
+    </div>
+
     <div class="service-search__field service-search__field--service">
       <UIcon name="i-lucide-search" />
       <label>
-        <span>O que você precisa?</span>
+        <span>Tipo do Serviço</span>
         <UInputMenu
           v-model="service"
           v-model:search-term="service"
@@ -154,6 +191,28 @@ function submit() {
     min-width: 0;
     padding: 4px 11px;
   }
+  &__field--professional {
+    grid-column: 1 / -1;
+    padding-block: 8px 12px;
+  }
+  &__or-divider {
+    display: flex;
+    grid-column: 1 / -1;
+    align-items: center;
+    gap: 12px;
+    margin: 0 11px 10px;
+    color: var(--ink-soft);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+  }
+  &__or-divider::before,
+  &__or-divider::after {
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+    content: "";
+  }
   &__field > svg {
     color: var(--color-brand);
     font-size: 1.15rem;
@@ -250,6 +309,9 @@ function submit() {
     }
     &__field {
       padding: 10px 12px;
+    }
+    &__field--professional {
+      padding-bottom: 12px;
     }
     &__field--location {
       border-top: 1px solid var(--line);

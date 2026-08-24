@@ -132,13 +132,23 @@ test("visitor can search, open a profile, and inspect the WhatsApp redirect", as
     ),
   ).toHaveCount(0);
 
+  const professionalNameInput = page.getByRole("searchbox", {
+    name: "Nome do profissional",
+  });
+  await professionalNameInput.fill("Marcos");
   await fillServiceSearch(page, "Eletricista");
+  await expect(professionalNameInput).toHaveValue("Marcos");
   await page.getByRole("button", { name: "Encontrar" }).click();
-  await expect(page).toHaveURL(/\/encontrar\?servico=eletricista&bairro=all$/);
+  await expect(page).toHaveURL(
+    /\/encontrar\?nome=Marcos&servico=eletricista&bairro=all$/,
+  );
   await expect(
     page.getByText(
       /\d+ (?:profissional encontrado|profissionais encontrados)/i,
     ),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Marcos Alves", { exact: true }).first(),
   ).toBeVisible();
   const profileResponsePromise = page.waitForResponse(
     (response) =>

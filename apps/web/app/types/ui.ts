@@ -11,6 +11,7 @@ export interface LegalDocumentSection {
 export type AppRole = "visitor" | "professional" | "admin";
 
 export interface ServiceSearchPayload {
+  professionalName: string;
   service: string;
   neighborhood: string;
 }

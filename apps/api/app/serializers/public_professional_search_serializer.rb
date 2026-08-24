@@ -10,6 +10,7 @@ class PublicProfessionalSearchSerializer
     {
       query: {
         normalized_term: result.normalized_term,
+        professional_name: result.professional_name,
         service: result.service && PublicServiceSuggestionSerializer.new(result.service).as_json,
         neighborhood: result.neighborhood && {
           code: result.neighborhood.code,

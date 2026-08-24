@@ -674,7 +674,7 @@ paths:
   /api/v1/public/professional-searches:
     post:
       operationId: searchPublicProfessionals
-      summary: Search publicly eligible professionals by service and optional Joinville neighborhood
+      summary: Search publicly eligible professionals by service, optional name, and Joinville neighborhood
       tags:
         - Public discovery
       security: []
@@ -704,7 +704,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "422":
-          description: The service term or optional neighborhood is malformed or unavailable.
+          description: The service term, optional professional name, or optional neighborhood is malformed or unavailable.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
@@ -5801,6 +5801,12 @@ components:
           type: string
           minLength: 1
           maxLength: 80
+        professional_name:
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 70
         neighborhood_code:
           type:
             - string
@@ -5842,6 +5848,7 @@ components:
           additionalProperties: false
           required:
             - normalized_term
+            - professional_name
             - service
             - neighborhood
           properties:
@@ -5849,6 +5856,12 @@ components:
               type: string
               minLength: 1
               maxLength: 80
+            professional_name:
+              type:
+                - string
+                - "null"
+              minLength: 1
+              maxLength: 70
             service:
               oneOf:
                 - $ref: "#/components/schemas/PublicServiceSuggestion"

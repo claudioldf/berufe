@@ -162,12 +162,13 @@ describe("public discovery API", () => {
     expect(card).not.toHaveProperty("whatsapp");
   });
 
-  it("submits a service and optional neighborhood through the typed search operation", async () => {
+  it("submits optional name and neighborhood filters through the typed search operation", async () => {
     const client = apiClientReturning({
       data: {
         data: {
           query: {
             normalized_term: "eletrica",
+            professional_name: "Ana",
             service: {
               id: contractCard.matching_service!.id,
               name: "Eletricista",
@@ -193,10 +194,12 @@ describe("public discovery API", () => {
 
     const result = await searchPublicProfessionals(client, {
       service: "Elétrica",
+      professionalName: "Ana",
       neighborhoodCode: "america",
     });
 
     expect(result.normalizedTerm).toBe("eletrica");
+    expect(result.professionalName).toBe("Ana");
     expect(result.professionals[0]?.matchingService?.name).toBe("Eletricista");
     expect(result.interaction).toEqual({
       searchEventId: "8d09847f-14d8-4ef7-80ea-8be6e9eb6d81",
@@ -205,7 +208,13 @@ describe("public discovery API", () => {
     expect(result.totalCount).toBe(1);
     expect(client.POST).toHaveBeenCalledWith(
       "/api/v1/public/professional-searches",
-      { body: { service: "Elétrica", neighborhood_code: "america" } },
+      {
+        body: {
+          service: "Elétrica",
+          professional_name: "Ana",
+          neighborhood_code: "america",
+        },
+      },
     );
   });
 

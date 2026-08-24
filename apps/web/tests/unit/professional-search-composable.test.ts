@@ -58,7 +58,11 @@ describe("professional search composable", () => {
     expect(search.status.value).toBe("idle");
     expect(apiClient.POST).not.toHaveBeenCalled();
 
-    await search.submitSearch({ service: "   ", neighborhood: "all" });
+    await search.submitSearch({
+      professionalName: "",
+      service: "   ",
+      neighborhood: "all",
+    });
 
     expect(useRoute().query.servico).toBeUndefined();
     expect(apiClient.POST).not.toHaveBeenCalled();
@@ -70,6 +74,7 @@ describe("professional search composable", () => {
         data: {
           query: {
             normalized_term: "eletricista",
+            professional_name: "Ana Souza",
             service: {
               id: service.id,
               name: service.name,
@@ -118,6 +123,12 @@ describe("professional search composable", () => {
       error: undefined,
       response: new Response(null),
     });
+    await useRouter().replace(
+      "/encontrar?servico=eletricista&bairro=america&nome=Ana%20Souza",
+    );
+    await flushPromises();
+    await clearNuxtData("public-professional-search");
+    vi.clearAllMocks();
 
     const search = await useProfessionalSearch({
       services: [service],
@@ -125,6 +136,7 @@ describe("professional search composable", () => {
     });
 
     expect(search.hasSearchTerm.value).toBe(true);
+    expect(search.professionalNameInput.value).toBe("Ana Souza");
     expect(search.isSearching.value).toBe(false);
     expect(search.error.value).toBeUndefined();
     expect(
@@ -134,13 +146,20 @@ describe("professional search composable", () => {
     expect(search.relatedServices.value).toEqual([]);
     expect(apiClient.POST).toHaveBeenCalledWith(
       "/api/v1/public/professional-searches",
-      { body: { service: "eletricista", neighborhood_code: "america" } },
+      {
+        body: {
+          service: "eletricista",
+          professional_name: "Ana Souza",
+          neighborhood_code: "america",
+        },
+      },
     );
     expect(apiClient.POST).toHaveBeenCalledOnce();
 
     await useRouter().replace("/encontrar");
 
     expect(search.hasSearchTerm.value).toBe(false);
+    expect(search.professionalNameInput.value).toBe("");
     expect(search.serviceInput.value).toBe("");
     expect(search.results.value).toEqual([]);
     expect(search.interaction.value).toBeNull();
@@ -172,6 +191,7 @@ describe("professional search composable", () => {
     });
 
     await search.submitSearch({
+      professionalName: "  Ana Souza  ",
       service: "  ELÉTRICA!  ",
       neighborhood: "all",
     });
@@ -179,6 +199,7 @@ describe("professional search composable", () => {
     expect(useRoute().query).toMatchObject({
       servico: "eletricista",
       bairro: "all",
+      nome: "Ana Souza",
     });
   });
 

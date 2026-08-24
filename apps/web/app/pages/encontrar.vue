@@ -20,8 +20,10 @@ if (catalogError.value || !catalog.value) {
 const services = catalog.value.services;
 const neighborhoods = catalog.value.neighborhoods;
 const {
+  professionalNameInput,
   serviceInput,
   neighborhoodInput,
+  professionalNameQuery,
   serviceQuery,
   hasSearchTerm,
   selectedService,
@@ -114,11 +116,13 @@ function announceContact() {
           }}
         </p>
         <PublicServiceSearch
+          v-model:professional-name="professionalNameInput"
           v-model:service="serviceInput"
           v-model:neighborhood="neighborhoodInput"
           :services="services"
           :neighborhoods="neighborhoods"
           compact
+          show-professional-name
           @submit="submitSearch"
         />
       </DesignSystemContainer>
@@ -132,6 +136,10 @@ function announceContact() {
       <DesignSystemContainer v-else class="finder__layout">
         <aside class="finder__aside">
           <p>Filtros</p>
+          <div v-if="professionalNameQuery" class="filter-block">
+            <strong>Nome</strong>
+            <span>{{ professionalNameQuery }}</span>
+          </div>
           <div class="filter-block">
             <strong>Serviço</strong>
             <span>{{ selectedService?.name ?? serviceQuery }}</span>
@@ -217,8 +225,13 @@ function announceContact() {
               /></span>
               <h2>Não encontramos um <br />profissional na sua região.</h2>
               <p>
-                Tente buscar em outra região próxima ou por outro serviço de que
-                precise.
+                <template v-if="professionalNameQuery">
+                  Confira o nome informado ou tente buscar sem esse filtro.
+                </template>
+                <template v-else>
+                  Tente buscar em outra região próxima ou por outro serviço de
+                  que precise.
+                </template>
               </p>
               <div class="empty-results__suggestions">
                 <NuxtLink

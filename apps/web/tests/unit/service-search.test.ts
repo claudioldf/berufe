@@ -22,6 +22,23 @@ const InputMenuStub = defineComponent({
   `,
 });
 
+const InputStub = defineComponent({
+  name: "UInput",
+  inheritAttrs: false,
+  props: {
+    modelValue: { type: String, default: "" },
+    name: { type: String, default: undefined },
+  },
+  emits: ["update:modelValue"],
+  template: `
+    <input
+      :name="name"
+      :value="modelValue"
+      @input="$emit('update:modelValue', $event.target.value)"
+    >
+  `,
+});
+
 const ButtonStub = defineComponent({
   name: "UButton",
   props: {
@@ -32,6 +49,7 @@ const ButtonStub = defineComponent({
 });
 
 const stubs = {
+  UInput: InputStub,
   UInputMenu: InputMenuStub,
   UButton: ButtonStub,
   UIcon: true,
@@ -70,6 +88,9 @@ describe("service search", () => {
     expect(wrapper.get('input[name="service"]').attributes("required")).toBe(
       "",
     );
+    expect(wrapper.find('input[name="professional_name"]').exists()).toBe(
+      false,
+    );
 
     await wrapper.get("form").trigger("submit");
 
@@ -93,7 +114,31 @@ describe("service search", () => {
     await wrapper.get("form").trigger("submit");
 
     expect(wrapper.emitted("submit")?.[0]?.[0]).toEqual({
+      professionalName: "",
       service: "troca de chuveiro",
+      neighborhood: "all",
+    });
+  });
+
+  it("shows the full-width professional-name filter when requested and emits its trimmed value", async () => {
+    const wrapper = await mountSuspended(ServiceSearch, {
+      props: { services, neighborhoods, showProfessionalName: true },
+      global: { stubs },
+    });
+
+    const nameField = wrapper.get(".service-search__field--professional");
+    expect(nameField.text()).toContain("O que você precisa?");
+    expect(wrapper.get('[role="separator"]').text()).toBe("OU");
+
+    await nameField
+      .get('input[name="professional_name"]')
+      .setValue("  Ana Souza  ");
+    await wrapper.get('input[name="service"]').setValue("Eletricista");
+    await wrapper.get("form").trigger("submit");
+
+    expect(wrapper.emitted("submit")?.[0]?.[0]).toEqual({
+      professionalName: "Ana Souza",
+      service: "Eletricista",
       neighborhood: "all",
     });
   });
