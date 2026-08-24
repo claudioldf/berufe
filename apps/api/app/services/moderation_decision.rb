@@ -187,15 +187,19 @@ class ModerationDecision
     case attributes[:action]
     when "approved"
       require_status!(item.status, "pending_review")
-      public_key = publisher.publish(target: item, target_type: "portfolio_item")
-      created_public_keys << public_key
-      item.update!(status: "approved", public_key:, reviewed_at: Time.current, rejection_reason: nil)
+      item.update!(status: "approved", reviewed_at: Time.current, rejection_reason: nil)
     when "rejected"
       require_status!(item.status, "pending_review")
-      item.update!(status: "rejected", reviewed_at: Time.current, rejection_reason: attributes[:reason])
+      public_keys_to_delete << item.public_key if item.public_key.present?
+      item.update!(
+        status: "rejected",
+        public_key: nil,
+        reviewed_at: Time.current,
+        rejection_reason: attributes[:reason]
+      )
     when "hidden"
       require_status!(item.status, "approved")
-      public_keys_to_delete << item.public_key
+      public_keys_to_delete << item.public_key if item.public_key.present?
       item.update!(status: "hidden", public_key: nil, hidden_at: Time.current)
     when "restored"
       require_status!(item.status, "hidden")

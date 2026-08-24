@@ -26,19 +26,26 @@ RSpec.describe "Portfolio moderation" do
   let(:context) { AdminActionContext.new(admin_user_id: admin.id, request_id: "portfolio-moderation") }
   let(:item) { create_item }
 
-  it "publishes the approved image while preserving service and deterministic order" do
+  it "keeps the work public while approval only removes it from the pending queue" do
+    item
     older = create_item(title: "Trabalho anterior", submitted_at: 1.day.ago)
     make_profile_publicly_eligible(profile)
+
+    expect(public_portfolio_ids).to eq([item.id, older.id])
+    expect(pending_queue_ids).to contain_exactly(item.id, older.id)
 
     decide(item, "approved")
     decide(older, "approved")
 
     expect(item.reload).to have_attributes(
       status: "approved",
-      public_key: public_key,
+      public_key: nil,
       service: service,
       rejection_reason: nil
     )
+    expect(publisher).not_to have_received(:publish)
+    expect(pending_queue_ids).to be_empty
+    expect(public_portfolio_ids).to eq([item.id, older.id])
     expect(PortfolioItem.publicly_visible.newest_first.pluck(:id)).to eq([item.id, older.id])
     projection = ProfessionalWorkspaceSerializer.new(profile.reload).as_json
     approved_item = projection.dig(:profile, :portfolio_items).find { |entry| entry[:id] == item.id }
@@ -50,6 +57,10 @@ RSpec.describe "Portfolio moderation" do
   end
 
   it "keeps rejection guidance private and excludes rejected work from public queries" do
+    item
+    make_profile_publicly_eligible(profile)
+    expect(public_portfolio_ids).to eq([item.id])
+
     decide(item, "rejected", reason: "A imagem está desfocada e precisa ser substituída.")
 
     expect(item.reload).to have_attributes(
@@ -57,6 +68,8 @@ RSpec.describe "Portfolio moderation" do
       public_key: nil,
       rejection_reason: "A imagem está desfocada e precisa ser substituída."
     )
+    expect(public_portfolio_ids).to be_empty
+    expect(pending_queue_ids).to be_empty
     expect(PortfolioItem.publicly_visible).not_to include(item)
     owner_item = ProfessionalWorkspaceSerializer.new(profile.reload).as_json.dig(:profile, :portfolio_items).sole
     expect(owner_item).to include(
@@ -68,14 +81,14 @@ RSpec.describe "Portfolio moderation" do
 
   it "hides public work immediately and restores it through a new public object" do
     decide(item, "approved")
-    approved_key = item.reload.public_key
+    expect(item.reload.public_key).to be_nil
     allow(publisher).to receive(:publish).and_return("moderation/portfolio_item/#{item.id}/restored.png")
 
     decide(item, "hidden", reason: "Conteúdo ocultado após uma revisão operacional.")
 
     expect(item.reload).to have_attributes(status: "hidden", public_key: nil)
     expect(PortfolioItem.publicly_visible).not_to include(item)
-    expect(publisher).to have_received(:delete).with(approved_key)
+    expect(publisher).not_to have_received(:delete)
 
     decide(item, "restored")
     expect(item.reload).to have_attributes(
@@ -85,13 +98,14 @@ RSpec.describe "Portfolio moderation" do
     expect(ModerationAction.order(:created_at).pluck(:action)).to eq(%w[approved hidden restored])
   end
 
-  it "removes an orphaned public object when the atomic audit append fails" do
+  it "rolls back approval when the atomic audit append fails" do
     allow(ModerationAction).to receive(:create!).and_raise(ActiveRecord::RecordInvalid.new(ModerationAction.new))
 
     expect { decide(item, "approved") }.to raise_error(ModerationDecision::Invalid)
 
     expect(item.reload).to have_attributes(status: "pending_review", public_key: nil)
-    expect(publisher).to have_received(:delete).with(public_key)
+    expect(publisher).not_to have_received(:publish)
+    expect(publisher).not_to have_received(:delete)
   end
 
   private
@@ -103,6 +117,14 @@ RSpec.describe "Portfolio moderation" do
       action:,
       reason:
     )
+  end
+
+  def public_portfolio_ids
+    PublicProfessionalProfileSerializer.new(profile.reload).as_json.fetch(:portfolio).pluck(:id)
+  end
+
+  def pending_queue_ids
+    ModerationQueueQuery.new.call(type: "portfolio_item").fetch(:items).pluck(:target_id)
   end
 
   def create_selected_service

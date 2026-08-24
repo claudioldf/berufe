@@ -25,7 +25,7 @@ RSpec.describe "Public professional profiles", type: :request, openapi: true do
     )
   end
 
-  it "returns the complete approved projection and a profile-bound search interaction" do
+  it "returns the complete public projection and a profile-bound search interaction" do
     profile = create_published_profile(
       phone: "+5547999997701",
       name: "Ana Souza Pública",
@@ -35,7 +35,18 @@ RSpec.describe "Public professional profiles", type: :request, openapi: true do
       youtube: "https://www.youtube.com/@berufe-ana"
     )
     photo = profile.published_photo
-    approved_portfolio = create_portfolio(profile, status: "approved", service: primary_service)
+    approved_portfolio = create_portfolio(
+      profile,
+      status: "approved",
+      service: primary_service,
+      submitted_at: 2.minutes.ago
+    )
+    pending_portfolio = create_portfolio(
+      profile,
+      status: "pending_review",
+      service: additional_service,
+      submitted_at: 1.minute.ago
+    )
     create_portfolio(profile, status: "hidden", service: additional_service)
     create_identity(profile, status: "approved")
     create_identity(profile, status: "pending_review")
@@ -103,6 +114,17 @@ RSpec.describe "Public professional profiles", type: :request, openapi: true do
       include("type" => "identity", "label" => "Identidade verificada")
     )
     expect(professional.fetch("portfolio")).to eq([
+      {
+        "id" => pending_portfolio.id,
+        "title" => pending_portfolio.title,
+        "description" => pending_portfolio.description,
+        "service" => {
+          "id" => additional_service.id,
+          "name" => additional_service.name,
+          "slug" => additional_service.slug
+        },
+        "image_url" => PublicPortfolioImageUrl.call(pending_portfolio)
+      },
       {
         "id" => approved_portfolio.id,
         "title" => approved_portfolio.title,
@@ -274,12 +296,12 @@ RSpec.describe "Public professional profiles", type: :request, openapi: true do
     )
   end
 
-  def create_portfolio(profile, status:, service:)
+  def create_portfolio(profile, status:, service:, submitted_at: Time.current)
     upload = create_upload(profile, purpose: "portfolio_image", content_type: "image/png")
     profile.portfolio_items.create!(
       media_upload: upload,
       service:,
-      title: "Quadro organizado #{status}",
+      title: "Quadro organizado",
       description: "Organização e identificação do quadro.",
       status:,
       private_key: upload.sanitized_key,
@@ -288,7 +310,7 @@ RSpec.describe "Public professional profiles", type: :request, openapi: true do
       byte_size: 100,
       width: 640,
       height: 380,
-      submitted_at: Time.current,
+      submitted_at:,
       reviewed_at: (Time.current if status == "approved")
     )
   end
