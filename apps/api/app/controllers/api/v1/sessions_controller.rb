@@ -5,7 +5,8 @@ module Api
     class SessionsController < BaseController
       before_action :prevent_caching
       before_action :authenticate_application_session!
-      rescue_from ActiveRecord::ActiveRecordError do
+      rescue_from ActiveRecord::ActiveRecordError do |error|
+        report_service_error(error)
         render_api_error(
           code: "session_unavailable",
           message: "Não foi possível consultar sua sessão agora.",

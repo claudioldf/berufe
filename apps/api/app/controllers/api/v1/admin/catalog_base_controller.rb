@@ -61,7 +61,8 @@ module Api
           )
         end
 
-        def render_catalog_unavailable(*)
+        def render_catalog_unavailable(error)
+          report_service_error(error)
           render_api_error(
             code: "catalog_unavailable",
             message: "Catálogo temporariamente indisponível.",

@@ -3,21 +3,22 @@ import LegalDocument from "~/components/legal/LegalDocument.vue";
 import type { LegalDocumentSection } from "~/types";
 
 const sections: LegalDocumentSection[] = [
-  { id: "escopo", label: "Escopo e responsáveis" },
-  { id: "dados", label: "Dados que tratamos" },
-  { id: "finalidades", label: "Como usamos os dados" },
-  { id: "visibilidade", label: "Dados públicos e privados" },
-  { id: "fornecedores", label: "Fornecedores" },
-  { id: "whatsapp", label: "WhatsApp" },
-  { id: "retencao", label: "Retenção e segurança" },
+  { id: "responsavel", label: "Responsável e alcance" },
+  { id: "dados", label: "Dados e fontes" },
+  { id: "finalidades", label: "Finalidades e bases legais" },
+  { id: "visibilidade", label: "Visibilidade dos dados" },
+  { id: "indicacoes", label: "Perfis por indicação" },
+  { id: "fornecedores", label: "Fornecedores e transferências" },
+  { id: "navegacao", label: "Navegação e armazenamento" },
+  { id: "retencao", label: "Retenção e exclusão" },
+  { id: "seguranca", label: "Segurança e automação" },
   { id: "direitos", label: "Direitos e contato" },
 ];
 
 useSeoMeta({
   title: "Política de Privacidade",
-  description:
-    "Entenda como a Berufe trata dados de profissionais e visitantes.",
-  robots: "noindex, nofollow",
+  description: "Como a Berufe trata e protege dados pessoais.",
+  robots: "index, follow",
 });
 </script>
 
@@ -25,299 +26,365 @@ useSeoMeta({
   <LegalDocument
     eyebrow="Privacidade desde o primeiro dado"
     title="Política de Privacidade"
-    description="Explicamos quais dados fazem parte da Berufe, por que precisamos deles e como os protegemos."
-    version="0.3 · minuta do MVP"
-    updated-at="20 de agosto de 2026"
+    description="Este aviso explica quais dados pessoais a Berufe trata, para quais finalidades, com quem compartilha e como exercer seus direitos."
+    version="1.0"
+    effective-at="1º de agosto de 2026"
+    updated-at="23 de agosto de 2026"
     :sections="sections"
   >
     <div class="legal-lead">
       <p>
-        A Berufe é uma rede local para profissionais de reforma e manutenção
-        residencial. Profissionais criam perfis e apresentam evidências;
-        visitantes pesquisam informações aprovadas e escolhem com quem conversar
-        diretamente.
+        A controladora é <strong>Rising Consultoria de Software LTDA.</strong>,
+        CNPJ <strong>36.443.360/0001-05</strong>, Rua Princesa Isabel, nº 213 –
+        Sala 1, box 682, Centro, CENTRAL Cowork, Joinville/SC, CEP 89201-270.
       </p>
       <p>
-        Esta Política deve ser lida junto com os
+        A Berufe atua como agente de tratamento de pequeno porte e disponibiliza
+        a Equipe de Suporte como canal de privacidade em
+        <a href="mailto:suporte@berufe.com.br">suporte@berufe.com.br</a>. Esta
+        Política deve ser lida com os
         <NuxtLink to="/termos-de-uso">Termos de Uso</NuxtLink>.
       </p>
     </div>
 
-    <section id="escopo" class="legal-section">
-      <h2>1. Escopo e responsáveis</h2>
+    <section id="responsavel" class="legal-section">
+      <h2>1. Responsável e alcance</h2>
       <p>
-        Esta Política abrange o cadastro e acesso de profissionais, perfil
-        público, catálogo de serviços, busca, portfólio, verificação de
-        identidade, conexões entre profissionais, perfis básicos criados por
-        indicação, moderação, compartilhamento de perfil, criação e
-        compartilhamento de orçamentos e contato pelo WhatsApp.
+        Esta Política abrange profissionais cadastrados, pessoas incluídas por
+        indicação, clientes presentes em orçamentos, autores de recomendações,
+        visitantes das páginas públicas e administradores autorizados.
       </p>
       <p>
-        A razão social, o CNPJ, o endereço e o canal oficial de privacidade
-        serão inseridos antes do início da operação com dados reais.
+        Ela se aplica ao cadastro e acesso, perfis, busca, portfólio,
+        verificação de identidade, conexões, moderação, WhatsApp, orçamentos,
+        acompanhamento de serviços, recomendações, suporte, segurança e medição
+        agregada do produto.
       </p>
-      <div class="legal-note">
-        <UIcon name="i-lucide-info" />
-        <p>
-          <strong>Quem está abrangido:</strong> profissionais cadastrados,
-          visitantes das páginas públicas e administradores autorizados.
-        </p>
-      </div>
     </section>
 
     <section id="dados" class="legal-section">
-      <h2>2. Dados que tratamos</h2>
-      <h3>2.1. Acesso e segurança</h3>
+      <h2>2. Dados pessoais e fontes</h2>
+      <h3>2.1. Cadastro, acesso e segurança</h3>
       <p>
-        Para o acesso profissional, tratamos o número de telefone normalizado, o
-        estado do desafio OTP do Infobip, a identidade confirmada pelo provedor
-        e controles temporários contra abuso. Depois da confirmação, a Rails
-        cria uma sessão própria e envia ao navegador apenas um cookie HttpOnly;
-        tokens do Infobip não ficam no navegador.
-      </p>
-      <p>
-        Administradores usam credenciais individuais de e-mail e senha. Também
-        registramos aceite dos documentos legais, criação da conta, último
-        acesso, revogação e dados técnicos mínimos de segurança.
+        Tratamos telefone, confirmação e estado do desafio OTP, datas de
+        cadastro e acesso, versões aceitas dos documentos, sessão da aplicação e
+        registros técnicos contra abuso. Administradores usam e-mail, senha
+        protegida por hash, eventos de acesso e limites de tentativa.
       </p>
 
-      <h3>2.2. Perfil e evidências</h3>
+      <h3>2.2. Perfil, portfólio e verificação</h3>
       <p>
-        O profissional pode fornecer nome de exibição, foto, apresentação,
-        experiência declarada, WhatsApp, serviços, bairros atendidos, imagens e
-        descrições de portfólio e conexões com outros profissionais já
-        cadastrados.
+        O profissional pode fornecer nome de exibição, data de nascimento, foto,
+        apresentação, experiência, WhatsApp, redes sociais, serviços, bairros,
+        imagens e descrições de trabalhos e conexões profissionais.
       </p>
       <p>
-        Um profissional com identidade aprovada também pode fornecer nome,
-        telefone profissional, serviços e área de atendimento de uma pessoa que
-        ainda não usa a Berufe. Registramos quem fez a indicação e quando
-        confirmou ter autorização para compartilhar esses dados. Criamos uma
-        conta não registrada e não verificada e um perfil básico, que o titular
-        pode reivindicar confirmando o próprio telefone e concluindo o cadastro.
-      </p>
-      <p>
-        A verificação do MVP aceita somente imagem JPEG ou PNG de documento
-        oficial com foto. O arquivo é privado, validado e regenerado antes da
-        análise, acessado apenas por administradores autorizados e nunca exibido
-        no perfil público.
+        Para verificar identidade, recebemos uma imagem JPEG ou PNG de documento
+        oficial com foto e a data declarada. O arquivo é privado, regenerado
+        para remover metadados desnecessários e acessado somente por
+        administradores autorizados, com registro do acesso.
       </p>
 
-      <h3>2.3. Orçamentos</h3>
+      <h3>2.3. Indicações profissionais</h3>
       <p>
-        Um orçamento pode conter nome do cliente, descrição do serviço, itens,
-        quantidades, valores, desconto, validade e observações. O rascunho é
-        privado do profissional. Depois do compartilhamento, a apresentação ao
-        cliente fica disponível somente a quem possuir o link longo e difícil de
-        adivinhar.
+        Um profissional elegível pode informar nome, telefone, serviços e
+        cobertura de outra pessoa. Registramos quem indicou, a conexão, o
+        contexto opcional e a data em que declarou poder compartilhar os dados.
       </p>
 
-      <h3>2.4. Navegação e suporte</h3>
+      <h3>2.4. Clientes, orçamentos e recomendações</h3>
       <p>
-        Registramos de forma mínima e agregada os termos de busca, serviço,
-        área, quantidade de resultados, abertura de perfil e início de contato
-        no WhatsApp. Mensagens enviadas voluntariamente ao suporte podem conter
-        o endereço de resposta e o conteúdo informado pela pessoa.
+        Um profissional pode cadastrar nome, WhatsApp e e-mail do cliente. O
+        orçamento pode incluir serviço, endereço, data, itens, quantidades,
+        valores, desconto, validade, observações, decisão do cliente, mensagens,
+        conclusão, pendências e cancelamento.
+      </p>
+      <p>
+        Para recomendações, tratamos e-mail ou sua impressão criptográfica,
+        token temporário, nome de exibição, texto, confirmação do serviço e
+        autorização de publicação.
+      </p>
+
+      <h3>2.5. Navegação e suporte</h3>
+      <p>
+        Registramos termo de busca normalizado, serviço, bairro, quantidade de
+        resultados, abertura de perfil e início de contato no WhatsApp, sem
+        identificador persistente do visitante. Solicitações de suporte incluem
+        o contato, o conteúdo enviado e os registros necessários ao atendimento.
+      </p>
+      <p>
+        Os dados vêm do próprio titular, de profissionais que cadastram clientes
+        ou indicações, de administradores e da geração automática estritamente
+        necessária ao uso e à segurança da plataforma.
       </p>
     </section>
 
     <section id="finalidades" class="legal-section">
-      <h2>3. Como e por que usamos os dados</h2>
-      <p>Tratamos dados apenas na medida necessária para:</p>
-      <ul>
-        <li>
-          confirmar o telefone, administrar a sessão e proteger as contas;
-        </li>
-        <li>criar, revisar, publicar e manter perfis e portfólios;</li>
-        <li>conferir identidade e moderar o conteúdo submetido;</li>
-        <li>permitir busca por serviço e região com ordenação explicável;</li>
-        <li>
-          criar perfis básicos por indicação, permitir sua reivindicação e
-          confirmar conexões entre profissionais;
-        </li>
-        <li>
-          abrir o compartilhamento de perfil ou o contato solicitado pela
-          pessoa;
-        </li>
-        <li>criar, manter, apresentar e compartilhar orçamentos protegidos;</li>
-        <li>atender suporte, cumprir obrigações legais e defender direitos;</li>
-        <li>medir de forma agregada se o MVP atende às necessidades locais.</li>
-      </ul>
+      <h2>3. Finalidades e bases legais</h2>
+      <div class="legal-table-wrap">
+        <table class="legal-table">
+          <thead>
+            <tr>
+              <th>Finalidade</th>
+              <th>Base legal principal</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Conta, sessão, perfil, orçamento e serviço solicitado.</td>
+              <td>Execução de contrato ou procedimentos preliminares.</td>
+            </tr>
+            <tr>
+              <td>
+                Segurança, prevenção a abuso, suporte e melhoria agregada.
+              </td>
+              <td>Legítimo interesse, necessidade e proteção de direitos.</td>
+            </tr>
+            <tr>
+              <td>Verificação manual de identidade e prevenção a fraude.</td>
+              <td>Prevenção à fraude e segurança do titular.</td>
+            </tr>
+            <tr>
+              <td>Perfil profissional básico criado por indicação.</td>
+              <td>Legítimo interesse, com transparência e oposição.</td>
+            </tr>
+            <tr>
+              <td>Publicação de recomendação de cliente.</td>
+              <td>Consentimento específico, comprovável e revogável.</td>
+            </tr>
+            <tr>
+              <td>Obrigações, auditoria, incidentes e defesa.</td>
+              <td>Obrigação legal e exercício regular de direitos.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
       <p>
-        As bases legais aplicáveis serão definidas conforme a operação e a LGPD.
-        O aceite geral desta Política não será tratado como consentimento para
-        toda finalidade.
+        A leitura ou aceitação geral desta Política não é usada como
+        consentimento para todas as finalidades. Quando dependermos de
+        consentimento, a autorização será separada e poderá ser retirada.
       </p>
     </section>
 
     <section id="visibilidade" class="legal-section">
-      <h2>4. O que fica público e o que permanece protegido</h2>
+      <h2>4. Visibilidade e destinatários</h2>
       <div class="legal-table-wrap">
         <table class="legal-table">
           <thead>
             <tr>
               <th>Classificação</th>
-              <th>Exemplos</th>
-              <th>Quem acessa</th>
+              <th>Dados</th>
+              <th>Acesso</th>
             </tr>
           </thead>
           <tbody>
             <tr>
               <td><strong>Público</strong></td>
               <td>
-                Perfil completo publicado ou perfil básico por indicação, nome,
-                serviços, região, foto, experiência declarada, portfólio, selos
-                específicos e conexões confirmadas entre perfis públicos e
-                ativos, conforme o tipo de perfil.
+                Perfil publicado ou indicado, nome, serviços, cobertura, foto,
+                apresentação, experiência, portfólio, selos, conexões e
+                recomendações autorizadas.
               </td>
-              <td>
-                Qualquer visitante e, quando aplicável, mecanismos de busca.
-              </td>
+              <td>Qualquer visitante e mecanismos de busca.</td>
+            </tr>
+            <tr>
+              <td><strong>Por link</strong></td>
+              <td>Orçamento, decisões e acompanhamento do serviço.</td>
+              <td>Quem possuir o link válido, sem indexação.</td>
             </tr>
             <tr>
               <td><strong>Privado</strong></td>
               <td>
-                Número de telefone em texto, sessão, solicitações de conexão
-                pendentes ou recusadas, rascunhos, dados de cliente em
-                orçamentos e motivos de moderação. O telefone profissional pode
-                ser usado pelo botão de WhatsApp sem ser escrito na página
-                pública.
+                Conta, telefone em texto, sessão, rascunhos, clientes,
+                solicitações pendentes, motivos e registros operacionais.
               </td>
-              <td>Titular e equipe autorizada, conforme a necessidade.</td>
-            </tr>
-            <tr>
-              <td><strong>Por link</strong></td>
-              <td>Apresentação compartilhada de um orçamento.</td>
-              <td>
-                Quem possuir o link válido; a página não é indexada nem
-                armazenada em cache compartilhado.
-              </td>
+              <td>Titular e equipe autorizada conforme a necessidade.</td>
             </tr>
             <tr>
               <td><strong>Restrito</strong></td>
-              <td>
-                Imagem usada para verificar identidade, credenciais
-                administrativas e registros de acesso ao arquivo.
-              </td>
+              <td>Documento de identidade e credenciais administrativas.</td>
               <td>Servidor e administradores estritamente autorizados.</td>
             </tr>
           </tbody>
         </table>
       </div>
       <p>
-        Conteúdo novo ou materialmente alterado permanece indisponível enquanto
-        aguarda aprovação. Conteúdo rejeitado, oculto ou ligado a uma conta
-        suspensa não aparece publicamente.
+        Perfil, foto e portfólio elegíveis podem ficar públicos com estado de
+        revisão pendente. Conteúdo rejeitado, oculto, excluído ou ligado a conta
+        suspensa deixa de ser exibido.
       </p>
       <p>
-        Um perfil básico por indicação permanece disponível enquanto houver uma
-        indicação ativa com autorização registrada ou depois que o titular
-        concluir o cadastro. Uma solicitação de conexão pendente nunca é exibida
-        no perfil público.
+        O telefone profissional não é escrito na página, mas é usado para formar
+        o link de WhatsApp quando o visitante escolhe iniciar contato.
+      </p>
+    </section>
+
+    <section id="indicacoes" class="legal-section">
+      <h2>5. Perfis criados por indicação</h2>
+      <p>
+        O perfil indicado informa claramente sua origem e se foi reivindicado. A
+        Berufe usa os dados profissionais fornecidos pelo indicador para
+        apresentar a conexão e facilitar a descoberta local, com medidas de
+        minimização, reivindicação por SMS e oposição.
+      </p>
+      <p>
+        A pessoa indicada pode confirmar o telefone para assumir o perfil ou
+        escrever para
+        <a href="mailto:suporte@berufe.com.br">suporte@berufe.com.br</a> para
+        despublicá-lo, corrigir informações ou solicitar exclusão. A
+        despublicação é tratada imediatamente após a verificação do pedido.
       </p>
     </section>
 
     <section id="fornecedores" class="legal-section">
-      <h2>5. Fornecedores necessários</h2>
-      <p>
-        A Berufe não vende dados pessoais nem comercializa contatos. Para operar
-        o MVP, pode compartilhar apenas os dados necessários com:
-      </p>
+      <h2>6. Fornecedores e transferências internacionais</h2>
+      <p>A Berufe não vende dados nem comercializa contatos. Usa:</p>
       <ul>
         <li>
-          <strong>Railway e PostgreSQL gerenciado:</strong> hospedagem da
-          aplicação web, API, sessões, tarefas e banco de dados;
+          <strong>Railway e PostgreSQL gerenciado:</strong> aplicação, API,
+          banco, sessões, tarefas e logs operacionais na região da Virgínia,
+          Estados Unidos;
         </li>
         <li>
-          <strong>Infobip:</strong> telefone, desafio OTP e resultado da
-          confirmação;
+          <strong>Infobip:</strong> telefone, desafio OTP, entrega e resultado
+          da confirmação;
         </li>
         <li>
-          <strong>Cloudflare R2:</strong> imagens públicas e evidência privada
-          de identidade;
-        </li>
-        <li><strong>Resend:</strong> entrega de e-mails transacionais;</li>
-        <li>
-          <strong>Bugsnag:</strong> falhas técnicas, sem corpos sensíveis de
-          requisição;
+          <strong>Cloudflare R2:</strong> armazenamento de imagens públicas e
+          arquivos privados;
         </li>
         <li>
-          <strong>autoridades e assessores:</strong> quando uma obrigação válida
-          exigir.
+          <strong>Resend:</strong> entrega de e-mails transacionais, com dados
+          de conta e registros operacionais nos Estados Unidos;
+        </li>
+        <li>
+          <strong>Bugsnag/SmartBear:</strong> erros, versão da aplicação, rota
+          normalizada e pilha técnica, sem identificação deliberada do usuário
+          ou corpo da requisição;
+        </li>
+        <li>
+          <strong>autoridades e assessores:</strong> somente quando houver base
+          jurídica e necessidade.
         </li>
       </ul>
       <p>
-        Alguns fornecedores podem processar dados fora do Brasil. Esses fluxos e
-        contratos serão avaliados antes do lançamento.
+        O tratamento pode envolver os Estados Unidos, a Alemanha e outros países
+        constantes das listas vigentes de subprocessadores. A Berufe verifica a
+        base e o mecanismo de cada transferência e adota contratos,
+        cláusulas-padrão da ANPD ou outra garantia válida. Informações e cópia
+        das garantias aplicáveis podem ser solicitadas ao canal de privacidade.
+      </p>
+      <p>
+        WhatsApp, Instagram e YouTube são serviços independentes abertos apenas
+        por ação do usuário e passam a aplicar seus próprios termos e avisos.
       </p>
     </section>
 
-    <section id="whatsapp" class="legal-section">
-      <h2>6. WhatsApp e links externos</h2>
+    <section id="navegacao" class="legal-section">
+      <h2>7. Cookies, armazenamento e medição</h2>
       <p>
-        A Berufe só abre o WhatsApp depois de uma ação da pessoa para falar com
-        um profissional. Também usa o compartilhamento nativo do dispositivo ou
-        abre o WhatsApp quando o profissional decide divulgar seu perfil ou
-        enviar um orçamento.
+        A sessão usa um cookie próprio, seguro, HttpOnly e SameSite, necessário
+        para autenticação. A Berufe não usa cookies publicitários nem cria
+        perfil persistente de navegação.
       </p>
-      <div class="legal-note">
-        <UIcon name="i-lucide-lock-keyhole" />
-        <p>
-          <strong>A Berufe não envia, recebe nem lê as conversas.</strong>
-          Também não confirma negociação, contratação, pagamento ou resultado do
-          serviço.
-        </p>
-      </div>
       <p>
-        Ao sair da Berufe, passam a valer os termos e a política do serviço
-        externo.
+        O navegador pode guardar somente preferências não pessoais, como a
+        variação visual da página inicial. Dados de onboarding permanecem na
+        memória da sessão e as informações salvas são recuperadas do servidor.
+      </p>
+      <p>
+        A busca registra eventos sem identificador persistente. Termos são
+        normalizados, limitados e rejeitados quando parecem conter contato ou
+        outro dado pessoal. Interações repetidas usam somente uma impressão
+        temporária por dez minutos.
       </p>
     </section>
 
     <section id="retencao" class="legal-section">
-      <h2>7. Retenção e segurança</h2>
+      <h2>8. Retenção, despublicação e exclusão</h2>
+      <ul>
+        <li>desafio OTP: até 10 minutos;</li>
+        <li>limites antiabuso de OTP: até 24 horas;</li>
+        <li>
+          sessão profissional: inatividade de 7 dias e limite absoluto de 30
+          dias; sessão administrativa: 30 minutos e 12 horas;
+        </li>
+        <li>eventos normalizados de busca: 90 dias;</li>
+        <li>métricas diárias agregadas: 730 dias;</li>
+        <li>
+          imagem de identidade: 30 dias após aprovação, rejeição ou expiração;
+        </li>
+        <li>
+          convite para recomendação: 14 dias, com limpeza do registro
+          operacional em até 30 dias após conclusão ou expiração;
+        </li>
+        <li>
+          mídia rejeitada, substituída, excluída ou não anexada: até 30 dias;
+        </li>
+        <li>
+          conta, perfil, clientes, orçamentos e serviços: enquanto necessários à
+          relação ou até pedido verificado de encerramento;
+        </li>
+        <li>
+          recomendação: enquanto publicada ou até retirada da autorização;
+        </li>
+        <li>
+          registros mínimos pseudonimizados de aceite, consentimento, fraude,
+          auditoria e defesa: cinco anos.
+        </li>
+      </ul>
       <p>
-        Desafios OTP, sessões e controles contra abuso duram somente pela janela
-        operacional definida. Eventos de descoberta são agregados e os registros
-        mínimos são eliminados conforme a matriz de retenção. Uploads
-        abandonados, rejeitados ou substituídos são limpos; a imagem de
-        identidade é mantida apenas durante análise, contestação e eventual
-        obrigação aplicável.
+        Em pedido verificado, a Berufe despublica o perfil, revoga sessões e
+        links imediatamente e exclui ou anonimiza os dados elegíveis em até 30
+        dias. A exclusão é irreversível; cópias de segurança deixam de conter os
+        dados conforme o ciclo contratado do provedor.
+      </p>
+    </section>
+
+    <section id="seguranca" class="legal-section">
+      <h2>9. Segurança, incidentes e automação</h2>
+      <p>
+        Usamos HTTPS, criptografia em trânsito e em repouso pelos provedores,
+        cookies seguros, autorização no servidor, segregação de arquivos, links
+        temporários, limitação de tentativas, regeneração de imagens, filtros de
+        logs, trilhas administrativas e monitoramento de erros com minimização
+        de dados.
       </p>
       <p>
-        Usamos HTTPS, cookies seguros, autorização no servidor, segundo fator
-        administrativo, arquivos privados, acesso temporário e auditado à
-        evidência de identidade, remoção de metadados desnecessários,
-        identificadores de requisição e registros sem telefones, códigos,
-        sessões ou documentos.
+        Incidentes relevantes são avaliados e comunicados à ANPD e aos titulares
+        afetados quando exigido. Nenhuma medida elimina todos os riscos;
+        suspeitas podem ser comunicadas ao suporte.
       </p>
       <p>
-        Contas, perfis e orçamentos permanecem durante a relação com a Berufe e,
-        depois dela, apenas pelo prazo exigido por obrigação, segurança ou
-        defesa de direitos. A matriz operacional também define a retenção de
-        rascunhos, links compartilhados e dados de clientes. Dados elegíveis são
-        apagados ou anonimizados.
+        A ordem da busca é automatizada pelos critérios descritos nos Termos:
+        tipo do perfil, cobertura específica, identidade verificada, portfólio
+        aprovado, conexões confirmadas e revisão do perfil, sempre depois da
+        correspondência de serviço e região. Não há compra de posição. A Berufe
+        não toma decisão exclusivamente automatizada que determine contratação,
+        preço, pagamento ou acesso a serviço profissional.
       </p>
     </section>
 
     <section id="direitos" class="legal-section">
-      <h2>8. Direitos, alterações e contato</h2>
+      <h2>10. Direitos, solicitações e alterações</h2>
       <p>
-        Nos termos da LGPD, o titular pode solicitar confirmação e acesso,
-        correção, informações sobre compartilhamento, anonimização, bloqueio ou
-        eliminação quando aplicável, portabilidade quando regulamentada,
-        oposição e revisão de decisões exclusivamente automatizadas.
+        O titular pode pedir confirmação, acesso, correção, informação sobre
+        compartilhamento, anonimização, bloqueio, exclusão, portabilidade quando
+        regulamentada, revisão de decisão automatizada, oposição e retirada de
+        consentimento. Também pode reclamar à ANPD.
       </p>
       <p>
-        A Berufe poderá confirmar a identidade do solicitante e preservar o
-        mínimo exigido por lei, segurança ou exercício regular de direitos.
-        Alterações relevantes terão nova versão e, quando necessário, novo
-        aceite.
+        Solicitações devem ser enviadas para
+        <a href="mailto:suporte@berufe.com.br">suporte@berufe.com.br</a>. A
+        Berufe confirmará a identidade sem pedir dados excessivos, responderá de
+        forma simplificada quando possível e fornecerá declaração completa de
+        acesso no prazo legal de até 15 dias.
       </p>
       <p>
-        Esta é uma minuta sem vigência para dados reais. A versão 1.0 deverá
-        incluir a identificação completa da responsável, canal validado, matriz
-        de retenção e revisão jurídica brasileira antes do lançamento.
+        A correção ou exclusão pode ser comunicada a operadores e destinatários
+        quando necessário. A Berufe informará eventual impossibilidade e a base
+        para preservar dados. Mudanças relevantes nesta Política receberão nova
+        versão e, quando necessário, novo aceite.
       </p>
     </section>
   </LegalDocument>

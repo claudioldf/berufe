@@ -249,6 +249,7 @@ class ModerationDecision
   def cleanup_created_public_keys(public_keys)
     public_keys.each { |public_key| publisher.delete(public_key) }
   rescue => error
+    Rails.error.report(error)
     Rails.logger.error("moderation_public_media_cleanup_failed class=#{error.class}")
   end
 end

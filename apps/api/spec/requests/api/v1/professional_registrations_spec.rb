@@ -35,8 +35,8 @@ RSpec.describe "Professional registration", type: :request, openapi: true do
     )
     expect(response.body).not_to include(account.phone_e164, "terms_version", "privacy_notice_version")
     expect(account.terms_accepted_at).to eq(now)
-    expect(account.terms_version).to eq("0.3")
-    expect(account.privacy_notice_version).to eq("0.3")
+    expect(account.terms_version).to eq("1.0")
+    expect(account.privacy_notice_version).to eq("1.0")
     expect(account.registered_at).to eq(now)
     expect(account).to be_registration_completed
     assert_api_conform(status: 200)

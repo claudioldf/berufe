@@ -18,8 +18,13 @@ Rails.application.configure do
   config.good_job.cleanup_discarded_jobs = false
   config.good_job.dequeue_query_sort = :scheduled_at
   config.good_job.on_thread_error = lambda do |exception|
-    Rails.error.report(exception)
-    Bugsnag.notify(exception) if defined?(Bugsnag) && Bugsnag.configuration.api_key.present?
+    Rails.error.report(exception, handled: false, severity: :error)
+    if defined?(Bugsnag) && Bugsnag.configuration.api_key.present?
+      Bugsnag.notify(exception) do |event|
+        event.severity = "error"
+        event.unhandled = true
+      end
+    end
   end
   config.good_job.cron = {
     authentication_records_cleanup: {
@@ -37,10 +42,25 @@ Rails.application.configure do
       class: "VerificationFileRetentionCleanupJob",
       description: "Delete identity evidence thirty days after a decision"
     },
+    media_retention_cleanup: {
+      cron: "7 3 * * *",
+      class: "MediaRetentionCleanupJob",
+      description: "Delete rejected, replaced, removed, and unattached media after thirty days"
+    },
     search_reporting_retention: {
       cron: "17 4 * * *",
       class: "SearchReportingRetentionJob",
       description: "Roll up anonymous search events and enforce report retention"
+    },
+    customer_recommendation_retention_cleanup: {
+      cron: "13 3 * * *",
+      class: "CustomerRecommendationRetentionCleanupJob",
+      description: "Expire recommendation invitations and remove operational records after thirty days"
+    },
+    lgpd_audit_retention_cleanup: {
+      cron: "29 4 * * *",
+      class: "LgpdAuditRetentionCleanupJob",
+      description: "Remove pseudonymized LGPD records after their five-year retention period"
     }
   }
 end

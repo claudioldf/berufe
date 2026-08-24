@@ -96,7 +96,7 @@ module Api
         end
 
         def render_unavailable(error)
-          Rails.error.report(error)
+          report_service_error(error)
           render_api_error(
             code: "media_unavailable",
             message: "O processamento da imagem está indisponível. Tente novamente.",

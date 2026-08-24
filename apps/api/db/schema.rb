@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_21_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_23_101000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -107,14 +107,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_21_120000) do
     t.string "display_name", limit: 80, null: false
     t.string "email_fingerprint", limit: 64, null: false
     t.datetime "email_verified_at", null: false
+    t.text "privacy_notice_version", null: false
     t.datetime "publication_authorized_at", null: false
+    t.datetime "publication_withdrawn_at", precision: nil
     t.text "recommendation_text", null: false
     t.datetime "service_confirmed_at", null: false
     t.uuid "service_job_id", null: false
     t.datetime "submitted_at", null: false
     t.datetime "updated_at", null: false
     t.index ["customer_id"], name: "index_customer_recommendations_on_customer_id"
+    t.index ["publication_withdrawn_at"], name: "index_customer_recommendations_on_publication_withdrawn_at"
     t.index ["service_job_id"], name: "idx_customer_recommendations_unique_job", unique: true
+    t.check_constraint "btrim(privacy_notice_version) <> ''::text", name: "customer_recommendations_privacy_version_present"
     t.check_constraint "char_length(btrim(display_name::text)) >= 1 AND char_length(btrim(display_name::text)) <= 80", name: "customer_recommendations_display_name_length"
     t.check_constraint "char_length(btrim(recommendation_text)) >= 1 AND char_length(btrim(recommendation_text)) <= 700", name: "customer_recommendations_text_length"
   end
@@ -132,6 +136,28 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_21_120000) do
     t.index ["professional_id"], name: "index_customers_on_professional_id"
     t.check_constraint "char_length(btrim(name::text)) >= 1 AND char_length(btrim(name::text)) <= 80", name: "customers_name_length"
     t.check_constraint "whatsapp_e164::text ~ '^\\+55[1-9][0-9]9[0-9]{8}$'::text", name: "customers_brazilian_mobile"
+  end
+
+  create_table "data_erasure_requests", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.string "failure_code", limit: 40
+    t.datetime "requested_at", null: false
+    t.datetime "retained_until", null: false
+    t.string "status", limit: 16, default: "requested", null: false
+    t.string "subject_digest", limit: 64, null: false
+    t.uuid "target_user_account_id", null: false
+    t.string "ticket_reference", limit: 100, null: false
+    t.datetime "unpublished_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "verification_method", limit: 32, null: false
+    t.datetime "verified_at", null: false
+    t.index ["retained_until"], name: "index_data_erasure_requests_on_retained_until"
+    t.index ["subject_digest"], name: "index_data_erasure_requests_on_subject_digest"
+    t.index ["target_user_account_id"], name: "idx_data_erasure_requests_one_active_account", unique: true, where: "((status)::text = ANY ((ARRAY['requested'::character varying, 'processing'::character varying, 'failed'::character varying])::text[]))"
+    t.check_constraint "status::text = ANY (ARRAY['requested'::character varying, 'processing'::character varying, 'failed'::character varying, 'completed'::character varying]::text[])", name: "data_erasure_requests_known_status"
+    t.check_constraint "subject_digest::text ~ '^[0-9a-f]{64}$'::text", name: "data_erasure_requests_digest_format"
+    t.check_constraint "ticket_reference::text ~ '^[A-Za-z0-9._/-]{1,100}$'::text", name: "data_erasure_requests_ticket_format"
   end
 
   create_table "good_job_batches", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -232,6 +258,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_21_120000) do
     t.index ["queue_name"], name: "index_good_jobs_on_queue_name"
     t.index ["scheduled_at", "queue_name"], name: "index_good_jobs_on_scheduled_at_and_queue_name"
     t.index ["scheduled_at"], name: "index_good_jobs_on_scheduled_at", where: "(finished_at IS NULL)"
+  end
+
+  create_table "legal_retention_records", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.jsonb "metadata", default: {}, null: false
+    t.datetime "occurred_at", null: false
+    t.string "record_type", limit: 48, null: false
+    t.datetime "retained_until", null: false
+    t.string "subject_digest", limit: 64, null: false
+    t.datetime "updated_at", null: false
+    t.index ["retained_until"], name: "index_legal_retention_records_on_retained_until"
+    t.index ["subject_digest"], name: "index_legal_retention_records_on_subject_digest"
+    t.check_constraint "jsonb_typeof(metadata) = 'object'::text", name: "legal_retention_records_metadata_object"
+    t.check_constraint "subject_digest::text ~ '^[0-9a-f]{64}$'::text", name: "legal_retention_records_digest_format"
   end
 
   create_table "media_uploads", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|

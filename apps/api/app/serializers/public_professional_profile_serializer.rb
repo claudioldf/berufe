@@ -140,6 +140,7 @@ class PublicProfessionalProfileSerializer
 
   def public_recommendation_records
     CustomerRecommendation
+      .publication_authorized
       .joins(service_job: :quote)
       .where(quotes: {professional_id: profile.id})
       .order(submitted_at: :desc, id: :desc)

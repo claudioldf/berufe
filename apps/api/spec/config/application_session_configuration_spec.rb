@@ -33,4 +33,14 @@ RSpec.describe "Application session configuration" do
       class: "VerificationFileRetentionCleanupJob"
     )
   end
+
+  it "schedules the remaining published retention controls" do
+    cron = Rails.configuration.good_job.cron
+
+    expect(cron.fetch(:media_retention_cleanup)).to include(class: "MediaRetentionCleanupJob")
+    expect(cron.fetch(:customer_recommendation_retention_cleanup)).to include(
+      class: "CustomerRecommendationRetentionCleanupJob"
+    )
+    expect(cron.fetch(:lgpd_audit_retention_cleanup)).to include(class: "LgpdAuditRetentionCleanupJob")
+  end
 end
