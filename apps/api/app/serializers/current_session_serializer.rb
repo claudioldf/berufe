@@ -15,6 +15,7 @@ class CurrentSessionSerializer
         registered: @account.registered?,
         verified: @account.phone_verified?,
         registration_completed: @account.registration_completed?,
+        onboarding_completed: onboarding_completed?,
         registration_display_name: professional_profile&.working_revision&.display_name,
         professional_profile_id: professional_profile&.id,
         relationship_eligible: relationship_eligible?
@@ -32,6 +33,10 @@ class CurrentSessionSerializer
 
   def professional_profile
     @professional_profile ||= @account.professional_profile
+  end
+
+  def onboarding_completed?
+    professional_profile&.has_self_service_publication? == true
   end
 
   def relationship_eligible?

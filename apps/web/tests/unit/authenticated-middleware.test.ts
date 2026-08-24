@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
     value: null as {
       role: "professional" | "admin";
       registrationCompleted: boolean;
+      onboardingCompleted: boolean;
     } | null,
   },
   session: {
@@ -30,7 +31,7 @@ mockNuxtImport("navigateTo", () => mocks.navigateTo);
 
 afterEach(() => {
   vi.unstubAllGlobals();
-  vi.clearAllMocks();
+  vi.resetAllMocks();
   mocks.account.value = null;
   mocks.session.value = null;
 });
@@ -74,6 +75,7 @@ describe("authenticated route middleware", () => {
     mocks.account.value = {
       role: "professional",
       registrationCompleted: true,
+      onboardingCompleted: false,
     };
     mocks.session.value = { authenticationMethod: "sms_otp" };
 
@@ -92,7 +94,11 @@ describe("authenticated route middleware", () => {
     "redirects an authenticated %s away from the other role workspace",
     async (role, requestedPath, expectedPath) => {
       mocks.restoreSession.mockResolvedValue(true);
-      mocks.account.value = { role, registrationCompleted: true };
+      mocks.account.value = {
+        role,
+        registrationCompleted: true,
+        onboardingCompleted: role === "professional",
+      };
       mocks.session.value = {
         authenticationMethod: role === "admin" ? "password" : "sms_otp",
       };
@@ -131,7 +137,11 @@ describe("authenticated route middleware", () => {
 
   it("requires a password-authenticated session for the admin workspace", async () => {
     mocks.restoreSession.mockResolvedValue(true);
-    mocks.account.value = { role: "admin", registrationCompleted: false };
+    mocks.account.value = {
+      role: "admin",
+      registrationCompleted: false,
+      onboardingCompleted: false,
+    };
     mocks.session.value = { authenticationMethod: "sms_otp" };
     mocks.navigateTo.mockResolvedValue(undefined);
 
@@ -147,6 +157,7 @@ describe("authenticated route middleware", () => {
     mocks.account.value = {
       role: "professional",
       registrationCompleted: false,
+      onboardingCompleted: false,
     };
     mocks.navigateTo.mockResolvedValue(undefined);
 
@@ -158,5 +169,88 @@ describe("authenticated route middleware", () => {
     expect(mocks.navigateTo).toHaveBeenCalledWith("/app/professional/login", {
       replace: true,
     });
+  });
+
+  it.each([
+    [false, "/app/professional/onboarding"],
+    [true, "/app/professional"],
+  ] as const)(
+    "redirects a registered professional with onboarding %s away from login",
+    async (onboardingCompleted, expectedPath) => {
+      mocks.restoreSession.mockResolvedValue(true);
+      mocks.account.value = {
+        role: "professional",
+        registrationCompleted: true,
+        onboardingCompleted,
+      };
+
+      await authenticatedMiddleware(
+        { path: "/app/professional/login" } as never,
+        {} as never,
+      );
+
+      expect(mocks.navigateTo).toHaveBeenCalledWith(expectedPath, {
+        replace: true,
+      });
+    },
+  );
+
+  it("redirects completed onboarding away from the onboarding route", async () => {
+    mocks.restoreSession.mockResolvedValue(true);
+    mocks.account.value = {
+      role: "professional",
+      registrationCompleted: true,
+      onboardingCompleted: true,
+    };
+    mocks.session.value = { authenticationMethod: "sms_otp" };
+
+    await authenticatedMiddleware(
+      { path: "/app/professional/onboarding" } as never,
+      {} as never,
+    );
+
+    expect(mocks.navigateTo).toHaveBeenCalledWith("/app/professional", {
+      replace: true,
+    });
+  });
+
+  it("waits for pending restoration before resolving the login route", async () => {
+    let resolveRestoration: ((authenticated: boolean) => void) | undefined;
+    mocks.restoreSession.mockImplementation(
+      () =>
+        new Promise<boolean>((resolve) => {
+          resolveRestoration = resolve;
+        }),
+    );
+
+    const navigation = authenticatedMiddleware(
+      { path: "/app/professional/login" } as never,
+      {} as never,
+    );
+    expect(mocks.navigateTo).not.toHaveBeenCalled();
+
+    mocks.account.value = {
+      role: "professional",
+      registrationCompleted: true,
+      onboardingCompleted: true,
+    };
+    resolveRestoration?.(true);
+    await navigation;
+
+    expect(mocks.navigateTo).toHaveBeenCalledWith("/app/professional", {
+      replace: true,
+    });
+  });
+
+  it("keeps the login route available when restoration fails", async () => {
+    mocks.restoreSession.mockRejectedValue(new Error("session unavailable"));
+
+    await expect(
+      authenticatedMiddleware(
+        { path: "/app/professional/login" } as never,
+        {} as never,
+      ),
+    ).resolves.toBeUndefined();
+    expect(mocks.navigateTo).not.toHaveBeenCalled();
   });
 });

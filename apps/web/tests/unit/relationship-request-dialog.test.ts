@@ -337,6 +337,11 @@ describe("relationship create dialog", () => {
         .find((button) => button.text().includes("Concluir meu perfil"))
         ?.attributes("data-to"),
     ).toBe("/app/professional/profile?tab=verificacoes");
+    await alert
+      .findAll("button")
+      .find((button) => button.text().includes("Concluir meu perfil"))!
+      .trigger("click");
+    expect(wrapper.emitted("update:open")?.at(-1)).toEqual([false]);
     expect(
       wrapper
         .findAll("footer button")

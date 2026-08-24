@@ -7,6 +7,7 @@ import { useProfessionalOnboarding } from "~/composables/useProfessionalOnboardi
 import { useToast } from "~/composables/useToast";
 import {
   professionalPhoneStepContent,
+  resolveProfessionalEntryPath,
   resolveProfessionalAuthIntent,
 } from "~/utils/professional-auth";
 
@@ -14,7 +15,7 @@ const router = useRouter();
 const route = useRoute();
 const { setRole } = useAppRole();
 const { showToast } = useToast();
-const { isComplete, hydrate, initializeFromAuth } = useProfessionalOnboarding();
+const { initializeFromAuth } = useProfessionalOnboarding();
 const { account, restoreSession, refreshSession } = useApplicationSession();
 const {
   step,
@@ -45,9 +46,9 @@ useSeoMeta({
 });
 
 async function enterProfessionalWorkspace() {
-  await router.replace(
-    isComplete.value ? "/app/professional" : "/app/professional/onboarding",
-  );
+  const currentAccount = account.value;
+  if (!currentAccount) return;
+  await router.replace(resolveProfessionalEntryPath(currentAccount));
 }
 
 async function continueAuthenticatedFlow() {
@@ -95,9 +96,10 @@ async function register() {
 
   initializeFromAuth({ name: name.value, phone: phone.value });
   setRole("professional");
+  const onboardingCompleted = account.value?.onboardingCompleted ?? false;
   showToast({
-    title: isComplete.value ? "Acesso confirmado" : "Sucesso!",
-    description: isComplete.value
+    title: onboardingCompleted ? "Acesso confirmado" : "Sucesso!",
+    description: onboardingCompleted
       ? "Que bom ter você de volta."
       : "Vamos completar seu perfil na Berufe.",
   });
@@ -105,7 +107,6 @@ async function register() {
 }
 
 onMounted(async () => {
-  hydrate();
   try {
     if (await restoreSession()) await continueAuthenticatedFlow();
   } catch {

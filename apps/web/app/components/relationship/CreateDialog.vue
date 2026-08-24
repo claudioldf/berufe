@@ -265,6 +265,7 @@ async function submit() {
             to="/app/professional/profile?tab=verificacoes"
             color="primary"
             icon="i-lucide-shield-check"
+            @click="open = false"
           >
             Concluir meu perfil
           </UButton>

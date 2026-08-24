@@ -26,6 +26,7 @@ RSpec.describe "Application sessions", type: :request, openapi: true do
           "registered" => false,
           "verified" => false,
           "registration_completed" => false,
+          "onboarding_completed" => false,
           "registration_display_name" => nil,
           "professional_profile_id" => nil,
           "relationship_eligible" => false
@@ -69,6 +70,7 @@ RSpec.describe "Application sessions", type: :request, openapi: true do
       "registered" => false,
       "verified" => false,
       "registration_completed" => false,
+      "onboarding_completed" => false,
       "registration_display_name" => nil,
       "professional_profile_id" => nil,
       "relationship_eligible" => false
@@ -78,7 +80,7 @@ RSpec.describe "Application sessions", type: :request, openapi: true do
     assert_api_conform(status: 200)
   end
 
-  it "projects the owned profile and approved-identity relationship eligibility" do
+  it "projects onboarding completion and approved-identity relationship eligibility" do
     account = create_account
     profile = ProfessionalProfile.create!(user_account: account, display_name: "Ana Elegível")
     profile.verification_requests.create!(
@@ -94,6 +96,13 @@ RSpec.describe "Application sessions", type: :request, openapi: true do
       terms_version: LegalDocumentVersions::TERMS,
       privacy_notice_version: LegalDocumentVersions::PRIVACY_NOTICE
     )
+    revision = profile.working_revision
+    revision.update!(status: "pending_review", submitted_at: Time.current)
+    profile.update!(
+      profile_status: "published",
+      published_revision: revision,
+      published_at: Time.current
+    )
     _application_session, session_token = ApplicationSession.issue!(user_account: account)
 
     get_current_session(session_token:, request_id: "session-relationship-eligibility")
@@ -103,6 +112,7 @@ RSpec.describe "Application sessions", type: :request, openapi: true do
       "professional_profile_id" => profile.id,
       "registered" => true,
       "verified" => true,
+      "onboarding_completed" => true,
       "registration_display_name" => "Ana Elegível",
       "relationship_eligible" => true
     )

@@ -5211,6 +5211,7 @@ components:
         - registered
         - verified
         - registration_completed
+        - onboarding_completed
         - registration_display_name
         - professional_profile_id
         - relationship_eligible
@@ -5231,6 +5232,8 @@ components:
         verified:
           type: boolean
         registration_completed:
+          type: boolean
+        onboarding_completed:
           type: boolean
         registration_display_name:
           type:

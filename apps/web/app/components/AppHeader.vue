@@ -1,12 +1,15 @@
 <script setup lang="ts">
-import { computed, shallowRef } from "vue";
+import { computed, onMounted, shallowRef } from "vue";
+import { useApplicationSession } from "~/composables/useApplicationSession";
 import {
   professionalLoginPath,
   professionalSignupPath,
+  resolveProfessionalEntryPath,
 } from "~/utils/professional-auth";
 
 const route = useRoute();
 const isMenuOpen = shallowRef(false);
+const { account, status, restoreSession } = useApplicationSession();
 
 const adminLoginPath = "/app/admin/login";
 const isProfessional = computed(
@@ -18,6 +21,25 @@ const isAdmin = computed(
   () => route.path.startsWith("/app/admin") && route.path !== adminLoginPath,
 );
 const showPublicAuthActions = computed(() => !route.path.startsWith("/app/"));
+const isAuthenticatedProfessional = computed(
+  () =>
+    status.value === "authenticated" && account.value?.role === "professional",
+);
+const publicProfessionalEntryPath = computed(() =>
+  account.value
+    ? resolveProfessionalEntryPath(account.value)
+    : professionalLoginPath,
+);
+const publicProfessionalEntryLabel = computed(() =>
+  account.value?.registrationCompleted ? "Ir ao painel" : "Continuar cadastro",
+);
+
+onMounted(() => {
+  if (!showPublicAuthActions.value) return;
+  void restoreSession().catch(() => {
+    // Keep the visitor actions available when session restoration fails.
+  });
+});
 
 const links = computed(() => {
   if (isProfessional.value) {
@@ -83,19 +105,34 @@ function isLinkActive(to: string) {
       <div class="header__actions">
         <div v-if="showPublicAuthActions" class="header__desktop-auth">
           <UButton
+            v-if="isAuthenticatedProfessional"
+            :to="publicProfessionalEntryPath"
+            color="primary"
+            :label="publicProfessionalEntryLabel"
+          />
+          <UButton
+            v-else
             :to="professionalLoginPath"
             color="neutral"
             variant="outline"
             label="Entrar"
           />
           <UButton
+            v-if="!isAuthenticatedProfessional"
             :to="professionalSignupPath"
             color="primary"
             label="Criar perfil grátis"
           />
         </div>
         <UButton
-          v-if="showPublicAuthActions"
+          v-if="showPublicAuthActions && isAuthenticatedProfessional"
+          :to="publicProfessionalEntryPath"
+          color="primary"
+          :label="publicProfessionalEntryLabel"
+          class="header__mobile-login"
+        />
+        <UButton
+          v-else-if="showPublicAuthActions"
           :to="professionalLoginPath"
           color="neutral"
           variant="ghost"
@@ -122,7 +159,7 @@ function isLinkActive(to: string) {
     </DesignSystemContainer>
 
     <DesignSystemContainer
-      v-if="showPublicAuthActions"
+      v-if="showPublicAuthActions && !isAuthenticatedProfessional"
       class="header__mobile-signup"
     >
       <UButton
