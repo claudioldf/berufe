@@ -38,7 +38,7 @@ RSpec.describe "Public portfolio images", type: :request, openapi: true do
     assert_api_conform(status: 200)
   end
 
-  it "serves a pending item from private storage without caching it" do
+  it "keeps the same image link public when a pending item is approved" do
     item = create_item(status: "pending_review", public_key: nil)
     allow(storage).to receive(:read).with(scope: :private, key: item.private_key).and_return("pending-image")
 
@@ -48,6 +48,33 @@ RSpec.describe "Public portfolio images", type: :request, openapi: true do
     expect(response.body).to eq("pending-image")
     expect(response.headers.fetch("Cache-Control")).to eq("no-store")
     assert_api_conform(status: 200)
+
+    item.update!(status: "approved", reviewed_at: Time.current)
+    get "/api/v1/public/portfolio-items/#{item.id}/image", headers: {"X-Request-Id" => "portfolio-image-approved"}
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to eq("pending-image")
+    expect(response.headers.fetch("Cache-Control")).to eq("max-age=0, public, must-revalidate")
+    assert_api_conform(status: 200)
+  end
+
+  it "unpublishes the same image link when a pending item is rejected" do
+    item = create_item(status: "pending_review", public_key: nil)
+    allow(storage).to receive(:read).with(scope: :private, key: item.private_key).and_return("pending-image")
+
+    get "/api/v1/public/portfolio-items/#{item.id}/image", headers: {"X-Request-Id" => "portfolio-image-before-rejection"}
+    expect(response).to have_http_status(:ok)
+    assert_api_conform(status: 200)
+
+    item.update!(
+      status: "rejected",
+      reviewed_at: Time.current,
+      rejection_reason: "A imagem está desfocada e precisa ser substituída."
+    )
+    get "/api/v1/public/portfolio-items/#{item.id}/image", headers: {"X-Request-Id" => "portfolio-image-after-rejection"}
+
+    expect(response).to have_http_status(:not_found)
+    assert_api_conform(status: 404)
   end
 
   it "revalidates the parent professional on every image read" do

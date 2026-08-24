@@ -749,6 +749,7 @@ The public promise depends on accurate evidence and controlled content. With onl
 4. They approve, reject with a private reason, or hide previously approved content.
 5. Every admin decision is recorded in an audit trail.
 6. Pending profile content, profile photos, and portfolio items are public without a moderation badge. Rejected or hidden content is removed immediately. Verification evidence remains private and its label appears only after approval. Professional relationships are outside this queue and become public through recipient acceptance.
+7. Approving a portfolio item only marks it reviewed and removes it from the pending queue; its public URL does not change. Rejecting it makes that URL unavailable immediately.
 
 Public pages expose a visible Berufe support/report contact. The founding-cohort operations team records and handles reports through the documented manual support process; an in-product reporting workflow is deferred.
 
