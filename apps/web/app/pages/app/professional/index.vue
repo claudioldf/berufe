@@ -517,7 +517,7 @@ async function respondRelationship(
     color: var(--color-danger);
   }
 }
-@media (width <= 900px) {
+@media (width <= 1100px) {
   .dashboard-layout {
     grid-template-columns: 1fr;
     grid-template-rows: auto;
@@ -528,6 +528,7 @@ async function respondRelationship(
   .dashboard-sidebar {
     grid-row: auto;
     grid-column: 1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 @media (width <= 700px) {
@@ -538,6 +539,9 @@ async function respondRelationship(
     &__actions {
       flex-wrap: wrap;
     }
+  }
+  .dashboard-sidebar {
+    grid-template-columns: 1fr;
   }
 }
 </style>

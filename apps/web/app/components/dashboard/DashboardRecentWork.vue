@@ -204,6 +204,7 @@ const serviceStatusLabel = {
   & small {
     margin-top: 3px;
     color: var(--ink-soft);
+    overflow-wrap: anywhere;
   }
 
   &__date {
@@ -251,18 +252,14 @@ const serviceStatusLabel = {
   }
 }
 
-@media (width <= 700px) {
-  .dashboard-section__heading {
-    display: grid;
-  }
-
+@media (width <= 900px) {
   .quotes-table {
     &__head {
       display: none;
     }
 
     & > a {
-      grid-template-columns: 1fr auto auto;
+      grid-template-columns: minmax(0, 1fr) auto auto;
     }
 
     &:not(.quotes-table--quotes) > a > span:nth-child(2),
@@ -278,6 +275,12 @@ const serviceStatusLabel = {
     &--quotes > a > span:nth-child(4) {
       display: none;
     }
+  }
+}
+
+@media (width <= 700px) {
+  .dashboard-section__heading {
+    display: grid;
   }
 }
 </style>
