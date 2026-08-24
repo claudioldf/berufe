@@ -95,4 +95,26 @@ RSpec.describe ProfessionalProfileIdentityUpdater do
     )
     expect(request_record.expired_at).to be_present
   end
+
+  it "accepts biographies up to 2,500 characters and rejects longer content" do
+    attributes = {
+      display_name: "Ana Souza",
+      birthdate: "1990-04-12",
+      headline: "",
+      bio: "B" * 2500,
+      years_experience: nil,
+      whatsapp: "",
+      instagram: "",
+      youtube: ""
+    }
+
+    result = described_class.new.call(profile:, attributes:)
+
+    expect(result.working_revision.bio.length).to eq(2500)
+    expect do
+      described_class.new.call(profile:, attributes: attributes.merge(bio: "B" * 2501))
+    end.to raise_error(described_class::Invalid) { |error|
+      expect(error.field_errors[:bio]).to include("deve ter entre 1 e 2500 caracteres")
+    }
+  end
 end

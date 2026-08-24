@@ -79,7 +79,7 @@ class ProfessionalProfileIdentityUpdater
     field_errors = {}
     length_error(field_errors, :display_name, attributes[:display_name], 3..70)
     length_error(field_errors, :headline, attributes[:headline], 1..120) if attributes[:headline]
-    length_error(field_errors, :bio, attributes[:bio], 1..500) if attributes[:bio]
+    length_error(field_errors, :bio, attributes[:bio], 1..2500) if attributes[:bio]
     birthdate = attributes[:birthdate]
     if birthdate.nil? || birthdate > Date.current || birthdate < 120.years.ago.to_date
       field_errors[:birthdate] = ["informe uma data de nascimento válida"]

@@ -34,7 +34,7 @@ RSpec.describe ProfessionalProfile, type: :model do
       user_account: account,
       display_name: "Ana Souza",
       headline: "H" * 121,
-      bio: "B" * 501,
+      bio: "B" * 2501,
       years_experience: 71,
       whatsapp_e164: "+5547999995003",
       instagram_url: "https://example.com/ana",

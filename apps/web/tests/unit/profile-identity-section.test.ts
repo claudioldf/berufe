@@ -105,4 +105,15 @@ describe("professional profile identity photo control", () => {
 
     expect(wrapper.text()).not.toContain("Remover foto");
   });
+
+  it("allows a professional biography of up to 2,500 characters", async () => {
+    const wrapper = await mountSuspended(IdentitySection, {
+      props: { modelValue: { ...draft, bio: "B".repeat(2500) } },
+      global,
+    });
+    const biography = wrapper.get('textarea[name="bio"]');
+
+    expect(biography.attributes("maxlength")).toBe("2500");
+    expect(wrapper.text()).toContain("2500/2500");
+  });
 });

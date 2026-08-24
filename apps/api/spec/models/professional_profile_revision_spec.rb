@@ -45,6 +45,30 @@ RSpec.describe ProfessionalProfileRevision, type: :model do
     end.to raise_error(ActiveRecord::RecordNotUnique)
   end
 
+  it "accepts a 2,500-character biography and rejects longer content" do
+    profile = ProfessionalProfile.create!(user_account: first_account, display_name: "Ana Souza")
+    revision = profile.working_revision
+
+    revision.bio = "B" * 2500
+    expect(revision).to be_valid
+
+    revision.bio = "B" * 2501
+    expect(revision).not_to be_valid
+    expect(revision.errors[:bio]).to be_present
+  end
+
+  it "enforces the 2,500-character biography limit in PostgreSQL" do
+    profile = ProfessionalProfile.create!(user_account: first_account, display_name: "Ana Souza")
+    revision = profile.working_revision
+
+    revision.update_columns(bio: "B" * 2500)
+    expect(revision.reload.bio.length).to eq(2500)
+
+    expect do
+      described_class.where(id: revision.id).update_all(bio: "B" * 2501)
+    end.to raise_error(ActiveRecord::StatementInvalid)
+  end
+
   it "rejects revision pointers that belong to another profile" do
     first = ProfessionalProfile.create!(user_account: first_account, display_name: "Ana Souza")
     second = ProfessionalProfile.create!(user_account: second_account, display_name: "Bia Lima")

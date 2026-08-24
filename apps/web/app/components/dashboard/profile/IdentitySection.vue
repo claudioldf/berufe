@@ -267,14 +267,14 @@ function selectPhoto(event: Event) {
       >
         <template #label>
           Conte um pouco sobre seu trabalho (opcional)
-          <em>{{ form.bio.length }}/500</em>
+          <em>{{ form.bio.length }}/2500</em>
         </template>
         <template #default="field">
           <textarea
             :id="field.controlId"
             v-model="form.bio"
             name="bio"
-            maxlength="500"
+            maxlength="2500"
             :aria-describedby="field.describedBy"
           />
         </template>
