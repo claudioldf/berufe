@@ -6154,6 +6154,7 @@ components:
         - id
         - name
         - slug
+        - icon
         - is_primary
         - note
       properties:
@@ -6166,6 +6167,9 @@ components:
         slug:
           type: string
           pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        icon:
+          type: string
+          minLength: 1
         is_primary:
           type: boolean
         note:

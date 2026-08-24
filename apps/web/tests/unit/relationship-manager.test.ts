@@ -164,10 +164,14 @@ describe("professional relationship manager", () => {
     expect(wrapper.get('[role="alert"]').text()).toContain(
       "Não foi possível remover a conexão agora.",
     );
-    expect(wrapper.text()).toContain("Sua rede começa com uma colaboração.");
+    expect(wrapper.text()).toContain(
+      "Transforme boas parcerias em prova social.",
+    );
+    expect(wrapper.text()).toContain("Recomendações baseadas em trabalho real");
+    expect(wrapper.text()).not.toContain("Rede profissional");
     const add = wrapper
       .findAll("button")
-      .find((button) => button.text().includes("Conectar"));
+      .find((button) => button.text().includes("Criar minha primeira conexão"));
     expect(add).toBeDefined();
     await add!.trigger("click");
     expect(wrapper.emitted("add")?.at(-1)).toEqual([]);

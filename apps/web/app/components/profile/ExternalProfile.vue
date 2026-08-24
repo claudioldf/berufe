@@ -15,7 +15,7 @@ const coverageLabel = computed(() => {
   if (props.professional.neighborhoods.length) {
     return props.professional.neighborhoods.join(", ");
   }
-  return "Joinville · área não informada";
+  return "Joinville";
 });
 </script>
 
@@ -35,6 +35,10 @@ const coverageLabel = computed(() => {
         <div class="external-profile__identity">
           <DesignSystemAvatar
             :name="professional.name"
+            :src="professional.avatar ?? undefined"
+            :fallback-icon="
+              professional.primaryServiceIcon ?? 'i-lucide-briefcase-business'
+            "
             size="profile"
             shape="rounded"
           />
@@ -67,13 +71,25 @@ const coverageLabel = computed(() => {
           <DesignSystemEyebrow>Serviços informados</DesignSystemEyebrow>
           <h2>Como este profissional pode ajudar.</h2>
           <div class="external-profile__services">
-            <span v-for="service in professional.services" :key="service">
-              <UIcon name="i-lucide-wrench" /> {{ service }}
+            <span
+              v-for="service in professional.services"
+              :key="service"
+              class="external-profile__service"
+            >
+              <UIcon
+                class="external-profile__service-icon"
+                name="i-lucide-wrench"
+              />
+              {{ service }}
             </span>
           </div>
         </DesignSystemSurfaceCard>
 
-        <DesignSystemSurfaceCard as="section" class="external-profile__card">
+        <DesignSystemSurfaceCard
+          v-if="professional.relationships.length > 0"
+          as="section"
+          class="external-profile__card"
+        >
           <div class="external-profile__section-heading">
             <div>
               <DesignSystemEyebrow>Rede profissional</DesignSystemEyebrow>
@@ -81,10 +97,7 @@ const coverageLabel = computed(() => {
             </div>
             <span>{{ professional.relationships.length }}</span>
           </div>
-          <div
-            v-if="professional.relationships.length"
-            class="external-profile__relationships"
-          >
+          <div class="external-profile__relationships">
             <article
               v-for="relationship in professional.relationships"
               :key="relationship.id"
@@ -115,16 +128,18 @@ const coverageLabel = computed(() => {
               </div>
             </article>
           </div>
-          <p v-else class="external-profile__empty">
-            Nenhuma conexão profissional foi confirmada publicamente ainda.
-          </p>
         </DesignSystemSurfaceCard>
       </main>
 
       <aside>
         <DesignSystemSurfaceCard class="external-profile__contact">
-          <UIcon name="i-lucide-message-circle" />
-          <h2>Fale diretamente com {{ professional.name.split(" ")[0] }}.</h2>
+          <div class="external-profile__contact-heading">
+            <UIcon
+              class="external-profile__contact-icon"
+              name="i-lucide-message-circle"
+            />
+            <h2>Fale diretamente com {{ professional.name.split(" ")[0] }}.</h2>
+          </div>
           <p>O telefone permanece privado e a conversa acontece no WhatsApp.</p>
           <UButton
             color="primary"
@@ -269,10 +284,24 @@ const coverageLabel = computed(() => {
   }
 
   &__card h2,
-  &__contact h2 {
+  &__contact-heading h2 {
     margin: 7px 0 18px;
     font-family: var(--font-display);
     font-size: 1.8rem;
+  }
+
+  &__contact-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 7px 0 18px;
+  }
+
+  &__contact-heading h2 {
+    margin: 0;
+    font-size: clamp(1.2rem, 1.6vw, 1.45rem);
+    line-height: 1.1;
+    white-space: nowrap;
   }
 
   &__services {
@@ -281,7 +310,7 @@ const coverageLabel = computed(() => {
     gap: 8px;
   }
 
-  &__services span {
+  &__service {
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -291,6 +320,13 @@ const coverageLabel = computed(() => {
     color: var(--color-brand-strong);
     font-size: 0.82rem;
     font-weight: 700;
+  }
+
+  &__service-icon {
+    flex: 0 0 auto;
+    width: 1rem;
+    height: 1rem;
+    color: var(--color-brand);
   }
 
   &__section-heading {
@@ -319,7 +355,6 @@ const coverageLabel = computed(() => {
 
   &__relationships p,
   &__relationships a,
-  &__empty,
   &__contact p,
   &__claim p {
     color: var(--ink-soft);
@@ -331,6 +366,11 @@ const coverageLabel = computed(() => {
     margin: 6px 0;
   }
 
+  &__contact p,
+  &__claim p {
+    margin-bottom: 14px;
+  }
+
   &__relationships a,
   &__support {
     color: var(--color-brand);
@@ -338,9 +378,13 @@ const coverageLabel = computed(() => {
     text-decoration: none;
   }
 
-  &__contact > svg {
+  &__contact-icon {
+    display: block;
+    flex: 0 0 auto;
+    align-self: center;
     color: var(--color-brand);
     font-size: 1.7rem;
+    line-height: 1;
   }
 
   &__claim strong {

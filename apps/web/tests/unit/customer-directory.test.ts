@@ -17,6 +17,10 @@ const page: CustomerPage = {
   customers: [customer],
   meta: { page: 1, perPage: 20, totalCount: 1, totalPages: 1 },
 };
+const emptyPage: CustomerPage = {
+  customers: [],
+  meta: { page: 1, perPage: 20, totalCount: 0, totalPages: 1 },
+};
 const SurfaceCardStub = defineComponent({
   template: "<section><slot /></section>",
 });
@@ -41,6 +45,7 @@ describe("customer directory", () => {
         stubs: {
           DesignSystemSurfaceCard: SurfaceCardStub,
           NuxtLink: NuxtLinkStub,
+          UButton: NuxtLinkStub,
           UIcon: true,
         },
       },
@@ -56,6 +61,30 @@ describe("customer directory", () => {
     expect(wrapper.emitted("request")?.at(-1)).toEqual([
       { search: "Ana", page: 1, perPage: 20 },
     ]);
+  });
+
+  it("replaces the first-use customer list with a helpful CTA", () => {
+    const wrapper = mount(CustomerDirectory, {
+      props: { result: emptyPage },
+      global: {
+        stubs: {
+          DesignSystemSurfaceCard: SurfaceCardStub,
+          NuxtLink: NuxtLinkStub,
+          UButton: NuxtLinkStub,
+          UIcon: true,
+        },
+      },
+    });
+
+    expect(wrapper.text()).toContain(
+      "Cada orçamento começa a construir sua carteira.",
+    );
+    expect(wrapper.text()).toContain("Histórico de propostas por cliente");
+    expect(wrapper.find('input[name="customerSearch"]').exists()).toBe(false);
+    expect(
+      wrapper.get('a[href="/app/professional/quotes/new"]').text(),
+    ).toContain("Criar meu primeiro orçamento");
+    expect(wrapper.text()).not.toContain("Nenhum cliente encontrado");
   });
 
   it("submits editable contact details and explains snapshot behavior", async () => {

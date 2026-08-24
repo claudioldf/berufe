@@ -14,6 +14,30 @@ const rejectedItem: ProfessionalPortfolioItem = {
 };
 
 describe("professional portfolio manager", () => {
+  it("explains the value of a portfolio and opens the first upload", async () => {
+    const wrapper = mount(PortfolioManager, {
+      props: { items: [], serviceOptions: ["Eletricista"] },
+    });
+
+    expect(wrapper.text()).toContain(
+      "Mostre resultados antes mesmo da conversa.",
+    );
+    expect(wrapper.text()).toContain(
+      "Imagens em destaque no seu perfil público",
+    );
+    expect(wrapper.text()).not.toContain("Seu trabalho na prática");
+    expect(wrapper.find(".portfolio-manager__grid").exists()).toBe(false);
+
+    const firstUpload = wrapper
+      .findAll("button")
+      .find((button) =>
+        button.text().includes("Adicionar meu primeiro trabalho"),
+      );
+    expect(firstUpload).toBeDefined();
+    await firstUpload!.trigger("click");
+    expect(wrapper.getComponent({ name: "UModal" }).props("open")).toBe(true);
+  });
+
   it("renders the approved Rails public-image URL in the existing card", () => {
     const approvedItem: ProfessionalPortfolioItem = {
       ...rejectedItem,

@@ -47,9 +47,6 @@ async function loadCustomers(filters: CustomerListFilters) {
         </NuxtLink>
         <div class="customers-page__heading-row">
           <div>
-            <DesignSystemEyebrow tone="inverse"
-              >Relacionamento</DesignSystemEyebrow
-            >
             <h1>Clientes</h1>
             <p>Consulte contatos e retome o histórico de cada cliente.</p>
           </div>
@@ -114,7 +111,7 @@ async function loadCustomers(filters: CustomerListFilters) {
   }
 
   &__heading h1 {
-    margin: 6px 0;
+    margin: 0 0 6px;
     font-family: var(--font-display);
     font-size: 2.7rem;
     font-weight: 500;

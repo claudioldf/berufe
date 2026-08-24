@@ -24,6 +24,20 @@ const statusLabels = {
   rejected: "Recusado",
   hidden: "Oculto",
 } as const;
+const emptyStateBenefits = [
+  "Até 12 trabalhos com serviço e descrição",
+  "Imagens em destaque no seu perfil público",
+  "Publicação imediata enquanto a equipe revisa",
+];
+const emptyStateVisual = {
+  icon: "i-lucide-images",
+  title: "Seu portfólio",
+  caption: "Resultados que falam por você",
+  metaLabel: "Capacidade",
+  metaValue: "Até 12 trabalhos",
+  badge: "Mais confiança",
+  badgeIcon: "i-lucide-badge-check",
+};
 
 function submitUpload(draft: PortfolioItemDraft) {
   emit("added", draft);
@@ -33,7 +47,11 @@ function submitUpload(draft: PortfolioItemDraft) {
 
 <template>
   <div class="portfolio-manager">
-    <DesignSystemSurfaceCard as="section" class="portfolio-manager__intro">
+    <DesignSystemSurfaceCard
+      v-if="items.length"
+      as="section"
+      class="portfolio-manager__intro"
+    >
       <div>
         <DesignSystemEyebrow>Seu trabalho na prática</DesignSystemEyebrow>
         <h2>Portfólio</h2>
@@ -50,7 +68,18 @@ function submitUpload(draft: PortfolioItemDraft) {
         >Adicionar trabalho</UButton
       >
     </DesignSystemSurfaceCard>
-    <div class="portfolio-manager__grid">
+    <DesignSystemFeatureEmptyState
+      v-if="items.length === 0"
+      eyebrow="Seu trabalho vende por você"
+      title="Mostre resultados antes mesmo da conversa."
+      description="Fotos de trabalhos reais ajudam clientes a entender sua qualidade, seu cuidado e o tipo de resultado que podem esperar."
+      :items="emptyStateBenefits"
+      cta-label="Adicionar meu primeiro trabalho"
+      cta-icon="i-lucide-image-plus"
+      :visual="emptyStateVisual"
+      @action="uploadOpen = true"
+    />
+    <div v-else class="portfolio-manager__grid">
       <article v-for="item in items" :key="item.id">
         <img
           v-if="item.image"

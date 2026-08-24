@@ -131,6 +131,7 @@ export function mapPublicProfessionalProfile(
     avatar: profile.photo_url,
     primaryService: primaryService?.name ?? null,
     primaryServiceSlug: primaryService?.slug ?? null,
+    primaryServiceIcon: primaryService?.icon ?? null,
     services: profile.services.map((service) => service.name),
     serviceNotes: profile.services.map((service) => service.note),
     neighborhoods: profile.coverage.neighborhoods.map(

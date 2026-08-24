@@ -2,6 +2,7 @@ import { mountSuspended } from "@nuxt/test-utils/runtime";
 import { mount } from "@vue/test-utils";
 import { defineComponent, ref, shallowRef } from "vue";
 import DashboardChecklist from "@app/components/dashboard/DashboardChecklist.vue";
+import DashboardQuickActions from "@app/components/dashboard/DashboardQuickActions.vue";
 import ProfessionalDashboardPage from "@app/pages/app/professional/index.vue";
 import type { ProfessionalRelationship } from "~/types";
 
@@ -42,6 +43,11 @@ const mountOptions = {
     stubs: {
       UButton: ButtonStub,
       DashboardActivitySections: false,
+      DashboardChecklist: false,
+      DashboardQuickActions: false,
+      DashboardQuoteEmptyState: false,
+      DashboardRecentWork: false,
+      DesignSystemFeatureEmptyState: false,
     },
   },
 } as const;
@@ -260,7 +266,7 @@ describe("professional dashboard", () => {
     expect(relationshipRow!.findAll("button")).toHaveLength(0);
   });
 
-  it("places activity sections after quick actions and before tools", async () => {
+  it("prioritizes status and the bare quote empty state before profile tools", async () => {
     mocks.useWorkspace.mockResolvedValue(workspace());
     const wrapper = await mountSuspended(
       ProfessionalDashboardPage,
@@ -268,13 +274,21 @@ describe("professional dashboard", () => {
     );
 
     const visibleText = wrapper.text();
+    const statusIndex = visibleText.indexOf("Seu perfil está publicado");
     const quickActionsIndex = visibleText.indexOf("Ações rápidas");
     const activityIndex = visibleText.indexOf("Para resolver.");
-    const toolsIndex = visibleText.indexOf("Ferramentas");
+    const quoteEmptyIndex = visibleText.indexOf(
+      "Transforme pedidos em trabalhos fechados.",
+    );
+    const progressIndex = visibleText.indexOf("100% completo");
 
-    expect(quickActionsIndex).toBeGreaterThanOrEqual(0);
-    expect(activityIndex).toBeGreaterThan(quickActionsIndex);
-    expect(toolsIndex).toBeGreaterThan(activityIndex);
+    expect(statusIndex).toBeGreaterThanOrEqual(0);
+    expect(activityIndex).toBeGreaterThan(statusIndex);
+    expect(quoteEmptyIndex).toBeGreaterThan(activityIndex);
+    expect(visibleText).not.toContain("Ferramentas");
+    expect(visibleText).not.toContain("Orçamentos recentes.");
+    expect(progressIndex).toBeGreaterThan(quoteEmptyIndex);
+    expect(quickActionsIndex).toBeGreaterThan(progressIndex);
   });
 
   it("shows safe loading and failure feedback and hides empty activity sections", async () => {
@@ -300,7 +314,9 @@ describe("professional dashboard", () => {
     failedWorkspace.error.value = null;
     await failed.vm.$nextTick();
     expect(failed.find(".dashboard-activity").exists()).toBe(false);
-    expect(failed.text()).toContain("Nenhum orçamento criado ainda.");
+    expect(failed.text()).toContain(
+      "Transforme pedidos em trabalhos fechados.",
+    );
   });
 
   it("shows real rejected work and the server-calculated readiness", async () => {
@@ -328,9 +344,9 @@ describe("professional dashboard", () => {
       "A apresentação precisa de mais detalhes.",
     );
     expect(wrapper.text()).toContain("A imagem não está legível.");
-    expect(
-      wrapper.find("dashboard-checklist-stub").attributes("readiness"),
-    ).toBe("25");
+    expect(wrapper.findComponent(DashboardChecklist).props("readiness")).toBe(
+      25,
+    );
   });
 
   it("publishes a complete draft directly from the status banner", async () => {
@@ -367,7 +383,7 @@ describe("professional dashboard", () => {
     );
   });
 
-  it("emits the publish action from the bottom of the checklist card", async () => {
+  it("hides completed checklist items and emits the publish action", async () => {
     const wrapper = mount(DashboardChecklist, {
       props: {
         readiness: 75,
@@ -382,6 +398,14 @@ describe("professional dashboard", () => {
             done: true,
             to: "/app/professional/profile",
           },
+          {
+            id: "portfolio",
+            label: "Primeiro trabalho",
+            description: "Um trabalho em análise ou aprovado",
+            icon: "i-lucide-image-plus",
+            done: false,
+            to: "/app/professional/profile?tab=portfolio",
+          },
         ],
       },
       global: {
@@ -394,9 +418,40 @@ describe("professional dashboard", () => {
       },
     });
 
+    expect(wrapper.text()).not.toContain("Base do perfil");
+    expect(wrapper.text()).toContain("Primeiro trabalho");
+
     const publishButton = wrapper.get("button");
     expect(publishButton.text()).toContain("Publicar perfil");
     await publishButton.trigger("click");
     expect(wrapper.emitted("publish")).toEqual([[]]);
+  });
+
+  it("renders compact quick actions and emits the recommendation action", async () => {
+    const wrapper = mount(DashboardQuickActions, {
+      global: {
+        stubs: {
+          DesignSystemSurfaceCard: { template: "<section><slot /></section>" },
+          NuxtLink: {
+            props: ["to"],
+            template: '<a :href="to"><slot /></a>',
+          },
+          UIcon: true,
+        },
+      },
+    });
+
+    expect(wrapper.findAll("a").map((link) => link.attributes("href"))).toEqual(
+      [
+        "/app/professional/profile",
+        "/app/professional/profile?tab=portfolio",
+        "/app/professional/profile?tab=verificacoes",
+        "/app/professional/services",
+      ],
+    );
+    expect(wrapper.text()).not.toContain("Fortaleça seu perfil");
+
+    await wrapper.get("button").trigger("click");
+    expect(wrapper.emitted("recommend")).toEqual([[]]);
   });
 });

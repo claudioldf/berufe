@@ -1,8 +1,51 @@
 import { mount } from "@vue/test-utils";
 import CodeStep from "~/components/auth/CodeStep.vue";
+import PhoneStep from "~/components/auth/PhoneStep.vue";
 import RegistrationStep from "~/components/auth/RegistrationStep.vue";
+import {
+  professionalPhoneStepContent,
+  resolveProfessionalAuthIntent,
+} from "~/utils/professional-auth";
 
 describe("phone authentication components", () => {
+  it("presents distinct login and signup intent without changing the form", async () => {
+    const wrapper = mount(PhoneStep, {
+      props: {
+        modelValue: "",
+        loading: false,
+        error: "",
+        content: professionalPhoneStepContent.login,
+      },
+      global: {
+        stubs: {
+          DesignSystemEyebrow: { template: "<span><slot /></span>" },
+          NuxtLink: {
+            props: ["to"],
+            template: '<a :href="to"><slot /></a>',
+          },
+          UButton: { template: "<button><slot /></button>" },
+          UIcon: true,
+        },
+      },
+    });
+
+    expect(wrapper.get("h1").text()).toBe("Acesse seu perfil.");
+    expect(wrapper.get("button").text()).toBe("Receber código para entrar");
+    expect(wrapper.get(".phone-step__alternate a").attributes("href")).toBe(
+      "/app/professional/login?intent=signup",
+    );
+
+    await wrapper.setProps({ content: professionalPhoneStepContent.signup });
+
+    expect(wrapper.get("h1").text()).toBe("Crie seu perfil profissional.");
+    expect(wrapper.get("button").text()).toBe("Receber código e começar");
+    expect(wrapper.get(".phone-step__alternate a").attributes("href")).toBe(
+      "/app/professional/login",
+    );
+    expect(resolveProfessionalAuthIntent("signup")).toBe("signup");
+    expect(resolveProfessionalAuthIntent("unexpected")).toBe("login");
+  });
+
   it("keeps short and daily resend timing in the existing control", async () => {
     const wrapper = mount(CodeStep, {
       props: {

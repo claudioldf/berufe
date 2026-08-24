@@ -6,7 +6,6 @@ import { useCatalogs } from "~/composables/useCatalogs";
 import { useShare } from "~/composables/useShare";
 import { useToast } from "~/composables/useToast";
 import type { ProfessionalRelationshipResponse } from "~/services/api/professional-relationships";
-import { formatCurrency, formatDateTime } from "~/utils/formatters";
 
 const runtimeConfig = useRuntimeConfig();
 const { share } = useShare();
@@ -201,36 +200,12 @@ const dashboardStatus = computed(() => {
     publicAvailable: false,
   };
 });
-const verificationDescription = computed(() => {
-  const status = workspace.value?.profile.verification.current?.status;
-  if (status === "approved")
-    return "Perfeito! Sua identidade foi verificada e aprovada pela nossa equipe.";
-  if (status === "pending_review")
-    return "Seus documentos estão em análise. Em breve, avisaremos você por aqui.";
-  if (status === "rejected" || status === "expired")
-    return "Reenvie sua identidade";
-  return "Seus documentos estão em análise. Em breve, avisaremos você por aqui.";
-});
 const recentQuotes = computed(
   () => workspace.value?.dashboard.recentQuotes ?? [],
 );
 const recentServices = computed(
   () => workspace.value?.dashboard.recentServiceJobs ?? [],
 );
-const quoteStatusLabel = {
-  draft: "Rascunho",
-  shared: "Aguardando resposta",
-  change_requested: "Alteração solicitada",
-  approved: "Aprovado",
-  declined: "Recusado",
-} as const;
-const serviceStatusLabel = {
-  approved: "Aprovado",
-  completion_requested: "Aguardando confirmação",
-  completion_issue: "Pendência",
-  completed: "Concluído",
-  cancelled: "Cancelado",
-} as const;
 
 definePageMeta({ layout: "workspace" });
 
@@ -333,185 +308,66 @@ async function respondRelationship(
       </p>
     </DesignSystemContainer>
     <DesignSystemContainer v-else class="dashboard-content">
-      <section
-        class="status-banner"
-        :class="`status-banner--${dashboardStatus.tone}`"
-      >
-        <span class="status-banner__icon"
-          ><UIcon :name="dashboardStatus.icon"
-        /></span>
-        <div>
-          <strong>{{ dashboardStatus.title }}</strong>
-          <p>{{ dashboardStatus.description }}</p>
-        </div>
-        <UButton
-          v-if="canPublish"
-          class="status-banner__action"
-          type="button"
-          color="primary"
-          icon="i-lucide-megaphone"
-          :loading="professionalWorkspace.submissionSaving.value"
-          :disabled="professionalWorkspace.submissionSaving.value"
-          @click="publishProfile"
+      <div class="dashboard-layout">
+        <section
+          class="status-banner"
+          :class="`status-banner--${dashboardStatus.tone}`"
         >
-          Publicar perfil
-        </UButton>
-        <NuxtLink
-          v-else-if="dashboardStatus.publicAvailable"
-          class="status-banner__action"
-          :to="`/profissionais/${workspace.profile.publicSlug}`"
-          target="_blank"
-          >Ver perfil público <UIcon name="i-lucide-arrow-up-right"
-        /></NuxtLink>
-      </section>
-
-      <div class="dashboard-grid">
-        <DashboardChecklist
-          :readiness="progress"
-          :items="checklist"
-          :can-publish="canPublish"
-          :publishing="professionalWorkspace.submissionSaving.value"
-          @publish="publishProfile"
-        />
-
-        <DesignSystemSurfaceCard as="section" class="actions-card">
-          <header>
-            <span>Ações rápidas</span><small>Fortaleça seu perfil</small>
-          </header>
-          <div class="actions-card__grid">
-            <NuxtLink to="/app/professional/profile">
-              <span><UIcon name="i-lucide-pencil" /></span>
-              <strong>Editar perfil</strong>
-              <small
-                >Edite seus dados, serviços e região que atende.</small
-              ></NuxtLink
-            >
-            <NuxtLink to="/app/professional/profile?tab=portfolio">
-              <span><UIcon name="i-lucide-image-plus" /></span>
-              <strong>Novo trabalho</strong>
-              <small
-                >Demonstre seus trabalhos já feitos e aumente sua
-                credibilidade.</small
-              >
-            </NuxtLink>
-            <NuxtLink to="/app/professional/profile?tab=verificacoes">
-              <span><UIcon name="i-lucide-id-card" /></span>
-              <strong>Ver verificações</strong>
-              <small>{{ verificationDescription }}</small></NuxtLink
-            >
-            <NuxtLink to="/app/professional/services">
-              <span><UIcon name="i-lucide-clipboard-check" /></span>
-              <strong>Acompanhar serviços</strong>
-              <small>Conclua os trabalhos aprovados com o cliente.</small>
-            </NuxtLink>
-            <button type="button" @click="relationshipOpen = true">
-              <span><UIcon name="i-lucide-handshake" /></span>
-              <strong>Recomendar um profissional</strong>
-              <small
-                >Amplie sua rede e fortaleça sua credibilidade. Quem
-                compartilha, cresce.</small
-              >
-            </button>
+          <span class="status-banner__icon">
+            <UIcon :name="dashboardStatus.icon" />
+          </span>
+          <div class="status-banner__content">
+            <strong>{{ dashboardStatus.title }}</strong>
+            <p>{{ dashboardStatus.description }}</p>
           </div>
-        </DesignSystemSurfaceCard>
+          <UButton
+            v-if="canPublish"
+            class="status-banner__action"
+            type="button"
+            color="primary"
+            icon="i-lucide-megaphone"
+            :loading="professionalWorkspace.submissionSaving.value"
+            :disabled="professionalWorkspace.submissionSaving.value"
+            @click="publishProfile"
+          >
+            Publicar perfil
+          </UButton>
+          <NuxtLink
+            v-else-if="dashboardStatus.publicAvailable"
+            class="status-banner__action"
+            :to="`/profissionais/${workspace.profile.publicSlug}`"
+            target="_blank"
+          >
+            Ver perfil público <UIcon name="i-lucide-arrow-up-right" />
+          </NuxtLink>
+        </section>
+
+        <div class="dashboard-operational">
+          <DashboardActivitySections
+            :workspace="workspace"
+            :responding-id="
+              professionalWorkspace.relationshipRespondingId.value
+            "
+            :relationship-error="professionalWorkspace.relationshipError.value"
+            @respond="respondRelationship"
+          />
+          <DashboardRecentWork
+            :quotes="recentQuotes"
+            :services="recentServices"
+          />
+        </div>
+
+        <aside class="dashboard-sidebar" aria-label="Ferramentas do perfil">
+          <DashboardChecklist
+            :readiness="progress"
+            :items="checklist"
+            :can-publish="canPublish"
+            :publishing="professionalWorkspace.submissionSaving.value"
+            @publish="publishProfile"
+          />
+          <DashboardQuickActions @recommend="relationshipOpen = true" />
+        </aside>
       </div>
-
-      <DashboardActivitySections
-        :workspace="workspace"
-        :responding-id="professionalWorkspace.relationshipRespondingId.value"
-        :relationship-error="professionalWorkspace.relationshipError.value"
-        @respond="respondRelationship"
-      />
-
-      <section class="dashboard-section quotes-section">
-        <div class="dashboard-section__heading">
-          <div>
-            <DesignSystemEyebrow>Ferramentas</DesignSystemEyebrow>
-            <h2>Orçamentos recentes.</h2>
-          </div>
-          <UButton
-            to="/app/professional/quotes"
-            variant="link"
-            trailing-icon="i-lucide-arrow-right"
-            >Ver todos</UButton
-          >
-        </div>
-        <DesignSystemSurfaceCard class="quotes-table">
-          <div class="quotes-table__head">
-            <span>Orçamento</span><span>Cliente</span><span>Valor</span
-            ><span>Status</span><span>Data</span>
-          </div>
-          <NuxtLink
-            v-for="quote in recentQuotes"
-            :key="quote.id"
-            :to="`/app/professional/quotes/new?quote=${quote.id}`"
-          >
-            <span
-              ><strong>#{{ quote.number }}</strong
-              ><small>{{ quote.serviceDescription }}</small></span
-            >
-            <span>{{ quote.customerName }}</span>
-            <span
-              ><strong>{{ formatCurrency(quote.total) }}</strong></span
-            >
-            <span
-              ><em :class="quote.status">{{
-                quoteStatusLabel[quote.status]
-              }}</em></span
-            >
-            <span
-              >{{ formatDateTime(quote.createdAt) }}
-              <UIcon name="i-lucide-chevron-right"
-            /></span>
-          </NuxtLink>
-          <p v-if="recentQuotes.length === 0" class="quotes-table__empty">
-            Nenhum orçamento criado ainda.
-          </p>
-        </DesignSystemSurfaceCard>
-      </section>
-
-      <section
-        v-if="recentServices.length"
-        class="dashboard-section quotes-section"
-      >
-        <div class="dashboard-section__heading">
-          <div>
-            <DesignSystemEyebrow>Execução</DesignSystemEyebrow>
-            <h2>Serviços em andamento.</h2>
-          </div>
-          <UButton
-            to="/app/professional/services"
-            variant="link"
-            trailing-icon="i-lucide-arrow-right"
-            >Ver todos</UButton
-          >
-        </div>
-        <DesignSystemSurfaceCard class="quotes-table">
-          <NuxtLink
-            v-for="service in recentServices"
-            :key="service.id"
-            :to="`/app/professional/services/${service.id}`"
-          >
-            <span>
-              <strong>#{{ service.quote.number }}</strong>
-              <small>{{ service.quote.serviceDescription }}</small>
-            </span>
-            <span>{{ service.quote.customerName }}</span>
-            <span
-              ><strong>{{ formatCurrency(service.quote.total) }}</strong></span
-            >
-            <span
-              ><em :class="service.status">{{
-                serviceStatusLabel[service.status]
-              }}</em></span
-            >
-            <span
-              >{{ formatDateTime(service.updatedAt) }}
-              <UIcon name="i-lucide-chevron-right"
-            /></span>
-          </NuxtLink>
-        </DesignSystemSurfaceCard>
-      </section>
     </DesignSystemContainer>
     <RelationshipCreateDialog
       v-model:open="relationshipOpen"
@@ -579,12 +435,35 @@ async function respondRelationship(
     font-weight: 700;
   }
 }
-.status-banner {
+.dashboard-layout {
   display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 13px;
-  padding: 15px 18px;
+  grid-template-columns: minmax(260px, 1fr) minmax(0, 2fr);
+  grid-template-rows: max-content minmax(0, 1fr);
+  gap: 12px 28px;
+  align-items: start;
+}
+.dashboard-operational {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  display: grid;
+  gap: 48px;
+  min-width: 0;
+}
+.dashboard-sidebar {
+  grid-row: 2;
+  grid-column: 1;
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+.status-banner {
+  grid-row: 1;
+  grid-column: 1;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 11px;
+  padding: 14px;
   border: 1px solid #b6d9cd;
   border-radius: 16px;
   background: #e6f4ef;
@@ -596,6 +475,9 @@ async function respondRelationship(
     border-radius: 11px;
     background: white;
     color: var(--color-brand);
+  }
+  &__content {
+    min-width: 0;
   }
   & strong,
   & p {
@@ -619,6 +501,10 @@ async function respondRelationship(
     font-weight: 850;
     text-decoration: none;
   }
+  &__action {
+    grid-column: 2;
+    justify-self: start;
+  }
   &--pending {
     border-color: #ead9a5;
     background: #fff7dd;
@@ -631,165 +517,17 @@ async function respondRelationship(
     color: var(--color-danger);
   }
 }
-.dashboard-section {
-  margin-top: 48px;
-  &__heading {
-    display: flex;
-    justify-content: space-between;
-    align-items: end;
-    gap: 20px;
-    margin-bottom: 20px;
-  }
-  &__heading .eyebrow {
-    margin-bottom: 8px;
-  }
-  &__heading h2 {
-    margin: 0;
-    font-family: var(--font-display);
-    font-size: 2rem;
-    font-weight: 500;
-    letter-spacing: -0.035em;
-  }
-  &__heading > span {
-    color: var(--ink-soft);
-    font-size: 0.86rem;
-  }
-}
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: 0.9fr 1.1fr;
-  gap: 12px;
-  margin-top: 48px;
-}
-.actions-card {
-  padding: 22px;
-  & header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-  }
-  & header span {
-    font-family: var(--font-display);
-    font-size: 1.4rem;
-    font-weight: 600;
-  }
-  & header small {
-    color: var(--ink-soft);
-    font-size: 0.84rem;
-  }
-  &__grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 9px;
-  }
-  &__grid a,
-  &__grid button {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    column-gap: 10px;
-    min-height: 94px;
-    padding: 15px;
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    background: #faf9f6;
-    color: var(--ink);
-    text-align: left;
-    text-decoration: none;
-    cursor: pointer;
-    transition: 0.15s ease;
-  }
-  &__grid a:hover,
-  &__grid button:hover {
-    border-color: #9fc8bb;
-    background: var(--color-brand-tint-subtle);
-  }
-  &__grid a > span,
-  &__grid button > span {
-    align-self: center;
-    grid-row: 1 / 3;
-    display: grid;
-    place-items: center;
-    width: 34px;
-    height: 34px;
-    border-radius: 10px;
-    background: var(--mint);
-    color: var(--color-brand);
-  }
-  &__grid strong {
-    align-self: end;
-    font-size: 0.82rem;
-  }
-  &__grid small {
-    color: var(--ink-soft);
-    font-size: 0.84rem;
-  }
-}
-.quotes-table {
-  overflow: hidden;
-  &__head,
-  & > a {
-    display: grid;
-    grid-template-columns: 1.2fr 1fr 0.7fr 0.8fr 0.55fr;
-    gap: 12px;
-    align-items: center;
-    padding: 13px 16px;
-  }
-  &__head {
-    background: #f6f4ef;
-    color: var(--ink-soft);
-    font-size: 0.82rem;
-    font-weight: 850;
-    text-transform: uppercase;
-  }
-  & > a {
-    border-top: 1px solid var(--line);
-    color: var(--ink);
-    font-size: 0.84rem;
-    text-decoration: none;
-  }
-  & > a:hover {
-    background: #faf9f6;
-  }
-  & strong,
-  & small {
-    display: block;
-  }
-  & small {
-    margin-top: 3px;
-    color: var(--ink-soft);
-  }
-  & em {
-    display: inline-flex;
-    padding: 5px 7px;
-    border-radius: 7px;
-    background: #eceae4;
-    color: var(--ink-soft);
-    font-size: 0.82rem;
-    font-style: normal;
-    font-weight: 800;
-  }
-  & em.shared {
-    background: var(--mint);
-    color: var(--color-brand);
-  }
-  & > a > span:last-child {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  &__empty {
-    margin: 0;
-    padding: 24px 16px;
-    border-top: 1px solid var(--line);
-    color: var(--ink-soft);
-    font-size: 0.86rem;
-    text-align: center;
-  }
-}
 @media (width <= 900px) {
-  .dashboard-grid {
+  .dashboard-layout {
     grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    gap: 40px;
+  }
+  .status-banner,
+  .dashboard-operational,
+  .dashboard-sidebar {
+    grid-row: auto;
+    grid-column: 1;
   }
 }
 @media (width <= 700px) {
@@ -799,30 +537,6 @@ async function respondRelationship(
     }
     &__actions {
       flex-wrap: wrap;
-    }
-  }
-  .dashboard-section {
-    &__heading {
-      display: grid;
-    }
-  }
-  .status-banner {
-    grid-template-columns: auto 1fr;
-  }
-  .status-banner__action {
-    grid-column: 2;
-    justify-self: start;
-  }
-  .quotes-table {
-    &__head {
-      display: none;
-    }
-    & > a {
-      grid-template-columns: 1fr auto auto;
-    }
-    & > a > span:nth-child(2),
-    & > a > span:nth-child(5) {
-      display: none;
     }
   }
 }

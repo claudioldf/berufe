@@ -148,6 +148,33 @@ function clearSelection() {
     >
       Continue digitando o nome completo.
     </p>
+    <div
+      v-else-if="searchSettled && query.trim().length >= 3"
+      class="professional-lookup__empty"
+    >
+      <span>
+        <UIcon name="i-lucide-user-round-plus" aria-hidden="true" />
+      </span>
+      <div>
+        <strong>Essa pessoa ainda não aparece na busca.</strong>
+        <p>
+          Continue para informar o telefone profissional e enviar a conexão.
+        </p>
+      </div>
+    </div>
+    <div
+      v-else-if="query.trim().length === 0"
+      class="professional-lookup__empty"
+    >
+      <span><UIcon name="i-lucide-handshake" aria-hidden="true" /></span>
+      <div>
+        <strong>Boas conexões tornam seu perfil mais forte.</strong>
+        <p>
+          Busque alguém com quem você já trabalhou para criar uma recomendação
+          baseada em uma parceria real.
+        </p>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -210,6 +237,39 @@ function clearSelection() {
 
   &__warning {
     color: var(--color-warning-strong);
+  }
+
+  &__empty {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid rgb(18 98 93 / 12%);
+    border-radius: 14px;
+    background: var(--color-brand-tint-subtle);
+  }
+
+  &__empty > span {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: white;
+    color: var(--color-brand);
+    font-size: 1.25rem;
+  }
+
+  &__empty strong {
+    font-size: 0.86rem;
+  }
+
+  &__empty p {
+    margin: 3px 0 0;
+    color: var(--ink-soft);
+    font-size: 0.8rem;
+    line-height: 1.45;
   }
 
   &__results {

@@ -84,6 +84,7 @@ function mountIndex(result = pageFixture()) {
       stubs: {
         DesignSystemSurfaceCard: SurfaceCardStub,
         NuxtLink: NuxtLinkStub,
+        UButton: NuxtLinkStub,
         UIcon: true,
       },
     },
@@ -234,7 +235,7 @@ describe("professional quote index", () => {
     ]);
   });
 
-  it("uses a natural result count when no quotes are available", () => {
+  it("replaces the first-use quote table with a helpful CTA", () => {
     const wrapper = mountIndex(
       pageFixture({
         quotes: [],
@@ -242,7 +243,15 @@ describe("professional quote index", () => {
       }),
     );
 
-    expect(wrapper.text()).toContain("0 orçamentos");
-    expect(wrapper.text()).not.toContain("0 de 0 orçamentos");
+    expect(wrapper.text()).toContain(
+      "Transforme pedidos em trabalhos fechados.",
+    );
+    expect(wrapper.text()).toContain("Aprovação do cliente direto pelo link");
+    expect(wrapper.find(".quote-table").exists()).toBe(false);
+    expect(wrapper.find(".quote-filters").exists()).toBe(false);
+    expect(
+      wrapper.get('a[href="/app/professional/quotes/new"]').text(),
+    ).toContain("Criar meu primeiro orçamento");
+    expect(wrapper.text()).not.toContain("Nenhum orçamento criado ainda.");
   });
 });

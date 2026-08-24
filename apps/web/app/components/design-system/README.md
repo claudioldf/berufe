@@ -2,19 +2,20 @@
 
 These components contain presentation rules that are shared by more than one page or feature. Nuxt auto-imports them with the `DesignSystem` prefix.
 
-| Component     | Responsibility                                                          |
-| ------------- | ----------------------------------------------------------------------- |
-| `Avatar`      | Render a person's image or initials, with optional verification state.  |
-| `Brand`       | Render the Berufe home link and wordmark.                               |
-| `Container`   | Constrain page width and responsive horizontal gutters.                 |
-| `Eyebrow`     | Render the accent-line eyebrow typography role.                         |
-| `FormField`   | Connect a label, direct form control, hint, error, and accessibility IDs. |
-| `Heading`     | Separate semantic heading level from display, section, or workspace style. |
-| `PageSection` | Apply shared responsive vertical page spacing.                          |
-| `SectionCopy` | Render supporting section copy.                                         |
-| `StatusDot`   | Render a semantic status color without status-specific copy.            |
-| `SurfaceCard` | Apply the shared card surface while callers compose the content.        |
-| `Toast`       | Render and dismiss the application toast notification.                  |
+| Component           | Responsibility                                                              |
+| ------------------- | --------------------------------------------------------------------------- |
+| `Avatar`            | Render a person's image or initials, with optional verification state.      |
+| `Brand`             | Render the Berufe home link and wordmark.                                   |
+| `Container`         | Constrain page width and responsive horizontal gutters.                     |
+| `Eyebrow`           | Render the accent-line eyebrow typography role.                             |
+| `FeatureEmptyState` | Explain a first-use feature with benefits, illustration, and a next action. |
+| `FormField`         | Connect a label, direct form control, hint, error, and accessibility IDs.   |
+| `Heading`           | Separate semantic heading level from display, section, or workspace style.  |
+| `PageSection`       | Apply shared responsive vertical page spacing.                              |
+| `SectionCopy`       | Render supporting section copy.                                             |
+| `StatusDot`         | Render a semantic status color without status-specific copy.                |
+| `SurfaceCard`       | Apply the shared card surface while callers compose the content.            |
+| `Toast`             | Render and dismiss the application toast notification.                      |
 
 ## Boundaries
 

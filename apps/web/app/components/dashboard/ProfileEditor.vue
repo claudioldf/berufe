@@ -107,6 +107,7 @@ function save() {
   }
   .editor-savebar > div {
     display: flex;
+    align-items: center;
     gap: 8px;
   }
   @media (width <= 750px) {

@@ -98,8 +98,10 @@ beforeEach(() => {
   });
 });
 
-async function mountPage() {
+async function mountPage(route = "/app/professional/login") {
+  await useRouter().push(route);
   const wrapper = await mountSuspended(ProfessionalLoginPage, {
+    route,
     shallow: true,
   });
   await flushPromises();
@@ -107,6 +109,22 @@ async function mountPage() {
 }
 
 describe("professional login page", () => {
+  it("derives the professional entry experience from the URL intent", async () => {
+    const signupWrapper = await mountPage(
+      "/app/professional/login?intent=signup",
+    );
+    expect(
+      (
+        signupWrapper.vm as unknown as {
+          phoneStepContent: { title: string; submitLabel: string };
+        }
+      ).phoneStepContent,
+    ).toMatchObject({
+      title: "Crie seu perfil profissional.",
+      submitLabel: "Receber código e começar",
+    });
+  });
+
   it("sends a returning registered professional directly to setup", async () => {
     mocks.state!.account.value = {
       role: "professional",

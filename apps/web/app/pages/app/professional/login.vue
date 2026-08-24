@@ -1,12 +1,17 @@
 <script setup lang="ts">
-import { onMounted } from "vue";
+import { computed, onMounted } from "vue";
 import { useApplicationSession } from "~/composables/useApplicationSession";
 import { useAppRole } from "~/composables/useAppRole";
 import { usePhoneAuthFlow } from "~/composables/usePhoneAuthFlow";
 import { useProfessionalOnboarding } from "~/composables/useProfessionalOnboarding";
 import { useToast } from "~/composables/useToast";
+import {
+  professionalPhoneStepContent,
+  resolveProfessionalAuthIntent,
+} from "~/utils/professional-auth";
 
 const router = useRouter();
+const route = useRoute();
 const { setRole } = useAppRole();
 const { showToast } = useToast();
 const { isComplete, hydrate, initializeFromAuth } = useProfessionalOnboarding();
@@ -27,8 +32,15 @@ const {
   registerProfessional,
 } = usePhoneAuthFlow();
 
+const authIntent = computed(() =>
+  resolveProfessionalAuthIntent(route.query.intent),
+);
+const phoneStepContent = computed(
+  () => professionalPhoneStepContent[authIntent.value],
+);
+
 useSeoMeta({
-  title: "Entrar ou criar perfil",
+  title: () => phoneStepContent.value.pageTitle,
   robots: "noindex, nofollow",
 });
 
@@ -153,6 +165,7 @@ onMounted(async () => {
           v-model="phone"
           :loading="isLoading"
           :error="error"
+          :content="phoneStepContent"
           @submit="requestCode"
         />
         <AuthCodeStep
@@ -297,6 +310,7 @@ onMounted(async () => {
       font-weight: 500;
       letter-spacing: -0.05em;
       line-height: 0.98;
+      text-wrap: balance;
     }
     &__lead {
       margin: 18px 0 28px;

@@ -1,5 +1,9 @@
+<script setup lang="ts">
+import { professionalSignupPath } from "~/utils/professional-auth";
+</script>
+
 <template>
-  <section class="professional-cta">
+  <section id="para-profissionais" class="professional-cta">
     <DesignSystemContainer class="professional-cta__inner">
       <div>
         <DesignSystemEyebrow>Você é profissional?</DesignSystemEyebrow>
@@ -13,13 +17,19 @@
           orçamentos sem pagar por contatos.
         </p>
         <UButton
-          to="/app/professional/login"
+          :to="professionalSignupPath"
           color="secondary"
           trailing-icon="i-lucide-arrow-right"
         >
-          Criar meu perfil gratuito
+          Criar perfil grátis
         </UButton>
       </div>
     </DesignSystemContainer>
   </section>
 </template>
+
+<style scoped>
+.professional-cta {
+  scroll-margin-top: 1rem;
+}
+</style>

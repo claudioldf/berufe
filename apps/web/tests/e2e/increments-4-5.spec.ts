@@ -44,6 +44,56 @@ async function expectActionAtCardBottom(card: Locator, name: string) {
   ).toBeLessThanOrEqual(20);
 }
 
+test("professional dashboard prioritizes operational work responsively", async ({
+  page,
+}, testInfo) => {
+  test.setTimeout(60_000);
+  const professionalPhone = testInfo.project.name.startsWith("mobile")
+    ? "47999990000"
+    : "47999993333";
+  await signInExistingProfessional(page, professionalPhone);
+  await page.goto("/app/professional");
+  await waitForNuxtHydration(page);
+
+  const layout = page.locator(".dashboard-layout");
+  const status = page.locator(".status-banner");
+  const operational = page.locator(".dashboard-operational");
+  const sidebar = page.locator(".dashboard-sidebar");
+  await expect(layout).toBeVisible();
+  await expect(
+    operational.getByText("Transforme pedidos em trabalhos fechados."),
+  ).toBeVisible();
+  await expect(operational.getByText("Orçamentos recentes.")).toHaveCount(0);
+  await expect(
+    operational.getByText("Ferramentas", { exact: true }),
+  ).toHaveCount(0);
+  await expect(sidebar.getByText("Ações rápidas")).toBeVisible();
+
+  const statusBox = await status.boundingBox();
+  const operationalBox = await operational.boundingBox();
+  const sidebarBox = await sidebar.boundingBox();
+  expect(statusBox).not.toBeNull();
+  expect(operationalBox).not.toBeNull();
+  expect(sidebarBox).not.toBeNull();
+
+  if (testInfo.project.name.startsWith("mobile")) {
+    expect(operationalBox!.y).toBeGreaterThan(statusBox!.y + statusBox!.height);
+    expect(sidebarBox!.y).toBeGreaterThan(
+      operationalBox!.y + operationalBox!.height,
+    );
+    expect(Math.abs(statusBox!.x - operationalBox!.x)).toBeLessThanOrEqual(1);
+    expect(
+      Math.abs(statusBox!.width - operationalBox!.width),
+    ).toBeLessThanOrEqual(1);
+    return;
+  }
+
+  expect(operationalBox!.x).toBeGreaterThan(statusBox!.x + statusBox!.width);
+  expect(Math.abs(statusBox!.x - sidebarBox!.x)).toBeLessThanOrEqual(1);
+  expect(operationalBox!.width / statusBox!.width).toBeGreaterThan(1.9);
+  expect(operationalBox!.width / statusBox!.width).toBeLessThan(2.1);
+});
+
 test("published professional creates, previews, securely shares, and live-edits a quote", async ({
   context,
   page,
@@ -164,7 +214,7 @@ test("existing members publish a relationship by confirming it together", async 
   await page.goto("/app/professional");
   await page
     .locator(".actions-card")
-    .getByRole("button", { name: /Conectar/ })
+    .getByRole("button", { name: "Recomendar um profissional" })
     .click();
   const requestDialog = page.getByRole("dialog", {
     name: "Conectar com um profissional",
@@ -203,7 +253,7 @@ test("existing members publish a relationship by confirming it together", async 
 
   await page.goto("/app/professional");
   const ongoingSection = page.locator(".activity-section--ongoing");
-  await expect(ongoingSection).toContainText("Acompanhamentos.");
+  await expect(ongoingSection).toContainText("Para acompanhar.");
   const outboundOverview = ongoingSection
     .locator("article")
     .filter({ hasText: recipient.name });

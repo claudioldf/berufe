@@ -5,6 +5,7 @@ interface Props {
   name: string;
   src?: string;
   alt?: string;
+  fallbackIcon?: string;
   size?: "xs" | "sm" | "md" | "lg" | "profile";
   shape?: "circle" | "rounded";
   verified?: boolean;
@@ -14,6 +15,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   src: undefined,
   alt: undefined,
+  fallbackIcon: undefined,
   size: "md",
   shape: "circle",
   verified: false,
@@ -59,9 +61,15 @@ const classes = computed(() => [
       :height="imageDimensions.height"
       :loading="loading"
     />
-    <span v-else class="avatar__fallback" :aria-label="name || 'Avatar'">{{
-      initials
-    }}</span>
+    <span v-else class="avatar__fallback" :aria-label="name || 'Avatar'">
+      <UIcon
+        v-if="fallbackIcon"
+        class="avatar__fallback-icon"
+        :name="fallbackIcon"
+        aria-hidden="true"
+      />
+      <template v-else>{{ initials }}</template>
+    </span>
     <span
       v-if="verified"
       class="avatar__verified"
@@ -129,6 +137,11 @@ const classes = computed(() => [
     place-items: center;
     color: var(--color-brand);
     font-weight: 900;
+  }
+
+  &__fallback-icon {
+    width: 45%;
+    height: 45%;
   }
 
   &__verified {

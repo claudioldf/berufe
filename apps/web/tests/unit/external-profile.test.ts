@@ -25,6 +25,7 @@ const professional: PublicProfessionalProfile = {
   avatar: null,
   primaryService: "Pintura",
   primaryServiceSlug: "pintura",
+  primaryServiceIcon: "i-lucide-paintbrush",
   services: ["Pintura"],
   serviceNotes: [null],
   neighborhoods: [],
@@ -55,20 +56,26 @@ describe("external public profile", () => {
           DesignSystemSurfaceCard: { template: "<section><slot /></section>" },
           DesignSystemEyebrow: { template: "<span><slot /></span>" },
           DesignSystemAvatar: {
-            props: ["name"],
-            template: "<span data-initials>{{ name.slice(0, 1) }}</span>",
+            props: ["name", "fallbackIcon"],
+            template:
+              '<span data-avatar :data-fallback-icon="fallbackIcon">{{ name }}</span>',
           },
         },
       },
     });
 
     expect(wrapper.text()).toContain("Perfil adicionado por indicação");
-    expect(wrapper.text()).toContain("Joinville · área não informada");
+    expect(wrapper.text()).toContain("Joinville");
+    expect(wrapper.text()).not.toContain("área não informada");
     expect(wrapper.text()).toContain(
       "Este profissional ainda não reivindicou o perfil",
     );
     expect(wrapper.text()).toContain("Pintura");
-    expect(wrapper.text()).toContain(
+    expect(wrapper.get("[data-avatar]").attributes("data-fallback-icon")).toBe(
+      "i-lucide-paintbrush",
+    );
+    expect(wrapper.text()).not.toContain("Conexões confirmadas");
+    expect(wrapper.text()).not.toContain(
       "Nenhuma conexão profissional foi confirmada publicamente ainda",
     );
     expect(wrapper.get(`a[href="${contactUrl}"]`).text()).toContain(

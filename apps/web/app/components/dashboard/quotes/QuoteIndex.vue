@@ -35,6 +35,13 @@ const hasFilters = computed(
     status.value !== "all" ||
     scheduledOn.value.length > 0,
 );
+const firstUseEmpty = computed(
+  () =>
+    props.result.meta.totalCount === 0 &&
+    !hasFilters.value &&
+    !props.loading &&
+    !props.error,
+);
 const resultRange = computed(() => {
   const { page: currentPage, perPage, totalCount } = props.result.meta;
   const noun = totalCount === 1 ? "orçamento" : "orçamentos";
@@ -124,39 +131,42 @@ onScopeDispose(clearSearchTimer);
 
 <template>
   <div class="quote-index">
-    <QuoteSummary :summary="props.result.summary" />
+    <DashboardQuoteEmptyState v-if="firstUseEmpty" />
+    <template v-else>
+      <QuoteSummary :summary="props.result.summary" />
 
-    <QuoteFilters
-      :query="query"
-      :status="status"
-      :scheduled-on="scheduledOn"
-      @update:query="setQuery"
-      @update:status="setStatus"
-      @update:scheduled-on="setScheduledOn"
-    />
+      <QuoteFilters
+        :query="query"
+        :status="status"
+        :scheduled-on="scheduledOn"
+        @update:query="setQuery"
+        @update:status="setStatus"
+        @update:scheduled-on="setScheduledOn"
+      />
 
-    <div class="quote-index__summary">
-      <p role="status" aria-live="polite">{{ resultRange }}</p>
-      <button v-if="hasFilters" type="button" @click="clearFilters">
-        Limpar filtros
-      </button>
-    </div>
+      <div class="quote-index__summary">
+        <p role="status" aria-live="polite">{{ resultRange }}</p>
+        <button v-if="hasFilters" type="button" @click="clearFilters">
+          Limpar filtros
+        </button>
+      </div>
 
-    <p v-if="error" class="quote-index__error" role="alert">{{ error }}</p>
-    <QuoteTable
-      :quotes="result.quotes"
-      :filtered="hasFilters"
-      :sort="sort"
-      :direction="direction"
-      :loading="loading"
-      @sort="setSort"
-    />
-    <QuotePagination
-      :page="result.meta.page"
-      :total-pages="result.meta.totalPages"
-      :loading="loading"
-      @page="setPage"
-    />
+      <p v-if="error" class="quote-index__error" role="alert">{{ error }}</p>
+      <QuoteTable
+        :quotes="result.quotes"
+        :filtered="hasFilters"
+        :sort="sort"
+        :direction="direction"
+        :loading="loading"
+        @sort="setSort"
+      />
+      <QuotePagination
+        :page="result.meta.page"
+        :total-pages="result.meta.totalPages"
+        :loading="loading"
+        @page="setPage"
+      />
+    </template>
   </div>
 </template>
 

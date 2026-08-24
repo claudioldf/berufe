@@ -239,11 +239,36 @@ async function submit() {
         class="relationship-create-dialog__eligibility"
         role="alert"
       >
-        <UIcon name="i-lucide-shield-alert" aria-hidden="true" />
-        <p>
-          Para se conectar com outros profissionais, conclua seu cadastro,
-          confirme o telefone e tenha a identidade aprovada.
-        </p>
+        <UIcon
+          class="relationship-create-dialog__eligibility-icon"
+          name="i-lucide-shield-alert"
+          aria-hidden="true"
+        />
+        <div>
+          <span>Ative sua rede profissional</span>
+          <h3>Prepare seu perfil para criar conexões reais.</h3>
+          <p>
+            Para se conectar com outros profissionais, conclua seu cadastro,
+            confirme o telefone e tenha a identidade aprovada.
+          </p>
+          <ul>
+            <li>
+              <UIcon name="i-lucide-circle-check" aria-hidden="true" />
+              Recomendações confirmadas fortalecem os dois perfis
+            </li>
+            <li>
+              <UIcon name="i-lucide-circle-check" aria-hidden="true" />
+              Clientes enxergam parcerias baseadas em trabalho real
+            </li>
+          </ul>
+          <UButton
+            to="/app/professional/profile?tab=verificacoes"
+            color="primary"
+            icon="i-lucide-shield-check"
+          >
+            Concluir meu perfil
+          </UButton>
+        </div>
       </div>
       <form v-else class="relationship-create-dialog" @submit.prevent="submit">
         <RelationshipProfessionalLookup
@@ -422,16 +447,74 @@ async function submit() {
 
   &__eligibility {
     display: flex;
-    gap: 10px;
-    padding: 14px;
-    border-radius: 12px;
-    background: var(--color-warning-soft);
+    align-items: flex-start;
+    gap: 18px;
+    padding: 24px;
+    border: 1px solid rgb(18 98 93 / 14%);
+    border-radius: 18px;
+    background:
+      radial-gradient(circle at 100% 0%, var(--mint), transparent 42%),
+      var(--color-brand-tint-subtle);
     color: var(--ink);
+  }
+
+  &__eligibility-icon {
+    flex: 0 0 3rem;
+    width: 3rem;
+    height: 3rem;
+    color: var(--color-brand);
+    font-size: 3rem;
+  }
+
+  &__eligibility > div > span {
+    color: var(--color-brand);
+    font-size: 0.74rem;
+    font-weight: 850;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  &__eligibility h3 {
+    margin: 7px 0;
+    font-family: var(--font-display);
+    font-size: 1.55rem;
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    line-height: 1.08;
   }
 
   &__eligibility p {
     margin: 0;
-    line-height: 1.5;
+    color: var(--ink-soft);
+    font-size: 0.88rem;
+    line-height: 1.55;
+  }
+
+  &__eligibility ul {
+    display: grid;
+    gap: 7px;
+    margin: 16px 0 18px;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__eligibility li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    font-weight: 720;
+  }
+
+  &__eligibility li svg {
+    flex: 0 0 auto;
+    color: var(--color-brand);
+  }
+}
+
+@media (width <= 520px) {
+  .relationship-create-dialog__eligibility {
+    display: grid;
   }
 }
 </style>

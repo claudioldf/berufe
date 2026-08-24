@@ -50,6 +50,20 @@ const removalDescription = computed(() => {
     ? `A solicitação de conexão enviada para ${name} será cancelada. Você poderá se conectar novamente no futuro.`
     : `A conexão com ${name} deixará de aparecer nos perfis públicos. Você poderá se conectar novamente no futuro.`;
 });
+const emptyStateBenefits = [
+  "Conexões confirmadas nos perfis públicos",
+  "Recomendações baseadas em trabalho real",
+  "Mais confiança para novos clientes",
+];
+const emptyStateVisual = {
+  icon: "i-lucide-handshake",
+  title: "Minha rede",
+  caption: "Parcerias que geram confiança",
+  metaLabel: "Resultado",
+  metaValue: "Prova social real",
+  badge: "Juntos, mais fortes",
+  badgeIcon: "i-lucide-users-round",
+};
 
 function requestRemoval(relationship: ProfessionalRelationship) {
   selectedRelationship.value = relationship;
@@ -74,7 +88,11 @@ function confirmRemoval() {
 
 <template>
   <div class="relationship-manager">
-    <DesignSystemSurfaceCard as="section" class="relationship-manager__intro">
+    <DesignSystemSurfaceCard
+      v-if="relationships.length"
+      as="section"
+      class="relationship-manager__intro"
+    >
       <div>
         <DesignSystemEyebrow>Rede profissional</DesignSystemEyebrow>
         <h2>Minha rede</h2>
@@ -109,18 +127,17 @@ function confirmRemoval() {
       />
     </div>
 
-    <DesignSystemSurfaceCard
+    <DesignSystemFeatureEmptyState
       v-else
-      as="section"
-      class="relationship-manager__empty"
-    >
-      <span><UIcon name="i-lucide-handshake" aria-hidden="true" /></span>
-      <h3>Sua rede começa com uma colaboração.</h3>
-      <p>
-        Encontre um profissional na Berufe ou adicione um contato pelo telefone.
-      </p>
-      <UButton color="primary" @click="emit('add')">Conectar</UButton>
-    </DesignSystemSurfaceCard>
+      eyebrow="Confiança se constrói em rede"
+      title="Transforme boas parcerias em prova social."
+      description="Conecte-se a profissionais com quem você já trabalhou. Depois da confirmação, essa relação fortalece os dois perfis diante de novos clientes."
+      :items="emptyStateBenefits"
+      cta-label="Criar minha primeira conexão"
+      cta-icon="i-lucide-user-plus"
+      :visual="emptyStateVisual"
+      @action="emit('add')"
+    />
 
     <UModal
       v-model:open="removalOpen"
@@ -189,38 +206,6 @@ function confirmRemoval() {
       color: var(--color-danger);
       font-weight: 700;
     }
-  }
-
-  &__empty {
-    display: grid;
-    justify-items: center;
-    padding: 48px 24px;
-    text-align: center;
-  }
-
-  &__empty > span {
-    display: grid;
-    place-items: center;
-    width: 54px;
-    height: 54px;
-    border-radius: 16px;
-    background: var(--mint);
-    color: var(--color-brand);
-    font-size: 1.5rem;
-  }
-
-  &__empty h3 {
-    margin: 16px 0 0;
-    font-family: var(--font-display);
-    font-size: 1.45rem;
-  }
-
-  &__empty p {
-    max-width: 420px;
-    margin: 7px 0 18px;
-    color: var(--ink-soft);
-    font-size: 0.84rem;
-    line-height: 1.5;
   }
 }
 
