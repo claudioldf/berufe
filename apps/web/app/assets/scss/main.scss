@@ -2,7 +2,7 @@
   :root {
     --font-display: "Newsreader", georgia, "Times New Roman", serif;
     --ui-primary: var(--color-forest-700);
-    --ui-secondary: var(--color-coral-500);
+    --ui-secondary: var(--coral);
     --ui-radius: 0.75rem;
     --ui-container: 76rem;
     --color-brand-strong: #17352f;
@@ -164,5 +164,9 @@
 
   .skip-link:focus-visible {
     transform: translateY(0);
+  }
+
+  .bg-secondary {
+    background-color: var(--coral) !important;
   }
 }

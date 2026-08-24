@@ -145,7 +145,7 @@ describe("dashboard activity sections", () => {
 
     const attention = wrapper.get(".activity-section--attention");
     const ongoing = wrapper.get(".activity-section--ongoing");
-    expect(wrapper.get(".dashboard-activity").classes()).toContain(
+    expect(wrapper.get(".dashboard-activity").classes()).not.toContain(
       "dashboard-activity--split",
     );
     expect(attention.text()).toContain("Ação necessária");
@@ -298,7 +298,7 @@ describe("dashboard activity sections", () => {
     ).toBe(true);
   });
 
-  it("uses the full width for one group and hides the container when empty", async () => {
+  it("uses one stacked container for a single group and hides it when empty", async () => {
     const ongoingWorkspace = workspace();
     ongoingWorkspace.relationships = [
       relationship(
@@ -316,9 +316,9 @@ describe("dashboard activity sections", () => {
       false,
     );
     expect(ongoingOnly.get(".activity-section--ongoing").exists()).toBe(true);
-    expect(ongoingOnly.get(".dashboard-activity").classes()).not.toContain(
-      "dashboard-activity--split",
-    );
+    expect(ongoingOnly.get(".dashboard-activity").classes()).toEqual([
+      "dashboard-activity",
+    ]);
 
     const empty = await mountSuspended(DashboardActivitySections, {
       ...mountOptions,

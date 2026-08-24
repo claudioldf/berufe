@@ -209,11 +209,7 @@ function activityIcon(type: ActivityItemType) {
 </script>
 
 <template>
-  <div
-    v-if="sections.length"
-    class="dashboard-activity"
-    :class="{ 'dashboard-activity--split': sections.length > 1 }"
-  >
+  <div v-if="sections.length" class="dashboard-activity">
     <section
       v-for="section in sections"
       :key="section.id"
@@ -303,12 +299,7 @@ function activityIcon(type: ActivityItemType) {
 .dashboard-activity {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 28px;
-  margin-top: 48px;
-
-  &--split {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+  gap: 40px;
 }
 
 .activity-section {
@@ -426,12 +417,6 @@ function activityIcon(type: ActivityItemType) {
   & .activity-list__status {
     background: var(--color-brand-tint-subtle);
     color: var(--color-brand);
-  }
-}
-
-@media (width <= 900px) {
-  .dashboard-activity--split {
-    grid-template-columns: minmax(0, 1fr);
   }
 }
 
