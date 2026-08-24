@@ -1,6 +1,7 @@
 import {
   fetchProfessionalWorkspace,
   attachProfessionalProfilePhoto,
+  deleteProfessionalProfilePhoto,
   attachProfessionalPortfolioItem,
   deleteProfessionalPortfolioItem,
   deleteProfessionalRelationship,
@@ -36,6 +37,7 @@ export async function useProfessionalWorkspace() {
     fetchProfessionalWorkspace(client),
   );
   const photoUploading = shallowRef(false);
+  const photoRemoving = shallowRef(false);
   const photoError = shallowRef("");
   const portfolioSaving = shallowRef(false);
   const portfolioError = shallowRef("");
@@ -109,7 +111,8 @@ export async function useProfessionalWorkspace() {
   }
 
   async function runPhotoAction(action: () => Promise<MediaUpload>) {
-    if (photoUploading.value) return workspace.data.value;
+    if (photoUploading.value || photoRemoving.value)
+      return workspace.data.value;
     photoUploading.value = true;
     photoError.value = "";
     try {
@@ -133,6 +136,30 @@ export async function useProfessionalWorkspace() {
     const upload = workspace.data.value?.profile.photo.latestUpload;
     if (!upload?.retryable) return workspace.data.value;
     return runPhotoAction(() => retryMediaUpload(client, upload.id));
+  }
+
+  async function removePhoto() {
+    if (photoUploading.value || photoRemoving.value)
+      return workspace.data.value;
+
+    photoRemoving.value = true;
+    photoError.value = "";
+    try {
+      const updated = await deleteProfessionalProfilePhoto(client);
+      workspace.data.value = updated;
+      clearNuxtData(
+        `public-professional-profile-${updated.profile.publicSlug}`,
+      );
+      return updated;
+    } catch (error) {
+      photoError.value =
+        error instanceof ApiRequestError
+          ? error.message
+          : "Não foi possível remover a foto. Tente novamente.";
+      throw error;
+    } finally {
+      photoRemoving.value = false;
+    }
   }
 
   async function createPortfolioItem(draft: PortfolioItemDraft) {
@@ -343,9 +370,11 @@ export async function useProfessionalWorkspace() {
     saveSupply,
     saveProfile,
     photoUploading,
+    photoRemoving,
     photoError,
     uploadPhoto,
     retryPhoto,
+    removePhoto,
     portfolioSaving,
     portfolioError,
     createPortfolioItem,

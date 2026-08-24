@@ -122,9 +122,11 @@ function workspace() {
     error: shallowRef(null),
     saveProfile: vi.fn(),
     photoUploading: shallowRef(false),
+    photoRemoving: shallowRef(false),
     photoError: shallowRef(""),
     uploadPhoto: vi.fn(),
     retryPhoto: vi.fn(),
+    removePhoto: vi.fn(),
     portfolioSaving: shallowRef(false),
     createPortfolioItem: vi.fn(),
     deletePortfolioItem: vi.fn(),
@@ -252,5 +254,38 @@ describe("professional profile editor page", () => {
     expect(mocks.showToast).toHaveBeenCalledWith(
       expect.objectContaining({ title: "Conexão removida" }),
     );
+  });
+
+  it("delegates confirmed profile-photo removal and reports success", async () => {
+    const currentWorkspace = workspace();
+    currentWorkspace.data.value.profile.photo = {
+      current: {
+        id: "d25c64fa-3e6a-4e56-adc9-85bdac0045cb",
+        status: "approved",
+        rejectionReason: null,
+        submittedAt: "2026-08-23T12:00:00Z",
+      },
+      hasPublishedPhoto: true,
+      publishedImageUrl: "https://api.example.test/profile-photo.jpg",
+      latestUpload: null,
+    };
+    currentWorkspace.removePhoto.mockResolvedValue(currentWorkspace.data.value);
+    mocks.useWorkspace.mockResolvedValue(currentWorkspace);
+
+    const wrapper = await mountSuspended(ProfessionalProfilePage, {
+      shallow: true,
+      global: { renderStubDefaultSlot: true },
+    });
+    const editor = wrapper.getComponent({ name: "DashboardProfileEditor" });
+
+    editor.vm.$emit("photoRemove");
+    await flushPromises();
+
+    expect(currentWorkspace.removePhoto).toHaveBeenCalledOnce();
+    expect(mocks.showToast).toHaveBeenCalledWith({
+      title: "Foto removida",
+      description:
+        "Ela não aparece mais no perfil. Adicione outra foto para publicá-lo novamente.",
+    });
   });
 });

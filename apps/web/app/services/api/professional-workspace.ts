@@ -290,6 +290,17 @@ export async function attachProfessionalProfilePhoto(
   return mapProfessionalWorkspace(data.data);
 }
 
+export async function deleteProfessionalProfilePhoto(
+  client: BerufeApiClient,
+): Promise<ProfessionalWorkspace> {
+  const { data, error, response } = await client.DELETE(
+    "/api/v1/professional/profile/photo",
+  );
+  if (error || !data) throw requestError(error, response);
+
+  return mapProfessionalWorkspace(data.data);
+}
+
 export async function attachProfessionalPortfolioItem(
   client: BerufeApiClient,
   input: {

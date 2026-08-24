@@ -30,9 +30,11 @@ const {
   error: workspaceError,
   saveProfile: saveWorkspaceProfile,
   photoUploading,
+  photoRemoving,
   photoError,
   uploadPhoto,
   retryPhoto,
+  removePhoto,
   portfolioSaving,
   createPortfolioItem,
   deletePortfolioItem,
@@ -108,6 +110,12 @@ const statusLabel = computed(() => {
     return "Publicado · revisão pendente";
   }
   if (profile.isPublic) return "Publicado";
+  if (
+    profile.status === "published" &&
+    profile.publicationBlockers.includes("photo")
+  ) {
+    return "Indisponível · adicione uma foto";
+  }
   if (profile.revisionStatus === "rejected") {
     return "Indisponível após revisão";
   }
@@ -182,6 +190,25 @@ async function handlePhotoRetry() {
   } catch (error) {
     showToast({
       title: "Não foi possível reenviar a foto",
+      description:
+        error instanceof ApiRequestError
+          ? error.message
+          : "Tente novamente em instantes.",
+    });
+  }
+}
+
+async function handlePhotoRemove() {
+  try {
+    await removePhoto();
+    showToast({
+      title: "Foto removida",
+      description:
+        "Ela não aparece mais no perfil. Adicione outra foto para publicá-lo novamente.",
+    });
+  } catch (error) {
+    showToast({
+      title: "Não foi possível remover a foto",
       description:
         error instanceof ApiRequestError
           ? error.message
@@ -328,10 +355,12 @@ async function handleRelationshipRemove(id: string) {
         :saving="saving"
         :photo="workspace?.profile.photo"
         :photo-uploading="photoUploading"
+        :photo-removing="photoRemoving"
         :photo-error="photoError"
         @save="saveProfile"
         @photo-select="handlePhoto"
         @photo-retry="handlePhotoRetry"
+        @photo-remove="handlePhotoRemove"
       />
       <DashboardPortfolioManager
         v-else-if="activeTab === 'portfolio'"

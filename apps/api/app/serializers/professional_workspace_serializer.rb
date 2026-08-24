@@ -129,7 +129,7 @@ class ProfessionalWorkspaceSerializer
   def serialized_photo
     current = profile.working_photo
     latest_upload = profile.media_uploads.where(purpose: "profile_photo").order(created_at: :desc, id: :desc).first
-    latest_upload = nil if latest_upload&.attached? && current&.media_upload_id == latest_upload.id
+    latest_upload = nil if latest_upload&.attached?
     {
       current: current && {
         id: current.id,
