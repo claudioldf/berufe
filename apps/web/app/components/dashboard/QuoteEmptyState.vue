@@ -18,6 +18,7 @@ const visual = {
 
 <template>
   <DesignSystemFeatureEmptyState
+    class="quote-empty-state"
     eyebrow="Sua proposta, com cara profissional"
     title="Transforme pedidos em trabalhos fechados."
     description="Monte um orçamento claro em poucos minutos. O cliente recebe um link seguro para aprovar ou pedir ajustes, e você acompanha tudo pelo painel."
@@ -27,3 +28,11 @@ const visual = {
     :visual="visual"
   />
 </template>
+
+<style scoped lang="scss">
+@media (width <= 700px) {
+  .quote-empty-state :deep(.feature-empty__visual) {
+    display: none;
+  }
+}
+</style>

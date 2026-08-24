@@ -49,11 +49,33 @@ async function expectStacked(upper: Locator, lower: Locator) {
   expect(Math.abs(upperBox.width - lowerBox.width)).toBeLessThanOrEqual(1);
 }
 
+async function expectAlignedBelow(upper: Locator, lower: Locator) {
+  const upperBox = await boundingBox(upper);
+  const lowerBox = await boundingBox(lower);
+  expect(lowerBox.y).toBeGreaterThanOrEqual(upperBox.y + upperBox.height);
+  expect(Math.abs(upperBox.x - lowerBox.x)).toBeLessThanOrEqual(1);
+}
+
 async function expectSideBySide(left: Locator, right: Locator) {
   const leftBox = await boundingBox(left);
   const rightBox = await boundingBox(right);
   expect(rightBox.x).toBeGreaterThanOrEqual(leftBox.x + leftBox.width);
   expect(Math.abs(leftBox.y - rightBox.y)).toBeLessThanOrEqual(1);
+}
+
+async function expectSameWidth(outer: Locator, inner: Locator) {
+  const outerBox = await boundingBox(outer);
+  const innerBox = await boundingBox(inner);
+  expect(Math.abs(outerBox.x - innerBox.x)).toBeLessThanOrEqual(1);
+  expect(Math.abs(outerBox.width - innerBox.width)).toBeLessThanOrEqual(1);
+}
+
+async function expectStatusContentFollowsIcon(status: Locator) {
+  const iconBox = await boundingBox(status.locator(".status-banner__icon"));
+  const contentBox = await boundingBox(
+    status.locator(".status-banner__content"),
+  );
+  expect(contentBox.x - (iconBox.x + iconBox.width)).toBeLessThanOrEqual(16);
 }
 
 async function expectProgressStepsOnOneRow(page: Page) {
@@ -118,9 +140,21 @@ test("onboarding and dashboard remain spacious across responsive layouts", async
   const sidebar = page.locator(".dashboard-sidebar");
   const checklist = page.locator(".checklist-card");
   const quickActions = page.locator(".actions-card");
+  const recentWork = page.locator(".dashboard-operational .recent-work");
+  const welcomeIntro = page.locator(".dashboard-welcome__inner > div").first();
+  const welcomeActions = page.locator(".dashboard-welcome__actions");
 
   await expectStacked(status, operational);
   await expectStacked(operational, sidebar);
+  await expectStatusContentFollowsIcon(status);
+  await expectSameWidth(operational, recentWork);
+  await expectSideBySide(checklist, quickActions);
+  await expectNoHorizontalOverflow(page);
+
+  await page.setViewportSize({ width: 834, height: 1194 });
+  await expectAlignedBelow(welcomeIntro, welcomeActions);
+  await expectStatusContentFollowsIcon(status);
+  await expectSameWidth(operational, recentWork);
   await expectSideBySide(checklist, quickActions);
   await expectNoHorizontalOverflow(page);
 
@@ -134,8 +168,14 @@ test("onboarding and dashboard remain spacious across responsive layouts", async
   await expectNoHorizontalOverflow(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
+  await expectAlignedBelow(welcomeIntro, welcomeActions);
   await expectStacked(status, operational);
   await expectStacked(operational, sidebar);
+  await expectStatusContentFollowsIcon(status);
+  await expectSameWidth(operational, recentWork);
   await expectStacked(checklist, quickActions);
+  await expect(
+    page.locator(".dashboard-operational .feature-empty__visual"),
+  ).toBeHidden();
   await expectNoHorizontalOverflow(page);
 });
