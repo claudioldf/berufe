@@ -32,6 +32,7 @@ class PublicProfessionalProfileSerializer
           id: selection.service_id,
           name: selection.service.name,
           slug: selection.service.slug,
+          icon: selection.service.icon,
           is_primary: selection.is_primary,
           note: selection.note
         }

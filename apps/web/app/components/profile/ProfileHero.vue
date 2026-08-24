@@ -38,6 +38,9 @@ const identityVerified = computed(() =>
           <DesignSystemAvatar
             :name="professional.name"
             :src="professional.avatar ?? undefined"
+            :fallback-icon="
+              professional.primaryServiceIcon ?? 'i-lucide-briefcase-business'
+            "
             size="profile"
             shape="rounded"
             :verified="identityVerified"

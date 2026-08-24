@@ -154,6 +154,7 @@ export interface PublicProfessionalProfile {
   avatar: string | null;
   primaryService: string | null;
   primaryServiceSlug: string | null;
+  primaryServiceIcon: string | null;
   services: string[];
   serviceNotes: Array<string | null>;
   neighborhoods: string[];

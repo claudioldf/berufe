@@ -81,6 +81,7 @@ RSpec.describe "Public professional profiles", type: :request, openapi: true do
         "id" => primary_service.id,
         "name" => primary_service.name,
         "slug" => primary_service.slug,
+        "icon" => primary_service.icon,
         "is_primary" => true,
         "note" => "Quadros elétricos"
       },
@@ -88,6 +89,7 @@ RSpec.describe "Public professional profiles", type: :request, openapi: true do
         "id" => additional_service.id,
         "name" => additional_service.name,
         "slug" => additional_service.slug,
+        "icon" => additional_service.icon,
         "is_primary" => false,
         "note" => "Pequenos reparos"
       }

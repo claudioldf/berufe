@@ -2298,6 +2298,7 @@ export interface components {
             id: string;
             name: string;
             slug: string;
+            icon: string;
             is_primary: boolean;
             note: string | null;
         };

@@ -19,10 +19,11 @@ const AvatarStub = defineComponent({
   props: {
     name: { type: String, required: true },
     src: { type: String, default: undefined },
+    fallbackIcon: { type: String, default: undefined },
     verified: { type: Boolean, default: false },
   },
   template:
-    '<span data-avatar :data-src="src" :data-verified="verified">{{ name }}</span>',
+    '<span data-avatar :data-src="src" :data-fallback-icon="fallbackIcon" :data-verified="verified">{{ name }}</span>',
 });
 const EvidenceStub = defineComponent({
   props: { evidence: { type: Object, required: true } },
@@ -41,6 +42,7 @@ function professional(
     avatar: null,
     primaryService: "Eletricista",
     primaryServiceSlug: "eletricista",
+    primaryServiceIcon: "i-lucide-zap",
     services: ["Eletricista", "Marido de aluguel"],
     serviceNotes: ["Quadros elétricos", null],
     neighborhoods: ["América", "Centro"],
@@ -137,6 +139,9 @@ describe("public profile components", () => {
     expect(wrapper.get("[data-avatar]").attributes("data-verified")).toBe(
       "true",
     );
+    expect(wrapper.get("[data-avatar]").attributes("data-fallback-icon")).toBe(
+      "i-lucide-zap",
+    );
     expect(
       wrapper.get('a[href="/encontrar?servico=eletricista&bairro=america"]'),
     ).toBeTruthy();
@@ -154,6 +159,11 @@ describe("public profile components", () => {
   it("keeps unapproved identity and absent optional profile claims out of the hero", async () => {
     const profile = professional({
       avatar: null,
+      primaryService: null,
+      primaryServiceSlug: null,
+      primaryServiceIcon: null,
+      services: [],
+      serviceNotes: [],
       yearsExperience: null,
       evidence: [
         {
@@ -178,6 +188,9 @@ describe("public profile components", () => {
 
     expect(wrapper.get("[data-avatar]").attributes("data-verified")).toBe(
       "false",
+    );
+    expect(wrapper.get("[data-avatar]").attributes("data-fallback-icon")).toBe(
+      "i-lucide-briefcase-business",
     );
     expect(wrapper.text()).not.toContain("anos de experiência");
     expect(wrapper.find("nav").exists()).toBe(false);
