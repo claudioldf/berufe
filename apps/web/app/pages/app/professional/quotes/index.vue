@@ -48,9 +48,6 @@ async function loadQuotes(filters: QuoteListFilters) {
         </NuxtLink>
         <div class="quote-list-page__heading-row">
           <div>
-            <DesignSystemEyebrow tone="inverse"
-              >Ferramentas</DesignSystemEyebrow
-            >
             <h1>Orçamentos</h1>
             <p>Encontre, revise e acompanhe as respostas dos clientes.</p>
           </div>
@@ -112,7 +109,7 @@ async function loadQuotes(filters: QuoteListFilters) {
   }
 
   &__heading h1 {
-    margin: 6px 0;
+    margin: 0 0 6px;
     font-family: var(--font-display);
     font-size: 2.7rem;
     font-weight: 500;
