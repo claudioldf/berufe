@@ -11,16 +11,27 @@ const props = withDefaults(
   defineProps<{
     photo?: ProfessionalProfilePhotoState;
     photoUploading?: boolean;
+    photoRemoving?: boolean;
+    allowPhotoRemoval?: boolean;
     photoError?: string;
   }>(),
-  { photo: undefined, photoUploading: false, photoError: "" },
+  {
+    photo: undefined,
+    photoUploading: false,
+    photoRemoving: false,
+    allowPhotoRemoval: false,
+    photoError: "",
+  },
 );
 const emit = defineEmits<{
   photoSelect: [file: File];
   photoRetry: [];
+  photoRemove: [];
 }>();
 const photoInput = useTemplateRef<HTMLInputElement>("photo-input");
 const selectionError = shallowRef("");
+const photoRemovalOpen = shallowRef(false);
+const photoBusy = computed(() => props.photoUploading || props.photoRemoving);
 const canRetry = computed(
   () =>
     props.photo?.latestUpload?.state === "failed" &&
@@ -31,6 +42,7 @@ const hasPhoto = computed(() =>
 );
 const photoStatus = computed(() => {
   if (props.photoUploading) return "Enviando e processando foto…";
+  if (props.photoRemoving) return "Removendo foto…";
   if (selectionError.value || props.photoError)
     return selectionError.value || props.photoError;
 
@@ -56,8 +68,14 @@ const photoStatus = computed(() => {
 });
 
 function openPhotoPicker() {
+  if (photoBusy.value) return;
   selectionError.value = "";
   photoInput.value?.click();
+}
+
+function confirmPhotoRemoval() {
+  photoRemovalOpen.value = false;
+  emit("photoRemove");
 }
 
 function selectPhoto(event: Event) {
@@ -104,30 +122,71 @@ function selectPhoto(event: Event) {
         class="profile-photo-control__input"
         type="file"
         accept="image/jpeg,image/png"
-        :disabled="props.photoUploading"
+        :disabled="photoBusy"
         @change="selectPhoto"
       />
-      <UButton
-        type="button"
-        color="neutral"
-        variant="outline"
-        :loading="props.photoUploading"
-        :disabled="props.photoUploading"
-        @click="openPhotoPicker"
-      >
-        {{ hasPhoto ? "Trocar foto" : "Adicionar foto" }}
-      </UButton>
-      <UButton
-        v-if="canRetry"
-        type="button"
-        color="neutral"
-        variant="ghost"
-        :disabled="props.photoUploading"
-        @click="emit('photoRetry')"
-      >
-        Tentar novamente
-      </UButton>
+      <div class="profile-photo-control__actions">
+        <UButton
+          type="button"
+          color="neutral"
+          variant="outline"
+          :loading="props.photoUploading"
+          :disabled="photoBusy"
+          @click="openPhotoPicker"
+        >
+          {{ hasPhoto ? "Trocar foto" : "Adicionar foto" }}
+        </UButton>
+        <UButton
+          v-if="canRetry"
+          type="button"
+          color="neutral"
+          variant="ghost"
+          :disabled="photoBusy"
+          @click="emit('photoRetry')"
+        >
+          Tentar novamente
+        </UButton>
+        <UButton
+          v-if="props.allowPhotoRemoval && hasPhoto"
+          type="button"
+          color="error"
+          variant="ghost"
+          icon="i-lucide-trash-2"
+          :loading="props.photoRemoving"
+          :disabled="photoBusy"
+          @click="photoRemovalOpen = true"
+        >
+          Remover foto
+        </UButton>
+      </div>
     </div>
+    <UModal
+      v-model:open="photoRemovalOpen"
+      title="Remover foto do perfil?"
+      description="A foto deixará de aparecer no seu perfil. Se ele estiver publicado, ficará indisponível até você adicionar outra foto."
+    >
+      <template #footer>
+        <UButton
+          type="button"
+          color="neutral"
+          variant="ghost"
+          :disabled="photoBusy"
+          @click="photoRemovalOpen = false"
+        >
+          Manter foto
+        </UButton>
+        <UButton
+          type="button"
+          color="error"
+          icon="i-lucide-trash-2"
+          :loading="props.photoRemoving"
+          :disabled="photoBusy"
+          @click="confirmPhotoRemoval"
+        >
+          Remover foto
+        </UButton>
+      </template>
+    </UModal>
     <div class="editor-grid">
       <DesignSystemFormField
         id="profile-name"
@@ -244,7 +303,7 @@ function selectPhoto(event: Event) {
 <style scoped lang="scss">
 .profile-photo-control {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
   margin-bottom: 18px;
@@ -293,13 +352,20 @@ function selectPhoto(event: Event) {
   &__input {
     display: none;
   }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+  }
 }
 
 @media (width <= 720px) {
   .profile-photo-control {
     grid-template-columns: auto minmax(0, 1fr);
 
-    & > button {
+    &__actions {
       grid-column: 1 / -1;
       justify-content: center;
     }

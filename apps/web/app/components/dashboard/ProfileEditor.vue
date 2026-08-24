@@ -15,12 +15,14 @@ const props = defineProps<{
   saving?: boolean;
   photo?: ProfessionalProfilePhotoState;
   photoUploading?: boolean;
+  photoRemoving?: boolean;
   photoError?: string;
 }>();
 const emit = defineEmits<{
   save: [draft: ProfessionalProfileDraft, confirm: () => void];
   photoSelect: [file: File];
   photoRetry: [];
+  photoRemove: [];
 }>();
 
 const {
@@ -49,9 +51,12 @@ function save() {
         v-model="form"
         :photo="props.photo"
         :photo-uploading="props.photoUploading"
+        :photo-removing="props.photoRemoving"
+        allow-photo-removal
         :photo-error="props.photoError"
         @photo-select="emit('photoSelect', $event)"
         @photo-retry="emit('photoRetry')"
+        @photo-remove="emit('photoRemove')"
       />
       <DashboardProfileSocialSection
         v-model="form"

@@ -2,6 +2,7 @@ import type { BerufeApiClient } from "@app/services/api/client";
 import {
   fetchProfessionalWorkspace,
   attachProfessionalProfilePhoto,
+  deleteProfessionalProfilePhoto,
   attachProfessionalPortfolioItem,
   deleteProfessionalPortfolioItem,
   deleteProfessionalRelationship,
@@ -271,6 +272,22 @@ describe("professional workspace API", () => {
           media_upload_id: "12d12a91-582e-4f1b-aa6b-49b5fd7ce1eb",
         },
       },
+    );
+  });
+
+  it("removes the current profile photo and maps the refreshed workspace", async () => {
+    const client = apiClientReturning("DELETE", {
+      data: { data: workspaceData, request_id: "workspace-photo-remove" },
+      error: undefined,
+      response: new Response(null),
+    });
+
+    await expect(deleteProfessionalProfilePhoto(client)).resolves.toEqual(
+      mapProfessionalWorkspace(workspaceData),
+    );
+
+    expect(client.DELETE).toHaveBeenCalledWith(
+      "/api/v1/professional/profile/photo",
     );
   });
 

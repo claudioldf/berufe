@@ -50,6 +50,59 @@ RSpec.describe "Professional profile photo", type: :request, openapi: true do
     assert_api_conform(status: 422)
   end
 
+  it "removes the active photo and returns the refreshed workspace" do
+    photo = ProfessionalProfilePhotoAttacher.new.call(
+      profile:,
+      media_upload_id: processed_upload.id
+    )
+    profile.update!(published_photo: photo)
+
+    delete "/api/v1/professional/profile/photo",
+      headers: session_headers(request_id: "profile-photo-remove", origin: true),
+      as: :json
+
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body.dig("data", "profile", "photo")).to eq(
+      "current" => nil,
+      "has_published_photo" => false,
+      "published_image_url" => nil,
+      "latest_upload" => nil
+    )
+    expect(profile.reload).to have_attributes(
+      working_photo: nil,
+      published_photo: nil,
+      approved_photo: nil
+    )
+    expect(photo.reload).to be_superseded
+    assert_api_conform(status: 200)
+  end
+
+  it "denies anonymous, invalid-origin, and missing-profile photo removal" do
+    delete "/api/v1/professional/profile/photo",
+      headers: {"X-Request-Id" => "profile-photo-remove-anonymous", "Origin" => ENV.fetch("WEB_ORIGIN")},
+      as: :json
+    expect(response).to have_http_status(:unauthorized)
+    assert_api_conform(status: 401)
+
+    delete "/api/v1/professional/profile/photo",
+      headers: session_headers(request_id: "profile-photo-remove-origin", origin: "https://untrusted.example"),
+      as: :json
+    expect(response).to have_http_status(:forbidden)
+    assert_api_conform(status: 403)
+
+    unregistered = UserAccount.create!(phone_e164: "+5547999996206", role: "professional", status: "active")
+    unregistered_token = ApplicationSession.issue!(user_account: unregistered).last
+    delete "/api/v1/professional/profile/photo",
+      headers: session_headers(
+        request_id: "profile-photo-remove-missing",
+        origin: true,
+        token: unregistered_token
+      ),
+      as: :json
+    expect(response).to have_http_status(:not_found)
+    assert_api_conform(status: 404)
+  end
+
   it "denies anonymous, invalid-origin, and missing-profile access" do
     put "/api/v1/professional/profile/photo",
       params: {media_upload_id: SecureRandom.uuid},
