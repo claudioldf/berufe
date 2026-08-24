@@ -46,7 +46,10 @@ const connectionCountLabel = computed(() =>
       </div>
     </section>
 
-    <section class="profile-section portfolio-section">
+    <section
+      v-if="professional.portfolio.length"
+      class="profile-section portfolio-section"
+    >
       <div class="profile-section__heading">
         <div>
           <DesignSystemEyebrow>Portfólio aprovado</DesignSystemEyebrow>
@@ -78,7 +81,10 @@ const connectionCountLabel = computed(() =>
       </div>
     </section>
 
-    <section class="profile-section relationships-section">
+    <section
+      v-if="professional.relationships.length"
+      class="profile-section relationships-section"
+    >
       <div class="profile-section__heading">
         <div>
           <DesignSystemEyebrow>Rede profissional</DesignSystemEyebrow>
@@ -86,7 +92,7 @@ const connectionCountLabel = computed(() =>
         </div>
         <span>{{ connectionCountLabel }}</span>
       </div>
-      <div v-if="professional.relationships.length" class="relationships-list">
+      <div class="relationships-list">
         <article
           v-for="relationship in professional.relationships"
           :key="relationship.id"
@@ -122,9 +128,6 @@ const connectionCountLabel = computed(() =>
           </div>
         </article>
       </div>
-      <p v-else class="relationships-empty">
-        Este profissional ainda não possui conexões profissionais confirmadas.
-      </p>
     </section>
 
     <section class="profile-disclaimer">

@@ -227,6 +227,24 @@ describe("public profile components", () => {
     expect(evidence.text()).toContain("3serviços concluídos");
   });
 
+  it("hides empty portfolio and professional-relationship sections", async () => {
+    const details = await mountSuspended(ProfileDetails, {
+      props: {
+        professional: professional({ portfolio: [], relationships: [] }),
+        supportEmailUrl: "mailto:suporte@berufe.com.br",
+      },
+      global: { stubs: globalStubs },
+    });
+
+    expect(details.text()).not.toContain("Trabalhos que falam.");
+    expect(details.text()).not.toContain("Confiança entre quem faz.");
+    expect(details.text()).not.toContain(
+      "ainda não possui conexões profissionais confirmadas",
+    );
+    expect(details.text()).toContain("Experiência que dá");
+    expect(details.text()).toContain("O que a verificação significa");
+  });
+
   it("names who authored each professional recommendation", async () => {
     const profile = professional({
       relationships: [
