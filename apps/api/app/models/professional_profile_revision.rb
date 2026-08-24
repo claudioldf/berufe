@@ -20,7 +20,7 @@ class ProfessionalProfileRevision < ApplicationRecord
   validates :profile_type, inclusion: {in: PROFILE_TYPES}
   validates :display_name, length: {in: 3..70}
   validates :headline, length: {in: 1..120}, allow_nil: true
-  validates :bio, length: {in: 1..500}, allow_nil: true
+  validates :bio, length: {in: 1..2500}, allow_nil: true
   validates :years_experience, numericality: {only_integer: true, in: 0..70}, allow_nil: true
   validates :whatsapp_e164, format: {with: UserAccount::BRAZILIAN_MOBILE_PATTERN}, allow_nil: true
   validates :instagram_url, length: {maximum: 200}, allow_nil: true

@@ -198,7 +198,7 @@ Use structured service selections rather than free-form specialties. Allow a sho
 | `status`                    | enum      | `draft`, `pending_review`, `approved`, `rejected`, or `superseded`  |
 | `display_name`              | text      | Required                                                            |
 | `headline`                  | text      | Short public description                                            |
-| `bio`                       | text      | Short, length-limited                                               |
+| `bio`                       | text      | Optional; 1–2,500 characters when present                           |
 | `years_experience_declared` | smallint  | Nullable; explicitly labeled “declared”                             |
 | `whatsapp_phone_e164`       | text      | Required for submission; defaults to confirmed account phone        |
 | `instagram_url`             | text      | Nullable; canonical Instagram HTTPS profile URL                     |

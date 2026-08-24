@@ -3662,7 +3662,7 @@ components:
           maxLength: 120
         bio:
           type: string
-          maxLength: 500
+          maxLength: 2500
         years_experience:
           type:
             - integer
@@ -4901,7 +4901,7 @@ components:
           maxLength: 120
         bio:
           type: string
-          maxLength: 500
+          maxLength: 2500
         years_experience:
           type:
             - integer
@@ -6128,7 +6128,7 @@ components:
             - string
             - "null"
           minLength: 1
-          maxLength: 500
+          maxLength: 2500
         years_experience:
           type:
             - integer

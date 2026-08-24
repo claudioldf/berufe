@@ -385,7 +385,7 @@ Apply these rules whenever they are relevant to the story:
 
 **Acceptance criteria:**
 
-- The profile form supports display name, headline, short biography, declared years of experience, WhatsApp phone, and independently optional Instagram and YouTube profile links.
+- The profile form supports display name, a biography of up to 2,500 characters, headline, declared years of experience, WhatsApp phone, and independently optional Instagram and YouTube profile links.
 - The WhatsApp phone defaults to the confirmed account phone and is normalized to E.164.
 - Instagram accepts a bare or `@` handle and a direct Instagram profile URL; YouTube accepts a bare or `@` handle and a direct `youtube.com/@handle` channel URL. Rails stores canonical HTTPS profile URLs and removes copied query strings/fragments.
 - Off-platform URLs, Instagram post/reel paths, and YouTube video, playlist, or legacy channel paths are rejected with field-level errors; an empty value remains valid.
