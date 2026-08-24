@@ -1,3 +1,5 @@
+import type { CurrentAccount } from "~/services/api/application-session";
+
 export type ProfessionalAuthIntent = "login" | "signup";
 
 export interface ProfessionalPhoneStepContent {
@@ -13,6 +15,25 @@ export interface ProfessionalPhoneStepContent {
 
 export const professionalLoginPath = "/app/professional/login";
 export const professionalSignupPath = `${professionalLoginPath}?intent=signup`;
+export const professionalDashboardPath = "/app/professional";
+export const professionalOnboardingPath = "/app/professional/onboarding";
+
+type ProfessionalEntryAccount = Pick<
+  CurrentAccount,
+  "role" | "registrationCompleted" | "onboardingCompleted"
+>;
+
+export function resolveProfessionalEntryPath(
+  account: ProfessionalEntryAccount,
+) {
+  if (account.role !== "professional" || !account.registrationCompleted) {
+    return professionalLoginPath;
+  }
+
+  return account.onboardingCompleted
+    ? professionalDashboardPath
+    : professionalOnboardingPath;
+}
 
 export const professionalPhoneStepContent: Record<
   ProfessionalAuthIntent,

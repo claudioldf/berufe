@@ -8,7 +8,6 @@ const mocks = vi.hoisted(() => ({
   replace: vi.fn(),
   restoreSession: vi.fn(),
   refreshSession: vi.fn(),
-  hydrate: vi.fn(),
   initializeFromAuth: vi.fn(),
   setRole: vi.fn(),
   showToast: vi.fn(),
@@ -22,6 +21,7 @@ const mocks = vi.hoisted(() => ({
         account: Ref<{
           role: "professional" | "admin";
           registrationCompleted: boolean;
+          onboardingCompleted: boolean;
           registrationDisplayName?: string | null;
         } | null>;
         step: Ref<number>;
@@ -32,7 +32,6 @@ const mocks = vi.hoisted(() => ({
         isLoading: Ref<boolean>;
         error: Ref<string>;
         cooldown: Ref<number>;
-        isComplete: Ref<boolean>;
       }
     | undefined,
 }));
@@ -66,8 +65,6 @@ vi.mock("~/composables/usePhoneAuthFlow", () => ({
 }));
 vi.mock("~/composables/useProfessionalOnboarding", () => ({
   useProfessionalOnboarding: () => ({
-    isComplete: mocks.state!.isComplete,
-    hydrate: mocks.hydrate,
     initializeFromAuth: mocks.initializeFromAuth,
   }),
 }));
@@ -88,7 +85,6 @@ beforeEach(() => {
     isLoading: ref(false),
     error: ref(""),
     cooldown: ref(0),
-    isComplete: ref(false),
   };
   mocks.restoreSession.mockResolvedValue(false);
   mocks.refreshSession.mockResolvedValue(true);
@@ -129,20 +125,35 @@ describe("professional login page", () => {
     mocks.state!.account.value = {
       role: "professional",
       registrationCompleted: true,
+      onboardingCompleted: false,
     };
     mocks.restoreSession.mockResolvedValue(true);
 
     await mountPage();
 
-    expect(mocks.hydrate).toHaveBeenCalledOnce();
     expect(mocks.resumeRegistration).not.toHaveBeenCalled();
     expect(mocks.replace).toHaveBeenCalledWith("/app/professional/onboarding");
+  });
+
+  it("sends a returning professional with completed onboarding to the dashboard", async () => {
+    mocks.state!.account.value = {
+      role: "professional",
+      registrationCompleted: true,
+      onboardingCompleted: true,
+    };
+    mocks.restoreSession.mockResolvedValue(true);
+
+    await mountPage();
+
+    expect(mocks.resumeRegistration).not.toHaveBeenCalled();
+    expect(mocks.replace).toHaveBeenCalledWith("/app/professional");
   });
 
   it("resumes the existing final step for an incomplete professional", async () => {
     mocks.state!.account.value = {
       role: "professional",
       registrationCompleted: false,
+      onboardingCompleted: false,
       registrationDisplayName: "Carla Pinturas",
     };
     mocks.restoreSession.mockResolvedValue(true);
@@ -165,6 +176,7 @@ describe("professional login page", () => {
         mocks.state!.account.value = {
           role: "professional",
           registrationCompleted: false,
+          onboardingCompleted: false,
         };
         return true;
       })
@@ -172,6 +184,7 @@ describe("professional login page", () => {
         mocks.state!.account.value = {
           role: "professional",
           registrationCompleted: true,
+          onboardingCompleted: false,
         };
         return true;
       });

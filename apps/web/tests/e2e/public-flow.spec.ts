@@ -35,7 +35,16 @@ async function completeProfessionalSignIn(
   await page.getByRole("button", { name: "Receber código" }).click();
   await page.getByLabel("Código de 6 dígitos").fill("123456");
   await page.getByRole("button", { name: "Confirmar e continuar" }).click();
-  await page.getByLabel("Nome profissional").fill("Marcos Alves");
+  const registrationName = page.getByLabel("Nome profissional");
+  const nextStep = await Promise.race([
+    registrationName.waitFor({ state: "visible" }).then(() => "registration"),
+    page
+      .waitForURL(/\/app\/professional(?:\/onboarding)?$/)
+      .then(() => "workspace"),
+  ]);
+  if (nextStep === "workspace") return;
+
+  await registrationName.fill("Marcos Alves");
   await page.getByLabel(/li e aceito/i).check();
   await page.getByRole("button", { name: "Criar meu perfil" }).click();
 }
@@ -193,10 +202,8 @@ test("an incomplete professional sees onboarding and can skip it", async ({
 test("professional completes onboarding and retains the published state", async ({
   page,
 }, testInfo) => {
-  await completeProfessionalSignIn(
-    page,
-    syntheticPhone(testInfo.project.name, 2),
-  );
+  const professionalPhone = syntheticPhone(testInfo.project.name, 2);
+  await completeProfessionalSignIn(page, professionalPhone);
 
   await page.getByLabel("Data de nascimento").fill("1990-04-12");
   await page
@@ -244,21 +251,32 @@ test("professional completes onboarding and retains the published state", async 
     }),
   ).toBeVisible();
 
-  await page.reload();
+  await page
+    .locator("header")
+    .getByRole("link", { name: "Berufe — início" })
+    .click();
+  await expect(page).toHaveURL(/\/$/);
+  const isMobileHeader = (page.viewportSize()?.width ?? 0) <= 900;
+  const workspaceAction = isMobileHeader
+    ? page.locator(".header__mobile-login")
+    : page.locator(".header__desktop-auth").getByRole("link", {
+        name: "Ir ao painel",
+        exact: true,
+      });
+  await expect(workspaceAction).toBeVisible();
+  await expect(workspaceAction).toHaveAttribute("href", "/app/professional");
   await expect(
-    page.getByRole("heading", {
-      name: "Seu perfil já pode ser encontrado.",
-    }),
+    page.getByRole("heading", { name: "Acesse seu perfil." }),
+  ).toHaveCount(0);
+  await workspaceAction.click();
+  await expect(page).toHaveURL(/\/app\/professional$/);
+  await expect(
+    page.getByRole("heading", { level: 1, name: /Olá, Marcos/i }),
   ).toBeVisible();
 
-  if ((page.viewportSize()?.width ?? 0) <= 720) {
-    await page.getByRole("button", { name: "Abrir menu" }).click();
-  }
-  await page.getByRole("button", { name: "Sair" }).click();
-  await expect(page).toHaveURL(/\/app\/professional\/login$/);
-  await completeProfessionalSignIn(
-    page,
-    syntheticPhone(testInfo.project.name, 3),
-  );
+  await page.goto("/app/professional/onboarding");
   await expect(page).toHaveURL(/\/app\/professional$/);
+  await expect(
+    page.getByRole("heading", { name: /deixar seu perfil pronto/i }),
+  ).toHaveCount(0);
 });

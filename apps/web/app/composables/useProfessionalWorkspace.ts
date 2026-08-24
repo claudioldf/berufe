@@ -30,9 +30,11 @@ import {
   respondProfessionalRelationship,
   type ProfessionalRelationshipResponse,
 } from "~/services/api/professional-relationships";
+import { useApplicationSession } from "~/composables/useApplicationSession";
 
 export async function useProfessionalWorkspace() {
   const client = useApiClient();
+  const { refreshSession } = useApplicationSession();
   const workspace = await useAsyncData("professional-workspace", () =>
     fetchProfessionalWorkspace(client),
   );
@@ -282,6 +284,11 @@ export async function useProfessionalWorkspace() {
     try {
       const updated = await submitProfessionalProfile(client);
       workspace.data.value = updated;
+      try {
+        await refreshSession();
+      } catch {
+        // The persisted submission remains successful; later entry restores it.
+      }
       return updated;
     } catch (error) {
       if (error instanceof ApiRequestError) {

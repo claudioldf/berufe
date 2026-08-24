@@ -4,10 +4,28 @@ import PhoneStep from "~/components/auth/PhoneStep.vue";
 import RegistrationStep from "~/components/auth/RegistrationStep.vue";
 import {
   professionalPhoneStepContent,
+  resolveProfessionalEntryPath,
   resolveProfessionalAuthIntent,
 } from "~/utils/professional-auth";
 
 describe("phone authentication components", () => {
+  it.each([
+    [false, false, "/app/professional/login"],
+    [true, false, "/app/professional/onboarding"],
+    [true, true, "/app/professional"],
+  ] as const)(
+    "resolves registration %s and onboarding %s to %s",
+    (registrationCompleted, onboardingCompleted, expectedPath) => {
+      expect(
+        resolveProfessionalEntryPath({
+          role: "professional",
+          registrationCompleted,
+          onboardingCompleted,
+        }),
+      ).toBe(expectedPath);
+    },
+  );
+
   it("presents distinct login and signup intent without changing the form", async () => {
     const wrapper = mount(PhoneStep, {
       props: {

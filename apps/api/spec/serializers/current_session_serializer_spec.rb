@@ -18,6 +18,7 @@ RSpec.describe CurrentSessionSerializer do
         registered: false,
         verified: false,
         registration_completed: false,
+        onboarding_completed: false,
         registration_display_name: nil,
         professional_profile_id: nil,
         relationship_eligible: false
@@ -36,5 +37,24 @@ RSpec.describe CurrentSessionSerializer do
       "created_at",
       "updated_at"
     )
+  end
+
+  it "derives onboarding completion from a self-service publication" do
+    now = Time.zone.parse("2026-08-15 12:00:00 UTC")
+    account = UserAccount.create!(phone_e164: "+5547999994002", role: "professional", status: "active")
+    profile = ProfessionalProfile.create!(user_account: account, display_name: "Ana Souza")
+    revision = profile.working_revision
+    application_session = ApplicationSession.issue!(user_account: account, now:).first
+
+    expect(described_class.new(application_session:).as_json.dig(:account, :onboarding_completed)).to be(false)
+
+    revision.update!(status: "pending_review", submitted_at: now)
+    profile.update!(profile_status: "published", published_revision: revision, published_at: now)
+
+    expect(described_class.new(application_session:).as_json.dig(:account, :onboarding_completed)).to be(true)
+
+    revision.update!(profile_type: "external")
+
+    expect(described_class.new(application_session:).as_json.dig(:account, :onboarding_completed)).to be(false)
   end
 end

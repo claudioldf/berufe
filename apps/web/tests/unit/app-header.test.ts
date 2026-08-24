@@ -1,10 +1,20 @@
 import { mountSuspended } from "@nuxt/test-utils/runtime";
+import { flushPromises } from "@vue/test-utils";
 import { defineComponent } from "vue";
 import AppHeader from "~/components/AppHeader.vue";
-import type {
-  CurrentAccount,
-  CurrentSession,
-} from "~/services/api/application-session";
+import type { RestoredApplicationSession } from "~/services/api/application-session";
+
+const mocks = vi.hoisted(() => ({
+  readSession: vi.fn(),
+}));
+
+vi.mock("~/services/api/client", () => ({
+  useApiClient: () => ({}),
+}));
+vi.mock("~/services/api/application-session", async (importOriginal) => ({
+  ...(await importOriginal()),
+  getCurrentApplicationSession: mocks.readSession,
+}));
 
 const NuxtLinkStub = defineComponent({
   props: { to: { type: String, required: true } },
@@ -21,38 +31,15 @@ const UButtonStub = defineComponent({
 async function mountHeader(route: string) {
   const path = route.split("?")[0] ?? route;
   if (
-    path.startsWith("/app/admin") ||
-    (path.startsWith("/app/professional") && path !== "/app/professional/login")
+    path.startsWith("/app/professional") &&
+    path !== "/app/professional/login"
   ) {
-    const role = path.startsWith("/app/admin") ? "admin" : "professional";
-    useState("application-session-status", () => "authenticated").value =
-      "authenticated";
-    useState<CurrentAccount | null>(
-      "application-session-account",
-      () => null,
-    ).value = {
-      id: "23a94f5e-1429-4ec7-bbc4-a6f805d5182d",
-      role,
-      status: "active",
-      registered: role === "professional",
-      verified: role === "professional",
-      registrationCompleted: true,
-      registrationDisplayName: null,
-      professionalProfileId: "fc34e59b-0915-45c1-b0ea-29015578264a",
-      relationshipEligible: true,
-    };
-    useState<CurrentSession | null>(
-      "application-session-summary",
-      () => null,
-    ).value = {
-      authenticationMethod: role === "admin" ? "password" : "sms_otp",
-      authenticatedAt: "2026-08-15T12:00:00.000Z",
-      idleExpiresAt: "2026-08-15T12:30:00.000Z",
-      absoluteExpiresAt: "2026-08-16T00:00:00.000Z",
-    };
+    mocks.readSession.mockResolvedValue(restoredProfessional(true, false));
+  } else if (path.startsWith("/app/admin") && path !== "/app/admin/login") {
+    mocks.readSession.mockResolvedValue(restoredAdmin());
   }
 
-  return mountSuspended(AppHeader, {
+  const wrapper = await mountSuspended(AppHeader, {
     route,
     global: {
       stubs: {
@@ -67,10 +54,64 @@ async function mountHeader(route: string) {
       },
     },
   });
+  await flushPromises();
+  return wrapper;
+}
+
+function restoredProfessional(
+  registrationCompleted: boolean,
+  onboardingCompleted: boolean,
+): RestoredApplicationSession {
+  return {
+    account: {
+      id: "23a94f5e-1429-4ec7-bbc4-a6f805d5182d",
+      role: "professional",
+      status: "active",
+      registered: registrationCompleted,
+      verified: true,
+      registrationCompleted,
+      onboardingCompleted,
+      registrationDisplayName: "Ana Souza",
+      professionalProfileId: registrationCompleted
+        ? "fc34e59b-0915-45c1-b0ea-29015578264a"
+        : null,
+      relationshipEligible: false,
+    },
+    session: {
+      authenticationMethod: "sms_otp",
+      authenticatedAt: "2026-08-15T12:00:00.000Z",
+      idleExpiresAt: "2026-08-15T12:30:00.000Z",
+      absoluteExpiresAt: "2026-08-16T00:00:00.000Z",
+    },
+  };
+}
+
+function restoredAdmin(): RestoredApplicationSession {
+  return {
+    account: {
+      id: "fab9823b-9099-4ed5-9619-fd8435e958a5",
+      role: "admin",
+      status: "active",
+      registered: false,
+      verified: false,
+      registrationCompleted: false,
+      onboardingCompleted: false,
+      registrationDisplayName: null,
+      professionalProfileId: null,
+      relationshipEligible: false,
+    },
+    session: {
+      authenticationMethod: "password",
+      authenticatedAt: "2026-08-15T12:00:00.000Z",
+      idleExpiresAt: "2026-08-15T12:30:00.000Z",
+      absoluteExpiresAt: "2026-08-16T00:00:00.000Z",
+    },
+  };
 }
 
 beforeEach(() => {
   clearNuxtState();
+  mocks.readSession.mockReset().mockResolvedValue(null);
 });
 
 describe("application header", () => {
@@ -95,6 +136,42 @@ describe("application header", () => {
       "Criar perfil grátis",
     );
     expect(wrapper.find(".logout-stub").exists()).toBe(false);
+    expect(mocks.readSession).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    [false, false, "Continuar cadastro", "/app/professional/login"],
+    [true, false, "Ir ao painel", "/app/professional/onboarding"],
+    [true, true, "Ir ao painel", "/app/professional"],
+  ] as const)(
+    "shows one contextual action for registration %s and onboarding %s",
+    async (
+      registrationCompleted,
+      onboardingCompleted,
+      expectedLabel,
+      expectedPath,
+    ) => {
+      mocks.readSession.mockResolvedValue(
+        restoredProfessional(registrationCompleted, onboardingCompleted),
+      );
+
+      const wrapper = await mountHeader("/encontrar");
+
+      expect(wrapper.findAll(`a[href="${expectedPath}"]`)).toHaveLength(2);
+      expect(wrapper.get(".header__desktop-auth").text()).toBe(expectedLabel);
+      expect(wrapper.get(".header__mobile-login").text()).toBe(expectedLabel);
+      expect(wrapper.text()).not.toContain("Criar perfil grátis");
+      expect(wrapper.find(".header__mobile-signup").exists()).toBe(false);
+    },
+  );
+
+  it("keeps visitor actions available when session restoration fails", async () => {
+    mocks.readSession.mockRejectedValue(new Error("session unavailable"));
+
+    const wrapper = await mountHeader("/encontrar");
+
+    expect(wrapper.text()).toContain("Entrar");
+    expect(wrapper.text()).toContain("Criar perfil grátis");
   });
 
   it("does not repeat public authentication actions on the auth page", async () => {
@@ -104,6 +181,7 @@ describe("application header", () => {
     expect(wrapper.find(".header__desktop-auth").exists()).toBe(false);
     expect(wrapper.find(".header__mobile-login").exists()).toBe(false);
     expect(wrapper.find(".header__mobile-signup").exists()).toBe(false);
+    expect(mocks.readSession).toHaveBeenCalledOnce();
   });
 
   it("renders the approved logout action in professional desktop and mobile navigation", async () => {

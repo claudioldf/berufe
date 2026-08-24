@@ -8,6 +8,7 @@ export interface CurrentAccount {
   registered: boolean;
   verified: boolean;
   registrationCompleted: boolean;
+  onboardingCompleted: boolean;
   registrationDisplayName: string | null;
   professionalProfileId: string | null;
   relationshipEligible: boolean;
@@ -47,6 +48,7 @@ export async function getCurrentApplicationSession(
       registered: data.data.account.registered,
       verified: data.data.account.verified,
       registrationCompleted: data.data.account.registration_completed,
+      onboardingCompleted: data.data.account.onboarding_completed,
       registrationDisplayName: data.data.account.registration_display_name,
       professionalProfileId: data.data.account.professional_profile_id,
       relationshipEligible: data.data.account.relationship_eligible,

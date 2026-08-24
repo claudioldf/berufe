@@ -1989,6 +1989,7 @@ export interface components {
             registered: boolean;
             verified: boolean;
             registration_completed: boolean;
+            onboarding_completed: boolean;
             registration_display_name: string | null;
             /** Format: uuid */
             professional_profile_id: string | null;
