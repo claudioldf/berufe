@@ -493,8 +493,8 @@ Apply these rules whenever they are relevant to the story:
 - A small Rails-owned storage adapter uses an authenticated Rails upload endpoint backed by local disk in development and separate public/private Cloudflare R2 buckets in deployed environments.
 - Rails authorizes upload purpose, ownership, declared content type, and declared size before issuing a 10-minute upload authorization to a private quarantine key.
 - After upload confirmation, a retry-safe job checks actual bytes and file signature, safely decodes with libvips, normalizes orientation, strips metadata, and re-encodes into a new private object. It deletes the quarantine original after processing; mismatched, oversized, or undecodable uploads are rejected and deleted without becoming reviewable.
-- Pending media and verification evidence remain private, and a processing failure is rejected without exposing the object to an admin or the public.
-- Approved feature records persist public URLs/keys as defined by Features A2–A4. A narrowly scoped pending-upload record holds temporary private keys for profile/portfolio media until approval; verification evidence uses `verification_file`.
+- Sanitized media and verification evidence remain in private storage, and a processing failure is rejected without exposing the object to an admin or the public. Rails-owned image endpoints expose only profile and portfolio media that are currently eligible for public display.
+- Approved profile photos persist public keys as defined by Feature A2. Portfolio image URLs remain stable across review, while rejected or hidden items become unavailable immediately; verification evidence uses `verification_file` and always remains private.
 - R2 credentials and permanent verification-file URLs never reach Nuxt.
 - Provider adapter tests use fakes and do not contact R2.
 - The generic sanitizer preserves the verified JPEG/PNG codec, never retains the client filename, and expires abandoned authorizations through GoodJob every 10 minutes. Purpose-specific stories create any stricter derived variants.
@@ -529,9 +529,9 @@ Apply these rules whenever they are relevant to the story:
 
 - A professional can upload an image, select one catalog service, add a short title/description, and submit the item.
 - Rails enforces ownership and a maximum of 12 non-deleted items per professional.
-- Approved items appear newest first, with ID as the deterministic tie-breaker.
-- Images use the same private-upload, libvips-processing, and public-variant rules as profile photos.
-- Pending or rejected items are visible to the owner but not anonymous users.
+- Pending and approved items appear newest first, with ID as the deterministic tie-breaker.
+- Images use the same private-upload and libvips-processing rules as profile photos, then become available through a stable Rails-owned public image endpoint.
+- Pending and approved items are visible to anonymous users when the professional profile is public. Rejected or hidden items remain visible only to the owner with private moderation guidance.
 - Deletion is soft deletion through the existing management action. Manual ordering is not exposed; public ordering remains newest first.
 
 **Depends on:** S020, S025, S026.
@@ -541,15 +541,16 @@ Apply these rules whenever they are relevant to the story:
 
 **Status:** DONE
 
-**Story:** As an admin, I want to approve, reject, hide, and restore portfolio items so that public portfolios contain reviewed evidence only.
+**Story:** As an admin, I want to approve, reject, hide, and restore portfolio items so that unsafe work can be removed without delaying legitimate publication.
 
 **Acceptance criteria:**
 
 - Portfolio items appear in the shared moderation queue.
-- Approval makes the optimized variant public and preserves its service association and order.
+- A new item is public immediately while it remains in the pending moderation queue.
+- Approval marks the item reviewed and removes it from the pending queue without changing its public URL, service association, or order.
 - Rejection or hiding removes public access and records the reason without exposing it publicly.
 - The owner sees item status and rejection guidance.
-- Public portfolio queries return approved items only.
+- Public portfolio queries return pending and approved items only.
 
 **Depends on:** S027.
 **Covers:** Features A3 and E1.

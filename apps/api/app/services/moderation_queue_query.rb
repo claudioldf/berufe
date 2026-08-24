@@ -183,7 +183,7 @@ class ModerationQueueQuery
       title: "#{item.title} · #{revision.display_name}",
       subtitle: [item.service.name, coverage_label(revision)].compact_blank.join(" · "),
       submitted_at: item.submitted_at,
-      details: "Nova imagem de portfólio associada ao serviço #{item.service.name}.",
+      details: portfolio_details(item),
       preview: item.description.presence || item.title,
       currently_public: !!(
         item.status.in?(%w[pending_review approved]) && item.professional_profile.publicly_available?
@@ -214,6 +214,14 @@ class ModerationQueueQuery
       has_media: false,
       verification_file_id: request_record.verification_file&.id
     }
+  end
+
+  def portfolio_details(item)
+    if item.professional_profile.publicly_available?
+      "O trabalho já está público. Marcar como revisado apenas o remove da fila; rejeitar o retira do perfil público."
+    else
+      "O trabalho será publicado junto com o perfil. Marcar como revisado apenas o remove da fila; rejeitar impede sua publicação."
+    end
   end
 
   def supply_subtitle(revision)
