@@ -47,6 +47,47 @@ function syntheticPhone(projectName: string, sequence: number) {
   return `479${projectDigit}${runPhoneSegment}${sequence.toString().padStart(4, "0")}`;
 }
 
+test("public header makes login and professional signup easy to find", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await waitForNuxtHydration(page);
+
+  const isMobile = (page.viewportSize()?.width ?? 0) <= 900;
+  const loginAction = isMobile
+    ? page.locator(".header__mobile-login")
+    : page.locator(".header__desktop-auth").getByRole("link", {
+        name: "Entrar",
+        exact: true,
+      });
+  const signupAction = isMobile
+    ? page.locator(".header__mobile-signup-button")
+    : page.locator(".header__desktop-auth").getByRole("link", {
+        name: "Criar perfil grátis",
+        exact: true,
+      });
+
+  await expect(loginAction).toBeVisible();
+  await expect(loginAction).toHaveAttribute("href", "/app/professional/login");
+  await expect(signupAction).toBeVisible();
+  await expect(signupAction).toHaveAttribute(
+    "href",
+    "/app/professional/login?intent=signup",
+  );
+
+  await signupAction.click();
+  await expect(page).toHaveURL(/\/app\/professional\/login\?intent=signup$/);
+  await expect(
+    page.getByRole("heading", {
+      level: 1,
+      name: "Crie seu perfil profissional.",
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Entrar", exact: true }),
+  ).toHaveAttribute("href", "/app/professional/login");
+});
+
 test("visitor can search, open a profile, and inspect the WhatsApp redirect", async ({
   page,
   request,

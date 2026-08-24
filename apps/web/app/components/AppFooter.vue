@@ -1,3 +1,7 @@
+<script setup lang="ts">
+import { professionalSignupPath } from "~/utils/professional-auth";
+</script>
+
 <template>
   <footer class="footer">
     <DesignSystemContainer class="footer__inner">
@@ -7,7 +11,7 @@
       </div>
       <div class="footer__links">
         <NuxtLink to="/encontrar">Encontrar profissional</NuxtLink>
-        <NuxtLink to="/app/professional/login">Criar meu perfil</NuxtLink>
+        <NuxtLink :to="professionalSignupPath">Criar perfil grátis</NuxtLink>
         <NuxtLink to="/privacidade">Privacidade</NuxtLink>
         <NuxtLink to="/termos-de-uso">Termos</NuxtLink>
       </div>

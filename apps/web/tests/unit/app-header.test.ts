@@ -11,17 +11,20 @@ const NuxtLinkStub = defineComponent({
   template: '<a :href="to"><slot /></a>',
 });
 const UButtonStub = defineComponent({
-  props: { label: { type: String, default: "" } },
-  template: "<button>{{ label }}<slot /></button>",
+  props: {
+    label: { type: String, default: "" },
+    to: { type: String, default: "" },
+  },
+  template: '<a v-if="to" :href="to">{{ label }}<slot /></a>',
 });
 
 async function mountHeader(route: string) {
+  const path = route.split("?")[0] ?? route;
   if (
-    route.startsWith("/app/admin") ||
-    (route.startsWith("/app/professional") &&
-      route !== "/app/professional/login")
+    path.startsWith("/app/admin") ||
+    (path.startsWith("/app/professional") && path !== "/app/professional/login")
   ) {
-    const role = route.startsWith("/app/admin") ? "admin" : "professional";
+    const role = path.startsWith("/app/admin") ? "admin" : "professional";
     useState("application-session-status", () => "authenticated").value =
       "authenticated";
     useState<CurrentAccount | null>(
@@ -71,14 +74,36 @@ beforeEach(() => {
 });
 
 describe("application header", () => {
-  it("keeps the existing public navigation without a logout action", async () => {
+  it("separates public information, login, and signup navigation", async () => {
     const wrapper = await mountHeader("/encontrar");
 
     expect(wrapper.text()).toContain("Encontrar profissional");
     expect(wrapper.text()).toContain("Como funciona");
-    expect(wrapper.text()).toContain("Sou um profissional");
+    expect(wrapper.text()).toContain("Para profissionais");
+    expect(wrapper.text()).not.toContain("Sou um profissional");
     expect(wrapper.text()).toContain("Entrar");
+    expect(wrapper.text()).toContain("Criar perfil grátis");
+    expect(wrapper.get('a[href="/#para-profissionais"]')).toBeDefined();
+    expect(wrapper.findAll('a[href="/app/professional/login"]')).toHaveLength(
+      2,
+    );
+    expect(
+      wrapper.findAll('a[href="/app/professional/login?intent=signup"]'),
+    ).toHaveLength(2);
+    expect(wrapper.get(".header__mobile-login").text()).toBe("Entrar");
+    expect(wrapper.get(".header__mobile-signup-button").text()).toBe(
+      "Criar perfil grátis",
+    );
     expect(wrapper.find(".logout-stub").exists()).toBe(false);
+  });
+
+  it("does not repeat public authentication actions on the auth page", async () => {
+    const wrapper = await mountHeader("/app/professional/login?intent=signup");
+
+    expect(wrapper.text()).toContain("Para profissionais");
+    expect(wrapper.find(".header__desktop-auth").exists()).toBe(false);
+    expect(wrapper.find(".header__mobile-login").exists()).toBe(false);
+    expect(wrapper.find(".header__mobile-signup").exists()).toBe(false);
   });
 
   it("renders the approved logout action in professional desktop and mobile navigation", async () => {
@@ -125,7 +150,7 @@ describe("application header", () => {
 
     expect(wrapper.classes()).not.toContain("header--workspace");
     expect(wrapper.text()).not.toContain("Moderação");
-    expect(wrapper.text()).toContain("Entrar");
+    expect(wrapper.text()).not.toContain("Criar perfil grátis");
     expect(wrapper.find(".logout-stub").exists()).toBe(false);
   });
 });

@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { computed, shallowRef } from "vue";
+import {
+  professionalLoginPath,
+  professionalSignupPath,
+} from "~/utils/professional-auth";
 
 const route = useRoute();
 const isMenuOpen = shallowRef(false);
 
-const professionalLoginPath = "/app/professional/login";
 const adminLoginPath = "/app/admin/login";
 const isProfessional = computed(
   () =>
@@ -14,6 +17,7 @@ const isProfessional = computed(
 const isAdmin = computed(
   () => route.path.startsWith("/app/admin") && route.path !== adminLoginPath,
 );
+const showPublicAuthActions = computed(() => !route.path.startsWith("/app/"));
 
 const links = computed(() => {
   if (isProfessional.value) {
@@ -33,7 +37,7 @@ const links = computed(() => {
   return [
     { label: "Encontrar profissional", to: "/encontrar" },
     { label: "Como funciona", to: "/#como-funciona" },
-    { label: "Sou um profissional", to: professionalLoginPath },
+    { label: "Para profissionais", to: "/#para-profissionais" },
   ];
 });
 
@@ -77,12 +81,26 @@ function isLinkActive(to: string) {
       </nav>
 
       <div class="header__actions">
+        <div v-if="showPublicAuthActions" class="header__desktop-auth">
+          <UButton
+            :to="professionalLoginPath"
+            color="neutral"
+            variant="outline"
+            label="Entrar"
+          />
+          <UButton
+            :to="professionalSignupPath"
+            color="primary"
+            label="Criar perfil grátis"
+          />
+        </div>
         <UButton
-          v-if="!isProfessional && !isAdmin"
+          v-if="showPublicAuthActions"
           :to="professionalLoginPath"
-          color="primary"
+          color="neutral"
+          variant="ghost"
           label="Entrar"
-          class="header__login"
+          class="header__mobile-login"
         />
         <AuthSessionLogoutButton
           v-if="isProfessional || isAdmin"
@@ -95,9 +113,24 @@ function isLinkActive(to: string) {
           :aria-label="isMenuOpen ? 'Fechar menu' : 'Abrir menu'"
           @click="isMenuOpen = !isMenuOpen"
         >
-          <UIcon :name="isMenuOpen ? 'i-lucide-x' : 'i-lucide-menu'" />
+          <UIcon
+            :name="isMenuOpen ? 'i-lucide-x' : 'i-lucide-menu'"
+            aria-hidden="true"
+          />
         </button>
       </div>
+    </DesignSystemContainer>
+
+    <DesignSystemContainer
+      v-if="showPublicAuthActions"
+      class="header__mobile-signup"
+    >
+      <UButton
+        :to="professionalSignupPath"
+        color="primary"
+        label="Criar perfil grátis"
+        class="header__mobile-signup-button"
+      />
     </DesignSystemContainer>
 
     <nav
@@ -174,13 +207,22 @@ function isLinkActive(to: string) {
     align-items: center;
     gap: 12px;
   }
+  &__desktop-auth {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  &__mobile-login,
+  &__mobile-signup {
+    display: none;
+  }
 }
 .header {
   &__menu {
     display: none;
     place-items: center;
-    width: 42px;
-    height: 42px;
+    width: 44px;
+    height: 44px;
     border: 1px solid currentcolor;
     border-radius: 12px;
     background: transparent;
@@ -201,12 +243,24 @@ function isLinkActive(to: string) {
       grid-template-columns: 1fr auto;
     }
     &__nav,
-    &__login,
+    &__desktop-auth,
     &__logout {
       display: none;
     }
+    &__mobile-login {
+      display: inline-flex;
+    }
     &__menu {
       display: grid;
+    }
+    &__mobile-signup {
+      display: flex;
+      padding-bottom: 14px;
+    }
+    &__mobile-signup-button {
+      justify-content: center;
+      width: 100%;
+      min-height: 44px;
     }
     &__mobile-nav {
       display: grid;
