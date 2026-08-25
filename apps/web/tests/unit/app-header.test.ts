@@ -217,6 +217,7 @@ describe("application header", () => {
     expect(wrapper.text()).toContain("Moderação");
     expect(wrapper.text()).toContain("Catálogo");
     expect(wrapper.text()).toContain("Relatórios");
+    expect(wrapper.text()).toContain("Auditoria de buscas");
     expect(wrapper.get('a[href="/app/admin/catalog"]').classes()).toContain(
       "header__link--active",
     );
