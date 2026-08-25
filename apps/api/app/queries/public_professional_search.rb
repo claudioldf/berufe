@@ -1,24 +1,31 @@
 # frozen_string_literal: true
 
 class PublicProfessionalSearch
-  MAXIMUM_TERM_LENGTH = 80
-  ALL_JOINVILLE = "all"
+  MAXIMUM_TERM_LENGTH = LlmSearchParser::MAXIMUM_EXPRESSION_LENGTH
   DEFAULT_PER_PAGE = 20
   MAX_PER_PAGE = 50
+  UUID_PATTERN = /\A[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/i
 
-  Result = Data.define(
-    :normalized_term,
-    :professional_name,
-    :service,
-    :neighborhood,
-    :professionals,
-    :related_services,
-    :page,
-    :per_page,
-    :total_count
-  ) do
+  Result = Data.define(:criteria, :services, :professionals, :related_services, :page, :per_page, :total_count) do
     def total_pages
       total_count.zero? ? 0 : (total_count.to_f / per_page).ceil
+    end
+
+    def matching_service_for(profile)
+      profile_services = profile.published_revision.professional_profile_services
+      service_ids.each do |service_id|
+        match = profile_services.find { |profile_service| profile_service.service_id == service_id }
+        return match.service if match
+      end
+      nil
+    end
+
+    def service_ids
+      criteria.service_ids
+    end
+
+    def neighborhood_codes
+      criteria.locations.filter_map(&:neighborhood_code)
     end
   end
 
@@ -31,75 +38,87 @@ class PublicProfessionalSearch
     end
   end
 
-  def initialize(resolver: PublicServiceResolver.new, related_services: PublicRelatedServices.new)
-    @resolver = resolver
+  def initialize(parser: LlmSearchParser.new, related_services: PublicRelatedServices.new)
+    @parser = parser
     @related_services = related_services
   end
 
-  def call(term:, professional_name: nil, neighborhood_code: nil, page: 1, per_page: DEFAULT_PER_PAGE)
-    validate_term!(term)
-    normalized_professional_name = normalize_professional_name(professional_name)
-    resolution = resolver.call(term)
-    validate_normalized_term!(resolution.normalized_term)
-    neighborhood = resolve_neighborhood(neighborhood_code)
+  def call(expression:, page: 1, per_page: DEFAULT_PER_PAGE)
     normalized_page, normalized_per_page = normalize_pagination(page, per_page)
+    criteria = parser.call(expression:)
+    result_for(criteria, page: normalized_page, per_page: normalized_per_page)
+  rescue LlmSearchParser::InvalidExpression
+    raise InvalidInput, {expression: ["é obrigatória e deve ter no máximo #{MAXIMUM_TERM_LENGTH} caracteres"]}
+  rescue LlmSearchParser::LocationUnsupported
+    raise InvalidInput, {expression: ["a busca está disponível somente em Joinville, SC"]}
+  rescue LlmSearchParser::LocationUnrecognized
+    raise InvalidInput, {expression: ["informe um bairro reconhecido de Joinville"]}
+  end
 
-    matches = if resolution.service
-      matching_professionals(resolution.service, neighborhood, normalized_professional_name)
-    else
-      ProfessionalProfile.none
-    end
-    # The event records how many professionals matched, not how many this page
-    # returned, so the count is taken before the window is applied.
-    total_count = matches.count(:id)
-    suggestions = related_services.call(
-      normalized_term: resolution.normalized_term,
-      active_services: resolution.active_services,
-      resolved_service: resolution.service
+  def call_with_filters(service_id:, state_code:, city:, page: 1, per_page: DEFAULT_PER_PAGE)
+    normalized_page, normalized_per_page = normalize_pagination(page, per_page)
+    service = structured_service(service_id)
+    validate_structured_location!(state_code:, city:)
+    criteria = LlmSearchParser::Criteria.new(
+      service_ids: [service.id],
+      locations: [
+        LlmSearchParser::Location.new(
+          state_code: LlmSearchParser::DEFAULT_STATE_CODE,
+          city: LlmSearchParser::DEFAULT_CITY,
+          neighborhood_code: nil
+        )
+      ],
+      keywords: [],
+      normalized_request: nil
     )
-
-    Result.new(
-      normalized_term: resolution.normalized_term,
-      professional_name: normalized_professional_name,
-      service: resolution.service,
-      neighborhood:,
-      professionals: page_of(matches, neighborhood, normalized_page, normalized_per_page),
-      related_services: suggestions,
-      page: normalized_page,
-      per_page: normalized_per_page,
-      total_count:
-    )
+    result_for(criteria, page: normalized_page, per_page: normalized_per_page)
   end
 
   private
 
-  attr_reader :resolver, :related_services
+  attr_reader :parser, :related_services
 
-  def validate_term!(term)
-    return if term.is_a?(String) && term.length <= MAXIMUM_TERM_LENGTH
+  def result_for(criteria, page:, per_page:)
+    active_services = Service.publicly_active.includes(:category).ordered.to_a
+    services_by_id = active_services.index_by(&:id)
+    services = criteria.service_ids.filter_map { |service_id| services_by_id[service_id] }
+    matches = matching_professionals(criteria)
+    total_count = matches.count(:id)
+    suggestions = related_services.call(
+      normalized_term: "",
+      active_services:,
+      resolved_service: services.first,
+      excluded_service_ids: criteria.service_ids
+    )
 
-    raise InvalidInput, {service: ["deve ter no máximo 80 caracteres"]}
+    Result.new(
+      criteria:,
+      services:,
+      professionals: page_of(matches, criteria, page, per_page),
+      related_services: suggestions,
+      page:,
+      per_page:,
+      total_count:
+    )
   end
 
-  def validate_normalized_term!(normalized_term)
-    return if normalized_term.present?
+  def structured_service(value)
+    service_id = value.to_s
+    service = Service.publicly_active.find_by(id: service_id) if service_id.match?(UUID_PATTERN)
+    return service if service
 
-    raise InvalidInput, {service: ["é obrigatório"]}
+    raise InvalidInput, {service_id: ["selecione um serviço disponível"]}
   end
 
-  def normalize_professional_name(professional_name)
-    return if professional_name.nil?
-    unless professional_name.is_a?(String)
-      raise InvalidInput, {professional_name: ["deve ser um texto"]}
+  def validate_structured_location!(state_code:, city:)
+    errors = {}
+    unless state_code.to_s.upcase == LlmSearchParser::DEFAULT_STATE_CODE
+      errors[:state_code] = ["selecione um estado disponível"]
     end
-
-    normalized = professional_name.squish
-    return if normalized.blank?
-    if normalized.length > 70
-      raise InvalidInput, {professional_name: ["deve ter no máximo 70 caracteres"]}
+    unless PublicSearchText.normalize(city) == PublicSearchText.normalize(LlmSearchParser::DEFAULT_CITY)
+      errors[:city] = ["selecione uma cidade disponível"]
     end
-
-    normalized
+    raise InvalidInput, errors if errors.any?
   end
 
   def normalize_pagination(page, per_page)
@@ -115,29 +134,20 @@ class PublicProfessionalSearch
     [normalized_page, normalized_per_page]
   end
 
-  def resolve_neighborhood(neighborhood_code)
-    code = neighborhood_code.to_s.strip
-    return if code.blank? || code == ALL_JOINVILLE
+  def matching_professionals(criteria)
+    return ProfessionalProfile.none if criteria.service_ids.empty?
 
-    Neighborhood.active.find_by(code:) || raise(
-      InvalidInput,
-      {neighborhood_code: ["não é um bairro ativo de Joinville"]}
-    )
-  end
-
-  def matching_professionals(service, neighborhood, professional_name)
     relation = ProfessionalProfile
       .publicly_searchable
-      .joins(published_revision: :professional_profile_services)
-      .where(professional_profile_services: {service_id: service.id})
-    relation = relation.where(coverage_sql, neighborhood.code) if neighborhood
-    return relation unless professional_name
-
-    pattern = "%#{ActiveRecord::Base.sanitize_sql_like(professional_name)}%"
-    relation.where("professional_profile_revisions.display_name ILIKE ?", pattern)
+      .where(service_filter_sql, criteria.service_ids)
+    neighborhood_codes = criteria.locations.filter_map(&:neighborhood_code).uniq
+    if neighborhood_codes.any? && criteria.locations.none? { |location| location.neighborhood_code.nil? }
+      relation = relation.where(coverage_sql, neighborhood_codes)
+    end
+    relation
   end
 
-  def page_of(relation, neighborhood, page, per_page)
+  def page_of(relation, criteria, page, per_page)
     relation
       .includes(
         :published_photo,
@@ -148,15 +158,16 @@ class PublicProfessionalSearch
           professional_profile_service_areas: :neighborhood
         }
       )
-      .order(*ranking_order(neighborhood))
+      .order(*ranking_order(criteria))
       .limit(per_page)
       .offset((page - 1) * per_page)
   end
 
-  def ranking_order(neighborhood)
+  def ranking_order(criteria)
     [
       external_profile_order,
-      explicit_neighborhood_order(neighborhood),
+      matching_service_order(criteria.service_ids),
+      explicit_neighborhood_order(criteria.locations.filter_map(&:neighborhood_code).uniq),
       approved_identity_order,
       approved_portfolio_order,
       public_relationship_order,
@@ -169,18 +180,40 @@ class PublicProfessionalSearch
     Arel.sql("CASE WHEN professional_profile_revisions.profile_type = 'external' THEN 1 ELSE 0 END ASC")
   end
 
-  def explicit_neighborhood_order(neighborhood)
-    return unless neighborhood
+  def matching_service_order(service_ids)
+    return if service_ids.empty?
 
-    quoted_code = ActiveRecord::Base.connection.quote(neighborhood.code)
-    Arel.sql(<<~SQL.squish)
-      CASE WHEN EXISTS (
-        SELECT 1
-        FROM professional_profile_service_areas ranked_areas
-        WHERE ranked_areas.professional_profile_revision_id = professional_profiles.published_revision_id
-          AND ranked_areas.neighborhood_code = #{quoted_code}
-      ) THEN 0 ELSE 1 END ASC
-    SQL
+    profiles = ProfessionalProfile.arel_table
+    ranked_services = ProfessionalProfileService.arel_table
+    ranking = Arel::Nodes::Case.new
+    service_ids.each_with_index do |service_id, index|
+      matching_service = ProfessionalProfileService
+        .select(Arel.sql("1"))
+        .where(
+          ranked_services[:professional_profile_revision_id]
+            .eq(profiles[:published_revision_id])
+            .and(ranked_services[:service_id].eq(service_id))
+        )
+      ranking.when(matching_service.arel.exists).then(index)
+    end
+
+    ranking.else(service_ids.length).asc
+  end
+
+  def explicit_neighborhood_order(neighborhood_codes)
+    return if neighborhood_codes.empty?
+
+    profiles = ProfessionalProfile.arel_table
+    ranked_areas = ProfessionalProfileServiceArea.arel_table
+    matching_area = ProfessionalProfileServiceArea
+      .select(Arel.sql("1"))
+      .where(
+        ranked_areas[:professional_profile_revision_id]
+          .eq(profiles[:published_revision_id])
+          .and(ranked_areas[:neighborhood_code].in(neighborhood_codes))
+      )
+
+    Arel::Nodes::Case.new.when(matching_area.arel.exists).then(0).else(1).asc
   end
 
   def approved_identity_order
@@ -226,7 +259,18 @@ class PublicProfessionalSearch
         SELECT 1
         FROM professional_profile_service_areas search_areas
         WHERE search_areas.professional_profile_revision_id = professional_profiles.published_revision_id
-          AND (search_areas.neighborhood_code IS NULL OR search_areas.neighborhood_code = ?)
+          AND (search_areas.neighborhood_code IS NULL OR search_areas.neighborhood_code IN (?))
+      )
+    SQL
+  end
+
+  def service_filter_sql
+    <<~SQL.squish
+      EXISTS (
+        SELECT 1
+        FROM professional_profile_services search_services
+        WHERE search_services.professional_profile_revision_id = professional_profiles.published_revision_id
+          AND search_services.service_id IN (?)
       )
     SQL
   end

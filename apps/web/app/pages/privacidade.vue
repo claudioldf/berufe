@@ -107,10 +107,17 @@ useSeoMeta({
 
       <h3>2.5. Navegação e suporte</h3>
       <p>
-        Registramos termo de busca normalizado, serviço, bairro, quantidade de
-        resultados, abertura de perfil e início de contato no WhatsApp, sem
-        identificador persistente do visitante. Solicitações de suporte incluem
-        o contato, o conteúdo enviado e os registros necessários ao atendimento.
+        A descrição digitada na busca é enviada ao provedor de inteligência
+        artificial para identificar serviço e localização e gerar um rascunho
+        curto, em primeira pessoa, para o contato com o profissional. Não
+        guardamos a frase original. Sua impressão criptográfica, os critérios
+        estruturados, palavras-chave filtradas e o rascunho sem dados pessoais
+        podem permanecer em cache por até 24 horas. Registramos separadamente a
+        quantidade de resultados, a abertura de perfil e o início de contato no
+        WhatsApp, sem identificador persistente do visitante e sem guardar a
+        mensagem efetivamente editada ou enviada no WhatsApp. Solicitações de
+        suporte incluem o contato, o conteúdo enviado e os registros necessários
+        ao atendimento.
       </p>
       <p>
         Os dados vêm do próprio titular, de profissionais que cadastram clientes
@@ -310,6 +317,9 @@ useSeoMeta({
           dias; sessão administrativa: 30 minutos e 12 horas;
         </li>
         <li>eventos normalizados de busca: 90 dias;</li>
+        <li>
+          análises temporárias da busca por inteligência artificial: 24 horas;
+        </li>
         <li>métricas diárias agregadas: 730 dias;</li>
         <li>
           imagem de identidade: 30 dias após aprovação, rejeição ou expiração;

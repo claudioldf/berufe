@@ -14,12 +14,12 @@ class PublicProfileInteractionIssuer
     service_ids = revision.professional_profile_services.map(&:service_id)
     primary_service_id = revision.professional_profile_services.find(&:is_primary)&.service_id
     search_context = search_tokens.verify(search_token) if search_token.present?
-    search_context = nil unless search_context&.service_id&.in?(service_ids)
+    matching_search_service_id = search_context&.service_ids&.find { |service_id| service_id.in?(service_ids) }
 
     profile_tokens.issue(
       professional_id: profile.id,
-      service_id: search_context&.service_id || primary_service_id,
-      search_event_id: search_context&.search_event_id
+      service_id: matching_search_service_id || primary_service_id,
+      search_event_id: matching_search_service_id && search_context.search_event_id
     )
   end
 

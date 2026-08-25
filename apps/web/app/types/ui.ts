@@ -10,8 +10,19 @@ export interface LegalDocumentSection {
 
 export type AppRole = "visitor" | "professional" | "admin";
 
-export interface ServiceSearchPayload {
-  professionalName: string;
-  service: string;
-  neighborhood: string;
+export interface ExpressionSearchPayload {
+  expression: string;
+}
+
+export interface StructuredSearchCity {
+  id: string;
+  name: "Joinville";
+  stateCode: "SC";
+}
+
+export interface StructuredSearchPayload {
+  serviceId: string;
+  serviceName: string;
+  stateCode: "SC";
+  city: "Joinville";
 }

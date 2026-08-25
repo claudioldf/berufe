@@ -10,6 +10,9 @@ x-api-environment: &api-environment
   WEB_ORIGIN: https://www.berufe.com.br
   API_PUBLIC_URL: https://api.berufe.com.br
   PRODUCT_LAUNCH_DATE: "2026-08-01"
+  LLM_ADAPTER: openai
+  OPENAI_MODEL: gpt-5-mini
+  OPENAI_API_KEY: smoke-only
   SMS_OTP_ADAPTER: infobip
   INFOBIP_BASE_URL: https://example.api.infobip.com
   INFOBIP_API_KEY: smoke-only

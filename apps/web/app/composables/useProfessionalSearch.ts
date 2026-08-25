@@ -1,76 +1,104 @@
 import { computed, shallowRef, watch } from "vue";
 import type {
-  Neighborhood,
+  ExpressionSearchPayload,
   PublicProfessionalCard,
-  Service,
-  ServiceSearchPayload,
+  PublicProfessionalSearchResult,
+  StructuredSearchPayload,
 } from "~/types";
-import { searchPublicProfessionals } from "~/services/api/public-discovery";
+import {
+  searchPublicProfessionals,
+  searchStructuredProfessionals,
+} from "~/services/api/public-discovery";
 import { useApiClient } from "~/services/api/client";
-import { findService } from "~/utils/services";
-import { normalizeSearchText } from "~/utils/text";
+import {
+  ApiRequestError,
+  type NormalizedApiError,
+} from "~/services/api/errors";
+import {
+  decodeSearchExpression,
+  encodeSearchExpression,
+} from "~/utils/searchExpression";
 
-interface ProfessionalSearchOptions {
-  services: Service[];
-  neighborhoods: Neighborhood[];
+type SearchSource =
+  | { type: "expression" }
+  | { type: "structured"; filters: StructuredSearchPayload };
+
+interface SearchResponse {
+  expression: string;
+  source: SearchSource;
+  result: PublicProfessionalSearchResult | null;
+  failure: NormalizedApiError | null;
 }
 
-export async function useProfessionalSearch(
-  options: ProfessionalSearchOptions,
-) {
+function normalizeSearchFailure(failure: ApiRequestError): NormalizedApiError {
+  return {
+    code: failure.code,
+    message: failure.message,
+    fieldErrors: failure.fieldErrors,
+    requestId: failure.requestId,
+  };
+}
+
+function unexpectedSearchFailure(): NormalizedApiError {
+  return {
+    code: "unexpected_error",
+    message: "Não foi possível concluir a solicitação.",
+    fieldErrors: {},
+    requestId: "client",
+  };
+}
+
+export async function useProfessionalSearch() {
   const route = useRoute();
   const router = useRouter();
   const client = useApiClient();
-  const professionalNameInput = shallowRef("");
-  const serviceInput = shallowRef("");
-  const neighborhoodInput = shallowRef("all");
-  // Pages after the first are appended here; the async data always holds page 1.
+  const expressionInput = shallowRef("");
   const additionalResults = shallowRef<PublicProfessionalCard[]>([]);
   const loadedPage = shallowRef(1);
   const loadingMore = shallowRef(false);
+  const structuredResponse = shallowRef<SearchResponse | null>(null);
+  const isStructuredSearching = shallowRef(false);
+  const structuredRouteExpression = shallowRef("");
 
-  const serviceQuery = computed(() => String(route.query.servico ?? "").trim());
-  const professionalNameQuery = computed(() =>
-    String(route.query.nome ?? "").trim(),
+  const encodedExpression = computed(() => {
+    const value = route.query.expressao;
+    return String(Array.isArray(value) ? (value[0] ?? "") : (value ?? ""));
+  });
+  const expressionQuery = computed(() =>
+    decodeSearchExpression(encodedExpression.value),
   );
-  const hasSearchTerm = computed(() => serviceQuery.value.length > 0);
-  const neighborhoodCode = computed(() => String(route.query.bairro ?? "all"));
-  const selectedNeighborhood = computed(
-    () =>
-      options.neighborhoods.find(
-        (item) => item.code === neighborhoodCode.value,
-      ) ?? options.neighborhoods[0],
-  );
-  const effectiveNeighborhoodCode = computed(
-    () => selectedNeighborhood.value?.code ?? "all",
-  );
-  const { data, error, status, refresh, clear } = await useAsyncData(
+  const hasSearchTerm = computed(() => expressionQuery.value.length > 0);
+
+  const {
+    data,
+    error: unexpectedError,
+    status,
+    refresh,
+    clear,
+  } = await useAsyncData(
     "public-professional-search",
-    () =>
-      searchPublicProfessionals(client, {
-        service: serviceQuery.value,
-        professionalName: professionalNameQuery.value || null,
-        neighborhoodCode:
-          effectiveNeighborhoodCode.value === "all"
-            ? null
-            : effectiveNeighborhoodCode.value,
-      }),
-    {
-      enabled: hasSearchTerm,
-    },
-  );
+    async (): Promise<SearchResponse> => {
+      const expression = expressionQuery.value;
+      try {
+        const result = await searchPublicProfessionals(client, { expression });
+        return {
+          expression,
+          source: { type: "expression" },
+          result,
+          failure: null,
+        };
+      } catch (failure) {
+        if (!(failure instanceof ApiRequestError)) throw failure;
 
-  watch(
-    [serviceQuery, professionalNameQuery, effectiveNeighborhoodCode],
-    () => {
-      resetPaging();
-      if (!hasSearchTerm.value) {
-        clear();
-        return;
+        return {
+          expression,
+          source: { type: "expression" },
+          result: null,
+          failure: normalizeSearchFailure(failure),
+        };
       }
-
-      void refresh();
     },
+    { enabled: hasSearchTerm },
   );
 
   function resetPaging() {
@@ -79,47 +107,64 @@ export async function useProfessionalSearch(
     loadingMore.value = false;
   }
 
+  watch(encodedExpression, () => {
+    if (expressionQuery.value === structuredRouteExpression.value) {
+      structuredRouteExpression.value = "";
+      expressionInput.value = expressionQuery.value;
+      return;
+    }
+
+    resetPaging();
+    structuredResponse.value = null;
+    expressionInput.value = expressionQuery.value;
+    if (!hasSearchTerm.value) {
+      clear();
+      return;
+    }
+
+    void refresh();
+  });
+
   if (!hasSearchTerm.value) clear();
+  expressionInput.value = expressionQuery.value;
 
-  const currentResult = computed(() => {
-    if (!hasSearchTerm.value) return null;
-
-    const result = data.value;
-    if (!result) return null;
-    if (
-      result.normalizedTerm !== normalizeSearchText(serviceQuery.value) ||
-      normalizeSearchText(result.professionalName ?? "") !==
-        normalizeSearchText(professionalNameQuery.value) ||
-      (result.neighborhood?.code ?? "all") !== effectiveNeighborhoodCode.value
-    ) {
-      return null;
+  const currentResponse = computed(() => {
+    if (!hasSearchTerm.value || isStructuredSearching.value) return null;
+    if (structuredResponse.value?.expression === expressionQuery.value) {
+      return structuredResponse.value;
     }
-
-    return result;
+    if (!data.value) return null;
+    return data.value.expression === expressionQuery.value ? data.value : null;
   });
-  const selectedService = computed(() => {
-    if (!hasSearchTerm.value) return undefined;
+  const currentResult = computed(() => currentResponse.value?.result ?? null);
+  const error = computed<NormalizedApiError | null>(() => {
+    if (currentResponse.value?.failure) return currentResponse.value.failure;
+    if (!unexpectedError.value) return null;
 
-    const resolvedService = currentResult.value?.resolvedService;
-    if (resolvedService) {
-      return options.services.find(
-        (service) => service.id === resolvedService.id,
-      );
-    }
-
-    return currentResult.value
-      ? undefined
-      : findService(options.services, serviceQuery.value);
+    return unexpectedSearchFailure();
   });
-
   const results = computed(() =>
     currentResult.value
       ? [...currentResult.value.professionals, ...additionalResults.value]
       : [],
   );
   const totalCount = computed(() => currentResult.value?.totalCount ?? 0);
+  const interpretation = computed(
+    () => currentResult.value?.interpretation ?? null,
+  );
+  const relatedServices = computed(
+    () => currentResult.value?.relatedServices ?? [],
+  );
   const hasMoreResults = computed(
     () => results.value.length < totalCount.value,
+  );
+  const interaction = computed(() => currentResult.value?.interaction ?? null);
+  const isSearching = computed(
+    () =>
+      isStructuredSearching.value ||
+      (hasSearchTerm.value &&
+        currentResponse.value === null &&
+        !unexpectedError.value),
   );
 
   async function loadMoreResults() {
@@ -128,15 +173,17 @@ export async function useProfessionalSearch(
     loadingMore.value = true;
     try {
       const nextPage = loadedPage.value + 1;
-      const page = await searchPublicProfessionals(client, {
-        service: serviceQuery.value,
-        professionalName: professionalNameQuery.value || null,
-        neighborhoodCode:
-          effectiveNeighborhoodCode.value === "all"
-            ? null
-            : effectiveNeighborhoodCode.value,
-        page: nextPage,
-      });
+      const source = currentResponse.value?.source;
+      const page =
+        source?.type === "structured"
+          ? await searchStructuredProfessionals(client, {
+              ...source.filters,
+              page: nextPage,
+            })
+          : await searchPublicProfessionals(client, {
+              expression: expressionQuery.value,
+              page: nextPage,
+            });
       additionalResults.value = [
         ...additionalResults.value,
         ...page.professionals,
@@ -146,61 +193,75 @@ export async function useProfessionalSearch(
       loadingMore.value = false;
     }
   }
-  const relatedServices = computed(
-    () => currentResult.value?.relatedServices ?? [],
-  );
-  const interaction = computed(() => currentResult.value?.interaction ?? null);
-  const isSearching = computed(
-    () => hasSearchTerm.value && currentResult.value === null && !error.value,
-  );
 
-  watch(
-    [serviceQuery, professionalNameQuery, neighborhoodCode],
-    () => {
-      professionalNameInput.value = professionalNameQuery.value;
-      serviceInput.value = selectedService.value?.name ?? serviceQuery.value;
-      neighborhoodInput.value = effectiveNeighborhoodCode.value;
-    },
-    { immediate: true },
-  );
+  async function submitSearch(payload: ExpressionSearchPayload) {
+    const expression = payload.expression.trim();
+    if (!expression) return;
 
-  async function submitSearch(payload: ServiceSearchPayload) {
-    const serviceTerm = payload.service.trim();
-    if (!serviceTerm) return;
-
-    const service = findService(options.services, serviceTerm);
-    const professionalName = payload.professionalName.trim();
     await router.push({
       path: "/encontrar",
-      query: {
-        ...(professionalName ? { nome: professionalName } : {}),
-        servico: service?.slug ?? serviceTerm,
-        bairro: payload.neighborhood,
-      },
+      query: { expressao: encodeSearchExpression(expression) },
     });
   }
 
+  async function submitStructuredSearch(payload: StructuredSearchPayload) {
+    resetPaging();
+    isStructuredSearching.value = true;
+    const expression = `${payload.serviceName.trim()} em ${payload.city}`;
+    structuredRouteExpression.value = expression;
+    expressionInput.value = expression;
+    try {
+      await router.push({
+        path: "/encontrar",
+        query: { expressao: encodeSearchExpression(expression) },
+      });
+      const result = await searchStructuredProfessionals(client, payload);
+      structuredResponse.value = {
+        expression,
+        source: { type: "structured", filters: payload },
+        result,
+        failure: null,
+      };
+    } catch (failure) {
+      structuredResponse.value = {
+        expression: expressionQuery.value,
+        source: { type: "structured", filters: payload },
+        result: null,
+        failure:
+          failure instanceof ApiRequestError
+            ? normalizeSearchFailure(failure)
+            : unexpectedSearchFailure(),
+      };
+    } finally {
+      structuredRouteExpression.value = "";
+      isStructuredSearching.value = false;
+    }
+  }
+
+  async function refreshSearch() {
+    structuredResponse.value = null;
+    await refresh();
+  }
+
   return {
-    professionalNameInput,
-    serviceInput,
-    neighborhoodInput,
-    professionalNameQuery,
-    serviceQuery,
+    expressionInput,
+    expressionQuery,
+    encodedExpression,
     hasSearchTerm,
-    neighborhoodCode,
-    selectedService,
-    selectedNeighborhood,
     results,
     totalCount,
+    interpretation,
+    relatedServices,
     hasMoreResults,
     loadingMore,
     loadMoreResults,
-    relatedServices,
     interaction,
     isSearching,
+    isStructuredSearching,
     error,
     status,
-    refresh,
+    refresh: refreshSearch,
     submitSearch,
+    submitStructuredSearch,
   };
 }

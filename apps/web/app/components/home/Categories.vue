@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, shallowRef } from "vue";
 import type { Service } from "~/types";
+import { encodeSearchExpression } from "~/utils/searchExpression";
 
 const INITIAL_VISIBLE_SERVICES = 8;
 const props = defineProps<{ services: Service[] }>();
@@ -13,6 +14,13 @@ const visibleServices = computed(() =>
     ? props.services
     : props.services.slice(0, INITIAL_VISIBLE_SERVICES),
 );
+
+function searchUrl(service: Service) {
+  return {
+    path: "/encontrar",
+    query: { expressao: encodeSearchExpression(service.name) },
+  };
+}
 </script>
 
 <template>
@@ -37,7 +45,7 @@ const visibleServices = computed(() =>
           v-for="service in visibleServices"
           :key="service.id"
           class="category-card"
-          :to="`/encontrar?servico=${service.slug}&bairro=all`"
+          :to="searchUrl(service)"
         >
           <span class="category-card__icon"
             ><UIcon :name="service.icon"

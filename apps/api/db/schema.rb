@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_24_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_25_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -98,7 +98,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_24_100000) do
     t.index ["service_job_id"], name: "idx_recommendation_requests_unique_job", unique: true
     t.index ["status", "expires_at"], name: "idx_recommendation_requests_status_expiry"
     t.index ["token_hash"], name: "idx_recommendation_requests_unique_token", unique: true
-    t.check_constraint "status::text = ANY (ARRAY['open'::character varying, 'completed'::character varying, 'expired'::character varying]::text[])", name: "customer_recommendation_requests_known_status"
+    t.check_constraint "status::text = ANY (ARRAY['open'::character varying::text, 'completed'::character varying::text, 'expired'::character varying::text])", name: "customer_recommendation_requests_known_status"
   end
 
   create_table "customer_recommendations", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -154,8 +154,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_24_100000) do
     t.datetime "verified_at", null: false
     t.index ["retained_until"], name: "index_data_erasure_requests_on_retained_until"
     t.index ["subject_digest"], name: "index_data_erasure_requests_on_subject_digest"
-    t.index ["target_user_account_id"], name: "idx_data_erasure_requests_one_active_account", unique: true, where: "((status)::text = ANY ((ARRAY['requested'::character varying, 'processing'::character varying, 'failed'::character varying])::text[]))"
-    t.check_constraint "status::text = ANY (ARRAY['requested'::character varying, 'processing'::character varying, 'failed'::character varying, 'completed'::character varying]::text[])", name: "data_erasure_requests_known_status"
+    t.index ["target_user_account_id"], name: "idx_data_erasure_requests_one_active_account", unique: true, where: "((status)::text = ANY (ARRAY[('requested'::character varying)::text, ('processing'::character varying)::text, ('failed'::character varying)::text]))"
+    t.check_constraint "status::text = ANY (ARRAY['requested'::character varying::text, 'processing'::character varying::text, 'failed'::character varying::text, 'completed'::character varying::text])", name: "data_erasure_requests_known_status"
     t.check_constraint "subject_digest::text ~ '^[0-9a-f]{64}$'::text", name: "data_erasure_requests_digest_format"
     t.check_constraint "ticket_reference::text ~ '^[A-Za-z0-9._/-]{1,100}$'::text", name: "data_erasure_requests_ticket_format"
   end
@@ -272,6 +272,30 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_24_100000) do
     t.index ["subject_digest"], name: "index_legal_retention_records_on_subject_digest"
     t.check_constraint "jsonb_typeof(metadata) = 'object'::text", name: "legal_retention_records_metadata_object"
     t.check_constraint "subject_digest::text ~ '^[0-9a-f]{64}$'::text", name: "legal_retention_records_digest_format"
+  end
+
+  create_table "llm_search_analyses", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "adapter", limit: 24, null: false
+    t.integer "cache_hit_count", default: 0, null: false
+    t.string "cache_key_digest", limit: 64, null: false
+    t.integer "cached_input_tokens"
+    t.datetime "created_at", null: false
+    t.datetime "expires_at", null: false
+    t.string "expression_digest", limit: 64, null: false
+    t.integer "input_tokens"
+    t.integer "latency_ms"
+    t.string "model", limit: 80, null: false
+    t.integer "output_tokens"
+    t.jsonb "parsed_result", null: false
+    t.string "prompt_digest", limit: 64, null: false
+    t.string "provider_request_id", limit: 120
+    t.datetime "updated_at", null: false
+    t.index ["cache_key_digest"], name: "index_llm_search_analyses_on_cache_key_digest", unique: true
+    t.index ["expires_at"], name: "index_llm_search_analyses_on_expires_at"
+    t.check_constraint "cache_hit_count >= 0", name: "llm_search_analyses_nonnegative_hits"
+    t.check_constraint "cache_key_digest::text ~ '^[0-9a-f]{64}$'::text", name: "llm_search_analyses_cache_digest_format"
+    t.check_constraint "expression_digest::text ~ '^[0-9a-f]{64}$'::text", name: "llm_search_analyses_expression_digest_format"
+    t.check_constraint "prompt_digest::text ~ '^[0-9a-f]{64}$'::text", name: "llm_search_analyses_prompt_digest_format"
   end
 
   create_table "media_uploads", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -606,6 +630,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_24_100000) do
     t.check_constraint "status = ANY (ARRAY['pending'::text, 'accepted'::text, 'declined'::text])", name: "professional_relationships_known_status"
   end
 
+  create_table "public_search_rate_limit_counters", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "request_count", default: 0, null: false
+    t.string "subject_digest", limit: 64, null: false
+    t.datetime "updated_at", null: false
+    t.datetime "window_started_at", null: false
+    t.index ["subject_digest", "window_started_at"], name: "idx_public_search_rate_limits_subject_window", unique: true
+    t.index ["window_started_at"], name: "index_public_search_rate_limit_counters_on_window_started_at"
+    t.check_constraint "request_count >= 0", name: "public_search_rate_limits_nonnegative_count"
+    t.check_constraint "subject_digest::text ~ '^[0-9a-f]{64}$'::text", name: "public_search_rate_limits_digest_format"
+  end
+
   create_table "quote_change_requests", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "message", null: false
@@ -671,7 +707,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_24_100000) do
     t.check_constraint "discount_amount <= subtotal_amount AND total_amount = (subtotal_amount - discount_amount)", name: "quotes_consistent_totals"
     t.check_constraint "quote_number > 0", name: "quotes_positive_number"
     t.check_constraint "status::text = 'draft'::text AND share_token_hash IS NULL AND share_token_ciphertext IS NULL AND shared_at IS NULL OR status::text <> 'draft'::text AND share_token_hash IS NOT NULL AND share_token_ciphertext IS NOT NULL AND shared_at IS NOT NULL", name: "quotes_consistent_share_state"
-    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying, 'shared'::character varying, 'change_requested'::character varying, 'approved'::character varying, 'declined'::character varying]::text[])", name: "quotes_known_status"
+    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying::text, 'shared'::character varying::text, 'change_requested'::character varying::text, 'approved'::character varying::text, 'declined'::character varying::text])", name: "quotes_known_status"
     t.check_constraint "subtotal_amount >= 0::numeric AND discount_amount >= 0::numeric AND total_amount >= 0::numeric", name: "quotes_nonnegative_amounts"
   end
 
@@ -693,8 +729,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_24_100000) do
     t.index ["report_date", "service_id", "neighborhood_code", "unmatched_query"], name: "idx_search_daily_rollups_unique_dimensions", unique: true, nulls_not_distinct: true
     t.index ["service_id", "report_date"], name: "index_search_daily_rollups_on_service_id_and_report_date"
     t.index ["service_id"], name: "index_search_daily_rollups_on_service_id"
-    t.check_constraint "(service_id IS NULL) <> (unmatched_query IS NULL)", name: "search_daily_rollups_matched_or_unmatched"
     t.check_constraint "searches >= 0 AND with_results >= 0 AND with_three_results >= 0 AND with_profile_open >= 0 AND with_whatsapp_handoff >= 0 AND zero_results >= 0 AND thin_results >= 0", name: "search_daily_rollups_nonnegative"
+    t.check_constraint "service_id IS NULL OR unmatched_query IS NULL", name: "search_daily_rollups_do_not_mix_dimensions"
     t.check_constraint "unmatched_query IS NULL OR unmatched_query ~ '^[a-z0-9]+( [a-z0-9]+)*$'::text AND char_length(unmatched_query) <= 80", name: "search_daily_rollups_query_format"
     t.check_constraint "with_results <= searches AND with_three_results <= with_results AND with_profile_open <= searches AND with_whatsapp_handoff <= searches AND (zero_results + with_results) = searches AND thin_results <= with_results", name: "search_daily_rollups_subset_counts"
   end
@@ -747,7 +783,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_24_100000) do
     t.index ["status", "updated_at"], name: "index_service_jobs_on_status_and_updated_at"
     t.check_constraint "cancellation_reason IS NULL OR char_length(btrim(cancellation_reason)) >= 1 AND char_length(btrim(cancellation_reason)) <= 700", name: "service_jobs_cancellation_reason_length"
     t.check_constraint "completion_issue_message IS NULL OR char_length(btrim(completion_issue_message)) >= 1 AND char_length(btrim(completion_issue_message)) <= 700", name: "service_jobs_completion_issue_message_length"
-    t.check_constraint "status::text = ANY (ARRAY['approved'::character varying, 'completion_requested'::character varying, 'completion_issue'::character varying, 'completed'::character varying, 'cancelled'::character varying]::text[])", name: "service_jobs_known_status"
+    t.check_constraint "status::text = ANY (ARRAY['approved'::character varying::text, 'completion_requested'::character varying::text, 'completion_issue'::character varying::text, 'completed'::character varying::text, 'cancelled'::character varying::text])", name: "service_jobs_known_status"
   end
 
   create_table "services", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|

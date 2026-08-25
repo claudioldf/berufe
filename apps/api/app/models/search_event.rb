@@ -2,6 +2,7 @@
 
 class SearchEvent < ApplicationRecord
   JOINVILLE = "Joinville"
+  MAXIMUM_RETAINED_QUERY_LENGTH = 80
 
   belongs_to :service, optional: true
   belongs_to :neighborhood,
@@ -11,7 +12,7 @@ class SearchEvent < ApplicationRecord
 
   validates :city_code, inclusion: {in: [JOINVILLE]}
   validates :query_text_normalized,
-    length: {maximum: PublicProfessionalSearch::MAXIMUM_TERM_LENGTH},
+    length: {maximum: MAXIMUM_RETAINED_QUERY_LENGTH},
     allow_nil: true
   validates :result_count, numericality: {only_integer: true, greater_than_or_equal_to: 0}
   validates :profile_opened, :whatsapp_handoff_occurred, inclusion: {in: [true, false]}

@@ -3,23 +3,23 @@
 class PublicSearchEventRecorder
   Interaction = Data.define(:search_event_id, :token)
 
-  def initialize(
-    sanitizer: SearchEventQuerySanitizer.new,
-    token_issuer: PublicInteractionToken.new
-  )
-    @sanitizer = sanitizer
+  def initialize(token_issuer: PublicInteractionToken.new)
     @token_issuer = token_issuer
   end
 
-  def call(raw_term:, normalized_term:, service:, neighborhood:, result_count:)
+  def call(criteria:, result_count:)
+    service = Service.find_by(id: criteria.service_ids.first) if criteria.service_ids.one?
+    neighborhood_codes = criteria.locations.filter_map(&:neighborhood_code).uniq
+    neighborhood_code = neighborhood_codes.first if neighborhood_codes.one?
+    neighborhood = Neighborhood.find_by(code: neighborhood_code) if neighborhood_code
     event = SearchEvent.create!(
       service:,
-      query_text_normalized: sanitizer.call(raw_term:, normalized_term:),
+      query_text_normalized: nil,
       city_code: SearchEvent::JOINVILLE,
       neighborhood:,
       result_count:
     )
-    token = token_issuer.issue(search_event_id: event.id, service_id: service&.id)
+    token = token_issuer.issue(search_event_id: event.id, service_ids: criteria.service_ids)
 
     Interaction.new(search_event_id: event.id, token:)
   rescue ActiveRecord::ActiveRecordError => error
@@ -32,5 +32,5 @@ class PublicSearchEventRecorder
 
   private
 
-  attr_reader :sanitizer, :token_issuer
+  attr_reader :token_issuer
 end

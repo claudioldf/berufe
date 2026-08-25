@@ -314,7 +314,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Search publicly eligible professionals by service, optional name, and Joinville neighborhood */
+        /** Search publicly eligible professionals from a natural-language expression */
         post: operations["searchPublicProfessionals"];
         delete?: never;
         options?: never;
@@ -367,6 +367,8 @@ export interface paths {
             query: {
                 source: "search_result" | "public_profile";
                 interaction_token: string;
+                /** @description Sanitized first-person request returned by expression search; ignored outside search-derived interactions. */
+                request_message?: string;
             };
             header?: never;
             path: {
@@ -2169,9 +2171,19 @@ export interface components {
             request_id: components["schemas"]["RequestId"];
         };
         PublicProfessionalSearchRequest: {
-            service: string;
-            professional_name?: string | null;
-            neighborhood_code?: string | null;
+            expression: string;
+            /** @description One-based page of matching professionals; defaults to 1. */
+            page?: number;
+            /** @description Professionals per page; defaults to 20. */
+            per_page?: number;
+        };
+        PublicProfessionalStructuredSearchRequest: {
+            /** Format: uuid */
+            service_id: string;
+            /** @constant */
+            state_code: "SC";
+            /** @constant */
+            city: "Joinville";
             /** @description One-based page of matching professionals; defaults to 1. */
             page?: number;
             /** @description Professionals per page; defaults to 20. */
@@ -2182,16 +2194,24 @@ export interface components {
             request_id: components["schemas"]["RequestId"];
         };
         PublicProfessionalSearchData: {
-            query: {
-                normalized_term: string;
-                professional_name: string | null;
-                service: components["schemas"]["PublicServiceSuggestion"] | null;
-                neighborhood: components["schemas"]["PublicProfessionalNeighborhoodSummary"] | null;
-            };
             professionals: components["schemas"]["PublicProfessionalCard"][];
             related_services: components["schemas"]["PublicServiceSuggestion"][];
             meta: components["schemas"]["PageMeta"];
+            interpretation: components["schemas"]["PublicProfessionalSearchInterpretation"];
             interaction: components["schemas"]["PublicSearchInteraction"] | null;
+        };
+        PublicProfessionalSearchInterpretation: {
+            services: components["schemas"]["PublicServiceSuggestion"][];
+            locations: components["schemas"]["PublicProfessionalSearchLocation"][];
+            /** @description Sanitized first-person contact request produced for expression search; null for structured search. */
+            normalized_request: string | null;
+        };
+        PublicProfessionalSearchLocation: {
+            /** @enum {string} */
+            state_code: "SC";
+            /** @enum {string} */
+            city: "Joinville";
+            neighborhood: components["schemas"]["PublicProfessionalNeighborhoodSummary"] | null;
         };
         PublicSearchInteraction: {
             /** Format: uuid */
@@ -3231,11 +3251,11 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PublicProfessionalSearchRequest"];
+                "application/json": components["schemas"]["PublicProfessionalSearchRequest"] | components["schemas"]["PublicProfessionalStructuredSearchRequest"];
             };
         };
         responses: {
-            /** @description Matching public professional cards or safe related active-service suggestions. */
+            /** @description Public professional cards matching the parsed service and Joinville location criteria. */
             200: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
@@ -3255,10 +3275,21 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description The service term, optional professional name, or optional neighborhood is malformed or unavailable. */
+            /** @description The expression is malformed or describes an unsupported or unrecognized location. */
             422: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Public expression search is temporarily rate limited by the application or its LLM dependency. */
+            429: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Retry-After"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3393,6 +3424,8 @@ export interface operations {
             query: {
                 source: "search_result" | "public_profile";
                 interaction_token: string;
+                /** @description Sanitized first-person request returned by expression search; ignored outside search-derived interactions. */
+                request_message?: string;
             };
             header?: never;
             path: {

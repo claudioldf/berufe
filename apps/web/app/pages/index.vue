@@ -2,7 +2,8 @@
 import { computed } from "vue";
 import { useCatalogs } from "~/composables/useCatalogs";
 import { useFeaturedProfessionals } from "~/composables/useFeaturedProfessionals";
-import { findService } from "~/utils/services";
+import type { ExpressionSearchPayload } from "~/types";
+import { encodeSearchExpression } from "~/utils/searchExpression";
 
 const router = useRouter();
 const runtimeConfig = useRuntimeConfig();
@@ -22,9 +23,6 @@ if (
   });
 }
 const services = computed(() => catalogResult.data.value?.services ?? []);
-const neighborhoods = computed(
-  () => catalogResult.data.value?.neighborhoods ?? [],
-);
 const featured = computed(() => featuredResult.data.value ?? []);
 
 const title = "Profissionais de confiança em Joinville";
@@ -46,25 +44,17 @@ useSeoMeta({
 });
 useHead({ link: [{ rel: "canonical", href: canonicalUrl }] });
 
-async function search(payload: { service: string; neighborhood: string }) {
-  const service = findService(services.value, payload.service);
+async function search(payload: ExpressionSearchPayload) {
   await router.push({
     path: "/encontrar",
-    query: {
-      servico: service?.slug ?? payload.service,
-      bairro: payload.neighborhood,
-    },
+    query: { expressao: encodeSearchExpression(payload.expression) },
   });
 }
 </script>
 
 <template>
   <div>
-    <HomeHero
-      :services="services"
-      :neighborhoods="neighborhoods"
-      @search="search"
-    />
+    <HomeHero @search="search" />
 
     <HomeCategories :services="services" />
 

@@ -4,6 +4,7 @@ import { useState } from "#app";
 import type { PublicProfessionalProfileResult } from "@app/types";
 import type { CurrentAccount } from "@app/services/api/application-session";
 import PublicProfilePage from "@app/pages/profissionais/[slug].vue";
+import { encodeSearchExpression } from "@app/utils/searchExpression";
 
 const mocks = vi.hoisted(() => ({
   client: {},
@@ -71,10 +72,11 @@ describe("public profile page", () => {
   });
 
   it("loads the Rails projection, preserves finder context, and records after rendering", async () => {
+    const encodedExpression = encodeSearchExpression("Eletricista no América");
+    const requestMessage = "Eu preciso trocar a fiação da cozinha.";
     const wrapper = await mountSuspended(PublicProfilePage, {
       shallow: true,
-      route:
-        "/profissionais/ana-souza?servico=eletricista&bairro=america&contexto=signed-search-context",
+      route: `/profissionais/ana-souza?expressao=${encodedExpression}&contexto=signed-search-context&pedido=${encodeURIComponent(requestMessage)}`,
     });
     await flushPromises();
 
@@ -91,7 +93,7 @@ describe("public profile page", () => {
     const hero = wrapper.getComponent({ name: "ProfileHero" });
     expect(hero.props("professional")).toEqual(result.professional);
     expect(hero.props("resultsUrl")).toBe(
-      "/encontrar?servico=eletricista&bairro=america",
+      `/encontrar?expressao=${encodedExpression}`,
     );
     const contactUrl = new URL(String(hero.props("contactUrl")));
     expect(contactUrl.pathname).toBe(
@@ -101,6 +103,7 @@ describe("public profile page", () => {
     expect(contactUrl.searchParams.get("interaction_token")).toBe(
       "signed-profile-interaction",
     );
+    expect(contactUrl.searchParams.get("request_message")).toBe(requestMessage);
     expect(contactUrl.searchParams.has("interactionToken")).toBe(false);
     expect(wrapper.html()).not.toContain("@data/professionals");
   });

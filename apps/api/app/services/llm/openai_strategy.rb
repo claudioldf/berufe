@@ -1,0 +1,84 @@
+# frozen_string_literal: true
+
+require "json"
+require "openai"
+
+module Llm
+  class OpenaiStrategy
+    DEFAULT_RETRY_AFTER = 60
+    MAXIMUM_RETRY_AFTER = 1.hour.to_i
+
+    def initialize(
+      model:,
+      client: OpenAI::Client.new(
+        api_key: ENV.fetch("OPENAI_API_KEY"),
+        timeout: ENV.fetch("OPENAI_TIMEOUT_SECONDS", "8").to_f,
+        max_retries: 1,
+        logger: Rails.logger,
+        log_level: :info
+      )
+    )
+      @model = model
+      @client = client
+    end
+
+    def call(expression:, prompt:, schema:, services:, neighborhoods:)
+      started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      response = client.responses.create(
+        model:,
+        store: false,
+        input: [
+          {role: :system, content: prompt},
+          {role: :user, content: expression}
+        ],
+        text: {
+          format: {
+            type: :json_schema,
+            name: "berufe_public_search",
+            strict: true,
+            schema:
+          }
+        },
+        max_output_tokens: 800
+      )
+      content = response.output
+        .filter_map { |item| item.content if item.respond_to?(:content) }
+        .flatten
+        .find { |item| item.respond_to?(:text) }
+      raise Client::Unavailable, "OpenAI returned no structured search output" unless content
+
+      usage = response.usage
+      Client::Response.new(
+        payload: JSON.parse(content.text),
+        provider_request_id: response._request_id,
+        input_tokens: usage&.input_tokens,
+        cached_input_tokens: usage&.input_tokens_details&.cached_tokens,
+        output_tokens: usage&.output_tokens,
+        latency_ms: elapsed_milliseconds(started_at)
+      )
+    rescue OpenAI::Errors::RateLimitError => error
+      Rails.error.report(error)
+      raise Client::RateLimited.new(retry_after: retry_after(error))
+    rescue OpenAI::Errors::APIError, JSON::ParserError, NoMethodError => error
+      Rails.error.report(error)
+      raise Client::Unavailable, "OpenAI search parsing failed"
+    end
+
+    private
+
+    attr_reader :client, :model
+
+    def retry_after(error)
+      value = error.headers&.find do |name, _header_value|
+        name.to_s.casecmp?("retry-after")
+      end&.last
+      seconds = Integer(value, exception: false)
+
+      (seconds || DEFAULT_RETRY_AFTER).clamp(1, MAXIMUM_RETRY_AFTER)
+    end
+
+    def elapsed_milliseconds(started_at)
+      ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - started_at) * 1000).round
+    end
+  end
+end

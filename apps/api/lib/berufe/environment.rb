@@ -4,7 +4,14 @@ module Berufe
   class Environment
     class InvalidConfiguration < StandardError; end
 
-    Config = Data.define(:name, :sms_otp_adapter, :media_storage_adapter, :product_launch_date)
+    Config = Data.define(
+      :name,
+      :sms_otp_adapter,
+      :media_storage_adapter,
+      :llm_adapter,
+      :openai_model,
+      :product_launch_date
+    )
 
     ENVIRONMENTS = %w[local preview staging integration production test].freeze
     SMS_OTP_ADAPTERS = {
@@ -22,6 +29,14 @@ module Berufe
       "integration" => %w[r2],
       "production" => %w[r2],
       "test" => %w[local]
+    }.freeze
+    LLM_ADAPTERS = {
+      "local" => %w[fake openai],
+      "preview" => %w[fake openai],
+      "staging" => %w[openai],
+      "integration" => %w[openai],
+      "production" => %w[openai],
+      "test" => %w[fake]
     }.freeze
     NON_PRODUCTION_INFOBIP_ENVIRONMENTS = %w[local staging integration].freeze
     INFOBIP_TEST_PHONE_PATTERN = /\A\+55\d{2}9\d{8}\z/
@@ -54,6 +69,7 @@ module Berufe
       R2_PUBLIC_BUCKET
       R2_PRIVATE_BUCKET
     ].freeze
+    OPENAI_REQUIRED = %w[OPENAI_API_KEY].freeze
     SMTP_REQUIRED = %w[
       SMTP_ADDRESS
       SMTP_PORT
@@ -70,12 +86,16 @@ module Berufe
         "BERUFE_ENV" => "local",
         "SMS_OTP_ADAPTER" => "fake",
         "MEDIA_STORAGE_ADAPTER" => "local",
+        "LLM_ADAPTER" => "fake",
+        "OPENAI_MODEL" => "gpt-5-mini",
         "PRODUCT_LAUNCH_DATE" => "2026-08-01"
       },
       "test" => {
         "BERUFE_ENV" => "test",
         "SMS_OTP_ADAPTER" => "fake",
         "MEDIA_STORAGE_ADAPTER" => "local",
+        "LLM_ADAPTER" => "fake",
+        "OPENAI_MODEL" => "gpt-5-mini",
         "PRODUCT_LAUNCH_DATE" => "2026-08-01"
       }
     }.freeze
@@ -85,6 +105,8 @@ module Berufe
       name = values["BERUFE_ENV"]
       sms_otp_adapter = values["SMS_OTP_ADAPTER"]
       media_storage_adapter = values["MEDIA_STORAGE_ADAPTER"]
+      llm_adapter = values["LLM_ADAPTER"]
+      openai_model = values["OPENAI_MODEL"].to_s.strip.presence || "gpt-5-mini"
       errors = []
       product_launch_date = parse_product_launch_date(values["PRODUCT_LAUNCH_DATE"], errors)
 
@@ -93,15 +115,19 @@ module Berufe
       if ENVIRONMENTS.include?(name)
         allowed_sms_otp_adapters = SMS_OTP_ADAPTERS.fetch(name)
         allowed_media_storage_adapters = MEDIA_STORAGE_ADAPTERS.fetch(name)
+        allowed_llm_adapters = LLM_ADAPTERS.fetch(name)
         unless allowed_sms_otp_adapters.include?(sms_otp_adapter)
           errors << "SMS_OTP_ADAPTER must be one of: #{allowed_sms_otp_adapters.join(", ")} for #{name}"
         end
         unless allowed_media_storage_adapters.include?(media_storage_adapter)
           errors << "MEDIA_STORAGE_ADAPTER must be one of: #{allowed_media_storage_adapters.join(", ")} for #{name}"
         end
+        unless allowed_llm_adapters.include?(llm_adapter)
+          errors << "LLM_ADAPTER must be one of: #{allowed_llm_adapters.join(", ")} for #{name}"
+        end
       end
 
-      required = required_variables(name, sms_otp_adapter, media_storage_adapter, values)
+      required = required_variables(name, sms_otp_adapter, media_storage_adapter, llm_adapter, values)
       missing = required.select { |key| values[key].to_s.strip.empty? }
       errors << "missing required variables: #{missing.sort.join(", ")}" if missing.any?
 
@@ -110,7 +136,14 @@ module Berufe
 
       raise InvalidConfiguration, "Invalid Berufe configuration: #{errors.join("; ")}" if errors.any?
 
-      Config.new(name:, sms_otp_adapter:, media_storage_adapter:, product_launch_date:)
+      Config.new(
+        name:,
+        sms_otp_adapter:,
+        media_storage_adapter:,
+        llm_adapter:,
+        openai_model:,
+        product_launch_date:
+      )
     end
 
     def self.parse_product_launch_date(value, errors)
@@ -126,12 +159,13 @@ module Berufe
     end
     private_class_method :parse_product_launch_date
 
-    def self.required_variables(name, sms_otp_adapter, media_storage_adapter, values)
+    def self.required_variables(name, sms_otp_adapter, media_storage_adapter, llm_adapter, values)
       required = (name == "test") ? %w[TEST_DATABASE_URL DB_POOL] : COMMON_REQUIRED.dup
       required.concat(FAKE_OTP_REQUIRED) if sms_otp_adapter == "fake"
       required.concat(INFOBIP_REQUIRED) if sms_otp_adapter == "infobip"
       required.concat(LOCAL_STORAGE_REQUIRED) if media_storage_adapter == "local"
       required.concat(R2_REQUIRED) if media_storage_adapter == "r2"
+      required.concat(OPENAI_REQUIRED) if llm_adapter == "openai"
       required.concat(DEPLOYMENT_SECRET_REQUIRED) if %w[staging integration production].include?(name)
       required.concat(SMTP_REQUIRED) if %w[staging integration production].include?(name)
       required << "BUGSNAG_API_KEY" if name == "production"

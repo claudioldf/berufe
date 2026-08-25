@@ -11,6 +11,7 @@ RSpec.describe "Sensitive parameter filtering" do
       birthdate: "1990-01-01",
       display_name: "Ana Souza",
       service_address: "Rua das Flores, 100",
+      request_message: "Eu preciso trocar a fiação da cozinha.",
       recommendation_text: "Texto público após consentimento",
       query_text_normalized: "eletricista",
       status: "published"

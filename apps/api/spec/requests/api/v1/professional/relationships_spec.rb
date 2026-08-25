@@ -411,8 +411,7 @@ RSpec.describe "Professional relationship requests", type: :request, openapi: tr
     )
     expect(
       PublicProfessionalSearch.new.call(
-        term: service.name,
-        neighborhood_code: "america-relacao"
+        expression: "#{service.name} no bairro América Relação"
       ).professionals
     ).to contain_exactly(profile)
     expect(response.body).not_to include("+5547999981203", "999981203")

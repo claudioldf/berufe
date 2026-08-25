@@ -674,7 +674,7 @@ paths:
   /api/v1/public/professional-searches:
     post:
       operationId: searchPublicProfessionals
-      summary: Search publicly eligible professionals by service, optional name, and Joinville neighborhood
+      summary: Search publicly eligible professionals from a natural-language expression
       tags:
         - Public discovery
       security: []
@@ -683,10 +683,12 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PublicProfessionalSearchRequest"
+              oneOf:
+                - $ref: "#/components/schemas/PublicProfessionalSearchRequest"
+                - $ref: "#/components/schemas/PublicProfessionalStructuredSearchRequest"
       responses:
         "200":
-          description: Matching public professional cards or safe related active-service suggestions.
+          description: Public professional cards matching the parsed service and Joinville location criteria.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
@@ -704,10 +706,22 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "422":
-          description: The service term, optional professional name, or optional neighborhood is malformed or unavailable.
+          description: The expression is malformed or describes an unsupported or unrecognized location.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Public expression search is temporarily rate limited by the application or its LLM dependency.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Retry-After:
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -859,6 +873,14 @@ paths:
           type: string
           minLength: 1
           maxLength: 2048
+      - name: request_message
+        in: query
+        required: false
+        description: Sanitized first-person request returned by expression search; ignored outside search-derived interactions.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 240
     get:
       operationId: openPublicProfessionalWhatsapp
       summary: Attribute an anonymous direct-contact handoff and redirect to WhatsApp
@@ -5795,24 +5817,38 @@ components:
       type: object
       additionalProperties: false
       required:
-        - service
+        - expression
       properties:
-        service:
+        expression:
           type: string
           minLength: 1
-          maxLength: 80
-        professional_name:
-          type:
-            - string
-            - "null"
-          minLength: 1
-          maxLength: 70
-        neighborhood_code:
-          type:
-            - string
-            - "null"
-          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
-          maxLength: 80
+          maxLength: 200
+        page:
+          type: integer
+          minimum: 1
+          description: One-based page of matching professionals; defaults to 1.
+        per_page:
+          type: integer
+          minimum: 1
+          maximum: 50
+          description: Professionals per page; defaults to 20.
+    PublicProfessionalStructuredSearchRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - service_id
+        - state_code
+        - city
+      properties:
+        service_id:
+          type: string
+          format: uuid
+        state_code:
+          type: string
+          const: SC
+        city:
+          type: string
+          const: Joinville
         page:
           type: integer
           minimum: 1
@@ -5837,39 +5873,12 @@ components:
       type: object
       additionalProperties: false
       required:
-        - query
         - professionals
         - related_services
         - meta
+        - interpretation
         - interaction
       properties:
-        query:
-          type: object
-          additionalProperties: false
-          required:
-            - normalized_term
-            - professional_name
-            - service
-            - neighborhood
-          properties:
-            normalized_term:
-              type: string
-              minLength: 1
-              maxLength: 80
-            professional_name:
-              type:
-                - string
-                - "null"
-              minLength: 1
-              maxLength: 70
-            service:
-              oneOf:
-                - $ref: "#/components/schemas/PublicServiceSuggestion"
-                - type: "null"
-            neighborhood:
-              oneOf:
-                - $ref: "#/components/schemas/PublicProfessionalNeighborhoodSummary"
-                - type: "null"
         professionals:
           type: array
           items:
@@ -5881,9 +5890,54 @@ components:
             $ref: "#/components/schemas/PublicServiceSuggestion"
         meta:
           $ref: "#/components/schemas/PageMeta"
+        interpretation:
+          $ref: "#/components/schemas/PublicProfessionalSearchInterpretation"
         interaction:
           oneOf:
             - $ref: "#/components/schemas/PublicSearchInteraction"
+            - type: "null"
+    PublicProfessionalSearchInterpretation:
+      type: object
+      additionalProperties: false
+      required:
+        - services
+        - locations
+        - normalized_request
+      properties:
+        services:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicServiceSuggestion"
+        locations:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicProfessionalSearchLocation"
+        normalized_request:
+          description: Sanitized first-person contact request produced for expression search; null for structured search.
+          oneOf:
+            - type: string
+              minLength: 1
+              maxLength: 240
+            - type: "null"
+    PublicProfessionalSearchLocation:
+      type: object
+      additionalProperties: false
+      required:
+        - state_code
+        - city
+        - neighborhood
+      properties:
+        state_code:
+          type: string
+          enum:
+            - SC
+        city:
+          type: string
+          enum:
+            - Joinville
+        neighborhood:
+          oneOf:
+            - $ref: "#/components/schemas/PublicProfessionalNeighborhoodSummary"
             - type: "null"
     PublicSearchInteraction:
       type: object

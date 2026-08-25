@@ -58,6 +58,21 @@ RSpec.describe PublicRelatedServices do
     expect(suggestions).to eq([same_category, other])
   end
 
+  it "excludes every service already present in a multi-service interpretation" do
+    first = create_service("Eletricista múltiplo", "relacionado-multiplo-eletricista", [], 0)
+    second = create_service("Encanador múltiplo", "relacionado-multiplo-encanador", [], 1)
+    suggestion = create_service("Pintor múltiplo", "relacionado-multiplo-pintor", [], 2)
+
+    expect(
+      described_class.new.call(
+        normalized_term: "",
+        active_services: [first, second, suggestion],
+        resolved_service: first,
+        excluded_service_ids: [first.id, second.id]
+      )
+    ).to eq([suggestion])
+  end
+
   private
 
   def create_service(name, slug, aliases, order)

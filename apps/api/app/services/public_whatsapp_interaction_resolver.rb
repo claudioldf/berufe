@@ -24,13 +24,13 @@ class PublicWhatsappInteractionResolver
     raise InvalidInteraction unless source.in?(SOURCES)
 
     token_context = verify_token(profile:, source:, token:)
-    service = if token_context.service_id
-      profile.published_revision.professional_profile_services
-        .includes(:service)
-        .find_by(service_id: token_context.service_id)
-        &.service
-    end
-    raise InvalidInteraction if token_context.service_id && !service
+    profile_services = profile.published_revision.professional_profile_services.includes(:service)
+    requested_service_ids = token_context.respond_to?(:service_ids) ? token_context.service_ids : [token_context.service_id]
+    profile_service = requested_service_ids.filter_map do |service_id|
+      profile_services.find { |candidate| candidate.service_id == service_id }
+    end.first
+    service = profile_service&.service
+    raise InvalidInteraction if requested_service_ids.any? && !service
 
     Context.new(
       source:,

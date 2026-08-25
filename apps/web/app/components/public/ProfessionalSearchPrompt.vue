@@ -3,9 +3,10 @@
     <span class="search-prompt__icon" aria-hidden="true">
       <UIcon name="i-lucide-search" />
     </span>
-    <h2 class="search-prompt__title">Comece sua busca por um serviço.</h2>
+    <h2 class="search-prompt__title">Conte o que você precisa resolver.</h2>
     <p class="search-prompt__copy">
-      Digite ou escolha um serviço acima para ver os profissionais disponíveis.
+      Você pode descrever o serviço, a cidade e o bairro com suas próprias
+      palavras.
     </p>
   </DesignSystemSurfaceCard>
 </template>

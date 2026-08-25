@@ -14,12 +14,12 @@ class SearchDailyRollup < ApplicationRecord
 
   validates :report_date, presence: true
   validates(*COUNTERS, numericality: {only_integer: true, greater_than_or_equal_to: 0})
-  validate :matched_or_unmatched_dimension
+  validate :dimensions_do_not_conflict
 
   private
 
-  def matched_or_unmatched_dimension
-    return if service_id.present? ^ unmatched_query.present?
+  def dimensions_do_not_conflict
+    return unless service_id.present? && unmatched_query.present?
 
     errors.add(:base, :invalid)
   end

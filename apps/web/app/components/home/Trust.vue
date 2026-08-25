@@ -35,7 +35,7 @@
             <span>01</span>
             <div>
               <strong>Busque pelo serviço</strong>
-              <p>Use nosso catálogo e escolha seu bairro em Joinville.</p>
+              <p>Descreva seu pedido e informe o bairro quando quiser.</p>
             </div>
           </li>
           <li>

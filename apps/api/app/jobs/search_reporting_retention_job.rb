@@ -18,6 +18,10 @@ class SearchReportingRetentionJob < ApplicationJob
     SearchDailyRollup.where(report_date: ...aggregate_from).delete_all
     ProfessionalDailyMetric.where(metric_date: ...aggregate_from).delete_all
     ProfessionalDailyActivity.where(activity_date: ...aggregate_from).delete_all
+    LlmSearchAnalysis.where(expires_at: ..now).delete_all
+    PublicSearchRateLimitCounter
+      .where(window_started_at: ...(now - PublicSearchRateLimiter::WINDOW))
+      .delete_all
   end
 
   private

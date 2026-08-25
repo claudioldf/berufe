@@ -14,7 +14,8 @@ RSpec.describe PublicInteractionToken do
 
     expect(issuer.verify(token)).to have_attributes(
       search_event_id: event_id,
-      service_id:
+      service_id:,
+      service_ids: [service_id]
     )
     expect(token).not_to include("Joinville", "encanador", "query")
   end

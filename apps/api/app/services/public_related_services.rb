@@ -3,8 +3,9 @@
 class PublicRelatedServices
   LIMIT = 3
 
-  def call(normalized_term:, active_services:, resolved_service: nil)
-    candidates = active_services.reject { |service| service.id == resolved_service&.id }
+  def call(normalized_term:, active_services:, resolved_service: nil, excluded_service_ids: [])
+    excluded_ids = [resolved_service&.id, *excluded_service_ids].compact.map(&:to_s).to_set
+    candidates = active_services.reject { |service| excluded_ids.include?(service.id.to_s) }
     candidates.sort_by do |service|
       [category_priority(service, resolved_service), service_distance(service, normalized_term), service.sort_order, service.slug]
     end.first(LIMIT)

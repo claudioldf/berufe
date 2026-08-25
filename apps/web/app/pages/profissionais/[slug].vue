@@ -31,6 +31,10 @@ const incomingInteractionToken = computed(() => {
   const value = route.query.contexto;
   return Array.isArray(value) ? value[0] : value;
 });
+const incomingRequestMessage = computed(() => {
+  const value = route.query.pedido;
+  return Array.isArray(value) ? value[0] : value;
+});
 const { data: profileResult, error: profileError } = await useAsyncData(
   `public-professional-profile-${requestedSlug.value}`,
   () =>
@@ -70,18 +74,17 @@ const contactUrl = computed(() => {
     apiBaseUrl: runtimeConfig.public.apiBaseUrl,
     professionalId: profile.id,
     interactionToken: profileResult.value!.interactionToken,
+    requestMessage: incomingRequestMessage.value || undefined,
   });
 });
 const resultsUrl = computed(() => {
-  if (!professional.value.primaryServiceSlug) return "/encontrar";
+  const expression = route.query.expressao;
+  const encodedExpression = Array.isArray(expression)
+    ? expression[0]
+    : expression;
+  if (!encodedExpression) return "/encontrar";
 
-  const query = new URLSearchParams({
-    servico: String(
-      route.query.servico ?? professional.value.primaryServiceSlug,
-    ),
-    bairro: String(route.query.bairro ?? "all"),
-  });
-  return `/encontrar?${query.toString()}`;
+  return `/encontrar?${new URLSearchParams({ expressao: encodedExpression }).toString()}`;
 });
 const socialLinks = computed<SocialLink[]>(() => {
   const profile = professional.value;

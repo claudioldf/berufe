@@ -165,12 +165,14 @@ useSeoMeta({
     <section id="busca" class="legal-section">
       <h2>7. Busca, compartilhamento e WhatsApp</h2>
       <p>
-        A busca primeiro exige correspondência do serviço e da cobertura. Perfis
-        com cadastro próprio precedem os perfis ainda não reivindicados; quando
-        um bairro é escolhido, a cobertura específica precede a cidade inteira.
-        Depois, a ordem considera identidade verificada, portfólio aprovado,
-        conexões confirmadas e a revisão mais recente do perfil. Não há compra
-        de posição, nota oculta nem garantia de destaque.
+        A descrição da busca é interpretada automaticamente para identificar
+        serviços e localizações do catálogo. A busca então exige correspondência
+        do serviço e da cobertura. Perfis com cadastro próprio precedem os
+        perfis ainda não reivindicados; quando um bairro é identificado, a
+        cobertura específica precede a cidade inteira. Depois, a ordem considera
+        identidade verificada, portfólio aprovado, conexões confirmadas e a
+        revisão mais recente do perfil. Não há compra de posição, nota oculta
+        nem garantia de destaque.
       </p>
       <p>
         Compartilhar um perfil ou abrir o WhatsApp depende de ação da pessoa. A
