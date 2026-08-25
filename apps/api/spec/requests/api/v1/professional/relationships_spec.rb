@@ -205,14 +205,16 @@ RSpec.describe "Professional relationship requests", type: :request, openapi: tr
     ).to eq(1)
     assert_api_conform(status: 200)
 
-    post "/api/v1/professional/relationships/#{relationship.id}/response",
-      params: {response: "declined"},
-      headers: session_headers(
-        request_id: "relationship-repeat",
-        origin: true,
-        token: recipient_session_token
-      ),
-      as: :json
+    travel_to(now) do
+      post "/api/v1/professional/relationships/#{relationship.id}/response",
+        params: {response: "declined"},
+        headers: session_headers(
+          request_id: "relationship-repeat",
+          origin: true,
+          token: recipient_session_token
+        ),
+        as: :json
+    end
 
     expect(response).to have_http_status(:conflict)
     expect(relationship.reload).to have_attributes(status: "accepted", responded_at: now)
