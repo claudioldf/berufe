@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_25_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_25_110000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -289,6 +289,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_25_100000) do
     t.jsonb "parsed_result", null: false
     t.string "prompt_digest", limit: 64, null: false
     t.string "provider_request_id", limit: 120
+    t.text "raw_response"
     t.datetime "updated_at", null: false
     t.index ["cache_key_digest"], name: "index_llm_search_analyses_on_cache_key_digest", unique: true
     t.index ["expires_at"], name: "index_llm_search_analyses_on_expires_at"
@@ -736,19 +737,35 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_25_100000) do
   end
 
   create_table "search_events", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "audit_status", limit: 32
     t.text "city_code", null: false
     t.datetime "created_at", null: false
+    t.text "input_prompt"
+    t.string "llm_adapter", limit: 24
+    t.string "llm_model", limit: 80
+    t.string "llm_prompt_digest", limit: 64
+    t.string "llm_provider_request_id", limit: 120
     t.text "neighborhood_code"
+    t.jsonb "parsed_response"
     t.boolean "profile_opened", default: false, null: false
     t.text "query_text_normalized"
+    t.text "raw_llm_response"
+    t.boolean "reportable", default: true, null: false
+    t.string "response_source", limit: 16
     t.integer "result_count", null: false
     t.uuid "service_id"
     t.datetime "updated_at", null: false
     t.boolean "whatsapp_handoff_occurred", default: false, null: false
+    t.index ["created_at", "id"], name: "index_search_events_on_recent_llm_audits", order: :desc, where: "(input_prompt IS NOT NULL)"
     t.index ["created_at", "service_id", "neighborhood_code"], name: "index_search_events_on_time_service_and_neighborhood"
     t.index ["service_id"], name: "index_search_events_on_service_id"
+    t.check_constraint "audit_status IS NULL OR (audit_status::text = ANY (ARRAY['processing'::character varying, 'completed'::character varying, 'application_rate_limited'::character varying, 'provider_rate_limited'::character varying, 'provider_unavailable'::character varying, 'response_rejected'::character varying, 'search_failed'::character varying]::text[]))", name: "search_events_known_audit_status"
     t.check_constraint "city_code = 'Joinville'::text", name: "search_events_launch_city"
+    t.check_constraint "input_prompt IS NOT NULL OR raw_llm_response IS NULL AND parsed_response IS NULL AND response_source IS NULL AND llm_adapter IS NULL AND llm_model IS NULL AND llm_provider_request_id IS NULL AND llm_prompt_digest IS NULL", name: "search_events_audit_fields_require_prompt"
+    t.check_constraint "input_prompt IS NULL OR char_length(input_prompt) >= 1 AND char_length(input_prompt) <= 200", name: "search_events_input_prompt_length"
+    t.check_constraint "llm_prompt_digest IS NULL OR llm_prompt_digest::text ~ '^[0-9a-f]{64}$'::text", name: "search_events_llm_prompt_digest_format"
     t.check_constraint "query_text_normalized IS NULL OR query_text_normalized ~ '^[a-z0-9]+( [a-z0-9]+)*$'::text AND char_length(query_text_normalized) <= 80", name: "search_events_normalized_query_format"
+    t.check_constraint "response_source IS NULL OR (response_source::text = ANY (ARRAY['provider'::character varying, 'cache'::character varying]::text[]))", name: "search_events_known_response_source"
     t.check_constraint "result_count >= 0", name: "search_events_result_count_nonnegative"
   end
 

@@ -13,8 +13,19 @@ module Llm
       end
     end
 
+    class InvalidResponse < Unavailable
+      attr_reader :raw_response, :provider_request_id
+
+      def initialize(raw_response:, provider_request_id: nil)
+        @raw_response = raw_response
+        @provider_request_id = provider_request_id
+        super("LLM provider returned an invalid structured response")
+      end
+    end
+
     Response = Data.define(
       :payload,
+      :raw_response,
       :provider_request_id,
       :input_tokens,
       :cached_input_tokens,

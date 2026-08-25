@@ -51,6 +51,7 @@ RSpec.describe LlmSearchParser do
         "keywords" => ["troca de fiação", "ana@example.com"],
         "normalized_request" => "Eu preciso trocar a fiação no América Parser."
       },
+      raw_response: '{"service_ids":["controlled"]}',
       provider_request_id: "req_parser",
       input_tokens: 120,
       cached_input_tokens: 20,
@@ -63,12 +64,15 @@ RSpec.describe LlmSearchParser do
     allow(client).to receive(:parse).and_return(provider_response)
   end
 
-  it "returns controlled IDs and location codes, stores no raw expression, and reuses the 24-hour cache" do
+  it "returns controlled criteria and records provider and cache audit details" do
     parser = described_class.new(client:, settings:)
     expression = "Preciso trocar a fiação da casa da Ana no América Parser"
+    recorder = PublicSearchAuditRecorder.new
+    first_event = recorder.start(expression:)
 
-    first = parser.call(expression:)
-    second = parser.call(expression:)
+    first = parser.call(expression:, audit_event: first_event)
+    second_event = recorder.start(expression:)
+    second = parser.call(expression:, audit_event: second_event)
 
     expect(first).to eq(
       described_class::Criteria.new(
@@ -93,6 +97,21 @@ RSpec.describe LlmSearchParser do
       model: "gpt-5-mini",
       provider_request_id: "req_parser",
       cache_hit_count: 1
+    )
+    expect(first_event.reload).to have_attributes(
+      raw_llm_response: provider_response.raw_response,
+      response_source: "provider",
+      llm_adapter: "fake",
+      llm_model: "gpt-5-mini"
+    )
+    expect(first_event.parsed_response).to include(
+      "service_ids" => [service.id],
+      "services" => [{"id" => service.id, "name" => service.name}],
+      "normalized_request" => "Eu preciso trocar a fiação no América Parser."
+    )
+    expect(second_event.reload).to have_attributes(
+      raw_llm_response: provider_response.raw_response,
+      response_source: "cache"
     )
     expect(analysis.expires_at).to be_within(2.seconds).of(24.hours.from_now)
     expect(analysis.attributes.to_json).not_to include(expression, "Ana")
@@ -173,5 +192,31 @@ RSpec.describe LlmSearchParser do
     }.to raise_error(described_class::ProviderRateLimited) do |error|
       expect(error.retry_after).to eq(37)
     end
+  end
+
+  it "marks invalid provider output as rejected while retaining the exact response" do
+    allow(client).to receive(:parse).and_raise(
+      Llm::Client::InvalidResponse.new(
+        raw_response: "not valid json",
+        provider_request_id: "req_invalid"
+      )
+    )
+    event = PublicSearchAuditRecorder.new.start(expression: "Preciso de eletricista")
+
+    expect {
+      described_class.new(client:, settings:).call(
+        expression: "Preciso de eletricista",
+        audit_event: event
+      )
+    }.to raise_error(described_class::ProviderUnavailable)
+
+    expect(event.reload).to have_attributes(
+      audit_status: "response_rejected",
+      raw_llm_response: "not valid json",
+      response_source: "provider",
+      llm_provider_request_id: "req_invalid",
+      result_count: 0,
+      reportable: false
+    )
   end
 end

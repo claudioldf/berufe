@@ -28,7 +28,7 @@ module Admin
       attr_reader :start_at, :end_at
 
       def raw_rows
-        SearchEvent.where(created_at: start_at...end_at)
+        SearchEvent.reportable.where(created_at: start_at...end_at)
           .group(:service_id, :neighborhood_code)
           .group(Arel.sql("CASE WHEN service_id IS NULL THEN query_text_normalized END"))
           .pluck(

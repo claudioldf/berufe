@@ -53,7 +53,7 @@ RSpec.describe "Public professional searches", type: :request, openapi: true do
     allow_any_instance_of(LlmSearchParser).to receive(:call).and_return(criteria)
   end
 
-  it "returns matching cards without echoing or retaining the raw expression" do
+  it "returns matching cards without echoing the raw expression in the public response" do
     profile = create_published_profile
     expression = "Preciso trocar meu chuveiro no bairro América Contratada"
 
@@ -103,6 +103,9 @@ RSpec.describe "Public professional searches", type: :request, openapi: true do
       service_id: electrician.id,
       neighborhood_code: neighborhood.code,
       query_text_normalized: nil,
+      input_prompt: expression,
+      audit_status: "completed",
+      reportable: true,
       result_count: 1
     )
     expect(PublicInteractionToken.new.verify(data.dig("interaction", "token"))).to have_attributes(
@@ -136,6 +139,17 @@ RSpec.describe "Public professional searches", type: :request, openapi: true do
       ],
       "normalized_request" => nil
     )
+    expect(SearchEvent.count).to eq(1)
+    assert_api_conform(status: 200)
+
+    post "/api/v1/public/professional-searches",
+      params: {service_id: electrician.id, state_code: "SC", city: "Joinville", page: 2},
+      headers: request_headers("structured-search-page-2"),
+      as: :json
+
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body.dig("data", "interaction")).to be_nil
+    expect(SearchEvent.count).to eq(1)
     assert_api_conform(status: 200)
   end
 
@@ -165,6 +179,13 @@ RSpec.describe "Public professional searches", type: :request, openapi: true do
       as: :json
     expect(response).to have_http_status(:too_many_requests)
     expect(response.headers["Retry-After"]).to eq("42")
+    expect(SearchEvent.find_by(input_prompt: "Eletricista")).to have_attributes(
+      audit_status: "application_rate_limited",
+      raw_llm_response: nil,
+      parsed_response: nil,
+      result_count: 0,
+      reportable: false
+    )
     assert_api_conform(status: 429)
 
     allow_any_instance_of(PublicSearchRateLimiter).to receive(:check_and_increment!).and_return(nil)
@@ -223,6 +244,7 @@ RSpec.describe "Public professional searches", type: :request, openapi: true do
       "total_pages" => 2
     )
     expect(SearchEvent.find(data.dig("interaction", "search_event_id")).result_count).to eq(21)
+    expect(SearchEvent.count).to eq(1)
     assert_api_conform(status: 200)
 
     post "/api/v1/public/professional-searches",
@@ -230,6 +252,8 @@ RSpec.describe "Public professional searches", type: :request, openapi: true do
       headers: request_headers("expression-page-2"),
       as: :json
     expect(response.parsed_body.dig("data", "professionals").length).to eq(1)
+    expect(response.parsed_body.dig("data", "interaction")).to be_nil
+    expect(SearchEvent.count).to eq(1)
     assert_api_conform(status: 200)
   end
 

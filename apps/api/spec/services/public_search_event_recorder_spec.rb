@@ -87,6 +87,26 @@ RSpec.describe PublicSearchEventRecorder do
     )
   end
 
+  it "completes the provisional expression event instead of creating a second row" do
+    event = PublicSearchAuditRecorder.new.start(expression: "Preciso de pintor no Centro")
+
+    interaction = described_class.new.call(
+      criteria:,
+      result_count: 8,
+      event:
+    )
+
+    expect(SearchEvent.count).to eq(1)
+    expect(event.reload).to have_attributes(
+      audit_status: "completed",
+      result_count: 8,
+      reportable: true,
+      service_id: service.id,
+      neighborhood_code: neighborhood.code
+    )
+    expect(interaction.search_event_id).to eq(event.id)
+  end
+
   it "logs only safe diagnostics and suppresses persistence failures" do
     Current.request_id = "search-event-failure"
     error = ActiveRecord::StatementInvalid.new("private database detail")

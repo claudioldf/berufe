@@ -43,9 +43,26 @@ class PublicProfessionalSearch
     @related_services = related_services
   end
 
-  def call(expression:, page: 1, per_page: DEFAULT_PER_PAGE)
+  def self.normalize_pagination(page:, per_page:)
+    normalized_page = Integer(page.to_s.presence || 1, exception: false)
+    normalized_per_page = Integer(per_page.to_s.presence || DEFAULT_PER_PAGE, exception: false)
+    errors = {}
+    errors[:page] = ["deve ser maior que zero"] unless normalized_page&.positive?
+    unless normalized_per_page&.between?(1, MAX_PER_PAGE)
+      errors[:per_page] = ["deve estar entre 1 e #{MAX_PER_PAGE}"]
+    end
+    raise InvalidInput, errors if errors.any?
+
+    [normalized_page, normalized_per_page]
+  end
+
+  def call(expression:, page: 1, per_page: DEFAULT_PER_PAGE, audit_event: nil)
     normalized_page, normalized_per_page = normalize_pagination(page, per_page)
-    criteria = parser.call(expression:)
+    criteria = if audit_event
+      parser.call(expression:, audit_event:)
+    else
+      parser.call(expression:)
+    end
     result_for(criteria, page: normalized_page, per_page: normalized_per_page)
   rescue LlmSearchParser::InvalidExpression
     raise InvalidInput, {expression: ["é obrigatória e deve ter no máximo #{MAXIMUM_TERM_LENGTH} caracteres"]}
@@ -122,16 +139,7 @@ class PublicProfessionalSearch
   end
 
   def normalize_pagination(page, per_page)
-    normalized_page = Integer(page.to_s.presence || 1, exception: false)
-    normalized_per_page = Integer(per_page.to_s.presence || DEFAULT_PER_PAGE, exception: false)
-    errors = {}
-    errors[:page] = ["deve ser maior que zero"] unless normalized_page&.positive?
-    unless normalized_per_page&.between?(1, MAX_PER_PAGE)
-      errors[:per_page] = ["deve estar entre 1 e #{MAX_PER_PAGE}"]
-    end
-    raise InvalidInput, errors if errors.any?
-
-    [normalized_page, normalized_per_page]
+    self.class.normalize_pagination(page:, per_page:)
   end
 
   def matching_professionals(criteria)

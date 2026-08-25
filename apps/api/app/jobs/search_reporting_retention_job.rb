@@ -6,6 +6,7 @@ class SearchReportingRetentionJob < ApplicationJob
   TIME_ZONE = "America/Sao_Paulo"
 
   def perform(now: Time.current)
+    scrub_llm_audits!(now:)
     today = now.in_time_zone(TIME_ZONE).to_date
     retained_from = today - (Rails.configuration.x.berufe.reporting.raw_search_retention_days - 1)
     aggregate_dates = SearchEvent.where(created_at: ...retained_from.in_time_zone(TIME_ZONE))
@@ -26,6 +27,23 @@ class SearchReportingRetentionJob < ApplicationJob
 
   private
 
+  def scrub_llm_audits!(now:)
+    retained_after = now - Rails.configuration.x.berufe.reporting.llm_search_audit_retention_days.days
+    SearchEvent.llm_audits
+      .where(created_at: ...retained_after)
+      .update_all(
+        input_prompt: nil,
+        raw_llm_response: nil,
+        parsed_response: nil,
+        response_source: nil,
+        llm_adapter: nil,
+        llm_model: nil,
+        llm_provider_request_id: nil,
+        llm_prompt_digest: nil,
+        updated_at: now
+      )
+  end
+
   def aggregate_and_purge!(date)
     range = date.in_time_zone(TIME_ZONE)...(date + 1).in_time_zone(TIME_ZONE)
     SearchEvent.transaction do
@@ -34,8 +52,9 @@ class SearchReportingRetentionJob < ApplicationJob
       return if locked_ids.empty?
 
       relation = SearchEvent.where(id: locked_ids)
+      reportable_relation = relation.reportable
 
-      rows = relation.group(:service_id, :neighborhood_code)
+      rows = reportable_relation.group(:service_id, :neighborhood_code)
         .group(Arel.sql("CASE WHEN service_id IS NULL THEN query_text_normalized END"))
         .pluck(
           :service_id,
@@ -50,7 +69,7 @@ class SearchReportingRetentionJob < ApplicationJob
           Arel.sql("COUNT(*) FILTER (WHERE result_count BETWEEN 1 AND 2)")
         )
       SearchDailyRollup.where(report_date: date).delete_all
-      SearchDailyRollup.insert_all!(rows.map do |service_id, neighborhood_code, unmatched_query, *counts|
+      rollups = rows.map do |service_id, neighborhood_code, unmatched_query, *counts|
         {
           report_date: date,
           service_id:,
@@ -64,7 +83,8 @@ class SearchReportingRetentionJob < ApplicationJob
           zero_results: counts[5],
           thin_results: counts[6]
         }
-      end)
+      end
+      SearchDailyRollup.insert_all!(rollups) if rollups.any?
       relation.delete_all
     end
   end

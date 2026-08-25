@@ -24,27 +24,55 @@ class LlmSearchParser
     end
   end
 
+  def self.normalize_expression!(expression)
+    raise InvalidExpression unless expression.is_a?(String)
+
+    normalized = expression.squish
+    raise InvalidExpression if normalized.blank? || normalized.length > MAXIMUM_EXPRESSION_LENGTH
+
+    normalized
+  end
+
   def initialize(
     client: Llm::Client.build,
     settings: Rails.configuration.x.berufe.environment,
-    now: -> { Time.current }
+    now: -> { Time.current },
+    audit_recorder: PublicSearchAuditRecorder.new
   )
     @client = client
     @settings = settings
     @now = now
+    @audit_recorder = audit_recorder
   end
 
-  def call(expression:)
+  def call(expression:, audit_event: nil)
     normalized_expression = validate_expression!(expression)
     services = Service.publicly_active.ordered.to_a
     neighborhoods = Neighborhood.active.ordered.to_a
     prompt = LlmSearchPrompt.new(services:, neighborhoods:)
+    audit_raw_response = nil
+    audit_response_source = nil
+    audit_provider_request_id = nil
     cache_key_digest = digest(
       "#{normalized_expression}\0#{prompt.digest}\0#{settings.llm_adapter}\0#{settings.openai_model}"
     )
 
     if (cached = cached_analysis(cache_key_digest))
-      return criteria_from(cached.parsed_result, services:, neighborhoods:)
+      audit_raw_response = cached.raw_response
+      audit_response_source = "cache"
+      audit_provider_request_id = cached.provider_request_id
+      criteria = criteria_from(cached.parsed_result, services:, neighborhoods:)
+      audit_recorder.record_interpretation(
+        event: audit_event,
+        criteria:,
+        raw_response: cached.raw_response,
+        response_source: "cache",
+        adapter: cached.adapter,
+        model: cached.model,
+        provider_request_id: cached.provider_request_id,
+        prompt_digest: cached.prompt_digest
+      )
+      return criteria
     end
 
     response = client.parse(
@@ -54,7 +82,20 @@ class LlmSearchParser
       services:,
       neighborhoods:
     )
+    audit_raw_response = response.raw_response
+    audit_response_source = "provider"
+    audit_provider_request_id = response.provider_request_id
     criteria = criteria_from(response.payload, services:, neighborhoods:)
+    audit_recorder.record_interpretation(
+      event: audit_event,
+      criteria:,
+      raw_response: response.raw_response,
+      response_source: "provider",
+      adapter: settings.llm_adapter,
+      model: settings.openai_model,
+      provider_request_id: response.provider_request_id,
+      prompt_digest: prompt.digest
+    )
     persist_analysis(
       cache_key_digest:,
       expression_digest: digest(normalized_expression),
@@ -63,23 +104,56 @@ class LlmSearchParser
       response:
     )
     criteria
+  rescue LocationUnsupported, LocationUnrecognized
+    audit_recorder.record_failure(
+      event: audit_event,
+      status: "response_rejected",
+      raw_response: audit_raw_response,
+      response_source: audit_response_source,
+      adapter: settings.llm_adapter,
+      model: settings.openai_model,
+      provider_request_id: audit_provider_request_id,
+      prompt_digest: prompt&.digest
+    )
+    raise
+  rescue Llm::Client::InvalidResponse => error
+    audit_recorder.record_failure(
+      event: audit_event,
+      status: "response_rejected",
+      raw_response: error.raw_response,
+      response_source: "provider",
+      adapter: settings.llm_adapter,
+      model: settings.openai_model,
+      provider_request_id: error.provider_request_id,
+      prompt_digest: prompt&.digest
+    )
+    raise ProviderUnavailable, error.message
   rescue Llm::Client::RateLimited => error
+    audit_recorder.record_failure(
+      event: audit_event,
+      status: "provider_rate_limited",
+      adapter: settings.llm_adapter,
+      model: settings.openai_model,
+      prompt_digest: prompt&.digest
+    )
     raise ProviderRateLimited.new(retry_after: error.retry_after)
   rescue Llm::Client::Unavailable => error
+    audit_recorder.record_failure(
+      event: audit_event,
+      status: "provider_unavailable",
+      adapter: settings.llm_adapter,
+      model: settings.openai_model,
+      prompt_digest: prompt&.digest
+    )
     raise ProviderUnavailable, error.message
   end
 
   private
 
-  attr_reader :client, :settings, :now
+  attr_reader :client, :settings, :now, :audit_recorder
 
   def validate_expression!(expression)
-    raise InvalidExpression unless expression.is_a?(String)
-
-    normalized = expression.squish
-    raise InvalidExpression if normalized.blank? || normalized.length > MAXIMUM_EXPRESSION_LENGTH
-
-    normalized
+    self.class.normalize_expression!(expression)
   end
 
   def criteria_from(payload, services:, neighborhoods:)
@@ -194,6 +268,7 @@ class LlmSearchParser
       adapter: settings.llm_adapter,
       model: settings.openai_model,
       prompt_digest:,
+      raw_response: response.raw_response,
       parsed_result: {
         service_ids: criteria.service_ids,
         locations: criteria.locations.map(&:to_h),

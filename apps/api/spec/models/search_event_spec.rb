@@ -58,6 +58,29 @@ RSpec.describe SearchEvent, type: :model do
     )
   end
 
+  it "stores bounded plain-text LLM audit content without changing the result-count invariant" do
+    event = described_class.create!(
+      input_prompt: "Preciso de encanador no América",
+      raw_llm_response: '{"service_ids":[]}',
+      parsed_response: {
+        service_ids: [], services: [], locations: [], keywords: [], normalized_request: nil
+      },
+      audit_status: "completed",
+      response_source: "provider",
+      llm_prompt_digest: "a" * 64,
+      city_code: "Joinville",
+      result_count: 0
+    )
+
+    expect(event.reload.input_prompt).to eq("Preciso de encanador no América")
+    expect(event.raw_llm_response).to eq('{"service_ids":[]}')
+    expect(event.result_count).to eq(0)
+
+    event.input_prompt = "x" * 201
+    expect(event).not_to be_valid
+    expect(event.errors).to include(:input_prompt)
+  end
+
   it "permits unmatched redacted demand and rejects invalid aggregate values" do
     event = described_class.new(
       service: nil,

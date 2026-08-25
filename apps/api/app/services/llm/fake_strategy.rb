@@ -21,13 +21,15 @@ module Llm
         neighborhoods: matched_neighborhoods
       )
 
+      payload = {
+        "service_ids" => service_ids,
+        "locations" => locations,
+        "keywords" => [],
+        "normalized_request" => normalized_request
+      }
       Client::Response.new(
-        payload: {
-          "service_ids" => service_ids,
-          "locations" => locations,
-          "keywords" => [],
-          "normalized_request" => normalized_request
-        },
+        payload:,
+        raw_response: JSON.generate(payload),
         provider_request_id: nil,
         input_tokens: nil,
         cached_input_tokens: nil,

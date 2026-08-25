@@ -47,6 +47,7 @@ RSpec.describe Llm::OpenaiStrategy do
     )
     expect(result).to have_attributes(
       payload: {"service_ids" => [], "locations" => [], "keywords" => [], "normalized_request" => nil},
+      raw_response: content.text,
       provider_request_id: "req_openai",
       input_tokens: 80,
       cached_input_tokens: 12,
@@ -77,5 +78,30 @@ RSpec.describe Llm::OpenaiStrategy do
         neighborhoods: []
       )
     }.to raise_error(Llm::Client::RateLimited) { |raised| expect(raised.retry_after).to eq(37) }
+  end
+
+  it "preserves invalid provider text for the search audit" do
+    content = double(text: "not valid json")
+    response = double(
+      output: [double(content: [content])],
+      usage: nil,
+      _request_id: "req_invalid_json"
+    )
+    responses = double
+    client = double(responses:)
+    allow(responses).to receive(:create).and_return(response)
+
+    expect {
+      described_class.new(model: "gpt-5-mini", client:).call(
+        expression: "Preciso de pintor",
+        prompt: "Interprete o pedido",
+        schema: {},
+        services: [],
+        neighborhoods: []
+      )
+    }.to raise_error(Llm::Client::InvalidResponse) do |error|
+      expect(error.raw_response).to eq("not valid json")
+      expect(error.provider_request_id).to eq("req_invalid_json")
+    end
   end
 end

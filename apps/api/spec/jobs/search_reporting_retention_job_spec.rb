@@ -37,4 +37,48 @@ RSpec.describe SearchReportingRetentionJob do
     )
     expect(aggregate.totals).to have_attributes(searches: 2, with_results: 1, zero_results: 1)
   end
+
+  it "scrubs seven-day LLM details and never rolls failed audits into discovery metrics" do
+    now = Time.zone.parse("2026-08-25 15:00:00")
+    retained_event = SearchEvent.create!(
+      input_prompt: "Preciso de pintor",
+      raw_llm_response: '{"service_ids":[]}',
+      parsed_response: {
+        service_ids: [], services: [], locations: [], keywords: [], normalized_request: nil
+      },
+      audit_status: "completed",
+      response_source: "provider",
+      llm_adapter: "fake",
+      llm_model: "gpt-5-mini",
+      llm_prompt_digest: "a" * 64,
+      city_code: "Joinville",
+      result_count: 2,
+      reportable: true,
+      created_at: now - 8.days
+    )
+    failed_event = SearchEvent.create!(
+      input_prompt: "Preciso de eletricista",
+      audit_status: "application_rate_limited",
+      city_code: "Joinville",
+      result_count: 0,
+      reportable: false,
+      created_at: now - 91.days
+    )
+
+    described_class.perform_now(now:)
+
+    expect(retained_event.reload).to have_attributes(
+      input_prompt: nil,
+      raw_llm_response: nil,
+      parsed_response: nil,
+      response_source: nil,
+      llm_adapter: nil,
+      llm_model: nil,
+      llm_prompt_digest: nil,
+      audit_status: "completed",
+      result_count: 2
+    )
+    expect(SearchEvent.exists?(failed_event.id)).to be(false)
+    expect(SearchDailyRollup.sum(:searches)).to eq(0)
+  end
 end

@@ -24,6 +24,8 @@ module Llm
 
     def call(expression:, prompt:, schema:, services:, neighborhoods:)
       started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      raw_response = nil
+      provider_request_id = nil
       response = client.responses.create(
         model:,
         store: false,
@@ -48,9 +50,12 @@ module Llm
       raise Client::Unavailable, "OpenAI returned no structured search output" unless content
 
       usage = response.usage
+      raw_response = content.text
+      provider_request_id = response._request_id
       Client::Response.new(
-        payload: JSON.parse(content.text),
-        provider_request_id: response._request_id,
+        payload: JSON.parse(raw_response),
+        raw_response:,
+        provider_request_id:,
         input_tokens: usage&.input_tokens,
         cached_input_tokens: usage&.input_tokens_details&.cached_tokens,
         output_tokens: usage&.output_tokens,
@@ -59,7 +64,10 @@ module Llm
     rescue OpenAI::Errors::RateLimitError => error
       Rails.error.report(error)
       raise Client::RateLimited.new(retry_after: retry_after(error))
-    rescue OpenAI::Errors::APIError, JSON::ParserError, NoMethodError => error
+    rescue JSON::ParserError => error
+      Rails.error.report(error)
+      raise Client::InvalidResponse.new(raw_response:, provider_request_id:)
+    rescue OpenAI::Errors::APIError, NoMethodError => error
       Rails.error.report(error)
       raise Client::Unavailable, "OpenAI search parsing failed"
     end

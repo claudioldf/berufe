@@ -7,5 +7,6 @@ Rails.application.config.filter_parameters += [
   :passw, :email, :phone, :code, :pin, :secret, :token, :challenge, :_key, :crypt, :salt, :certificate,
   :otp, :ssn, :cvv, :cvc, :birthdate, :display_name, :customer_name, :name, :headline, :bio, :whatsapp,
   :instagram, :youtube, :address, :description, :message, :notes, :context_note, :recommendation_text,
-  :review_note, :cancellation_reason, :request_message, :query
+  :review_note, :cancellation_reason, :request_message, :query, :expression,
+  :input_prompt, :raw_llm_response, :parsed_response
 ]
