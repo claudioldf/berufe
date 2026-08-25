@@ -481,6 +481,33 @@ paths:
           $ref: "#/components/responses/AdminModerationForbidden"
         "422":
           $ref: "#/components/responses/AdminModerationInvalid"
+  /api/v1/admin/search-audits:
+    get:
+      operationId: getAdminSearchAudits
+      summary: Read the last seven days of expression-search LLM audits
+      tags:
+        - Reports
+      security:
+        - applicationSession: []
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Newest-first expression prompts, LLM output, controlled parsing, and total matches.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminSearchAuditResponse"
+        "401":
+          $ref: "#/components/responses/AdminModerationUnauthorized"
+        "403":
+          $ref: "#/components/responses/AdminModerationForbidden"
+        "422":
+          $ref: "#/components/responses/AdminModerationInvalid"
   /api/v1/admin/moderation/{target_type}/{target_id}/decisions:
     parameters:
       - $ref: "#/components/parameters/ModerationTargetType"
@@ -3220,6 +3247,93 @@ components:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
   schemas:
+    AdminSearchAuditResponse:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data:
+          $ref: "#/components/schemas/AdminSearchAuditData"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    AdminSearchAuditData:
+      type: object
+      additionalProperties: false
+      required: [items, meta]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminSearchAuditItem"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    AdminSearchAuditItem:
+      type: object
+      additionalProperties: false
+      required: [id, input_prompt, raw_llm_response, parsed_response, status, response_source, adapter, model, provider_request_id, prompt_digest, result_count, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        input_prompt: { type: string, minLength: 1, maxLength: 200 }
+        raw_llm_response: { type: [string, "null"] }
+        parsed_response:
+          oneOf:
+            - $ref: "#/components/schemas/AdminSearchAuditParsedResponse"
+            - type: "null"
+        status:
+          type: string
+          enum: [processing, completed, application_rate_limited, provider_rate_limited, provider_unavailable, response_rejected, search_failed]
+        response_source:
+          type: [string, "null"]
+          enum: [provider, cache, null]
+        adapter: { type: [string, "null"] }
+        model: { type: [string, "null"] }
+        provider_request_id: { type: [string, "null"] }
+        prompt_digest:
+          type: [string, "null"]
+          pattern: "^[0-9a-f]{64}$"
+        result_count: { type: integer, minimum: 0 }
+        created_at: { type: string, format: date-time }
+    AdminSearchAuditParsedResponse:
+      type: object
+      additionalProperties: false
+      required: [service_ids, services, locations, keywords, normalized_request]
+      properties:
+        service_ids:
+          type: array
+          items: { type: string, format: uuid }
+        services:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [id, name]
+            properties:
+              id: { type: string, format: uuid }
+              name: { type: string, minLength: 1 }
+        locations:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [state_code, city, neighborhood]
+            properties:
+              state_code: { type: string, minLength: 2, maxLength: 2 }
+              city: { type: string, minLength: 1 }
+              neighborhood:
+                oneOf:
+                  - type: object
+                    additionalProperties: false
+                    required: [code, name]
+                    properties:
+                      code: { type: string, minLength: 1 }
+                      name: { type: string, minLength: 1 }
+                  - type: "null"
+        keywords:
+          type: array
+          items: { type: string }
+        normalized_request:
+          type: [string, "null"]
+          maxLength: 240
     AdminGrowthReportPeriodKey:
       type: string
       enum: [since_launch, last_30_days, last_7_days]
