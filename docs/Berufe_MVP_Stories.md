@@ -617,14 +617,14 @@ Apply these rules whenever they are relevant to the story:
 
 **Status:** DONE
 
-**Story:** As a customer, I want to choose a residential service from the home page so that I can begin a relevant search without understanding Berufe’s internal taxonomy.
+**Story:** As a customer, I want to describe a residential service from the home page so that I can begin a relevant search without understanding Berufe’s internal taxonomy.
 
 **Acceptance criteria:**
 
 - The server-rendered home page asks what service is needed and defaults location to Joinville.
-- Suggestions use only active controlled services. The visitor may still submit an unmatched typed term so Berufe can record unmet demand without creating a lead.
+- The visitor may describe a request in their own words. The interpretation can return only active controlled services and Joinville locations, and an unmatched expression creates no lead.
 - Public pages include correct title, description, canonical URL, and share metadata.
-- Results URLs preserve selected service/neighborhood state. No dedicated category landing page, free-form lead request, multi-city selector, map, or paid placement is present.
+- Results URLs preserve the encoded search expression. No dedicated category landing page, multi-city selector, map, paid placement, or form that sends a request to multiple professionals is present.
 
 **Depends on:** S010, S007, S024.
 **Covers:** Feature B1.
@@ -633,15 +633,16 @@ Apply these rules whenever they are relevant to the story:
 
 **Status:** DONE
 
-**Story:** As a customer, I want to filter professionals by service, public name, and neighborhood so that results match who I am looking for, what I need, and where I live.
+**Story:** As a customer, I want to describe the service and location I need so that results match what I need and where I live.
 
 **Acceptance criteria:**
 
-- When an active service is selected or a known spelling variation resolves to one, the public API returns only published professionals offering that service and serving the selected neighborhood or all Joinville.
-- An optional professional-name filter matches a case-insensitive part of the published display name without storing that name in the anonymous search event.
-- A selected/resolved service is required to return professionals; an unmatched term returns no professionals plus safe related-service suggestions. Professional name and neighborhood are optional profile filters.
+- The natural-language expression field and API accept at most 200 characters.
+- Expression search uses strict structured LLM output limited to controlled active service IDs and Joinville locations; application and provider rate limits expose the same structured service/city fallback.
+- A resolved active service is required to return professionals. The public API returns only published professionals offering at least one interpreted service and serving at least one explicit neighborhood or all Joinville.
+- An unmatched expression returns no professionals plus safe related-service suggestions. A missing neighborhood means all Joinville.
 - Indexed PostgreSQL queries meet the agreed small-catalog response target without an external search engine.
-- Common known spelling variations are normalized in application code.
+- Controlled service names, slugs, aliases, and neighborhood names are supplied to the parser; returned identifiers are validated again in application code.
 - No-result responses suggest a related active service or changing the neighborhood; they never create a lead.
 
 **Depends on:** S024, S032.
@@ -655,7 +656,7 @@ Apply these rules whenever they are relevant to the story:
 
 **Acceptance criteria:**
 
-- A search records selected service when available, normalized query, Joinville/neighborhood, result count, and time.
+- A search records a service or neighborhood only when the structured interpretation has one unambiguous value, plus result count and time. It does not retain the raw or normalized expression.
 - Each anonymous search event can record whether at least one result profile was opened; it does not record a visitor or a list of every profile viewed.
 - The event stores no customer account, phone number, name, free-form note, cookie identifier, or persistent visitor identity.
 - Clearly malformed/sensitive input is not retained.
@@ -711,10 +712,12 @@ Apply these rules whenever they are relevant to the story:
 
 **Acceptance criteria:**
 
-- Search results and the public profile offer a `wa.me` action with an encoded, short pt-BR message naming Berufe and the viewed service.
+- Expression search returns a sanitized first-person request of at most 240 characters; structured fallback builds `Eu preciso de {serviço} em {cidade}, {UF}` from controlled catalog values.
+- Search results and search-derived public profiles offer a `wa.me` action with an encoded short pt-BR message in the form `Olá, {nome}! Encontrei seu perfil na Berufe. {pedido}`; direct profile visits retain the generic service message.
+- The generated draft is excluded from signed interaction tokens, search events, and aggregate metrics. The temporary LLM analysis cache expires after 24 hours, and Berufe does not retain the message actually edited or sent in WhatsApp.
 - Tapping records an anonymous daily aggregate for that professional with source `search_result` or `public_profile`, then opens WhatsApp.
 - A copy-number or equivalent practical fallback is available when the deep link cannot open.
-- Berufe does not proxy, store, or claim visibility into message content, delivery, negotiation, or hiring.
+- Berufe does not proxy or claim visibility into the message actually sent, delivery, negotiation, or hiring.
 - Basic short-lived deduplication prevents obvious repeated browser taps from inflating counts without creating a permanent visitor table.
 - Internal aggregates can calculate search-to-profile-open and public-profile-to-WhatsApp conversion without a visitor identity; no professional-facing analytics UI is added.
 

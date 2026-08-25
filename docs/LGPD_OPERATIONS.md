@@ -85,6 +85,7 @@ The maximum operational deadline is 30 days from the verified request.
 | Successful GoodJob record                                  | 14 days                                                                            | GoodJob preserved-record cleanup              |
 | Unresolved failed GoodJob record                           | Until operational review                                                           | Manual review; never blind deletion           |
 | Anonymous search event                                     | 90 days                                                                            | Daily rollup and purge                        |
+| Temporary LLM search analysis and sanitized contact draft  | 24 hours                                                                           | Daily search-reporting retention cleanup      |
 | Daily aggregate/activity                                   | 730 days                                                                           | Daily reporting cleanup                       |
 | Abandoned upload authorization                             | 10 minutes                                                                         | Ten-minute cleanup                            |
 | Rejected, replaced, removed, or unattached media           | 30 days                                                                            | Daily media retention cleanup                 |

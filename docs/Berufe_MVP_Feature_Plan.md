@@ -453,10 +453,11 @@ Discovery turns the trust profiles into customer value. It also tests whether cu
 
 #### 3. How it works and implementation overview
 
-1. The home page asks “What service do you need?” and defaults the location to Joinville.
-2. Suggestions come from the controlled service catalog.
-3. The search endpoint filters only published profiles that serve the selected area and offer the selected service.
-4. If there are no results, the page suggests nearby related services or asks the visitor to change the neighborhood; it does not create or sell a lead.
+1. The home page asks “What service do you need?” in a natural-language field limited to 200 characters and defaults the location to Joinville.
+2. The LLM returns only strict structured service/location criteria from the controlled catalog plus a sanitized first-person contact draft; Rails rejects uncontrolled IDs and locations.
+3. When expression search reaches its application or provider limit, the page offers a controlled service and Joinville/SC form that bypasses the LLM.
+4. The search endpoint filters only published profiles that serve the selected area and offer the selected service.
+5. If there are no results, the page suggests nearby related services; it does not create or sell a lead.
 
 For 30–50 professionals, use ordinary relational database queries and indexed columns. Do not introduce a separate search engine. Normalize common spelling variations in application code. Record anonymous search aggregates to identify missing supply.
 
@@ -467,8 +468,8 @@ For 30–50 professionals, use ordinary relational database queries and indexed 
 | Field                   | Type      | Rules                                                |
 | ----------------------- | --------- | ---------------------------------------------------- |
 | `id`                    | UUID      | Primary key                                          |
-| `service_id`            | UUID      | Nullable only when no suggestion selected            |
-| `query_text_normalized` | text      | No names, phone numbers, or free-form notes retained |
+| `service_id`            | UUID      | Set only for one unambiguous interpreted service     |
+| `query_text_normalized` | text      | Null for expression and structured fallback searches |
 | `city_code`             | text      | Joinville at launch                                  |
 | `neighborhood_code`     | text      | Nullable                                             |
 | `result_count`          | integer   | Non-negative                                         |
@@ -478,7 +479,7 @@ No customer account or persistent identity is required.
 
 #### 5. Explicitly not in MVP
 
-- Natural-language AI search.
+- AI-generated profiles, services, locations, ranking, or public evidence outside the controlled structured schema.
 - Maps and distance-based ranking.
 - Nationwide or multi-city search.
 - Saved searches.
@@ -587,14 +588,15 @@ The product promise is direct contact without buying a lead. WhatsApp matches th
 
 1. The customer taps “Contact on WhatsApp.”
 2. Berufe records one anonymous aggregate click for that professional.
-3. The device opens WhatsApp with a short prefilled message: the customer found the professional on Berufe and names the service viewed.
-4. The conversation and negotiation happen entirely in WhatsApp.
+3. For expression search, the LLM returns a sanitized first-person request of at most 240 characters. For the structured fallback, Rails builds `Eu preciso de {serviço} em {cidade}, {UF}` from controlled catalog values.
+4. Rails combines the professional's full display name, Berufe attribution, and that request in the prefilled WhatsApp message. A direct profile visit without search context keeps the generic service message.
+5. The conversation and negotiation happen entirely in WhatsApp.
 
-Use a standard deep link. Do not proxy messages or collect the message content. Apply basic bot/rate filtering so automated clicks do not inflate the dashboard.
+Use a standard deep link. The raw expression is not retained. The sanitized LLM draft may remain only in the 24-hour search-analysis cache; signed interaction tokens contain identifiers, not the draft. Do not proxy or retain the message actually edited or sent in WhatsApp. Apply basic bot/rate filtering so automated clicks do not inflate the dashboard.
 
 #### 4. Suggested feature-scoped data schema
 
-No raw contact record is required. The feature increments `whatsapp_clicks` in the dashboard’s daily aggregate. If technical deduplication is needed, use a short-lived server cache rather than a permanent visitor table.
+No raw contact record is required. The feature increments `whatsapp_clicks` in the dashboard’s daily aggregate. The generated draft exists only in the temporary LLM analysis cache and request URL; it is not copied into search events, click metrics, or tokens. If technical deduplication is needed, use a short-lived server cache rather than a permanent visitor table.
 
 #### 5. Explicitly not in MVP
 
