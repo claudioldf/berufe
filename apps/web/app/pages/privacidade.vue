@@ -300,10 +300,13 @@ useSeoMeta({
         memória da sessão e as informações salvas são recuperadas do servidor.
       </p>
       <p>
-        A busca registra eventos sem identificador persistente. Termos são
-        normalizados, limitados e rejeitados quando parecem conter contato ou
-        outro dado pessoal. Interações repetidas usam somente uma impressão
-        temporária por dez minutos.
+        A busca registra eventos sem identificador persistente. Nas buscas por
+        texto livre, a Berufe mantém por sete dias o texto informado, a resposta
+        bruta da inteligência artificial e a interpretação controlada, com
+        acesso restrito a administradores para análise do negócio e auditoria. O
+        campo é limitado a 200 caracteres e não deve ser usado para informar
+        telefone, e-mail, CPF ou outros dados pessoais. Interações repetidas
+        usam somente uma impressão temporária por dez minutos.
       </p>
     </section>
 
@@ -317,6 +320,9 @@ useSeoMeta({
           dias; sessão administrativa: 30 minutos e 12 horas;
         </li>
         <li>eventos normalizados de busca: 90 dias;</li>
+        <li>
+          prompts e respostas da busca por inteligência artificial: 7 dias;
+        </li>
         <li>
           análises temporárias da busca por inteligência artificial: 24 horas;
         </li>

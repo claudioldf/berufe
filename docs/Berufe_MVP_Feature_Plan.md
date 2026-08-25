@@ -592,11 +592,11 @@ The product promise is direct contact without buying a lead. WhatsApp matches th
 4. Rails combines the professional's full display name, Berufe attribution, and that request in the prefilled WhatsApp message. A direct profile visit without search context keeps the generic service message.
 5. The conversation and negotiation happen entirely in WhatsApp.
 
-Use a standard deep link. The raw expression is not retained. The sanitized LLM draft may remain only in the 24-hour search-analysis cache; signed interaction tokens contain identifiers, not the draft. Do not proxy or retain the message actually edited or sent in WhatsApp. Apply basic bot/rate filtering so automated clicks do not inflate the dashboard.
+Use a standard deep link. The expression, exact LLM output, and controlled parse are retained on the search event for seven days for administrator audit; the LLM analysis cache remains limited to 24 hours. Signed interaction tokens contain identifiers, not the draft. Do not proxy or retain the message actually edited or sent in WhatsApp. Apply basic bot/rate filtering so automated clicks do not inflate the dashboard.
 
 #### 4. Suggested feature-scoped data schema
 
-No raw contact record is required. The feature increments `whatsapp_clicks` in the dashboard’s daily aggregate. The generated draft exists only in the temporary LLM analysis cache and request URL; it is not copied into search events, click metrics, or tokens. If technical deduplication is needed, use a short-lived server cache rather than a permanent visitor table.
+No raw contact record is required. The feature increments `whatsapp_clicks` in the dashboard’s daily aggregate. The generated draft may remain in the seven-day administrator search audit and temporary LLM cache, but is not copied into click metrics or signed tokens. If technical deduplication is needed, use a short-lived server cache rather than a permanent visitor table.
 
 #### 5. Explicitly not in MVP
 

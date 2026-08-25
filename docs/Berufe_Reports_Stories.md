@@ -112,7 +112,7 @@ The relationship counts for both the initiator and recipient. A self-relationshi
 
 #### Valid anonymous search
 
-Use retained `search_events` rows that passed the search endpoint's input validation and privacy normalization. Require `city_code` for Joinville and `created_at` inside the selected period. Include matched and unmatched service queries because unmatched demand is part of the coverage denominator. Never return individual events or raw search text to the admin frontend.
+Use reportable `search_events` rows that passed the search endpoint's input validation and completed professional matching. Require `city_code` for Joinville and `created_at` inside the selected period. Include matched and unmatched service queries because unmatched demand is part of the coverage denominator. This aggregate growth report never returns individual events or raw search text; the separately authorized seven-day search-audit endpoint owns that operational view.
 
 ### 2.5 Associations used by the report
 
