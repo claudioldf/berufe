@@ -592,11 +592,13 @@ The product promise is direct contact without buying a lead. WhatsApp matches th
 4. Rails combines the professional's full display name, Berufe attribution, and that request in the prefilled WhatsApp message. A direct profile visit without search context keeps the generic service message.
 5. The conversation and negotiation happen entirely in WhatsApp.
 
-Use a standard deep link. The expression, exact LLM output, and controlled parse are retained on the search event for seven days for administrator audit; the LLM analysis cache remains limited to 24 hours. Signed interaction tokens contain identifiers, not the draft. Do not proxy or retain the message actually edited or sent in WhatsApp. Apply basic bot/rate filtering so automated clicks do not inflate the dashboard.
+Use a standard deep link. The expression, exact LLM output, and controlled parse are retained on the search event for six calendar months for administrator audit; the LLM analysis cache remains limited to 24 hours. Signed interaction tokens contain identifiers, not the draft. Do not proxy or retain the message actually edited or sent in WhatsApp. Apply basic bot/rate filtering so automated clicks do not inflate the dashboard.
 
 #### 4. Suggested feature-scoped data schema
 
-No raw contact record is required. The feature increments `whatsapp_clicks` in the dashboard’s daily aggregate. The generated draft may remain in the seven-day administrator search audit and temporary LLM cache, but is not copied into click metrics or signed tokens. If technical deduplication is needed, use a short-lived server cache rather than a permanent visitor table.
+No raw contact record is required. The feature increments `whatsapp_clicks` in the dashboard’s daily aggregate. The generated draft may remain in the six-month administrator search audit and temporary LLM cache, but is not copied into click metrics or signed tokens. If technical deduplication is needed, use a short-lived server cache rather than a permanent visitor table.
+
+Search-event counting reuses an event for 24 hours when the same keyed request subject repeats the same normalized expression or structured query and receives the same total result count. The bounded claim stores only HMAC subject/query digests, the result count, expiry, and event reference; it never stores the raw IP address, session token, or query.
 
 #### 5. Explicitly not in MVP
 

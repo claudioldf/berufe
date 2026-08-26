@@ -714,7 +714,7 @@ Apply these rules whenever they are relevant to the story:
 
 - Expression search returns a sanitized first-person request of at most 240 characters; structured fallback builds `Eu preciso de {serviço} em {cidade}, {UF}` from controlled catalog values.
 - Search results and search-derived public profiles offer a `wa.me` action with an encoded short pt-BR message in the form `Olá, {nome}! Encontrei seu perfil na Berufe. {pedido}`; direct profile visits retain the generic service message.
-- The generated draft is excluded from signed interaction tokens and aggregate metrics. The prompt, exact LLM output, and controlled parse remain in the administrator search audit for seven days; the temporary LLM analysis cache expires after 24 hours, and Berufe does not retain the message actually edited or sent in WhatsApp.
+- The generated draft is excluded from signed interaction tokens and aggregate metrics. The prompt, exact LLM output, and controlled parse remain in the administrator search audit for six calendar months; the temporary LLM analysis cache expires after 24 hours, and Berufe does not retain the message actually edited or sent in WhatsApp.
 - Tapping records an anonymous daily aggregate for that professional with source `search_result` or `public_profile`, then opens WhatsApp.
 - A copy-number or equivalent practical fallback is available when the deep link cannot open.
 - Berufe does not proxy or claim visibility into the message actually sent, delivery, negotiation, or hiring.

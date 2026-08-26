@@ -84,8 +84,9 @@ The maximum operational deadline is 30 days from the verified request.
 | Admin session                                                    | 30 idle minutes, 12 absolute hours                                                 | Authentication and hourly cleanup             |
 | Successful GoodJob record                                        | 14 days                                                                            | GoodJob preserved-record cleanup              |
 | Unresolved failed GoodJob record                                 | Until operational review                                                           | Manual review; never blind deletion           |
-| Anonymous search event                                           | 90 days                                                                            | Daily rollup and purge                        |
-| Verbatim expression prompt, raw LLM output, and controlled parse | 7 days                                                                             | Daily field scrubbing on the search event     |
+| Anonymous non-audit search event                                 | 90 days                                                                            | Daily rollup and purge                        |
+| Expression prompt, raw LLM output, and controlled parse          | 6 calendar months                                                                  | Daily deletion of the complete audit event    |
+| Pseudonymous search-event deduplication claim                    | 24 hours                                                                           | Daily expiry cleanup and replacement on reuse |
 | Temporary LLM search analysis and sanitized contact draft        | 24 hours                                                                           | Daily search-reporting retention cleanup      |
 | Daily aggregate/activity                                         | 730 days                                                                           | Daily reporting cleanup                       |
 | Abandoned upload authorization                                   | 10 minutes                                                                         | Ten-minute cleanup                            |
