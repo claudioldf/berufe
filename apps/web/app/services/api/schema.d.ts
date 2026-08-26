@@ -219,7 +219,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Read the last seven days of expression-search LLM audits */
+        /** Read the last six calendar months of expression-search LLM audits */
         get: operations["getAdminSearchAudits"];
         put?: never;
         post?: never;
@@ -1073,7 +1073,16 @@ export interface components {
         };
         AdminSearchAuditData: {
             items: components["schemas"]["AdminSearchAuditItem"][];
+            summary: components["schemas"]["AdminSearchAuditSummary"];
             meta: components["schemas"]["PageMeta"];
+        };
+        AdminSearchAuditSummary: {
+            total: number;
+            zero_results: number;
+            not_understood: number;
+            thin_results: number;
+            operational_issue: number;
+            healthy: number;
         };
         AdminSearchAuditItem: {
             /** Format: uuid */
@@ -3136,6 +3145,10 @@ export interface operations {
                 page?: components["parameters"]["Page"];
                 /** @description Result count per page. */
                 per_page?: components["parameters"]["PageSize"];
+                /** @description Case-insensitive prompt, normalized request, service, city, or neighborhood search. */
+                q?: string;
+                outcome?: "zero_results" | "not_understood" | "thin_results" | "operational_issue" | "healthy";
+                sort?: "results_asc" | "gaps" | "newest" | "results_desc";
             };
             header?: never;
             path?: never;
@@ -3143,7 +3156,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Newest-first expression prompts, LLM output, controlled parsing, and total matches. */
+            /** @description Filtered expression prompts, LLM output, controlled parsing, analytical summary, and total matches. */
             200: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];

@@ -7,6 +7,16 @@ export type SearchAuditStatus =
   | "response_rejected"
   | "search_failed";
 
+export type SearchAuditOutcome =
+  | "zero_results"
+  | "not_understood"
+  | "thin_results"
+  | "operational_issue"
+  | "healthy";
+
+export type SearchAuditSort =
+  "results_asc" | "gaps" | "newest" | "results_desc";
+
 export interface SearchAuditParsedResponse {
   serviceIds: string[];
   services: Array<{ id: string; name: string }>;
@@ -36,10 +46,25 @@ export interface SearchAuditItem {
 
 export interface SearchAuditPage {
   items: SearchAuditItem[];
+  summary: {
+    total: number;
+    zeroResults: number;
+    notUnderstood: number;
+    thinResults: number;
+    operationalIssue: number;
+    healthy: number;
+  };
   meta: {
     page: number;
     perPage: number;
     totalCount: number;
     totalPages: number;
   };
+}
+
+export interface SearchAuditRequest {
+  page: number;
+  q: string;
+  outcome: SearchAuditOutcome | null;
+  sort: SearchAuditSort;
 }

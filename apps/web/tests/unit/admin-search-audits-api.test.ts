@@ -41,6 +41,14 @@ const data: ApiData = {
       created_at: "2026-08-25T12:00:00Z",
     },
   ],
+  summary: {
+    total: 1,
+    zero_results: 0,
+    not_understood: 0,
+    thin_results: 0,
+    operational_issue: 0,
+    healthy: 1,
+  },
   meta: { page: 1, per_page: 20, total_count: 1, total_pages: 1 },
 };
 
@@ -71,9 +79,17 @@ describe("administrator search-audit API", () => {
       totalCount: 1,
       totalPages: 1,
     });
+    expect(result.summary).toEqual({
+      total: 1,
+      zeroResults: 0,
+      notUnderstood: 0,
+      thinResults: 0,
+      operationalIssue: 0,
+      healthy: 1,
+    });
   });
 
-  it("fetches an explicit page with the fixed page size", async () => {
+  it("fetches server-side filters and omits the default ascending sort", async () => {
     const client = {
       GET: vi.fn().mockResolvedValue({
         data: { data, request_id: "search-audits-200" },
@@ -83,10 +99,38 @@ describe("administrator search-audit API", () => {
     } as unknown as BerufeApiClient;
     const signal = new AbortController().signal;
 
-    await fetchAdminSearchAudits(client, 2, signal);
+    await fetchAdminSearchAudits(
+      client,
+      {
+        page: 2,
+        q: "eletricista",
+        outcome: "thin_results",
+        sort: "newest",
+      },
+      signal,
+    );
 
     expect(client.GET).toHaveBeenCalledWith("/api/v1/admin/search-audits", {
-      params: { query: { page: 2, per_page: 20 } },
+      params: {
+        query: {
+          page: 2,
+          per_page: 20,
+          q: "eletricista",
+          outcome: "thin_results",
+          sort: "newest",
+        },
+      },
+      signal,
+    });
+
+    await fetchAdminSearchAudits(
+      client,
+      { page: 1, q: "", outcome: null, sort: "results_asc" },
+      signal,
+    );
+
+    expect(client.GET).toHaveBeenLastCalledWith("/api/v1/admin/search-audits", {
+      params: { query: { page: 1, per_page: 20 } },
       signal,
     });
   });

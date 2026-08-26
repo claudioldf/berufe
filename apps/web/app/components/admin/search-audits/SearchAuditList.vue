@@ -1,5 +1,12 @@
 <script setup lang="ts">
 import { formatDateTime } from "~/utils/formatters";
+import {
+  searchAuditCityLabel,
+  searchAuditOutcome,
+  searchAuditOutcomeLabels,
+  searchAuditServiceLabel,
+  searchAuditStatusLabels,
+} from "~/utils/searchAudit";
 import type { SearchAuditItem, SearchAuditPage } from "~/types";
 
 const props = defineProps<{
@@ -9,108 +16,81 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   changePage: [page: number];
+  view: [item: SearchAuditItem];
 }>();
-
-const statusLabels: Record<SearchAuditItem["status"], string> = {
-  processing: "Processando",
-  completed: "Concluída",
-  application_rate_limited: "Limite da aplicação",
-  provider_rate_limited: "Limite do provedor",
-  provider_unavailable: "Provedor indisponível",
-  response_rejected: "Resposta rejeitada",
-  search_failed: "Busca indisponível",
-};
-
-function serviceLabel(item: SearchAuditItem) {
-  const services = item.parsedResponse?.services.map((service) => service.name);
-  return services?.length ? services.join(", ") : "Não identificado";
-}
-
-function locationLabel(item: SearchAuditItem) {
-  const locations = item.parsedResponse?.locations.map((location) => {
-    const neighborhood = location.neighborhood
-      ? `${location.neighborhood.name}, `
-      : "";
-    return `${neighborhood}${location.city} - ${location.stateCode}`;
-  });
-  return locations?.length ? [...new Set(locations)].join(" · ") : "—";
-}
-
-function rawResponseLabel(item: SearchAuditItem) {
-  if (item.rawLlmResponse) return item.rawLlmResponse;
-  if (item.status === "application_rate_limited") {
-    return "Rejeitada antes do envio ao LLM.";
-  }
-  return "Nenhuma resposta bruta foi recebida.";
-}
-
-function parsedResponseLabel(item: SearchAuditItem) {
-  return item.parsedResponse
-    ? JSON.stringify(item.parsedResponse, null, 2)
-    : "Nenhuma resposta interpretada.";
-}
 </script>
 
 <template>
   <section
     class="audit-list"
-    aria-label="Prompts de busca dos últimos sete dias"
+    aria-label="Prompts de busca dos últimos seis meses"
   >
-    <article v-for="item in props.items" :key="item.id" class="audit-card">
-      <header class="audit-card__header">
-        <div>
-          <span class="audit-card__time">{{
-            formatDateTime(item.createdAt)
-          }}</span>
-          <h2 class="audit-card__prompt">{{ item.inputPrompt }}</h2>
-        </div>
-        <span
-          class="audit-card__status"
-          :class="`audit-card__status--${item.status}`"
-        >
-          {{ statusLabels[item.status] }}
-        </span>
-      </header>
+    <div class="audit-list__heading">
+      <p>
+        <strong>{{ props.meta.totalCount }}</strong>
+        {{
+          props.meta.totalCount === 1
+            ? "busca encontrada"
+            : "buscas encontradas"
+        }}
+      </p>
+      <span>O total de profissionais considera a consulta completa.</span>
+    </div>
 
-      <dl class="audit-card__summary">
-        <div>
-          <dt>Serviço</dt>
-          <dd>{{ serviceLabel(item) }}</dd>
-        </div>
-        <div>
-          <dt>Localização</dt>
-          <dd>{{ locationLabel(item) }}</dd>
-        </div>
-        <div>
-          <dt>Profissionais encontrados</dt>
-          <dd class="audit-card__count">{{ item.resultCount }}</dd>
-        </div>
-      </dl>
-
-      <div class="audit-card__message">
-        <span>Mensagem normalizada para contato</span>
-        <p>{{ item.parsedResponse?.normalizedRequest ?? "—" }}</p>
-      </div>
-
-      <details class="audit-card__details">
-        <summary>Resposta bruta do LLM</summary>
-        <pre>{{ rawResponseLabel(item) }}</pre>
-      </details>
-
-      <details class="audit-card__details">
-        <summary>Resposta interpretada</summary>
-        <pre>{{ parsedResponseLabel(item) }}</pre>
-      </details>
-
-      <footer class="audit-card__metadata">
-        <span>Origem: {{ item.responseSource ?? "—" }}</span>
-        <span>Adaptador: {{ item.adapter ?? "—" }}</span>
-        <span>Modelo: {{ item.model ?? "—" }}</span>
-        <span v-if="item.providerRequestId">
-          Requisição: {{ item.providerRequestId }}
-        </span>
-      </footer>
-    </article>
+    <div class="audit-list__table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Busca</th>
+            <th scope="col">Interpretação</th>
+            <th scope="col">Localização</th>
+            <th scope="col">Diagnóstico</th>
+            <th scope="col" class="audit-list__numeric">Resultados</th>
+            <th scope="col">Quando</th>
+            <th scope="col"><span class="sr-only">Ações</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="item in props.items" :key="item.id">
+            <td class="audit-list__prompt-cell">
+              <p>{{ item.inputPrompt }}</p>
+            </td>
+            <td class="audit-list__interpretation">
+              <strong>{{ searchAuditServiceLabel(item) }}</strong>
+            </td>
+            <td class="audit-list__location">
+              {{ searchAuditCityLabel(item) }}
+            </td>
+            <td class="audit-list__diagnostic">
+              <small>{{ searchAuditStatusLabels[item.status] }}</small>
+              <span
+                class="audit-list__outcome"
+                :class="`audit-list__outcome--${searchAuditOutcome(item)}`"
+              >
+                {{ searchAuditOutcomeLabels[searchAuditOutcome(item)] }}
+              </span>
+            </td>
+            <td class="audit-list__count audit-list__numeric">
+              {{ item.resultCount }}
+            </td>
+            <td class="audit-list__date">
+              <time :datetime="item.createdAt">{{
+                formatDateTime(item.createdAt)
+              }}</time>
+            </td>
+            <td class="audit-list__action">
+              <UButton
+                color="neutral"
+                variant="outline"
+                size="sm"
+                label="Detalhes"
+                @click="emit('view', item)"
+              />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
     <nav
       v-if="props.meta.totalPages > 1"
@@ -138,165 +118,188 @@ function parsedResponseLabel(item: SearchAuditItem) {
 
 <style scoped lang="scss">
 .audit-list {
-  display: grid;
-  gap: 16px;
-}
-
-.audit-card {
   overflow: hidden;
-  border: 1px solid rgb(24 48 43 / 10%);
-  border-radius: 16px;
-  background: white;
-  box-shadow: 0 8px 30px rgb(24 48 43 / 5%);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
 
-  &__header {
+  &__heading {
     display: flex;
-    align-items: start;
+    align-items: center;
     justify-content: space-between;
-    gap: 20px;
-    padding: 20px 22px;
-    border-bottom: 1px solid rgb(24 48 43 / 8%);
+    gap: 16px;
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-surface-neutral);
+
+    p,
+    span {
+      margin: 0;
+      color: var(--color-text-muted);
+      font-size: 0.74rem;
+    }
+
+    strong {
+      color: var(--color-brand-strong);
+      font-variant-numeric: tabular-nums;
+    }
   }
 
-  &__time {
+  &__table-wrap {
+    overflow-x: auto;
+  }
+
+  table {
+    width: 100%;
+    min-width: 980px;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+
+  th,
+  td {
+    padding: 11px 12px;
+    border-bottom: 1px solid var(--color-border);
+    text-align: left;
+    vertical-align: middle;
+  }
+
+  th {
+    background: var(--color-surface);
     color: var(--color-text-muted);
-    font-size: 0.76rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
+    font-size: 0.68rem;
+    font-weight: 850;
+    letter-spacing: 0.025em;
     text-transform: uppercase;
+
+    &:first-child {
+      width: 26%;
+    }
+
+    &:nth-child(2) {
+      width: 16%;
+    }
+
+    &:nth-child(3) {
+      width: 15%;
+    }
+
+    &:nth-child(4) {
+      width: 15%;
+    }
+
+    &:nth-child(5) {
+      width: 9%;
+    }
+
+    &:nth-child(6) {
+      width: 11%;
+    }
+
+    &:last-child {
+      width: 8%;
+    }
   }
 
-  &__prompt {
-    margin: 6px 0 0;
+  tbody tr {
+    transition: background var(--motion-fast) ease;
+
+    &:hover {
+      background: var(--color-surface-hover);
+    }
+
+    &:last-child td {
+      border-bottom: 0;
+    }
+  }
+
+  &__prompt-cell p {
+    display: -webkit-box;
+    margin: 0;
+    overflow: hidden;
     color: var(--color-brand-strong);
-    font-family: var(--font-display);
-    font-size: 1.25rem;
-    font-weight: 600;
+    font-size: 0.82rem;
+    font-weight: 700;
     line-height: 1.35;
     overflow-wrap: anywhere;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
 
-  &__status {
-    flex: 0 0 auto;
-    padding: 5px 9px;
-    border-radius: 999px;
-    background: #f2f0ea;
-    color: var(--color-brand-strong);
-    font-size: 0.72rem;
-    font-weight: 800;
-
-    &--completed {
-      background: #e2f2e8;
-      color: #23613c;
-    }
-
-    &--application_rate_limited,
-    &--provider_rate_limited,
-    &--response_rejected {
-      background: #fff0d7;
-      color: #845813;
-    }
-
-    &--provider_unavailable,
-    &--search_failed {
-      background: #fde8e5;
-      color: #8b3028;
+  &__interpretation {
+    strong {
+      display: block;
+      overflow: hidden;
+      color: var(--color-text);
+      font-size: 0.78rem;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
   }
 
-  &__summary {
-    display: grid;
-    grid-template-columns: 1fr 1.2fr minmax(150px, 0.5fr);
-    gap: 16px;
-    margin: 0;
-    padding: 18px 22px;
+  &__location {
+    overflow: hidden;
+    color: var(--color-text-muted);
+    font-size: 0.74rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 
-    div {
-      min-width: 0;
+  &__diagnostic small {
+    display: block;
+    margin: 0 0 4px;
+    color: var(--color-text-subtle);
+    font-size: 0.66rem;
+  }
+
+  &__outcome {
+    display: inline-flex;
+    padding: 4px 7px;
+    border-radius: var(--radius-pill);
+    background: var(--color-surface-muted);
+    color: var(--color-text);
+    font-size: 0.68rem;
+    font-weight: 850;
+    line-height: 1.1;
+
+    &--zero_results,
+    &--operational_issue {
+      background: var(--color-danger-tint);
+      color: var(--color-danger);
     }
 
-    dt,
-    dd {
-      margin: 0;
+    &--not_understood,
+    &--thin_results {
+      background: var(--color-warning-tint);
+      color: #815107;
     }
 
-    dt {
-      color: var(--color-text-muted);
-      font-size: 0.72rem;
-      font-weight: 800;
-      text-transform: uppercase;
+    &--healthy {
+      background: var(--color-success-tint);
+      color: var(--color-success);
     }
+  }
 
-    dd {
-      margin-top: 5px;
-      color: var(--color-brand-strong);
-      font-size: 0.9rem;
-      overflow-wrap: anywhere;
-    }
+  &__numeric {
+    text-align: right !important;
   }
 
   &__count {
-    font-size: 1.35rem !important;
-    font-weight: 800;
+    color: var(--color-brand-strong);
+    font-size: 1rem;
+    font-variant-numeric: tabular-nums;
+    font-weight: 850;
   }
 
-  &__message {
-    margin: 0 22px 18px;
-    padding: 13px 15px;
-    border-radius: 11px;
-    background: #f7f5ef;
-
-    span {
-      color: var(--color-text-muted);
-      font-size: 0.72rem;
-      font-weight: 800;
-      text-transform: uppercase;
-    }
-
-    p {
-      margin: 6px 0 0;
-      color: var(--color-brand-strong);
-      font-size: 0.9rem;
-      line-height: 1.5;
-      overflow-wrap: anywhere;
-    }
-  }
-
-  &__details {
-    margin: 0 22px 12px;
-    border: 1px solid rgb(24 48 43 / 9%);
-    border-radius: 10px;
-
-    summary {
-      padding: 11px 13px;
-      color: var(--color-brand-strong);
-      cursor: pointer;
-      font-size: 0.82rem;
-      font-weight: 800;
-    }
-
-    pre {
-      max-height: 320px;
-      margin: 0;
-      padding: 14px;
-      overflow: auto;
-      border-top: 1px solid rgb(24 48 43 / 8%);
-      background: #17322d;
-      color: #eaf4f1;
-      font-size: 0.76rem;
-      line-height: 1.55;
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
-    }
-  }
-
-  &__metadata {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 7px 16px;
-    padding: 8px 22px 18px;
+  &__date {
     color: var(--color-text-muted);
-    font-size: 0.72rem;
+    font-size: 0.7rem;
+    white-space: nowrap;
+  }
+
+  &__action {
+    text-align: right;
   }
 }
 
@@ -305,42 +308,22 @@ function parsedResponseLabel(item: SearchAuditItem) {
   align-items: center;
   justify-content: center;
   gap: 16px;
-  padding-top: 6px;
+  padding: 12px;
+  border-top: 1px solid var(--color-border);
 
   span {
     color: var(--color-text-muted);
-    font-size: 0.82rem;
+    font-size: 0.76rem;
+    font-variant-numeric: tabular-nums;
     font-weight: 700;
   }
 }
 
-@media (width <= 760px) {
-  .audit-card {
-    &__header {
-      display: grid;
-      gap: 12px;
-      padding: 17px;
-    }
-
-    &__status {
-      justify-self: start;
-    }
-
-    &__summary {
-      grid-template-columns: 1fr;
-      padding: 16px 17px;
-    }
-
-    &__message,
-    &__details {
-      margin-right: 17px;
-      margin-left: 17px;
-    }
-
-    &__metadata {
-      display: grid;
-      padding: 8px 17px 16px;
-    }
+@media (width <= 650px) {
+  .audit-list__heading {
+    align-items: start;
+    flex-direction: column;
+    gap: 3px;
   }
 
   .audit-pagination {

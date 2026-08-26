@@ -12,7 +12,7 @@ useSeoMeta({
 <template>
   <AdminWorkspace
     title="Auditoria de buscas"
-    description="Prompts, respostas do LLM, interpretação controlada e alcance profissional dos últimos sete dias."
+    description="Intenções, respostas do LLM, interpretação controlada e cobertura profissional dos últimos seis meses."
   >
     <SearchAudits />
   </AdminWorkspace>
