@@ -1,8 +1,15 @@
 <script setup lang="ts">
-import type { PublicProfessionalCard } from "~/types";
+import type { PublicProfessionalCard, SearchLocation } from "~/types";
 import { formatCountLabel } from "~/utils/text";
+import {
+  fallbackSearchLocation,
+  searchLocationPath,
+} from "~/utils/searchLocation";
 
-defineProps<{ professionals: PublicProfessionalCard[] }>();
+const props = defineProps<{
+  professionals: PublicProfessionalCard[];
+  location?: SearchLocation;
+}>();
 
 function connectionCountLabel(count: number) {
   return formatCountLabel(
@@ -24,7 +31,7 @@ function connectionCountLabel(count: number) {
           >
         </div>
         <UButton
-          to="/encontrar"
+          :to="searchLocationPath(props.location ?? fallbackSearchLocation)"
           variant="link"
           trailing-icon="i-lucide-arrow-right"
         >

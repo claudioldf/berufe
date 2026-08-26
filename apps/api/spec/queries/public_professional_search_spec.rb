@@ -76,7 +76,10 @@ RSpec.describe PublicProfessionalSearch do
     expect(result.professionals).to contain_exactly(all_city, exact_area)
     expect(result.matching_service_for(exact_area)).to eq(electrician)
     expect(result.related_services).to include(plumber)
-    expect(parser).to have_received(:call).with(expression: "Trocar a fiação no América")
+    expect(parser).to have_received(:call).with(
+      expression: "Trocar a fiação no América",
+      default_location: have_attributes(state_code: "SC", city: "Joinville")
+    )
   end
 
   it "treats a location without a neighborhood as all Joinville and returns no matches without services" do

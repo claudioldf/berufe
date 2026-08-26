@@ -90,6 +90,12 @@ RSpec.describe LlmSearchParser do
     )
     expect(second).to eq(first)
     expect(client).to have_received(:parse).once
+    expect(client).to have_received(:parse).with(
+      hash_including(
+        prompt: include("Se o usuário não informar localização, use SC e Joinville"),
+        default_location: have_attributes(state_code: "SC", city: "Joinville")
+      )
+    )
 
     analysis = LlmSearchAnalysis.sole
     expect(analysis).to have_attributes(

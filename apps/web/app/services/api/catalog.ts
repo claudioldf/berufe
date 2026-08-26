@@ -21,6 +21,12 @@ export function mapPublicCatalog(data: CatalogData): PublicCatalog {
       description: service.description,
       aliases: service.aliases,
     })),
+    cities: data.cities.map((city) => ({
+      stateCode: city.state_code,
+      city: city.city,
+      stateSlug: city.state_slug,
+      citySlug: city.city_slug,
+    })),
     neighborhoods: [
       {
         code: "all",

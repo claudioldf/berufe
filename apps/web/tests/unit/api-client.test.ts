@@ -86,6 +86,31 @@ describe("API client", () => {
     expect(window.localStorage.length).toBe(0);
   });
 
+  it("forwards a server-resolved visitor IP only when explicitly configured", async () => {
+    const fetch = vi.fn(async () =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            data: { service: "berufe-api", status: "ok" },
+            request_id: "visitor-ip-request",
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      ),
+    );
+    const client = createApiClient({
+      baseUrl: "http://api:3000",
+      fetch,
+      visitorIp: "2001:4860:4860::8888",
+    });
+
+    await client.GET("/api/v1/status");
+
+    expect(fetch.mock.calls[0]?.[0].headers.get("X-Real-IP")).toBe(
+      "2001:4860:4860::8888",
+    );
+  });
+
   it("refuses to build a server-side client without a configured origin", () => {
     expect(() =>
       createApiClient({

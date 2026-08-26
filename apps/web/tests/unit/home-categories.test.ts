@@ -4,8 +4,8 @@ import Categories from "~/components/home/Categories.vue";
 import type { Service } from "~/types";
 
 const NuxtLinkStub = defineComponent({
-  props: { to: { type: String, required: true } },
-  template: '<a :href="to"><slot /></a>',
+  props: { to: { type: [String, Object], required: true } },
+  template: "<a><slot /></a>",
 });
 
 const services: Service[] = Array.from({ length: 10 }, (_, index) => ({

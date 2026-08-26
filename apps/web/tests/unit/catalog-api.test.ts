@@ -36,6 +36,14 @@ const catalogData: CatalogData = {
       city: "Joinville",
     },
   ],
+  cities: [
+    {
+      state_code: "SC",
+      city: "Joinville",
+      state_slug: "sc",
+      city_slug: "joinville",
+    },
+  ],
 };
 
 function apiClientReturning(result: object) {
@@ -63,6 +71,14 @@ describe("public catalog API", () => {
           icon: "i-lucide-zap",
           description: "Instalações elétricas.",
           aliases: ["elétrica"],
+        },
+      ],
+      cities: [
+        {
+          stateCode: "SC",
+          city: "Joinville",
+          stateSlug: "sc",
+          citySlug: "joinville",
         },
       ],
       neighborhoods: [

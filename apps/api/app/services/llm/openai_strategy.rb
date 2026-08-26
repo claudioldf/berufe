@@ -22,7 +22,7 @@ module Llm
       @client = client
     end
 
-    def call(expression:, prompt:, schema:, services:, neighborhoods:)
+    def call(expression:, prompt:, schema:, services:, neighborhoods:, default_location: nil)
       started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       raw_response = nil
       provider_request_id = nil

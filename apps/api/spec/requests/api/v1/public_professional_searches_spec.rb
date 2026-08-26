@@ -247,6 +247,19 @@ RSpec.describe "Public professional searches", type: :request, openapi: true do
     assert_api_conform(status: 503)
   end
 
+  it "rejects a client-supplied default location outside the supported catalog" do
+    post "/api/v1/public/professional-searches",
+      params: {
+        expression: "Eletricista",
+        default_location: {state_code: "PR", city: "Curitiba"}
+      },
+      headers: request_headers("expression-default-location-unsupported"),
+      as: :json
+
+    expect(response).to have_http_status(:unprocessable_entity)
+    expect(response.parsed_body.dig("error", "field_errors", "default_location")).to be_present
+  end
+
   it "requires the exact browser origin" do
     post "/api/v1/public/professional-searches",
       params: {expression: "Eletricista em Joinville"},

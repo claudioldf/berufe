@@ -2,7 +2,7 @@
 
 module Llm
   class FakeStrategy
-    def call(expression:, prompt:, schema:, services:, neighborhoods:)
+    def call(expression:, prompt:, schema:, services:, neighborhoods:, default_location:)
       normalized = PublicSearchText.normalize(expression)
       service_ids = services.filter_map do |service|
         terms = [service.name, service.slug, *service.aliases].map { |value| PublicSearchText.normalize(value) }
@@ -15,10 +15,15 @@ module Llm
       end
       locations = matched_neighborhoods.presence&.map do |neighborhood|
         {"state_code" => "SC", "city" => "Joinville", "neighborhood" => neighborhood.name}
-      end || [{"state_code" => "SC", "city" => "Joinville", "neighborhood" => nil}]
+      end || [{
+        "state_code" => default_location.state_code,
+        "city" => default_location.city,
+        "neighborhood" => nil
+      }]
       normalized_request = normalized_request_for(
         services: services.select { |service| service.id.in?(service_ids) },
-        neighborhoods: matched_neighborhoods
+        neighborhoods: matched_neighborhoods,
+        default_location:
       )
 
       payload = {
@@ -40,12 +45,12 @@ module Llm
 
     private
 
-    def normalized_request_for(services:, neighborhoods:)
+    def normalized_request_for(services:, neighborhoods:, default_location:)
       service = services.first
       return unless service
 
-      location = neighborhoods.first&.name || LlmSearchParser::DEFAULT_CITY
-      "Eu preciso de #{service.name.downcase} em #{location}, #{LlmSearchParser::DEFAULT_STATE_CODE}."
+      location = neighborhoods.first&.name || default_location.city
+      "Eu preciso de #{service.name.downcase} em #{location}, #{default_location.state_code}."
         .first(WhatsappRequestMessageBuilder::MAXIMUM_REQUEST_LENGTH)
     end
   end

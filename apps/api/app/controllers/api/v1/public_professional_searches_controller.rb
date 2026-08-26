@@ -24,9 +24,11 @@ module Api
         else
           expression = params.require(:expression)
           audit_event = audit_recorder.start(expression:) if page == 1
-          PublicSearchRateLimiter.new.check_and_increment!(ip_address: request.remote_ip)
+          ip_address = visitor_ip_resolver.call(request)
+          PublicSearchRateLimiter.new.check_and_increment!(ip_address:)
           search.call(
             expression:,
+            default_location: expression_default_location(ip_address:),
             page:,
             per_page:,
             audit_event:
@@ -102,6 +104,18 @@ module Api
 
       def audit_recorder
         @audit_recorder ||= PublicSearchAuditRecorder.new
+      end
+
+      def visitor_ip_resolver
+        @visitor_ip_resolver ||= VisitorIpResolver.new
+      end
+
+      def expression_default_location(ip_address:)
+        if params[:default_location].present?
+          return params.require(:default_location).permit(:state_code, :city).to_h.symbolize_keys
+        end
+
+        PublicSearchLocationResolver.new.call(ip_address:).location
       end
 
       def record_audit_failure(event, status:)

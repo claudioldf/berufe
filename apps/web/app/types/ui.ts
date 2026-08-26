@@ -14,6 +14,15 @@ export interface ExpressionSearchPayload {
   expression: string;
 }
 
+export interface SearchLocation {
+  stateCode: "SC";
+  city: "Joinville";
+  stateSlug: "sc";
+  citySlug: "joinville";
+}
+
+export type SearchLocationSource = "ip" | "fallback" | "manual";
+
 export interface StructuredSearchCity {
   id: string;
   name: "Joinville";

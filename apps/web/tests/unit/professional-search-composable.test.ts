@@ -12,6 +12,13 @@ vi.mock("@app/services/api/client", () => ({
 }));
 
 const expression = "Preciso de eletricista no bairro América";
+const location = {
+  stateCode: "SC" as const,
+  city: "Joinville" as const,
+  stateSlug: "sc" as const,
+  citySlug: "joinville" as const,
+};
+const finderPath = "/encontrar/sc/joinville";
 const professional = {
   id: "ad59e74a-a1aa-47d5-b725-26350f0f2376",
   public_slug: "ana-souza",
@@ -102,7 +109,7 @@ function rateLimitedResponse() {
 describe("professional search composable", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
-    await clearNuxtData("public-professional-search");
+    await clearNuxtData();
     await useRouter().replace("/encontrar");
     await flushPromises();
   });
@@ -116,11 +123,11 @@ describe("professional search composable", () => {
           resolveSearch = resolve;
         }),
     );
-    await clearNuxtData("public-professional-search");
+    await clearNuxtData();
 
     const SearchViewHarness = defineComponent({
       async setup() {
-        const search = await useProfessionalSearch();
+        const search = await useProfessionalSearch({ location });
 
         return () =>
           h(
@@ -131,14 +138,16 @@ describe("professional search composable", () => {
     });
     let mounted = false;
     const mounting = mountSuspended(SearchViewHarness, {
-      route: `/encontrar?expressao=${encodeSearchExpression(expression)}`,
+      route: `${finderPath}?expressao=${encodeSearchExpression(expression)}`,
     }).then((wrapper) => {
       mounted = true;
       return wrapper;
     });
 
     try {
-      await vi.waitFor(() => expect(apiClient.POST).toHaveBeenCalledOnce());
+      await vi.waitFor(() => expect(apiClient.POST).toHaveBeenCalledOnce(), {
+        timeout: 5_000,
+      });
       await flushPromises();
 
       expect(mounted).toBe(true);
@@ -150,7 +159,7 @@ describe("professional search composable", () => {
   });
 
   it("keeps a first visit idle until an expression is submitted", async () => {
-    const search = await useProfessionalSearch();
+    const search = await useProfessionalSearch({ location });
 
     expect(search.hasSearchTerm.value).toBe(false);
     expect(search.expressionInput.value).toBe("");
@@ -163,14 +172,14 @@ describe("professional search composable", () => {
     expect(useRoute().query.expressao).toBeUndefined();
   });
 
-  it("decodes the route expression and sends only that expression to Rails", async () => {
+  it("decodes the route expression and sends its visible default location to Rails", async () => {
     apiClient.POST.mockResolvedValue(successfulResponse());
     await useRouter().replace(
-      `/encontrar?expressao=${encodeSearchExpression(expression)}`,
+      `${finderPath}?expressao=${encodeSearchExpression(expression)}`,
     );
-    await clearNuxtData("public-professional-search");
+    await clearNuxtData();
 
-    const search = await useProfessionalSearch();
+    const search = await useProfessionalSearch({ location });
 
     expect(search.expressionInput.value).toBe(expression);
     expect(search.results.value.map((item) => item.name)).toEqual([
@@ -196,28 +205,34 @@ describe("professional search composable", () => {
     });
     expect(apiClient.POST).toHaveBeenCalledWith(
       "/api/v1/public/professional-searches",
-      { body: { expression } },
+      {
+        body: {
+          expression,
+          default_location: { state_code: "SC", city: "Joinville" },
+        },
+      },
     );
   });
 
   it("stores a submitted UTF-8 expression as unpadded Base64URL route state", async () => {
-    const search = await useProfessionalSearch();
+    const search = await useProfessionalSearch({ location });
 
     await search.submitSearch({ expression: `  ${expression}  ` });
 
     expect(useRoute().query).toEqual({
       expressao: encodeSearchExpression(expression),
     });
+    expect(useRoute().path).toBe(finderPath);
   });
 
   it("preserves a rate-limit error code across the Nuxt async-data boundary", async () => {
     apiClient.POST.mockResolvedValue(rateLimitedResponse());
     await useRouter().replace(
-      `/encontrar?expressao=${encodeSearchExpression(expression)}`,
+      `${finderPath}?expressao=${encodeSearchExpression(expression)}`,
     );
-    await clearNuxtData("public-professional-search");
+    await clearNuxtData();
 
-    const search = await useProfessionalSearch();
+    const search = await useProfessionalSearch({ location });
 
     expect(search.error.value).toEqual({
       code: "public_search_rate_limited",
@@ -239,10 +254,10 @@ describe("professional search composable", () => {
         ),
     );
     await useRouter().replace(
-      `/encontrar?expressao=${encodeSearchExpression(expression)}`,
+      `${finderPath}?expressao=${encodeSearchExpression(expression)}`,
     );
-    await clearNuxtData("public-professional-search");
-    const search = await useProfessionalSearch();
+    await clearNuxtData();
+    const search = await useProfessionalSearch({ location });
 
     await search.submitStructuredSearch({
       serviceId: professional.matching_service.id,

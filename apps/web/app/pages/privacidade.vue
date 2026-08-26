@@ -29,7 +29,7 @@ useSeoMeta({
     description="Este aviso explica quais dados pessoais a Berufe trata, para quais finalidades, com quem compartilha e como exercer seus direitos."
     version="1.0"
     effective-at="1º de agosto de 2026"
-    updated-at="23 de agosto de 2026"
+    updated-at="26 de agosto de 2026"
     :sections="sections"
   >
     <div class="legal-lead">
@@ -106,6 +106,13 @@ useSeoMeta({
       </p>
 
       <h3>2.5. Navegação e suporte</h3>
+      <p>
+        Para sugerir a cidade da busca, o endereço IP do visitante é enviado à
+        MaxMind e convertido em uma localização aproximada de cidade, estado e
+        país. A cidade efetivamente usada fica visível e pode ser alterada. Se a
+        localização não puder ser determinada ou ainda não for atendida, a busca
+        usa Joinville/SC e informa essa escolha.
+      </p>
       <p>
         A descrição digitada na busca é enviada ao provedor de inteligência
         artificial para identificar serviço e localização e gerar um rascunho
@@ -270,6 +277,10 @@ useSeoMeta({
           ou corpo da requisição;
         </li>
         <li>
+          <strong>MaxMind:</strong> endereço IP para estimar cidade, estado e
+          país e definir a localização inicial da busca;
+        </li>
+        <li>
           <strong>autoridades e assessores:</strong> somente quando houver base
           jurídica e necessidade.
         </li>
@@ -310,6 +321,12 @@ useSeoMeta({
         horas para evitar buscas duplicadas e dez minutos para ações sobre um
         profissional.
       </p>
+      <p>
+        A localização aproximada pode permanecer em memória por até 24 horas,
+        associada somente a uma impressão criptográfica do IP. Falhas de
+        consulta permanecem por até cinco minutos. O IP em texto não é incluído
+        nesse cache nem nos registros específicos da consulta de localização.
+      </p>
     </section>
 
     <section id="retencao" class="legal-section">
@@ -327,6 +344,10 @@ useSeoMeta({
         </li>
         <li>
           análises temporárias da busca por inteligência artificial: 24 horas;
+        </li>
+        <li>
+          localização aproximada associada a impressão criptográfica do IP: até
+          24 horas; falha de consulta: até cinco minutos;
         </li>
         <li>métricas diárias agregadas: 730 dias;</li>
         <li>

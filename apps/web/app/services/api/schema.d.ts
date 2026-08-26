@@ -322,6 +322,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/search-location": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Resolve the visitor's supported approximate search city */
+        get: operations["getPublicSearchLocation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/professional-searches": {
         parameters: {
             query?: never;
@@ -2208,6 +2225,7 @@ export interface components {
             categories: components["schemas"]["PublicServiceCategory"][];
             services: components["schemas"]["PublicService"][];
             neighborhoods: components["schemas"]["PublicNeighborhood"][];
+            cities: components["schemas"]["PublicSearchCity"][];
         };
         PublicServiceCategory: {
             /** Format: uuid */
@@ -2234,6 +2252,32 @@ export interface components {
             /** @constant */
             city: "Joinville";
         };
+        PublicSearchCity: {
+            /** @constant */
+            state_code: "SC";
+            /** @constant */
+            city: "Joinville";
+            /** @constant */
+            state_slug: "sc";
+            /** @constant */
+            city_slug: "joinville";
+        };
+        PublicSearchLocationResponse: {
+            data: components["schemas"]["PublicSearchLocation"];
+            request_id: components["schemas"]["RequestId"];
+        };
+        PublicSearchLocation: {
+            /** @constant */
+            state_code: "SC";
+            /** @constant */
+            city: "Joinville";
+            /** @constant */
+            state_slug: "sc";
+            /** @constant */
+            city_slug: "joinville";
+            /** @enum {string} */
+            source: "ip" | "fallback";
+        };
         FeaturedPublicProfessionalsResponse: {
             data: {
                 professionals: components["schemas"]["PublicProfessionalCard"][];
@@ -2242,10 +2286,17 @@ export interface components {
         };
         PublicProfessionalSearchRequest: {
             expression: string;
+            default_location?: components["schemas"]["PublicSearchDefaultLocation"];
             /** @description One-based page of matching professionals; defaults to 1. */
             page?: number;
             /** @description Professionals per page; defaults to 20. */
             per_page?: number;
+        };
+        PublicSearchDefaultLocation: {
+            /** @constant */
+            state_code: "SC";
+            /** @constant */
+            city: "Joinville";
         };
         PublicProfessionalStructuredSearchRequest: {
             /** Format: uuid */
@@ -3341,6 +3392,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getPublicSearchLocation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A supported IP-derived location or the disclosed launch-city fallback. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicSearchLocationResponse"];
                 };
             };
         };

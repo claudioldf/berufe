@@ -1,4 +1,5 @@
 import type { Neighborhood, Service } from "./professional";
+import type { SearchLocation } from "./ui";
 
 export type CatalogTab = "services" | "neighborhoods";
 
@@ -15,6 +16,7 @@ export interface PublicCatalog {
   categories: PublicServiceCategory[];
   services: Service[];
   neighborhoods: Neighborhood[];
+  cities: SearchLocation[];
 }
 
 export interface CatalogEntry {

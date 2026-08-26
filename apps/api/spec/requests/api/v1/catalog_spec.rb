@@ -97,6 +97,9 @@ RSpec.describe "Public catalog", type: :request, openapi: true do
         ],
         "neighborhoods" => [
           {"code" => america.code, "name" => "América", "state_code" => "SC", "city" => "Joinville"}
+        ],
+        "cities" => [
+          {"state_code" => "SC", "city" => "Joinville", "state_slug" => "sc", "city_slug" => "joinville"}
         ]
       },
       "request_id" => "catalog-200"
@@ -143,7 +146,10 @@ RSpec.describe "Public catalog", type: :request, openapi: true do
     expect(response.parsed_body.fetch("data")).to eq(
       "categories" => [],
       "services" => [],
-      "neighborhoods" => []
+      "neighborhoods" => [],
+      "cities" => [
+        {"state_code" => "SC", "city" => "Joinville", "state_slug" => "sc", "city_slug" => "joinville"}
+      ]
     )
     assert_api_conform(status: 200)
   end
