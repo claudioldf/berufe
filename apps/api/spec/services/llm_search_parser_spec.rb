@@ -7,7 +7,7 @@ RSpec.describe LlmSearchParser do
     ServiceCategory.create!(
       name: "Interpretação",
       slug: "interpretacao",
-      icon: "i-lucide-sparkles",
+      icon: "i-lucide-scan-search",
       is_active: true,
       sort_order: 0
     )

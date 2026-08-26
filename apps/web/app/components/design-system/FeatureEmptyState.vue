@@ -40,7 +40,7 @@ function handleAction() {
   <DesignSystemSurfaceCard as="section" class="feature-empty">
     <div class="feature-empty__copy">
       <span class="feature-empty__kicker">
-        <UIcon name="i-lucide-sparkles" aria-hidden="true" />
+        <UIcon name="i-lucide-circle-plus" aria-hidden="true" />
         {{ eyebrow }}
       </span>
       <h3>{{ title }}</h3>
@@ -81,7 +81,7 @@ function handleAction() {
         </footer>
       </div>
       <span class="feature-empty__badge">
-        <UIcon :name="visual.badgeIcon ?? 'i-lucide-sparkles'" />
+        <UIcon :name="visual.badgeIcon ?? 'i-lucide-badge-check'" />
         {{ visual.badge }}
       </span>
     </div>

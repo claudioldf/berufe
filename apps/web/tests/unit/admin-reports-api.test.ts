@@ -76,7 +76,7 @@ const data: ApiReport = {
         key: "all",
         label: "Perfil ativado",
         description: "cumpre os 3 critérios",
-        icon: "i-lucide-sparkles",
+        icon: "i-lucide-badge-check",
       },
     ],
   },

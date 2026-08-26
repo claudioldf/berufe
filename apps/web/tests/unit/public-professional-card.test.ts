@@ -133,6 +133,10 @@ describe("public professional result card", () => {
     expect(wrapper.text()).toContain("2 conexões profissionais");
     expect(wrapper.text()).toContain("Atualizado recentemente");
     expect(wrapper.find("[data-avatar-fallback]").exists()).toBe(true);
+    expect(wrapper.find('[name="i-lucide-briefcase-business"]').exists()).toBe(
+      true,
+    );
+    expect(wrapper.find('[name="i-lucide-sparkles"]').exists()).toBe(false);
     expect(wrapper.findAll(`a[href="${profileUrl}"]`)).toHaveLength(3);
     const contact = wrapper.get(`a[href="${contactUrl}"]`);
     expect(contact.text()).toBe("WhatsApp");
