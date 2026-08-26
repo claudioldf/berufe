@@ -212,6 +212,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/search-audits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read the last six calendar months of expression-search LLM audits */
+        get: operations["getAdminSearchAudits"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/moderation/{target_type}/{target_id}/decisions": {
         parameters: {
             query?: never;
@@ -314,7 +331,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Search publicly eligible professionals by service and optional Joinville neighborhood */
+        /** Search publicly eligible professionals from a natural-language expression */
         post: operations["searchPublicProfessionals"];
         delete?: never;
         options?: never;
@@ -367,6 +384,8 @@ export interface paths {
             query: {
                 source: "search_result" | "public_profile";
                 interaction_token: string;
+                /** @description Sanitized first-person request returned by expression search; ignored outside search-derived interactions. */
+                request_message?: string;
             };
             header?: never;
             path: {
@@ -1048,6 +1067,59 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AdminSearchAuditResponse: {
+            data: components["schemas"]["AdminSearchAuditData"];
+            request_id: components["schemas"]["RequestId"];
+        };
+        AdminSearchAuditData: {
+            items: components["schemas"]["AdminSearchAuditItem"][];
+            summary: components["schemas"]["AdminSearchAuditSummary"];
+            meta: components["schemas"]["PageMeta"];
+        };
+        AdminSearchAuditSummary: {
+            total: number;
+            zero_results: number;
+            not_understood: number;
+            thin_results: number;
+            operational_issue: number;
+            healthy: number;
+        };
+        AdminSearchAuditItem: {
+            /** Format: uuid */
+            id: string;
+            input_prompt: string;
+            raw_llm_response: string | null;
+            parsed_response: components["schemas"]["AdminSearchAuditParsedResponse"] | null;
+            /** @enum {string} */
+            status: "processing" | "completed" | "application_rate_limited" | "provider_rate_limited" | "provider_unavailable" | "response_rejected" | "search_failed";
+            /** @enum {string|null} */
+            response_source: "provider" | "cache" | null;
+            adapter: string | null;
+            model: string | null;
+            provider_request_id: string | null;
+            prompt_digest: string | null;
+            result_count: number;
+            /** Format: date-time */
+            created_at: string;
+        };
+        AdminSearchAuditParsedResponse: {
+            service_ids: string[];
+            services: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+            }[];
+            locations: {
+                state_code: string;
+                city: string;
+                neighborhood: {
+                    code: string;
+                    name: string;
+                } | null;
+            }[];
+            keywords: string[];
+            normalized_request: string | null;
+        };
         /** @enum {string} */
         AdminGrowthReportPeriodKey: "since_launch" | "last_30_days" | "last_7_days";
         AdminGrowthReportResponse: {
@@ -2169,8 +2241,19 @@ export interface components {
             request_id: components["schemas"]["RequestId"];
         };
         PublicProfessionalSearchRequest: {
-            service: string;
-            neighborhood_code?: string | null;
+            expression: string;
+            /** @description One-based page of matching professionals; defaults to 1. */
+            page?: number;
+            /** @description Professionals per page; defaults to 20. */
+            per_page?: number;
+        };
+        PublicProfessionalStructuredSearchRequest: {
+            /** Format: uuid */
+            service_id: string;
+            /** @constant */
+            state_code: "SC";
+            /** @constant */
+            city: "Joinville";
             /** @description One-based page of matching professionals; defaults to 1. */
             page?: number;
             /** @description Professionals per page; defaults to 20. */
@@ -2181,15 +2264,24 @@ export interface components {
             request_id: components["schemas"]["RequestId"];
         };
         PublicProfessionalSearchData: {
-            query: {
-                normalized_term: string;
-                service: components["schemas"]["PublicServiceSuggestion"] | null;
-                neighborhood: components["schemas"]["PublicProfessionalNeighborhoodSummary"] | null;
-            };
             professionals: components["schemas"]["PublicProfessionalCard"][];
             related_services: components["schemas"]["PublicServiceSuggestion"][];
             meta: components["schemas"]["PageMeta"];
+            interpretation: components["schemas"]["PublicProfessionalSearchInterpretation"];
             interaction: components["schemas"]["PublicSearchInteraction"] | null;
+        };
+        PublicProfessionalSearchInterpretation: {
+            services: components["schemas"]["PublicServiceSuggestion"][];
+            locations: components["schemas"]["PublicProfessionalSearchLocation"][];
+            /** @description Sanitized first-person contact request produced for expression search; null for structured search. */
+            normalized_request: string | null;
+        };
+        PublicProfessionalSearchLocation: {
+            /** @enum {string} */
+            state_code: "SC";
+            /** @enum {string} */
+            city: "Joinville";
+            neighborhood: components["schemas"]["PublicProfessionalNeighborhoodSummary"] | null;
         };
         PublicSearchInteraction: {
             /** Format: uuid */
@@ -3046,6 +3138,39 @@ export interface operations {
             422: components["responses"]["AdminModerationInvalid"];
         };
     };
+    getAdminSearchAudits: {
+        parameters: {
+            query?: {
+                /** @description One-based result page. */
+                page?: components["parameters"]["Page"];
+                /** @description Result count per page. */
+                per_page?: components["parameters"]["PageSize"];
+                /** @description Case-insensitive prompt, normalized request, service, city, or neighborhood search. */
+                q?: string;
+                outcome?: "zero_results" | "not_understood" | "thin_results" | "operational_issue" | "healthy";
+                sort?: "results_asc" | "gaps" | "newest" | "results_desc";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Filtered expression prompts, LLM output, controlled parsing, analytical summary, and total matches. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminSearchAuditResponse"];
+                };
+            };
+            401: components["responses"]["AdminModerationUnauthorized"];
+            403: components["responses"]["AdminModerationForbidden"];
+            422: components["responses"]["AdminModerationInvalid"];
+        };
+    };
     createAdminModerationDecision: {
         parameters: {
             query?: {
@@ -3229,11 +3354,11 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PublicProfessionalSearchRequest"];
+                "application/json": components["schemas"]["PublicProfessionalSearchRequest"] | components["schemas"]["PublicProfessionalStructuredSearchRequest"];
             };
         };
         responses: {
-            /** @description Matching public professional cards or safe related active-service suggestions. */
+            /** @description Public professional cards matching the parsed service and Joinville location criteria. */
             200: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
@@ -3253,10 +3378,21 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description The service term or optional neighborhood is malformed or unavailable. */
+            /** @description The expression is malformed or describes an unsupported or unrecognized location. */
             422: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Public expression search is temporarily rate limited by the application or its LLM dependency. */
+            429: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Retry-After"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3391,6 +3527,8 @@ export interface operations {
             query: {
                 source: "search_result" | "public_profile";
                 interaction_token: string;
+                /** @description Sanitized first-person request returned by expression search; ignored outside search-derived interactions. */
+                request_message?: string;
             };
             header?: never;
             path: {

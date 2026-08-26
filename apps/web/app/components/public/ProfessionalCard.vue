@@ -60,7 +60,7 @@ const coverageLabel = computed(() => {
           ><UIcon name="i-lucide-user-round-plus" /> Perfil por indicação</span
         >
         <span v-else-if="professional.matchingService"
-          ><UIcon name="i-lucide-sparkles" />
+          ><UIcon name="i-lucide-briefcase-business" />
           {{ professional.matchingService.name }}</span
         >
         <span v-if="wasUpdatedRecently">Atualizado recentemente</span>

@@ -91,6 +91,11 @@ WEB_ORIGIN=https://www.berufe.com.br
 API_PUBLIC_URL=https://api.berufe.com.br
 PRODUCT_LAUNCH_DATE=<actual YYYY-MM-DD launch date>
 
+LLM_ADAPTER=openai
+OPENAI_MODEL=gpt-5-mini
+OPENAI_API_KEY=<secret OpenAI API key>
+OPENAI_TIMEOUT_SECONDS=8
+
 SMS_OTP_ADAPTER=infobip
 INFOBIP_BASE_URL=<production account base URL>
 INFOBIP_API_KEY=<secret>

@@ -2,7 +2,7 @@
 
 **Status:** in progress
 
-**Updated:** August 17, 2026
+**Updated:** August 25, 2026
 
 **Scope:** S032–S037 — public discovery and direct contact
 
@@ -88,15 +88,16 @@ Increment 3 adds the relationship read-model foundation needed by the existing p
 
 ### S033 — Search published professionals
 
-- Add `POST /api/v1/public/professional-searches` with a service term and optional active Joinville neighborhood.
-- Resolve an active service by exact stable slug, normalized name, or a controlled spelling alias. An unmatched term returns no professionals and at most three safe related active-service suggestions.
+- Add `POST /api/v1/public/professional-searches` with either a natural-language expression of at most 200 characters or controlled service and Joinville/SC fields for the rate-limit fallback.
+- Interpret expression searches through strict structured LLM output. Resolve only controlled service IDs and Joinville locations, and return a sanitized first-person contact request of at most 240 characters. Retain the prompt, exact LLM output, and controlled parse for six calendar months for administrator audit. Structured search bypasses the LLM and returns a null normalized request.
 - Return only the safe card projection: profile UUID and slug, public name, approved photo URL, matching/primary service, coverage, precise labels, approved portfolio counts, accepted relationship counts, and approved snapshot review time. Never return a phone number.
 - Use indexed PostgreSQL joins for service and coverage. No external search engine is introduced.
 
 ### S034 — Record privacy-friendly search aggregates
 
-- Add `search_events` with nullable service, privacy-normalized query, Joinville city code, optional neighborhood code, result count, profile-opened flag, optional search-handoff flag, and timestamps.
-- Reject malformed request values but do not retain names, phone numbers, free-form notes, raw sensitive input, a customer account, a cookie identifier, or persistent visitor identity.
+- Add `search_events` with an optional unambiguous service/neighborhood dimension, Joinville city code, result count, profile-opened flag, optional search-handoff flag, and timestamps. Page-one expression submissions also retain the prompt and LLM audit fields for six calendar months; structured fallback searches leave those fields null.
+- Reject malformed request values. Never attach a customer account, cookie identifier, IP address, or persistent visitor identity to the search event; prompt/output values remain administrator-only and the complete audit event is removed after six calendar months.
+- Reuse the original event when the same pseudonymous request subject repeats the same normalized expression or structured query with the same total result count inside 24 hours. Keep only keyed subject/query digests in a separate expiring claim; never persist the raw IP address, session token, or query in that claim.
 - Search-event persistence failure is logged safely and never blocks search results.
 - A successful search response may include the event UUID and a short-lived Rails-signed interaction token containing only random/context identifiers required to mark the search-level outcome. Raw signing material is never stored or returned elsewhere.
 
@@ -119,11 +120,13 @@ Increment 3 adds the relationship read-model foundation needed by the existing p
 ### S037 — Open a direct WhatsApp conversation and count the handoff
 
 - Add `GET /api/v1/public/professionals/{id}/whatsapp` with source `search_result` or `public_profile` and a short-lived signed interaction token.
-- Rails resolves the professional phone privately, increments the total and source daily counters atomically, optionally marks the search-level handoff once, and returns a `302` redirect to an allowlisted `https://wa.me/` URL with an encoded short pt-BR message naming Berufe and the viewed service.
+- A centralized Rails message builder combines the full professional display name and Berufe attribution with the sanitized first-person LLM request. If no safe request exists, search-derived interactions use the controlled fallback `Eu preciso de {serviço} em Joinville, SC`; direct profile visits preserve the existing generic service message.
+- Rails resolves the professional phone privately, increments the total and source daily counters atomically, optionally marks the search-level handoff once, and returns a `302` redirect to an allowlisted `https://wa.me/` URL with the encoded builder output.
 - The Nuxt application receives only the Berufe redirect URL. It never receives the phone number in JSON or page source.
+- Nuxt carries the sanitized request from results to a search-derived profile and WhatsApp handoff. Signed interaction tokens continue to contain identifiers only. The search audit retains the normalized request for six calendar months; aggregate metrics, interaction tokens, and redirect logs do not store it, while the LLM analysis cache expires after 24 hours.
 - A bounded ten-minute Rails memory cache suppresses repeated taps for the same signed interaction/profile/source. Obvious bots and link-preview agents are not counted. No visitor identity, IP-derived identifier, or permanent deduplication record is created.
 - Metric/cache failure is logged without sensitive data and does not prevent a valid eligible professional from redirecting.
-- The ordinary web `wa.me` redirect is the practical fallback when a native WhatsApp deep link is unavailable. Berufe does not observe message content, delivery, negotiation, or hiring.
+- The ordinary web `wa.me` redirect is the practical fallback when a native WhatsApp deep link is unavailable. Berufe does not observe the message actually edited or sent, delivery, negotiation, or hiring.
 
 ## 6. HTTP contract
 

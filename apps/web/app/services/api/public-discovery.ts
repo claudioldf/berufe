@@ -3,6 +3,7 @@ import type {
   PublicProfessionalProfile,
   PublicProfessionalProfileResult,
   PublicProfessionalSearchResult,
+  StructuredSearchPayload,
 } from "~/types";
 import { ApiRequestError, normalizeApiError } from "~/services/api/errors";
 import type { BerufeApiClient } from "~/services/api/client";
@@ -13,6 +14,7 @@ type ContractProfessionalProfile =
   components["schemas"]["PublicProfessionalProfile"];
 type ContractVerificationLabel =
   components["schemas"]["PublicVerificationLabel"];
+type ContractSearchData = components["schemas"]["PublicProfessionalSearchData"];
 
 function mapVerificationLabel(label: ContractVerificationLabel) {
   return {
@@ -47,10 +49,43 @@ export function mapPublicProfessionalCard(
 }
 
 interface PublicProfessionalSearchInput {
-  service: string;
-  neighborhoodCode?: string | null;
+  expression: string;
   page?: number;
   perPage?: number;
+}
+
+interface StructuredProfessionalSearchInput extends Pick<
+  StructuredSearchPayload,
+  "serviceId" | "stateCode" | "city"
+> {
+  page?: number;
+  perPage?: number;
+}
+
+function mapPublicProfessionalSearchResult(
+  data: ContractSearchData,
+): PublicProfessionalSearchResult {
+  return {
+    professionals: data.professionals.map(mapPublicProfessionalCard),
+    relatedServices: data.related_services,
+    page: data.meta.page,
+    perPage: data.meta.per_page,
+    totalCount: data.meta.total_count,
+    totalPages: data.meta.total_pages,
+    interpretation: {
+      services: data.interpretation.services,
+      locations: data.interpretation.locations.map((location) => ({
+        stateCode: location.state_code,
+        city: location.city,
+        neighborhood: location.neighborhood,
+      })),
+      normalizedRequest: data.interpretation.normalized_request,
+    },
+    interaction: data.interaction && {
+      searchEventId: data.interaction.search_event_id,
+      token: data.interaction.token,
+    },
+  };
 }
 
 export async function searchPublicProfessionals(
@@ -61,8 +96,7 @@ export async function searchPublicProfessionals(
     "/api/v1/public/professional-searches",
     {
       body: {
-        service: input.service,
-        neighborhood_code: input.neighborhoodCode ?? null,
+        expression: input.expression,
         ...(input.page ? { page: input.page } : {}),
         ...(input.perPage ? { per_page: input.perPage } : {}),
       },
@@ -77,21 +111,35 @@ export async function searchPublicProfessionals(
     );
   }
 
-  return {
-    normalizedTerm: data.data.query.normalized_term,
-    resolvedService: data.data.query.service,
-    neighborhood: data.data.query.neighborhood,
-    professionals: data.data.professionals.map(mapPublicProfessionalCard),
-    relatedServices: data.data.related_services,
-    page: data.data.meta.page,
-    perPage: data.data.meta.per_page,
-    totalCount: data.data.meta.total_count,
-    totalPages: data.data.meta.total_pages,
-    interaction: data.data.interaction && {
-      searchEventId: data.data.interaction.search_event_id,
-      token: data.data.interaction.token,
+  return mapPublicProfessionalSearchResult(data.data);
+}
+
+export async function searchStructuredProfessionals(
+  client: BerufeApiClient,
+  input: StructuredProfessionalSearchInput,
+): Promise<PublicProfessionalSearchResult> {
+  const { data, error, response } = await client.POST(
+    "/api/v1/public/professional-searches",
+    {
+      body: {
+        service_id: input.serviceId,
+        state_code: input.stateCode,
+        city: input.city,
+        ...(input.page ? { page: input.page } : {}),
+        ...(input.perPage ? { per_page: input.perPage } : {}),
+      },
     },
-  };
+  );
+  if (error || !data) {
+    throw new ApiRequestError(
+      normalizeApiError(
+        error,
+        response.headers.get("X-Request-Id") ?? "client",
+      ),
+    );
+  }
+
+  return mapPublicProfessionalSearchResult(data.data);
 }
 
 export async function fetchFeaturedProfessionals(

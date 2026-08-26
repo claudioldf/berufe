@@ -54,6 +54,7 @@ const links = computed(() => {
       { label: "Moderação", to: "/app/admin" },
       { label: "Catálogo", to: "/app/admin/catalog" },
       { label: "Relatórios", to: "/app/admin/reports" },
+      { label: "Auditoria de buscas", to: "/app/admin/search-audits" },
     ];
   }
   return [
@@ -72,6 +73,9 @@ function isLinkActive(to: string) {
   }
   if (to === "/app/admin/catalog") {
     return route.path === "/app/admin/catalog";
+  }
+  if (to === "/app/admin/search-audits") {
+    return route.path === "/app/admin/search-audits";
   }
   if (to === "/app/professional/quotes") {
     return route.path === to || route.path.startsWith(`${to}/`);

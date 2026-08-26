@@ -40,7 +40,7 @@ const services: Service[] = [
     name: "Diarista",
     slug: "diarista",
     category: "Serviços domésticos",
-    icon: "i-lucide-sparkles",
+    icon: "i-lucide-spray-can",
     description: "Limpeza residencial.",
     aliases: [],
   },

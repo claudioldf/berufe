@@ -48,7 +48,6 @@ class PublicWhatsappHandoffRecorder
     search_events
       .where(
         id: interaction.search_event_id,
-        service_id: interaction.service_id,
         whatsapp_handoff_occurred: false
       )
       .update_all(whatsapp_handoff_occurred: true, updated_at: Time.current)

@@ -56,6 +56,7 @@ Rails.application.routes.draw do
         resource :session, only: :create
         resource :catalog, only: :show
         get "reports/growth", to: "reports#growth"
+        get "search-audits", to: "search_audits#index"
         get "moderation", to: "moderation#index"
         post "moderation/:target_type/:target_id/decisions", to: "moderation_decisions#create"
         get "moderation/:target_type/:target_id/media", to: "moderation_media#show"

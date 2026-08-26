@@ -12,15 +12,15 @@ async function waitForNuxtHydration(page: import("@playwright/test").Page) {
   );
 }
 
-async function fillServiceSearch(
+async function fillExpressionSearch(
   page: import("@playwright/test").Page,
-  service: string,
+  expression: string,
 ) {
-  const input = page.getByRole("combobox", { name: "O que você precisa?" });
+  const input = page.getByRole("searchbox", { name: "O que você precisa?" });
   const submit = page.getByRole("button", { name: "Encontrar" });
 
   await expect(async () => {
-    await input.fill(service);
+    await input.fill(expression);
     await expect(submit).toBeEnabled({ timeout: 1_000 });
   }).toPass({ timeout: 10_000 });
 }
@@ -103,7 +103,12 @@ test("visitor can search, open a profile, and inspect the WhatsApp redirect", as
 }) => {
   const browserErrors: string[] = [];
   page.on("console", (message) => {
-    if (message.type() === "error") browserErrors.push(message.text());
+    const isAnonymousSessionProbe =
+      message.text() ===
+      "Failed to load resource: the server responded with a status of 401 (Unauthorized)";
+    if (message.type() === "error" && !isAnonymousSessionProbe) {
+      browserErrors.push(message.text());
+    }
   });
   page.on("pageerror", (error) => browserErrors.push(error.message));
 
@@ -123,7 +128,7 @@ test("visitor can search, open a profile, and inspect the WhatsApp redirect", as
   await expect(
     page.getByRole("heading", {
       level: 2,
-      name: /comece sua busca por um serviço/i,
+      name: /conte o que você precisa resolver/i,
     }),
   ).toBeVisible();
   await expect(
@@ -132,13 +137,27 @@ test("visitor can search, open a profile, and inspect the WhatsApp redirect", as
     ),
   ).toHaveCount(0);
 
-  await fillServiceSearch(page, "Eletricista");
+  await fillExpressionSearch(page, "Preciso de um eletricista em Joinville");
   await page.getByRole("button", { name: "Encontrar" }).click();
-  await expect(page).toHaveURL(/\/encontrar\?servico=eletricista&bairro=all$/);
+  await expect(page).toHaveURL(/\/encontrar\?expressao=[A-Za-z0-9_-]+$/);
   await expect(
     page.getByText(
       /\d+ (?:profissional encontrado|profissionais encontrados)/i,
     ),
+  ).toBeVisible();
+  await expect(page.getByText("Seu pedido", { exact: true })).toHaveCount(0);
+  const interpretedFilters = page.getByLabel("Filtros interpretados");
+  if ((page.viewportSize()?.width ?? 0) > 800) {
+    await expect(interpretedFilters.getByText("Eletricista")).toBeVisible();
+    await expect(interpretedFilters.getByText("Joinville - SC")).toBeVisible();
+    await expect(
+      interpretedFilters.getByText("Como ordenamos", { exact: true }),
+    ).toBeVisible();
+  } else {
+    await expect(interpretedFilters).toBeHidden();
+  }
+  await expect(
+    page.getByText("Marcos Alves", { exact: true }).first(),
   ).toBeVisible();
   const profileResponsePromise = page.waitForResponse(
     (response) =>
@@ -164,6 +183,9 @@ test("visitor can search, open a profile, and inspect the WhatsApp redirect", as
   expect(contactUrl).toBeTruthy();
   expect(contactUrl).not.toContain("wa.me");
   expect(contactUrl).not.toMatch(/5547\d{9}/);
+  expect(new URL(contactUrl!).searchParams.get("request_message")).toBe(
+    "Eu preciso de eletricista em Joinville, SC.",
+  );
 
   const redirect = await request.get(contactUrl!, {
     maxRedirects: 0,
@@ -175,7 +197,10 @@ test("visitor can search, open a profile, and inspect the WhatsApp redirect", as
   expect(redirect.headers().location).toMatch(
     /^https:\/\/wa\.me\/\d{12,13}\?text=/,
   );
-  expect(decodeURIComponent(redirect.headers().location)).toContain("Berufe");
+  expect(new URL(redirect.headers().location).searchParams.get("text")).toBe(
+    "Olá, Marcos Alves! Encontrei seu perfil na Berufe. " +
+      "Eu preciso de eletricista em Joinville, SC.",
+  );
   expect(browserErrors).toEqual([]);
 });
 

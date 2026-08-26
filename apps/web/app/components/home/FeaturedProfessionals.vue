@@ -47,7 +47,10 @@ function connectionCountLabel(count: number) {
               shape="rounded"
               loading="lazy"
             />
-            <span v-if="professional.primaryService">
+            <span
+              v-if="professional.primaryService"
+              class="featured-card__service"
+            >
               {{ professional.primaryService.name }}
             </span>
           </div>
@@ -89,17 +92,136 @@ function connectionCountLabel(count: number) {
 </template>
 
 <style scoped lang="scss">
-.featured-card__avatar {
-  width: 100%;
-  height: 100%;
+.featured {
+  background: var(--color-surface-warm);
 
-  :deep(.avatar__image),
-  :deep(.avatar__fallback) {
-    border-radius: 0;
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+}
+
+.featured-card {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: white;
+  color: var(--ink);
+  text-decoration: none;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-sm);
   }
 
-  :deep(.avatar__fallback) {
-    font-size: 3rem;
+  &__image {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 4 / 5;
+    background: var(--mint);
+  }
+
+  &__avatar {
+    display: block;
+    width: 100%;
+    height: 100%;
+
+    :deep(.avatar__image),
+    :deep(.avatar__fallback) {
+      width: 100%;
+      height: 100%;
+      border-radius: 0;
+    }
+
+    :deep(.avatar__image) {
+      display: block;
+      object-fit: cover;
+      object-position: center top;
+      transition: transform 0.4s ease;
+    }
+
+    :deep(.avatar__fallback) {
+      font-size: 3rem;
+    }
+  }
+
+  &:hover &__avatar :deep(.avatar__image) {
+    transform: scale(1.03);
+  }
+
+  &__service {
+    position: absolute;
+    left: 14px;
+    bottom: 14px;
+    padding: 7px 10px;
+    border-radius: 9px;
+    background: white;
+    font-size: 0.86rem;
+    font-weight: 800;
+  }
+
+  &__body {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 17px 18px 12px;
+  }
+
+  &__body strong,
+  &__body small {
+    display: block;
+  }
+
+  &__body strong {
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+  }
+
+  &__body small {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 5px;
+    color: var(--ink-soft);
+    font-size: 0.86rem;
+  }
+
+  &__proof {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 12px 18px 16px;
+    border-top: 1px solid var(--line);
+    color: var(--ink-soft);
+    font-size: 0.86rem;
+    font-weight: 700;
+  }
+
+  &__proof span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  &__proof span:first-child {
+    color: var(--color-brand);
+  }
+}
+
+@media (width <= 760px) {
+  .featured {
+    &__grid {
+      grid-template-columns: 1fr;
+      justify-items: center;
+    }
+  }
+
+  .featured-card {
+    width: min(100%, 450px);
   }
 }
 </style>

@@ -5,5 +5,6 @@ export * from "./onboarding";
 export * from "./professional";
 export * from "./quote";
 export * from "./reports";
+export * from "./search-audit";
 export * from "./service-job";
 export * from "./ui";

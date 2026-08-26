@@ -6,6 +6,7 @@ import {
   mapPublicProfessionalProfile,
   recordPublicProfessionalProfileView,
   searchPublicProfessionals,
+  searchStructuredProfessionals,
 } from "@app/services/api/public-discovery";
 import type { ApiRequestError } from "@app/services/api/errors";
 import type { components } from "@app/services/api/schema";
@@ -162,24 +163,39 @@ describe("public discovery API", () => {
     expect(card).not.toHaveProperty("whatsapp");
   });
 
-  it("submits a service and optional neighborhood through the typed search operation", async () => {
+  it("submits the free-form expression through the typed search operation", async () => {
     const client = apiClientReturning({
       data: {
         data: {
-          query: {
-            normalized_term: "eletrica",
-            service: {
-              id: contractCard.matching_service!.id,
-              name: "Eletricista",
-              slug: "eletricista",
-              icon: "i-lucide-zap",
-              description: "Instalações elétricas residenciais.",
-            },
-            neighborhood: { code: "america", name: "América" },
-          },
           professionals: [contractCard],
-          related_services: [],
+          related_services: [
+            {
+              id: "894a140b-219f-4fab-a01e-6f0dc02f6764",
+              name: "Marido de aluguel",
+              slug: "marido-de-aluguel",
+              icon: "i-lucide-wrench",
+              description: "Pequenos reparos residenciais.",
+            },
+          ],
           meta: { page: 1, per_page: 20, total_count: 1, total_pages: 1 },
+          interpretation: {
+            services: [
+              {
+                ...contractCard.matching_service!,
+                icon: "i-lucide-zap",
+                description: "Instalações elétricas residenciais.",
+              },
+            ],
+            locations: [
+              {
+                state_code: "SC",
+                city: "Joinville",
+                neighborhood: { code: "america", name: "América" },
+              },
+            ],
+            normalized_request:
+              "Eu preciso trocar a fiação da cozinha no América.",
+          },
           interaction: {
             search_event_id: "8d09847f-14d8-4ef7-80ea-8be6e9eb6d81",
             token: "signed-search-interaction",
@@ -192,20 +208,42 @@ describe("public discovery API", () => {
     });
 
     const result = await searchPublicProfessionals(client, {
-      service: "Elétrica",
-      neighborhoodCode: "america",
+      expression: "Preciso de elétrica no América",
     });
 
-    expect(result.normalizedTerm).toBe("eletrica");
     expect(result.professionals[0]?.matchingService?.name).toBe("Eletricista");
     expect(result.interaction).toEqual({
       searchEventId: "8d09847f-14d8-4ef7-80ea-8be6e9eb6d81",
       token: "signed-search-interaction",
     });
+    expect(result.interpretation).toEqual({
+      services: [
+        {
+          ...contractCard.matching_service,
+          icon: "i-lucide-zap",
+          description: "Instalações elétricas residenciais.",
+        },
+      ],
+      locations: [
+        {
+          stateCode: "SC",
+          city: "Joinville",
+          neighborhood: { code: "america", name: "América" },
+        },
+      ],
+      normalizedRequest: "Eu preciso trocar a fiação da cozinha no América.",
+    });
+    expect(result.relatedServices.map((service) => service.name)).toEqual([
+      "Marido de aluguel",
+    ]);
     expect(result.totalCount).toBe(1);
     expect(client.POST).toHaveBeenCalledWith(
       "/api/v1/public/professional-searches",
-      { body: { service: "Elétrica", neighborhood_code: "america" } },
+      {
+        body: {
+          expression: "Preciso de elétrica no América",
+        },
+      },
     );
   });
 
@@ -217,7 +255,7 @@ describe("public discovery API", () => {
     });
 
     await expect(
-      searchPublicProfessionals(client, { service: "Elétrica" }),
+      searchPublicProfessionals(client, { expression: "Elétrica" }),
     ).rejects.toMatchObject({
       name: "ApiRequestError",
       code: "unexpected_error",
@@ -225,7 +263,57 @@ describe("public discovery API", () => {
     } satisfies Partial<ApiRequestError>);
     expect(client.POST).toHaveBeenCalledWith(
       "/api/v1/public/professional-searches",
-      { body: { service: "Elétrica", neighborhood_code: null } },
+      { body: { expression: "Elétrica" } },
+    );
+  });
+
+  it("submits controlled service and city filters without an expression", async () => {
+    const client = apiClientReturning({
+      data: {
+        data: {
+          professionals: [],
+          related_services: [],
+          meta: { page: 1, per_page: 20, total_count: 0, total_pages: 0 },
+          interpretation: {
+            services: [
+              {
+                ...contractCard.matching_service!,
+                icon: "i-lucide-zap",
+                description: "Instalações elétricas residenciais.",
+              },
+            ],
+            locations: [
+              { state_code: "SC", city: "Joinville", neighborhood: null },
+            ],
+            normalized_request: null,
+          },
+          interaction: null,
+        },
+        request_id: "structured-search-200",
+      },
+      error: undefined,
+      response: new Response(null),
+    });
+
+    const result = await searchStructuredProfessionals(client, {
+      serviceId: contractCard.matching_service!.id,
+      stateCode: "SC",
+      city: "Joinville",
+    });
+
+    expect(result.interpretation.locations).toEqual([
+      { stateCode: "SC", city: "Joinville", neighborhood: null },
+    ]);
+    expect(result.interpretation.normalizedRequest).toBeNull();
+    expect(client.POST).toHaveBeenCalledWith(
+      "/api/v1/public/professional-searches",
+      {
+        body: {
+          service_id: contractCard.matching_service!.id,
+          state_code: "SC",
+          city: "Joinville",
+        },
+      },
     );
   });
 

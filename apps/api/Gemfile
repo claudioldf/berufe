@@ -18,6 +18,8 @@ gem "ruby-vips", "~> 2.2"
 gem "good_job", "~> 4.0"
 # Enforce role, ownership, and public-data authorization at the API boundary
 gem "pundit", "~> 2.5"
+# Parse public search expressions through the OpenAI Responses API.
+gem "openai", "~> 0.80.0"
 
 # Hash administrator passwords through Active Model's secure-password support
 gem "bcrypt", "~> 3.1.7"

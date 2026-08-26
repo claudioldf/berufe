@@ -89,7 +89,7 @@ describe("administrator report widgets", () => {
           total: 0,
           rate: null,
           description: "cumpre os 3 critérios",
-          icon: "i-lucide-sparkles",
+          icon: "i-lucide-badge-check",
         },
       ],
     };

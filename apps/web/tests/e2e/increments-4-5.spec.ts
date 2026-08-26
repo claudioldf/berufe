@@ -436,7 +436,11 @@ test("an indicated professional claims the external profile and publishes the co
   expect(redirect.status()).toBe(302);
   expect(redirect.headers().location).toContain(externalPhone);
 
-  await page.goto(`/encontrar?servico=${externalService.slug}&bairro=all`);
+  await page.goto("/encontrar");
+  await page
+    .getByRole("searchbox", { name: "O que você precisa?" })
+    .fill(externalService.name);
+  await page.getByRole("button", { name: "Encontrar" }).click();
   const externalCard = page
     .locator(".professional-card")
     .filter({ hasText: externalName });

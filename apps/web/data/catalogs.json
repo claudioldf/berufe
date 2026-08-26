@@ -187,7 +187,7 @@
       "name": "Diarista",
       "slug": "diarista",
       "category": "servicos-domesticos",
-      "icon": "i-lucide-sparkles",
+      "icon": "i-lucide-spray-can",
       "description": "Limpeza e organização da casa para o dia a dia.",
       "aliases": ["faxineira", "faxina", "limpeza diaria"]
     },
@@ -196,7 +196,7 @@
       "name": "Limpeza Residencial",
       "slug": "limpeza-residencial",
       "category": "servicos-domesticos",
-      "icon": "i-lucide-sparkles",
+      "icon": "i-lucide-brush-cleaning",
       "description": "Limpeza completa e recorrente de casas e apartamentos.",
       "aliases": ["limpeza de casa", "limpeza residencial", "limpeza domestica"]
     },

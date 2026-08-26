@@ -90,20 +90,28 @@ describe("public professional result card", () => {
   it("renders only API evidence and the preserved result links", async () => {
     const profileUrl = buildPublicProfileResultUrl({
       slug: "ana-souza",
-      serviceSlug: "eletricista",
-      neighborhoodCode: "america",
+      encodedExpression: "ZWxldHJpY2lzdGE",
       interactionToken: "signed context",
+      requestMessage: "Eu preciso trocar a fiação da cozinha.",
     });
     const contactUrl = buildSearchResultWhatsAppUrl({
       apiBaseUrl: "https://api.berufe.test",
       professionalId: "ad59e74a-a1aa-47d5-b725-26350f0f2376",
       interactionToken: "signed context",
+      requestMessage: "Eu preciso trocar a fiação da cozinha.",
     });
     const parsedContactUrl = new URL(contactUrl);
     expect(parsedContactUrl.searchParams.get("interaction_token")).toBe(
       "signed context",
     );
     expect(parsedContactUrl.searchParams.has("interactionToken")).toBe(false);
+    expect(parsedContactUrl.searchParams.get("request_message")).toBe(
+      "Eu preciso trocar a fiação da cozinha.",
+    );
+    const parsedProfileUrl = new URL(profileUrl, "https://berufe.test");
+    expect(parsedProfileUrl.searchParams.get("pedido")).toBe(
+      "Eu preciso trocar a fiação da cozinha.",
+    );
     const wrapper = await mountSuspended(ProfessionalCard, {
       props: { professional: professional(), profileUrl, contactUrl },
       global: {
@@ -125,6 +133,10 @@ describe("public professional result card", () => {
     expect(wrapper.text()).toContain("2 conexões profissionais");
     expect(wrapper.text()).toContain("Atualizado recentemente");
     expect(wrapper.find("[data-avatar-fallback]").exists()).toBe(true);
+    expect(wrapper.find('[name="i-lucide-briefcase-business"]').exists()).toBe(
+      true,
+    );
+    expect(wrapper.find('[name="i-lucide-sparkles"]').exists()).toBe(false);
     expect(wrapper.findAll(`a[href="${profileUrl}"]`)).toHaveLength(3);
     const contact = wrapper.get(`a[href="${contactUrl}"]`);
     expect(contact.text()).toBe("WhatsApp");
@@ -176,10 +188,11 @@ describe("public professional result card", () => {
       apiBaseUrl: "https://api.berufe.test/",
       professionalId: "ad59e74a-a1aa-47d5-b725-26350f0f2376",
       interactionToken: "signed profile context",
+      requestMessage: "Eu preciso trocar a fiação da cozinha.",
     });
 
     expect(url).toBe(
-      "https://api.berufe.test/api/v1/public/professionals/ad59e74a-a1aa-47d5-b725-26350f0f2376/whatsapp?source=public_profile&interaction_token=signed+profile+context",
+      "https://api.berufe.test/api/v1/public/professionals/ad59e74a-a1aa-47d5-b725-26350f0f2376/whatsapp?source=public_profile&interaction_token=signed+profile+context&request_message=Eu+preciso+trocar+a+fia%C3%A7%C3%A3o+da+cozinha.",
     );
     expect(url).not.toContain("interactionToken");
     expect(url).not.toContain("wa.me");

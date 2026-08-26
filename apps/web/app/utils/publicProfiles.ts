@@ -16,20 +16,20 @@ export function isRecentPublicSnapshot(
 
 interface PublicProfileResultUrlOptions {
   slug: string;
-  serviceSlug: string;
-  neighborhoodCode: string;
+  encodedExpression: string;
   interactionToken?: string;
+  requestMessage?: string;
 }
 
 export function buildPublicProfileResultUrl(
   options: PublicProfileResultUrlOptions,
 ) {
-  const query = new URLSearchParams({
-    servico: options.serviceSlug,
-    bairro: options.neighborhoodCode,
-  });
+  const query = new URLSearchParams({ expressao: options.encodedExpression });
   if (options.interactionToken) {
     query.set("contexto", options.interactionToken);
+  }
+  if (options.requestMessage) {
+    query.set("pedido", options.requestMessage);
   }
 
   return `/profissionais/${options.slug}?${query.toString()}`;
@@ -39,6 +39,7 @@ interface SearchResultWhatsAppUrlOptions {
   apiBaseUrl: string;
   professionalId: string;
   interactionToken?: string;
+  requestMessage?: string;
 }
 
 export function buildSearchResultWhatsAppUrl(
@@ -52,6 +53,9 @@ export function buildSearchResultWhatsAppUrl(
   if (options.interactionToken) {
     url.searchParams.set("interaction_token", options.interactionToken);
   }
+  if (options.requestMessage) {
+    url.searchParams.set("request_message", options.requestMessage);
+  }
 
   return url.toString();
 }
@@ -60,6 +64,7 @@ interface PublicProfileWhatsAppUrlOptions {
   apiBaseUrl: string;
   professionalId: string;
   interactionToken: string;
+  requestMessage?: string;
 }
 
 export function buildPublicProfileWhatsAppUrl(
@@ -71,6 +76,9 @@ export function buildPublicProfileWhatsAppUrl(
   );
   url.searchParams.set("source", "public_profile");
   url.searchParams.set("interaction_token", options.interactionToken);
+  if (options.requestMessage) {
+    url.searchParams.set("request_message", options.requestMessage);
+  }
 
   return url.toString();
 }

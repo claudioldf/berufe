@@ -12,9 +12,17 @@ module Api
           source: params[:source],
           token: params[:interaction_token]
         )
+        message = WhatsappRequestMessageBuilder.call(
+          professional_name: profile.published_revision.display_name,
+          service_name: interaction.service_name,
+          state_code: LlmSearchParser::DEFAULT_STATE_CODE,
+          city: LlmSearchParser::DEFAULT_CITY,
+          normalized_request: params[:request_message],
+          search_context: interaction.search_event_id.present?
+        )
         redirect_url = PublicWhatsappUrl.call(
           phone_e164: profile.published_revision.whatsapp_e164,
-          service_name: interaction.service_name
+          message:
         )
         if PublicInteractionUserAgent.countable?(request.user_agent)
           PublicWhatsappHandoffRecorder.new.call(profile:, interaction:)

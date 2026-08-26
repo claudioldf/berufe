@@ -41,7 +41,7 @@ class PublicProfileViewRecorder
     return unless interaction.search_event_id
 
     search_events
-      .where(id: interaction.search_event_id, service_id: interaction.service_id, profile_opened: false)
+      .where(id: interaction.search_event_id, profile_opened: false)
       .update_all(profile_opened: true, updated_at: Time.current)
   end
 

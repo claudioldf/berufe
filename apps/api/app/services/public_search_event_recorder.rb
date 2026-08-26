@@ -4,22 +4,41 @@ class PublicSearchEventRecorder
   Interaction = Data.define(:search_event_id, :token)
 
   def initialize(
-    sanitizer: SearchEventQuerySanitizer.new,
-    token_issuer: PublicInteractionToken.new
+    token_issuer: PublicInteractionToken.new,
+    deduplicator: PublicSearchEventDeduplicator.new
   )
-    @sanitizer = sanitizer
     @token_issuer = token_issuer
+    @deduplicator = deduplicator
   end
 
-  def call(raw_term:, normalized_term:, service:, neighborhood:, result_count:)
-    event = SearchEvent.create!(
+  def call(criteria:, result_count:, subject:, query:, event: nil, now: Time.current)
+    service = Service.find_by(id: criteria.service_ids.first) if criteria.service_ids.one?
+    neighborhood_codes = criteria.locations.filter_map(&:neighborhood_code).uniq
+    neighborhood_code = neighborhood_codes.first if neighborhood_codes.one?
+    neighborhood = Neighborhood.find_by(code: neighborhood_code) if neighborhood_code
+    attributes = {
       service:,
-      query_text_normalized: sanitizer.call(raw_term:, normalized_term:),
+      query_text_normalized: nil,
       city_code: SearchEvent::JOINVILLE,
       neighborhood:,
-      result_count:
+      result_count:,
+      reportable: true
+    }
+    if event
+      attributes[:audit_status] = "completed"
+      attributes[:parsed_response] ||= PublicSearchAuditRecorder.parsed_response(criteria)
+      event.update!(attributes)
+    else
+      event = SearchEvent.create!(attributes)
+    end
+    event = deduplicator.reuse_or_claim!(
+      event:,
+      subject:,
+      query:,
+      result_count:,
+      now:
     )
-    token = token_issuer.issue(search_event_id: event.id, service_id: service&.id)
+    token = token_issuer.issue(search_event_id: event.id, service_ids: criteria.service_ids)
 
     Interaction.new(search_event_id: event.id, token:)
   rescue ActiveRecord::ActiveRecordError => error
@@ -32,5 +51,5 @@ class PublicSearchEventRecorder
 
   private
 
-  attr_reader :sanitizer, :token_issuer
+  attr_reader :deduplicator, :token_issuer
 end

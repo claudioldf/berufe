@@ -1,5 +1,6 @@
 import { mount } from "@vue/test-utils";
 import { describe, expect, it } from "vitest";
+import FeatureEmptyState from "~/components/design-system/FeatureEmptyState.vue";
 import FormField from "~/components/design-system/FormField.vue";
 import Heading from "~/components/design-system/Heading.vue";
 
@@ -28,5 +29,35 @@ describe("design-system contracts", () => {
     });
     expect(wrapper.element.tagName).toBe("H1");
     expect(wrapper.classes()).toContain("heading--workspace");
+  });
+
+  it("uses action and status icons in feature cards", () => {
+    const wrapper = mount(FeatureEmptyState, {
+      props: {
+        eyebrow: "Comece por aqui",
+        title: "Cadastre seu primeiro trabalho",
+        description: "Mostre sua experiência profissional.",
+        visual: {
+          icon: "i-lucide-images",
+          title: "Portfólio",
+          caption: "Seus trabalhos",
+          metaLabel: "Status",
+          metaValue: "Pronto para começar",
+          badge: "Perfil em construção",
+        },
+      },
+      global: {
+        stubs: {
+          DesignSystemSurfaceCard: {
+            template: '<section class="surface-card"><slot /></section>',
+          },
+          UIcon: true,
+        },
+      },
+    });
+
+    expect(wrapper.find('[name="i-lucide-circle-plus"]').exists()).toBe(true);
+    expect(wrapper.find('[name="i-lucide-badge-check"]').exists()).toBe(true);
+    expect(wrapper.find('[name="i-lucide-sparkles"]').exists()).toBe(false);
   });
 });

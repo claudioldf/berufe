@@ -2,7 +2,8 @@
 import { computed } from "vue";
 import { useCatalogs } from "~/composables/useCatalogs";
 import { useFeaturedProfessionals } from "~/composables/useFeaturedProfessionals";
-import { findService } from "~/utils/services";
+import type { ExpressionSearchPayload } from "~/types";
+import { encodeSearchExpression } from "~/utils/searchExpression";
 
 const router = useRouter();
 const runtimeConfig = useRuntimeConfig();
@@ -22,9 +23,6 @@ if (
   });
 }
 const services = computed(() => catalogResult.data.value?.services ?? []);
-const neighborhoods = computed(
-  () => catalogResult.data.value?.neighborhoods ?? [],
-);
 const featured = computed(() => featuredResult.data.value ?? []);
 
 const title = "Profissionais de confiança em Joinville";
@@ -46,25 +44,17 @@ useSeoMeta({
 });
 useHead({ link: [{ rel: "canonical", href: canonicalUrl }] });
 
-async function search(payload: { service: string; neighborhood: string }) {
-  const service = findService(services.value, payload.service);
+async function search(payload: ExpressionSearchPayload) {
   await router.push({
     path: "/encontrar",
-    query: {
-      servico: service?.slug ?? payload.service,
-      bairro: payload.neighborhood,
-    },
+    query: { expressao: encodeSearchExpression(payload.expression) },
   });
 }
 </script>
 
 <template>
   <div>
-    <HomeHero
-      :services="services"
-      :neighborhoods="neighborhoods"
-      @search="search"
-    />
+    <HomeHero @search="search" />
 
     <HomeCategories :services="services" />
 
@@ -83,7 +73,7 @@ async function search(payload: { service: string; neighborhood: string }) {
   .hero {
     position: relative;
     padding: 76px 0 100px;
-    background: var(--color-surface-page);
+    background: var(--color-surface-page-light);
     &__inner {
       position: relative;
       display: grid;
@@ -362,95 +352,6 @@ async function search(payload: { service: string; neighborhood: string }) {
       line-height: 1.5;
     }
   }
-  .featured {
-    background: var(--color-surface-warm);
-    &__grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-    }
-  }
-  .featured-card {
-    overflow: hidden;
-    border: 1px solid var(--line);
-    border-radius: 22px;
-    background: white;
-    color: var(--ink);
-    text-decoration: none;
-    transition:
-      transform 0.2s ease,
-      box-shadow 0.2s ease;
-    &:hover {
-      transform: translateY(-4px);
-      box-shadow: var(--shadow-sm);
-    }
-    &__image {
-      position: relative;
-      height: 280px;
-      overflow: hidden;
-      background: var(--mint);
-    }
-    &__image img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      object-position: center top;
-      transition: transform 0.4s ease;
-    }
-    &:hover img {
-      transform: scale(1.03);
-    }
-    &__image span {
-      position: absolute;
-      left: 14px;
-      bottom: 14px;
-      padding: 7px 10px;
-      border-radius: 9px;
-      background: white;
-      font-size: 0.86rem;
-      font-weight: 800;
-    }
-    &__body {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 17px 18px 12px;
-    }
-    &__body strong,
-    &__body small {
-      display: block;
-    }
-    &__body strong {
-      font-family: var(--font-display);
-      font-size: 1.2rem;
-    }
-    &__body small {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      margin-top: 5px;
-      color: var(--ink-soft);
-      font-size: 0.86rem;
-    }
-    &__proof {
-      display: flex;
-      justify-content: space-between;
-      gap: 8px;
-      padding: 12px 18px 16px;
-      border-top: 1px solid var(--line);
-      color: var(--ink-soft);
-      font-size: 0.86rem;
-      font-weight: 700;
-    }
-    &__proof span {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-    &__proof span:first-child {
-      color: var(--color-brand);
-    }
-  }
   .professional-cta {
     padding: 80px 0;
     background: var(--mint);
@@ -488,11 +389,6 @@ async function search(payload: { service: string; neighborhood: string }) {
     .trust {
       &__grid {
         gap: 45px;
-      }
-    }
-    .featured-card {
-      &__image {
-        height: 220px;
       }
     }
   }
@@ -536,16 +432,6 @@ async function search(payload: { service: string; neighborhood: string }) {
         min-height: 400px;
       }
     }
-    .featured {
-      &__grid {
-        grid-template-columns: 1fr;
-      }
-    }
-    .featured-card {
-      &__image {
-        height: 320px;
-      }
-    }
     .professional-cta {
       &__inner {
         grid-template-columns: 1fr;
@@ -563,11 +449,6 @@ async function search(payload: { service: string; neighborhood: string }) {
       }
       &__trust-chip {
         top: 25px;
-      }
-    }
-    .featured-card {
-      &__image {
-        height: 270px;
       }
     }
   }

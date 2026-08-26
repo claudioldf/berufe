@@ -34,6 +34,19 @@ RSpec.describe PublicProfessionalSearch do
       sort_order: 1
     )
   end
+  let(:parser) { instance_double(LlmSearchParser) }
+  let(:criteria) do
+    LlmSearchParser::Criteria.new(
+      service_ids: [electrician.id],
+      locations: [LlmSearchParser::Location.new(state_code: "SC", city: "Joinville", neighborhood_code: america.code)],
+      keywords: [],
+      normalized_request: "Eu preciso trocar a fiação no América."
+    )
+  end
+
+  before do
+    allow(parser).to receive(:call).and_return(criteria)
+  end
 
   it "returns only eligible profiles offering the resolved service in the selected coverage" do
     all_city = create_published_profile("+5547999997401", "Ana Toda Cidade", services: [electrician], all_city: true)
@@ -58,14 +71,15 @@ RSpec.describe PublicProfessionalSearch do
     suspended.user_account.update!(status: "suspended")
     create_draft_profile("+5547999997405", "Eva Rascunho", electrician)
 
-    result = described_class.new.call(term: "ELÉTRICA", neighborhood_code: america.code)
+    result = described_class.new(parser:).call(expression: "Trocar a fiação no América")
 
-    expect(result.service).to eq(electrician)
-    expect(result.neighborhood).to eq(america)
     expect(result.professionals).to contain_exactly(all_city, exact_area)
+    expect(result.matching_service_for(exact_area)).to eq(electrician)
+    expect(result.related_services).to include(plumber)
+    expect(parser).to have_received(:call).with(expression: "Trocar a fiação no América")
   end
 
-  it "requires a resolved service before returning professionals and treats all Joinville as no area filter" do
+  it "treats a location without a neighborhood as all Joinville and returns no matches without services" do
     profile = create_published_profile(
       "+5547999997406",
       "Fábio Específico",
@@ -73,35 +87,115 @@ RSpec.describe PublicProfessionalSearch do
       neighborhoods: [centro]
     )
 
-    all_city_result = described_class.new.call(term: electrician.slug, neighborhood_code: "all")
+    allow(parser).to receive(:call).and_return(
+      LlmSearchParser::Criteria.new(
+        service_ids: [electrician.id],
+        locations: [LlmSearchParser::Location.new(state_code: "SC", city: "Joinville", neighborhood_code: nil)],
+        keywords: [],
+        normalized_request: "Eu preciso de eletricista em Joinville."
+      )
+    )
+    all_city_result = described_class.new(parser:).call(expression: "Eletricista em Joinville")
     expect(all_city_result.professionals).to contain_exactly(profile)
-    expect(all_city_result.neighborhood).to be_nil
 
-    unmatched = described_class.new.call(term: "dedetização", neighborhood_code: nil)
-    expect(unmatched.service).to be_nil
+    allow(parser).to receive(:call).and_return(
+      LlmSearchParser::Criteria.new(
+        service_ids: [],
+        locations: [LlmSearchParser::Location.new(state_code: "SC", city: "Joinville", neighborhood_code: nil)],
+        keywords: [],
+        normalized_request: nil
+      )
+    )
+    unmatched = described_class.new(parser:).call(expression: "Algo fora do catálogo")
     expect(unmatched.professionals).to be_empty
-    expect(unmatched.related_services.length).to be_between(1, 3)
   end
 
-  it "rejects blank, oversized, non-text, and inactive neighborhood input" do
-    inactive = Neighborhood.create!(
-      code: "inativo-busca",
-      name: "Inativo Busca",
-      state_code: "SC",
-      city_code: "Joinville",
-      is_active: false,
-      sort_order: 2
+  it "searches controlled service and city filters without calling the LLM parser" do
+    profile = create_published_profile(
+      "+5547999997409",
+      "Gabi Busca Manual",
+      services: [electrician],
+      neighborhoods: [centro]
     )
 
-    expect { described_class.new.call(term: "!!!") }
-      .to raise_error(described_class::InvalidInput) { |error| expect(error.field_errors).to have_key(:service) }
-    expect { described_class.new.call(term: "x" * 81) }
-      .to raise_error(described_class::InvalidInput)
-    expect { described_class.new.call(term: 123) }
-      .to raise_error(described_class::InvalidInput)
-    expect { described_class.new.call(term: electrician.slug, neighborhood_code: inactive.code) }
+    result = described_class.new(parser:).call_with_filters(
+      service_id: electrician.id,
+      state_code: "SC",
+      city: "Joinville"
+    )
+
+    expect(result.professionals).to contain_exactly(profile)
+    expect(result.criteria).to eq(
+      LlmSearchParser::Criteria.new(
+        service_ids: [electrician.id],
+        locations: [
+          LlmSearchParser::Location.new(
+            state_code: "SC",
+            city: "Joinville",
+            neighborhood_code: nil
+          )
+        ],
+        keywords: [],
+        normalized_request: nil
+      )
+    )
+    expect(parser).not_to have_received(:call)
+  end
+
+  it "rejects uncontrolled structured filters" do
+    search = described_class.new(parser:)
+
+    expect {
+      search.call_with_filters(service_id: "not-a-service", state_code: "SC", city: "Joinville")
+    }.to raise_error(described_class::InvalidInput) do |error|
+      expect(error.field_errors).to eq(service_id: ["selecione um serviço disponível"])
+    end
+    expect {
+      search.call_with_filters(service_id: electrician.id, state_code: "PR", city: "Curitiba")
+    }.to raise_error(described_class::InvalidInput) do |error|
+      expect(error.field_errors.keys).to contain_exactly(:state_code, :city)
+    end
+  end
+
+  it "unions parsed services and uses their parser order for each card's matching service" do
+    electrician_profile = create_published_profile(
+      "+5547999997407",
+      "Ana Eletricista",
+      services: [electrician],
+      all_city: true
+    )
+    plumber_profile = create_published_profile(
+      "+5547999997408",
+      "Beto Encanador",
+      services: [plumber],
+      all_city: true
+    )
+    allow(parser).to receive(:call).and_return(
+      LlmSearchParser::Criteria.new(
+        service_ids: [plumber.id, electrician.id],
+        locations: [LlmSearchParser::Location.new(state_code: "SC", city: "Joinville", neighborhood_code: nil)],
+        keywords: [],
+        normalized_request: "Eu preciso de encanador ou eletricista."
+      )
+    )
+
+    result = described_class.new(parser:).call(expression: "Encanador ou eletricista")
+
+    expect(result.professionals).to contain_exactly(electrician_profile, plumber_profile)
+    expect(result.matching_service_for(electrician_profile)).to eq(electrician)
+    expect(result.matching_service_for(plumber_profile)).to eq(plumber)
+  end
+
+  it "maps parser and pagination errors to the public expression field" do
+    allow(parser).to receive(:call).and_raise(LlmSearchParser::LocationUnsupported)
+
+    expect { described_class.new(parser:).call(expression: "Pintor em Curitiba") }
       .to raise_error(described_class::InvalidInput) do |error|
-        expect(error.field_errors).to have_key(:neighborhood_code)
+        expect(error.field_errors).to have_key(:expression)
+      end
+    expect { described_class.new(parser:).call(expression: "Pintor", page: 0, per_page: 51) }
+      .to raise_error(described_class::InvalidInput) do |error|
+        expect(error.field_errors.keys).to contain_exactly(:page, :per_page)
       end
   end
 
@@ -201,7 +295,7 @@ RSpec.describe PublicProfessionalSearch do
       )
     ].sort_by(&:id)
 
-    result = described_class.new.call(term: electrician.slug, neighborhood_code: america.code)
+    result = described_class.new(parser:).call(expression: "Eletricista no América")
 
     expect(result.professionals.to_a).to eq([
       explicit_area,

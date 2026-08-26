@@ -14,6 +14,8 @@ RSpec.describe Berufe::Environment do
       "GOOD_JOB_PROBE_PORT" => "7001",
       "WEB_ORIGIN" => "http://localhost:3000",
       "API_PUBLIC_URL" => "http://localhost:3001",
+      "LLM_ADAPTER" => "fake",
+      "OPENAI_MODEL" => "gpt-5-mini",
       "PRODUCT_LAUNCH_DATE" => "2026-08-01"
     }
   end
@@ -23,6 +25,8 @@ RSpec.describe Berufe::Environment do
       "BERUFE_ENV" => name,
       "SMS_OTP_ADAPTER" => "infobip",
       "MEDIA_STORAGE_ADAPTER" => media_storage,
+      "LLM_ADAPTER" => (name == "local") ? "fake" : "openai",
+      "OPENAI_API_KEY" => "openai-secret",
       "INFOBIP_BASE_URL" => "https://example.api.infobip.com",
       "INFOBIP_API_KEY" => "infobip-secret",
       "INFOBIP_2FA_APPLICATION_ID" => "application-id",
@@ -86,6 +90,8 @@ RSpec.describe Berufe::Environment do
       name: "local",
       sms_otp_adapter: "fake",
       media_storage_adapter: "local",
+      llm_adapter: "fake",
+      openai_model: "gpt-5-mini",
       product_launch_date: Date.new(2026, 8, 1)
     )
     expect(infobip_config).to have_attributes(
@@ -121,6 +127,7 @@ RSpec.describe Berufe::Environment do
       expect(config.name).to eq(name)
       expect(config.sms_otp_adapter).to eq("infobip")
       expect(config.media_storage_adapter).to eq(media_storage)
+      expect(config.llm_adapter).to eq("openai")
     end
   end
 

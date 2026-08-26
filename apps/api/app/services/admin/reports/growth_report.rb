@@ -180,7 +180,7 @@ module Admin
           ["identity", "Identidade verificada", "documento aprovado", "i-lucide-badge-check"],
           ["portfolio", "3+ trabalhos", "portfólio suficiente", "i-lucide-images"],
           ["relationships", "2+ conexões", "confiança confirmada", "i-lucide-share-2"],
-          ["all", "Perfil ativado", "cumpre os 3 critérios", "i-lucide-sparkles"]
+          ["all", "Perfil ativado", "cumpre os 3 critérios", "i-lucide-badge-check"]
         ].map do |key, label, description, icon|
           ratio(quality.fetch(key.to_sym).length, quality_ids.length).merge(key:, label:, description:, icon:)
         end

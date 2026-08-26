@@ -66,14 +66,76 @@ RSpec.describe "Public professional WhatsApp handoffs", type: :request, openapi:
     token = PublicInteractionToken.new.issue(search_event_id: event.id, service_id: service.id)
 
     get endpoint(profile),
-      params: {source: "search_result", interaction_token: token},
+      params: {
+        source: "search_result",
+        interaction_token: token,
+        request_message: "Eu preciso trocar a fiação da cozinha."
+      },
       headers: browser_headers("whatsapp-search-302")
 
     expect(response).to have_http_status(:found)
+    expect_redirect_message(
+      "Olá, Contato Público! Encontrei seu perfil na Berufe. Eu preciso trocar a fiação da cozinha."
+    )
     expect(ProfessionalDailyMetric.sole).to have_attributes(
       whatsapp_clicks: 1,
       whatsapp_clicks_public_profile: 0,
       whatsapp_clicks_search_result: 1
+    )
+    expect(event.reload.whatsapp_handoff_occurred).to be(true)
+    assert_api_conform(status: 302)
+  end
+
+  it "builds a first-person service and location message for structured search" do
+    event = SearchEvent.create!(
+      service:,
+      query_text_normalized: nil,
+      city_code: "Joinville",
+      result_count: 1
+    )
+    token = PublicInteractionToken.new.issue(search_event_id: event.id, service_id: service.id)
+
+    get endpoint(profile),
+      params: {source: "search_result", interaction_token: token},
+      headers: browser_headers("whatsapp-structured-search-302")
+
+    expect(response).to have_http_status(:found)
+    expect_redirect_message(
+      "Olá, Contato Público! Encontrei seu perfil na Berufe. " \
+        "Eu preciso de instalação elétrica pública em Joinville, SC."
+    )
+    assert_api_conform(status: 302)
+  end
+
+  it "preserves a normalized request after opening a result profile" do
+    event = SearchEvent.create!(
+      service:,
+      query_text_normalized: nil,
+      city_code: "Joinville",
+      result_count: 1
+    )
+    token = PublicProfileInteractionToken.new.issue(
+      professional_id: profile.id,
+      service_id: service.id,
+      search_event_id: event.id
+    )
+
+    get endpoint(profile),
+      params: {
+        source: "public_profile",
+        interaction_token: token,
+        request_message: "Eu preciso revisar o quadro elétrico."
+      },
+      headers: browser_headers("whatsapp-search-profile-302")
+
+    expect(response).to have_http_status(:found)
+    expect_redirect_message(
+      "Olá, Contato Público! Encontrei seu perfil na Berufe. Eu preciso revisar o quadro elétrico."
+    )
+    expect(ProfessionalDailyMetric.sole).to have_attributes(
+      whatsapp_clicks: 1,
+      whatsapp_clicks_public_profile: 1,
+      whatsapp_clicks_search_result: 0
     )
     expect(event.reload.whatsapp_handoff_occurred).to be(true)
     assert_api_conform(status: 302)
@@ -207,6 +269,12 @@ RSpec.describe "Public professional WhatsApp handoffs", type: :request, openapi:
     expect(URI.decode_www_form(uri.query).to_h.fetch("text")).to eq(
       "Olá! Vi seu perfil na Berufe para #{service_name}."
     )
+  end
+
+  def expect_redirect_message(message)
+    uri = URI.parse(response.location)
+    expect(uri).to have_attributes(scheme: "https", host: "wa.me")
+    expect(URI.decode_www_form(uri.query).to_h.fetch("text")).to eq(message)
   end
 
   def create_published_profile(phone:, name:)

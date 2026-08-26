@@ -128,15 +128,21 @@ export interface PublicServiceSuggestion {
 }
 
 export interface PublicProfessionalSearchResult {
-  normalizedTerm: string;
-  resolvedService: PublicServiceSuggestion | null;
-  neighborhood: { code: string; name: string } | null;
   professionals: PublicProfessionalCard[];
   relatedServices: PublicServiceSuggestion[];
   page: number;
   perPage: number;
   totalCount: number;
   totalPages: number;
+  interpretation: {
+    services: PublicServiceSuggestion[];
+    locations: Array<{
+      stateCode: "SC";
+      city: "Joinville";
+      neighborhood: { code: string; name: string } | null;
+    }>;
+    normalizedRequest: string | null;
+  };
   interaction: {
     searchEventId: string;
     token: string;

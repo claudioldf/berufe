@@ -37,4 +37,92 @@ RSpec.describe SearchReportingRetentionJob do
     )
     expect(aggregate.totals).to have_attributes(searches: 2, with_results: 1, zero_results: 1)
   end
+
+  it "retains six-month LLM audits after rollup and never reports failed audits" do
+    now = Time.zone.parse("2026-08-25 15:00:00")
+    completed_audit = SearchEvent.create!(
+      input_prompt: "Preciso de pintor",
+      raw_llm_response: '{"service_ids":[]}',
+      parsed_response: {
+        service_ids: [], services: [], locations: [], keywords: [], normalized_request: nil
+      },
+      audit_status: "completed",
+      response_source: "provider",
+      llm_adapter: "fake",
+      llm_model: "gpt-5-mini",
+      llm_prompt_digest: "a" * 64,
+      city_code: "Joinville",
+      result_count: 2,
+      reportable: true,
+      created_at: now - 91.days
+    )
+    failed_audit = SearchEvent.create!(
+      input_prompt: "Preciso de eletricista",
+      audit_status: "application_rate_limited",
+      city_code: "Joinville",
+      result_count: 0,
+      reportable: false,
+      created_at: now - 91.days
+    )
+    expired_audit = SearchEvent.create!(
+      input_prompt: "Preciso de encanador",
+      audit_status: "provider_unavailable",
+      city_code: "Joinville",
+      result_count: 0,
+      reportable: false,
+      created_at: now - 6.months - 1.minute
+    )
+    discarded_failed_row = SearchEvent.create!(
+      audit_status: "search_failed",
+      city_code: "Joinville",
+      result_count: 0,
+      reportable: false,
+      created_at: now - 91.days
+    )
+
+    described_class.perform_now(now:)
+    described_class.perform_now(now:)
+
+    expect(completed_audit.reload).to have_attributes(
+      input_prompt: "Preciso de pintor",
+      raw_llm_response: '{"service_ids":[]}',
+      parsed_response: include("service_ids" => []),
+      response_source: "provider",
+      llm_adapter: "fake",
+      llm_model: "gpt-5-mini",
+      llm_prompt_digest: "a" * 64,
+      audit_status: "completed",
+      result_count: 2,
+      reportable: false
+    )
+    expect(failed_audit.reload.input_prompt).to eq("Preciso de eletricista")
+    expect(SearchEvent.exists?(expired_audit.id)).to be(false)
+    expect(SearchEvent.exists?(discarded_failed_row.id)).to be(false)
+    expect(SearchDailyRollup.sum(:searches)).to eq(1)
+  end
+
+  it "removes expired search-event deduplication claims" do
+    now = Time.zone.parse("2026-08-26 15:00:00")
+    expired_event = SearchEvent.create!(city_code: "Joinville", result_count: 1, created_at: now)
+    retained_event = SearchEvent.create!(city_code: "Joinville", result_count: 1, created_at: now)
+    expired = PublicSearchEventDeduplication.create!(
+      search_event: expired_event,
+      subject_digest: "a" * 64,
+      query_digest: "b" * 64,
+      result_count: 1,
+      expires_at: now
+    )
+    retained = PublicSearchEventDeduplication.create!(
+      search_event: retained_event,
+      subject_digest: "c" * 64,
+      query_digest: "d" * 64,
+      result_count: 1,
+      expires_at: now + 1.second
+    )
+
+    described_class.perform_now(now:)
+
+    expect(PublicSearchEventDeduplication.exists?(expired.id)).to be(false)
+    expect(PublicSearchEventDeduplication.exists?(retained.id)).to be(true)
+  end
 end

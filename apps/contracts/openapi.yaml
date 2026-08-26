@@ -481,6 +481,51 @@ paths:
           $ref: "#/components/responses/AdminModerationForbidden"
         "422":
           $ref: "#/components/responses/AdminModerationInvalid"
+  /api/v1/admin/search-audits:
+    get:
+      operationId: getAdminSearchAudits
+      summary: Read the last six calendar months of expression-search LLM audits
+      tags:
+        - Reports
+      security:
+        - applicationSession: []
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+        - name: q
+          in: query
+          required: false
+          schema: { type: string, minLength: 1, maxLength: 100 }
+          description: Case-insensitive prompt, normalized request, service, city, or neighborhood search.
+        - name: outcome
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [zero_results, not_understood, thin_results, operational_issue, healthy]
+        - name: sort
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [results_asc, gaps, newest, results_desc]
+            default: results_asc
+      responses:
+        "200":
+          description: Filtered expression prompts, LLM output, controlled parsing, analytical summary, and total matches.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminSearchAuditResponse"
+        "401":
+          $ref: "#/components/responses/AdminModerationUnauthorized"
+        "403":
+          $ref: "#/components/responses/AdminModerationForbidden"
+        "422":
+          $ref: "#/components/responses/AdminModerationInvalid"
   /api/v1/admin/moderation/{target_type}/{target_id}/decisions:
     parameters:
       - $ref: "#/components/parameters/ModerationTargetType"
@@ -674,7 +719,7 @@ paths:
   /api/v1/public/professional-searches:
     post:
       operationId: searchPublicProfessionals
-      summary: Search publicly eligible professionals by service and optional Joinville neighborhood
+      summary: Search publicly eligible professionals from a natural-language expression
       tags:
         - Public discovery
       security: []
@@ -683,10 +728,12 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PublicProfessionalSearchRequest"
+              oneOf:
+                - $ref: "#/components/schemas/PublicProfessionalSearchRequest"
+                - $ref: "#/components/schemas/PublicProfessionalStructuredSearchRequest"
       responses:
         "200":
-          description: Matching public professional cards or safe related active-service suggestions.
+          description: Public professional cards matching the parsed service and Joinville location criteria.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
@@ -704,10 +751,22 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "422":
-          description: The service term or optional neighborhood is malformed or unavailable.
+          description: The expression is malformed or describes an unsupported or unrecognized location.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Public expression search is temporarily rate limited by the application or its LLM dependency.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Retry-After:
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -859,6 +918,14 @@ paths:
           type: string
           minLength: 1
           maxLength: 2048
+      - name: request_message
+        in: query
+        required: false
+        description: Sanitized first-person request returned by expression search; ignored outside search-derived interactions.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 240
     get:
       operationId: openPublicProfessionalWhatsapp
       summary: Attribute an anonymous direct-contact handoff and redirect to WhatsApp
@@ -3198,6 +3265,106 @@ components:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
   schemas:
+    AdminSearchAuditResponse:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data:
+          $ref: "#/components/schemas/AdminSearchAuditData"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    AdminSearchAuditData:
+      type: object
+      additionalProperties: false
+      required: [items, summary, meta]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminSearchAuditItem"
+        summary:
+          $ref: "#/components/schemas/AdminSearchAuditSummary"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    AdminSearchAuditSummary:
+      type: object
+      additionalProperties: false
+      required: [total, zero_results, not_understood, thin_results, operational_issue, healthy]
+      properties:
+        total: { type: integer, minimum: 0 }
+        zero_results: { type: integer, minimum: 0 }
+        not_understood: { type: integer, minimum: 0 }
+        thin_results: { type: integer, minimum: 0 }
+        operational_issue: { type: integer, minimum: 0 }
+        healthy: { type: integer, minimum: 0 }
+    AdminSearchAuditItem:
+      type: object
+      additionalProperties: false
+      required: [id, input_prompt, raw_llm_response, parsed_response, status, response_source, adapter, model, provider_request_id, prompt_digest, result_count, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        input_prompt: { type: string, minLength: 1, maxLength: 200 }
+        raw_llm_response: { type: [string, "null"] }
+        parsed_response:
+          oneOf:
+            - $ref: "#/components/schemas/AdminSearchAuditParsedResponse"
+            - type: "null"
+        status:
+          type: string
+          enum: [processing, completed, application_rate_limited, provider_rate_limited, provider_unavailable, response_rejected, search_failed]
+        response_source:
+          type: [string, "null"]
+          enum: [provider, cache, null]
+        adapter: { type: [string, "null"] }
+        model: { type: [string, "null"] }
+        provider_request_id: { type: [string, "null"] }
+        prompt_digest:
+          type: [string, "null"]
+          pattern: "^[0-9a-f]{64}$"
+        result_count: { type: integer, minimum: 0 }
+        created_at: { type: string, format: date-time }
+    AdminSearchAuditParsedResponse:
+      type: object
+      additionalProperties: false
+      required: [service_ids, services, locations, keywords, normalized_request]
+      properties:
+        service_ids:
+          type: array
+          items: { type: string, format: uuid }
+        services:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [id, name]
+            properties:
+              id: { type: string, format: uuid }
+              name: { type: string, minLength: 1 }
+        locations:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [state_code, city, neighborhood]
+            properties:
+              state_code: { type: string, minLength: 2, maxLength: 2 }
+              city: { type: string, minLength: 1 }
+              neighborhood:
+                oneOf:
+                  - type: object
+                    additionalProperties: false
+                    required: [code, name]
+                    properties:
+                      code: { type: string, minLength: 1 }
+                      name: { type: string, minLength: 1 }
+                  - type: "null"
+        keywords:
+          type: array
+          items: { type: string }
+        normalized_request:
+          type: [string, "null"]
+          maxLength: 240
     AdminGrowthReportPeriodKey:
       type: string
       enum: [since_launch, last_30_days, last_7_days]
@@ -5795,18 +5962,38 @@ components:
       type: object
       additionalProperties: false
       required:
-        - service
+        - expression
       properties:
-        service:
+        expression:
           type: string
           minLength: 1
-          maxLength: 80
-        neighborhood_code:
-          type:
-            - string
-            - "null"
-          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
-          maxLength: 80
+          maxLength: 200
+        page:
+          type: integer
+          minimum: 1
+          description: One-based page of matching professionals; defaults to 1.
+        per_page:
+          type: integer
+          minimum: 1
+          maximum: 50
+          description: Professionals per page; defaults to 20.
+    PublicProfessionalStructuredSearchRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - service_id
+        - state_code
+        - city
+      properties:
+        service_id:
+          type: string
+          format: uuid
+        state_code:
+          type: string
+          const: SC
+        city:
+          type: string
+          const: Joinville
         page:
           type: integer
           minimum: 1
@@ -5831,32 +6018,12 @@ components:
       type: object
       additionalProperties: false
       required:
-        - query
         - professionals
         - related_services
         - meta
+        - interpretation
         - interaction
       properties:
-        query:
-          type: object
-          additionalProperties: false
-          required:
-            - normalized_term
-            - service
-            - neighborhood
-          properties:
-            normalized_term:
-              type: string
-              minLength: 1
-              maxLength: 80
-            service:
-              oneOf:
-                - $ref: "#/components/schemas/PublicServiceSuggestion"
-                - type: "null"
-            neighborhood:
-              oneOf:
-                - $ref: "#/components/schemas/PublicProfessionalNeighborhoodSummary"
-                - type: "null"
         professionals:
           type: array
           items:
@@ -5868,9 +6035,54 @@ components:
             $ref: "#/components/schemas/PublicServiceSuggestion"
         meta:
           $ref: "#/components/schemas/PageMeta"
+        interpretation:
+          $ref: "#/components/schemas/PublicProfessionalSearchInterpretation"
         interaction:
           oneOf:
             - $ref: "#/components/schemas/PublicSearchInteraction"
+            - type: "null"
+    PublicProfessionalSearchInterpretation:
+      type: object
+      additionalProperties: false
+      required:
+        - services
+        - locations
+        - normalized_request
+      properties:
+        services:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicServiceSuggestion"
+        locations:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicProfessionalSearchLocation"
+        normalized_request:
+          description: Sanitized first-person contact request produced for expression search; null for structured search.
+          oneOf:
+            - type: string
+              minLength: 1
+              maxLength: 240
+            - type: "null"
+    PublicProfessionalSearchLocation:
+      type: object
+      additionalProperties: false
+      required:
+        - state_code
+        - city
+        - neighborhood
+      properties:
+        state_code:
+          type: string
+          enum:
+            - SC
+        city:
+          type: string
+          enum:
+            - Joinville
+        neighborhood:
+          oneOf:
+            - $ref: "#/components/schemas/PublicProfessionalNeighborhoodSummary"
             - type: "null"
     PublicSearchInteraction:
       type: object
