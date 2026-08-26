@@ -76,28 +76,28 @@ The maximum operational deadline is 30 days from the verified request.
 
 ## Retention matrix
 
-| Record or object                                                 | Production rule                                                                    | Enforcement                                   |
-| ---------------------------------------------------------------- | ---------------------------------------------------------------------------------- | --------------------------------------------- |
-| OTP challenge                                                    | Until its configured expiry, at most 10 minutes                                    | Hourly authentication cleanup                 |
-| OTP anti-abuse counter                                           | Until its 24-hour window expires                                                   | Hourly authentication cleanup                 |
-| Professional session                                             | 7 idle days, 30 absolute days                                                      | Authentication and hourly cleanup             |
-| Admin session                                                    | 30 idle minutes, 12 absolute hours                                                 | Authentication and hourly cleanup             |
-| Successful GoodJob record                                        | 14 days                                                                            | GoodJob preserved-record cleanup              |
-| Unresolved failed GoodJob record                                 | Until operational review                                                           | Manual review; never blind deletion           |
-| Anonymous non-audit search event                                 | 90 days                                                                            | Daily rollup and purge                        |
-| Expression prompt, raw LLM output, and controlled parse          | 6 calendar months                                                                  | Daily deletion of the complete audit event    |
-| Pseudonymous search-event deduplication claim                    | 24 hours                                                                           | Daily expiry cleanup and replacement on reuse |
-| Temporary LLM search analysis and sanitized contact draft        | 24 hours                                                                           | Daily search-reporting retention cleanup      |
-| Daily aggregate/activity                                         | 730 days                                                                           | Daily reporting cleanup                       |
-| Abandoned upload authorization                                   | 10 minutes                                                                         | Ten-minute cleanup                            |
-| Rejected, replaced, removed, or unattached media                 | 30 days                                                                            | Daily media retention cleanup                 |
-| Identity evidence after a decision                               | 30 days                                                                            | Daily identity-file cleanup                   |
-| Recommendation invitation                                        | 14-day validity; operational row removed within 30 days after completion or expiry | Daily recommendation cleanup                  |
-| Published recommendation                                         | Until publication consent is withdrawn                                             | Timestamped withdrawal and public query scope |
-| Active account, profile, customer, quote, and service data       | While required for the relationship; eligible data erased after a verified request | Support erasure workflow                      |
-| Minimal pseudonymous legal/audit records                         | Five years                                                                         | Daily LGPD audit cleanup                      |
-| Support correspondence                                           | Only while required to answer, evidence, or defend the request                     | Controlled mailbox review                     |
-| Database backups                                                 | Provider's verified production backup cycle                                        | Railway configuration and restore tests       |
+| Record or object                                           | Production rule                                                                    | Enforcement                                   |
+| ---------------------------------------------------------- | ---------------------------------------------------------------------------------- | --------------------------------------------- |
+| OTP challenge                                              | Until its configured expiry, at most 10 minutes                                    | Hourly authentication cleanup                 |
+| OTP anti-abuse counter                                     | Until its 24-hour window expires                                                   | Hourly authentication cleanup                 |
+| Professional session                                       | 7 idle days, 30 absolute days                                                      | Authentication and hourly cleanup             |
+| Admin session                                              | 30 idle minutes, 12 absolute hours                                                 | Authentication and hourly cleanup             |
+| Successful GoodJob record                                  | 14 days                                                                            | GoodJob preserved-record cleanup              |
+| Unresolved failed GoodJob record                           | Until operational review                                                           | Manual review; never blind deletion           |
+| Anonymous non-audit search event                           | 90 days                                                                            | Daily rollup and purge                        |
+| Expression prompt, raw LLM output, and controlled parse    | 6 calendar months                                                                  | Daily deletion of the complete audit event    |
+| Pseudonymous search-event deduplication claim              | 24 hours                                                                           | Daily expiry cleanup and replacement on reuse |
+| Temporary LLM search analysis and sanitized contact draft  | 24 hours                                                                           | Daily search-reporting retention cleanup      |
+| Daily aggregate/activity                                   | 730 days                                                                           | Daily reporting cleanup                       |
+| Abandoned upload authorization                             | 10 minutes                                                                         | Ten-minute cleanup                            |
+| Rejected, replaced, removed, or unattached media           | 30 days                                                                            | Daily media retention cleanup                 |
+| Identity evidence after a decision                         | 30 days                                                                            | Daily identity-file cleanup                   |
+| Recommendation invitation                                  | 14-day validity; operational row removed within 30 days after completion or expiry | Daily recommendation cleanup                  |
+| Published recommendation                                   | Until publication consent is withdrawn                                             | Timestamped withdrawal and public query scope |
+| Active account, profile, customer, quote, and service data | While required for the relationship; eligible data erased after a verified request | Support erasure workflow                      |
+| Minimal pseudonymous legal/audit records                   | Five years                                                                         | Daily LGPD audit cleanup                      |
+| Support correspondence                                     | Only while required to answer, evidence, or defend the request                     | Controlled mailbox review                     |
+| Database backups                                           | Provider's verified production backup cycle                                        | Railway configuration and restore tests       |
 
 Review the matrix quarterly and after every material feature or provider change. A longer
 retention requires a recorded legal basis, necessity assessment, and updated public notice
