@@ -46,9 +46,7 @@ describe("expression search", () => {
       required: "",
       maxlength: "200",
     });
-    expect(
-      wrapper.get('button[type="submit"]').attributes("disabled"),
-    ).toBeDefined();
+    expect(wrapper.find('button[type="submit"]').exists()).toBe(false);
     expect(wrapper.get('input[name="expression"]').classes()).toContain(
       "rounded-none",
     );
@@ -68,6 +66,7 @@ describe("expression search", () => {
     await wrapper
       .get('input[name="expression"]')
       .setValue("  preciso de um pintor no América  ");
+    expect(wrapper.find('button[type="submit"]').exists()).toBe(true);
     await wrapper.get("form").trigger("submit");
 
     expect(wrapper.emitted("submit")?.[0]?.[0]).toEqual({
@@ -81,9 +80,7 @@ describe("expression search", () => {
     });
 
     await wrapper.get('input[name="expression"]').setValue("x".repeat(201));
-    expect(
-      wrapper.get('button[type="submit"]').attributes("disabled"),
-    ).toBeDefined();
+    expect(wrapper.find('button[type="submit"]').exists()).toBe(false);
     await wrapper.get("form").trigger("submit");
 
     expect(wrapper.emitted("submit")).toBeUndefined();
