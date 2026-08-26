@@ -223,21 +223,10 @@ function retrySearch() {
         </aside>
 
         <div class="finder__results">
-          <DesignSystemSurfaceCard
+          <PublicSearchLoadingCard
             v-if="isSearching"
-            class="search-state"
-            role="status"
-            aria-live="polite"
-          >
-            <UIcon name="i-lucide-loader-circle" aria-hidden="true" />
-            <strong>
-              {{
-                isStructuredSearching
-                  ? "Buscando profissionais com os filtros selecionados..."
-                  : "Entendendo seu pedido e buscando profissionais..."
-              }}
-            </strong>
-          </DesignSystemSurfaceCard>
+            :structured="isStructuredSearching"
+          />
 
           <PublicSearchRateLimitCard
             v-else-if="isSearchRateLimited"
@@ -526,21 +515,11 @@ function retrySearch() {
   font-size: 0.82rem;
 }
 
-.search-state,
 .empty-results {
   display: flex;
   align-items: center;
   gap: 15px;
   padding: 30px;
-}
-
-.search-state > svg {
-  color: var(--color-brand);
-  font-size: 1.5rem;
-}
-
-.search-state:not(.search-state--error) > svg {
-  animation: spin 0.9s linear infinite;
 }
 
 .empty-results {
@@ -594,12 +573,6 @@ function retrySearch() {
   font-size: 0.84rem;
   font-weight: 800;
   text-decoration: none;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 @media (width <= 800px) {

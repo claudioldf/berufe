@@ -98,7 +98,7 @@ export async function useProfessionalSearch() {
         };
       }
     },
-    { enabled: hasSearchTerm },
+    { enabled: hasSearchTerm, lazy: true },
   );
 
   function resetPaging() {

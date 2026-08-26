@@ -1,5 +1,7 @@
 import { clearNuxtData } from "#app";
+import { mountSuspended } from "@nuxt/test-utils/runtime";
 import { flushPromises } from "@vue/test-utils";
+import { defineComponent, h } from "vue";
 import { useProfessionalSearch } from "@app/composables/useProfessionalSearch";
 import { encodeSearchExpression } from "@app/utils/searchExpression";
 
@@ -103,6 +105,48 @@ describe("professional search composable", () => {
     await clearNuxtData("public-professional-search");
     await useRouter().replace("/encontrar");
     await flushPromises();
+  });
+
+  it("mounts the search view while its initial request is still pending", async () => {
+    let resolveSearch:
+      ((response: ReturnType<typeof successfulResponse>) => void) | undefined;
+    apiClient.POST.mockImplementation(
+      () =>
+        new Promise<ReturnType<typeof successfulResponse>>((resolve) => {
+          resolveSearch = resolve;
+        }),
+    );
+    await clearNuxtData("public-professional-search");
+
+    const SearchViewHarness = defineComponent({
+      async setup() {
+        const search = await useProfessionalSearch();
+
+        return () =>
+          h(
+            "p",
+            search.isSearching.value ? "Busca em andamento" : "Busca concluída",
+          );
+      },
+    });
+    let mounted = false;
+    const mounting = mountSuspended(SearchViewHarness, {
+      route: `/encontrar?expressao=${encodeSearchExpression(expression)}`,
+    }).then((wrapper) => {
+      mounted = true;
+      return wrapper;
+    });
+
+    try {
+      await vi.waitFor(() => expect(apiClient.POST).toHaveBeenCalledOnce());
+      await flushPromises();
+
+      expect(mounted).toBe(true);
+      expect((await mounting).text()).toContain("Busca em andamento");
+    } finally {
+      resolveSearch?.(successfulResponse());
+      await mounting;
+    }
   });
 
   it("keeps a first visit idle until an expression is submitted", async () => {
