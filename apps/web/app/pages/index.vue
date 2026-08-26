@@ -73,7 +73,7 @@ async function search(payload: ExpressionSearchPayload) {
   .hero {
     position: relative;
     padding: 76px 0 100px;
-    background: var(--color-surface-page);
+    background: var(--color-surface-page-light);
     &__inner {
       position: relative;
       display: grid;

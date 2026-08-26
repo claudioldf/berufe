@@ -40,7 +40,7 @@ function submit() {
           autocomplete="off"
           required
           :maxlength="MAXIMUM_EXPRESSION_LENGTH"
-          placeholder="Ex.: pintar uma casa em Joinville"
+          placeholder="Ex.: quero pintar um quarto infantil em Joinville"
           :ui="{
             base: 'rounded-none p-0 border-0 ring-0 shadow-none bg-transparent focus-visible:outline-none focus-visible:ring-0',
           }"
@@ -49,10 +49,10 @@ function submit() {
     </div>
 
     <UButton
+      v-if="canSubmit"
       type="submit"
       color="primary"
       class="expression-search__button"
-      :disabled="!canSubmit"
     >
       <span>Encontrar</span>
       <UIcon name="i-lucide-arrow-right" aria-hidden="true" />
@@ -81,6 +81,7 @@ function submit() {
     align-items: center;
     gap: 9px;
     min-width: 0;
+    height: 3.63rem;
     padding: 6px 12px;
   }
 
@@ -107,7 +108,7 @@ function submit() {
     min-width: 0;
     color: var(--ink);
     font-size: 0.94rem;
-    font-weight: 700;
+    font-weight: 500;
   }
 
   &__button {
