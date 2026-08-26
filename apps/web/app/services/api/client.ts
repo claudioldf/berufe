@@ -16,6 +16,7 @@ interface ApiClientOptions {
   origin?: string;
   requireOrigin?: boolean;
   requestId?: () => string | undefined;
+  visitorIp?: string;
 }
 
 export function createApiClient(options: ApiClientOptions): BerufeApiClient {
@@ -45,6 +46,9 @@ export function createApiClient(options: ApiClientOptions): BerufeApiClient {
         !["GET", "HEAD", "OPTIONS"].includes(request.method)
       ) {
         request.headers.set("Origin", options.origin);
+      }
+      if (options.visitorIp) {
+        request.headers.set("X-Real-IP", options.visitorIp);
       }
 
       return request;
@@ -76,6 +80,13 @@ export function useApiClient(): BerufeApiClient {
   const inboundRequestId = import.meta.server
     ? useRequestHeader("x-request-id")
     : undefined;
+  const inboundVisitorIp = import.meta.server
+    ? useRequestHeader("x-real-ip")
+    : undefined;
+  const visitorIp =
+    inboundVisitorIp && /^[0-9a-f:.]{2,64}$/i.test(inboundVisitorIp)
+      ? inboundVisitorIp
+      : undefined;
 
   return createApiClient({
     baseUrl: import.meta.server
@@ -87,5 +98,6 @@ export function useApiClient(): BerufeApiClient {
         : undefined,
     requireOrigin: import.meta.server,
     requestId: () => inboundRequestId ?? undefined,
+    visitorIp,
   });
 }

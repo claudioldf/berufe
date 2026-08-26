@@ -41,6 +41,8 @@ export default defineRailway(() => {
       WEB_ORIGIN: "https://www.berufe.com.br",
       API_PUBLIC_URL: "https://api.berufe.com.br",
       PRODUCT_LAUNCH_DATE: preserve(),
+      MAXMIND_ACCOUNT_ID: preserve(),
+      MAXMIND_LICENSE_KEY: preserve(),
       SMS_OTP_ADAPTER: "infobip",
       INFOBIP_BASE_URL: preserve(),
       INFOBIP_API_KEY: preserve(),

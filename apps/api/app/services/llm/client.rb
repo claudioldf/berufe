@@ -50,8 +50,8 @@ module Llm
       @strategy = strategy
     end
 
-    def parse(expression:, prompt:, schema:, services:, neighborhoods:)
-      strategy.call(expression:, prompt:, schema:, services:, neighborhoods:)
+    def parse(expression:, prompt:, schema:, services:, neighborhoods:, default_location:)
+      strategy.call(expression:, prompt:, schema:, services:, neighborhoods:, default_location:)
     end
 
     private

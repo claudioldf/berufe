@@ -10,7 +10,19 @@ describe("catalog composable", () => {
   it("shares the SSR-compatible public catalog request", async () => {
     apiClient.GET.mockResolvedValue({
       data: {
-        data: { categories: [], services: [], neighborhoods: [] },
+        data: {
+          categories: [],
+          services: [],
+          neighborhoods: [],
+          cities: [
+            {
+              state_code: "SC",
+              city: "Joinville",
+              state_slug: "sc",
+              city_slug: "joinville",
+            },
+          ],
+        },
         request_id: "catalog-empty",
       },
       error: undefined,
@@ -23,6 +35,14 @@ describe("catalog composable", () => {
     expect(data.value).toEqual({
       categories: [],
       services: [],
+      cities: [
+        {
+          stateCode: "SC",
+          city: "Joinville",
+          stateSlug: "sc",
+          citySlug: "joinville",
+        },
+      ],
       neighborhoods: [
         {
           code: "all",

@@ -45,23 +45,24 @@ class LlmSearchParser
     @audit_recorder = audit_recorder
   end
 
-  def call(expression:, audit_event: nil)
+  def call(expression:, default_location: nil, audit_event: nil)
     normalized_expression = validate_expression!(expression)
+    default_location = normalize_default_location(default_location)
     services = Service.publicly_active.ordered.to_a
     neighborhoods = Neighborhood.active.ordered.to_a
-    prompt = LlmSearchPrompt.new(services:, neighborhoods:)
+    prompt = LlmSearchPrompt.new(services:, neighborhoods:, default_location:)
     audit_raw_response = nil
     audit_response_source = nil
     audit_provider_request_id = nil
     cache_key_digest = digest(
-      "#{normalized_expression}\0#{prompt.digest}\0#{settings.llm_adapter}\0#{settings.openai_model}"
+      "#{normalized_expression}\0#{default_location.to_h.to_json}\0#{prompt.digest}\0#{settings.llm_adapter}\0#{settings.openai_model}"
     )
 
     if (cached = cached_analysis(cache_key_digest))
       audit_raw_response = cached.raw_response
       audit_response_source = "cache"
       audit_provider_request_id = cached.provider_request_id
-      criteria = criteria_from(cached.parsed_result, services:, neighborhoods:)
+      criteria = criteria_from(cached.parsed_result, services:, neighborhoods:, default_location:)
       audit_recorder.record_interpretation(
         event: audit_event,
         criteria:,
@@ -80,12 +81,13 @@ class LlmSearchParser
       prompt: prompt.render,
       schema: response_schema(services),
       services:,
-      neighborhoods:
+      neighborhoods:,
+      default_location:
     )
     audit_raw_response = response.raw_response
     audit_response_source = "provider"
     audit_provider_request_id = response.provider_request_id
-    criteria = criteria_from(response.payload, services:, neighborhoods:)
+    criteria = criteria_from(response.payload, services:, neighborhoods:, default_location:)
     audit_recorder.record_interpretation(
       event: audit_event,
       criteria:,
@@ -156,13 +158,13 @@ class LlmSearchParser
     self.class.normalize_expression!(expression)
   end
 
-  def criteria_from(payload, services:, neighborhoods:)
+  def criteria_from(payload, services:, neighborhoods:, default_location:)
     value = payload.respond_to?(:to_h) ? payload.to_h.deep_stringify_keys : {}
     services_by_id = services.index_by { |service| service.id.to_s }
     service_ids = Array(value["service_ids"])
       .filter_map { |id| services_by_id[id.to_s]&.id }
       .uniq
-    locations = parse_locations(value["locations"], neighborhoods:)
+    locations = parse_locations(value["locations"], neighborhoods:, default_location:)
     keywords = Array(value["keywords"])
       .filter_map { |keyword| safe_keyword(keyword) }
       .uniq
@@ -172,26 +174,36 @@ class LlmSearchParser
     Criteria.new(service_ids:, locations:, keywords:, normalized_request:)
   end
 
-  def parse_locations(values, neighborhoods:)
+  def parse_locations(values, neighborhoods:, default_location:)
     raw_locations = Array(values).presence || [{}]
     locations = raw_locations.map do |raw_location|
       location = raw_location.respond_to?(:to_h) ? raw_location.to_h.deep_stringify_keys : {}
-      state_code = location["state_code"].to_s.squish.presence&.upcase || DEFAULT_STATE_CODE
-      city = location["city"].to_s.squish.presence || DEFAULT_CITY
-      unless state_code == DEFAULT_STATE_CODE && PublicSearchText.normalize(city) == "joinville"
+      state_code = location["state_code"].to_s.squish.presence&.upcase || default_location.state_code
+      city = location["city"].to_s.squish.presence || default_location.city
+      unless state_code == default_location.state_code &&
+          PublicSearchText.normalize(city) == PublicSearchText.normalize(default_location.city)
         raise LocationUnsupported
       end
 
       neighborhood_value = (location["neighborhood"] || location["neighborhood_code"]).to_s.squish.presence
       neighborhood = resolve_neighborhood(neighborhood_value, neighborhoods:)
       Location.new(
-        state_code: DEFAULT_STATE_CODE,
-        city: DEFAULT_CITY,
+        state_code: default_location.state_code,
+        city: default_location.city,
         neighborhood_code: neighborhood&.code
       )
     end
 
     locations.uniq
+  end
+
+  def normalize_default_location(value)
+    attributes = value.respond_to?(:to_h) ? value.to_h.symbolize_keys : {}
+    Location.new(
+      state_code: attributes[:state_code].to_s.squish.presence&.upcase || DEFAULT_STATE_CODE,
+      city: attributes[:city].to_s.squish.presence || DEFAULT_CITY,
+      neighborhood_code: nil
+    )
   end
 
   def resolve_neighborhood(value, neighborhoods:)

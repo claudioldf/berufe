@@ -1,8 +1,10 @@
-import { computed, shallowRef, watch } from "vue";
+import { computed, shallowRef, toValue, watch } from "vue";
+import type { MaybeRefOrGetter } from "vue";
 import type {
   ExpressionSearchPayload,
   PublicProfessionalCard,
   PublicProfessionalSearchResult,
+  SearchLocation,
   StructuredSearchPayload,
 } from "~/types";
 import {
@@ -18,6 +20,7 @@ import {
   decodeSearchExpression,
   encodeSearchExpression,
 } from "~/utils/searchExpression";
+import { searchLocationPath } from "~/utils/searchLocation";
 
 type SearchSource =
   | { type: "expression" }
@@ -48,7 +51,9 @@ function unexpectedSearchFailure(): NormalizedApiError {
   };
 }
 
-export async function useProfessionalSearch() {
+export async function useProfessionalSearch(options: {
+  location: MaybeRefOrGetter<SearchLocation>;
+}) {
   const route = useRoute();
   const router = useRouter();
   const client = useApiClient();
@@ -68,6 +73,10 @@ export async function useProfessionalSearch() {
     decodeSearchExpression(encodedExpression.value),
   );
   const hasSearchTerm = computed(() => expressionQuery.value.length > 0);
+  const locationKey = computed(() => {
+    const location = toValue(options.location);
+    return `${location.stateSlug}/${location.citySlug}`;
+  });
 
   const {
     data,
@@ -76,11 +85,14 @@ export async function useProfessionalSearch() {
     refresh,
     clear,
   } = await useAsyncData(
-    "public-professional-search",
+    `public-professional-search:${locationKey.value}`,
     async (): Promise<SearchResponse> => {
       const expression = expressionQuery.value;
       try {
-        const result = await searchPublicProfessionals(client, { expression });
+        const result = await searchPublicProfessionals(client, {
+          expression,
+          defaultLocation: toValue(options.location),
+        });
         return {
           expression,
           source: { type: "expression" },
@@ -107,7 +119,7 @@ export async function useProfessionalSearch() {
     loadingMore.value = false;
   }
 
-  watch(encodedExpression, () => {
+  watch([encodedExpression, locationKey], () => {
     if (expressionQuery.value === structuredRouteExpression.value) {
       structuredRouteExpression.value = "";
       expressionInput.value = expressionQuery.value;
@@ -182,6 +194,7 @@ export async function useProfessionalSearch() {
             })
           : await searchPublicProfessionals(client, {
               expression: expressionQuery.value,
+              defaultLocation: toValue(options.location),
               page: nextPage,
             });
       additionalResults.value = [
@@ -199,7 +212,7 @@ export async function useProfessionalSearch() {
     if (!expression) return;
 
     await router.push({
-      path: "/encontrar",
+      path: searchLocationPath(toValue(options.location)),
       query: { expressao: encodeSearchExpression(expression) },
     });
   }
@@ -212,7 +225,7 @@ export async function useProfessionalSearch() {
     expressionInput.value = expression;
     try {
       await router.push({
-        path: "/encontrar",
+        path: searchLocationPath(toValue(options.location)),
         query: { expressao: encodeSearchExpression(expression) },
       });
       const result = await searchStructuredProfessionals(client, payload);

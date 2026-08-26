@@ -1,10 +1,17 @@
 <script setup lang="ts">
 import { computed, shallowRef } from "vue";
-import type { Service } from "~/types";
+import type { SearchLocation, Service } from "~/types";
 import { encodeSearchExpression } from "~/utils/searchExpression";
+import {
+  fallbackSearchLocation,
+  searchLocationPath,
+} from "~/utils/searchLocation";
 
 const INITIAL_VISIBLE_SERVICES = 8;
-const props = defineProps<{ services: Service[] }>();
+const props = defineProps<{
+  services: Service[];
+  location?: SearchLocation;
+}>();
 const expanded = shallowRef(false);
 const hasAdditionalServices = computed(
   () => props.services.length > INITIAL_VISIBLE_SERVICES,
@@ -17,7 +24,7 @@ const visibleServices = computed(() =>
 
 function searchUrl(service: Service) {
   return {
-    path: "/encontrar",
+    path: searchLocationPath(props.location ?? fallbackSearchLocation),
     query: { expressao: encodeSearchExpression(service.name) },
   };
 }

@@ -91,6 +91,9 @@ WEB_ORIGIN=https://www.berufe.com.br
 API_PUBLIC_URL=https://api.berufe.com.br
 PRODUCT_LAUNCH_DATE=<actual YYYY-MM-DD launch date>
 
+MAXMIND_ACCOUNT_ID=<GeoLite account ID>
+MAXMIND_LICENSE_KEY=<secret GeoLite license key>
+
 LLM_ADAPTER=openai
 OPENAI_MODEL=gpt-5-mini
 OPENAI_API_KEY=<secret OpenAI API key>
@@ -176,6 +179,13 @@ explicitly replaced.
 In Infobip, use the approved production base URL, 2FA application, template, sender, and a
 dedicated API key. Confirm sender registration, per-message cost, monthly spend alerts,
 and the `2fa:pin:send` permission before the live smoke check.
+
+In MaxMind, create a dedicated GeoLite web-services license key for the Rails API and enter
+its account ID and license key only on the `api` service. The integration is configured for
+`geolite.info`; do not expose either variable to Nuxt, add an `NUXT_PUBLIC_` equivalent, or
+switch the host to the paid `geoip.maxmind.com` service without an explicit product and
+cost review. After deploy, verify `/api/v1/public/search-location` from a normal public
+connection and confirm that local/private addresses return the Joinville fallback.
 
 Create separate Bugsnag projects named `berufe-api-production` and
 `berufe-web-production`. Disable session tracking and user/IP collection in project

@@ -3,6 +3,7 @@ import type {
   PublicProfessionalProfile,
   PublicProfessionalProfileResult,
   PublicProfessionalSearchResult,
+  SearchLocation,
   StructuredSearchPayload,
 } from "~/types";
 import { ApiRequestError, normalizeApiError } from "~/services/api/errors";
@@ -50,6 +51,7 @@ export function mapPublicProfessionalCard(
 
 interface PublicProfessionalSearchInput {
   expression: string;
+  defaultLocation?: Pick<SearchLocation, "stateCode" | "city">;
   page?: number;
   perPage?: number;
 }
@@ -97,6 +99,14 @@ export async function searchPublicProfessionals(
     {
       body: {
         expression: input.expression,
+        ...(input.defaultLocation
+          ? {
+              default_location: {
+                state_code: input.defaultLocation.stateCode,
+                city: input.defaultLocation.city,
+              },
+            }
+          : {}),
         ...(input.page ? { page: input.page } : {}),
         ...(input.perPage ? { per_page: input.perPage } : {}),
       },

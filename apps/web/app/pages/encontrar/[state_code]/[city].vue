@@ -3,6 +3,7 @@ import { computed } from "vue";
 import type {
   PublicProfessionalCard,
   PublicServiceSuggestion,
+  SearchLocation,
   StructuredSearchCity,
 } from "~/types";
 import { useCatalogs } from "~/composables/useCatalogs";
@@ -13,13 +14,41 @@ import {
   buildSearchResultWhatsAppUrl,
 } from "~/utils/publicProfiles";
 import { encodeSearchExpression } from "~/utils/searchExpression";
+import {
+  findSearchLocationByRoute,
+  searchLocationPath,
+} from "~/utils/searchLocation";
 
 const { showToast } = useToast();
 const runtimeConfig = useRuntimeConfig();
-const [catalogResult, professionalSearch] = await Promise.all([
-  useCatalogs(),
-  useProfessionalSearch(),
-]);
+const route = useRoute();
+const router = useRouter();
+const catalogResult = await useCatalogs();
+if (catalogResult.error.value || !catalogResult.data.value) {
+  throw createError({
+    statusCode: 503,
+    statusMessage: "Descoberta temporariamente indisponível.",
+  });
+}
+const initialLocation = findSearchLocationByRoute(
+  catalogResult.data.value.cities,
+  route.params.state_code,
+  route.params.city,
+);
+if (!initialLocation) {
+  throw createError({ statusCode: 404, statusMessage: "Cidade não atendida." });
+}
+const activeLocation = computed(
+  () =>
+    findSearchLocationByRoute(
+      catalogResult.data.value?.cities ?? [],
+      route.params.state_code,
+      route.params.city,
+    ) ?? initialLocation,
+);
+const professionalSearch = await useProfessionalSearch({
+  location: activeLocation,
+});
 const {
   expressionInput,
   encodedExpression,
@@ -44,14 +73,11 @@ const fallbackServices = computed(
   () => catalogResult.data.value?.services ?? [],
 );
 const fallbackCities = computed<StructuredSearchCity[]>(() => {
-  const supportsJoinville = catalogResult.data.value?.neighborhoods.some(
-    (neighborhood) =>
-      neighborhood.stateCode === "SC" && neighborhood.city === "Joinville",
-  );
-
-  return supportsJoinville
-    ? [{ id: "joinville-sc", name: "Joinville", stateCode: "SC" }]
-    : [];
+  return (catalogResult.data.value?.cities ?? []).map((location) => ({
+    id: `${location.citySlug}-${location.stateSlug}`,
+    name: location.city,
+    stateCode: location.stateCode,
+  }));
 });
 
 const interpretedServices = computed(
@@ -90,9 +116,9 @@ const canRetrySearch = computed(() => {
 });
 
 useSeoMeta({
-  title: "Encontrar profissionais em Joinville",
-  description:
-    "Descreva o serviço que você precisa e encontre profissionais que atendem sua região em Joinville.",
+  title: () => `Encontrar profissionais em ${activeLocation.value.city}`,
+  description: () =>
+    `Descreva o serviço que você precisa e encontre profissionais que atendem sua região em ${activeLocation.value.city}.`,
 });
 
 function profileUrl(professional: PublicProfessionalCard) {
@@ -115,9 +141,16 @@ function contactUrl(professional: PublicProfessionalCard) {
 
 function relatedServiceUrl(service: PublicServiceSuggestion) {
   return {
-    path: "/encontrar",
+    path: searchLocationPath(activeLocation.value),
     query: { expressao: encodeSearchExpression(service.name) },
   };
+}
+
+async function changeLocation(location: SearchLocation) {
+  await router.push({
+    path: searchLocationPath(location),
+    query: route.query,
+  });
 }
 
 function announceContact() {
@@ -139,13 +172,15 @@ function retrySearch() {
         <DesignSystemEyebrow>Profissionais</DesignSystemEyebrow>
         <h1>
           <template v-if="!hasSearchTerm">
-            Encontre profissionais <em>em Joinville</em>
+            Encontre profissionais <em>em {{ activeLocation.city }}</em>
           </template>
           <template v-else-if="primaryInterpretedService">
-            {{ primaryInterpretedService.name }} <em>em Joinville</em>
+            {{ primaryInterpretedService.name }}
+            <em>em {{ activeLocation.city }}</em>
           </template>
           <template v-else
-            >Encontre a ajuda certa <em>em Joinville</em></template
+            >Encontre a ajuda certa
+            <em>em {{ activeLocation.city }}</em></template
           >
         </h1>
         <p v-if="!hasSearchTerm">
@@ -161,7 +196,11 @@ function retrySearch() {
         <PublicExpressionSearch
           v-model="expressionInput"
           compact
+          :location="activeLocation"
+          :cities="catalogResult.data.value?.cities ?? []"
+          location-source="manual"
           @submit="submitSearch"
+          @location-change="changeLocation"
         />
       </DesignSystemContainer>
     </section>
@@ -264,7 +303,7 @@ function retrySearch() {
                 <span v-else-if="interpretedNeighborhoods.length > 1">
                   Atendendo os bairros informados
                 </span>
-                <span v-else>Em Joinville</span>
+                <span v-else>Em {{ activeLocation.city }}</span>
               </div>
               <span class="results-heading__order">
                 <UIcon name="i-lucide-info" /> Ordem por relevância

@@ -119,6 +119,7 @@ test("visitor can search, open a profile, and inspect the WhatsApp redirect", as
 
   await page.goto("/encontrar");
   await waitForNuxtHydration(page);
+  await expect(page).toHaveURL(/\/encontrar\/sc\/joinville$/);
   await expect(
     page.getByRole("heading", {
       level: 1,
@@ -139,7 +140,9 @@ test("visitor can search, open a profile, and inspect the WhatsApp redirect", as
 
   await fillExpressionSearch(page, "Preciso de um eletricista em Joinville");
   await page.getByRole("button", { name: "Encontrar" }).click();
-  await expect(page).toHaveURL(/\/encontrar\?expressao=[A-Za-z0-9_-]+$/);
+  await expect(page).toHaveURL(
+    /\/encontrar\/sc\/joinville\?expressao=[A-Za-z0-9_-]+$/,
+  );
   await expect(
     page.getByText(
       /\d+ (?:profissional encontrado|profissionais encontrados)/i,

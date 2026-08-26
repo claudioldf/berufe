@@ -1,11 +1,24 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { ExpressionSearchPayload } from "~/types";
+import type {
+  ExpressionSearchPayload,
+  SearchLocation,
+  SearchLocationSource,
+} from "~/types";
 
-withDefaults(defineProps<{ compact?: boolean }>(), { compact: false });
+withDefaults(
+  defineProps<{
+    compact?: boolean;
+    location?: SearchLocation;
+    cities?: SearchLocation[];
+    locationSource?: SearchLocationSource;
+  }>(),
+  { compact: false, cities: () => [], locationSource: "fallback" },
+);
 
 const emit = defineEmits<{
   submit: [payload: ExpressionSearchPayload];
+  locationChange: [location: SearchLocation];
 }>();
 const MAXIMUM_EXPRESSION_LENGTH = 200;
 const expression = defineModel<string>({ default: "" });
@@ -23,44 +36,58 @@ function submit() {
 </script>
 
 <template>
-  <form
-    class="expression-search"
-    :class="{ 'expression-search--compact': compact }"
-    @submit.prevent="submit"
-  >
-    <div class="expression-search__field">
-      <UIcon name="i-lucide-search" aria-hidden="true" />
-      <label>
-        <span>O que você precisa?</span>
-        <UInput
-          v-model="expression"
-          class="expression-search__input"
-          name="expression"
-          type="search"
-          autocomplete="off"
-          required
-          :maxlength="MAXIMUM_EXPRESSION_LENGTH"
-          placeholder="Ex.: quero pintar um quarto infantil em Joinville"
-          :ui="{
-            base: 'rounded-none p-0 border-0 ring-0 shadow-none bg-transparent focus-visible:outline-none focus-visible:ring-0',
-          }"
-        />
-      </label>
-    </div>
-
-    <UButton
-      v-if="canSubmit"
-      type="submit"
-      color="primary"
-      class="expression-search__button"
+  <div class="expression-search-shell">
+    <form
+      class="expression-search"
+      :class="{ 'expression-search--compact': compact }"
+      @submit.prevent="submit"
     >
-      <span>Encontrar</span>
-      <UIcon name="i-lucide-arrow-right" aria-hidden="true" />
-    </UButton>
-  </form>
+      <div class="expression-search__field">
+        <UIcon name="i-lucide-search" aria-hidden="true" />
+        <label>
+          <span>O que você precisa?</span>
+          <UInput
+            v-model="expression"
+            class="expression-search__input"
+            name="expression"
+            type="search"
+            autocomplete="off"
+            required
+            :maxlength="MAXIMUM_EXPRESSION_LENGTH"
+            placeholder="Ex.: quero pintar um quarto infantil"
+            :ui="{
+              base: 'rounded-none p-0 border-0 ring-0 shadow-none bg-transparent focus-visible:outline-none focus-visible:ring-0',
+            }"
+          />
+        </label>
+      </div>
+
+      <UButton
+        v-if="canSubmit"
+        type="submit"
+        color="primary"
+        class="expression-search__button"
+      >
+        <span>Encontrar</span>
+        <UIcon name="i-lucide-arrow-right" aria-hidden="true" />
+      </UButton>
+    </form>
+
+    <PublicSearchLocationHint
+      v-if="location"
+      :location="location"
+      :cities="cities"
+      :source="locationSource"
+      @change="emit('locationChange', $event)"
+    />
+  </div>
 </template>
 
 <style scoped lang="scss">
+.expression-search-shell {
+  width: 100%;
+}
+
 .expression-search {
   position: relative;
   z-index: 10;

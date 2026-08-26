@@ -27,6 +27,8 @@ RSpec.describe Berufe::Environment do
       "MEDIA_STORAGE_ADAPTER" => media_storage,
       "LLM_ADAPTER" => (name == "local") ? "fake" : "openai",
       "OPENAI_API_KEY" => "openai-secret",
+      "MAXMIND_ACCOUNT_ID" => "123456",
+      "MAXMIND_LICENSE_KEY" => "maxmind-secret",
       "INFOBIP_BASE_URL" => "https://example.api.infobip.com",
       "INFOBIP_API_KEY" => "infobip-secret",
       "INFOBIP_2FA_APPLICATION_ID" => "application-id",
@@ -227,6 +229,13 @@ RSpec.describe Berufe::Environment do
 
     expect { described_class.load!(environment:, rails_environment: "production") }
       .to raise_error(described_class::InvalidConfiguration, /SMTP_PASSWORD/)
+  end
+
+  it "requires server-only MaxMind credentials in deployed environments" do
+    environment = production_environment.merge("MAXMIND_LICENSE_KEY" => "")
+
+    expect { described_class.load!(environment:, rails_environment: "production") }
+      .to raise_error(described_class::InvalidConfiguration, /MAXMIND_LICENSE_KEY/)
   end
 
   it "reports variable names without leaking their values" do

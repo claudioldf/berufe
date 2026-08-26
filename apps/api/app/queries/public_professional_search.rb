@@ -56,12 +56,13 @@ class PublicProfessionalSearch
     [normalized_page, normalized_per_page]
   end
 
-  def call(expression:, page: 1, per_page: DEFAULT_PER_PAGE, audit_event: nil)
+  def call(expression:, default_location: nil, page: 1, per_page: DEFAULT_PER_PAGE, audit_event: nil)
     normalized_page, normalized_per_page = normalize_pagination(page, per_page)
+    default_location = validated_default_location(default_location)
     criteria = if audit_event
-      parser.call(expression:, audit_event:)
+      parser.call(expression:, default_location:, audit_event:)
     else
-      parser.call(expression:)
+      parser.call(expression:, default_location:)
     end
     result_for(criteria, page: normalized_page, per_page: normalized_per_page)
   rescue LlmSearchParser::InvalidExpression
@@ -136,6 +137,20 @@ class PublicProfessionalSearch
       errors[:city] = ["selecione uma cidade disponível"]
     end
     raise InvalidInput, errors if errors.any?
+  end
+
+  def validated_default_location(value)
+    attributes = value.respond_to?(:to_h) ? value.to_h.symbolize_keys : {}
+    state_code = attributes[:state_code].to_s.squish.presence || LlmSearchParser::DEFAULT_STATE_CODE
+    city = attributes[:city].to_s.squish.presence || LlmSearchParser::DEFAULT_CITY
+    location = SupportedSearchLocations.new.find(state_code:, city:)
+    return location if location
+
+    errors = {}
+    errors[:state_code] = ["selecione um estado disponível"] unless state_code.casecmp?(LlmSearchParser::DEFAULT_STATE_CODE)
+    errors[:city] = ["selecione uma cidade disponível"] unless PublicSearchText.normalize(city) == "joinville"
+    errors[:city] ||= ["selecione uma cidade disponível"] if errors.empty?
+    raise InvalidInput, {default_location: errors.values.flatten}
   end
 
   def normalize_pagination(page, per_page)

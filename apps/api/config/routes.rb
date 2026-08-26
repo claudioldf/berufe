@@ -5,6 +5,7 @@ Rails.application.routes.draw do
     namespace :v1 do
       resource :status, only: :show, controller: :status
       resource :catalog, only: :show, controller: :catalogs
+      get "public/search-location", to: "public_search_locations#show"
       get "public/professionals/featured", to: "public_featured_professionals#index"
       post "public/professional-searches", to: "public_professional_searches#create"
       get "public/professionals/:slug", to: "public_professionals#show"

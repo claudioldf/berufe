@@ -162,6 +162,7 @@ export default defineNuxtConfig({
     "/**": { headers: browserSecurityHeaders },
     "/": { prerender: false },
     "/encontrar": { prerender: false },
+    "/encontrar/**": { prerender: false },
     "/profissionais/**": { prerender: false },
     "/foundation": { prerender: false },
     "/app/**": {

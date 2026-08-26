@@ -20,6 +20,8 @@ gem "good_job", "~> 4.0"
 gem "pundit", "~> 2.5"
 # Parse public search expressions through the OpenAI Responses API.
 gem "openai", "~> 0.80.0"
+# Resolve an approximate city/UF from the visitor IP without exposing provider credentials.
+gem "maxmind-geoip2", "~> 1.6"
 
 # Hash administrator passwords through Active Model's secure-password support
 gem "bcrypt", "~> 3.1.7"

@@ -716,6 +716,27 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/public/search-location:
+    get:
+      operationId: getPublicSearchLocation
+      summary: Resolve the visitor's supported approximate search city
+      tags:
+        - Public discovery
+      security: []
+      responses:
+        "200":
+          description: A supported IP-derived location or the disclosed launch-city fallback.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicSearchLocationResponse"
   /api/v1/public/professional-searches:
     post:
       operationId: searchPublicProfessionals
@@ -5848,6 +5869,7 @@ components:
         - categories
         - services
         - neighborhoods
+        - cities
       properties:
         categories:
           type: array
@@ -5861,6 +5883,11 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PublicNeighborhood"
+        cities:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/PublicSearchCity"
     PublicServiceCategory:
       type: object
       additionalProperties: false
@@ -5938,6 +5965,65 @@ components:
         city:
           type: string
           const: Joinville
+    PublicSearchCity:
+      type: object
+      additionalProperties: false
+      required:
+        - state_code
+        - city
+        - state_slug
+        - city_slug
+      properties:
+        state_code:
+          type: string
+          const: SC
+        city:
+          type: string
+          const: Joinville
+        state_slug:
+          type: string
+          const: sc
+        city_slug:
+          type: string
+          const: joinville
+    PublicSearchLocationResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          $ref: "#/components/schemas/PublicSearchLocation"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    PublicSearchLocation:
+      type: object
+      additionalProperties: false
+      required:
+        - state_code
+        - city
+        - state_slug
+        - city_slug
+        - source
+      properties:
+        state_code:
+          type: string
+          const: SC
+        city:
+          type: string
+          const: Joinville
+        state_slug:
+          type: string
+          const: sc
+        city_slug:
+          type: string
+          const: joinville
+        source:
+          type: string
+          enum:
+            - ip
+            - fallback
     FeaturedPublicProfessionalsResponse:
       type: object
       additionalProperties: false
@@ -5968,6 +6054,8 @@ components:
           type: string
           minLength: 1
           maxLength: 200
+        default_location:
+          $ref: "#/components/schemas/PublicSearchDefaultLocation"
         page:
           type: integer
           minimum: 1
@@ -5977,6 +6065,19 @@ components:
           minimum: 1
           maximum: 50
           description: Professionals per page; defaults to 20.
+    PublicSearchDefaultLocation:
+      type: object
+      additionalProperties: false
+      required:
+        - state_code
+        - city
+      properties:
+        state_code:
+          type: string
+          const: SC
+        city:
+          type: string
+          const: Joinville
     PublicProfessionalStructuredSearchRequest:
       type: object
       additionalProperties: false

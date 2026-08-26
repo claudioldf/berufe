@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, onMounted } from "vue";
 import { useCatalogs } from "~/composables/useCatalogs";
 import { useFeaturedProfessionals } from "~/composables/useFeaturedProfessionals";
-import type { ExpressionSearchPayload } from "~/types";
+import { useDetectedSearchLocation } from "~/composables/useDetectedSearchLocation";
+import type { ExpressionSearchPayload, SearchLocation } from "~/types";
 import { encodeSearchExpression } from "~/utils/searchExpression";
+import { searchLocationPath } from "~/utils/searchLocation";
 
 const router = useRouter();
 const runtimeConfig = useRuntimeConfig();
@@ -24,6 +26,18 @@ if (
 }
 const services = computed(() => catalogResult.data.value?.services ?? []);
 const featured = computed(() => featuredResult.data.value ?? []);
+const cities = computed(() => catalogResult.data.value?.cities ?? []);
+const detectedLocation = useDetectedSearchLocation();
+const {
+  location,
+  source: locationSource,
+  resolve: resolveLocation,
+  select: selectLocation,
+} = detectedLocation;
+
+onMounted(() => {
+  void resolveLocation();
+});
 
 const title = "Profissionais de confiança em Joinville";
 const description =
@@ -46,23 +60,34 @@ useHead({ link: [{ rel: "canonical", href: canonicalUrl }] });
 
 async function search(payload: ExpressionSearchPayload) {
   await router.push({
-    path: "/encontrar",
+    path: searchLocationPath(location.value),
     query: { expressao: encodeSearchExpression(payload.expression) },
   });
+}
+
+function changeLocation(nextLocation: SearchLocation) {
+  selectLocation(nextLocation);
 }
 </script>
 
 <template>
   <div>
-    <HomeHero @search="search" />
+    <HomeHero
+      :location="location"
+      :cities="cities"
+      :location-source="locationSource"
+      @search="search"
+      @location-change="changeLocation"
+    />
 
-    <HomeCategories :services="services" />
+    <HomeCategories :services="services" :location="location" />
 
     <HomeTrust />
 
     <HomeFeaturedProfessionals
       v-if="featured.length > 0"
       :professionals="featured"
+      :location="location"
     />
     <HomeProfessionalCta />
   </div>
