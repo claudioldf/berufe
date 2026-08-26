@@ -14,10 +14,10 @@ RSpec.describe "Administrator search audits", type: :request, openapi: true do
   end
   let(:admin_token) { ApplicationSession.issue!(user_account: admin).last }
 
-  it "returns only the rolling seven-day prompt window in newest-first pages" do
+  it "returns six-month audits with analytical summary, filters, and lowest-result pages" do
     now = Time.current
-    older = create_audit(prompt: "Busca antiga", created_at: now - 8.days)
-    newest = create_audit(prompt: "Preciso de pintor", created_at: now - 1.hour)
+    older = create_audit(prompt: "Busca antiga", created_at: now - 6.months - 1.minute)
+    healthy = create_audit(prompt: "Preciso de pintor", result_count: 3, created_at: now - 1.hour)
     limited = create_audit(
       prompt: "Preciso de eletricista",
       status: "application_rate_limited",
@@ -26,9 +26,11 @@ RSpec.describe "Administrator search audits", type: :request, openapi: true do
       result_count: 0,
       created_at: now - 2.hours
     )
+    zero = create_audit(prompt: "Preciso de marceneiro", result_count: 0, created_at: now - 3.hours)
+    thin = create_audit(prompt: "Preciso de encanador", result_count: 2, created_at: now - 4.hours)
 
     get "/api/v1/admin/search-audits",
-      params: {page: 1, per_page: 2},
+      params: {page: 1, per_page: 3},
       headers: session_headers(admin_token, "search-audits-index")
 
     expect(response).to have_http_status(:ok)
@@ -36,35 +38,53 @@ RSpec.describe "Administrator search audits", type: :request, openapi: true do
     data = response.parsed_body.fetch("data")
     expect(data.fetch("meta")).to eq(
       "page" => 1,
-      "per_page" => 2,
-      "total_count" => 2,
-      "total_pages" => 1
+      "per_page" => 3,
+      "total_count" => 4,
+      "total_pages" => 2
     )
-    expect(data.fetch("items").pluck("id")).to eq([newest.id, limited.id])
+    expect(data.fetch("summary")).to eq(
+      "total" => 4,
+      "zero_results" => 1,
+      "not_understood" => 0,
+      "thin_results" => 1,
+      "operational_issue" => 1,
+      "healthy" => 1
+    )
+    expect(data.fetch("items").pluck("id")).to eq([limited.id, zero.id, thin.id])
     expect(data.fetch("items").first).to include(
-      "input_prompt" => "Preciso de pintor",
-      "raw_llm_response" => '{"service_ids":[]}',
-      "status" => "completed",
-      "response_source" => "provider",
-      "result_count" => 3
-    )
-    expect(data.fetch("items").second).to include(
       "input_prompt" => "Preciso de eletricista",
       "raw_llm_response" => nil,
       "parsed_response" => nil,
       "status" => "application_rate_limited",
       "result_count" => 0
     )
+    expect(data.fetch("items").second).to include(
+      "input_prompt" => "Preciso de marceneiro",
+      "raw_llm_response" => '{"service_ids":[]}',
+      "status" => "completed",
+      "response_source" => "provider",
+      "result_count" => 0
+    )
     expect(data.fetch("items").pluck("id")).not_to include(older.id)
+    expect(data.fetch("items").pluck("id")).not_to include(healthy.id)
+    assert_api_conform(status: 200)
+
+    get "/api/v1/admin/search-audits",
+      params: {q: "ELETRICISTA", outcome: "operational_issue", sort: "newest"},
+      headers: session_headers(admin_token, "search-audits-filtered")
+    expect(response.parsed_body.dig("data", "items").pluck("id")).to eq([limited.id])
+    expect(response.parsed_body.dig("data", "summary", "total")).to eq(1)
     assert_api_conform(status: 200)
   end
 
   it "validates pagination and rejects anonymous and non-admin callers" do
     get "/api/v1/admin/search-audits",
-      params: {page: 0, per_page: 101},
+      params: {page: 0, per_page: 101, q: "a" * 101, outcome: "unknown", sort: "oldest"},
       headers: session_headers(admin_token, "search-audits-invalid")
     expect(response).to have_http_status(:unprocessable_entity)
-    expect(response.parsed_body.dig("error", "field_errors").keys).to contain_exactly("page", "per_page")
+    expect(response.parsed_body.dig("error", "field_errors").keys).to contain_exactly(
+      "page", "per_page", "q", "outcome", "sort"
+    )
 
     get "/api/v1/admin/search-audits", headers: {"X-Request-Id" => "search-audits-anonymous"}
     expect(response).to have_http_status(:unauthorized)

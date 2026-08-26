@@ -484,7 +484,7 @@ paths:
   /api/v1/admin/search-audits:
     get:
       operationId: getAdminSearchAudits
-      summary: Read the last seven days of expression-search LLM audits
+      summary: Read the last six calendar months of expression-search LLM audits
       tags:
         - Reports
       security:
@@ -492,9 +492,27 @@ paths:
       parameters:
         - $ref: "#/components/parameters/Page"
         - $ref: "#/components/parameters/PageSize"
+        - name: q
+          in: query
+          required: false
+          schema: { type: string, minLength: 1, maxLength: 100 }
+          description: Case-insensitive prompt, normalized request, service, city, or neighborhood search.
+        - name: outcome
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [zero_results, not_understood, thin_results, operational_issue, healthy]
+        - name: sort
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [results_asc, gaps, newest, results_desc]
+            default: results_asc
       responses:
         "200":
-          description: Newest-first expression prompts, LLM output, controlled parsing, and total matches.
+          description: Filtered expression prompts, LLM output, controlled parsing, analytical summary, and total matches.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
@@ -3259,14 +3277,27 @@ components:
     AdminSearchAuditData:
       type: object
       additionalProperties: false
-      required: [items, meta]
+      required: [items, summary, meta]
       properties:
         items:
           type: array
           items:
             $ref: "#/components/schemas/AdminSearchAuditItem"
+        summary:
+          $ref: "#/components/schemas/AdminSearchAuditSummary"
         meta:
           $ref: "#/components/schemas/PageMeta"
+    AdminSearchAuditSummary:
+      type: object
+      additionalProperties: false
+      required: [total, zero_results, not_understood, thin_results, operational_issue, healthy]
+      properties:
+        total: { type: integer, minimum: 0 }
+        zero_results: { type: integer, minimum: 0 }
+        not_understood: { type: integer, minimum: 0 }
+        thin_results: { type: integer, minimum: 0 }
+        operational_issue: { type: integer, minimum: 0 }
+        healthy: { type: integer, minimum: 0 }
     AdminSearchAuditItem:
       type: object
       additionalProperties: false

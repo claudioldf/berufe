@@ -8,6 +8,7 @@ class AdminSearchAuditSerializer
   def as_json(*)
     {
       items: result.events.map { |event| serialize_event(event) },
+      summary: result.summary,
       meta: {
         page: result.page,
         per_page: result.per_page,

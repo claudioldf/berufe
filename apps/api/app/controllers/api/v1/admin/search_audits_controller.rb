@@ -12,7 +12,10 @@ module Api
         def index
           result = ::Admin::SearchAuditIndexQuery.new.call(
             page: params[:page],
-            per_page: params[:per_page]
+            per_page: params[:per_page],
+            q: params[:q],
+            outcome: params[:outcome],
+            sort: params[:sort]
           )
           Rails.logger.info(
             "admin_search_audit_access admin_user_id=#{Current.user_account.id} " \
@@ -25,7 +28,7 @@ module Api
         rescue ::Admin::SearchAuditIndexQuery::Invalid => error
           render_api_error(
             code: "validation_failed",
-            message: "Revise a paginação da auditoria.",
+            message: "Revise os filtros ou a paginação da auditoria.",
             status: :unprocessable_entity,
             field_errors: error.field_errors
           )
