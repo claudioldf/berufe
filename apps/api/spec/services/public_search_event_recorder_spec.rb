@@ -48,11 +48,15 @@ RSpec.describe PublicSearchEventRecorder do
       normalized_request: "Eu preciso de pintor no Centro."
     )
   end
+  let(:subject) { ["ip", "203.0.113.10"].join("\0") }
+  let(:query) { "expression\0preciso de pintor no centro" }
 
   it "creates an anonymous event and short-lived interaction context" do
     interaction = described_class.new.call(
       criteria:,
-      result_count: 3
+      result_count: 3,
+      subject:,
+      query:
     )
 
     event = SearchEvent.find(interaction.search_event_id)
@@ -77,7 +81,9 @@ RSpec.describe PublicSearchEventRecorder do
         keywords: [],
         normalized_request: nil
       ),
-      result_count: 0
+      result_count: 0,
+      subject:,
+      query:
     )
 
     expect(SearchEvent.find(interaction.search_event_id)).to have_attributes(
@@ -93,6 +99,8 @@ RSpec.describe PublicSearchEventRecorder do
     interaction = described_class.new.call(
       criteria:,
       result_count: 8,
+      subject:,
+      query:,
       event:
     )
 
@@ -116,7 +124,9 @@ RSpec.describe PublicSearchEventRecorder do
 
     interaction = described_class.new.call(
       criteria:,
-      result_count: 0
+      result_count: 0,
+      subject:,
+      query:
     )
 
     expect(interaction).to be_nil

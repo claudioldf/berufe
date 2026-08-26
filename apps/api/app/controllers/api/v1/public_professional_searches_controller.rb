@@ -37,6 +37,8 @@ module Api
           PublicSearchEventRecorder.new.call(
             criteria: result.criteria,
             result_count: result.total_count,
+            subject: search_deduplication_subject,
+            query: search_deduplication_query,
             event: audit_event
           )
         end
@@ -110,6 +112,26 @@ module Api
 
       def structured_request?
         %i[service_id state_code city].any? { |key| params.key?(key) }
+      end
+
+      def search_deduplication_subject
+        session_token = request.cookies[ApplicationSession::COOKIE_NAME].presence
+        return "session\0#{session_token}" if session_token
+
+        "ip\0#{request.remote_ip}"
+      end
+
+      def search_deduplication_query
+        if structured_request?
+          [
+            "structured",
+            params[:service_id].to_s.downcase,
+            params[:state_code].to_s.upcase,
+            PublicSearchText.normalize(params[:city])
+          ].join("\0")
+        else
+          "expression\0#{PublicSearchText.normalize(params[:expression])}"
+        end
       end
     end
   end

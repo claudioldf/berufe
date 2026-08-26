@@ -115,6 +115,30 @@ RSpec.describe "Public professional searches", type: :request, openapi: true do
     assert_api_conform(status: 200)
   end
 
+  it "reuses a search event for the same subject, expression, and result count for one day" do
+    create_published_profile
+    expression = "Preciso trocar meu chuveiro no América Contratada"
+
+    post "/api/v1/public/professional-searches",
+      params: {expression:},
+      headers: request_headers("expression-deduplication-first"),
+      as: :json
+    first_event_id = response.parsed_body.dig("data", "interaction", "search_event_id")
+
+    post "/api/v1/public/professional-searches",
+      params: {expression: "  PRECISO trocar meu chuveiro no América Contratada  "},
+      headers: request_headers("expression-deduplication-second"),
+      as: :json
+    second_event_id = response.parsed_body.dig("data", "interaction", "search_event_id")
+
+    expect(response).to have_http_status(:ok)
+    expect(second_event_id).to eq(first_event_id)
+    expect(SearchEvent.count).to eq(1)
+    expect(PublicSearchEventDeduplication.count).to eq(1)
+    expect(PublicSearchEventDeduplication.sole.attributes.to_json).not_to include(expression)
+    assert_api_conform(status: 200)
+  end
+
   it "searches by controlled service and city without invoking the LLM or expression limiter" do
     profile = create_published_profile
     expect_any_instance_of(LlmSearchParser).not_to receive(:call)
@@ -138,6 +162,18 @@ RSpec.describe "Public professional searches", type: :request, openapi: true do
         }
       ],
       "normalized_request" => nil
+    )
+    expect(SearchEvent.count).to eq(1)
+    assert_api_conform(status: 200)
+
+    post "/api/v1/public/professional-searches",
+      params: {service_id: electrician.id, state_code: "SC", city: "Joinville"},
+      headers: request_headers("structured-search-repeated"),
+      as: :json
+
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body.dig("data", "interaction", "search_event_id")).to eq(
+      data.dig("interaction", "search_event_id")
     )
     expect(SearchEvent.count).to eq(1)
     assert_api_conform(status: 200)

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_25_110000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_26_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -631,6 +631,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_25_110000) do
     t.check_constraint "status = ANY (ARRAY['pending'::text, 'accepted'::text, 'declined'::text])", name: "professional_relationships_known_status"
   end
 
+  create_table "public_search_event_deduplications", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "expires_at", null: false
+    t.string "query_digest", limit: 64, null: false
+    t.integer "result_count", null: false
+    t.uuid "search_event_id", null: false
+    t.string "subject_digest", limit: 64, null: false
+    t.datetime "updated_at", null: false
+    t.index ["expires_at"], name: "index_public_search_event_deduplications_on_expires_at"
+    t.index ["subject_digest", "query_digest", "result_count"], name: "idx_public_search_event_deduplications_unique_claim", unique: true
+    t.check_constraint "query_digest::text ~ '^[0-9a-f]{64}$'::text", name: "public_search_event_deduplications_query_digest_format"
+    t.check_constraint "result_count >= 0", name: "public_search_event_deduplications_result_count_nonnegative"
+    t.check_constraint "subject_digest::text ~ '^[0-9a-f]{64}$'::text", name: "public_search_event_deduplications_subject_digest_format"
+  end
+
   create_table "public_search_rate_limit_counters", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "request_count", default: 0, null: false
@@ -942,6 +957,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_25_110000) do
   add_foreign_key "professional_profiles", "user_accounts"
   add_foreign_key "professional_relationships", "professional_profiles", column: "initiator_professional_id"
   add_foreign_key "professional_relationships", "professional_profiles", column: "recipient_professional_id"
+  add_foreign_key "public_search_event_deduplications", "search_events", on_delete: :cascade
   add_foreign_key "quote_change_requests", "quotes", on_delete: :cascade
   add_foreign_key "quote_items", "quotes", on_delete: :cascade
   add_foreign_key "quotes", "customers", column: ["customer_id", "professional_id"], primary_key: ["id", "professional_id"], name: "quotes_customer_owned_by_professional"

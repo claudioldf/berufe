@@ -3,11 +3,15 @@
 class PublicSearchEventRecorder
   Interaction = Data.define(:search_event_id, :token)
 
-  def initialize(token_issuer: PublicInteractionToken.new)
+  def initialize(
+    token_issuer: PublicInteractionToken.new,
+    deduplicator: PublicSearchEventDeduplicator.new
+  )
     @token_issuer = token_issuer
+    @deduplicator = deduplicator
   end
 
-  def call(criteria:, result_count:, event: nil)
+  def call(criteria:, result_count:, subject:, query:, event: nil, now: Time.current)
     service = Service.find_by(id: criteria.service_ids.first) if criteria.service_ids.one?
     neighborhood_codes = criteria.locations.filter_map(&:neighborhood_code).uniq
     neighborhood_code = neighborhood_codes.first if neighborhood_codes.one?
@@ -27,6 +31,13 @@ class PublicSearchEventRecorder
     else
       event = SearchEvent.create!(attributes)
     end
+    event = deduplicator.reuse_or_claim!(
+      event:,
+      subject:,
+      query:,
+      result_count:,
+      now:
+    )
     token = token_issuer.issue(search_event_id: event.id, service_ids: criteria.service_ids)
 
     Interaction.new(search_event_id: event.id, token:)
@@ -40,5 +51,5 @@ class PublicSearchEventRecorder
 
   private
 
-  attr_reader :token_issuer
+  attr_reader :deduplicator, :token_issuer
 end
