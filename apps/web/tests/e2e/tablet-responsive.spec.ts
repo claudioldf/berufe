@@ -41,6 +41,38 @@ async function expectNoHorizontalOverflow(page: Page) {
   expect(widths.scroll).toBeLessThanOrEqual(widths.client);
 }
 
+async function expectFeaturedPhotoFillsMedia(page: Page) {
+  const media = page
+    .locator(".featured-card__image:has(.avatar__image)")
+    .first();
+  const image = media.locator(".avatar__image");
+
+  await media.scrollIntoViewIfNeeded();
+  await expect(image).toBeVisible();
+  await expect
+    .poll(() =>
+      image.evaluate(
+        (element) =>
+          (element as HTMLImageElement).complete &&
+          (element as HTMLImageElement).naturalWidth > 0,
+      ),
+    )
+    .toBe(true);
+
+  const mediaBox = await boundingBox(media);
+  const imageBox = await boundingBox(image);
+
+  expect(Math.abs(imageBox.x - mediaBox.x)).toBeLessThanOrEqual(1);
+  expect(Math.abs(imageBox.y - mediaBox.y)).toBeLessThanOrEqual(1);
+  expect(Math.abs(imageBox.width - mediaBox.width)).toBeLessThanOrEqual(1);
+  expect(Math.abs(imageBox.height - mediaBox.height)).toBeLessThanOrEqual(1);
+  expect(Math.abs(mediaBox.height / mediaBox.width - 1.25)).toBeLessThanOrEqual(
+    0.01,
+  );
+
+  return mediaBox;
+}
+
 async function expectStacked(upper: Locator, lower: Locator) {
   const upperBox = await boundingBox(upper);
   const lowerBox = await boundingBox(lower);
@@ -100,6 +132,42 @@ async function expectProgressStepsStacked(page: Page) {
   expect(boxes[1]!.top).toBeGreaterThan(boxes[0]!.top);
   expect(boxes[2]!.top).toBeGreaterThan(boxes[1]!.top);
 }
+
+test("featured professional photos fill portrait cards across responsive layouts", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto("/");
+  await waitForNuxtHydration(page);
+  await expect(
+    page.getByRole("heading", {
+      level: 2,
+      name: "Gente boa, trabalho bem feito.",
+    }),
+  ).toBeVisible();
+
+  await expectFeaturedPhotoFillsMedia(page);
+  await expectNoHorizontalOverflow(page);
+
+  await page.setViewportSize({ width: 760, height: 1024 });
+  const tabletCard = await boundingBox(page.locator(".featured-card").first());
+  const tabletGrid = await boundingBox(page.locator(".featured__grid"));
+  expect(tabletCard.width).toBeLessThanOrEqual(450);
+  expect(
+    Math.abs(
+      tabletCard.x - (tabletGrid.x + (tabletGrid.width - tabletCard.width) / 2),
+    ),
+  ).toBeLessThanOrEqual(1);
+  await expectFeaturedPhotoFillsMedia(page);
+  await expectNoHorizontalOverflow(page);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const phoneCard = await boundingBox(page.locator(".featured-card").first());
+  const phoneGrid = await boundingBox(page.locator(".featured__grid"));
+  expect(Math.abs(phoneCard.width - phoneGrid.width)).toBeLessThanOrEqual(1);
+  await expectFeaturedPhotoFillsMedia(page);
+  await expectNoHorizontalOverflow(page);
+});
 
 test("onboarding and dashboard remain spacious across responsive layouts", async ({
   page,
