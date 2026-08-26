@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import SearchAudits from "~/components/admin/search-audits/SearchAudits.vue";
+
 definePageMeta({ layout: "workspace" });
 
 useSeoMeta({
@@ -12,6 +14,6 @@ useSeoMeta({
     title="Auditoria de buscas"
     description="Prompts, respostas do LLM, interpretação controlada e alcance profissional dos últimos sete dias."
   >
-    <AdminSearchAuditsSearchAudits />
+    <SearchAudits />
   </AdminWorkspace>
 </template>
