@@ -1,43 +1,73 @@
 <script setup lang="ts">
-withDefaults(
+import type {
+  Service,
+  StructuredSearchCity,
+  StructuredSearchPayload,
+} from "~/types";
+
+const props = withDefaults(
   defineProps<{
     message: string;
+    services: Service[];
+    cities: StructuredSearchCity[];
     canRetry?: boolean;
+    loading?: boolean;
   }>(),
-  { canRetry: true },
+  { canRetry: true, loading: false },
 );
 
-defineEmits<{
+const emit = defineEmits<{
   retry: [];
+  search: [payload: StructuredSearchPayload];
 }>();
 </script>
 
 <template>
-  <DesignSystemSurfaceCard as="article" class="search-failure" role="alert">
+  <DesignSystemSurfaceCard as="article" class="search-failure">
     <div class="search-failure__visual" aria-hidden="true">
       <span class="search-failure__icon">
         <UIcon name="i-lucide-search-x" />
       </span>
-      <span class="search-failure__sparkle">
-        <UIcon name="i-lucide-sparkles" />
+      <span class="search-failure__badge">
+        <UIcon name="i-lucide-user-search" />
       </span>
     </div>
 
     <div class="search-failure__body">
-      <span class="search-failure__eyebrow">Ops, tivemos um imprevisto</span>
-      <h2 class="search-failure__title">Não foi possível concluir a busca.</h2>
-      <p class="search-failure__message">{{ message }}</p>
+      <div role="alert">
+        <span class="search-failure__eyebrow">Ops, tivemos um imprevisto</span>
+        <h2 class="search-failure__title">
+          Não foi possível concluir a busca.
+        </h2>
+        <p class="search-failure__message">{{ props.message }}</p>
+      </div>
 
-      <div v-if="canRetry" class="search-failure__actions">
-        <UButton
-          type="button"
-          color="primary"
-          variant="soft"
-          icon="i-lucide-refresh-cw"
-          @click="$emit('retry')"
-        >
-          Tentar novamente
-        </UButton>
+      <div class="search-failure__recovery">
+        <div class="search-failure__recovery-heading">
+          <div>
+            <strong>Escolha o serviço e a cidade</strong>
+            <p>Continue a busca usando os filtros disponíveis.</p>
+          </div>
+          <UButton
+            v-if="props.canRetry"
+            type="button"
+            class="search-failure__retry"
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            icon="i-lucide-refresh-cw"
+            @click="emit('retry')"
+          >
+            Tentar a descrição novamente
+          </UButton>
+        </div>
+
+        <PublicStructuredSearchFallback
+          :services="props.services"
+          :cities="props.cities"
+          :loading="props.loading"
+          @submit="emit('search', $event)"
+        />
       </div>
     </div>
   </DesignSystemSurfaceCard>
@@ -90,7 +120,7 @@ defineEmits<{
   transform: rotate(3deg);
 }
 
-.search-failure__sparkle {
+.search-failure__badge {
   position: absolute;
   right: -9px;
   top: -9px;
@@ -135,8 +165,33 @@ defineEmits<{
   line-height: 1.65;
 }
 
-.search-failure__actions {
-  margin-top: 22px;
+.search-failure__recovery {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid rgb(23 53 47 / 9%);
+}
+
+.search-failure__recovery-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 14px;
+}
+
+.search-failure__recovery-heading strong {
+  display: block;
+  font-size: 0.86rem;
+}
+
+.search-failure__recovery-heading p {
+  margin: 3px 0 0;
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+}
+
+.search-failure__retry {
+  flex: 0 0 auto;
 }
 
 @media (width <= 640px) {
@@ -154,6 +209,11 @@ defineEmits<{
 
   .search-failure__icon {
     font-size: 2rem;
+  }
+
+  .search-failure__recovery-heading {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 </style>

@@ -239,8 +239,12 @@ function retrySearch() {
           <PublicSearchFailureCard
             v-else-if="searchFailureMessage"
             :message="searchFailureMessage"
+            :services="fallbackServices"
+            :cities="fallbackCities"
             :can-retry="canRetrySearch"
+            :loading="isStructuredSearching"
             @retry="retrySearch"
+            @search="submitStructuredSearch"
           />
 
           <template v-else>
