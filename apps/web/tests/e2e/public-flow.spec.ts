@@ -25,6 +25,21 @@ async function fillExpressionSearch(
   }).toPass({ timeout: 10_000 });
 }
 
+async function selectLaunchCityFromModal(
+  page: import("@playwright/test").Page,
+) {
+  await page.getByRole("button", { name: "alterar cidade" }).click();
+
+  const dialog = page.getByRole("dialog", { name: "Escolha sua cidade" });
+  await expect(dialog).toBeVisible();
+  await expect(
+    dialog.getByText("Mostramos apenas cidades com profissionais disponíveis."),
+  ).toBeVisible();
+  await expect(dialog.locator("select")).toHaveCount(0);
+  await dialog.getByRole("button", { name: /Joinville\s+SC/i }).click();
+  await expect(dialog).toBeHidden();
+}
+
 async function completeProfessionalSignIn(
   page: import("@playwright/test").Page,
   phone: string,
@@ -95,6 +110,19 @@ test("public header makes login and professional signup easy to find", async ({
   await expect(
     page.getByRole("link", { name: "Entrar", exact: true }),
   ).toHaveAttribute("href", "/app/professional/login");
+});
+
+test("visitor can choose the launch city from the home and finder pages", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await waitForNuxtHydration(page);
+  await selectLaunchCityFromModal(page);
+
+  await page.goto("/encontrar");
+  await waitForNuxtHydration(page);
+  await expect(page).toHaveURL(/\/encontrar\/sc\/joinville$/);
+  await selectLaunchCityFromModal(page);
 });
 
 test("visitor can search, open a profile, and inspect the WhatsApp redirect", async ({
