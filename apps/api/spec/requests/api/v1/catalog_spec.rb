@@ -73,6 +73,7 @@ RSpec.describe "Public catalog", type: :request, openapi: true do
       is_active: true,
       sort_order: 0
     )
+    publish_profile_for(service: painter, neighborhood: america)
     Neighborhood.create!(
       code: "atiradores",
       state_code: "SC",
@@ -133,6 +134,7 @@ RSpec.describe "Public catalog", type: :request, openapi: true do
       is_active: true,
       sort_order: 0
     )
+    publish_profile_for(service:, neighborhood:)
 
     get "/api/v1/catalog", headers: {"X-Request-Id" => "catalog-before-hide"}
     expect(response.parsed_body.dig("data", "services").pluck("id")).to contain_exactly(service.id)
@@ -147,9 +149,7 @@ RSpec.describe "Public catalog", type: :request, openapi: true do
       "categories" => [],
       "services" => [],
       "neighborhoods" => [],
-      "cities" => [
-        {"state_code" => "SC", "city" => "Joinville", "state_slug" => "sc", "city_slug" => "joinville"}
-      ]
+      "cities" => []
     )
     assert_api_conform(status: 200)
   end
@@ -168,5 +168,21 @@ RSpec.describe "Public catalog", type: :request, openapi: true do
       }
     )
     assert_api_conform(status: 503)
+  end
+
+  private
+
+  def publish_profile_for(service:, neighborhood:)
+    phone = "+5547999990101"
+    account = UserAccount.create!(phone_e164: phone, role: "professional", status: "active")
+    profile = ProfessionalProfile.create!(
+      user_account: account,
+      display_name: "Profissional do catálogo",
+      whatsapp_e164: phone
+    )
+    revision = profile.working_revision
+    revision.professional_profile_services.create!(service:, is_primary: true)
+    revision.professional_profile_service_areas.create!(city_code: "Joinville", neighborhood:)
+    make_profile_publicly_eligible(profile, revision:)
   end
 end

@@ -5885,7 +5885,6 @@ components:
             $ref: "#/components/schemas/PublicNeighborhood"
         cities:
           type: array
-          minItems: 1
           items:
             $ref: "#/components/schemas/PublicSearchCity"
     PublicServiceCategory:

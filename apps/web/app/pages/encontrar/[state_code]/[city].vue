@@ -15,6 +15,7 @@ import {
 } from "~/utils/publicProfiles";
 import { encodeSearchExpression } from "~/utils/searchExpression";
 import {
+  fallbackSearchLocation,
   findSearchLocationByRoute,
   searchLocationPath,
 } from "~/utils/searchLocation";
@@ -31,7 +32,7 @@ if (catalogResult.error.value || !catalogResult.data.value) {
   });
 }
 const initialLocation = findSearchLocationByRoute(
-  catalogResult.data.value.cities,
+  [...catalogResult.data.value.cities, fallbackSearchLocation],
   route.params.state_code,
   route.params.city,
 );
@@ -41,7 +42,7 @@ if (!initialLocation) {
 const activeLocation = computed(
   () =>
     findSearchLocationByRoute(
-      catalogResult.data.value?.cities ?? [],
+      [...(catalogResult.data.value?.cities ?? []), fallbackSearchLocation],
       route.params.state_code,
       route.params.city,
     ) ?? initialLocation,
