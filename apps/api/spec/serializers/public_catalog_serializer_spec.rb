@@ -48,7 +48,7 @@ RSpec.describe PublicCatalogSerializer do
         aliases: ["elétrica"]
       }],
       neighborhoods: [{code: "america", name: "América", state_code: "SC", city: "Joinville"}],
-      cities: [{state_code: "SC", city: "Joinville", state_slug: "sc", city_slug: "joinville"}]
+      cities: []
     )
     expect(serialized.to_json).not_to include(
       "is_active",
