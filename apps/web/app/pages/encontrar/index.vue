@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { fetchPublicSearchLocation } from "~/services/api/search-location";
 import { useApiClient } from "~/services/api/client";
+import { encodeSearchExpression } from "~/utils/searchExpression";
 import {
   fallbackSearchLocation,
   searchLocationPath,
@@ -16,11 +17,23 @@ try {
   location = fallbackSearchLocation;
 }
 
-const expression = route.query.expressao;
+// `q` is the plain-text entry point the WebSite SearchAction JSON-LD points
+// at (Google/answer engines expect a readable query param); `expressao` is
+// the already base64url-encoded internal form. Prefer an explicit
+// `expressao` if both are present.
+const rawExpression = route.query.expressao;
+const plainQuery = route.query.q;
+const expressionQuery =
+  rawExpression !== undefined
+    ? { expressao: rawExpression }
+    : typeof plainQuery === "string" && plainQuery.trim()
+      ? { expressao: encodeSearchExpression(plainQuery) }
+      : {};
+
 await navigateTo(
   {
     path: searchLocationPath(location),
-    query: expression === undefined ? {} : { expressao: expression },
+    query: expressionQuery,
   },
   { redirectCode: 302, replace: true },
 );
