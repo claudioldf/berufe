@@ -110,10 +110,13 @@ function submit() {
     padding: 10px 11px;
     border: 1px solid var(--line-strong);
     border-radius: 9px;
-    background: white;
+    background-color: white;
     color: var(--ink);
     font: inherit;
     font-size: 0.86rem;
+  }
+  &__field select {
+    padding-right: 2.5rem;
   }
   &__field small {
     color: var(--ink-soft);

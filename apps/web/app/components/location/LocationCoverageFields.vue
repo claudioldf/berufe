@@ -173,10 +173,10 @@ function toggleNeighborhood(code: string) {
   &__selectors select {
     width: 100%;
     min-height: 44px;
-    padding: 0 12px;
+    padding: 0 2.75rem 0 12px;
     border: 1px solid var(--line);
     border-radius: 10px;
-    background: white;
+    background-color: white;
     color: var(--ink);
   }
 
@@ -184,16 +184,37 @@ function toggleNeighborhood(code: string) {
     display: grid;
     grid-template-columns: auto 1fr auto;
     align-items: center;
-    gap: 12px;
-    padding: 14px;
-    border: 1px solid var(--line);
-    border-radius: 12px;
+    gap: 11px;
+    padding: 15px;
+    border: 1px solid var(--color-border-strong);
+    border-radius: 13px;
+    background: #edf7f3;
     cursor: pointer;
+  }
+
+  &__whole-city input {
+    width: 17px;
+    height: 17px;
+    accent-color: var(--color-brand);
   }
 
   &__whole-city strong,
   &__whole-city small {
     display: block;
+  }
+
+  &__whole-city strong {
+    font-size: 0.82rem;
+  }
+
+  &__whole-city small {
+    margin-top: 3px;
+    font-size: 0.84rem;
+  }
+
+  &__whole-city > svg {
+    color: var(--color-brand);
+    font-size: 1.3rem;
   }
 
   &__whole-city small,

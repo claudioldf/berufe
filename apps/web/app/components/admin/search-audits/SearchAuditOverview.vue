@@ -296,7 +296,7 @@ function changeSort(event: Event) {
       min-height: 38px;
       border: 1px solid var(--color-border);
       border-radius: var(--radius-md);
-      background: var(--color-surface-control);
+      background-color: var(--color-surface-control);
       color: var(--color-text);
       font-size: 0.8rem;
     }
@@ -306,7 +306,7 @@ function changeSort(event: Event) {
     }
 
     select {
-      padding: 8px 30px 8px 10px;
+      padding: 8px 2.5rem 8px 10px;
     }
   }
 

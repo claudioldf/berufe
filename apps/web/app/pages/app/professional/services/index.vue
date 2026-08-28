@@ -26,7 +26,6 @@ const statusLabel = {
         <NuxtLink to="/app/professional">
           <UIcon name="i-lucide-arrow-left" /> Voltar ao painel
         </NuxtLink>
-        <DesignSystemEyebrow tone="inverse">Execução</DesignSystemEyebrow>
         <h1>Serviços</h1>
         <p>Acompanhe os orçamentos aprovados até a conclusão pelo cliente.</p>
       </DesignSystemContainer>

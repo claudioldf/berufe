@@ -36,10 +36,10 @@ function submit() {
   <form class="identity-upload-form" @submit.prevent="submit">
     <header>
       <div>
-        <h3>Enviar evidência de identidade</h3>
+        <h3>Confirmar sua identidade</h3>
         <p>
-          Selecione uma imagem de documento oficial com foto. A imagem será
-          processada e mantida privada durante a análise.
+          Envie uma foto do seu RG, CNH ou documento de identidade com nome
+          completo, data de nascimento e foto.
         </p>
       </div>
       <span><UIcon name="i-lucide-lock-keyhole" /> Arquivo protegido</span>
@@ -102,7 +102,7 @@ function submit() {
     font-size: 1.25rem;
   }
   & header p {
-    max-width: 550px;
+    max-width: 100%;
     margin: 5px 0 0;
     color: var(--ink-soft);
     font-size: 0.86rem;
