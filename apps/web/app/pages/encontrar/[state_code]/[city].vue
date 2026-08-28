@@ -163,7 +163,10 @@ function retrySearch() {
       <DesignSystemContainer class="finder__masthead-inner">
         <DesignSystemEyebrow>Profissionais</DesignSystemEyebrow>
         <h1>
-          <template v-if="!hasSearchTerm">
+          <template v-if="isSearching">
+            Buscando a ajuda certa <em>para você</em>
+          </template>
+          <template v-else-if="!hasSearchTerm">
             Encontre profissionais <em>em {{ activeLocation.city }}</em>
           </template>
           <template v-else-if="primaryInterpretedService">

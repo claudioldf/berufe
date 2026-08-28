@@ -200,6 +200,7 @@ test("an explicit search city overrides the selected finder city", async ({
         }
       ).__finderHeadingHistory ?? [],
   );
+  expect(headingHistory).toContain("Buscando a ajuda certa para você");
   expect(
     headingHistory.some((heading) =>
       /encontre a ajuda certa em curitiba/i.test(heading),
