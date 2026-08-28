@@ -784,6 +784,83 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/public/professional-listings:
+    get:
+      operationId: getPublicProfessionalListing
+      summary: Read a deterministic, indexable professional listing for one service in one city
+      description: >-
+        A GET, cacheable counterpart to POST /public/professional-searches's
+        structured mode, built for server-rendered landing pages: it neither
+        records a SearchEvent nor consumes the search rate limit, and it
+        reports whether Rails considers the page substantial enough to be
+        indexed by search engines.
+      tags:
+        - Public discovery
+      security: []
+      parameters:
+        - name: service_slug
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        - name: state_slug
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: "^[a-z]{2}$"
+        - name: city_slug
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+        - name: per_page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+      responses:
+        "200":
+          description: Professional cards matching the service and city, with the page's indexability.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              schema:
+                type: string
+                const: "max-age=0, public, must-revalidate"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicProfessionalListingResponse"
+        "404":
+          description: The service slug or the state/city route is unknown or unsupported.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: The public listing query is temporarily unavailable.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/public/professionals/{slug}:
     parameters:
       - name: slug
@@ -6126,6 +6203,46 @@ components:
           oneOf:
             - $ref: "#/components/schemas/PublicSearchInteraction"
             - type: "null"
+    PublicProfessionalListingResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          $ref: "#/components/schemas/PublicProfessionalListingData"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    PublicProfessionalListingData:
+      type: object
+      additionalProperties: false
+      required:
+        - service
+        - location
+        - professionals
+        - related_services
+        - meta
+        - indexable
+      properties:
+        service:
+          $ref: "#/components/schemas/PublicServiceSuggestion"
+        location:
+          $ref: "#/components/schemas/PublicProfessionalSearchEffectiveLocation"
+        professionals:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicProfessionalCard"
+        related_services:
+          type: array
+          maxItems: 3
+          items:
+            $ref: "#/components/schemas/PublicServiceSuggestion"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+        indexable:
+          type: boolean
+          description: Whether this service/city combination has enough supply to be worth indexing.
     PublicProfessionalSearchInterpretation:
       type: object
       additionalProperties: false

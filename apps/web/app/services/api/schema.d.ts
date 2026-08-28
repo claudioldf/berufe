@@ -358,6 +358,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/professional-listings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read a deterministic, indexable professional listing for one service in one city
+         * @description A GET, cacheable counterpart to POST /public/professional-searches's structured mode, built for server-rendered landing pages: it neither records a SearchEvent nor consumes the search rate limit, and it reports whether Rails considers the page substantial enough to be indexed by search engines.
+         */
+        get: operations["getPublicProfessionalListing"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/professionals/{slug}": {
         parameters: {
             query?: {
@@ -2305,6 +2325,19 @@ export interface components {
             interpretation: components["schemas"]["PublicProfessionalSearchInterpretation"];
             interaction: components["schemas"]["PublicSearchInteraction"] | null;
         };
+        PublicProfessionalListingResponse: {
+            data: components["schemas"]["PublicProfessionalListingData"];
+            request_id: components["schemas"]["RequestId"];
+        };
+        PublicProfessionalListingData: {
+            service: components["schemas"]["PublicServiceSuggestion"];
+            location: components["schemas"]["PublicProfessionalSearchEffectiveLocation"];
+            professionals: components["schemas"]["PublicProfessionalCard"][];
+            related_services: components["schemas"]["PublicServiceSuggestion"][];
+            meta: components["schemas"]["PageMeta"];
+            /** @description Whether this service/city combination has enough supply to be worth indexing. */
+            indexable: boolean;
+        };
         PublicProfessionalSearchInterpretation: {
             services: components["schemas"]["PublicServiceSuggestion"][];
             effective_location: components["schemas"]["PublicProfessionalSearchEffectiveLocation"];
@@ -3486,6 +3519,54 @@ export interface operations {
                 };
             };
             /** @description The public professional query is temporarily unavailable. */
+            503: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getPublicProfessionalListing: {
+        parameters: {
+            query: {
+                service_slug: string;
+                state_slug: string;
+                city_slug: string;
+                page?: number;
+                per_page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Professional cards matching the service and city, with the page's indexability. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Cache-Control"?: "max-age=0, public, must-revalidate";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicProfessionalListingResponse"];
+                };
+            };
+            /** @description The service slug or the state/city route is unknown or unsupported. */
+            404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The public listing query is temporarily unavailable. */
             503: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
