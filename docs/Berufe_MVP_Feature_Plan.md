@@ -16,7 +16,7 @@ The core asset is not a list of service requests. It is a local trust graph show
 
 ### Initial market
 
-- **Location:** Joinville.
+- **Location:** Joinville at MVP launch. **Superseded 2026-08:** multi-city search (Curitiba, Blumenau, Balneário Camboriú) shipped in `feat/add-other-cities-support`; the "Nationwide or multi-city search" exclusion below no longer applies. City-specific acceptance criteria elsewhere in this document describe the launch-time state and are historical.
 - **Supply:** 30–50 connected founding professionals.
 - **Categories:** electricians, painters, plumbers, masons, flooring/tile installers, drywall/plaster professionals, carpenters, furniture installers, handymen, architects, interior designers, roof/gutter professionals, residential air-conditioning technicians, metalworkers, glaziers, and waterproofing specialists.
 - **Users:** service professionals and customers. Admin users operate verification and moderation.
@@ -481,11 +481,11 @@ No customer account or persistent identity is required.
 
 - AI-generated profiles, services, locations, ranking, or public evidence outside the controlled structured schema.
 - Maps and distance-based ranking.
-- Nationwide or multi-city search.
+- ~~Nationwide or multi-city search.~~ Shipped 2026-08 (`feat/add-other-cities-support`); no longer excluded.
 - Saved searches.
 - Paid placement.
 - A form that sends one request to many professionals.
-- Dedicated SEO category landing pages.
+- ~~Dedicated SEO category landing pages.~~ Promoted from V2-006 2026-08-28; see `docs/Berufe_Increment_8_Implementation_Plan.md`.
 
 ---
 
