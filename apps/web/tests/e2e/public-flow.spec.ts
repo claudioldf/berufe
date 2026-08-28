@@ -128,8 +128,37 @@ test("visitor can choose the launch city from the home and finder pages", async 
 test("an explicit search city overrides the selected finder city", async ({
   page,
 }) => {
+  const searchRequests: import("@playwright/test").Request[] = [];
+  page.on("request", (request) => {
+    if (
+      request.url().includes("/api/v1/public/professional-searches") &&
+      request.method() === "POST"
+    ) {
+      searchRequests.push(request);
+    }
+  });
   await page.goto("/encontrar/sc/joinville");
   await waitForNuxtHydration(page);
+  await page.evaluate(() => {
+    const state = window as typeof window & {
+      __finderHeadingHistory?: string[];
+    };
+    const headings: string[] = [];
+    const recordHeading = () => {
+      const heading = document
+        .querySelector(".finder__masthead h1")
+        ?.textContent?.replace(/\s+/g, " ")
+        .trim();
+      if (heading && headings.at(-1) !== heading) headings.push(heading);
+    };
+    state.__finderHeadingHistory = headings;
+    new MutationObserver(recordHeading).observe(document.body, {
+      childList: true,
+      characterData: true,
+      subtree: true,
+    });
+    recordHeading();
+  });
   await fillExpressionSearch(page, "Pintor em Curitiba");
   const searchResponsePromise = page.waitForResponse(
     (response) =>
@@ -158,6 +187,24 @@ test("an explicit search city overrides the selected finder city", async ({
       /\d+ (?:profissional encontrado|profissionais encontrados)/i,
     ),
   ).toBeVisible();
+  expect(searchRequests).toHaveLength(1);
+  expect(searchRequests[0]?.postDataJSON()).toMatchObject({
+    expression: "Pintor em Curitiba",
+    default_location: { city_code: "4209102" },
+  });
+  const headingHistory = await page.evaluate(
+    () =>
+      (
+        window as typeof window & {
+          __finderHeadingHistory?: string[];
+        }
+      ).__finderHeadingHistory ?? [],
+  );
+  expect(
+    headingHistory.some((heading) =>
+      /encontre a ajuda certa em curitiba/i.test(heading),
+    ),
+  ).toBe(false);
 });
 
 test("visitor can search, open a profile, and inspect the WhatsApp redirect", async ({

@@ -17,6 +17,8 @@ import {
 import { encodeSearchExpression } from "~/utils/searchExpression";
 import { searchLocationPath } from "~/utils/searchLocation";
 
+definePageMeta({ key: "professional-finder" });
+
 const { showToast } = useToast();
 const runtimeConfig = useRuntimeConfig();
 const route = useRoute();
