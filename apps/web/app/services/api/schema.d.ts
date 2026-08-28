@@ -1886,6 +1886,8 @@ export interface components {
             presentation_type: "self_service" | "external";
             is_public: boolean;
             is_search_eligible: boolean;
+            /** @description Whether this profile currently meets the bar to be indexed by search engines (see PublicIndexability on the API side). */
+            is_indexable: boolean;
             publication_blockers: ("identity" | "photo" | "services" | "coverage")[];
             /** @enum {string} */
             revision_status: "draft" | "pending_review" | "approved" | "rejected" | "superseded";

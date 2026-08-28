@@ -4733,6 +4733,7 @@ components:
         - presentation_type
         - is_public
         - is_search_eligible
+        - is_indexable
         - publication_blockers
         - revision_status
         - revision_rejection_reason
@@ -4767,6 +4768,11 @@ components:
           type: boolean
         is_search_eligible:
           type: boolean
+        is_indexable:
+          type: boolean
+          description: >-
+            Whether this profile currently meets the bar to be indexed by
+            search engines (see PublicIndexability on the API side).
         publication_blockers:
           type: array
           uniqueItems: true
