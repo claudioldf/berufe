@@ -146,6 +146,11 @@ export interface PublicProfessionalSearchResult {
   } | null;
 }
 
+export interface PublicServiceDemand {
+  released: boolean;
+  searches: number | null;
+}
+
 export interface PublicProfessionalProfile {
   id: string;
   slug: string;

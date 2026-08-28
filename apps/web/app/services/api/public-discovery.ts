@@ -3,6 +3,7 @@ import type {
   PublicProfessionalProfile,
   PublicProfessionalProfileResult,
   PublicProfessionalSearchResult,
+  PublicServiceDemand,
   SearchLocation,
   StructuredSearchPayload,
 } from "~/types";
@@ -290,6 +291,40 @@ export async function fetchPublicProfessionalProfile(
     professional: mapPublicProfessionalProfile(data.data.professional),
     interactionToken: data.data.interaction.token,
   };
+}
+
+interface PublicServiceDemandInput {
+  serviceSlug: string;
+  stateSlug: string;
+  citySlug: string;
+}
+
+export async function fetchPublicServiceDemand(
+  client: BerufeApiClient,
+  input: PublicServiceDemandInput,
+): Promise<PublicServiceDemand> {
+  const { data, error, response } = await client.GET(
+    "/api/v1/public/service-demand",
+    {
+      params: {
+        query: {
+          service_slug: input.serviceSlug,
+          state_slug: input.stateSlug,
+          city_slug: input.citySlug,
+        },
+      },
+    },
+  );
+  if (error || !data) {
+    throw new ApiRequestError(
+      normalizeApiError(
+        error,
+        response.headers.get("X-Request-Id") ?? "client",
+      ),
+    );
+  }
+
+  return { released: data.data.released, searches: data.data.searches };
 }
 
 export async function recordPublicProfessionalProfileView(
