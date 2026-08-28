@@ -1,5 +1,6 @@
 import type { ProfessionalServiceJob } from "./service-job";
 import type { LocationCoverage } from "./location";
+import type { SearchLocation } from "./ui";
 
 export interface Service {
   id: string;
@@ -130,6 +131,7 @@ export interface PublicProfessionalSearchResult {
   totalPages: number;
   interpretation: {
     services: PublicServiceSuggestion[];
+    effectiveLocation: SearchLocation;
     locations: Array<{
       cityCode: string;
       stateCode: string;

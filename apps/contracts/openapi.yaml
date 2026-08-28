@@ -6131,6 +6131,7 @@ components:
       additionalProperties: false
       required:
         - services
+        - effective_location
         - locations
         - normalized_request
       properties:
@@ -6138,6 +6139,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PublicServiceSuggestion"
+        effective_location:
+          $ref: "#/components/schemas/PublicProfessionalSearchEffectiveLocation"
         locations:
           type: array
           items:
@@ -6149,6 +6152,31 @@ components:
               minLength: 1
               maxLength: 240
             - type: "null"
+    PublicProfessionalSearchEffectiveLocation:
+      type: object
+      additionalProperties: false
+      required:
+        - city_code
+        - state_code
+        - city
+        - state_slug
+        - city_slug
+      properties:
+        city_code:
+          type: string
+          pattern: "^[0-9]{7}$"
+        state_code:
+          type: string
+          pattern: "^[A-Z]{2}$"
+        city:
+          type: string
+          minLength: 1
+        state_slug:
+          type: string
+          pattern: "^[a-z]{2}$"
+        city_slug:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
     PublicProfessionalSearchLocation:
       type: object
       additionalProperties: false

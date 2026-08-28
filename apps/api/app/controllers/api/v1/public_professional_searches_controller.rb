@@ -40,7 +40,7 @@ module Api
             criteria: result.criteria,
             result_count: result.total_count,
             subject: search_deduplication_subject,
-            query: search_deduplication_query,
+            query: search_deduplication_query(result.criteria),
             event: audit_event
           )
         end
@@ -140,7 +140,7 @@ module Api
         "ip\0#{request.remote_ip}"
       end
 
-      def search_deduplication_query
+      def search_deduplication_query(criteria)
         if structured_request?
           [
             "structured",
@@ -148,7 +148,11 @@ module Api
             params[:city_code].to_s
           ].join("\0")
         else
-          "expression\0#{PublicSearchText.normalize(params[:expression])}"
+          [
+            "expression",
+            PublicSearchText.normalize(params[:expression]),
+            criteria.locations.first.city_code
+          ].join("\0")
         end
       end
     end

@@ -68,9 +68,9 @@ class PublicProfessionalSearch
   rescue LlmSearchParser::InvalidExpression
     raise InvalidInput, {expression: ["é obrigatória e deve ter no máximo #{MAXIMUM_TERM_LENGTH} caracteres"]}
   rescue LlmSearchParser::LocationUnsupported
-    raise InvalidInput, {expression: ["a localização informada não corresponde à cidade selecionada"]}
+    raise InvalidInput, {expression: ["informe uma cidade brasileira reconhecida"]}
   rescue LlmSearchParser::LocationUnrecognized
-    raise InvalidInput, {expression: ["informe um bairro reconhecido da cidade selecionada"]}
+    raise InvalidInput, {expression: ["informe um bairro reconhecido da cidade buscada"]}
   end
 
   def call_with_filters(service_id:, city_code:, page: 1, per_page: DEFAULT_PER_PAGE)

@@ -53,6 +53,7 @@ function unexpectedSearchFailure(): NormalizedApiError {
 
 export async function useProfessionalSearch(options: {
   location: MaybeRefOrGetter<SearchLocation>;
+  onLocationResolved?: (location: SearchLocation) => void;
 }) {
   const route = useRoute();
   const router = useRouter();
@@ -63,7 +64,7 @@ export async function useProfessionalSearch(options: {
   const loadingMore = shallowRef(false);
   const structuredResponse = shallowRef<SearchResponse | null>(null);
   const isStructuredSearching = shallowRef(false);
-  const structuredRouteExpression = shallowRef("");
+  const suppressedRouteState = shallowRef("");
 
   const encodedExpression = computed(() => {
     const value = route.query.expressao;
@@ -77,6 +78,10 @@ export async function useProfessionalSearch(options: {
     const location = toValue(options.location);
     return `${location.stateSlug}/${location.citySlug}`;
   });
+
+  function routeState(expression: string, location: SearchLocation) {
+    return `${expression}\0${location.stateSlug}/${location.citySlug}`;
+  }
 
   const {
     data,
@@ -120,8 +125,12 @@ export async function useProfessionalSearch(options: {
   }
 
   watch([encodedExpression, locationKey], () => {
-    if (expressionQuery.value === structuredRouteExpression.value) {
-      structuredRouteExpression.value = "";
+    const currentRouteState = routeState(
+      expressionQuery.value,
+      toValue(options.location),
+    );
+    if (currentRouteState === suppressedRouteState.value) {
+      suppressedRouteState.value = "";
       expressionInput.value = expressionQuery.value;
       return;
     }
@@ -179,6 +188,31 @@ export async function useProfessionalSearch(options: {
         !unexpectedError.value),
   );
 
+  async function adoptEffectiveLocation(location: SearchLocation) {
+    if (!import.meta.client) return;
+
+    const currentLocation = toValue(options.location);
+    const targetPath = searchLocationPath(location);
+    if (
+      currentLocation.cityCode === location.cityCode &&
+      route.path === targetPath
+    ) {
+      return;
+    }
+
+    suppressedRouteState.value = routeState(expressionQuery.value, location);
+    options.onLocationResolved?.(location);
+    await router.replace({ path: targetPath, query: route.query });
+  }
+
+  watch(
+    () => interpretation.value?.effectiveLocation ?? null,
+    (location) => {
+      if (location) void adoptEffectiveLocation(location);
+    },
+    { immediate: true },
+  );
+
   async function loadMoreResults() {
     if (loadingMore.value || !hasMoreResults.value) return;
 
@@ -228,8 +262,9 @@ export async function useProfessionalSearch(options: {
       citySlug: payload.citySlug,
     };
     const expression = `${payload.serviceName.trim()} em ${payload.city}`;
-    structuredRouteExpression.value = expression;
+    suppressedRouteState.value = routeState(expression, selectedLocation);
     expressionInput.value = expression;
+    options.onLocationResolved?.(selectedLocation);
     try {
       await router.push({
         path: searchLocationPath(selectedLocation),
@@ -253,7 +288,6 @@ export async function useProfessionalSearch(options: {
             : unexpectedSearchFailure(),
       };
     } finally {
-      structuredRouteExpression.value = "";
       isStructuredSearching.value = false;
     }
   }

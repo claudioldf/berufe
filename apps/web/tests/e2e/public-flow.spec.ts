@@ -125,6 +125,41 @@ test("visitor can choose the launch city from the home and finder pages", async 
   await selectLaunchCityFromModal(page);
 });
 
+test("an explicit search city overrides the selected finder city", async ({
+  page,
+}) => {
+  await page.goto("/encontrar/sc/joinville");
+  await waitForNuxtHydration(page);
+  await fillExpressionSearch(page, "Pintor em Curitiba");
+  const searchResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/public/professional-searches") &&
+      response.request().method() === "POST",
+  );
+  await page.getByRole("button", { name: "Encontrar" }).click();
+  const searchResponse = await searchResponsePromise;
+  expect(searchResponse.status()).toBe(200);
+  const searchPayload = await searchResponse.json();
+  expect(searchPayload.data.interpretation.effective_location).toMatchObject({
+    city_code: "4106902",
+    state_code: "PR",
+    city: "Curitiba",
+  });
+
+  await expect(page).toHaveURL(
+    /\/encontrar\/pr\/curitiba\?expressao=[A-Za-z0-9_-]+$/,
+  );
+  await expect(
+    page.getByRole("heading", { level: 1, name: /pintor em curitiba/i }),
+  ).toBeVisible();
+  await expect(page.getByText(/buscando em\s+curitiba, pr/i)).toBeVisible();
+  await expect(
+    page.getByText(
+      /\d+ (?:profissional encontrado|profissionais encontrados)/i,
+    ),
+  ).toBeVisible();
+});
+
 test("visitor can search, open a profile, and inspect the WhatsApp redirect", async ({
   page,
   request,

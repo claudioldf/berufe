@@ -20,10 +20,18 @@ class SupportedSearchLocations
   end
 
   def find(state_code:, city:)
-    all.find do |location|
-      PublicSearchText.normalize(location.state_code) == PublicSearchText.normalize(state_code) &&
-        PublicSearchText.normalize(location.city) == PublicSearchText.normalize(city)
+    normalized_city = PublicSearchText.normalize(city)
+    matches = all.select do |location|
+      PublicSearchText.normalize(location.city) == normalized_city
     end
+    if state_code.to_s.squish.present?
+      normalized_state = PublicSearchText.normalize(state_code)
+      matches.select! do |location|
+        PublicSearchText.normalize(location.state_code) == normalized_state
+      end
+    end
+
+    matches.one? ? matches.first : nil
   end
 
   def find_by_code(city_code:)

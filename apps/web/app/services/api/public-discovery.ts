@@ -91,6 +91,13 @@ function mapPublicProfessionalSearchResult(
     totalPages: data.meta.total_pages,
     interpretation: {
       services: data.interpretation.services,
+      effectiveLocation: {
+        cityCode: data.interpretation.effective_location.city_code,
+        stateCode: data.interpretation.effective_location.state_code,
+        city: data.interpretation.effective_location.city,
+        stateSlug: data.interpretation.effective_location.state_slug,
+        citySlug: data.interpretation.effective_location.city_slug,
+      },
       locations: data.interpretation.locations.map((location) => ({
         cityCode: location.city_code,
         stateCode: location.state_code,

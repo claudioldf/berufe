@@ -7,6 +7,7 @@ import type {
   StructuredSearchCity,
 } from "~/types";
 import { useCatalogs } from "~/composables/useCatalogs";
+import { useFinderSearchLocation } from "~/composables/useFinderSearchLocation";
 import { useProfessionalSearch } from "~/composables/useProfessionalSearch";
 import { useToast } from "~/composables/useToast";
 import {
@@ -14,11 +15,7 @@ import {
   buildSearchResultWhatsAppUrl,
 } from "~/utils/publicProfiles";
 import { encodeSearchExpression } from "~/utils/searchExpression";
-import {
-  fallbackSearchLocation,
-  findSearchLocationByRoute,
-  searchLocationPath,
-} from "~/utils/searchLocation";
+import { searchLocationPath } from "~/utils/searchLocation";
 
 const { showToast } = useToast();
 const runtimeConfig = useRuntimeConfig();
@@ -31,24 +28,13 @@ if (catalogResult.error.value || !catalogResult.data.value) {
     statusMessage: "Descoberta temporariamente indisponível.",
   });
 }
-const initialLocation = findSearchLocationByRoute(
-  [...catalogResult.data.value.cities, fallbackSearchLocation],
-  route.params.state_code,
-  route.params.city,
-);
-if (!initialLocation) {
-  throw createError({ statusCode: 404, statusMessage: "Cidade não atendida." });
-}
-const activeLocation = computed(
-  () =>
-    findSearchLocationByRoute(
-      [...(catalogResult.data.value?.cities ?? []), fallbackSearchLocation],
-      route.params.state_code,
-      route.params.city,
-    ) ?? initialLocation,
-);
+const finderLocation = await useFinderSearchLocation({
+  catalogLocations: () => catalogResult.data.value?.cities ?? [],
+});
+const { location: activeLocation, adopt: adoptLocation } = finderLocation;
 const professionalSearch = await useProfessionalSearch({
   location: activeLocation,
+  onLocationResolved: adoptLocation,
 });
 const {
   expressionInput,
@@ -150,6 +136,7 @@ function relatedServiceUrl(service: PublicServiceSuggestion) {
 }
 
 async function changeLocation(location: SearchLocation) {
+  adoptLocation(location);
   await router.push({
     path: searchLocationPath(location),
     query: route.query,

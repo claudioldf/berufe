@@ -202,6 +202,13 @@ describe("public discovery API", () => {
                 description: "Instalações elétricas residenciais.",
               },
             ],
+            effective_location: {
+              city_code: "4209102",
+              state_code: "SC",
+              city: "Joinville",
+              state_slug: "sc",
+              city_slug: "joinville",
+            },
             locations: [
               {
                 city_code: "4209102",
@@ -241,6 +248,13 @@ describe("public discovery API", () => {
           description: "Instalações elétricas residenciais.",
         },
       ],
+      effectiveLocation: {
+        cityCode: "4209102",
+        stateCode: "SC",
+        city: "Joinville",
+        stateSlug: "sc",
+        citySlug: "joinville",
+      },
       locations: [
         {
           cityCode: "4209102",
@@ -300,6 +314,13 @@ describe("public discovery API", () => {
                 description: "Instalações elétricas residenciais.",
               },
             ],
+            effective_location: {
+              city_code: "4209102",
+              state_code: "SC",
+              city: "Joinville",
+              state_slug: "sc",
+              city_slug: "joinville",
+            },
             locations: [
               {
                 city_code: "4209102",

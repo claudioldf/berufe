@@ -2307,9 +2307,17 @@ export interface components {
         };
         PublicProfessionalSearchInterpretation: {
             services: components["schemas"]["PublicServiceSuggestion"][];
+            effective_location: components["schemas"]["PublicProfessionalSearchEffectiveLocation"];
             locations: components["schemas"]["PublicProfessionalSearchLocation"][];
             /** @description Sanitized first-person contact request produced for expression search; null for structured search. */
             normalized_request: string | null;
+        };
+        PublicProfessionalSearchEffectiveLocation: {
+            city_code: string;
+            state_code: string;
+            city: string;
+            state_slug: string;
+            city_slug: string;
         };
         PublicProfessionalSearchLocation: {
             city_code: string;

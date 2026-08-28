@@ -99,6 +99,49 @@ RSpec.describe PublicProfessionalSearch do
     expect(unmatched.professionals).to be_empty
   end
 
+  it "uses the parser city instead of the selected default city" do
+    curitiba_area = create_location_neighborhood(
+      code: "4106902020",
+      name: "Batel Busca",
+      city: curitiba_city
+    )
+    joinville_profile = create_published_profile(
+      "+5547999997420",
+      "Profissional Joinville",
+      services: [electrician],
+      all_city: true
+    )
+    curitiba_profile = create_published_profile(
+      "+5541999997421",
+      "Profissional Curitiba",
+      services: [electrician],
+      neighborhoods: [curitiba_area]
+    )
+    allow(parser).to receive(:call).and_return(
+      LlmSearchParser::Criteria.new(
+        service_ids: [electrician.id],
+        locations: [
+          LlmSearchParser::Location.new(
+            city_code: curitiba_city.code,
+            state_code: "PR",
+            city: "Curitiba",
+            neighborhood_code: nil
+          )
+        ],
+        keywords: [],
+        normalized_request: "Eu preciso de eletricista em Curitiba."
+      )
+    )
+
+    result = described_class.new(parser:).call(
+      expression: "Eletricista em Curitiba",
+      default_location: {city_code: joinville_city.code}
+    )
+
+    expect(result.professionals).to contain_exactly(curitiba_profile)
+    expect(result.professionals).not_to include(joinville_profile)
+  end
+
   it "searches controlled service and city filters without calling the LLM parser" do
     profile = create_published_profile(
       "+5547999997409",

@@ -60,6 +60,13 @@ function successfulResponse(
   professionals = [professional],
   totalCount = 1,
   normalizedRequest: string | null = "Eu preciso de eletricista no América.",
+  effectiveLocation = {
+    city_code: "4209102",
+    state_code: "SC",
+    city: "Joinville",
+    state_slug: "sc",
+    city_slug: "joinville",
+  },
 ) {
   return {
     data: {
@@ -80,12 +87,16 @@ function successfulResponse(
               description: "Instalações elétricas residenciais.",
             },
           ],
+          effective_location: effectiveLocation,
           locations: [
             {
-              city_code: "4209102",
-              state_code: "SC" as const,
-              city: "Joinville" as const,
-              neighborhood: { code: "4209102007", name: "América" },
+              city_code: effectiveLocation.city_code,
+              state_code: effectiveLocation.state_code,
+              city: effectiveLocation.city,
+              neighborhood:
+                effectiveLocation.city_code === "4209102"
+                  ? { code: "4209102007", name: "América" }
+                  : null,
             },
           ],
           normalized_request: normalizedRequest,
@@ -204,6 +215,7 @@ describe("professional search composable", () => {
           description: "Instalações elétricas residenciais.",
         },
       ],
+      effectiveLocation: location,
       locations: [
         {
           cityCode: "4209102",
