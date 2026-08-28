@@ -137,11 +137,16 @@ NUXT_API_INTERNAL_BASE_URL=http://${{api.RAILWAY_PRIVATE_DOMAIN}}:${{api.PORT}}
 NUXT_PUBLIC_API_BASE_URL=https://api.berufe.com.br
 NUXT_PUBLIC_SITE_URL=https://www.berufe.com.br
 NUXT_PUBLIC_BUGSNAG_API_KEY=<web project notifier key>
+NUXT_OG_IMAGE_SECRET=<secret: openssl rand -hex 32>
 ```
 
 The browser notifier key is intentionally public, but the Bugsnag account and management
-credentials are not. The IaC pins both HTTP listeners to `PORT=8080`; Railway supplies
-`RAILWAY_GIT_COMMIT_SHA` automatically.
+credentials are not. `NUXT_OG_IMAGE_SECRET` signs generated Open Graph image URLs; it is
+not a `NUXT_PUBLIC_*` value and never reaches the browser. Set it explicitly here because
+the `web` service runs more than one instance — without a fixed value each instance would
+sign OG image URLs differently and requests routed to a different instance than the one
+that signed the URL would fail verification. The IaC pins both HTTP listeners to
+`PORT=8080`; Railway supplies `RAILWAY_GIT_COMMIT_SHA` automatically.
 
 ## 2. Cloudflare R2
 
