@@ -14,7 +14,11 @@ module Llm
           .any? { |term| term.present? && normalized.include?(term) }
       end
       locations = matched_neighborhoods.presence&.map do |neighborhood|
-        {"state_code" => "SC", "city" => "Joinville", "neighborhood" => neighborhood.name}
+        {
+          "state_code" => default_location.state_code,
+          "city" => default_location.city,
+          "neighborhood" => neighborhood.name
+        }
       end || [{
         "state_code" => default_location.state_code,
         "city" => default_location.city,

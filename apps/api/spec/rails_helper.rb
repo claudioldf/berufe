@@ -16,6 +16,7 @@ require_relative "../config/environment"
 abort("The Rails environment is running in production mode!") if Rails.env.production?
 require "rspec/rails"
 require "openapi_first"
+require_relative "support/location_spec_helpers"
 require_relative "support/professional_profile_spec_helpers"
 
 ActiveRecord::Migration.maintain_test_schema!
@@ -28,10 +29,12 @@ OpenapiFirst::Test.setup do |test|
 end
 
 RSpec.configure do |config|
+  config.before(:suite) { LocationSpecHelpers.seed_baseline! }
   config.fixture_paths = [Rails.root.join("spec/fixtures")]
   config.use_transactional_fixtures = true
   config.infer_spec_type_from_file_location!
   config.filter_rails_from_backtrace!
   config.include OpenapiFirst::Test::Methods[Rails.application], openapi: true
+  config.include LocationSpecHelpers
   config.include ProfessionalProfileSpecHelpers
 end

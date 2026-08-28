@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
 class SupportedSearchLocations
-  Location = Data.define(:state_code, :city, :state_slug, :city_slug)
+  Location = Data.define(:city_code, :state_code, :city, :state_slug, :city_slug)
   FALLBACK = Location.new(
+    city_code: "4209102",
     state_code: LlmSearchParser::DEFAULT_STATE_CODE,
     city: LlmSearchParser::DEFAULT_CITY,
     state_slug: LlmSearchParser::DEFAULT_STATE_CODE.downcase,
@@ -10,10 +11,7 @@ class SupportedSearchLocations
   )
 
   def all
-    locations = Neighborhood.active
-      .distinct
-      .pluck(:state_code, :city_code)
-      .map { |state_code, city| build(state_code:, city:) }
+    locations = City.includes(:state).ordered.map { |city| build(city) }
     locations << FALLBACK unless locations.any? { |location| same?(location, FALLBACK) }
     locations.uniq.sort_by { |location| [location.state_code, location.city] }
   rescue ActiveRecord::ActiveRecordError => error
@@ -28,6 +26,10 @@ class SupportedSearchLocations
     end
   end
 
+  def find_by_code(city_code:)
+    all.find { |location| location.city_code == city_code.to_s }
+  end
+
   def find_by_route(state_slug:, city_slug:)
     all.find do |location|
       location.state_slug == state_slug.to_s.downcase &&
@@ -37,16 +39,17 @@ class SupportedSearchLocations
 
   private
 
-  def build(state_code:, city:)
+  def build(city_record)
     Location.new(
-      state_code: state_code.upcase,
-      city:,
-      state_slug: state_code.downcase,
-      city_slug: city.parameterize
+      city_code: city_record.code,
+      state_code: city_record.state.abbreviation,
+      city: city_record.name,
+      state_slug: city_record.state.abbreviation.downcase,
+      city_slug: city_record.slug
     )
   end
 
   def same?(first, second)
-    first.state_code == second.state_code && first.city == second.city
+    first.city_code == second.city_code
   end
 end

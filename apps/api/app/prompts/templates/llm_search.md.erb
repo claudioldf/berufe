@@ -10,11 +10,11 @@ Serviços permitidos:
 
 Caso o serviço buscado não corresponder com exatidão ou semelhança, analise qual o tipo de profissional/serviço da lista acima que mais se enquadraria para realizar o serviço solicitado.
 
-A busca atende exclusivamente Joinville, SC. Extraia UF, cidade e bairro quando forem informados.
+A busca está limitada a <%= default_location.city %>, <%= default_location.state_code %>. Extraia UF, cidade e bairro quando forem informados.
 Se o usuário não informar localização, use <%= default_location.state_code %> e <%= default_location.city %>, com bairro nulo.
 Se informar vários bairros, retorne uma localização separada para cada bairro.
-Se informar uma localização fora de Joinville/SC, preserve-a na resposta para que a aplicação a rejeite.
-Use apenas estes bairros de Joinville quando reconhecer um bairro:
+Se informar uma localização fora de <%= default_location.city %>/<%= default_location.state_code %>, preserve-a na resposta para que a aplicação a rejeite.
+Use apenas estes bairros de <%= default_location.city %> quando reconhecer um bairro:
 <% neighborhoods.each do |neighborhood| -%>
 - <%= neighborhood.code %> | <%= neighborhood.name %>
 <% end -%>

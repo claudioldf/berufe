@@ -231,7 +231,9 @@ class ModerationQueueQuery
 
   def coverage_label(revision)
     areas = revision.professional_profile_service_areas
-    return "Toda Joinville" if areas.any? { |area| area.neighborhood_code.nil? }
+    city = revision.coverage_city
+    return unless city
+    return "Toda #{city.name}" if revision.covers_whole_city?
 
     areas.filter_map { |area| area.neighborhood&.name }.join(", ")
   end

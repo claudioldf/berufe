@@ -45,7 +45,7 @@ RSpec.describe PublicProfessionalProfileSerializer do
       sort_order: 0
     )
     approved.professional_profile_services.create!(service:, is_primary: true, note: "Quadros")
-    approved.professional_profile_service_areas.create!(city_code: "Joinville")
+    approved.update!(coverage_city: joinville_city, covers_whole_city: true)
     approved.update!(status: "approved", reviewed_at: Time.current)
     photo = create_approved_photo(profile)
     profile.update!(
@@ -78,7 +78,11 @@ RSpec.describe PublicProfessionalProfileSerializer do
     expect(profile.published_revision).to eq(profile.working_revision)
     expect(profile.approved_revision).to eq(approved)
     expect(profile.working_revision.professional_profile_services.sole.service).to eq(service)
-    expect(profile.working_revision.professional_profile_service_areas.sole.neighborhood_code).to be_nil
+    expect(profile.working_revision).to have_attributes(
+      coverage_city_code: joinville_city.code,
+      covers_whole_city: true
+    )
+    expect(profile.working_revision.professional_profile_service_areas).to be_empty
     expect(described_class.new(profile).as_json).to include(
       display_name: "Ana Obras",
       headline: "Nova apresentação pendente.",
@@ -147,7 +151,7 @@ RSpec.describe PublicProfessionalProfileSerializer do
       sort_order: 0
     )
     revision.professional_profile_services.create!(service:, is_primary: true)
-    revision.professional_profile_service_areas.create!(city_code: "Joinville")
+    revision.update!(coverage_city: joinville_city, covers_whole_city: true)
     revision.update!(status: "approved", reviewed_at: Time.current)
     photo = create_approved_photo(public_profile)
     public_profile.update!(

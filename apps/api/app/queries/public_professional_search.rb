@@ -68,21 +68,22 @@ class PublicProfessionalSearch
   rescue LlmSearchParser::InvalidExpression
     raise InvalidInput, {expression: ["é obrigatória e deve ter no máximo #{MAXIMUM_TERM_LENGTH} caracteres"]}
   rescue LlmSearchParser::LocationUnsupported
-    raise InvalidInput, {expression: ["a busca está disponível somente em Joinville, SC"]}
+    raise InvalidInput, {expression: ["a localização informada não corresponde à cidade selecionada"]}
   rescue LlmSearchParser::LocationUnrecognized
-    raise InvalidInput, {expression: ["informe um bairro reconhecido de Joinville"]}
+    raise InvalidInput, {expression: ["informe um bairro reconhecido da cidade selecionada"]}
   end
 
-  def call_with_filters(service_id:, state_code:, city:, page: 1, per_page: DEFAULT_PER_PAGE)
+  def call_with_filters(service_id:, city_code:, page: 1, per_page: DEFAULT_PER_PAGE)
     normalized_page, normalized_per_page = normalize_pagination(page, per_page)
     service = structured_service(service_id)
-    validate_structured_location!(state_code:, city:)
+    location = validate_structured_location!(city_code:)
     criteria = LlmSearchParser::Criteria.new(
       service_ids: [service.id],
       locations: [
         LlmSearchParser::Location.new(
-          state_code: LlmSearchParser::DEFAULT_STATE_CODE,
-          city: LlmSearchParser::DEFAULT_CITY,
+          city_code: location.city_code,
+          state_code: location.state_code,
+          city: location.city,
           neighborhood_code: nil
         )
       ],
@@ -128,29 +129,20 @@ class PublicProfessionalSearch
     raise InvalidInput, {service_id: ["selecione um serviço disponível"]}
   end
 
-  def validate_structured_location!(state_code:, city:)
-    errors = {}
-    unless state_code.to_s.upcase == LlmSearchParser::DEFAULT_STATE_CODE
-      errors[:state_code] = ["selecione um estado disponível"]
-    end
-    unless PublicSearchText.normalize(city) == PublicSearchText.normalize(LlmSearchParser::DEFAULT_CITY)
-      errors[:city] = ["selecione uma cidade disponível"]
-    end
-    raise InvalidInput, errors if errors.any?
+  def validate_structured_location!(city_code:)
+    location = AvailableSearchLocations.new.all.find { |candidate| candidate.city_code == city_code.to_s }
+    return location if location
+
+    raise InvalidInput, {city_code: ["selecione uma cidade disponível"]}
   end
 
   def validated_default_location(value)
     attributes = value.respond_to?(:to_h) ? value.to_h.symbolize_keys : {}
-    state_code = attributes[:state_code].to_s.squish.presence || LlmSearchParser::DEFAULT_STATE_CODE
-    city = attributes[:city].to_s.squish.presence || LlmSearchParser::DEFAULT_CITY
-    location = SupportedSearchLocations.new.find(state_code:, city:)
+    city_code = attributes[:city_code].to_s.presence || SupportedSearchLocations::FALLBACK.city_code
+    location = SupportedSearchLocations.new.find_by_code(city_code:)
     return location if location
 
-    errors = {}
-    errors[:state_code] = ["selecione um estado disponível"] unless state_code.casecmp?(LlmSearchParser::DEFAULT_STATE_CODE)
-    errors[:city] = ["selecione uma cidade disponível"] unless PublicSearchText.normalize(city) == "joinville"
-    errors[:city] ||= ["selecione uma cidade disponível"] if errors.empty?
-    raise InvalidInput, {default_location: errors.values.flatten}
+    raise InvalidInput, {default_location: ["selecione uma cidade disponível"]}
   end
 
   def normalize_pagination(page, per_page)
@@ -163,6 +155,7 @@ class PublicProfessionalSearch
     relation = ProfessionalProfile
       .publicly_searchable
       .where(service_filter_sql, criteria.service_ids)
+      .where(professional_profile_revisions: {coverage_city_code: criteria.locations.map(&:city_code).uniq})
     neighborhood_codes = criteria.locations.filter_map(&:neighborhood_code).uniq
     if neighborhood_codes.any? && criteria.locations.none? { |location| location.neighborhood_code.nil? }
       relation = relation.where(coverage_sql, neighborhood_codes)
@@ -278,11 +271,11 @@ class PublicProfessionalSearch
 
   def coverage_sql
     <<~SQL.squish
-      EXISTS (
+      professional_profile_revisions.covers_whole_city = TRUE OR EXISTS (
         SELECT 1
         FROM professional_profile_service_areas search_areas
         WHERE search_areas.professional_profile_revision_id = professional_profiles.published_revision_id
-          AND (search_areas.neighborhood_code IS NULL OR search_areas.neighborhood_code IN (?))
+          AND search_areas.neighborhood_code IN (?)
       )
     SQL
   end

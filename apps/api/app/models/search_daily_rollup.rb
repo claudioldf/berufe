@@ -7,6 +7,7 @@ class SearchDailyRollup < ApplicationRecord
   ].freeze
 
   belongs_to :service, optional: true
+  belongs_to :city, primary_key: :code, foreign_key: :city_code
   belongs_to :neighborhood,
     primary_key: :code,
     foreign_key: :neighborhood_code,

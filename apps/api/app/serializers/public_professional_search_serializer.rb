@@ -46,6 +46,7 @@ class PublicProfessionalSearchSerializer
       locations: result.criteria.locations.map do |location|
         neighborhood = neighborhoods_by_code[location.neighborhood_code]
         {
+          city_code: location.city_code,
           state_code: location.state_code,
           city: location.city,
           neighborhood: neighborhood && {code: neighborhood.code, name: neighborhood.name}

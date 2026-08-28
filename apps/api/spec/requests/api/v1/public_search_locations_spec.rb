@@ -17,6 +17,7 @@ RSpec.describe "Public search location", type: :request, openapi: true do
     expect(response.headers["Cache-Control"]).to eq("no-store")
     expect(response.parsed_body).to eq(
       "data" => {
+        "city_code" => "4209102",
         "state_code" => "SC",
         "city" => "Joinville",
         "state_slug" => "sc",

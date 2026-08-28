@@ -1,17 +1,15 @@
 # frozen_string_literal: true
 
 class AdminCatalogSerializer
-  def initialize(categories:, services:, neighborhoods:)
+  def initialize(categories:, services:)
     @categories = categories
     @services = services
-    @neighborhoods = neighborhoods
   end
 
   def as_json(*)
     {
       categories: @categories.map { |category| serialize_category(category) },
-      services: @services.map { |service| serialize_service(service) },
-      neighborhoods: @neighborhoods.map { |neighborhood| serialize_neighborhood(neighborhood) }
+      services: @services.map { |service| serialize_service(service) }
     }
   end
 
@@ -34,17 +32,6 @@ class AdminCatalogSerializer
       description: service.description,
       is_active: service.is_active,
       sort_order: service.sort_order
-    }
-  end
-
-  def serialize_neighborhood(neighborhood)
-    {
-      code: neighborhood.code,
-      name: neighborhood.name,
-      state_code: neighborhood.state_code,
-      city: neighborhood.city_code,
-      is_active: neighborhood.is_active,
-      sort_order: neighborhood.sort_order
     }
   end
 end

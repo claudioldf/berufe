@@ -102,7 +102,7 @@ RSpec.describe ProfessionalRegistration do
       submitted_at: Time.current
     )
     external_revision.professional_profile_services.create!(service:, is_primary: true)
-    external_revision.professional_profile_service_areas.create!(city_code: "Joinville")
+    external_revision.update!(coverage_city: joinville_city, covers_whole_city: true)
     external_profile.update!(
       working_revision: external_revision,
       published_revision: external_revision
@@ -131,10 +131,12 @@ RSpec.describe ProfessionalRegistration do
       profile_type: "self_service",
       status: "draft",
       display_name: "Ana Souza",
-      whatsapp_e164: account.phone_e164
+      whatsapp_e164: account.phone_e164,
+      coverage_city_code: joinville_city.code,
+      covers_whole_city: true
     )
     expect(self_service_revision.professional_profile_services.sole.service).to eq(service)
-    expect(self_service_revision.professional_profile_service_areas.sole.neighborhood_code).to be_nil
+    expect(self_service_revision.professional_profile_service_areas).to be_empty
     expect(PublicProfessionalProfileSerializer.new(claimed_profile).as_json).to include(
       profile_type: "external",
       claimed: true,

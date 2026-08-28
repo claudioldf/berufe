@@ -6,8 +6,9 @@ class LlmSearchParser
   CACHE_TTL = 24.hours
   DEFAULT_STATE_CODE = "SC"
   DEFAULT_CITY = "Joinville"
+  DEFAULT_CITY_CODE = "4209102"
 
-  Location = Data.define(:state_code, :city, :neighborhood_code)
+  Location = Data.define(:city_code, :state_code, :city, :neighborhood_code)
   Criteria = Data.define(:service_ids, :locations, :keywords, :normalized_request)
 
   class InvalidExpression < StandardError; end
@@ -49,7 +50,7 @@ class LlmSearchParser
     normalized_expression = validate_expression!(expression)
     default_location = normalize_default_location(default_location)
     services = Service.publicly_active.ordered.to_a
-    neighborhoods = Neighborhood.active.ordered.to_a
+    neighborhoods = Neighborhood.where(city_code: default_location.city_code).ordered.to_a
     prompt = LlmSearchPrompt.new(services:, neighborhoods:, default_location:)
     audit_raw_response = nil
     audit_response_source = nil
@@ -188,6 +189,7 @@ class LlmSearchParser
       neighborhood_value = (location["neighborhood"] || location["neighborhood_code"]).to_s.squish.presence
       neighborhood = resolve_neighborhood(neighborhood_value, neighborhoods:)
       Location.new(
+        city_code: default_location.city_code,
         state_code: default_location.state_code,
         city: default_location.city,
         neighborhood_code: neighborhood&.code
@@ -199,9 +201,15 @@ class LlmSearchParser
 
   def normalize_default_location(value)
     attributes = value.respond_to?(:to_h) ? value.to_h.symbolize_keys : {}
+    city_code = attributes[:city_code].to_s.presence || DEFAULT_CITY_CODE
+    supported = SupportedSearchLocations.new.find_by_code(city_code:)
+    supported ||= SupportedSearchLocations::FALLBACK if city_code == DEFAULT_CITY_CODE
+    raise LocationUnsupported unless supported
+
     Location.new(
-      state_code: attributes[:state_code].to_s.squish.presence&.upcase || DEFAULT_STATE_CODE,
-      city: attributes[:city].to_s.squish.presence || DEFAULT_CITY,
+      city_code: supported.city_code,
+      state_code: supported.state_code,
+      city: supported.city,
       neighborhood_code: nil
     )
   end

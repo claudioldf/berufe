@@ -75,7 +75,7 @@ RSpec.describe PublicProfessionalRelationshipQuery do
       sort_order: 0
     )
     revision.professional_profile_services.create!(service:, is_primary: true)
-    revision.professional_profile_service_areas.create!(city_code: "Joinville")
+    revision.update!(coverage_city: joinville_city, covers_whole_city: true)
     revision.update!(status: "approved", reviewed_at: Time.current)
     photo = create_approved_photo(profile)
     profile.update!(

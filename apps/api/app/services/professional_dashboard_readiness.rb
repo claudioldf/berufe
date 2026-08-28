@@ -43,10 +43,13 @@ class ProfessionalDashboardReadiness
     service = selections.any? &&
       selections.count(&:is_primary?) == 1 &&
       selections.all? { |selection| selection.service.is_active? && selection.service.category.is_active? }
-    coverage = revision.professional_profile_service_areas.includes(:neighborhood).any? do |area|
-      area.city_code == ProfessionalProfileServiceArea::JOINVILLE &&
-        (area.neighborhood_code.nil? || area.neighborhood&.is_active?)
-    end
+    areas = revision.professional_profile_service_areas.includes(:neighborhood).to_a
+    coverage = revision.coverage_city.present? &&
+      if revision.covers_whole_city?
+        areas.empty?
+      else
+        areas.any? && areas.all? { |area| area.neighborhood&.city_code == revision.coverage_city_code }
+      end
     service && coverage
   end
 

@@ -102,6 +102,25 @@ docker compose run --rm -e RAILS_ENV=test -e BERUFE_ENV=test api bin/rails db:dr
 
 Committed Rails migrations are the only supported way to change the schema. Application generators use UUID primary keys, Rails stores time in UTC, and PostgreSQL maps Rails `datetime` columns to `timestamptz`.
 
+## IBGE location import
+
+`locations:import_ibge` upserts states and municipalities from the official
+[IBGE Localidades API](https://servicodados.ibge.gov.br/api/v1/localidades) and
+neighborhoods from the official 2022 Census neighborhood DBF archives. The Localidades
+API does not publish a neighborhood endpoint, so both sources are required.
+
+Import the entire country, selected states, or selected seven-digit municipality codes:
+
+```bash
+docker compose run --rm api bin/rake locations:import_ibge
+docker compose run --rm -e IBGE_UFS=SC,PR api bin/rake locations:import_ibge
+docker compose run --rm -e IBGE_CITY_CODES=4209102,4202404,4106902,4202008 api bin/rake locations:import_ibge
+```
+
+`db:seed` remains network-independent: it imports the committed official snapshot for
+Joinville/SC, Blumenau/SC, Curitiba/PR, and Balneário Camboriú/SC before creating demo
+professionals.
+
 ## GoodJob execution
 
 Local Compose uses GoodJob in `external` mode with a dedicated worker so worker health and

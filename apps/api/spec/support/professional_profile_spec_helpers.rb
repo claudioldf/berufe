@@ -47,9 +47,11 @@ module ProfessionalProfileSpecHelpers
       )
       revision.professional_profile_services.create!(service:, is_primary: true)
     end
-    return if revision.professional_profile_service_areas.exists?
-
-    revision.professional_profile_service_areas.create!(city_code: "Joinville")
+    city = revision.professional_profile_service_areas.first&.neighborhood&.city || joinville_city
+    revision.update!(
+      coverage_city: city,
+      covers_whole_city: revision.professional_profile_service_areas.none?
+    )
   end
 
   def create_public_profile_photo(profile, reviewed_at: Time.current)

@@ -74,9 +74,7 @@ module Api
           record.errors.to_hash(true).transform_keys do |field|
             {
               category: :category_slug,
-              city_code: :city,
-              is_active: :is_active,
-              state_code: :state_code
+              is_active: :is_active
             }.fetch(field, field)
           end
         end

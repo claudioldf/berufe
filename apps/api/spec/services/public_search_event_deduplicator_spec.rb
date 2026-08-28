@@ -59,7 +59,7 @@ RSpec.describe PublicSearchEventDeduplicator do
     SearchEvent.create!(
       input_prompt: "Preciso de pintor",
       audit_status: "completed",
-      city_code: SearchEvent::JOINVILLE,
+      city_code: joinville_city.code,
       result_count:,
       reportable: true,
       created_at:

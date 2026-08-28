@@ -31,7 +31,7 @@ RSpec.describe ProfessionalQuoteSharer do
       sort_order: 0
     )
     profile.working_revision.professional_profile_services.create!(service:, is_primary: true)
-    profile.working_revision.professional_profile_service_areas.create!(city_code: "Joinville")
+    profile.working_revision.update!(coverage_city: joinville_city, covers_whole_city: true)
     make_profile_publicly_eligible(profile)
     quote = ProfessionalQuoteWriter.new.call(
       profile:,

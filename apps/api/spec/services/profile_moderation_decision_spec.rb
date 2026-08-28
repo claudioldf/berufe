@@ -123,7 +123,7 @@ RSpec.describe "Professional profile moderation" do
     revision = profile.working_revision
     unless revision.professional_profile_services.exists?
       revision.professional_profile_services.create!(service: selected_service, is_primary: true)
-      revision.professional_profile_service_areas.create!(city_code: "Joinville")
+      revision.update!(coverage_city: joinville_city, covers_whole_city: true)
     end
     revision.update!(status: "pending_review", submitted_at: Time.current)
     photo = approved_photo

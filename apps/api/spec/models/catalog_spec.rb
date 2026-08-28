@@ -46,13 +46,12 @@ RSpec.describe "Catalog models", type: :model do
     expect(Service.publicly_active).to contain_exactly(visible)
   end
 
-  it "keeps neighborhood codes immutable and orders active entries deterministically" do
-    second = Neighborhood.create!(code: "america", state_code: "SC", city_code: "Joinville", name: "América", is_active: true, sort_order: 1)
-    first = Neighborhood.create!(code: "adhemar-garcia", state_code: "SC", city_code: "Joinville", name: "Adhemar Garcia", is_active: true, sort_order: 0)
-    Neighborhood.create!(code: "atiradores", state_code: "SC", city_code: "Joinville", name: "Atiradores", is_active: false, sort_order: 2)
+  it "keeps IBGE neighborhood codes immutable and orders entries by name" do
+    second = create_location_neighborhood(code: "4209102005", name: "América")
+    first = create_location_neighborhood(code: "4209102004", name: "Adhemar Garcia")
 
     expect(Neighborhood.active.ordered).to eq([first, second])
-    expect(first.update(code: "novo-codigo")).to be(false)
+    expect(first.update(code: "4209102999")).to be(false)
     expect(first.errors[:code]).to be_present
   end
 
@@ -67,8 +66,7 @@ RSpec.describe "Catalog models", type: :model do
     expect(service_columns.fetch("sort_order").sql_type).to eq("smallint")
     expect(connection.primary_key(:neighborhoods)).to eq("code")
     expect(neighborhood_columns.fetch("code").sql_type).to eq("text")
-    expect(neighborhood_columns.fetch("state_code").sql_type).to eq("character varying(2)")
-    expect(neighborhood_columns.fetch("sort_order").sql_type).to eq("smallint")
+    expect(neighborhood_columns.fetch("city_code").sql_type).to eq("text")
     expect(neighborhood_columns.fetch("created_at").sql_type).to include("timestamp", "with time zone")
   end
 end

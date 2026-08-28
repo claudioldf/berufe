@@ -20,15 +20,15 @@ RSpec.describe Admin::Reports::GrowthReport do
   it "calculates the five-stage anonymous journey and suppresses one-off unmatched terms" do
     now = Time.zone.parse("2026-08-18 15:00:00")
     SearchEvent.create!(
-      service:, city_code: "Joinville", result_count: 4,
+      service:, city_code: "4209102", result_count: 4,
       profile_opened: true, whatsapp_handoff_occurred: true, created_at: now - 1.day
     )
     SearchEvent.create!(
-      service:, city_code: "Joinville", result_count: 1,
+      service:, city_code: "4209102", result_count: 1,
       profile_opened: false, whatsapp_handoff_occurred: false, created_at: now - 2.days
     )
     SearchEvent.create!(
-      query_text_normalized: "servico sensivel", city_code: "Joinville", result_count: 0,
+      query_text_normalized: "servico sensivel", city_code: "4209102", result_count: 0,
       profile_opened: false, whatsapp_handoff_occurred: false, created_at: now - 1.day
     )
 

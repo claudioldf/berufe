@@ -86,7 +86,7 @@ RSpec.describe ProfessionalProfileRevisionEditor do
     profile.update!(birthdate: Date.new(1990, 4, 12))
     revision = profile.working_revision
     revision.professional_profile_services.create!(service: primary_service, is_primary: true)
-    revision.professional_profile_service_areas.create!(city_code: "Joinville")
+    revision.update!(coverage_city: joinville_city, covers_whole_city: true)
     revision.update!(status: "pending_review", submitted_at: Time.current)
     photo = approved_photo
     profile.update!(

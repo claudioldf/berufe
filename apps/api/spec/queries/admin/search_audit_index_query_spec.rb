@@ -172,7 +172,7 @@ RSpec.describe Admin::SearchAuditIndexQuery do
       llm_adapter: "fake",
       llm_model: "gpt-5-mini",
       llm_prompt_digest: "a" * 64,
-      city_code: SearchEvent::JOINVILLE,
+      city_code: joinville_city.code,
       result_count:,
       reportable: status == "completed",
       created_at:

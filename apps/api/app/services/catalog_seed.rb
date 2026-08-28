@@ -3,8 +3,6 @@
 require "json"
 
 class CatalogSeed
-  WHOLE_CITY_SENTINEL = "all"
-
   def self.default_path
     configured_path = ENV["CATALOG_SEED_PATH"].presence
     return Pathname(configured_path) if configured_path
@@ -23,7 +21,6 @@ class CatalogSeed
     ActiveRecord::Base.transaction do
       categories_by_slug = seed_categories(catalog.fetch("categories"))
       seed_services(catalog.fetch("services"), categories_by_slug)
-      seed_neighborhoods(catalog.fetch("neighborhoods"))
     end
   end
 
@@ -63,22 +60,6 @@ class CatalogSeed
         sort_order:
       )
       service.save!
-    end
-  end
-
-  def seed_neighborhoods(neighborhoods)
-    neighborhoods.reject { |attributes| attributes.fetch("code") == WHOLE_CITY_SENTINEL }.each_with_index do |attributes, sort_order|
-      neighborhood = Neighborhood.find_or_initialize_by(code: attributes.fetch("code"))
-      next unless neighborhood.new_record?
-
-      neighborhood.assign_attributes(
-        name: attributes.fetch("name"),
-        state_code: attributes.fetch("stateCode"),
-        city_code: attributes.fetch("city"),
-        is_active: true,
-        sort_order:
-      )
-      neighborhood.save!
     end
   end
 end

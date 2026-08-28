@@ -41,7 +41,7 @@ RSpec.describe "Professional relationship candidates", type: :request, openapi: 
         name: "Carla Pinturas",
         phone: "(47) 99998-1303",
         service_ids: [],
-        coverage: {all_joinville: false, neighborhood_codes: []},
+        coverage: {city_code: nil, whole_city: false, neighborhood_codes: []},
         contact_publication_attested: true
       },
       relationship_type: "recommendation",

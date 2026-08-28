@@ -1,0 +1,877 @@
+{
+  "states": [
+    {
+      "code": "41",
+      "abbreviation": "PR",
+      "name": "Paraná"
+    },
+    {
+      "code": "42",
+      "abbreviation": "SC",
+      "name": "Santa Catarina"
+    }
+  ],
+  "cities": [
+    {
+      "code": "4106902",
+      "state_code": "41",
+      "name": "Curitiba",
+      "slug": "curitiba"
+    },
+    {
+      "code": "4202008",
+      "state_code": "42",
+      "name": "Balneário Camboriú",
+      "slug": "balneario-camboriu"
+    },
+    {
+      "code": "4202404",
+      "state_code": "42",
+      "name": "Blumenau",
+      "slug": "blumenau"
+    },
+    {
+      "code": "4209102",
+      "state_code": "42",
+      "name": "Joinville",
+      "slug": "joinville"
+    }
+  ],
+  "neighborhoods": [
+    {
+      "code": "4106902011",
+      "city_code": "4106902",
+      "name": "Bigorrilho"
+    },
+    {
+      "code": "4106902035",
+      "city_code": "4106902",
+      "name": "Bacacheri"
+    },
+    {
+      "code": "4106902010",
+      "city_code": "4106902",
+      "name": "Batel"
+    },
+    {
+      "code": "4106902051",
+      "city_code": "4106902",
+      "name": "Cachoeira"
+    },
+    {
+      "code": "4106902017",
+      "city_code": "4106902",
+      "name": "Hugo Lange"
+    },
+    {
+      "code": "4106902007",
+      "city_code": "4106902",
+      "name": "Jardim Botânico"
+    },
+    {
+      "code": "4106902069",
+      "city_code": "4106902",
+      "name": "Riviera"
+    },
+    {
+      "code": "4106902065",
+      "city_code": "4106902",
+      "name": "Sítio Cercado"
+    },
+    {
+      "code": "4106902014",
+      "city_code": "4106902",
+      "name": "Ahú"
+    },
+    {
+      "code": "4106902013",
+      "city_code": "4106902",
+      "name": "Bom Retiro"
+    },
+    {
+      "code": "4106902009",
+      "city_code": "4106902",
+      "name": "Água Verde"
+    },
+    {
+      "code": "4106902049",
+      "city_code": "4106902",
+      "name": "Taboão"
+    },
+    {
+      "code": "4106902039",
+      "city_code": "4106902",
+      "name": "Fanny"
+    },
+    {
+      "code": "4106902063",
+      "city_code": "4106902",
+      "name": "Santa Felicidade"
+    },
+    {
+      "code": "4106902031",
+      "city_code": "4106902",
+      "name": "Vista Alegre"
+    },
+    {
+      "code": "4106902064",
+      "city_code": "4106902",
+      "name": "Alto Boqueirão"
+    },
+    {
+      "code": "4106902048",
+      "city_code": "4106902",
+      "name": "São João"
+    },
+    {
+      "code": "4106902033",
+      "city_code": "4106902",
+      "name": "São Lourenço"
+    },
+    {
+      "code": "4106902030",
+      "city_code": "4106902",
+      "name": "Campina do Siqueira"
+    },
+    {
+      "code": "4106902022",
+      "city_code": "4106902",
+      "name": "Jardim das Américas"
+    },
+    {
+      "code": "4106902060",
+      "city_code": "4106902",
+      "name": "São Braz"
+    },
+    {
+      "code": "4106902012",
+      "city_code": "4106902",
+      "name": "Mercês"
+    },
+    {
+      "code": "4106902006",
+      "city_code": "4106902",
+      "name": "Cristo Rei"
+    },
+    {
+      "code": "4106902054",
+      "city_code": "4106902",
+      "name": "Tinguí"
+    },
+    {
+      "code": "4106902001",
+      "city_code": "4106902",
+      "name": "Centro"
+    },
+    {
+      "code": "4106902038",
+      "city_code": "4106902",
+      "name": "Hauer"
+    },
+    {
+      "code": "4106902028",
+      "city_code": "4106902",
+      "name": "Vila Izabel"
+    },
+    {
+      "code": "4106902015",
+      "city_code": "4106902",
+      "name": "Juvevê"
+    },
+    {
+      "code": "4106902059",
+      "city_code": "4106902",
+      "name": "Orleans"
+    },
+    {
+      "code": "4106902071",
+      "city_code": "4106902",
+      "name": "Campo de Santana"
+    },
+    {
+      "code": "4106902050",
+      "city_code": "4106902",
+      "name": "Abranches"
+    },
+    {
+      "code": "4106902029",
+      "city_code": "4106902",
+      "name": "Seminário"
+    },
+    {
+      "code": "4106902004",
+      "city_code": "4106902",
+      "name": "Alto da Glória"
+    },
+    {
+      "code": "4106902052",
+      "city_code": "4106902",
+      "name": "Barreirinha"
+    },
+    {
+      "code": "4106902047",
+      "city_code": "4106902",
+      "name": "Cascatinha"
+    },
+    {
+      "code": "4106902058",
+      "city_code": "4106902",
+      "name": "Capão Raso"
+    },
+    {
+      "code": "4106902067",
+      "city_code": "4106902",
+      "name": "São Miguel"
+    },
+    {
+      "code": "4106902068",
+      "city_code": "4106902",
+      "name": "Augusta"
+    },
+    {
+      "code": "4106902072",
+      "city_code": "4106902",
+      "name": "Ganchinho"
+    },
+    {
+      "code": "4106902025",
+      "city_code": "4106902",
+      "name": "Parolin"
+    },
+    {
+      "code": "4106902003",
+      "city_code": "4106902",
+      "name": "Centro Cívico"
+    },
+    {
+      "code": "4106902019",
+      "city_code": "4106902",
+      "name": "Tarumã"
+    },
+    {
+      "code": "4106902073",
+      "city_code": "4106902",
+      "name": "Umbará"
+    },
+    {
+      "code": "4106902026",
+      "city_code": "4106902",
+      "name": "Guaíra"
+    },
+    {
+      "code": "4106902075",
+      "city_code": "4106902",
+      "name": "Cidade Industrial de Curitiba"
+    },
+    {
+      "code": "4106902008",
+      "city_code": "4106902",
+      "name": "Rebouças"
+    },
+    {
+      "code": "4106902027",
+      "city_code": "4106902",
+      "name": "Portão"
+    },
+    {
+      "code": "4106902045",
+      "city_code": "4106902",
+      "name": "Mossunguê"
+    },
+    {
+      "code": "4106902032",
+      "city_code": "4106902",
+      "name": "Pilarzinho"
+    },
+    {
+      "code": "4106902057",
+      "city_code": "4106902",
+      "name": "Xaxim"
+    },
+    {
+      "code": "4106902005",
+      "city_code": "4106902",
+      "name": "Alto da Rua XV"
+    },
+    {
+      "code": "4106902043",
+      "city_code": "4106902",
+      "name": "Santa Quitéria"
+    },
+    {
+      "code": "4106902020",
+      "city_code": "4106902",
+      "name": "Capão da Imbuia"
+    },
+    {
+      "code": "4106902055",
+      "city_code": "4106902",
+      "name": "Atuba"
+    },
+    {
+      "code": "4106902074",
+      "city_code": "4106902",
+      "name": "Tatuquara"
+    },
+    {
+      "code": "4106902061",
+      "city_code": "4106902",
+      "name": "Botiatuvinha"
+    },
+    {
+      "code": "4106902062",
+      "city_code": "4106902",
+      "name": "Lamenha Pequena"
+    },
+    {
+      "code": "4106902023",
+      "city_code": "4106902",
+      "name": "Guabirotuba"
+    },
+    {
+      "code": "4106902036",
+      "city_code": "4106902",
+      "name": "Bairro Alto"
+    },
+    {
+      "code": "4106902041",
+      "city_code": "4106902",
+      "name": "Novo Mundo"
+    },
+    {
+      "code": "4106902066",
+      "city_code": "4106902",
+      "name": "Pinheirinho"
+    },
+    {
+      "code": "4106902016",
+      "city_code": "4106902",
+      "name": "Cabral"
+    },
+    {
+      "code": "4106902070",
+      "city_code": "4106902",
+      "name": "Caximba"
+    },
+    {
+      "code": "4106902024",
+      "city_code": "4106902",
+      "name": "Prado Velho"
+    },
+    {
+      "code": "4106902034",
+      "city_code": "4106902",
+      "name": "Boa Vista"
+    },
+    {
+      "code": "4106902056",
+      "city_code": "4106902",
+      "name": "Boqueirão"
+    },
+    {
+      "code": "4106902042",
+      "city_code": "4106902",
+      "name": "Fazendinha"
+    },
+    {
+      "code": "4106902002",
+      "city_code": "4106902",
+      "name": "São Francisco"
+    },
+    {
+      "code": "4106902037",
+      "city_code": "4106902",
+      "name": "Uberaba"
+    },
+    {
+      "code": "4106902021",
+      "city_code": "4106902",
+      "name": "Cajuru"
+    },
+    {
+      "code": "4106902053",
+      "city_code": "4106902",
+      "name": "Santa Cândida"
+    },
+    {
+      "code": "4106902046",
+      "city_code": "4106902",
+      "name": "Santo Inácio"
+    },
+    {
+      "code": "4106902044",
+      "city_code": "4106902",
+      "name": "Campo Comprido"
+    },
+    {
+      "code": "4106902040",
+      "city_code": "4106902",
+      "name": "Lindóia"
+    },
+    {
+      "code": "4106902018",
+      "city_code": "4106902",
+      "name": "Jardim Social"
+    },
+    {
+      "code": "4202008001",
+      "city_code": "4202008",
+      "name": "da Praia dos Amores"
+    },
+    {
+      "code": "4202008004",
+      "city_code": "4202008",
+      "name": "das Nações"
+    },
+    {
+      "code": "4202008010",
+      "city_code": "4202008",
+      "name": "Nova Esperança"
+    },
+    {
+      "code": "4202008005",
+      "city_code": "4202008",
+      "name": "Várzea do Ranchinho"
+    },
+    {
+      "code": "4202008014",
+      "city_code": "4202008",
+      "name": "Centro"
+    },
+    {
+      "code": "4202008002",
+      "city_code": "4202008",
+      "name": "dos Pioneiros"
+    },
+    {
+      "code": "4202008012",
+      "city_code": "4202008",
+      "name": "da Barra"
+    },
+    {
+      "code": "4202008003",
+      "city_code": "4202008",
+      "name": "Ariribá"
+    },
+    {
+      "code": "4202008009",
+      "city_code": "4202008",
+      "name": "Jardim Iate Clube"
+    },
+    {
+      "code": "4202008007",
+      "city_code": "4202008",
+      "name": "dos Municípios"
+    },
+    {
+      "code": "4202008013",
+      "city_code": "4202008",
+      "name": "Região das Praias"
+    },
+    {
+      "code": "4202008008",
+      "city_code": "4202008",
+      "name": "Vila Real"
+    },
+    {
+      "code": "4202008011",
+      "city_code": "4202008",
+      "name": "São Judas Tadeu"
+    },
+    {
+      "code": "4202008006",
+      "city_code": "4202008",
+      "name": "dos Estados"
+    },
+    {
+      "code": "4202404015",
+      "city_code": "4202404",
+      "name": "Velha"
+    },
+    {
+      "code": "4202404016",
+      "city_code": "4202404",
+      "name": "Velha Grande"
+    },
+    {
+      "code": "4202404012",
+      "city_code": "4202404",
+      "name": "Victor Konder"
+    },
+    {
+      "code": "4202404034",
+      "city_code": "4202404",
+      "name": "Itoupava Central"
+    },
+    {
+      "code": "4202404033",
+      "city_code": "4202404",
+      "name": "Fidélis"
+    },
+    {
+      "code": "4202404031",
+      "city_code": "4202404",
+      "name": "Testo Salto"
+    },
+    {
+      "code": "4202404029",
+      "city_code": "4202404",
+      "name": "Badenfurt"
+    },
+    {
+      "code": "4202404021",
+      "city_code": "4202404",
+      "name": "do Salto"
+    },
+    {
+      "code": "4202404028",
+      "city_code": "4202404",
+      "name": "Salto do Norte"
+    },
+    {
+      "code": "4202404032",
+      "city_code": "4202404",
+      "name": "Itoupavazinha"
+    },
+    {
+      "code": "4202404009",
+      "city_code": "4202404",
+      "name": "Jardim Blumenau"
+    },
+    {
+      "code": "4202404020",
+      "city_code": "4202404",
+      "name": "Escola Agrícola"
+    },
+    {
+      "code": "4202404038",
+      "city_code": "4202404",
+      "name": "Fortaleza Alta"
+    },
+    {
+      "code": "4202404026",
+      "city_code": "4202404",
+      "name": "Fortaleza"
+    },
+    {
+      "code": "4202404024",
+      "city_code": "4202404",
+      "name": "Nova Esperança"
+    },
+    {
+      "code": "4202404018",
+      "city_code": "4202404",
+      "name": "Salto Weissbach"
+    },
+    {
+      "code": "4202404037",
+      "city_code": "4202404",
+      "name": "Velha Central"
+    },
+    {
+      "code": "4202404023",
+      "city_code": "4202404",
+      "name": "Ponta Aguda"
+    },
+    {
+      "code": "4202404010",
+      "city_code": "4202404",
+      "name": "Bom Retiro"
+    },
+    {
+      "code": "4202404001",
+      "city_code": "4202404",
+      "name": "Centro"
+    },
+    {
+      "code": "4202404030",
+      "city_code": "4202404",
+      "name": "Passo Manso"
+    },
+    {
+      "code": "4202404025",
+      "city_code": "4202404",
+      "name": "Itoupava Norte"
+    },
+    {
+      "code": "4202404013",
+      "city_code": "4202404",
+      "name": "Boa Vista"
+    },
+    {
+      "code": "4202404002",
+      "city_code": "4202404",
+      "name": "Vorstadt"
+    },
+    {
+      "code": "4202404014",
+      "city_code": "4202404",
+      "name": "Vila Nova"
+    },
+    {
+      "code": "4202404027",
+      "city_code": "4202404",
+      "name": "Tribess"
+    },
+    {
+      "code": "4202404022",
+      "city_code": "4202404",
+      "name": "Itoupava Seca"
+    },
+    {
+      "code": "4202404019",
+      "city_code": "4202404",
+      "name": "Água Verde"
+    },
+    {
+      "code": "4202404036",
+      "city_code": "4202404",
+      "name": "Vila Itoupava"
+    },
+    {
+      "code": "4202404004",
+      "city_code": "4202404",
+      "name": "Garcia"
+    },
+    {
+      "code": "4202404005",
+      "city_code": "4202404",
+      "name": "da Glória"
+    },
+    {
+      "code": "4202404007",
+      "city_code": "4202404",
+      "name": "Valparaíso"
+    },
+    {
+      "code": "4202404003",
+      "city_code": "4202404",
+      "name": "Ribeirão Fresco"
+    },
+    {
+      "code": "4202404008",
+      "city_code": "4202404",
+      "name": "Vila Formosa"
+    },
+    {
+      "code": "4202404006",
+      "city_code": "4202404",
+      "name": "Progresso"
+    },
+    {
+      "code": "4209102018",
+      "city_code": "4209102",
+      "name": "Bucarein"
+    },
+    {
+      "code": "4209102040",
+      "city_code": "4209102",
+      "name": "Zona Industrial 2"
+    },
+    {
+      "code": "4209102045",
+      "city_code": "4209102",
+      "name": "Ulysses Guimarães"
+    },
+    {
+      "code": "4209102026",
+      "city_code": "4209102",
+      "name": "Zona Industrial 1"
+    },
+    {
+      "code": "4209102022",
+      "city_code": "4209102",
+      "name": "Bom Retiro"
+    },
+    {
+      "code": "4209102008",
+      "city_code": "4209102",
+      "name": "Centro"
+    },
+    {
+      "code": "4209102007",
+      "city_code": "4209102",
+      "name": "América"
+    },
+    {
+      "code": "4209102033",
+      "city_code": "4209102",
+      "name": "Paranaguamirim"
+    },
+    {
+      "code": "4209102016",
+      "city_code": "4209102",
+      "name": "Fátima"
+    },
+    {
+      "code": "4209102030",
+      "city_code": "4209102",
+      "name": "Jardim Iririú"
+    },
+    {
+      "code": "4209102032",
+      "city_code": "4209102",
+      "name": "Adhemar Garcia"
+    },
+    {
+      "code": "4209102037",
+      "city_code": "4209102",
+      "name": "Espinheiros"
+    },
+    {
+      "code": "4209102044",
+      "city_code": "4209102",
+      "name": "Parque Guarani"
+    },
+    {
+      "code": "4209102031",
+      "city_code": "4209102",
+      "name": "Comasa"
+    },
+    {
+      "code": "4209102023",
+      "city_code": "4209102",
+      "name": "Aventureiro"
+    },
+    {
+      "code": "4209102020",
+      "city_code": "4209102",
+      "name": "Saguaçu"
+    },
+    {
+      "code": "4209102013",
+      "city_code": "4209102",
+      "name": "Itinga"
+    },
+    {
+      "code": "4209102004",
+      "city_code": "4209102",
+      "name": "Glória"
+    },
+    {
+      "code": "4209102034",
+      "city_code": "4209102",
+      "name": "João Costa"
+    },
+    {
+      "code": "4209102015",
+      "city_code": "4209102",
+      "name": "Jarivatuba"
+    },
+    {
+      "code": "4209102038",
+      "city_code": "4209102",
+      "name": "Jardim Paraíso"
+    },
+    {
+      "code": "4209102009",
+      "city_code": "4209102",
+      "name": "Atiradores"
+    },
+    {
+      "code": "4209102002",
+      "city_code": "4209102",
+      "name": "São Marcos"
+    },
+    {
+      "code": "4209102047",
+      "city_code": "4209102",
+      "name": "Profipo"
+    },
+    {
+      "code": "4209102039",
+      "city_code": "4209102",
+      "name": "Vila Cubatão"
+    },
+    {
+      "code": "4209102036",
+      "city_code": "4209102",
+      "name": "Petrópolis"
+    },
+    {
+      "code": "4209102001",
+      "city_code": "4209102",
+      "name": "Nova Brasília"
+    },
+    {
+      "code": "4209102005",
+      "city_code": "4209102",
+      "name": "Costa e Silva"
+    },
+    {
+      "code": "4209102021",
+      "city_code": "4209102",
+      "name": "Iririú"
+    },
+    {
+      "code": "4209102025",
+      "city_code": "4209102",
+      "name": "Morro do Meio"
+    },
+    {
+      "code": "4209102003",
+      "city_code": "4209102",
+      "name": "Vila Nova"
+    },
+    {
+      "code": "4209102024",
+      "city_code": "4209102",
+      "name": "Jardim Sofia"
+    },
+    {
+      "code": "4209102035",
+      "city_code": "4209102",
+      "name": "Boehmerwald"
+    },
+    {
+      "code": "4209102012",
+      "city_code": "4209102",
+      "name": "Santa Catarina"
+    },
+    {
+      "code": "4209102014",
+      "city_code": "4209102",
+      "name": "Itaum"
+    },
+    {
+      "code": "4209102011",
+      "city_code": "4209102",
+      "name": "Floresta"
+    },
+    {
+      "code": "4209102006",
+      "city_code": "4209102",
+      "name": "Santo Antônio"
+    },
+    {
+      "code": "4209102017",
+      "city_code": "4209102",
+      "name": "Guanabara"
+    },
+    {
+      "code": "4209102019",
+      "city_code": "4209102",
+      "name": "Boa Vista"
+    },
+    {
+      "code": "4209102010",
+      "city_code": "4209102",
+      "name": "Anita Garibaldi"
+    },
+    {
+      "code": "4209102027",
+      "city_code": "4209102",
+      "name": "Pirabeiraba"
+    },
+    {
+      "code": "4209102046",
+      "city_code": "4209102",
+      "name": "Dona Francisca"
+    },
+    {
+      "code": "4209102029",
+      "city_code": "4209102",
+      "name": "Rio Bonito"
+    }
+  ]
+}

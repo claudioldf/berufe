@@ -25,14 +25,7 @@ RSpec.describe LlmSearchParser do
     )
   end
   let!(:america) do
-    Neighborhood.create!(
-      code: "america-parser",
-      name: "América Parser",
-      state_code: "SC",
-      city_code: "Joinville",
-      is_active: true,
-      sort_order: 0
-    )
+    create_location_neighborhood(code: "4209102012", name: "América Parser")
   end
   let(:settings) do
     Data.define(:llm_adapter, :openai_model).new(
@@ -68,10 +61,10 @@ RSpec.describe LlmSearchParser do
     parser = described_class.new(client:, settings:)
     expression = "Preciso trocar a fiação da casa da Ana no América Parser"
     recorder = PublicSearchAuditRecorder.new
-    first_event = recorder.start(expression:)
+    first_event = recorder.start(expression:, city_code: joinville_city.code)
 
     first = parser.call(expression:, audit_event: first_event)
-    second_event = recorder.start(expression:)
+    second_event = recorder.start(expression:, city_code: joinville_city.code)
     second = parser.call(expression:, audit_event: second_event)
 
     expect(first).to eq(
@@ -79,6 +72,7 @@ RSpec.describe LlmSearchParser do
         service_ids: [service.id],
         locations: [
           described_class::Location.new(
+            city_code: joinville_city.code,
             state_code: "SC",
             city: "Joinville",
             neighborhood_code: america.code
@@ -136,7 +130,12 @@ RSpec.describe LlmSearchParser do
       )
     )
     expect(parser.call(expression: "Preciso de eletricista").locations).to eq([
-      described_class::Location.new(state_code: "SC", city: "Joinville", neighborhood_code: nil)
+      described_class::Location.new(
+        city_code: joinville_city.code,
+        state_code: "SC",
+        city: "Joinville",
+        neighborhood_code: nil
+      )
     ])
 
     allow(client).to receive(:parse).and_return(
@@ -207,7 +206,10 @@ RSpec.describe LlmSearchParser do
         provider_request_id: "req_invalid"
       )
     )
-    event = PublicSearchAuditRecorder.new.start(expression: "Preciso de eletricista")
+    event = PublicSearchAuditRecorder.new.start(
+      expression: "Preciso de eletricista",
+      city_code: joinville_city.code
+    )
 
     expect {
       described_class.new(client:, settings:).call(

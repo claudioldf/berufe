@@ -98,7 +98,7 @@ RSpec.describe "Professional profile submission", type: :request, openapi: true 
     ProfessionalProfileSupplyUpdater.new.call(
       profile:,
       services: [{service_id: service.id, is_primary: true, note: nil}],
-      coverage: {all_joinville: true, neighborhood_codes: []}
+      coverage: {city_code: joinville_city.code, whole_city: true, neighborhood_codes: []}
     )
     ProfessionalProfilePhotoAttacher.new.call(
       profile:,

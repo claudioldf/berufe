@@ -25,20 +25,14 @@ RSpec.describe PublicSearchEventRecorder do
     )
   end
   let!(:neighborhood) do
-    Neighborhood.create!(
-      code: "centro-registrado",
-      name: "Centro Registrado",
-      state_code: "SC",
-      city_code: "Joinville",
-      is_active: true,
-      sort_order: 0
-    )
+    create_location_neighborhood(code: "4209102011", name: "Centro Registrado")
   end
   let(:criteria) do
     LlmSearchParser::Criteria.new(
       service_ids: [service.id],
       locations: [
         LlmSearchParser::Location.new(
+          city_code: "4209102",
           state_code: "SC",
           city: "Joinville",
           neighborhood_code: neighborhood.code
@@ -63,7 +57,7 @@ RSpec.describe PublicSearchEventRecorder do
     expect(event).to have_attributes(
       service_id: service.id,
       query_text_normalized: nil,
-      city_code: "Joinville",
+      city_code: "4209102",
       neighborhood_code: neighborhood.code,
       result_count: 3
     )
@@ -77,7 +71,7 @@ RSpec.describe PublicSearchEventRecorder do
     interaction = described_class.new.call(
       criteria: LlmSearchParser::Criteria.new(
         service_ids: [],
-        locations: [LlmSearchParser::Location.new(state_code: "SC", city: "Joinville", neighborhood_code: nil)],
+        locations: [LlmSearchParser::Location.new(city_code: "4209102", state_code: "SC", city: "Joinville", neighborhood_code: nil)],
         keywords: [],
         normalized_request: nil
       ),
@@ -94,7 +88,10 @@ RSpec.describe PublicSearchEventRecorder do
   end
 
   it "completes the provisional expression event instead of creating a second row" do
-    event = PublicSearchAuditRecorder.new.start(expression: "Preciso de pintor no Centro")
+    event = PublicSearchAuditRecorder.new.start(
+      expression: "Preciso de pintor no Centro",
+      city_code: joinville_city.code
+    )
 
     interaction = described_class.new.call(
       criteria:,

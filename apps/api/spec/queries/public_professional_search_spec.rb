@@ -15,30 +15,16 @@ RSpec.describe PublicProfessionalSearch do
   let!(:electrician) { create_service("Eletricista busca", "busca-eletricista", ["elétrica"], 0) }
   let!(:plumber) { create_service("Encanador busca", "busca-encanador", ["hidráulica"], 1) }
   let!(:america) do
-    Neighborhood.create!(
-      code: "america-busca",
-      name: "América Busca",
-      state_code: "SC",
-      city_code: "Joinville",
-      is_active: true,
-      sort_order: 0
-    )
+    create_location_neighborhood(code: "4209102013", name: "América Busca")
   end
   let!(:centro) do
-    Neighborhood.create!(
-      code: "centro-busca",
-      name: "Centro Busca",
-      state_code: "SC",
-      city_code: "Joinville",
-      is_active: true,
-      sort_order: 1
-    )
+    create_location_neighborhood(code: "4209102014", name: "Centro Busca")
   end
   let(:parser) { instance_double(LlmSearchParser) }
   let(:criteria) do
     LlmSearchParser::Criteria.new(
       service_ids: [electrician.id],
-      locations: [LlmSearchParser::Location.new(state_code: "SC", city: "Joinville", neighborhood_code: america.code)],
+      locations: [LlmSearchParser::Location.new(city_code: "4209102", state_code: "SC", city: "Joinville", neighborhood_code: america.code)],
       keywords: [],
       normalized_request: "Eu preciso trocar a fiação no América."
     )
@@ -93,7 +79,7 @@ RSpec.describe PublicProfessionalSearch do
     allow(parser).to receive(:call).and_return(
       LlmSearchParser::Criteria.new(
         service_ids: [electrician.id],
-        locations: [LlmSearchParser::Location.new(state_code: "SC", city: "Joinville", neighborhood_code: nil)],
+        locations: [LlmSearchParser::Location.new(city_code: "4209102", state_code: "SC", city: "Joinville", neighborhood_code: nil)],
         keywords: [],
         normalized_request: "Eu preciso de eletricista em Joinville."
       )
@@ -104,7 +90,7 @@ RSpec.describe PublicProfessionalSearch do
     allow(parser).to receive(:call).and_return(
       LlmSearchParser::Criteria.new(
         service_ids: [],
-        locations: [LlmSearchParser::Location.new(state_code: "SC", city: "Joinville", neighborhood_code: nil)],
+        locations: [LlmSearchParser::Location.new(city_code: "4209102", state_code: "SC", city: "Joinville", neighborhood_code: nil)],
         keywords: [],
         normalized_request: nil
       )
@@ -123,8 +109,7 @@ RSpec.describe PublicProfessionalSearch do
 
     result = described_class.new(parser:).call_with_filters(
       service_id: electrician.id,
-      state_code: "SC",
-      city: "Joinville"
+      city_code: joinville_city.code
     )
 
     expect(result.professionals).to contain_exactly(profile)
@@ -133,6 +118,7 @@ RSpec.describe PublicProfessionalSearch do
         service_ids: [electrician.id],
         locations: [
           LlmSearchParser::Location.new(
+            city_code: "4209102",
             state_code: "SC",
             city: "Joinville",
             neighborhood_code: nil
@@ -149,14 +135,14 @@ RSpec.describe PublicProfessionalSearch do
     search = described_class.new(parser:)
 
     expect {
-      search.call_with_filters(service_id: "not-a-service", state_code: "SC", city: "Joinville")
+      search.call_with_filters(service_id: "not-a-service", city_code: joinville_city.code)
     }.to raise_error(described_class::InvalidInput) do |error|
       expect(error.field_errors).to eq(service_id: ["selecione um serviço disponível"])
     end
     expect {
-      search.call_with_filters(service_id: electrician.id, state_code: "PR", city: "Curitiba")
+      search.call_with_filters(service_id: electrician.id, city_code: "4106902")
     }.to raise_error(described_class::InvalidInput) do |error|
-      expect(error.field_errors.keys).to contain_exactly(:state_code, :city)
+      expect(error.field_errors.keys).to contain_exactly(:city_code)
     end
   end
 
@@ -176,7 +162,7 @@ RSpec.describe PublicProfessionalSearch do
     allow(parser).to receive(:call).and_return(
       LlmSearchParser::Criteria.new(
         service_ids: [plumber.id, electrician.id],
-        locations: [LlmSearchParser::Location.new(state_code: "SC", city: "Joinville", neighborhood_code: nil)],
+        locations: [LlmSearchParser::Location.new(city_code: "4209102", state_code: "SC", city: "Joinville", neighborhood_code: nil)],
         keywords: [],
         normalized_request: "Eu preciso de encanador ou eletricista."
       )
@@ -340,10 +326,11 @@ RSpec.describe PublicProfessionalSearch do
       revision.professional_profile_services.create!(service:, is_primary: index.zero?)
     end
     if all_city
-      revision.professional_profile_service_areas.create!(city_code: "Joinville")
+      revision.update!(coverage_city: joinville_city, covers_whole_city: true)
     else
       neighborhoods.each do |neighborhood|
-        revision.professional_profile_service_areas.create!(city_code: "Joinville", neighborhood:)
+        revision.update!(coverage_city: neighborhood.city, covers_whole_city: false)
+        revision.professional_profile_service_areas.create!(neighborhood:)
       end
     end
     make_profile_publicly_eligible(profile, revision:, reviewed_at:)

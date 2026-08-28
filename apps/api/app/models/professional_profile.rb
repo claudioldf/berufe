@@ -97,16 +97,17 @@ class ProfessionalProfile < ApplicationRecord
         )
       SQL
       .where(<<~SQL.squish)
-        EXISTS (
-          SELECT 1
-          FROM professional_profile_service_areas eligible_areas
-          LEFT JOIN neighborhoods eligible_neighborhoods
-            ON eligible_neighborhoods.code = eligible_areas.neighborhood_code
-          WHERE eligible_areas.professional_profile_revision_id = professional_profiles.published_revision_id
-            AND (
-              eligible_areas.neighborhood_code IS NULL OR
-              eligible_neighborhoods.is_active = TRUE
-            )
+        professional_profile_revisions.coverage_city_code IS NOT NULL
+        AND (
+          professional_profile_revisions.covers_whole_city = TRUE
+          OR EXISTS (
+            SELECT 1
+            FROM professional_profile_service_areas eligible_areas
+            INNER JOIN neighborhoods eligible_neighborhoods
+              ON eligible_neighborhoods.code = eligible_areas.neighborhood_code
+            WHERE eligible_areas.professional_profile_revision_id = professional_profiles.published_revision_id
+              AND eligible_neighborhoods.city_code = professional_profile_revisions.coverage_city_code
+          )
         )
       SQL
   }
@@ -142,11 +143,20 @@ class ProfessionalProfile < ApplicationRecord
 
   scope :publicly_searchable, -> {
     publicly_viewable
+      .joins(:published_revision)
       .where(<<~SQL.squish)
         EXISTS (
           SELECT 1
           FROM professional_profile_services searchable_services
           WHERE searchable_services.professional_profile_revision_id = professional_profiles.published_revision_id
+        )
+      SQL
+      .where.not(professional_profile_revisions: {coverage_city_code: nil})
+      .where(<<~SQL.squish)
+        professional_profile_revisions.covers_whole_city = TRUE OR EXISTS (
+          SELECT 1
+          FROM professional_profile_service_areas searchable_areas
+          WHERE searchable_areas.professional_profile_revision_id = professional_profiles.published_revision_id
         )
       SQL
   }
@@ -293,12 +303,12 @@ class ProfessionalProfile < ApplicationRecord
   end
 
   def revision_coverage_complete?(revision)
-    return false unless revision
+    return false unless revision&.coverage_city
 
     areas = revision.professional_profile_service_areas.includes(:neighborhood).to_a
+    return areas.empty? if revision.covers_whole_city?
     return false if areas.empty?
-    return true if areas.one? && areas.first.neighborhood_code.nil?
 
-    areas.all? { |area| area.neighborhood_code.present? && area.neighborhood&.is_active? }
+    areas.all? { |area| area.neighborhood&.city_code == revision.coverage_city_code }
   end
 end

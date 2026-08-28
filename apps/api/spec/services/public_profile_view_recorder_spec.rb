@@ -32,7 +32,7 @@ RSpec.describe PublicProfileViewRecorder do
     SearchEvent.create!(
       service:,
       query_text_normalized: "eletricista visualizado",
-      city_code: "Joinville",
+      city_code: "4209102",
       result_count: 1
     )
   end

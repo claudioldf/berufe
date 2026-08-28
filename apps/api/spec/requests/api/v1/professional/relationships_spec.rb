@@ -342,14 +342,7 @@ RSpec.describe "Professional relationship requests", type: :request, openapi: tr
 
   it "creates an unregistered external account and a minimal searchable profile from an attested phone contact" do
     service = create_external_service
-    Neighborhood.create!(
-      code: "america-relacao",
-      state_code: "SC",
-      city_code: "Joinville",
-      name: "América",
-      is_active: true,
-      sort_order: 0
-    )
+    create_location_neighborhood(code: "4209102015", name: "América")
     now = Time.zone.parse("2026-08-20 15:30:00 UTC")
 
     travel_to(now) do
@@ -358,7 +351,7 @@ RSpec.describe "Professional relationship requests", type: :request, openapi: tr
           name: "  Carla   Pinturas  ",
           phone: "(47) 99998-1203",
           service_ids: [service.id],
-          neighborhood_codes: ["america-relacao"]
+          neighborhood_codes: ["4209102015"]
         ),
         headers: session_headers(request_id: "relationship-external-create", origin: true),
         as: :json
@@ -393,7 +386,8 @@ RSpec.describe "Professional relationship requests", type: :request, openapi: tr
       service:,
       is_primary: true
     )
-    expect(revision.professional_profile_service_areas.sole.neighborhood_code).to eq("america-relacao")
+    expect(revision).to have_attributes(coverage_city_code: joinville_city.code, covers_whole_city: false)
+    expect(revision.professional_profile_service_areas.sole.neighborhood_code).to eq("4209102015")
     expect(relationship).to have_attributes(
       initiator_professional: initiator,
       source: "external_phone",
@@ -443,7 +437,7 @@ RSpec.describe "Professional relationship requests", type: :request, openapi: tr
     expect(projection).to include(
       profile_type: "external",
       services: [],
-      coverage: {all_joinville: false, neighborhoods: []}
+      coverage: {city: nil, whole_city: false, neighborhoods: []}
     )
     expect(external_profile).to be_publicly_available
     expect(external_profile).not_to be_search_eligible
@@ -549,7 +543,7 @@ RSpec.describe "Professional relationship requests", type: :request, openapi: tr
     relationship_type: "recommendation",
     service_ids: [],
     neighborhood_codes: [],
-    all_joinville: false,
+    whole_city: false,
     attested: true
   )
     {
@@ -560,7 +554,8 @@ RSpec.describe "Professional relationship requests", type: :request, openapi: tr
           phone:,
           service_ids:,
           coverage: {
-            all_joinville:,
+            city_code: (neighborhood_codes.any? || whole_city) ? joinville_city.code : nil,
+            whole_city:,
             neighborhood_codes:
           },
           contact_publication_attested: attested

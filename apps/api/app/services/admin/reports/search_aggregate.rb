@@ -4,7 +4,7 @@ module Admin
   module Reports
     class SearchAggregate
       Counter = Struct.new(
-        :service_id, :neighborhood_code, :unmatched_query,
+        :city_code, :service_id, :neighborhood_code, :unmatched_query,
         :searches, :with_results, :with_three_results, :with_profile_open,
         :with_whatsapp_handoff, :zero_results, :thin_results
       )
@@ -19,7 +19,7 @@ module Admin
 
       def totals
         rows.each_with_object(Counter.new(**Counter.members.index_with { 0 })) do |row, total|
-          Counter.members.drop(3).each { |field| total[field] += row[field] }
+          Counter.members.drop(4).each { |field| total[field] += row[field] }
         end
       end
 
@@ -29,9 +29,10 @@ module Admin
 
       def raw_rows
         SearchEvent.reportable.where(created_at: start_at...end_at)
-          .group(:service_id, :neighborhood_code)
+          .group(:city_code, :service_id, :neighborhood_code)
           .group(Arel.sql("CASE WHEN service_id IS NULL THEN query_text_normalized END"))
           .pluck(
+            :city_code,
             :service_id,
             :neighborhood_code,
             Arel.sql("CASE WHEN service_id IS NULL THEN query_text_normalized END"),
@@ -56,12 +57,13 @@ module Admin
       end
 
       def combine(all_rows)
-        all_rows.group_by { |row| [row.service_id, row.neighborhood_code, row.unmatched_query] }.map do |key, grouped|
+        all_rows.group_by { |row| [row.city_code, row.service_id, row.neighborhood_code, row.unmatched_query] }.map do |key, grouped|
           Counter.new(
-            service_id: key[0],
-            neighborhood_code: key[1],
-            unmatched_query: key[2],
-            **Counter.members.drop(3).index_with { |field| grouped.sum { |row| row[field].to_i } }
+            city_code: key[0],
+            service_id: key[1],
+            neighborhood_code: key[2],
+            unmatched_query: key[3],
+            **Counter.members.drop(4).index_with { |field| grouped.sum { |row| row[field].to_i } }
           )
         end
       end

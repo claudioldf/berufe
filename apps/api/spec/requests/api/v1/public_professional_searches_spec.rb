@@ -25,20 +25,14 @@ RSpec.describe "Public professional searches", type: :request, openapi: true do
     )
   end
   let!(:neighborhood) do
-    Neighborhood.create!(
-      code: "america-contratada",
-      name: "América Contratada",
-      state_code: "SC",
-      city_code: "Joinville",
-      is_active: true,
-      sort_order: 0
-    )
+    create_location_neighborhood(code: "4209102018", name: "América Contratada")
   end
   let(:criteria) do
     LlmSearchParser::Criteria.new(
       service_ids: [electrician.id],
       locations: [
         LlmSearchParser::Location.new(
+          city_code: "4209102",
           state_code: "SC",
           city: "Joinville",
           neighborhood_code: neighborhood.code
@@ -87,6 +81,7 @@ RSpec.describe "Public professional searches", type: :request, openapi: true do
       ],
       "locations" => [
         {
+          "city_code" => joinville_city.code,
           "state_code" => "SC",
           "city" => "Joinville",
           "neighborhood" => {"code" => neighborhood.code, "name" => neighborhood.name}
@@ -145,7 +140,7 @@ RSpec.describe "Public professional searches", type: :request, openapi: true do
     expect_any_instance_of(PublicSearchRateLimiter).not_to receive(:check_and_increment!)
 
     post "/api/v1/public/professional-searches",
-      params: {service_id: electrician.id, state_code: "SC", city: "Joinville"},
+      params: {service_id: electrician.id, city_code: joinville_city.code},
       headers: request_headers("structured-search-200"),
       as: :json
 
@@ -156,6 +151,7 @@ RSpec.describe "Public professional searches", type: :request, openapi: true do
       "services" => [include("id" => electrician.id)],
       "locations" => [
         {
+          "city_code" => joinville_city.code,
           "state_code" => "SC",
           "city" => "Joinville",
           "neighborhood" => nil
@@ -167,7 +163,7 @@ RSpec.describe "Public professional searches", type: :request, openapi: true do
     assert_api_conform(status: 200)
 
     post "/api/v1/public/professional-searches",
-      params: {service_id: electrician.id, state_code: "SC", city: "Joinville"},
+      params: {service_id: electrician.id, city_code: joinville_city.code},
       headers: request_headers("structured-search-repeated"),
       as: :json
 
@@ -179,7 +175,7 @@ RSpec.describe "Public professional searches", type: :request, openapi: true do
     assert_api_conform(status: 200)
 
     post "/api/v1/public/professional-searches",
-      params: {service_id: electrician.id, state_code: "SC", city: "Joinville", page: 2},
+      params: {service_id: electrician.id, city_code: joinville_city.code, page: 2},
       headers: request_headers("structured-search-page-2"),
       as: :json
 
@@ -251,7 +247,7 @@ RSpec.describe "Public professional searches", type: :request, openapi: true do
     post "/api/v1/public/professional-searches",
       params: {
         expression: "Eletricista",
-        default_location: {state_code: "PR", city: "Curitiba"}
+        default_location: {city_code: "4106902"}
       },
       headers: request_headers("expression-default-location-unsupported"),
       as: :json
@@ -325,7 +321,8 @@ RSpec.describe "Public professional searches", type: :request, openapi: true do
     )
     revision = profile.working_revision
     revision.professional_profile_services.create!(service: electrician, is_primary: true)
-    revision.professional_profile_service_areas.create!(city_code: "Joinville", neighborhood:)
+    revision.update!(coverage_city: neighborhood.city, covers_whole_city: false)
+    revision.professional_profile_service_areas.create!(neighborhood:)
     make_profile_publicly_eligible(profile, revision:)
   end
 end

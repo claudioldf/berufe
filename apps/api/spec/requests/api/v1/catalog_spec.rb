@@ -65,23 +65,8 @@ RSpec.describe "Public catalog", type: :request, openapi: true do
       is_active: true,
       sort_order: 3
     )
-    america = Neighborhood.create!(
-      code: "america",
-      state_code: "SC",
-      city_code: "Joinville",
-      name: "América",
-      is_active: true,
-      sort_order: 0
-    )
+    america = create_location_neighborhood(code: "4209102006", name: "América")
     publish_profile_for(service: painter, neighborhood: america)
-    Neighborhood.create!(
-      code: "atiradores",
-      state_code: "SC",
-      city_code: "Joinville",
-      name: "Atiradores",
-      is_active: false,
-      sort_order: 1
-    )
 
     get "/api/v1/catalog", headers: {"X-Request-Id" => "catalog-200"}
 
@@ -96,11 +81,8 @@ RSpec.describe "Public catalog", type: :request, openapi: true do
           {"id" => painter.id, "name" => "Pintor", "slug" => "pintor", "category_slug" => "acabamentos", "icon" => "i-lucide-paintbrush", "description" => "Pintura residencial.", "aliases" => ["pintura"]},
           {"id" => electrician.id, "name" => "Eletricista", "slug" => "eletricista", "category_slug" => "instalacoes", "icon" => "i-lucide-zap", "description" => "Instalações elétricas.", "aliases" => ["elétrica"]}
         ],
-        "neighborhoods" => [
-          {"code" => america.code, "name" => "América", "state_code" => "SC", "city" => "Joinville"}
-        ],
         "cities" => [
-          {"state_code" => "SC", "city" => "Joinville", "state_slug" => "sc", "city_slug" => "joinville"}
+          {"city_code" => "4209102", "state_code" => "SC", "city" => "Joinville", "state_slug" => "sc", "city_slug" => "joinville"}
         ]
       },
       "request_id" => "catalog-200"
@@ -126,29 +108,19 @@ RSpec.describe "Public catalog", type: :request, openapi: true do
       is_active: true,
       sort_order: 0
     )
-    neighborhood = Neighborhood.create!(
-      code: "america",
-      state_code: "SC",
-      city_code: "Joinville",
-      name: "América",
-      is_active: true,
-      sort_order: 0
-    )
+    neighborhood = create_location_neighborhood(code: "4209102007", name: "América")
     publish_profile_for(service:, neighborhood:)
 
     get "/api/v1/catalog", headers: {"X-Request-Id" => "catalog-before-hide"}
     expect(response.parsed_body.dig("data", "services").pluck("id")).to contain_exactly(service.id)
-    expect(response.parsed_body.dig("data", "neighborhoods").pluck("code")).to contain_exactly(neighborhood.code)
 
     category.update!(is_active: false)
-    neighborhood.update!(is_active: false)
     get "/api/v1/catalog", headers: {"X-Request-Id" => "catalog-after-hide"}
 
     expect(response).to have_http_status(:ok)
     expect(response.parsed_body.fetch("data")).to eq(
       "categories" => [],
       "services" => [],
-      "neighborhoods" => [],
       "cities" => []
     )
     assert_api_conform(status: 200)
@@ -182,7 +154,8 @@ RSpec.describe "Public catalog", type: :request, openapi: true do
     )
     revision = profile.working_revision
     revision.professional_profile_services.create!(service:, is_primary: true)
-    revision.professional_profile_service_areas.create!(city_code: "Joinville", neighborhood:)
+    revision.update!(coverage_city: neighborhood.city, covers_whole_city: false)
+    revision.professional_profile_service_areas.create!(neighborhood:)
     make_profile_publicly_eligible(profile, revision:)
   end
 end

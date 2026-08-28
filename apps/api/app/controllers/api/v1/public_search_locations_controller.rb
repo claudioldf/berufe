@@ -19,6 +19,7 @@ module Api
 
       def serialize(result)
         {
+          city_code: result.location.city_code,
           state_code: result.location.state_code,
           city: result.location.city,
           state_slug: result.location.state_slug,

@@ -72,7 +72,7 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
             "youtube" => nil
           },
           "services" => [],
-          "coverage" => {"all_joinville" => false, "neighborhoods" => []}
+          "coverage" => {"city" => nil, "whole_city" => false, "neighborhoods" => []}
         }
       },
       "request_id" => "workspace-show"
@@ -266,19 +266,16 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
       is_active: true,
       sort_order: 0
     )
-    neighborhood = Neighborhood.create!(
-      code: "america-workspace",
-      state_code: "SC",
-      city_code: "Joinville",
-      name: "América Workspace",
-      is_active: true,
-      sort_order: 0
-    )
+    neighborhood = create_location_neighborhood(code: "4209102017", name: "América Workspace")
 
     patch "/api/v1/professional/profile",
       params: {
         services: [{service_id: service.id, is_primary: true, note: "Quadros elétricos"}],
-        coverage: {all_joinville: false, neighborhood_codes: [neighborhood.code]}
+        coverage: {
+          city_code: joinville_city.code,
+          whole_city: false,
+          neighborhood_codes: [neighborhood.code]
+        }
       },
       headers: session_headers(request_id: "workspace-supply", origin: true),
       as: :json
@@ -288,7 +285,8 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
       [{"id" => service.id, "name" => service.name, "is_primary" => true, "note" => "Quadros elétricos"}]
     )
     expect(response.parsed_body.dig("data", "profile", "coverage")).to eq(
-      "all_joinville" => false,
+      "city" => LocationSerializer.city(joinville_city).stringify_keys,
+      "whole_city" => false,
       "neighborhoods" => [{"code" => neighborhood.code, "name" => neighborhood.name}]
     )
     expect(ProfessionalDailyActivity.sole).to have_attributes(

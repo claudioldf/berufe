@@ -54,9 +54,10 @@ class SearchReportingRetentionJob < ApplicationJob
       relation = SearchEvent.where(id: locked_ids)
       reportable_relation = relation.reportable
 
-      rows = reportable_relation.group(:service_id, :neighborhood_code)
+      rows = reportable_relation.group(:city_code, :service_id, :neighborhood_code)
         .group(Arel.sql("CASE WHEN service_id IS NULL THEN query_text_normalized END"))
         .pluck(
+          :city_code,
           :service_id,
           :neighborhood_code,
           Arel.sql("CASE WHEN service_id IS NULL THEN query_text_normalized END"),
@@ -69,9 +70,10 @@ class SearchReportingRetentionJob < ApplicationJob
           Arel.sql("COUNT(*) FILTER (WHERE result_count BETWEEN 1 AND 2)")
         )
       SearchDailyRollup.where(report_date: date).delete_all
-      rollups = rows.map do |service_id, neighborhood_code, unmatched_query, *counts|
+      rollups = rows.map do |city_code, service_id, neighborhood_code, unmatched_query, *counts|
         {
           report_date: date,
+          city_code:,
           service_id:,
           neighborhood_code:,
           unmatched_query:,

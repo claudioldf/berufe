@@ -67,32 +67,19 @@ RSpec.describe "Professional profile supply", type: :model do
     end.to raise_error(ActiveRecord::RecordNotUnique)
   end
 
-  it "prevents duplicate all-city and neighborhood coverage through PostgreSQL indexes" do
-    Neighborhood.create!(
-      code: "america-supply",
-      state_code: "SC",
-      city_code: "Joinville",
-      name: "América Supply",
-      is_active: true,
-      sort_order: 0
-    )
+  it "prevents duplicate neighborhood coverage through PostgreSQL indexes" do
+    neighborhood = create_location_neighborhood(code: "4209102003", name: "América Supply")
     revision = profile.working_revision
-    ProfessionalProfileServiceArea.create!(professional_profile_revision: revision, city_code: "Joinville")
-
-    expect do
-      ProfessionalProfileServiceArea.create!(professional_profile_revision: revision, city_code: "Joinville")
-    end.to raise_error(ActiveRecord::RecordNotUnique)
+    revision.update!(coverage_city: joinville_city, covers_whole_city: false)
 
     ProfessionalProfileServiceArea.create!(
       professional_profile_revision: revision,
-      city_code: "Joinville",
-      neighborhood_code: "america-supply"
+      neighborhood:
     )
     expect do
       ProfessionalProfileServiceArea.create!(
         professional_profile_revision: revision,
-        city_code: "Joinville",
-        neighborhood_code: "america-supply"
+        neighborhood:
       )
     end.to raise_error(ActiveRecord::RecordInvalid)
   end

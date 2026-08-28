@@ -119,7 +119,7 @@ RSpec.describe "Administrator search audits", type: :request, openapi: true do
       llm_adapter: raw_response && "fake",
       llm_model: raw_response && "gpt-5-mini",
       llm_prompt_digest: raw_response && "a" * 64,
-      city_code: SearchEvent::JOINVILLE,
+      city_code: joinville_city.code,
       result_count:,
       reportable: status == "completed",
       created_at:

@@ -71,72 +71,10 @@ class CatalogManagement
     end
   end
 
-  def create_neighborhood(attributes)
-    Neighborhood.transaction do
-      lock_catalog!
-      neighborhood = Neighborhood.create!(
-        code: attributes.fetch(:code).to_s.strip.downcase,
-        name: attributes.fetch(:name).to_s.squish,
-        state_code: attributes.fetch(:state_code).to_s.strip.upcase,
-        city_code: attributes.fetch(:city).to_s.squish,
-        is_active: true,
-        sort_order: next_sort_order(Neighborhood)
-      )
-      record_event!(
-        catalog_type: "neighborhood",
-        target_identifier: neighborhood.code,
-        action: "created",
-        changes: {before: nil, after: neighborhood_state(neighborhood)}
-      )
-      snapshot
-    end
-  end
-
-  def update_neighborhood(code, attributes)
-    Neighborhood.transaction do
-      lock_catalog!
-      neighborhood = Neighborhood.find(code)
-      before = neighborhood_state(neighborhood)
-      assign_neighborhood_attributes(neighborhood, attributes)
-      neighborhood.save!
-      after = neighborhood_state(neighborhood)
-      record_event!(
-        catalog_type: "neighborhood",
-        target_identifier: neighborhood.code,
-        action: update_action(before:, after:),
-        changes: changed_values(before:, after:)
-      )
-      snapshot
-    end
-  end
-
-  def reorder_neighborhoods(ordered_codes)
-    Neighborhood.transaction do
-      lock_catalog!
-      neighborhoods = Neighborhood.ordered.to_a
-      normalized_codes = normalize_order(ordered_codes)
-      validate_complete_order!(normalized_codes, neighborhoods.map(&:code))
-      neighborhoods_by_code = neighborhoods.index_by(&:code)
-
-      normalized_codes.each_with_index do |code, sort_order|
-        neighborhoods_by_code.fetch(code).update!(sort_order:)
-      end
-
-      record_event!(
-        catalog_type: "neighborhood",
-        target_identifier: "neighborhoods",
-        action: "reordered",
-        changes: {order: normalized_codes}
-      )
-      snapshot
-    end
-  end
-
   def snapshot
     AdminCatalogSerializer.new(
       categories: ServiceCategory.ordered.to_a,
-      services: Service.includes(:category).ordered.to_a,
-      neighborhoods: Neighborhood.ordered.to_a
+      services: Service.includes(:category).ordered.to_a
     )
   end
 
@@ -159,13 +97,6 @@ class CatalogManagement
     return unless attributes.key?(:category_slug)
 
     service.category = ServiceCategory.find_by!(slug: attributes.fetch(:category_slug))
-  end
-
-  def assign_neighborhood_attributes(neighborhood, attributes)
-    neighborhood.name = attributes.fetch(:name).to_s.squish if attributes.key?(:name)
-    neighborhood.state_code = attributes.fetch(:state_code).to_s.strip.upcase if attributes.key?(:state_code)
-    neighborhood.city_code = attributes.fetch(:city).to_s.squish if attributes.key?(:city)
-    neighborhood.is_active = attributes.fetch(:is_active) if attributes.key?(:is_active)
   end
 
   def normalize_order(identifiers)
@@ -201,16 +132,6 @@ class CatalogManagement
       description: service.description,
       isActive: service.is_active,
       sortOrder: service.sort_order
-    }
-  end
-
-  def neighborhood_state(neighborhood)
-    {
-      name: neighborhood.name,
-      stateCode: neighborhood.state_code,
-      city: neighborhood.city_code,
-      isActive: neighborhood.is_active,
-      sortOrder: neighborhood.sort_order
     }
   end
 

@@ -28,7 +28,7 @@ RSpec.describe CatalogSeed, type: :service do
     }
   end
 
-  it "seeds stable records once, preserves later edits, and excludes the whole-city sentinel" do
+  it "seeds stable service records once and preserves later edits" do
     Tempfile.create(["catalog", ".json"]) do |file|
       file.write(JSON.generate(catalog))
       file.flush
@@ -40,14 +40,11 @@ RSpec.describe CatalogSeed, type: :service do
 
       expect(ServiceCategory.count).to eq(1)
       expect(Service.count).to eq(1)
-      expect(Neighborhood.count).to eq(2)
       expect(Service.find_by!(slug: "eletricista")).to have_attributes(
         name: "Eletricista residencial",
         aliases: ["elétrica"],
         sort_order: 0
       )
-      expect(Neighborhood.ordered.pluck(:code, :sort_order)).to eq([["america", 0], ["atiradores", 1]])
-      expect(Neighborhood.exists?(code: "all")).to be(false)
     end
   end
 

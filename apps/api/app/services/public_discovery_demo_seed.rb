@@ -5,6 +5,8 @@ require "json"
 class PublicDiscoveryDemoSeed
   ALLOWED_ENVIRONMENTS = %w[local test].freeze
   CONTENT_TYPE = "image/jpeg"
+  DEMO_CITY_CODES = %w[4209102 4202404 4106902 4202008].freeze
+  PROFESSIONALS_PER_CATEGORY_AND_CITY = 2
 
   def self.default_data_path
     configured_path = ENV["PROFESSIONAL_DEMO_SEED_PATH"].presence
@@ -45,7 +47,8 @@ class PublicDiscoveryDemoSeed
       [attributes.fetch("slug"), seed_professional(attributes)]
     end
     seed_relationships(professionals, profiles)
-    profiles.values
+    generated = seed_category_city_matrix(initiator: profiles.values.first)
+    profiles.values + generated
   end
 
   private
@@ -107,6 +110,8 @@ class PublicDiscoveryDemoSeed
   end
 
   def update_supply(profile, attributes)
+    coverage = attributes.fetch("coverage")
+    city_code = coverage.dig("city", "code")
     primary_slug = attributes.fetch("primaryServiceSlug")
     notes = attributes.fetch("serviceNotes")
     selected_services = attributes.fetch("services").each_with_index.map do |name, index|
@@ -117,21 +122,14 @@ class PublicDiscoveryDemoSeed
         note: notes[index]
       }
     end
-    neighborhood_codes = if attributes.fetch("allJoinville")
-      []
-    else
-      neighborhood_names = attributes.fetch("neighborhoods")
-      codes = Neighborhood.where(name: neighborhood_names).pluck(:code)
-      raise ActiveRecord::RecordNotFound, "demo neighborhoods" unless codes.length == neighborhood_names.length
-
-      codes
-    end
+    neighborhood_codes = coverage.fetch("neighborhoods").pluck("code")
 
     ProfessionalProfileSupplyUpdater.new.call(
       profile:,
       services: selected_services,
       coverage: {
-        all_joinville: attributes.fetch("allJoinville"),
+        city_code:,
+        whole_city: coverage.fetch("wholeCity"),
         neighborhood_codes:
       }
     )
@@ -228,6 +226,71 @@ class PublicDiscoveryDemoSeed
         end
       end
     end
+  end
+
+  def seed_category_city_matrix(initiator:)
+    generated = []
+    cities = City.where(code: DEMO_CITY_CODES).includes(:state).index_by(&:code)
+    raise ActiveRecord::RecordNotFound, "demo cities" unless cities.length == DEMO_CITY_CODES.length
+
+    ServiceCategory.active.ordered.each_with_index do |category, category_index|
+      services = category.services.publicly_active.ordered.to_a
+      raise ActiveRecord::RecordNotFound, "demo category services" if services.empty?
+
+      DEMO_CITY_CODES.each_with_index do |city_code, city_index|
+        city = cities.fetch(city_code)
+        count = primary_professional_count(category:, city:)
+        (PROFESSIONALS_PER_CATEGORY_AND_CITY - count).times do |offset|
+          sequence = count + offset + 1
+          service = services[(sequence - 1) % services.length]
+          phone = generated_phone(city:, city_index:, category_index:, sequence:)
+          existing = UserAccount.find_by(phone_e164: phone)&.professional_profile
+          if existing
+            generated << existing
+            next
+          end
+
+          relationship = ProfessionalRelationshipRequester.new.call(
+            initiator:,
+            target: {
+              type: "phone",
+              name: "Profissional #{category.name} #{city.name} #{sequence}",
+              phone:,
+              service_ids: [service.id],
+              coverage: {city_code:, whole_city: true, neighborhood_codes: []},
+              contact_publication_attested: true
+            },
+            relationship_type: "worked_together",
+            context_note: "Perfil sintético para desenvolvimento local."
+          )
+          profile = relationship.recipient_professional
+          ModerationDecision.new(context: admin_context).call(
+            target_type: "profile_revision",
+            target_id: profile.published_revision_id,
+            action: "approved"
+          )
+          generated << profile.reload
+        end
+      end
+    end
+    generated
+  end
+
+  def primary_professional_count(category:, city:)
+    ProfessionalProfile
+      .publicly_searchable
+      .joins(published_revision: {professional_profile_services: :service})
+      .where(professional_profile_revisions: {coverage_city_code: city.code})
+      .where(professional_profile_services: {is_primary: true})
+      .where(services: {category_id: category.id})
+      .distinct
+      .count
+  end
+
+  def generated_phone(city:, city_index:, category_index:, sequence:)
+    area_code = (city.state.abbreviation == "PR") ? "41" : "47"
+    subscriber = format("99%d%d%05d", city_index, category_index, sequence)
+    "+55#{area_code}#{subscriber}"
   end
 
   def admin_context
