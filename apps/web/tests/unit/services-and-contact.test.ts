@@ -13,6 +13,14 @@ describe("service discovery", () => {
     expect(findService(services, "pintura")?.slug).toBe("pintor");
     expect(findService(services, "")).toBeUndefined();
   });
+
+  it("keeps legacy catalog terms searchable after the display-copy update", () => {
+    expect(findService(services, "marido de aluguel")?.name).toBe(
+      "Pequenos reparos",
+    );
+    expect(findService(services, "desentupidor")?.name).toBe("Desentupimento");
+    expect(findService(services, "petsitter")?.name).toBe("Cuidados para pets");
+  });
 });
 
 describe("contact links", () => {

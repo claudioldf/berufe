@@ -8,7 +8,7 @@
     "avatar": "/images/professional-marcos-alves-electrician.jpg",
     "primaryService": "Eletricista",
     "primaryServiceSlug": "eletricista",
-    "services": ["Eletricista", "Marido de aluguel"],
+    "services": ["Eletricista", "Pequenos reparos"],
     "serviceNotes": ["Quadros elétricos e adequação de instalações", "Iluminação e pequenos reparos"],
     "coverage": {
       "city": { "code": "4209102", "name": "Joinville", "slug": "joinville", "stateCode": "42", "stateAbbreviation": "SC", "stateName": "Santa Catarina" },
@@ -150,7 +150,7 @@
     "avatar": "/images/professional-rafael-oliveira-plumber.jpg",
     "primaryService": "Encanador",
     "primaryServiceSlug": "encanador",
-    "services": ["Encanador", "Marido de aluguel"],
+    "services": ["Encanador", "Pequenos reparos"],
     "serviceNotes": ["Vazamentos e instalações hidráulicas"],
     "coverage": {
       "city": { "code": "4209102", "name": "Joinville", "slug": "joinville", "stateCode": "42", "stateAbbreviation": "SC", "stateName": "Santa Catarina" },
