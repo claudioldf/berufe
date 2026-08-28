@@ -2414,6 +2414,8 @@ export interface components {
             social_links: components["schemas"]["PublicProfessionalSocialLinks"];
             /** Format: date-time */
             public_snapshot_updated_at: string | null;
+            /** @description Whether Rails considers this profile substantial enough to be indexed by search engines (self-service, published, with a photo and at least one piece of evidence). External or unclaimed profiles are never indexable. */
+            indexable: boolean;
         };
         PublicProfessionalEvidenceSummary: {
             completed_services: number;

@@ -86,13 +86,15 @@ RSpec.describe PublicProfessionalProfileSerializer do
     expect(described_class.new(profile).as_json).to include(
       display_name: "Ana Obras",
       headline: "Nova apresentação pendente.",
-      bio: "Conteúdo ainda não aprovado."
+      bio: "Conteúdo ainda não aprovado.",
+      indexable: true
     )
     expect(before_edit).to include(
       public_slug: "ana-souza",
       display_name: "Ana Souza",
       headline: "Elétrica residencial.",
-      verification_labels: [{type: "phone", label: "Telefone confirmado", verified_at: nil}]
+      verification_labels: [{type: "phone", label: "Telefone confirmado", verified_at: nil}],
+      indexable: true
     )
   end
 

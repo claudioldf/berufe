@@ -6434,6 +6434,7 @@ components:
         - relationships
         - social_links
         - public_snapshot_updated_at
+        - indexable
       properties:
         id:
           type: string
@@ -6508,6 +6509,13 @@ components:
             - string
             - "null"
           format: date-time
+        indexable:
+          type: boolean
+          description: >-
+            Whether Rails considers this profile substantial enough to be
+            indexed by search engines (self-service, published, with a
+            photo and at least one piece of evidence). External or
+            unclaimed profiles are never indexable.
     PublicProfessionalEvidenceSummary:
       type: object
       additionalProperties: false
