@@ -38,6 +38,9 @@ const statusLabel = {
       <p v-else-if="services.error.value" role="alert">
         Não foi possível carregar seus serviços.
       </p>
+      <DashboardServiceEmptyState
+        v-else-if="services.data.value?.length === 0"
+      />
       <DesignSystemSurfaceCard v-else class="service-list">
         <NuxtLink
           v-for="service in services.data.value ?? []"
@@ -56,10 +59,6 @@ const statusLabel = {
           <small>{{ formatDateTime(service.updatedAt) }}</small>
           <UIcon name="i-lucide-chevron-right" />
         </NuxtLink>
-        <p v-if="services.data.value?.length === 0">
-          Nenhum serviço aprovado ainda. Ele aparecerá aqui quando um cliente
-          aprovar um orçamento.
-        </p>
       </DesignSystemSurfaceCard>
     </DesignSystemContainer>
   </div>
@@ -135,12 +134,6 @@ const statusLabel = {
   font-size: 0.78rem;
   font-style: normal;
   font-weight: 800;
-}
-
-.service-list > p {
-  margin: 0;
-  padding: 24px;
-  color: var(--ink-soft);
 }
 
 @media (width <= 720px) {
