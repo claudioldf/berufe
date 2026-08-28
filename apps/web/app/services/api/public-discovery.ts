@@ -1,5 +1,6 @@
 import type {
   PublicProfessionalCard,
+  PublicProfessionalListing,
   PublicProfessionalProfile,
   PublicProfessionalProfileResult,
   PublicProfessionalSearchResult,
@@ -19,6 +20,8 @@ type ContractVerificationLabel =
   components["schemas"]["PublicVerificationLabel"];
 type ContractSearchData = components["schemas"]["PublicProfessionalSearchData"];
 type ContractCoverage = components["schemas"]["PublicProfessionalCoverage"];
+type ContractListingData =
+  components["schemas"]["PublicProfessionalListingData"];
 type ContractCoverageEntry =
   components["schemas"]["PublicServiceCoverageEntry"];
 type ContractEffectiveLocation =
@@ -308,6 +311,60 @@ function mapEffectiveLocation(
     stateSlug: location.state_slug,
     citySlug: location.city_slug,
   };
+}
+
+function mapPublicProfessionalListing(
+  data: ContractListingData,
+): PublicProfessionalListing {
+  return {
+    service: data.service,
+    location: mapEffectiveLocation(data.location),
+    professionals: data.professionals.map(mapPublicProfessionalCard),
+    relatedServices: data.related_services,
+    page: data.meta.page,
+    perPage: data.meta.per_page,
+    totalCount: data.meta.total_count,
+    totalPages: data.meta.total_pages,
+    indexable: data.indexable,
+  };
+}
+
+interface PublicProfessionalListingInput {
+  serviceSlug: string;
+  stateSlug: string;
+  citySlug: string;
+  page?: number;
+  perPage?: number;
+}
+
+export async function fetchPublicProfessionalListing(
+  client: BerufeApiClient,
+  input: PublicProfessionalListingInput,
+): Promise<PublicProfessionalListing> {
+  const { data, error, response } = await client.GET(
+    "/api/v1/public/professional-listings",
+    {
+      params: {
+        query: {
+          service_slug: input.serviceSlug,
+          state_slug: input.stateSlug,
+          city_slug: input.citySlug,
+          ...(input.page ? { page: input.page } : {}),
+          ...(input.perPage ? { per_page: input.perPage } : {}),
+        },
+      },
+    },
+  );
+  if (error || !data) {
+    throw new ApiRequestError(
+      normalizeApiError(
+        error,
+        response.headers.get("X-Request-Id") ?? "client",
+      ),
+    );
+  }
+
+  return mapPublicProfessionalListing(data.data);
 }
 
 function mapServiceCoverageEntry(

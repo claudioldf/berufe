@@ -146,6 +146,18 @@ export interface PublicProfessionalSearchResult {
   } | null;
 }
 
+export interface PublicProfessionalListing {
+  service: PublicServiceSuggestion;
+  location: SearchLocation;
+  professionals: PublicProfessionalCard[];
+  relatedServices: PublicServiceSuggestion[];
+  page: number;
+  perPage: number;
+  totalCount: number;
+  totalPages: number;
+  indexable: boolean;
+}
+
 export interface PublicServiceCoverageEntry {
   service: PublicServiceSuggestion;
   location: SearchLocation;
