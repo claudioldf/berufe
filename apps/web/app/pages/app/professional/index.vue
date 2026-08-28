@@ -7,7 +7,6 @@ import { useShare } from "~/composables/useShare";
 import { useToast } from "~/composables/useToast";
 import type { ProfessionalRelationshipResponse } from "~/services/api/professional-relationships";
 
-const runtimeConfig = useRuntimeConfig();
 const { share } = useShare();
 const { showToast } = useToast();
 const { account } = useApplicationSession();
@@ -26,12 +25,10 @@ const professionalFirstName = computed(
     workspace.value?.profile.identity.name.trim().split(" ")[0] ??
     "profissional",
 );
-const siteUrl = String(
-  runtimeConfig.public.siteUrl || "http://localhost:3000",
-).replace(/\/$/, "");
+const siteUrl = withSiteUrl("/");
 const publicProfileUrl = computed(() =>
   workspace.value
-    ? `${siteUrl}/profissionais/${workspace.value.profile.publicSlug}`
+    ? `${siteUrl.value.replace(/\/$/, "")}/profissionais/${workspace.value.profile.publicSlug}`
     : "",
 );
 const localDateLabel = computed(() => {

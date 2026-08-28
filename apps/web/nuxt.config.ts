@@ -33,11 +33,34 @@ export default defineNuxtConfig({
     "@components": fileURLToPath(new URL("./app/components", import.meta.url)),
     "@data": fileURLToPath(new URL("./data", import.meta.url)),
   },
-  modules: ["@nuxt/ui", "@nuxt/eslint"],
+  modules: ["@nuxt/ui", "@nuxt/eslint", "@nuxtjs/seo", "@nuxt/image"],
   eslint: {
     config: {
       stylistic: false,
     },
+  },
+  site: {
+    url: process.env.NUXT_PUBLIC_SITE_URL,
+    name: "Berufe",
+    description:
+      "Encontre profissionais verificados para sua casa e seu dia a dia. Veja trabalhos e referências e fale direto pelo WhatsApp — sem pagar por contato.",
+    defaultLocale: "pt-BR",
+  },
+  robots: {
+    disallow: ["/app", "/orcamento", "/recomendacao", "/foundation"],
+  },
+  sitemap: {
+    exclude: ["/app/**", "/orcamento/**", "/recomendacao/**", "/foundation"],
+  },
+  linkChecker: {
+    enabled: true,
+    // Report only; a broken internal link should not fail CI while the
+    // module is new. Revisit once the report is clean.
+    failOnError: false,
+  },
+  image: {
+    quality: 82,
+    format: ["webp"],
   },
   colorMode: {
     preference: "light",
@@ -152,9 +175,15 @@ export default defineNuxtConfig({
         {
           name: "description",
           content:
-            "Profissionais verificados para cuidar da sua casa em Joinville.",
+            "Profissionais verificados para cuidar da sua casa e do seu dia a dia.",
         },
         { name: "theme-color", content: "#183c35" },
+      ],
+      link: [
+        { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
+        { rel: "icon", type: "image/x-icon", href: "/favicon.ico" },
+        { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+        { rel: "manifest", href: "/site.webmanifest" },
       ],
     },
   },
@@ -162,18 +191,34 @@ export default defineNuxtConfig({
     "/**": { headers: browserSecurityHeaders },
     "/": { prerender: false },
     "/encontrar": { prerender: false },
-    "/encontrar/**": { prerender: false },
-    "/profissionais/**": { prerender: false },
-    "/foundation": { prerender: false },
+    "/encontrar/**": { prerender: false, swr: 300 },
+    "/profissionais/**": { prerender: false, swr: 300 },
+    "/foundation": {
+      prerender: false,
+      headers: {
+        ...browserSecurityHeaders,
+        "x-robots-tag": "noindex, nofollow",
+      },
+    },
     "/app/**": {
       ssr: false,
       prerender: false,
       headers: {
         ...browserSecurityHeaders,
         "cache-control": "private, no-store",
+        "x-robots-tag": "noindex, nofollow",
       },
     },
     "/orcamento/**": {
+      prerender: false,
+      headers: {
+        ...browserSecurityHeaders,
+        "cache-control": "private, no-store",
+        "referrer-policy": "no-referrer",
+        "x-robots-tag": "noindex, nofollow",
+      },
+    },
+    "/recomendacao/**": {
       prerender: false,
       headers: {
         ...browserSecurityHeaders,
