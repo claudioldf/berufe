@@ -60,6 +60,17 @@ describe("home marketing copy", () => {
     expect(wrapper.text()).toContain("Fale direto pelo WhatsApp");
     expect(wrapper.text()).toContain("trabalhos publicados");
     expect(wrapper.text()).toContain("referências de cada perfil");
+    expect(wrapper.get(".trust__profile-card").text()).toContain(
+      "Informações para decidir",
+    );
+    expect(wrapper.get(".trust__profile-card").text()).toContain(
+      "Informações verificadas",
+    );
+    expect(wrapper.find(".trust__step-number").exists()).toBe(false);
+    expect(wrapper.get(".trust__label").text()).toContain(
+      "Compare antes de escolher.",
+    );
+    expect(wrapper.find(".trust__photo").exists()).toBe(false);
     expect(wrapper.text()).not.toContain("evidências");
   });
 
