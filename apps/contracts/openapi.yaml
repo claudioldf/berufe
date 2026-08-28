@@ -917,6 +917,68 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/public/service-demand:
+    get:
+      operationId: getPublicServiceDemand
+      summary: Read 30-day search demand for one service in one city, above a privacy release threshold
+      description: >-
+        Powers the "N people searched for this near you" proof-of-demand
+        line on professional-acquisition pages. Never releases a raw count
+        below the privacy threshold -- below it, `searches` is null.
+      tags:
+        - Public discovery
+      security: []
+      parameters:
+        - name: service_slug
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        - name: state_slug
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: "^[a-z]{2}$"
+        - name: city_slug
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+      responses:
+        "200":
+          description: The release decision and, when released, the 30-day search count.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              schema:
+                type: string
+                const: "max-age=0, public, must-revalidate"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicServiceDemandResponse"
+        "404":
+          description: The service slug or the state/city route is unknown or unsupported.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: The public demand query is temporarily unavailable.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/public/professionals/{slug}:
     parameters:
       - name: slug
@@ -6338,6 +6400,29 @@ components:
           minimum: 1
         indexable:
           type: boolean
+    PublicServiceDemandResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required:
+            - released
+            - searches
+          properties:
+            released:
+              type: boolean
+            searches:
+              type:
+                - integer
+                - "null"
+              minimum: 0
+        request_id:
+          $ref: "#/components/schemas/RequestId"
     PublicProfessionalSearchInterpretation:
       type: object
       additionalProperties: false

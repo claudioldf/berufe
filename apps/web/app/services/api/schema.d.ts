@@ -398,6 +398,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/service-demand": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read 30-day search demand for one service in one city, above a privacy release threshold
+         * @description Powers the "N people searched for this near you" proof-of-demand line on professional-acquisition pages. Never releases a raw count below the privacy threshold -- below it, `searches` is null.
+         */
+        get: operations["getPublicServiceDemand"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/professionals/{slug}": {
         parameters: {
             query?: {
@@ -2371,6 +2391,13 @@ export interface components {
             professional_count: number;
             indexable: boolean;
         };
+        PublicServiceDemandResponse: {
+            data: {
+                released: boolean;
+                searches: number | null;
+            };
+            request_id: components["schemas"]["RequestId"];
+        };
         PublicProfessionalSearchInterpretation: {
             services: components["schemas"]["PublicServiceSuggestion"][];
             effective_location: components["schemas"]["PublicProfessionalSearchEffectiveLocation"];
@@ -3638,6 +3665,52 @@ export interface operations {
                 };
             };
             /** @description The public coverage query is temporarily unavailable. */
+            503: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getPublicServiceDemand: {
+        parameters: {
+            query: {
+                service_slug: string;
+                state_slug: string;
+                city_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The release decision and, when released, the 30-day search count. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Cache-Control"?: "max-age=0, public, must-revalidate";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicServiceDemandResponse"];
+                };
+            };
+            /** @description The service slug or the state/city route is unknown or unsupported. */
+            404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The public demand query is temporarily unavailable. */
             503: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
