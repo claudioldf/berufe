@@ -2,20 +2,66 @@
   <DesignSystemPageSection id="como-funciona" class="trust">
     <DesignSystemContainer class="trust__grid">
       <div class="trust__visual">
-        <div class="trust__photo">
-          <img
-            src="/images/photo-1503387762-592deb58ef4e.jpg"
-            alt="Profissionais em uma obra residencial"
-            width="1200"
-            height="675"
-            loading="lazy"
-          />
-        </div>
+        <article
+          class="trust__profile-card"
+          aria-labelledby="trust-profile-title"
+        >
+          <header class="trust__profile-header">
+            <span class="trust__profile-icon" aria-hidden="true">
+              <UIcon name="i-lucide-user-round" />
+            </span>
+            <div>
+              <small>Perfil profissional</small>
+              <h3 id="trust-profile-title">Informações para decidir</h3>
+            </div>
+          </header>
+
+          <div class="trust__profile-highlights">
+            <div>
+              <span aria-hidden="true">
+                <UIcon name="i-lucide-images" />
+              </span>
+              <strong>Trabalhos publicados</strong>
+            </div>
+            <div>
+              <span aria-hidden="true">
+                <UIcon name="i-lucide-wrench" />
+              </span>
+              <strong>Serviços oferecidos</strong>
+            </div>
+          </div>
+
+          <ul class="trust__profile-details">
+            <li>
+              <span aria-hidden="true">
+                <UIcon name="i-lucide-shield-check" />
+              </span>
+              <div>
+                <strong>Informações verificadas</strong>
+                <small>Veja com clareza quais dados foram confirmados.</small>
+              </div>
+            </li>
+            <li>
+              <span aria-hidden="true">
+                <UIcon name="i-lucide-quote" />
+              </span>
+              <div>
+                <strong>Referências profissionais</strong>
+                <small>Conheça quem pode recomendar aquele trabalho.</small>
+              </div>
+            </li>
+          </ul>
+        </article>
+
         <div class="trust__label">
-          <UIcon name="i-lucide-scan-search" />
+          <span aria-hidden="true">
+            <UIcon name="i-lucide-scan-search" />
+          </span>
           <span>
-            <strong>Mais clareza para escolher.</strong>
-            <small>Veja os detalhes de cada perfil.</small>
+            <strong>Compare antes de escolher.</strong>
+            <small
+              >Veja trabalhos, informações verificadas e referências.</small
+            >
           </span>
         </div>
       </div>
@@ -24,7 +70,7 @@
           Como a Berufe ajuda
         </DesignSystemEyebrow>
         <DesignSystemHeading tone="inverse">
-          Conheça melhor antes<br />de escolher.
+          Conheça melhor antes de escolher.
         </DesignSystemHeading>
         <DesignSystemSectionCopy>
           Aqui, a confiança não se resume a uma nota. Você vê separadamente o
@@ -33,7 +79,9 @@
         </DesignSystemSectionCopy>
         <ol class="trust__steps">
           <li>
-            <span>01</span>
+            <span class="trust__step-icon" aria-hidden="true">
+              <UIcon name="i-lucide-pencil" />
+            </span>
             <div>
               <strong>Conte o que você precisa</strong>
               <p>
@@ -43,7 +91,9 @@
             </div>
           </li>
           <li>
-            <span>02</span>
+            <span class="trust__step-icon" aria-hidden="true">
+              <UIcon name="i-lucide-panels-top-left" />
+            </span>
             <div>
               <strong>Compare os profissionais</strong>
               <p>
@@ -54,7 +104,9 @@
             </div>
           </li>
           <li>
-            <span>03</span>
+            <span class="trust__step-icon" aria-hidden="true">
+              <UIcon name="i-lucide-message-circle" />
+            </span>
             <div>
               <strong>Fale direto pelo WhatsApp</strong>
               <p>
