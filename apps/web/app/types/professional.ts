@@ -221,6 +221,7 @@ export interface PublicProfessionalProfile {
     note: string | null;
   }>;
   updatedAt: string | null;
+  indexable: boolean;
   instagram?: string;
   youtube?: string;
 }

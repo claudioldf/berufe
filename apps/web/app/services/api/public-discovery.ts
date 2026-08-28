@@ -263,6 +263,7 @@ export function mapPublicProfessionalProfile(
       note: relationship.note,
     })),
     updatedAt: profile.public_snapshot_updated_at,
+    indexable: profile.indexable,
     ...(profile.social_links.instagram
       ? { instagram: profile.social_links.instagram }
       : {}),
