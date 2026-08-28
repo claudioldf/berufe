@@ -3,6 +3,7 @@ import type {
   PublicProfessionalProfile,
   PublicProfessionalProfileResult,
   PublicProfessionalSearchResult,
+  PublicServiceCoverageEntry,
   PublicServiceDemand,
   SearchLocation,
   StructuredSearchPayload,
@@ -18,6 +19,10 @@ type ContractVerificationLabel =
   components["schemas"]["PublicVerificationLabel"];
 type ContractSearchData = components["schemas"]["PublicProfessionalSearchData"];
 type ContractCoverage = components["schemas"]["PublicProfessionalCoverage"];
+type ContractCoverageEntry =
+  components["schemas"]["PublicServiceCoverageEntry"];
+type ContractEffectiveLocation =
+  components["schemas"]["PublicProfessionalSearchEffectiveLocation"];
 
 function mapCoverage(coverage: ContractCoverage) {
   return {
@@ -291,6 +296,63 @@ export async function fetchPublicProfessionalProfile(
     professional: mapPublicProfessionalProfile(data.data.professional),
     interactionToken: data.data.interaction.token,
   };
+}
+
+function mapEffectiveLocation(
+  location: ContractEffectiveLocation,
+): SearchLocation {
+  return {
+    cityCode: location.city_code,
+    stateCode: location.state_code,
+    city: location.city,
+    stateSlug: location.state_slug,
+    citySlug: location.city_slug,
+  };
+}
+
+function mapServiceCoverageEntry(
+  entry: ContractCoverageEntry,
+): PublicServiceCoverageEntry {
+  return {
+    service: entry.service,
+    location: mapEffectiveLocation(entry.location),
+    professionalCount: entry.professional_count,
+    indexable: entry.indexable,
+  };
+}
+
+interface PublicServiceCoverageInput {
+  serviceSlug?: string;
+  stateSlug?: string;
+  citySlug?: string;
+}
+
+export async function fetchPublicServiceCoverage(
+  client: BerufeApiClient,
+  input: PublicServiceCoverageInput = {},
+): Promise<PublicServiceCoverageEntry[]> {
+  const { data, error, response } = await client.GET(
+    "/api/v1/public/service-coverage",
+    {
+      params: {
+        query: {
+          ...(input.serviceSlug ? { service_slug: input.serviceSlug } : {}),
+          ...(input.stateSlug ? { state_slug: input.stateSlug } : {}),
+          ...(input.citySlug ? { city_slug: input.citySlug } : {}),
+        },
+      },
+    },
+  );
+  if (error || !data) {
+    throw new ApiRequestError(
+      normalizeApiError(
+        error,
+        response.headers.get("X-Request-Id") ?? "client",
+      ),
+    );
+  }
+
+  return data.data.entries.map(mapServiceCoverageEntry);
 }
 
 interface PublicServiceDemandInput {

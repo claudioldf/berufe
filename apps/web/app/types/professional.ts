@@ -146,6 +146,13 @@ export interface PublicProfessionalSearchResult {
   } | null;
 }
 
+export interface PublicServiceCoverageEntry {
+  service: PublicServiceSuggestion;
+  location: SearchLocation;
+  professionalCount: number;
+  indexable: boolean;
+}
+
 export interface PublicServiceDemand {
   released: boolean;
   searches: number | null;

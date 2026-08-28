@@ -206,6 +206,7 @@ export default defineNuxtConfig({
     "/encontrar": { prerender: false },
     "/encontrar/**": { prerender: false, swr: 300 },
     "/profissionais/**": { prerender: false, swr: 300 },
+    "/servicos/**": { prerender: false, swr: 300 },
     "/para-profissionais/**": { prerender: false, swr: 900 },
     "/guias/**": { prerender: false, swr: 900 },
     "/foundation": {
