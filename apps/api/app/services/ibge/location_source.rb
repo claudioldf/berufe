@@ -9,6 +9,7 @@ require "zip"
 
 module Ibge
   class LocationSource
+    ResourceNotFound = Class.new(StandardError)
     LOCALITIES_BASE_URL = "https://servicodados.ibge.gov.br/api/v1/localidades"
     NEIGHBORHOOD_BASE_URL = "https://geoftp.ibge.gov.br/organizacao_do_territorio/" \
       "malhas_territoriais/malhas_de_setores_censitarios__divisoes_intramunicipais/" \
@@ -16,9 +17,13 @@ module Ibge
     MAXIMUM_DBF_BYTES = 100.megabytes
     Payload = Data.define(:states, :cities, :neighborhoods)
 
-    def initialize(state_abbreviations: nil, city_codes: nil)
+    attr_reader :missing_neighborhood_archives
+
+    def initialize(state_abbreviations: nil, city_codes: nil, logger: Rails.logger)
       @state_abbreviations = normalize_filter(state_abbreviations, pattern: /\A[A-Z]{2}\z/)
       @city_codes = normalize_filter(city_codes, pattern: /\A\d{7}\z/)
+      @logger = logger
+      @missing_neighborhood_archives = []
     end
 
     def fetch
@@ -36,7 +41,7 @@ module Ibge
 
     private
 
-    attr_reader :state_abbreviations, :city_codes
+    attr_reader :state_abbreviations, :city_codes, :logger
 
     def fetch_states
       get_json("#{LOCALITIES_BASE_URL}/estados?orderBy=nome").map do |row|
@@ -93,6 +98,10 @@ module Ibge
         end
       end
       neighborhoods
+    rescue ResourceNotFound
+      missing_neighborhood_archives << abbreviation
+      logger.warn("O IBGE não publicou arquivo de bairros para #{abbreviation}; cidades importadas sem bairros.")
+      []
     end
 
     def get_json(url)
@@ -125,6 +134,8 @@ module Ibge
         raise ArgumentError, "Redirecionamento inseguro ao consultar o IBGE." unless location.scheme == "https"
 
         get(location.to_s, redirects: redirects - 1)
+      when Net::HTTPNotFound
+        raise ResourceNotFound, "Recurso ausente no IBGE: #{uri}."
       else
         raise ArgumentError, "O IBGE respondeu HTTP #{response.code} para #{uri.host}."
       end

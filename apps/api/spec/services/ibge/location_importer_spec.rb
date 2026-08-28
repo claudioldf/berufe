@@ -39,4 +39,18 @@ RSpec.describe Ibge::LocationImporter do
     expect { import }.to raise_error(ArgumentError, /referencia uma cidade ausente/)
     expect([State.where(code: "43").count, City.where(code: "4314902").count, Neighborhood.count]).to eq([0, 0, 0])
   end
+
+  it "keeps distinct official codes when a municipality repeats a neighborhood name" do
+    payload[:neighborhoods] << {
+      code: 4_314_902_002,
+      city_code: 4_314_902,
+      name: "Centro Histórico"
+    }
+
+    expect { import }.to change(Neighborhood, :count).by(2)
+    expect(Neighborhood.where(city_code: "4314902", name: "Centro Histórico").pluck(:code)).to contain_exactly(
+      "4314902001",
+      "4314902002"
+    )
+  end
 end

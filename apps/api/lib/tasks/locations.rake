@@ -8,6 +8,10 @@ namespace :locations do
       city_codes: ENV["IBGE_CITY_CODES"]
     )
     payload = source.fetch
+    if source.missing_neighborhood_archives.any?
+      puts "Aviso: o IBGE não publicou arquivos de bairros para " \
+        "#{source.missing_neighborhood_archives.sort.join(", ")}; cidades importadas sem bairros."
+    end
     result = Ibge::LocationImporter.new.call(
       states: payload.states,
       cities: payload.cities,

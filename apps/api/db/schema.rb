@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_27_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_27_110000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -388,7 +388,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_27_100000) do
     t.datetime "created_at", null: false
     t.text "name", null: false
     t.datetime "updated_at", null: false
-    t.index "city_code, lower(name)", name: "index_neighborhoods_on_city_and_name", unique: true
+    t.index "city_code, lower(name)", name: "index_neighborhoods_on_city_and_name"
     t.index ["city_code", "code"], name: "index_neighborhoods_on_city_code_and_code"
     t.check_constraint "btrim(name) <> ''::text", name: "neighborhoods_name_present"
     t.check_constraint "code ~ '^[0-9]{10}$'::text", name: "neighborhoods_ibge_code_format"

@@ -107,7 +107,9 @@ Committed Rails migrations are the only supported way to change the schema. Appl
 `locations:import_ibge` upserts states and municipalities from the official
 [IBGE Localidades API](https://servicodados.ibge.gov.br/api/v1/localidades) and
 neighborhoods from the official 2022 Census neighborhood DBF archives. The Localidades
-API does not publish a neighborhood endpoint, so both sources are required.
+API does not publish a neighborhood endpoint, so both sources are required. States for
+which IBGE publishes no neighborhood archive are retained with all their municipalities
+and an empty neighborhood list.
 
 Import the entire country, selected states, or selected seven-digit municipality codes:
 

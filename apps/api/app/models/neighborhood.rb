@@ -10,7 +10,6 @@ class Neighborhood < ApplicationRecord
 
   validates :code, :city_code, :name, presence: true
   validates :code, uniqueness: true, format: {with: /\A\d{10}\z/}
-  validates :name, uniqueness: {scope: :city_code, case_sensitive: false}
   validate :code_is_immutable, on: :update
 
   delegate :state, to: :city
