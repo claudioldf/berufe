@@ -73,6 +73,7 @@ const isSubmitted = computed(
     props.workspace.profile.status === "published" &&
     props.workspace.profile.presentationType === "self_service",
 );
+const showSuccess = computed(() => isSubmitted.value && !reviewing.value);
 const professionalName = computed(
   () => state.value.profile.name.trim().split(" ")[0] || "profissional",
 );
@@ -227,7 +228,12 @@ watch(
             clareza.<br />Você pode sair e continuar depois.
           </p>
         </div>
-        <UButton to="/app/professional" color="neutral" variant="outline">
+        <UButton
+          v-if="!showSuccess"
+          to="/app/professional"
+          color="neutral"
+          variant="outline"
+        >
           Fazer depois
         </UButton>
       </DesignSystemContainer>
@@ -245,7 +251,8 @@ watch(
       </DesignSystemSurfaceCard>
 
       <OnboardingSuccess
-        v-else-if="isSubmitted && !reviewing"
+        v-else-if="showSuccess"
+        :public-slug="workspace.profile.publicSlug"
         @review="reviewSteps"
       />
 

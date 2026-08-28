@@ -45,7 +45,7 @@ export const professionalPhoneStepContent: Record<
     description: "Use o celular confirmado no seu cadastro.",
     submitLabel: "Receber código para entrar",
     alternatePrompt: "Ainda não tem perfil?",
-    alternateLabel: "Criar perfil grátis",
+    alternateLabel: "Criar meu perfil",
     alternateTo: professionalSignupPath,
     pageTitle: "Entrar no perfil profissional",
   },

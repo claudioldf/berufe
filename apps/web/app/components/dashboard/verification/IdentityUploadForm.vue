@@ -4,14 +4,22 @@ import type { VerificationSubmission } from "~/types";
 import { validateOnboardingImage } from "~/composables/useProfessionalOnboarding";
 
 const props = withDefaults(
-  defineProps<{ submitLabel?: string; submitting?: boolean }>(),
+  defineProps<{
+    submitLabel?: string;
+    submitting?: boolean;
+    formId?: string;
+    showSubmit?: boolean;
+  }>(),
   {
     submitLabel: "Enviar imagem para análise",
     submitting: false,
+    formId: undefined,
+    showSubmit: true,
   },
 );
 const emit = defineEmits<{
   submitted: [submission: VerificationSubmission];
+  selectionChanged: [hasFile: boolean];
 }>();
 
 const file = shallowRef<File | null>(null);
@@ -20,6 +28,7 @@ const error = shallowRef("");
 function selectFile(event: Event) {
   file.value = (event.target as HTMLInputElement).files?.[0] ?? null;
   error.value = validateOnboardingImage(file.value).error;
+  emit("selectionChanged", Boolean(file.value));
 }
 
 function submit() {
@@ -29,11 +38,16 @@ function submit() {
   emit("submitted", { file: file.value, kind: "identity" });
   file.value = null;
   error.value = "";
+  emit("selectionChanged", false);
 }
 </script>
 
 <template>
-  <form class="identity-upload-form" @submit.prevent="submit">
+  <form
+    :id="props.formId"
+    class="identity-upload-form"
+    @submit.prevent="submit"
+  >
     <header>
       <div>
         <h3>Confirmar sua identidade</h3>
@@ -75,6 +89,7 @@ function submit() {
       {{ error }}
     </p>
     <UButton
+      v-if="props.showSubmit"
       type="submit"
       color="primary"
       :loading="props.submitting"

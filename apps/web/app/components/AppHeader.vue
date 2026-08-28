@@ -125,7 +125,7 @@ function isLinkActive(to: string) {
             v-if="!isAuthenticatedProfessional"
             :to="professionalSignupPath"
             color="primary"
-            label="Criar perfil grátis"
+            label="Criar meu perfil"
           />
         </div>
         <UButton
@@ -169,7 +169,7 @@ function isLinkActive(to: string) {
       <UButton
         :to="professionalSignupPath"
         color="primary"
-        label="Criar perfil grátis"
+        label="Criar meu perfil"
         class="header__mobile-signup-button"
       />
     </DesignSystemContainer>

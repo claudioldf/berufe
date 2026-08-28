@@ -1,4 +1,5 @@
 <script setup lang="ts">
+defineProps<{ publicSlug: string }>();
 defineEmits<{ review: [] }>();
 </script>
 
@@ -12,7 +13,7 @@ defineEmits<{ review: [] }>();
       portfólio, conexões profissionais e verificação para fortalecer a
       confiança.
     </p>
-    <div>
+    <div class="onboarding-success__actions">
       <UButton
         type="button"
         color="neutral"
@@ -20,6 +21,16 @@ defineEmits<{ review: [] }>();
         @click="$emit('review')"
       >
         Revisar etapas
+      </UButton>
+      <UButton
+        :to="`/profissionais/${publicSlug}`"
+        target="_blank"
+        rel="noopener noreferrer"
+        color="neutral"
+        variant="outline"
+        trailing-icon="i-lucide-arrow-up-right"
+      >
+        Ver perfil público
       </UButton>
       <UButton
         to="/app/professional"
@@ -64,8 +75,10 @@ defineEmits<{ review: [] }>();
     color: var(--ink-soft);
     line-height: 1.6;
   }
-  & > div {
+  &__actions {
     display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 8px;
   }
 }
@@ -74,7 +87,7 @@ defineEmits<{ review: [] }>();
   .onboarding-success {
     padding: 28px 20px;
   }
-  .onboarding-success > div {
+  .onboarding-success__actions {
     display: grid;
     width: 100%;
   }

@@ -1,7 +1,11 @@
 import { mount } from "@vue/test-utils";
+import { defineComponent } from "vue";
 import { describe, expect, it } from "vitest";
+import IdentityUploadForm from "~/components/dashboard/verification/IdentityUploadForm.vue";
 import ProfileStep from "~/components/onboarding/ProfileStep.vue";
 import ServicesStep from "~/components/onboarding/ServicesStep.vue";
+import Success from "~/components/onboarding/Success.vue";
+import VerificationStep from "~/components/onboarding/VerificationStep.vue";
 import type { ProfessionalProfileDraft, Service } from "~/types";
 
 function profileDraft(
@@ -46,7 +50,106 @@ const services: Service[] = [
     aliases: [],
   },
 ];
+
+const ButtonStub = defineComponent({
+  props: {
+    to: { type: String, default: "" },
+    type: { type: String, default: "button" },
+    form: { type: String, default: "" },
+    target: { type: String, default: "" },
+    rel: { type: String, default: "" },
+    disabled: { type: Boolean, default: false },
+  },
+  template: `
+    <component
+      :is="to ? 'a' : 'button'"
+      :href="to || undefined"
+      :type="type"
+      :form="form || undefined"
+      :target="target || undefined"
+      :rel="rel || undefined"
+      :disabled="disabled"
+    >
+      <slot />
+    </component>
+  `,
+});
+
 describe("onboarding step contracts", () => {
+  it("offers review, public profile, and dashboard actions after publishing", async () => {
+    const wrapper = mount(Success, {
+      props: { publicSlug: "ana-souza" },
+      global: {
+        stubs: {
+          DesignSystemSurfaceCard: { template: "<section><slot /></section>" },
+          DesignSystemEyebrow: { template: "<span><slot /></span>" },
+          UButton: ButtonStub,
+          UIcon: true,
+        },
+      },
+    });
+
+    const publicProfile = wrapper.get('a[href="/profissionais/ana-souza"]');
+    expect(publicProfile.text()).toContain("Ver perfil público");
+    expect(publicProfile.attributes("target")).toBe("_blank");
+    expect(publicProfile.attributes("rel")).toBe("noopener noreferrer");
+    expect(wrapper.get('a[href="/app/professional"]').text()).toContain(
+      "Ir para o painel",
+    );
+
+    await wrapper.get("button").trigger("click");
+    expect(wrapper.emitted("review")).toHaveLength(1);
+  });
+
+  it("keeps both verification choices in the bottom action row", async () => {
+    const wrapper = mount(VerificationStep, {
+      props: { submitted: false },
+      global: {
+        components: {
+          DashboardVerificationIdentityUploadForm: IdentityUploadForm,
+        },
+        stubs: {
+          DesignSystemSurfaceCard: { template: "<section><slot /></section>" },
+          DesignSystemEyebrow: { template: "<span><slot /></span>" },
+          UButton: ButtonStub,
+          UIcon: true,
+        },
+      },
+    });
+
+    expect(wrapper.get(".onboarding-upload-card").text()).not.toContain(
+      "Enviar e concluir",
+    );
+
+    const actions = wrapper.get(".onboarding-step-actions");
+    const skip = actions
+      .findAll("button")
+      .find(
+        (button) => button.text() === "Pular verificação e publicar perfil",
+      );
+    const submit = actions
+      .findAll("button")
+      .find((button) => button.text() === "Enviar e concluir");
+
+    expect(skip).toBeTruthy();
+    expect(submit?.attributes("form")).toBe("onboarding-identity-verification");
+    expect(submit?.attributes("disabled")).toBeDefined();
+
+    const file = new File(["identity"], "identity.png", {
+      type: "image/png",
+    });
+    const input = wrapper.get('input[name="identity-document"]');
+    Object.defineProperty(input.element, "files", { value: [file] });
+    await input.trigger("change");
+
+    expect(submit?.attributes("disabled")).toBeUndefined();
+    await wrapper.get("form").trigger("submit");
+    expect(wrapper.emitted("complete")?.[0]).toEqual([file]);
+
+    await skip!.trigger("click");
+    expect(wrapper.emitted("skip")).toHaveLength(1);
+  });
+
   it("lists services alphabetically", () => {
     const wrapper = mount(ServicesStep, {
       props: {

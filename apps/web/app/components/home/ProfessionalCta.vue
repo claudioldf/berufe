@@ -21,7 +21,7 @@ import { professionalSignupPath } from "~/utils/professional-auth";
           color="secondary"
           trailing-icon="i-lucide-arrow-right"
         >
-          Criar perfil grátis
+          Criar meu perfil
         </UButton>
       </div>
     </DesignSystemContainer>

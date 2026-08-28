@@ -87,7 +87,7 @@ test("public header makes login and professional signup easy to find", async ({
   const signupAction = isMobile
     ? page.locator(".header__mobile-signup-button")
     : page.locator(".header__desktop-auth").getByRole("link", {
-        name: "Criar perfil grátis",
+        name: "Criar meu perfil",
         exact: true,
       });
 

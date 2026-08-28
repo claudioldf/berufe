@@ -528,7 +528,9 @@ test("an indicated professional claims the external profile and publishes the co
       response.request().method() === "POST",
   );
   await recipientPage
-    .getByRole("button", { name: "Agora não — publicar perfil" })
+    .getByRole("button", {
+      name: "Pular verificação e publicar perfil",
+    })
     .click();
   expect((await publishResponsePromise).status()).toBe(200);
   await expect(
