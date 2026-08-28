@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { onMounted, shallowRef } from "vue";
 import type {
   ExpressionSearchPayload,
   SearchLocation,
@@ -16,42 +15,6 @@ defineEmits<{
   search: [payload: ExpressionSearchPayload];
   locationChange: [location: SearchLocation];
 }>();
-
-const heroImages = [
-  {
-    src: "/images/photo-1621905252507-b35492cc74b4.jpg",
-    alt: "Profissional trabalhando em uma instalação residencial",
-  },
-  {
-    src: "/images/hero-professional-painter.jpg",
-    alt: "Pintora profissional trabalhando em uma parede residencial",
-  },
-  {
-    src: "/images/hero-professional-plumber.jpg",
-    alt: "Encanador profissional fazendo manutenção sob uma pia",
-  },
-] as const;
-
-const heroImageStorageKey = "berufe.hero-image-index";
-const activeHeroImage = shallowRef<(typeof heroImages)[number]>(heroImages[0]);
-
-onMounted(() => {
-  try {
-    const storedImageIndex = Number.parseInt(
-      window.localStorage.getItem(heroImageStorageKey) ?? "",
-      10,
-    );
-    const nextImageIndex = Number.isInteger(storedImageIndex)
-      ? (storedImageIndex + 1) % heroImages.length
-      : 0;
-
-    activeHeroImage.value = heroImages[nextImageIndex] ?? heroImages[0];
-    window.localStorage.setItem(heroImageStorageKey, String(nextImageIndex));
-  } catch {
-    const fallbackImageIndex = Math.floor(Math.random() * heroImages.length);
-    activeHeroImage.value = heroImages[fallbackImageIndex] ?? heroImages[0];
-  }
-});
 </script>
 
 <template>
@@ -80,31 +43,35 @@ onMounted(() => {
         />
       </div>
 
-      <div class="hero__visual" aria-label="Exemplo de profissional da Berufe">
-        <div class="hero__photo-wrap">
+      <div class="hero__visual">
+        <div class="hero__art-wrap">
           <img
-            :src="activeHeroImage.src"
-            :alt="activeHeroImage.alt"
-            width="1200"
-            height="801"
+            class="hero__art"
+            src="/images/hero-home-care-illustration.webp"
+            alt="Ilustração de profissionais cuidando da pintura e da iluminação de uma casa"
+            width="1224"
+            height="1285"
             fetchpriority="high"
+            decoding="async"
           />
         </div>
         <div class="hero__profile-chip">
-          <DesignSystemAvatar
-            :name="`Profissionais em ${location.city}`"
-            alt=""
-            size="sm"
-            shape="rounded"
-          />
+          <span class="hero__chip-icon" aria-hidden="true">
+            <UIcon name="i-lucide-map-pin" />
+          </span>
           <span>
             <strong>Profissionais em {{ location.city }}</strong>
             <small>Serviços para a casa e o dia a dia</small>
           </span>
-          <UIcon name="i-lucide-badge-check" />
+          <UIcon name="i-lucide-arrow-up-right" aria-hidden="true" />
         </div>
         <div class="hero__trust-chip">
-          <strong>Contato</strong>{{ " " }}<span>direto pelo WhatsApp</span>
+          <span class="hero__chip-icon" aria-hidden="true">
+            <UIcon name="i-lucide-message-circle" />
+          </span>
+          <span>
+            <strong>Contato direto</strong>{{ " " }}<small>pelo WhatsApp</small>
+          </span>
         </div>
       </div>
     </DesignSystemContainer>

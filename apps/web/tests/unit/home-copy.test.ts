@@ -1,14 +1,8 @@
 import { mount } from "@vue/test-utils";
-import { defineComponent } from "vue";
 import Hero from "~/components/home/Hero.vue";
 import ProfessionalCta from "~/components/home/ProfessionalCta.vue";
 import Trust from "~/components/home/Trust.vue";
 import { fallbackSearchLocation } from "~/utils/searchLocation";
-
-const AvatarStub = defineComponent({
-  props: { name: { type: String, required: true } },
-  template: "<span>{{ name }}</span>",
-});
 
 const sharedStubs = {
   DesignSystemContainer: { template: "<div><slot /></div>" },
@@ -30,7 +24,6 @@ describe("home marketing copy", () => {
       global: {
         stubs: {
           ...sharedStubs,
-          DesignSystemAvatar: AvatarStub,
           PublicExpressionSearch: true,
         },
       },
@@ -43,8 +36,12 @@ describe("home marketing copy", () => {
       "Profissionais em Joinville",
     );
     expect(wrapper.get(".hero__trust-chip").text()).toMatch(
-      /Contato\s*direto pelo\s*WhatsApp/,
+      /Contato direto\s*pelo WhatsApp/,
     );
+    expect(wrapper.get(".hero__art").attributes()).toMatchObject({
+      src: "/images/hero-home-care-illustration.webp",
+      alt: "Ilustração de profissionais cuidando da pintura e da iluminação de uma casa",
+    });
     expect(wrapper.text()).not.toContain("evidências");
     expect(wrapper.get(".hero__profile-chip").text()).not.toContain(
       "Marcos Alves",
