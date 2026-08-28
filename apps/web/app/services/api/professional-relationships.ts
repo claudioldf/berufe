@@ -29,7 +29,8 @@ export type ProfessionalRelationshipTarget =
       phone: string;
       serviceIds: string[];
       coverage: {
-        allJoinville: boolean;
+        cityCode: string | null;
+        wholeCity: boolean;
         neighborhoodCodes: string[];
       };
       contactPublicationAttested: true;
@@ -132,7 +133,8 @@ export async function createProfessionalRelationship(
           phone: input.target.phone,
           service_ids: input.target.serviceIds,
           coverage: {
-            all_joinville: input.target.coverage.allJoinville,
+            city_code: input.target.coverage.cityCode,
+            whole_city: input.target.coverage.wholeCity,
             neighborhood_codes: input.target.coverage.neighborhoodCodes,
           },
           contact_publication_attested: input.target.contactPublicationAttested,

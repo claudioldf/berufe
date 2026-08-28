@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, shallowRef, useTemplateRef, watch } from "vue";
 import type {
-  Neighborhood,
   OnboardingStepId,
   ProfessionalProfileDraft,
   ProfessionalWorkspace,
@@ -14,7 +13,6 @@ import {
 
 const props = defineProps<{
   services: Service[];
-  neighborhoods: Neighborhood[];
   workspace: ProfessionalWorkspace;
   saveIdentity: (
     draft: ProfessionalProfileDraft,
@@ -81,7 +79,7 @@ const professionalName = computed(
 const editableProfile = computed<ProfessionalProfileDraft>(() => ({
   ...state.value.profile,
   selectedServices: [...state.value.profile.selectedServices],
-  selectedNeighborhoods: [...state.value.profile.selectedNeighborhoods],
+  selectedNeighborhoodCodes: [...state.value.profile.selectedNeighborhoodCodes],
 }));
 const availableSteps = computed(() =>
   professionalOnboardingSteps
@@ -198,9 +196,10 @@ watch(
         serviceNotes: Object.fromEntries(
           selections.map((selection) => [selection.name, selection.note]),
         ),
-        allJoinville: workspace.profile.coverage.allJoinville,
-        selectedNeighborhoods: workspace.profile.coverage.neighborhoods.map(
-          (neighborhood) => neighborhood.name,
+        coverageCityCode: workspace.profile.coverage.city?.code ?? "",
+        coversWholeCity: workspace.profile.coverage.wholeCity,
+        selectedNeighborhoodCodes: workspace.profile.coverage.neighborhoods.map(
+          (neighborhood) => neighborhood.code,
         ),
       },
       Boolean(
@@ -283,7 +282,6 @@ watch(
             :key="`services-${state.completion.services ?? 'new'}`"
             :draft="editableProfile"
             :services="services"
-            :neighborhoods="neighborhoods"
             :saving="supplySaving"
             :server-error="supplyError"
             @back="previousStep"

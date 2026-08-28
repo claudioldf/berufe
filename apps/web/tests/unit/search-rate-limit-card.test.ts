@@ -13,7 +13,13 @@ const services = [
   },
 ];
 const cities = [
-  { id: "joinville-sc", name: "Joinville" as const, stateCode: "SC" as const },
+  {
+    id: "4209102",
+    name: "Joinville" as const,
+    stateCode: "SC" as const,
+    stateSlug: "sc",
+    citySlug: "joinville",
+  },
 ];
 
 const stubs = {
@@ -25,7 +31,7 @@ const stubs = {
     props: ["services", "cities", "loading"],
     emits: ["submit"],
     template:
-      "<button @click=\"$emit('submit', { serviceId: services[0].id, serviceName: services[0].name, stateCode: cities[0].stateCode, city: cities[0].name })\">Buscar novamente</button>",
+      "<button @click=\"$emit('submit', { serviceId: services[0].id, serviceName: services[0].name, cityCode: cities[0].id, stateCode: cities[0].stateCode, city: cities[0].name, stateSlug: cities[0].stateSlug, citySlug: cities[0].citySlug })\">Buscar novamente</button>",
   },
 };
 
@@ -55,8 +61,11 @@ describe("search rate limit card", () => {
     expect(wrapper.emitted("search")?.[0]?.[0]).toEqual({
       serviceId: services[0]?.id,
       serviceName: "Eletricista",
+      cityCode: "4209102",
       stateCode: "SC",
       city: "Joinville",
+      stateSlug: "sc",
+      citySlug: "joinville",
     });
   });
 });

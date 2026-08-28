@@ -27,14 +27,17 @@ const connectionCountNoun = computed(() =>
     : "conexões profissionais",
 );
 const coverageLabel = computed(() => {
-  if (props.professional.coverage.allJoinville) return "Atende toda Joinville";
+  const city = props.professional.coverage.city?.name;
+  if (props.professional.coverage.wholeCity && city) {
+    return `Atende toda ${city}`;
+  }
   if (props.professional.coverage.neighborhoods.length) {
     return `Atende ${props.professional.coverage.neighborhoods
       .slice(0, 3)
       .map((neighborhood) => neighborhood.name)
       .join(", ")}`;
   }
-  return "Joinville · área não informada";
+  return city ? `${city} · área não informada` : "Área não informada";
 });
 </script>
 

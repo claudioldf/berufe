@@ -10,8 +10,18 @@
     "primaryServiceSlug": "eletricista",
     "services": ["Eletricista", "Marido de aluguel"],
     "serviceNotes": ["Quadros elétricos e adequação de instalações", "Iluminação e pequenos reparos"],
-    "neighborhoods": ["América", "Atiradores", "Bom Retiro", "Centro", "Glória", "Saguaçu"],
-    "allJoinville": false,
+    "coverage": {
+      "city": { "code": "4209102", "name": "Joinville", "slug": "joinville", "stateCode": "42", "stateAbbreviation": "SC", "stateName": "Santa Catarina" },
+      "wholeCity": false,
+      "neighborhoods": [
+        { "code": "4209102007", "name": "América" },
+        { "code": "4209102009", "name": "Atiradores" },
+        { "code": "4209102022", "name": "Bom Retiro" },
+        { "code": "4209102008", "name": "Centro" },
+        { "code": "4209102004", "name": "Glória" },
+        { "code": "4209102020", "name": "Saguaçu" }
+      ]
+    },
     "yearsExperience": 11,
     "evidence": [
       { "id": "ev-m1", "label": "Telefone confirmado" },
@@ -43,8 +53,11 @@
     "primaryServiceSlug": "pedreiro",
     "services": ["Pedreiro", "Azulejista"],
     "serviceNotes": ["Reformas de cozinhas e banheiros", "Porcelanatos e revestimentos"],
-    "neighborhoods": ["Toda Joinville"],
-    "allJoinville": true,
+    "coverage": {
+      "city": { "code": "4209102", "name": "Joinville", "slug": "joinville", "stateCode": "42", "stateAbbreviation": "SC", "stateName": "Santa Catarina" },
+      "wholeCity": true,
+      "neighborhoods": []
+    },
     "yearsExperience": 16,
     "evidence": [
       { "id": "ev-j1", "label": "Telefone confirmado" },
@@ -73,8 +86,11 @@
     "primaryServiceSlug": "designer-de-interiores",
     "services": ["Designer de interiores", "Arquiteto"],
     "serviceNotes": ["Projetos de interiores residenciais"],
-    "neighborhoods": ["Toda Joinville"],
-    "allJoinville": true,
+    "coverage": {
+      "city": { "code": "4209102", "name": "Joinville", "slug": "joinville", "stateCode": "42", "stateAbbreviation": "SC", "stateName": "Santa Catarina" },
+      "wholeCity": true,
+      "neighborhoods": []
+    },
     "yearsExperience": 8,
     "evidence": [
       { "id": "ev-l1", "label": "Telefone confirmado" },
@@ -102,8 +118,16 @@
     "primaryServiceSlug": "pintor",
     "services": ["Pintor", "Drywall e gesso"],
     "serviceNotes": ["Pintura interna e acabamento fino"],
-    "neighborhoods": ["América", "Bom Retiro", "Costa e Silva", "Santo Antônio"],
-    "allJoinville": false,
+    "coverage": {
+      "city": { "code": "4209102", "name": "Joinville", "slug": "joinville", "stateCode": "42", "stateAbbreviation": "SC", "stateName": "Santa Catarina" },
+      "wholeCity": false,
+      "neighborhoods": [
+        { "code": "4209102007", "name": "América" },
+        { "code": "4209102022", "name": "Bom Retiro" },
+        { "code": "4209102005", "name": "Costa e Silva" },
+        { "code": "4209102006", "name": "Santo Antônio" }
+      ]
+    },
     "yearsExperience": 13,
     "evidence": [
       { "id": "ev-c1", "label": "Telefone confirmado" },
@@ -128,8 +152,11 @@
     "primaryServiceSlug": "encanador",
     "services": ["Encanador", "Marido de aluguel"],
     "serviceNotes": ["Vazamentos e instalações hidráulicas"],
-    "neighborhoods": ["Toda Joinville"],
-    "allJoinville": true,
+    "coverage": {
+      "city": { "code": "4209102", "name": "Joinville", "slug": "joinville", "stateCode": "42", "stateAbbreviation": "SC", "stateName": "Santa Catarina" },
+      "wholeCity": true,
+      "neighborhoods": []
+    },
     "yearsExperience": 9,
     "evidence": [
       { "id": "ev-r1", "label": "Telefone confirmado" },
@@ -153,8 +180,11 @@
     "primaryServiceSlug": "telhados-e-calhas",
     "services": ["Telhados e calhas"],
     "serviceNotes": ["Coberturas, calhas e rufos residenciais"],
-    "neighborhoods": ["Toda Joinville"],
-    "allJoinville": true,
+    "coverage": {
+      "city": { "code": "4209102", "name": "Joinville", "slug": "joinville", "stateCode": "42", "stateAbbreviation": "SC", "stateName": "Santa Catarina" },
+      "wholeCity": true,
+      "neighborhoods": []
+    },
     "yearsExperience": 14,
     "evidence": [
       { "id": "ev-d1", "label": "Telefone confirmado" },
@@ -181,8 +211,11 @@
     "primaryServiceSlug": "ar-condicionado",
     "services": ["Ar-condicionado"],
     "serviceNotes": ["Instalação, higienização e manutenção de split"],
-    "neighborhoods": ["Toda Joinville"],
-    "allJoinville": true,
+    "coverage": {
+      "city": { "code": "4209102", "name": "Joinville", "slug": "joinville", "stateCode": "42", "stateAbbreviation": "SC", "stateName": "Santa Catarina" },
+      "wholeCity": true,
+      "neighborhoods": []
+    },
     "yearsExperience": 8,
     "evidence": [
       { "id": "ev-cn1", "label": "Telefone confirmado" },
@@ -209,8 +242,11 @@
     "primaryServiceSlug": "serralheiro",
     "services": ["Serralheiro"],
     "serviceNotes": ["Portões, grades e corrimãos sob medida"],
-    "neighborhoods": ["Toda Joinville"],
-    "allJoinville": true,
+    "coverage": {
+      "city": { "code": "4209102", "name": "Joinville", "slug": "joinville", "stateCode": "42", "stateAbbreviation": "SC", "stateName": "Santa Catarina" },
+      "wholeCity": true,
+      "neighborhoods": []
+    },
     "yearsExperience": 17,
     "evidence": [
       { "id": "ev-e1", "label": "Telefone confirmado" },
@@ -237,8 +273,11 @@
     "primaryServiceSlug": "vidraceiro",
     "services": ["Vidraceiro"],
     "serviceNotes": ["Boxes, espelhos e vidros residenciais"],
-    "neighborhoods": ["Toda Joinville"],
-    "allJoinville": true,
+    "coverage": {
+      "city": { "code": "4209102", "name": "Joinville", "slug": "joinville", "stateCode": "42", "stateAbbreviation": "SC", "stateName": "Santa Catarina" },
+      "wholeCity": true,
+      "neighborhoods": []
+    },
     "yearsExperience": 10,
     "evidence": [
       { "id": "ev-p1", "label": "Telefone confirmado" },
@@ -265,8 +304,11 @@
     "primaryServiceSlug": "impermeabilizacao",
     "services": ["Impermeabilização"],
     "serviceNotes": ["Lajes, sacadas e áreas molhadas"],
-    "neighborhoods": ["Toda Joinville"],
-    "allJoinville": true,
+    "coverage": {
+      "city": { "code": "4209102", "name": "Joinville", "slug": "joinville", "stateCode": "42", "stateAbbreviation": "SC", "stateName": "Santa Catarina" },
+      "wholeCity": true,
+      "neighborhoods": []
+    },
     "yearsExperience": 12,
     "evidence": [
       { "id": "ev-f1", "label": "Telefone confirmado" },

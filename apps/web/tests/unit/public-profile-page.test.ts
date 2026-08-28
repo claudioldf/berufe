@@ -35,8 +35,18 @@ const result: PublicProfessionalProfileResult = {
     primaryServiceIcon: "i-lucide-zap",
     services: ["Eletricista"],
     serviceNotes: ["Quadros elétricos"],
-    neighborhoods: ["América"],
-    allJoinville: false,
+    coverage: {
+      city: {
+        code: "4209102",
+        name: "Joinville",
+        slug: "joinville",
+        stateCode: "42",
+        stateAbbreviation: "SC",
+        stateName: "Santa Catarina",
+      },
+      wholeCity: false,
+      neighborhoods: [{ code: "4209102001", name: "América" }],
+    },
     yearsExperience: 11,
     evidence: [
       {
@@ -138,7 +148,11 @@ describe("public profile page", () => {
         primaryServiceIcon: null,
         services: [],
         serviceNotes: [],
-        neighborhoods: [],
+        coverage: {
+          city: result.professional.coverage.city,
+          wholeCity: false,
+          neighborhoods: [],
+        },
         yearsExperience: null,
         evidence: [],
       },

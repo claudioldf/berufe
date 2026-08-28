@@ -8,3 +8,4 @@ export * from "./reports";
 export * from "./search-audit";
 export * from "./service-job";
 export * from "./ui";
+export * from "./location";

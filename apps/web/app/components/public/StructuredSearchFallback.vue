@@ -49,8 +49,11 @@ function submit() {
   emit("submit", {
     serviceId: service.id,
     serviceName: service.name,
-    stateCode: city.stateCode,
+    cityCode: city.id,
     city: city.name,
+    stateCode: city.stateCode,
+    stateSlug: city.stateSlug,
+    citySlug: city.citySlug,
   });
 }
 </script>

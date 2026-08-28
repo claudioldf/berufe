@@ -41,7 +41,13 @@ const services: Service[] = [
   },
 ];
 const cities: StructuredSearchCity[] = [
-  { id: "joinville-sc", name: "Joinville", stateCode: "SC" },
+  {
+    id: "4209102",
+    name: "Joinville",
+    stateCode: "SC",
+    stateSlug: "sc",
+    citySlug: "joinville",
+  },
 ];
 
 describe("structured search fallback", () => {
@@ -69,8 +75,11 @@ describe("structured search fallback", () => {
     expect(wrapper.emitted("submit")?.[0]?.[0]).toEqual({
       serviceId: services[0]!.id,
       serviceName: "Eletricista",
-      stateCode: "SC",
+      cityCode: "4209102",
       city: "Joinville",
+      stateCode: "SC",
+      stateSlug: "sc",
+      citySlug: "joinville",
     });
   });
 });

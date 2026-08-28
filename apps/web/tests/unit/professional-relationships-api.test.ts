@@ -208,8 +208,9 @@ describe("professional relationships API", () => {
         phone: "+5547999991234",
         serviceIds: ["cc1e5dfa-36a2-4f13-b37c-d1a3f9d25460"],
         coverage: {
-          allJoinville: false,
-          neighborhoodCodes: ["america"],
+          cityCode: "4209102",
+          wholeCity: false,
+          neighborhoodCodes: ["4209102007"],
         },
         contactPublicationAttested: true,
       },
@@ -227,8 +228,9 @@ describe("professional relationships API", () => {
               phone: "+5547999991234",
               service_ids: ["cc1e5dfa-36a2-4f13-b37c-d1a3f9d25460"],
               coverage: {
-                all_joinville: false,
-                neighborhood_codes: ["america"],
+                city_code: "4209102",
+                whole_city: false,
+                neighborhood_codes: ["4209102007"],
               },
               contact_publication_attested: true,
             },

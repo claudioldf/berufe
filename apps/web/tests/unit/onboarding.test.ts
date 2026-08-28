@@ -27,8 +27,9 @@ function validDraft(): ProfessionalProfileDraft {
     selectedServices: ["Eletricista"],
     serviceNotes: { Eletricista: "Quadros e circuitos" },
     primaryService: "Eletricista",
-    allJoinville: true,
-    selectedNeighborhoods: [],
+    coverageCityCode: "4209102",
+    coversWholeCity: true,
+    selectedNeighborhoodCodes: [],
   };
 }
 

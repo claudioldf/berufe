@@ -47,7 +47,7 @@ function itemTotal(index: number) {
       />
       <div>
         <strong>{{ professional.name }}</strong
-        ><span>{{ professional.primaryService }} · Joinville</span
+        ><span>{{ professional.primaryService }}</span
         ><small
           v-if="professional.identityVerified"
           class="quote-preview__verification"

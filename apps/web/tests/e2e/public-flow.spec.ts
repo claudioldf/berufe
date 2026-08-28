@@ -280,6 +280,8 @@ test("professional completes onboarding and retains the published state", async 
     page.getByRole("heading", { name: "Escolha o que você oferece." }),
   ).toBeVisible();
   await page.getByRole("button", { name: /Eletricista/ }).click();
+  await page.getByLabel("Estado").selectOption("42");
+  await page.getByLabel("Cidade").selectOption("4209102");
   await page.getByLabel("Atendo em toda Joinville").check();
   await page.getByRole("button", { name: "Salvar e continuar" }).click();
 

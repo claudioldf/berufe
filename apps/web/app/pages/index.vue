@@ -39,9 +39,9 @@ onMounted(() => {
   void resolveLocation();
 });
 
-const title = "Profissionais de confiança em Joinville";
+const title = "Profissionais de confiança perto de você";
 const description =
-  "Encontre profissionais verificados para reformas e manutenção residencial em Joinville.";
+  "Encontre profissionais verificados para reformas e manutenção residencial na sua cidade.";
 const siteUrl = String(
   runtimeConfig.public.siteUrl || "http://localhost:3000",
 ).replace(/\/$/, "");

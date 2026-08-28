@@ -15,7 +15,7 @@ import { professionalSignupPath } from "~/utils/professional-auth";
         <NuxtLink to="/privacidade">Privacidade</NuxtLink>
         <NuxtLink to="/termos-de-uso">Termos</NuxtLink>
       </div>
-      <p class="footer__note">Berufe · Joinville, SC</p>
+      <p class="footer__note">Berufe · Brasil</p>
     </DesignSystemContainer>
   </footer>
 </template>

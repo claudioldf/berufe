@@ -18,7 +18,6 @@ import {
   type MediaUpload,
 } from "~/services/api/media-upload";
 import type {
-  Neighborhood,
   PortfolioItemDraft,
   ProfessionalProfileDraft,
   ProfessionalRelationship,
@@ -250,14 +249,8 @@ export async function useProfessionalWorkspace() {
   async function saveSupply(
     draft: ProfessionalProfileDraft,
     services: Service[],
-    neighborhoods: Neighborhood[],
   ) {
-    const updated = await updateProfessionalSupply(
-      client,
-      draft,
-      services,
-      neighborhoods,
-    );
+    const updated = await updateProfessionalSupply(client, draft, services);
     workspace.data.value = updated;
     return updated;
   }
@@ -265,14 +258,8 @@ export async function useProfessionalWorkspace() {
   async function saveProfile(
     draft: ProfessionalProfileDraft,
     services: Service[],
-    neighborhoods: Neighborhood[],
   ) {
-    const updated = await updateProfessionalProfile(
-      client,
-      draft,
-      services,
-      neighborhoods,
-    );
+    const updated = await updateProfessionalProfile(client, draft, services);
     workspace.data.value = updated;
     return updated;
   }

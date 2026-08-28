@@ -22,25 +22,12 @@ export function mapPublicCatalog(data: CatalogData): PublicCatalog {
       aliases: service.aliases,
     })),
     cities: data.cities.map((city) => ({
+      cityCode: city.city_code,
       stateCode: city.state_code,
       city: city.city,
       stateSlug: city.state_slug,
       citySlug: city.city_slug,
     })),
-    neighborhoods: [
-      {
-        code: "all",
-        name: "Toda Joinville",
-        stateCode: "SC",
-        city: "Joinville",
-      },
-      ...data.neighborhoods.map((neighborhood) => ({
-        code: neighborhood.code,
-        name: neighborhood.name,
-        stateCode: neighborhood.state_code,
-        city: neighborhood.city,
-      })),
-    ],
   };
 }
 

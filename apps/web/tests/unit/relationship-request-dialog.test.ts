@@ -51,6 +51,23 @@ const ButtonStub = defineComponent({
   template:
     '<button type="button" :disabled="disabled" :data-to="to" @click="$emit(\'click\')"><slot /></button>',
 });
+const LocationCoverageStub = defineComponent({
+  props: { modelValue: { type: Object, required: true } },
+  emits: ["update:modelValue"],
+  template: `
+    <button
+      type="button"
+      data-test="select-whole-joinville"
+      @click="$emit('update:modelValue', {
+        cityCode: '4209102',
+        wholeCity: true,
+        neighborhoodCodes: [],
+      })"
+    >
+      Selecionar Joinville inteira
+    </button>
+  `,
+});
 
 const createdRelationship = {
   id: "d25c64fa-3e6a-4e56-adc9-85bdac0045cb",
@@ -95,7 +112,6 @@ async function mountDialog(eligible = true) {
           aliases: [],
         },
       ],
-      neighborhoods: [{ code: "america", name: "América", city: "Joinville" }],
     },
     global: {
       stubs: {
@@ -103,6 +119,7 @@ async function mountDialog(eligible = true) {
         UButton: ButtonStub,
         UIcon: true,
         DesignSystemFormField: FieldStub,
+        LocationCoverageFields: LocationCoverageStub,
       },
     },
   });
@@ -247,7 +264,8 @@ describe("relationship create dialog", () => {
     await wrapper
       .get(`input[value="cc1e5dfa-36a2-4f13-b37c-d1a3f9d25460"]`)
       .setValue(true);
-    await wrapper.get('input[value="all_joinville"]').setValue(true);
+    await wrapper.get('input[value="informed"]').setValue(true);
+    await wrapper.get('[data-test="select-whole-joinville"]').trigger("click");
     expect(
       wrapper.find('input[name="external-contact-consent"]').exists(),
     ).toBe(false);
@@ -267,7 +285,11 @@ describe("relationship create dialog", () => {
         name: "Beto Lima",
         phone: "+5547999991234",
         serviceIds: ["cc1e5dfa-36a2-4f13-b37c-d1a3f9d25460"],
-        coverage: { allJoinville: true, neighborhoodCodes: [] },
+        coverage: {
+          cityCode: "4209102",
+          wholeCity: true,
+          neighborhoodCodes: [],
+        },
         contactPublicationAttested: true,
       },
       relationshipType: "worked_together",

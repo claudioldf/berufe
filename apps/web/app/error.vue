@@ -20,7 +20,7 @@ const content = computed(() =>
         titleAccent: "não mora mais aqui.",
         description:
           "O link pode ter mudado ou talvez nunca tenha existido. Vamos levar você de volta para um lugar conhecido.",
-        note: "Você também pode continuar procurando profissionais em Joinville.",
+        note: "Você também pode continuar procurando profissionais na sua cidade.",
       }
     : {
         eyebrow: "Algo saiu do lugar",
@@ -172,7 +172,7 @@ useSeoMeta({
 
     <footer class="error-shell__footer">
       <span>Confiança para cuidar da sua casa.</span>
-      <span>Joinville, SC</span>
+      <span>Brasil</span>
     </footer>
   </div>
 </template>

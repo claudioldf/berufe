@@ -220,12 +220,19 @@ export async function useProfessionalSearch(options: {
   async function submitStructuredSearch(payload: StructuredSearchPayload) {
     resetPaging();
     isStructuredSearching.value = true;
+    const selectedLocation: SearchLocation = {
+      cityCode: payload.cityCode,
+      stateCode: payload.stateCode,
+      city: payload.city,
+      stateSlug: payload.stateSlug,
+      citySlug: payload.citySlug,
+    };
     const expression = `${payload.serviceName.trim()} em ${payload.city}`;
     structuredRouteExpression.value = expression;
     expressionInput.value = expression;
     try {
       await router.push({
-        path: searchLocationPath(toValue(options.location)),
+        path: searchLocationPath(selectedLocation),
         query: { expressao: encodeSearchExpression(expression) },
       });
       const result = await searchStructuredProfessionals(client, payload);

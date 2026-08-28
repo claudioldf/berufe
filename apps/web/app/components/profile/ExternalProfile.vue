@@ -11,11 +11,16 @@ const props = defineProps<{
 defineEmits<{ contact: []; share: [] }>();
 
 const coverageLabel = computed(() => {
-  if (props.professional.allJoinville) return "Atende toda Joinville";
-  if (props.professional.neighborhoods.length) {
-    return props.professional.neighborhoods.join(", ");
+  const city = props.professional.coverage.city?.name;
+  if (props.professional.coverage.wholeCity && city) {
+    return `Atende toda ${city}`;
   }
-  return "Joinville";
+  if (props.professional.coverage.neighborhoods.length) {
+    return props.professional.coverage.neighborhoods
+      .map((neighborhood) => neighborhood.name)
+      .join(", ");
+  }
+  return city ?? "Área não informada";
 });
 </script>
 

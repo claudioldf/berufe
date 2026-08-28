@@ -33,7 +33,7 @@ const form = ref<ProfessionalProfileDraft>({
   ...props.draft,
   selectedServices: [...props.draft.selectedServices],
   serviceNotes: { ...props.draft.serviceNotes },
-  selectedNeighborhoods: [...props.draft.selectedNeighborhoods],
+  selectedNeighborhoodCodes: [...props.draft.selectedNeighborhoodCodes],
 });
 const error = shallowRef("");
 
@@ -49,7 +49,7 @@ function submit() {
     ...form.value,
     selectedServices: [...form.value.selectedServices],
     serviceNotes: { ...form.value.serviceNotes },
-    selectedNeighborhoods: [...form.value.selectedNeighborhoods],
+    selectedNeighborhoodCodes: [...form.value.selectedNeighborhoodCodes],
   });
 }
 </script>

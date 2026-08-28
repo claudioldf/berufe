@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { ref, shallowRef } from "vue";
-import type { Neighborhood, ProfessionalProfileDraft, Service } from "~/types";
+import type { ProfessionalProfileDraft, Service } from "~/types";
 import { validateOnboardingServices } from "~/composables/useProfessionalOnboarding";
 
 const props = defineProps<{
   draft: ProfessionalProfileDraft;
   services: Service[];
-  neighborhoods: Neighborhood[];
   saving?: boolean;
   serverError?: string;
 }>();
@@ -19,7 +18,7 @@ const form = ref<ProfessionalProfileDraft>({
   ...props.draft,
   selectedServices: [...props.draft.selectedServices],
   serviceNotes: { ...props.draft.serviceNotes },
-  selectedNeighborhoods: [...props.draft.selectedNeighborhoods],
+  selectedNeighborhoodCodes: [...props.draft.selectedNeighborhoodCodes],
 });
 const error = shallowRef("");
 
@@ -39,15 +38,6 @@ function toggleService(name: string) {
   error.value = "";
 }
 
-function toggleNeighborhood(name: string) {
-  form.value.selectedNeighborhoods = form.value.selectedNeighborhoods.includes(
-    name,
-  )
-    ? form.value.selectedNeighborhoods.filter((item) => item !== name)
-    : [...form.value.selectedNeighborhoods, name];
-  error.value = "";
-}
-
 function submit() {
   const errors = validateOnboardingServices(form.value);
   error.value = Object.values(errors).find(Boolean) ?? "";
@@ -56,7 +46,7 @@ function submit() {
     ...form.value,
     selectedServices: [...form.value.selectedServices],
     serviceNotes: { ...form.value.serviceNotes },
-    selectedNeighborhoods: [...form.value.selectedNeighborhoods],
+    selectedNeighborhoodCodes: [...form.value.selectedNeighborhoodCodes],
   });
 }
 </script>
@@ -87,12 +77,7 @@ function submit() {
           :services="services"
           @toggle="toggleService"
         />
-        <DashboardProfileCoverageSection
-          v-model="form"
-          :neighborhoods="neighborhoods"
-          @dirty="error = ''"
-          @toggle="toggleNeighborhood"
-        />
+        <DashboardProfileCoverageSection v-model="form" @dirty="error = ''" />
       </DashboardProfileFormLayout>
       <footer class="onboarding-step-actions">
         <UButton

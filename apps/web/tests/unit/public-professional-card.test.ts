@@ -55,8 +55,16 @@ function professional(
       slug: "eletricista",
     },
     coverage: {
-      allJoinville: false,
-      neighborhoods: [{ code: "america", name: "América" }],
+      city: {
+        code: "4209102",
+        name: "Joinville",
+        slug: "joinville",
+        stateCode: "42",
+        stateAbbreviation: "SC",
+        stateName: "Santa Catarina",
+      },
+      wholeCity: false,
+      neighborhoods: [{ code: "4209102007", name: "América" }],
     },
     verificationLabels: [
       {
@@ -206,7 +214,11 @@ describe("public professional result card", () => {
           claimed: false,
           headline: null,
           photoUrl: null,
-          coverage: { allJoinville: false, neighborhoods: [] },
+          coverage: {
+            city: professional().coverage.city,
+            wholeCity: false,
+            neighborhoods: [],
+          },
           verificationLabels: [],
           portfolioCount: 0,
         }),

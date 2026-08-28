@@ -147,7 +147,18 @@ function workspace(options: { pending?: boolean; failed?: boolean } = {}) {
           youtube: "",
         },
         services: [],
-        coverage: { allJoinville: true, neighborhoods: [] },
+        coverage: {
+          city: {
+            code: "4209102",
+            name: "Joinville",
+            slug: "joinville",
+            stateCode: "42",
+            stateAbbreviation: "SC",
+            stateName: "Santa Catarina",
+          },
+          wholeCity: true,
+          neighborhoods: [],
+        },
       },
     }),
     status: shallowRef(options.pending ? "pending" : "success"),
@@ -168,12 +179,13 @@ describe("professional dashboard", () => {
       data: ref({
         categories: [],
         services: [],
-        neighborhoods: [
+        cities: [
           {
-            code: "all",
-            name: "Toda Joinville",
+            cityCode: "4209102",
             stateCode: "SC",
             city: "Joinville",
+            stateSlug: "sc",
+            citySlug: "joinville",
           },
         ],
       }),

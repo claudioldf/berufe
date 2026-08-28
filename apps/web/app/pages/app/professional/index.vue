@@ -17,11 +17,6 @@ const relationshipOpen = shallowRef(false);
 const relationshipServices = computed(
   () => relationshipCatalog.value?.services ?? [],
 );
-const relationshipNeighborhoods = computed(() =>
-  (relationshipCatalog.value?.neighborhoods ?? []).filter(
-    (item) => item.code !== "all",
-  ),
-);
 const relationshipEligible = computed(
   () => account.value?.relationshipEligible ?? false,
 );
@@ -63,7 +58,7 @@ const checklist = computed<OnboardingChecklistItem[]>(() => {
     {
       id: "services",
       label: "Serviços e bairros",
-      description: "Serviço e cobertura de Joinville",
+      description: "Serviço e área de atendimento",
       icon: "i-lucide-briefcase-business",
       done: steps?.serviceCoverage ?? false,
       to: "/app/professional/profile",
@@ -143,7 +138,7 @@ const dashboardStatus = computed(() => {
       identity: "nome e data de nascimento",
       photo: "foto profissional",
       services: "serviço principal",
-      coverage: "cobertura em Joinville",
+      coverage: "área de atendimento",
     } as const;
     const missing = profile.publicationBlockers.map(
       (blocker) => blockerLabels[blocker],
@@ -372,7 +367,6 @@ async function respondRelationship(
     <RelationshipCreateDialog
       v-model:open="relationshipOpen"
       :services="relationshipServices"
-      :neighborhoods="relationshipNeighborhoods"
       :eligible="relationshipEligible"
     />
   </div>

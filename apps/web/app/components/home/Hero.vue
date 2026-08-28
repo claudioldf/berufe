@@ -98,7 +98,7 @@ onMounted(() => {
           />
           <span>
             <strong>Marcos Alves</strong>
-            <small>Eletricista · Joinville</small>
+            <small>Eletricista · {{ location.city }}</small>
           </span>
           <UIcon name="i-lucide-badge-check" />
         </div>

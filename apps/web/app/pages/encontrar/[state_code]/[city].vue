@@ -75,9 +75,11 @@ const fallbackServices = computed(
 );
 const fallbackCities = computed<StructuredSearchCity[]>(() => {
   return (catalogResult.data.value?.cities ?? []).map((location) => ({
-    id: `${location.citySlug}-${location.stateSlug}`,
+    id: location.cityCode,
     name: location.city,
     stateCode: location.stateCode,
+    stateSlug: location.stateSlug,
+    citySlug: location.citySlug,
   }));
 });
 

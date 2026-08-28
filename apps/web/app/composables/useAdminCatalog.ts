@@ -1,15 +1,10 @@
 import { readonly, shallowRef } from "vue";
 import type { AdminCatalog } from "~/types";
 import {
-  createAdminCatalogNeighborhood,
   createAdminCatalogService,
   fetchAdminCatalog,
-  reorderAdminCatalogNeighborhoods,
   reorderAdminCatalogServices,
-  updateAdminCatalogNeighborhood,
   updateAdminCatalogService,
-  type AdminCatalogNeighborhoodCreateInput,
-  type AdminCatalogNeighborhoodUpdateInput,
   type AdminCatalogServiceCreateInput,
   type AdminCatalogServiceUpdateInput,
 } from "~/services/api/admin-catalog";
@@ -18,7 +13,6 @@ import { useApiClient } from "~/services/api/client";
 const emptyCatalog = (): AdminCatalog => ({
   categories: [],
   services: [],
-  neighborhoods: [],
 });
 
 interface AdminCatalogDependencies {
@@ -31,14 +25,6 @@ interface AdminCatalogDependencies {
     input: AdminCatalogServiceUpdateInput,
   ) => Promise<AdminCatalog>;
   reorderServices?: (ids: string[]) => Promise<AdminCatalog>;
-  createNeighborhood?: (
-    input: AdminCatalogNeighborhoodCreateInput,
-  ) => Promise<AdminCatalog>;
-  updateNeighborhood?: (
-    code: string,
-    input: AdminCatalogNeighborhoodUpdateInput,
-  ) => Promise<AdminCatalog>;
-  reorderNeighborhoods?: (codes: string[]) => Promise<AdminCatalog>;
   invalidatePublicCatalog?: () => Promise<void>;
 }
 
@@ -58,15 +44,6 @@ export function useAdminCatalog(dependencies: AdminCatalogDependencies = {}) {
   const orderServices =
     dependencies.reorderServices ??
     ((ids) => reorderAdminCatalogServices(client, ids));
-  const addNeighborhood =
-    dependencies.createNeighborhood ??
-    ((input) => createAdminCatalogNeighborhood(client, input));
-  const changeNeighborhood =
-    dependencies.updateNeighborhood ??
-    ((code, input) => updateAdminCatalogNeighborhood(client, code, input));
-  const orderNeighborhoods =
-    dependencies.reorderNeighborhoods ??
-    ((codes) => reorderAdminCatalogNeighborhoods(client, codes));
   const invalidatePublicCatalog =
     dependencies.invalidatePublicCatalog ??
     (async () => clearNuxtData("public-catalog"));
@@ -112,13 +89,5 @@ export function useAdminCatalog(dependencies: AdminCatalogDependencies = {}) {
     updateService: (id: string, input: AdminCatalogServiceUpdateInput) =>
       mutate(() => changeService(id, input)),
     reorderServices: (ids: string[]) => mutate(() => orderServices(ids)),
-    createNeighborhood: (input: AdminCatalogNeighborhoodCreateInput) =>
-      mutate(() => addNeighborhood(input)),
-    updateNeighborhood: (
-      code: string,
-      input: AdminCatalogNeighborhoodUpdateInput,
-    ) => mutate(() => changeNeighborhood(code, input)),
-    reorderNeighborhoods: (codes: string[]) =>
-      mutate(() => orderNeighborhoods(codes)),
   };
 }

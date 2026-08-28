@@ -14,7 +14,13 @@ const services = [
   },
 ];
 const cities = [
-  { id: "joinville-sc", name: "Joinville" as const, stateCode: "SC" as const },
+  {
+    id: "4209102",
+    name: "Joinville" as const,
+    stateCode: "SC" as const,
+    stateSlug: "sc",
+    citySlug: "joinville",
+  },
 ];
 
 const ButtonStub = defineComponent({
@@ -41,8 +47,11 @@ const stubs = {
         @click="$emit('submit', {
           serviceId: services[0].id,
           serviceName: services[0].name,
+          cityCode: cities[0].id,
           stateCode: cities[0].stateCode,
-          city: cities[0].name
+          city: cities[0].name,
+          stateSlug: cities[0].stateSlug,
+          citySlug: cities[0].citySlug
         })"
       >
         Buscar com serviço e cidade
@@ -83,8 +92,11 @@ describe("search failure card", () => {
     expect(wrapper.emitted("search")?.[0]?.[0]).toEqual({
       serviceId: services[0]?.id,
       serviceName: "Eletricista",
+      cityCode: "4209102",
       stateCode: "SC",
       city: "Joinville",
+      stateSlug: "sc",
+      citySlug: "joinville",
     });
   });
 
@@ -109,8 +121,11 @@ describe("search failure card", () => {
     expect(wrapper.emitted("search")?.[0]?.[0]).toEqual({
       serviceId: services[0]?.id,
       serviceName: "Eletricista",
+      cityCode: "4209102",
       stateCode: "SC",
       city: "Joinville",
+      stateSlug: "sc",
+      citySlug: "joinville",
     });
   });
 });

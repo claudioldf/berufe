@@ -1,4 +1,5 @@
 import type { ProfessionalServiceJob } from "./service-job";
+import type { LocationCoverage } from "./location";
 
 export interface Service {
   id: string;
@@ -8,13 +9,6 @@ export interface Service {
   icon: string;
   description: string;
   aliases: string[];
-}
-
-export interface Neighborhood {
-  code: string;
-  name: string;
-  stateCode: string;
-  city: string;
 }
 
 export interface Evidence {
@@ -74,8 +68,7 @@ export interface Professional {
   primaryServiceSlug: string;
   services: string[];
   serviceNotes: string[];
-  neighborhoods: string[];
-  allJoinville: boolean;
+  coverage: LocationCoverage;
   yearsExperience: number;
   evidence: Evidence[];
   portfolio: PortfolioItem[];
@@ -106,8 +99,9 @@ export interface PublicProfessionalCard {
     slug: string;
   } | null;
   coverage: {
-    allJoinville: boolean;
-    neighborhoods: Array<{ code: string; name: string }>;
+    city: LocationCoverage["city"];
+    wholeCity: boolean;
+    neighborhoods: LocationCoverage["neighborhoods"];
   };
   verificationLabels: Array<{
     type: "phone" | "identity";
@@ -137,8 +131,9 @@ export interface PublicProfessionalSearchResult {
   interpretation: {
     services: PublicServiceSuggestion[];
     locations: Array<{
-      stateCode: "SC";
-      city: "Joinville";
+      cityCode: string;
+      stateCode: string;
+      city: string;
       neighborhood: { code: string; name: string } | null;
     }>;
     normalizedRequest: string | null;
@@ -163,8 +158,7 @@ export interface PublicProfessionalProfile {
   primaryServiceIcon: string | null;
   services: string[];
   serviceNotes: Array<string | null>;
-  neighborhoods: string[];
-  allJoinville: boolean;
+  coverage: LocationCoverage;
   yearsExperience: number | null;
   evidence: Array<
     Evidence & {
@@ -243,8 +237,9 @@ export interface ProfessionalProfileDraft {
   selectedServices: string[];
   serviceNotes: Record<string, string>;
   primaryService: string;
-  allJoinville: boolean;
-  selectedNeighborhoods: string[];
+  coverageCityCode: string;
+  coversWholeCity: boolean;
+  selectedNeighborhoodCodes: string[];
   instagram: string;
   youtube: string;
 }
@@ -363,8 +358,9 @@ export interface ProfessionalWorkspace {
       note: string;
     }>;
     coverage: {
-      allJoinville: boolean;
-      neighborhoods: Array<{ code: string; name: string }>;
+      city: LocationCoverage["city"];
+      wholeCity: boolean;
+      neighborhoods: LocationCoverage["neighborhoods"];
     };
   };
 }

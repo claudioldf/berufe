@@ -22,9 +22,6 @@ if (catalogError.value || !catalog.value) {
   });
 }
 const services = computed(() => catalog.value?.services ?? []);
-const neighborhoods = computed(() =>
-  (catalog.value?.neighborhoods ?? []).filter((item) => item.code !== "all"),
-);
 const {
   data: workspace,
   error: workspaceError,
@@ -78,10 +75,7 @@ const professional = computed<Professional>(() => {
       services.value.find((service) => service.id === primary?.id)?.slug ?? "",
     services: profile.services.map((service) => service.name),
     serviceNotes: profile.services.map((service) => service.note),
-    neighborhoods: profile.coverage.neighborhoods.map(
-      (neighborhood) => neighborhood.name,
-    ),
-    allJoinville: profile.coverage.allJoinville,
+    coverage: profile.coverage,
     yearsExperience: profile.identity.yearsExperience,
     evidence: [
       { id: "phone-confirmed", label: "Telefone confirmado" },
@@ -143,7 +137,7 @@ async function saveProfile(
 
   saving.value = true;
   try {
-    await saveWorkspaceProfile(draft, services.value, neighborhoods.value);
+    await saveWorkspaceProfile(draft, services.value);
     confirm();
     showToast({
       title: "Perfil atualizado",
@@ -351,7 +345,6 @@ async function handleRelationshipRemove(id: string) {
         v-if="activeTab === 'dados'"
         :professional="professional"
         :services="services"
-        :neighborhoods="neighborhoods"
         :saving="saving"
         :photo="workspace?.profile.photo"
         :photo-uploading="photoUploading"
@@ -393,7 +386,6 @@ async function handleRelationshipRemove(id: string) {
     <RelationshipCreateDialog
       v-model:open="relationshipOpen"
       :services="services"
-      :neighborhoods="neighborhoods"
       :eligible="relationshipEligible"
     />
   </div>

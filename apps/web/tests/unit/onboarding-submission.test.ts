@@ -83,7 +83,18 @@ function completeWorkspace(): ProfessionalWorkspace {
           note: "",
         },
       ],
-      coverage: { allJoinville: true, neighborhoods: [] },
+      coverage: {
+        city: {
+          code: "4209102",
+          name: "Joinville",
+          slug: "joinville",
+          stateCode: "42",
+          stateAbbreviation: "SC",
+          stateName: "Santa Catarina",
+        },
+        wholeCity: true,
+        neighborhoods: [],
+      },
     },
   };
 }
@@ -122,7 +133,6 @@ describe("professional onboarding submission", () => {
             aliases: [],
           },
         ],
-        neighborhoods: [],
         workspace,
         saveIdentity: vi.fn(),
         saveSupply: vi.fn(),
@@ -189,7 +199,6 @@ describe("professional onboarding submission", () => {
             aliases: [],
           },
         ],
-        neighborhoods: [],
         workspace,
         saveIdentity: vi.fn(),
         saveSupply: vi.fn(),

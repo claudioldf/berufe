@@ -13,9 +13,6 @@ if (catalogError.value || !catalog.value) {
   });
 }
 const services = computed(() => catalog.value?.services ?? []);
-const neighborhoods = computed(() =>
-  (catalog.value?.neighborhoods ?? []).filter((item) => item.code !== "all"),
-);
 const {
   data: workspace,
   error: workspaceError,
@@ -47,7 +44,7 @@ async function saveOnboardingIdentity(draft: ProfessionalProfileDraft) {
 }
 
 async function saveOnboardingSupply(draft: ProfessionalProfileDraft) {
-  const updated = await saveSupply(draft, services.value, neighborhoods.value);
+  const updated = await saveSupply(draft, services.value);
   const selections = updated.profile.services;
   return {
     ...draft,
@@ -57,9 +54,10 @@ async function saveOnboardingSupply(draft: ProfessionalProfileDraft) {
     serviceNotes: Object.fromEntries(
       selections.map((selection) => [selection.name, selection.note]),
     ),
-    allJoinville: updated.profile.coverage.allJoinville,
-    selectedNeighborhoods: updated.profile.coverage.neighborhoods.map(
-      (neighborhood) => neighborhood.name,
+    coverageCityCode: updated.profile.coverage.city?.code ?? "",
+    coversWholeCity: updated.profile.coverage.wholeCity,
+    selectedNeighborhoodCodes: updated.profile.coverage.neighborhoods.map(
+      (neighborhood) => neighborhood.code,
     ),
   };
 }
@@ -80,7 +78,6 @@ useSeoMeta({
 <template>
   <OnboardingWizard
     :services="services"
-    :neighborhoods="neighborhoods"
     :workspace="professionalWorkspace"
     :save-identity="saveOnboardingIdentity"
     :save-supply="saveOnboardingSupply"

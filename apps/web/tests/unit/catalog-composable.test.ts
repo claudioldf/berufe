@@ -13,9 +13,9 @@ describe("catalog composable", () => {
         data: {
           categories: [],
           services: [],
-          neighborhoods: [],
           cities: [
             {
+              city_code: "4209102",
               state_code: "SC",
               city: "Joinville",
               state_slug: "sc",
@@ -37,18 +37,11 @@ describe("catalog composable", () => {
       services: [],
       cities: [
         {
+          cityCode: "4209102",
           stateCode: "SC",
           city: "Joinville",
           stateSlug: "sc",
           citySlug: "joinville",
-        },
-      ],
-      neighborhoods: [
-        {
-          code: "all",
-          name: "Toda Joinville",
-          stateCode: "SC",
-          city: "Joinville",
         },
       ],
     });

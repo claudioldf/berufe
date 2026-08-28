@@ -114,17 +114,20 @@ const siteUrl = String(
 const canonicalUrl = computed(
   () => `${siteUrl}/profissionais/${professional.value.slug}`,
 );
+const professionalCity = computed(
+  () => professional.value.coverage.city?.name ?? "sua cidade",
+);
 useSeoMeta({
   title: () =>
     professional.value.primaryService
       ? `${professional.value.name} — ${professional.value.primaryService}`
-      : `${professional.value.name} — profissional em Joinville`,
+      : `${professional.value.name} — profissional em ${professionalCity.value}`,
   description: () =>
     professional.value.headline ?? professional.value.bio ?? undefined,
   ogTitle: () =>
     professional.value.primaryService
       ? `${professional.value.name} — ${professional.value.primaryService}`
-      : `${professional.value.name} — profissional em Joinville`,
+      : `${professional.value.name} — profissional em ${professionalCity.value}`,
   ogDescription: () =>
     professional.value.headline ?? professional.value.bio ?? undefined,
   ogImage: () => professional.value.avatar ?? undefined,
@@ -160,8 +163,8 @@ async function shareProfile() {
   await share({
     title: `${professional.value.name} na Berufe`,
     text: professional.value.primaryService
-      ? `Veja o perfil de ${professional.value.name}, ${professional.value.primaryService.toLocaleLowerCase("pt-BR")} em Joinville.`
-      : `Veja o perfil profissional de ${professional.value.name} em Joinville.`,
+      ? `Veja o perfil de ${professional.value.name}, ${professional.value.primaryService.toLocaleLowerCase("pt-BR")} em ${professionalCity.value}.`
+      : `Veja o perfil profissional de ${professional.value.name} em ${professionalCity.value}.`,
     url: canonicalUrl.value,
   });
 }

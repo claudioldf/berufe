@@ -35,8 +35,16 @@ const contractCard: ContractProfessionalCard = {
     slug: "eletricista",
   },
   coverage: {
-    all_joinville: false,
-    neighborhoods: [{ code: "america", name: "América" }],
+    city: {
+      code: "4209102",
+      name: "Joinville",
+      slug: "joinville",
+      state_code: "42",
+      state_abbreviation: "SC",
+      state_name: "Santa Catarina",
+    },
+    whole_city: false,
+    neighborhoods: [{ code: "4209102001", name: "América" }],
   },
   verification_labels: [
     {
@@ -146,8 +154,16 @@ describe("public discovery API", () => {
       primaryService: contractCard.primary_service,
       matchingService: contractCard.matching_service,
       coverage: {
-        allJoinville: false,
-        neighborhoods: [{ code: "america", name: "América" }],
+        city: {
+          code: "4209102",
+          name: "Joinville",
+          slug: "joinville",
+          stateCode: "42",
+          stateAbbreviation: "SC",
+          stateName: "Santa Catarina",
+        },
+        wholeCity: false,
+        neighborhoods: [{ code: "4209102001", name: "América" }],
       },
       verificationLabels: [
         {
@@ -188,6 +204,7 @@ describe("public discovery API", () => {
             ],
             locations: [
               {
+                city_code: "4209102",
                 state_code: "SC",
                 city: "Joinville",
                 neighborhood: { code: "america", name: "América" },
@@ -226,6 +243,7 @@ describe("public discovery API", () => {
       ],
       locations: [
         {
+          cityCode: "4209102",
           stateCode: "SC",
           city: "Joinville",
           neighborhood: { code: "america", name: "América" },
@@ -283,7 +301,12 @@ describe("public discovery API", () => {
               },
             ],
             locations: [
-              { state_code: "SC", city: "Joinville", neighborhood: null },
+              {
+                city_code: "4209102",
+                state_code: "SC",
+                city: "Joinville",
+                neighborhood: null,
+              },
             ],
             normalized_request: null,
           },
@@ -297,12 +320,16 @@ describe("public discovery API", () => {
 
     const result = await searchStructuredProfessionals(client, {
       serviceId: contractCard.matching_service!.id,
-      stateCode: "SC",
-      city: "Joinville",
+      cityCode: "4209102",
     });
 
     expect(result.interpretation.locations).toEqual([
-      { stateCode: "SC", city: "Joinville", neighborhood: null },
+      {
+        cityCode: "4209102",
+        stateCode: "SC",
+        city: "Joinville",
+        neighborhood: null,
+      },
     ]);
     expect(result.interpretation.normalizedRequest).toBeNull();
     expect(client.POST).toHaveBeenCalledWith(
@@ -310,8 +337,7 @@ describe("public discovery API", () => {
       {
         body: {
           service_id: contractCard.matching_service!.id,
-          state_code: "SC",
-          city: "Joinville",
+          city_code: "4209102",
         },
       },
     );
@@ -387,8 +413,18 @@ describe("public discovery API", () => {
       primaryServiceIcon: "i-lucide-zap",
       services: ["Eletricista", "Marido de aluguel"],
       serviceNotes: ["Quadros elétricos", null],
-      neighborhoods: ["América"],
-      allJoinville: false,
+      coverage: {
+        city: {
+          code: "4209102",
+          name: "Joinville",
+          slug: "joinville",
+          stateCode: "42",
+          stateAbbreviation: "SC",
+          stateName: "Santa Catarina",
+        },
+        wholeCity: false,
+        neighborhoods: [{ code: "4209102001", name: "América" }],
+      },
       yearsExperience: 11,
       evidence: contractProfile.verification_labels.map((label) => ({
         id: label.type,

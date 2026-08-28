@@ -1,67 +1,33 @@
 <script setup lang="ts">
-import { reactive, shallowRef, watch } from "vue";
+import { reactive } from "vue";
 import type {
   CatalogCategoryOption,
   CatalogEntry,
   CatalogEntryDraft,
-  CatalogTab,
 } from "~/types/catalog";
-import { toIdentifier } from "~/utils/text";
 
 const props = defineProps<{
-  tab: CatalogTab;
   entry: CatalogEntry | null;
   categories: readonly CatalogCategoryOption[];
   disabled?: boolean;
 }>();
-
 const emit = defineEmits<{
   save: [draft: CatalogEntryDraft];
   cancel: [];
 }>();
-
 const form = reactive<CatalogEntryDraft>({
   name: props.entry?.name ?? "",
   identifier: props.entry?.identifier ?? "",
   description: props.entry?.description ?? "",
   category: props.entry?.category ?? props.categories[0]?.id,
-  stateCode: props.entry?.stateCode ?? "SC",
-  city: props.entry?.city ?? "Joinville",
 });
-const identifierManuallyEdited = shallowRef(false);
-
-function trackIdentifierEdit(event: Event) {
-  if (props.tab !== "neighborhoods" || props.entry) return;
-
-  const value = (event.target as HTMLInputElement).value;
-  identifierManuallyEdited.value = value !== toIdentifier(form.name);
-}
-
-watch(
-  () => form.name,
-  (name) => {
-    if (
-      props.tab !== "neighborhoods" ||
-      props.entry ||
-      identifierManuallyEdited.value
-    ) {
-      return;
-    }
-    form.identifier = toIdentifier(name);
-  },
-);
 
 function submit() {
   emit("save", {
     name: form.name.trim(),
     identifier: form.identifier.trim().toLocaleLowerCase("pt-BR"),
     description: form.description.trim(),
-    category: props.tab === "services" ? form.category : undefined,
-    stateCode:
-      props.tab === "neighborhoods"
-        ? form.stateCode?.trim().toLocaleUpperCase("pt-BR")
-        : undefined,
-    city: props.tab === "neighborhoods" ? form.city?.trim() : undefined,
+    category: form.category,
   });
 }
 </script>
@@ -69,28 +35,14 @@ function submit() {
 <template>
   <form class="catalog-form" @submit.prevent="submit">
     <label class="catalog-form__field">
-      <span>{{ props.tab === "services" ? "Nome" : "Bairro" }}</span>
-      <input
-        v-model="form.name"
-        name="catalog-name"
-        type="text"
-        autocomplete="off"
-        maxlength="80"
-        required
-        :disabled="props.disabled"
-      />
+      <span>Nome</span>
+      <input v-model="form.name" maxlength="80" required :disabled="disabled" />
     </label>
-
-    <label v-if="props.tab === 'services'" class="catalog-form__field">
+    <label class="catalog-form__field">
       <span>Categoria</span>
-      <select
-        v-model="form.category"
-        name="catalog-category"
-        required
-        :disabled="props.disabled"
-      >
+      <select v-model="form.category" required :disabled="disabled">
         <option
-          v-for="category in props.categories"
+          v-for="category in categories"
           :key="category.id"
           :value="category.id"
         >
@@ -98,83 +50,40 @@ function submit() {
         </option>
       </select>
     </label>
-
-    <label v-if="props.tab === 'neighborhoods'" class="catalog-form__field">
-      <span>UF</span>
-      <input
-        v-model="form.stateCode"
-        name="state-code"
-        type="text"
-        autocomplete="address-level1"
-        maxlength="2"
-        pattern="[A-Za-z]{2}"
-        required
-        :disabled="props.disabled"
-      />
-    </label>
-
-    <label v-if="props.tab === 'neighborhoods'" class="catalog-form__field">
-      <span>Cidade</span>
-      <input
-        v-model="form.city"
-        name="city"
-        type="text"
-        autocomplete="address-level2"
-        maxlength="80"
-        required
-        :disabled="props.disabled"
-      />
-    </label>
-
     <label class="catalog-form__field">
-      <span>{{ props.tab === "services" ? "Slug" : "Código" }}</span>
+      <span>Slug</span>
       <input
         v-model="form.identifier"
-        name="catalog-identifier"
-        type="text"
-        autocomplete="off"
         maxlength="80"
         pattern="[a-z0-9-]+"
         required
-        :disabled="Boolean(props.entry) || props.disabled"
-        @input="trackIdentifierEdit"
+        :disabled="Boolean(entry) || disabled"
       />
-      <small v-if="props.entry">
-        O identificador permanece estável para preservar referências históricas.
-      </small>
-      <small v-else-if="props.tab === 'neighborhoods'">
-        Gerado automaticamente pelo nome do bairro; você pode ajustá-lo antes de
-        salvar.
-      </small>
+      <small v-if="entry"
+        >O slug permanece estável para preservar referências históricas.</small
+      >
     </label>
-
-    <label v-if="props.tab === 'services'" class="catalog-form__field">
+    <label class="catalog-form__field">
       <span>Descrição</span>
       <textarea
         v-model="form.description"
-        name="catalog-description"
         rows="3"
         maxlength="240"
         required
-        :disabled="props.disabled"
+        :disabled="disabled"
       />
     </label>
-
     <div class="catalog-form__actions">
       <button
         type="button"
         class="catalog-form__cancel"
-        :disabled="props.disabled"
+        :disabled="disabled"
         @click="emit('cancel')"
       >
         Cancelar
       </button>
-      <button
-        type="submit"
-        class="catalog-form__save"
-        :disabled="props.disabled"
-      >
-        {{ props.entry ? "Salvar alterações" : "Adicionar entrada" }}
+      <button type="submit" class="catalog-form__save" :disabled="disabled">
+        {{ entry ? "Salvar alterações" : "Adicionar serviço" }}
       </button>
     </div>
   </form>
@@ -185,14 +94,6 @@ function submit() {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
-  &__actions {
-    grid-column: 1 / -1;
-  }
-  &__field small {
-    margin-top: 3px;
-    color: var(--ink-soft);
-    font-size: var(--font-size-min);
-  }
   &__field {
     display: grid;
     align-content: start;
@@ -214,14 +115,15 @@ function submit() {
     font: inherit;
     font-size: 0.86rem;
   }
-  &__field input:disabled {
-    background: #eceae4;
+  &__field small {
     color: var(--ink-soft);
+    font-size: var(--font-size-min);
   }
   &__field textarea {
     resize: vertical;
   }
   &__actions {
+    grid-column: 1 / -1;
     display: flex;
     justify-content: end;
     gap: 8px;
@@ -240,12 +142,16 @@ function submit() {
     color: var(--ink-soft);
   }
   &__save {
-    border: 1px solid var(--color-brand-strong);
-    background: var(--color-brand-strong);
+    border: 1px solid var(--color-brand);
+    background: var(--color-brand);
     color: white;
   }
+  button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
 }
-@media (width <= 700px) {
+@media (width <= 640px) {
   .catalog-form {
     grid-template-columns: 1fr;
   }
