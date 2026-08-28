@@ -33,7 +33,13 @@ export default defineNuxtConfig({
     "@components": fileURLToPath(new URL("./app/components", import.meta.url)),
     "@data": fileURLToPath(new URL("./data", import.meta.url)),
   },
-  modules: ["@nuxt/ui", "@nuxt/eslint", "@nuxtjs/seo", "@nuxt/image"],
+  modules: [
+    "@nuxt/ui",
+    "@nuxt/eslint",
+    "@nuxtjs/seo",
+    "@nuxt/content",
+    "@nuxt/image",
+  ],
   eslint: {
     config: {
       stylistic: false,
@@ -61,6 +67,13 @@ export default defineNuxtConfig({
   image: {
     quality: 82,
     format: ["webp"],
+  },
+  content: {
+    build: {
+      markdown: {
+        toc: { depth: 2 },
+      },
+    },
   },
   colorMode: {
     preference: "light",
@@ -193,6 +206,7 @@ export default defineNuxtConfig({
     "/encontrar": { prerender: false },
     "/encontrar/**": { prerender: false, swr: 300 },
     "/profissionais/**": { prerender: false, swr: 300 },
+    "/guias/**": { prerender: false, swr: 900 },
     "/foundation": {
       prerender: false,
       headers: {
