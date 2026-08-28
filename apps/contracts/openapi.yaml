@@ -861,6 +861,62 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/public/service-coverage:
+    get:
+      operationId: getPublicServiceCoverage
+      summary: Read the service-by-city professional count matrix
+      description: >-
+        Powers service and city hub pages, the footer link mesh, and the
+        sitemap: for every (service, city) combination with at least one
+        publicly searchable professional, the professional count and
+        whether that combination is indexable.
+      tags:
+        - Public discovery
+      security: []
+      parameters:
+        - name: service_slug
+          in: query
+          required: false
+          description: Restrict to one service's coverage across all cities.
+          schema:
+            type: string
+            pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        - name: city_slug
+          in: query
+          required: false
+          description: Restrict to one city's coverage across all services; requires state_slug.
+          schema:
+            type: string
+            pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        - name: state_slug
+          in: query
+          required: false
+          schema:
+            type: string
+            pattern: "^[a-z]{2}$"
+      responses:
+        "200":
+          description: The service-by-city coverage matrix.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              schema:
+                type: string
+                const: "max-age=0, public, must-revalidate"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicServiceCoverageResponse"
+        "503":
+          description: The public coverage query is temporarily unavailable.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/public/professionals/{slug}:
     parameters:
       - name: slug
@@ -6243,6 +6299,45 @@ components:
         indexable:
           type: boolean
           description: Whether this service/city combination has enough supply to be worth indexing.
+    PublicServiceCoverageResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          $ref: "#/components/schemas/PublicServiceCoverageData"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    PublicServiceCoverageData:
+      type: object
+      additionalProperties: false
+      required:
+        - entries
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicServiceCoverageEntry"
+    PublicServiceCoverageEntry:
+      type: object
+      additionalProperties: false
+      required:
+        - service
+        - location
+        - professional_count
+        - indexable
+      properties:
+        service:
+          $ref: "#/components/schemas/PublicServiceSuggestion"
+        location:
+          $ref: "#/components/schemas/PublicProfessionalSearchEffectiveLocation"
+        professional_count:
+          type: integer
+          minimum: 1
+        indexable:
+          type: boolean
     PublicProfessionalSearchInterpretation:
       type: object
       additionalProperties: false

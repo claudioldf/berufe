@@ -378,6 +378,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/service-coverage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read the service-by-city professional count matrix
+         * @description Powers service and city hub pages, the footer link mesh, and the sitemap: for every (service, city) combination with at least one publicly searchable professional, the professional count and whether that combination is indexable.
+         */
+        get: operations["getPublicServiceCoverage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/professionals/{slug}": {
         parameters: {
             query?: {
@@ -2338,6 +2358,19 @@ export interface components {
             /** @description Whether this service/city combination has enough supply to be worth indexing. */
             indexable: boolean;
         };
+        PublicServiceCoverageResponse: {
+            data: components["schemas"]["PublicServiceCoverageData"];
+            request_id: components["schemas"]["RequestId"];
+        };
+        PublicServiceCoverageData: {
+            entries: components["schemas"]["PublicServiceCoverageEntry"][];
+        };
+        PublicServiceCoverageEntry: {
+            service: components["schemas"]["PublicServiceSuggestion"];
+            location: components["schemas"]["PublicProfessionalSearchEffectiveLocation"];
+            professional_count: number;
+            indexable: boolean;
+        };
         PublicProfessionalSearchInterpretation: {
             services: components["schemas"]["PublicServiceSuggestion"][];
             effective_location: components["schemas"]["PublicProfessionalSearchEffectiveLocation"];
@@ -3567,6 +3600,44 @@ export interface operations {
                 };
             };
             /** @description The public listing query is temporarily unavailable. */
+            503: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getPublicServiceCoverage: {
+        parameters: {
+            query?: {
+                /** @description Restrict to one service's coverage across all cities. */
+                service_slug?: string;
+                /** @description Restrict to one city's coverage across all services; requires state_slug. */
+                city_slug?: string;
+                state_slug?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The service-by-city coverage matrix. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Cache-Control"?: "max-age=0, public, must-revalidate";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicServiceCoverageResponse"];
+                };
+            };
+            /** @description The public coverage query is temporarily unavailable. */
             503: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
