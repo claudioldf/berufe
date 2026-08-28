@@ -25,21 +25,14 @@ RSpec.describe SearchEvent, type: :model do
     )
   end
   let!(:neighborhood) do
-    Neighborhood.create!(
-      code: "america-agregado",
-      name: "América Agregado",
-      state_code: "SC",
-      city_code: "Joinville",
-      is_active: true,
-      sort_order: 0
-    )
+    create_location_neighborhood(code: "4209102010", name: "América Agregado")
   end
 
   it "stores only anonymous search context with one-way outcome defaults" do
     event = described_class.create!(
       service:,
       query_text_normalized: "encanador agregado",
-      city_code: "Joinville",
+      city_code: "4209102",
       neighborhood:,
       result_count: 2
     )
@@ -68,7 +61,7 @@ RSpec.describe SearchEvent, type: :model do
       audit_status: "completed",
       response_source: "provider",
       llm_prompt_digest: "a" * 64,
-      city_code: "Joinville",
+      city_code: "4209102",
       result_count: 0
     )
 
@@ -85,15 +78,15 @@ RSpec.describe SearchEvent, type: :model do
     event = described_class.new(
       service: nil,
       query_text_normalized: nil,
-      city_code: "Blumenau",
+      city_code: "4202404",
       neighborhood: nil,
       result_count: -1
     )
 
     expect(event).not_to be_valid
-    expect(event.errors).to include(:city_code, :result_count)
+    expect(event.errors).to include(:city, :result_count)
 
-    event.city_code = "Joinville"
+    event.city_code = joinville_city.code
     event.result_count = 0
     expect(event).to be_valid
   end
@@ -101,7 +94,7 @@ RSpec.describe SearchEvent, type: :model do
   it "requires retained query text to already use the public normalization" do
     event = described_class.new(
       query_text_normalized: "Elétrica!",
-      city_code: "Joinville",
+      city_code: "4209102",
       result_count: 0
     )
 

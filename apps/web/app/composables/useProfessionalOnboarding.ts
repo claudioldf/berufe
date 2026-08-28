@@ -62,8 +62,9 @@ export function createEmptyProfessionalProfileDraft(): ProfessionalProfileDraft 
     selectedServices: [],
     serviceNotes: {},
     primaryService: "",
-    allJoinville: false,
-    selectedNeighborhoods: [],
+    coverageCityCode: "",
+    coversWholeCity: false,
+    selectedNeighborhoodCodes: [],
   };
 }
 
@@ -113,14 +114,15 @@ export function validateOnboardingServices(
     draft.selectedServices.length > 0 &&
     draft.selectedServices.includes(draft.primaryService);
   const hasCoverage =
-    draft.allJoinville || draft.selectedNeighborhoods.length > 0;
+    Boolean(draft.coverageCityCode) &&
+    (draft.coversWholeCity || draft.selectedNeighborhoodCodes.length > 0);
   return {
     services: hasServices
       ? ""
       : "Escolha ao menos um serviço e defina o principal.",
     coverage: hasCoverage
       ? ""
-      : "Selecione toda Joinville ou pelo menos um bairro.",
+      : "Selecione uma cidade inteira ou pelo menos um bairro dela.",
   };
 }
 
@@ -175,7 +177,7 @@ function cloneProfileDraft(
     ...draft,
     selectedServices: [...draft.selectedServices],
     serviceNotes: { ...draft.serviceNotes },
-    selectedNeighborhoods: [...draft.selectedNeighborhoods],
+    selectedNeighborhoodCodes: [...draft.selectedNeighborhoodCodes],
   };
 }
 

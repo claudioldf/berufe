@@ -57,6 +57,8 @@ class ProfessionalRegistration
       version: profile.revisions.maximum(:version).to_i + 1,
       status: "draft",
       profile_type: "self_service",
+      coverage_city_code: source.coverage_city_code,
+      covers_whole_city: source.covers_whole_city,
       display_name:,
       headline: source.headline,
       bio: source.bio,
@@ -73,10 +75,7 @@ class ProfessionalRegistration
       )
     end
     source.professional_profile_service_areas.find_each do |area|
-      revision.professional_profile_service_areas.create!(
-        city_code: area.city_code,
-        neighborhood_code: area.neighborhood_code
-      )
+      revision.professional_profile_service_areas.create!(neighborhood_code: area.neighborhood_code)
     end
     profile.update!(working_revision: revision)
   end

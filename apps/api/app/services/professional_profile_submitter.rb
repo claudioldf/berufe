@@ -57,7 +57,7 @@ class ProfessionalProfileSubmitter
     errors[:identity] = ["complete nome, data de nascimento e contato"] unless identity_complete?(profile, revision)
     errors[:photo] = ["envie uma foto de perfil processada"] unless photo_complete?(profile)
     errors[:services] = ["escolha ao menos um serviço ativo e defina exatamente um principal"] unless services_complete?(revision)
-    errors[:coverage] = ["selecione toda Joinville ou ao menos um bairro ativo"] unless coverage_complete?(revision)
+    errors[:coverage] = ["selecione uma cidade inteira ou ao menos um bairro dela"] unless coverage_complete?(revision)
     raise Invalid.new(errors) if errors.any?
   end
 
@@ -79,10 +79,12 @@ class ProfessionalProfileSubmitter
   end
 
   def coverage_complete?(revision)
-    areas = revision.professional_profile_service_areas.includes(:neighborhood).to_a
-    return false if areas.empty?
-    return true if areas.one? && areas.first.neighborhood_code.nil?
+    return false unless revision.coverage_city
 
-    areas.all? { |area| area.neighborhood_code.present? && area.neighborhood&.is_active? }
+    areas = revision.professional_profile_service_areas.includes(:neighborhood).to_a
+    return areas.empty? if revision.covers_whole_city?
+    return false if areas.empty?
+
+    areas.all? { |area| area.neighborhood&.city_code == revision.coverage_city_code }
   end
 end

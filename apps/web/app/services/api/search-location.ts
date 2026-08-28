@@ -28,6 +28,7 @@ export async function fetchPublicSearchLocation(
 
   return {
     location: {
+      cityCode: data.data.city_code,
       stateCode: data.data.state_code,
       city: data.data.city,
       stateSlug: data.data.state_slug,

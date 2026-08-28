@@ -31,13 +31,15 @@ defineEmits<{ contact: [] }>();
     </DesignSystemSurfaceCard>
     <div class="profile-sidebar__coverage">
       <strong><UIcon name="i-lucide-map" /> Área de atendimento</strong>
-      <p v-if="professional.allJoinville">Toda Joinville</p>
+      <p v-if="professional.coverage.wholeCity">
+        Toda {{ professional.coverage.city?.name ?? "a cidade" }}
+      </p>
       <div v-else>
         <span
-          v-for="neighborhood in professional.neighborhoods"
-          :key="neighborhood"
+          v-for="neighborhood in professional.coverage.neighborhoods"
+          :key="neighborhood.code"
         >
-          {{ neighborhood }}
+          {{ neighborhood.name }}
         </span>
       </div>
     </div>

@@ -68,7 +68,7 @@ RSpec.describe ProfessionalProfileSubmitter do
     ProfessionalProfileSupplyUpdater.new.call(
       profile:,
       services: [{service_id: selected_service.id, is_primary: true, note: nil}],
-      coverage: {all_joinville: true, neighborhood_codes: []}
+      coverage: {city_code: joinville_city.code, whole_city: true, neighborhood_codes: []}
     )
     ProfessionalProfilePhotoAttacher.new.call(profile:, media_upload_id: processed_photo.id)
   end

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, shallowRef, useTemplateRef, watch } from "vue";
 import type {
-  Neighborhood,
   OnboardingStepId,
   ProfessionalProfileDraft,
   ProfessionalWorkspace,
@@ -14,7 +13,6 @@ import {
 
 const props = defineProps<{
   services: Service[];
-  neighborhoods: Neighborhood[];
   workspace: ProfessionalWorkspace;
   saveIdentity: (
     draft: ProfessionalProfileDraft,
@@ -75,13 +73,14 @@ const isSubmitted = computed(
     props.workspace.profile.status === "published" &&
     props.workspace.profile.presentationType === "self_service",
 );
+const showSuccess = computed(() => isSubmitted.value && !reviewing.value);
 const professionalName = computed(
   () => state.value.profile.name.trim().split(" ")[0] || "profissional",
 );
 const editableProfile = computed<ProfessionalProfileDraft>(() => ({
   ...state.value.profile,
   selectedServices: [...state.value.profile.selectedServices],
-  selectedNeighborhoods: [...state.value.profile.selectedNeighborhoods],
+  selectedNeighborhoodCodes: [...state.value.profile.selectedNeighborhoodCodes],
 }));
 const availableSteps = computed(() =>
   professionalOnboardingSteps
@@ -198,9 +197,10 @@ watch(
         serviceNotes: Object.fromEntries(
           selections.map((selection) => [selection.name, selection.note]),
         ),
-        allJoinville: workspace.profile.coverage.allJoinville,
-        selectedNeighborhoods: workspace.profile.coverage.neighborhoods.map(
-          (neighborhood) => neighborhood.name,
+        coverageCityCode: workspace.profile.coverage.city?.code ?? "",
+        coversWholeCity: workspace.profile.coverage.wholeCity,
+        selectedNeighborhoodCodes: workspace.profile.coverage.neighborhoods.map(
+          (neighborhood) => neighborhood.code,
         ),
       },
       Boolean(
@@ -228,7 +228,12 @@ watch(
             clareza.<br />Você pode sair e continuar depois.
           </p>
         </div>
-        <UButton to="/app/professional" color="neutral" variant="outline">
+        <UButton
+          v-if="!showSuccess"
+          to="/app/professional"
+          color="neutral"
+          variant="outline"
+        >
           Fazer depois
         </UButton>
       </DesignSystemContainer>
@@ -246,7 +251,8 @@ watch(
       </DesignSystemSurfaceCard>
 
       <OnboardingSuccess
-        v-else-if="isSubmitted && !reviewing"
+        v-else-if="showSuccess"
+        :public-slug="workspace.profile.publicSlug"
         @review="reviewSteps"
       />
 
@@ -283,7 +289,6 @@ watch(
             :key="`services-${state.completion.services ?? 'new'}`"
             :draft="editableProfile"
             :services="services"
-            :neighborhoods="neighborhoods"
             :saving="supplySaving"
             :server-error="supplyError"
             @back="previousStep"

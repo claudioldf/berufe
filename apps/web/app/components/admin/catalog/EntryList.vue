@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import type { CatalogEntry, CatalogTab } from "~/types/catalog";
+import type { CatalogEntry } from "~/types/catalog";
 
 const props = defineProps<{
   entries: readonly CatalogEntry[];
-  tab: CatalogTab;
   disabled?: boolean;
 }>();
 
@@ -16,28 +15,14 @@ const emit = defineEmits<{
 
 <template>
   <div class="catalog-table">
-    <div
-      class="catalog-table__head"
-      :class="{
-        'catalog-table__head--neighborhoods': props.tab === 'neighborhoods',
-      }"
-    >
-      <template v-if="props.tab === 'services'">
-        <span>Ordem</span><span>Nome</span><span>Identificador</span
-        ><span>Status</span><span>Ações</span>
-      </template>
-      <template v-else>
-        <span>Ordem</span><span>UF</span><span>Cidade</span><span>Bairro</span
-        ><span>Código</span><span>Status</span><span>Ações</span>
-      </template>
+    <div class="catalog-table__head">
+      <span>Ordem</span><span>Nome</span><span>Identificador</span
+      ><span>Status</span><span>Ações</span>
     </div>
     <div
       v-for="(entry, index) in props.entries"
       :key="entry.id"
       class="catalog-table__row"
-      :class="{
-        'catalog-table__row--neighborhood': props.tab === 'neighborhoods',
-      }"
     >
       <span class="catalog-table__order">
         <button
@@ -58,10 +43,6 @@ const emit = defineEmits<{
         </button>
         <small>{{ index + 1 }}</small>
       </span>
-      <template v-if="props.tab === 'neighborhoods'">
-        <span class="catalog-table__state">{{ entry.stateCode }}</span>
-        <span class="catalog-table__city">{{ entry.city }}</span>
-      </template>
       <span class="catalog-table__name">
         <strong>{{ entry.name }}</strong>
         <small v-if="entry.description">{{ entry.description }}</small>
@@ -87,8 +68,7 @@ const emit = defineEmits<{
     </div>
     <div v-if="props.entries.length === 0" class="catalog-table__empty">
       <UIcon name="i-lucide-search-x" />
-      <strong>Nenhum bairro encontrado</strong>
-      <small>Revise ou limpe os filtros para ver outras localidades.</small>
+      <strong>Nenhum serviço encontrado</strong>
     </div>
   </div>
 </template>
@@ -102,12 +82,6 @@ const emit = defineEmits<{
     gap: 12px;
     align-items: center;
     padding: 11px 20px;
-  }
-  &__head--neighborhoods,
-  &__row--neighborhood {
-    grid-template-columns:
-      80px 45px minmax(110px, 0.8fr) minmax(140px, 1fr) minmax(100px, 0.8fr)
-      80px 70px;
   }
   &__head {
     background: var(--color-surface-muted);
@@ -163,14 +137,6 @@ const emit = defineEmits<{
   &__identifier {
     color: var(--ink-soft);
     font-size: var(--font-size-min);
-  }
-  &__state,
-  &__city {
-    color: var(--ink-soft);
-    font-size: var(--font-size-min);
-  }
-  &__state {
-    font-weight: 850;
   }
   &__status,
   &__edit {

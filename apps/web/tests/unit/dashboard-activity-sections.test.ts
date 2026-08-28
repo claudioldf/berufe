@@ -97,7 +97,18 @@ function workspace(): ProfessionalWorkspace {
         youtube: "",
       },
       services: [],
-      coverage: { allJoinville: true, neighborhoods: [] },
+      coverage: {
+        city: {
+          code: "4209102",
+          name: "Joinville",
+          slug: "joinville",
+          stateCode: "42",
+          stateAbbreviation: "SC",
+          stateName: "Santa Catarina",
+        },
+        wholeCity: true,
+        neighborhoods: [],
+      },
     },
   };
 }

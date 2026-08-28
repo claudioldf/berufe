@@ -15,14 +15,7 @@ RSpec.describe "Public professional profiles", type: :request, openapi: true do
   let!(:primary_service) { create_service("Eletricista público", "eletricista-publico", 0) }
   let!(:additional_service) { create_service("Marido de aluguel público", "marido-de-aluguel-publico", 1) }
   let!(:neighborhood) do
-    Neighborhood.create!(
-      code: "america-perfil-publico",
-      name: "América Perfil Público",
-      state_code: "SC",
-      city_code: "Joinville",
-      is_active: true,
-      sort_order: 0
-    )
+    create_location_neighborhood(code: "4209102019", name: "América Perfil Público")
   end
 
   it "returns the complete public projection and a profile-bound search interaction" do
@@ -61,7 +54,7 @@ RSpec.describe "Public professional profiles", type: :request, openapi: true do
     search_event = SearchEvent.create!(
       service: additional_service,
       query_text_normalized: "marido de aluguel publico",
-      city_code: "Joinville",
+      city_code: "4209102",
       neighborhood:,
       result_count: 1
     )
@@ -106,7 +99,8 @@ RSpec.describe "Public professional profiles", type: :request, openapi: true do
       }
     ])
     expect(professional.fetch("coverage")).to eq(
-      "all_joinville" => false,
+      "city" => LocationSerializer.city(joinville_city).stringify_keys,
+      "whole_city" => false,
       "neighborhoods" => [{"code" => neighborhood.code, "name" => neighborhood.name}]
     )
     expect(professional.fetch("verification_labels")).to contain_exactly(
@@ -276,7 +270,8 @@ RSpec.describe "Public professional profiles", type: :request, openapi: true do
         note: index.zero? ? "Quadros elétricos" : "Pequenos reparos"
       )
     end
-    revision.professional_profile_service_areas.create!(city_code: "Joinville", neighborhood:)
+    revision.update!(coverage_city: neighborhood.city, covers_whole_city: false)
+    revision.professional_profile_service_areas.create!(neighborhood:)
     make_profile_publicly_eligible(profile, revision:)
   end
 

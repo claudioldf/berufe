@@ -1,5 +1,4 @@
 import type {
-  Neighborhood,
   ProfessionalProfileDraft,
   ProfessionalWorkspace,
   Service,
@@ -137,23 +136,26 @@ export function mapProfessionalWorkspace(
         note: selection.note ?? "",
       })),
       coverage: {
-        allJoinville: data.profile.coverage.all_joinville,
+        city: data.profile.coverage.city
+          ? {
+              code: data.profile.coverage.city.code,
+              name: data.profile.coverage.city.name,
+              slug: data.profile.coverage.city.slug,
+              stateCode: data.profile.coverage.city.state_code,
+              stateAbbreviation: data.profile.coverage.city.state_abbreviation,
+              stateName: data.profile.coverage.city.state_name,
+            }
+          : null,
+        wholeCity: data.profile.coverage.whole_city,
         neighborhoods: data.profile.coverage.neighborhoods,
       },
     },
   };
 }
 
-function supplyBody(
-  draft: ProfessionalProfileDraft,
-  services: Service[],
-  neighborhoods: Neighborhood[],
-) {
+function supplyBody(draft: ProfessionalProfileDraft, services: Service[]) {
   const catalogServices = new Map(
     services.map((service) => [service.name, service]),
-  );
-  const catalogNeighborhoods = new Map(
-    neighborhoods.map((neighborhood) => [neighborhood.name, neighborhood]),
   );
   return {
     services: draft.selectedServices.map((name) => {
@@ -166,15 +168,11 @@ function supplyBody(
       };
     }),
     coverage: {
-      all_joinville: draft.allJoinville,
-      neighborhood_codes: draft.allJoinville
+      city_code: draft.coverageCityCode,
+      whole_city: draft.coversWholeCity,
+      neighborhood_codes: draft.coversWholeCity
         ? []
-        : draft.selectedNeighborhoods.map((name) => {
-            const neighborhood = catalogNeighborhoods.get(name);
-            if (!neighborhood)
-              throw new Error("Unknown catalog neighborhood selection");
-            return neighborhood.code;
-          }),
+        : draft.selectedNeighborhoodCodes,
     },
   };
 }
@@ -226,11 +224,10 @@ export async function updateProfessionalSupply(
   client: BerufeApiClient,
   draft: ProfessionalProfileDraft,
   services: Service[],
-  neighborhoods: Neighborhood[],
 ): Promise<ProfessionalWorkspace> {
   const { data, error, response } = await client.PATCH(
     "/api/v1/professional/profile",
-    { body: supplyBody(draft, services, neighborhoods) },
+    { body: supplyBody(draft, services) },
   );
   if (error || !data) throw requestError(error, response);
 
@@ -241,7 +238,6 @@ export async function updateProfessionalProfile(
   client: BerufeApiClient,
   draft: ProfessionalProfileDraft,
   services: Service[],
-  neighborhoods: Neighborhood[],
 ): Promise<ProfessionalWorkspace> {
   const { data, error, response } = await client.PATCH(
     "/api/v1/professional/profile",
@@ -257,7 +253,7 @@ export async function updateProfessionalProfile(
           instagram: draft.instagram || null,
           youtube: draft.youtube || null,
         },
-        ...supplyBody(draft, services, neighborhoods),
+        ...supplyBody(draft, services),
       },
     },
   );

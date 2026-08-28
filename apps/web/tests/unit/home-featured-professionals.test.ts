@@ -36,7 +36,15 @@ function professional(
       slug: "eletricista",
     },
     coverage: {
-      allJoinville: false,
+      city: {
+        code: "4209102",
+        name: "Joinville",
+        slug: "joinville",
+        stateCode: "42",
+        stateAbbreviation: "SC",
+        stateName: "Santa Catarina",
+      },
+      wholeCity: false,
       neighborhoods: [
         { code: "america", name: "América" },
         { code: "saguacu", name: "Saguaçu" },
@@ -68,7 +76,11 @@ describe("home featured professionals", () => {
             name: "Beto Lima",
             photoUrl: null,
             primaryService: null,
-            coverage: { allJoinville: true, neighborhoods: [] },
+            coverage: {
+              city: professional().coverage.city,
+              wholeCity: true,
+              neighborhoods: [],
+            },
             verificationLabels: [],
             relationshipCount: 0,
           }),

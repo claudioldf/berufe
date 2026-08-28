@@ -21,20 +21,7 @@ RSpec.describe PublicCatalogSerializer do
       is_active: true,
       sort_order: 0
     )
-    neighborhood = Neighborhood.create!(
-      code: "america",
-      state_code: "SC",
-      city_code: "Joinville",
-      name: "América",
-      is_active: true,
-      sort_order: 0
-    )
-
-    serialized = described_class.new(
-      categories: [category],
-      services: [service],
-      neighborhoods: [neighborhood]
-    ).as_json
+    serialized = described_class.new(categories: [category], services: [service]).as_json
 
     expect(serialized).to eq(
       categories: [{id: category.id, slug: "instalacoes", name: "Instalações", icon: "i-lucide-wrench"}],
@@ -47,7 +34,6 @@ RSpec.describe PublicCatalogSerializer do
         description: "Instalações elétricas.",
         aliases: ["elétrica"]
       }],
-      neighborhoods: [{code: "america", name: "América", state_code: "SC", city: "Joinville"}],
       cities: []
     )
     expect(serialized.to_json).not_to include(

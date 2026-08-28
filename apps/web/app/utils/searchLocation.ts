@@ -1,6 +1,7 @@
 import type { SearchLocation } from "~/types";
 
 export const fallbackSearchLocation: SearchLocation = {
+  cityCode: "4209102",
   stateCode: "SC",
   city: "Joinville",
   stateSlug: "sc",

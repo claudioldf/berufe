@@ -6,10 +6,8 @@ module Api
       def show
         categories = policy_scope(ServiceCategory)
         services = policy_scope(Service)
-        neighborhoods = policy_scope(Neighborhood)
-
         render json: {
-          data: PublicCatalogSerializer.new(categories:, services:, neighborhoods:),
+          data: PublicCatalogSerializer.new(categories:, services:),
           request_id: Current.request_id
         }
       rescue ActiveRecord::ActiveRecordError => error

@@ -174,14 +174,6 @@ class ProfessionalWorkspaceSerializer
   end
 
   def serialized_coverage
-    areas = profile.working_revision.professional_profile_service_areas.includes(:neighborhood)
-    {
-      all_joinville: areas.any? { |area| area.neighborhood_code.nil? },
-      neighborhoods: areas.filter_map do |area|
-        next unless area.neighborhood
-
-        {code: area.neighborhood.code, name: area.neighborhood.name}
-      end
-    }
+    ProfessionalCoverageSerializer.new(profile.working_revision).as_json
   end
 end

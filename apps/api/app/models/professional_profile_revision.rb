@@ -11,6 +11,10 @@ class ProfessionalProfileRevision < ApplicationRecord
   ].freeze
 
   belongs_to :professional_profile, inverse_of: :revisions
+  belongs_to :coverage_city,
+    class_name: "City",
+    foreign_key: :coverage_city_code,
+    optional: true
   has_many :professional_profile_services, dependent: :destroy
   has_many :services, through: :professional_profile_services
   has_many :professional_profile_service_areas, dependent: :destroy
@@ -18,6 +22,7 @@ class ProfessionalProfileRevision < ApplicationRecord
   validates :version, numericality: {only_integer: true, greater_than: 0}, uniqueness: {scope: :professional_profile_id}
   validates :status, inclusion: {in: STATUSES}
   validates :profile_type, inclusion: {in: PROFILE_TYPES}
+  validates :covers_whole_city, inclusion: {in: [true, false]}
   validates :display_name, length: {in: 3..70}
   validates :headline, length: {in: 1..120}, allow_nil: true
   validates :bio, length: {in: 1..2500}, allow_nil: true
@@ -48,9 +53,11 @@ class ProfessionalProfileRevision < ApplicationRecord
       services: professional_profile_services.reload.map do |selection|
         [selection.service_id, selection.is_primary?, selection.note.to_s]
       end.sort,
-      areas: professional_profile_service_areas.reload.map do |area|
-        [area.city_code.to_s, area.neighborhood_code.to_s]
-      end.sort
+      coverage: [
+        coverage_city_code.to_s,
+        covers_whole_city?,
+        professional_profile_service_areas.reload.map(&:neighborhood_code).sort
+      ]
     )
   end
 

@@ -28,7 +28,7 @@ RSpec.describe PublicWhatsappHandoffRecorder do
     SearchEvent.create!(
       service:,
       query_text_normalized: "eletricista metrica",
-      city_code: "Joinville",
+      city_code: "4209102",
       result_count: 1
     )
   end

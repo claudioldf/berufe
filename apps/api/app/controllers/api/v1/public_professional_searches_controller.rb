@@ -16,19 +16,19 @@ module Api
         result = if structured_request?
           search.call_with_filters(
             service_id: params.require(:service_id),
-            state_code: params.require(:state_code),
-            city: params.require(:city),
+            city_code: params.require(:city_code),
             page:,
             per_page:
           )
         else
           expression = params.require(:expression)
-          audit_event = audit_recorder.start(expression:) if page == 1
           ip_address = visitor_ip_resolver.call(request)
+          default_location = expression_default_location(ip_address:)
+          audit_event = audit_recorder.start(expression:, city_code: default_location.city_code) if page == 1
           PublicSearchRateLimiter.new.check_and_increment!(ip_address:)
           search.call(
             expression:,
-            default_location: expression_default_location(ip_address:),
+            default_location:,
             page:,
             per_page:,
             audit_event:
@@ -40,7 +40,7 @@ module Api
             criteria: result.criteria,
             result_count: result.total_count,
             subject: search_deduplication_subject,
-            query: search_deduplication_query,
+            query: search_deduplication_query(result.criteria),
             event: audit_event
           )
         end
@@ -112,7 +112,12 @@ module Api
 
       def expression_default_location(ip_address:)
         if params[:default_location].present?
-          return params.require(:default_location).permit(:state_code, :city).to_h.symbolize_keys
+          city_code = params.require(:default_location).permit(:city_code).fetch(:city_code)
+          location = SupportedSearchLocations.new.find_by_code(city_code:)
+          return location if location
+
+          raise PublicProfessionalSearch::InvalidInput,
+            {default_location: ["selecione uma cidade disponível"]}
         end
 
         PublicSearchLocationResolver.new.call(ip_address:).location
@@ -125,7 +130,7 @@ module Api
       end
 
       def structured_request?
-        %i[service_id state_code city].any? { |key| params.key?(key) }
+        %i[service_id city_code].any? { |key| params.key?(key) }
       end
 
       def search_deduplication_subject
@@ -135,16 +140,19 @@ module Api
         "ip\0#{request.remote_ip}"
       end
 
-      def search_deduplication_query
+      def search_deduplication_query(criteria)
         if structured_request?
           [
             "structured",
             params[:service_id].to_s.downcase,
-            params[:state_code].to_s.upcase,
-            PublicSearchText.normalize(params[:city])
+            params[:city_code].to_s
           ].join("\0")
         else
-          "expression\0#{PublicSearchText.normalize(params[:expression])}"
+          [
+            "expression",
+            PublicSearchText.normalize(params[:expression]),
+            criteria.locations.first.city_code
+          ].join("\0")
         end
       end
     end

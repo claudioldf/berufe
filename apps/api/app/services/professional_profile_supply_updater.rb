@@ -47,8 +47,9 @@ class ProfessionalProfileSupplyUpdater
   def normalize_coverage(coverage)
     values = coverage.to_h.symbolize_keys
     {
-      all_joinville: values[:all_joinville] == true,
-      neighborhood_codes: Array(values[:neighborhood_codes]).map(&:to_s).uniq
+      city_code: values[:city_code].to_s,
+      whole_city: values[:whole_city] == true,
+      neighborhood_codes: Array(values[:neighborhood_codes]).map(&:to_s).reject(&:blank?).uniq
     }
   end
 
@@ -63,11 +64,12 @@ class ProfessionalProfileSupplyUpdater
   end
 
   def validate_coverage!(coverage)
-    all_joinville = coverage[:all_joinville]
+    whole_city = coverage[:whole_city]
     codes = coverage[:neighborhood_codes]
     errors = []
-    errors << "não combine toda Joinville com bairros específicos" if all_joinville && codes.any?
-    errors << "escolha toda Joinville ou ao menos um bairro" unless all_joinville || codes.any?
+    errors << "selecione uma cidade" if coverage[:city_code].blank?
+    errors << "não combine a cidade inteira com bairros específicos" if whole_city && codes.any?
+    errors << "escolha a cidade inteira ou ao menos um bairro" unless whole_city || codes.any?
     raise Invalid.new(coverage: errors) if errors.any?
   end
 
@@ -78,11 +80,14 @@ class ProfessionalProfileSupplyUpdater
       raise Invalid.new(services: ["escolha apenas serviços ativos do catálogo"])
     end
 
-    requested_codes = coverage[:neighborhood_codes]
-    active_codes = Neighborhood.active.where(code: requested_codes).pluck(:code)
-    return if active_codes.length == requested_codes.length
+    city = City.find_by(code: coverage[:city_code])
+    raise Invalid.new(coverage: ["selecione uma cidade disponível"]) unless city
 
-    raise Invalid.new(coverage: ["escolha apenas bairros ativos de Joinville"])
+    requested_codes = coverage[:neighborhood_codes]
+    city_codes = city.neighborhoods.where(code: requested_codes).pluck(:code)
+    return if city_codes.length == requested_codes.length
+
+    raise Invalid.new(coverage: ["escolha apenas bairros da cidade selecionada"])
   end
 
   def replace_services!(revision, services)
@@ -94,12 +99,12 @@ class ProfessionalProfileSupplyUpdater
 
   def replace_coverage!(revision, coverage)
     revision.professional_profile_service_areas.delete_all
-    codes = coverage[:all_joinville] ? [nil] : coverage[:neighborhood_codes]
-    codes.each do |neighborhood_code|
-      revision.professional_profile_service_areas.create!(
-        city_code: ProfessionalProfileServiceArea::JOINVILLE,
-        neighborhood_code:
-      )
+    revision.update!(
+      coverage_city_code: coverage[:city_code],
+      covers_whole_city: coverage[:whole_city]
+    )
+    coverage[:neighborhood_codes].each do |neighborhood_code|
+      revision.professional_profile_service_areas.create!(neighborhood_code:)
     end
   end
 end

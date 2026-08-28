@@ -346,9 +346,12 @@ function requestShare() {
       padding: 8px;
       border: 1px solid var(--line);
       border-radius: 8px;
-      background: var(--color-surface-control);
+      background-color: var(--color-surface-control);
       font-size: 0.84rem;
       transition: border-color var(--motion-fast) ease;
+    }
+    & select {
+      padding-right: 2.25rem;
     }
     & strong {
       text-align: right;

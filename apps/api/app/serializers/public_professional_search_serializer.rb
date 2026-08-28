@@ -38,14 +38,19 @@ class PublicProfessionalSearchSerializer
   def interpretation
     neighborhood_codes = result.criteria.locations.filter_map(&:neighborhood_code)
     neighborhoods_by_code = Neighborhood.where(code: neighborhood_codes).index_by(&:code)
+    effective_location = SupportedSearchLocations.new.find_by_code(
+      city_code: result.criteria.locations.first.city_code
+    )
 
     {
       services: result.services.map do |service|
         PublicServiceSuggestionSerializer.new(service).as_json
       end,
+      effective_location: effective_location.to_h,
       locations: result.criteria.locations.map do |location|
         neighborhood = neighborhoods_by_code[location.neighborhood_code]
         {
+          city_code: location.city_code,
           state_code: location.state_code,
           city: location.city,
           neighborhood: neighborhood && {code: neighborhood.code, name: neighborhood.name}

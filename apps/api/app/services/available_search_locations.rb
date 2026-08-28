@@ -8,12 +8,12 @@ class AvailableSearchLocations
   def all
     available_city_codes = ProfessionalProfile
       .publicly_searchable
-      .joins(published_revision: :professional_profile_service_areas)
+      .joins(:published_revision)
       .distinct
-      .pluck("professional_profile_service_areas.city_code")
+      .pluck("professional_profile_revisions.coverage_city_code")
 
     supported_locations.all.select do |location|
-      available_city_codes.include?(location.city)
+      available_city_codes.include?(location.city_code)
     end
   end
 

@@ -15,11 +15,11 @@ RSpec.describe SearchReportingRetentionJob do
     now = Time.zone.parse("2026-08-18 15:00:00")
     occurred_at = now - 91.days
     SearchEvent.create!(
-      service:, city_code: "Joinville", result_count: 3,
+      service:, city_code: "4209102", result_count: 3,
       profile_opened: true, whatsapp_handoff_occurred: false, created_at: occurred_at
     )
     SearchEvent.create!(
-      service:, city_code: "Joinville", result_count: 0,
+      service:, city_code: "4209102", result_count: 0,
       profile_opened: false, whatsapp_handoff_occurred: false, created_at: occurred_at + 1.hour
     )
 
@@ -51,7 +51,7 @@ RSpec.describe SearchReportingRetentionJob do
       llm_adapter: "fake",
       llm_model: "gpt-5-mini",
       llm_prompt_digest: "a" * 64,
-      city_code: "Joinville",
+      city_code: "4209102",
       result_count: 2,
       reportable: true,
       created_at: now - 91.days
@@ -59,7 +59,7 @@ RSpec.describe SearchReportingRetentionJob do
     failed_audit = SearchEvent.create!(
       input_prompt: "Preciso de eletricista",
       audit_status: "application_rate_limited",
-      city_code: "Joinville",
+      city_code: "4209102",
       result_count: 0,
       reportable: false,
       created_at: now - 91.days
@@ -67,14 +67,14 @@ RSpec.describe SearchReportingRetentionJob do
     expired_audit = SearchEvent.create!(
       input_prompt: "Preciso de encanador",
       audit_status: "provider_unavailable",
-      city_code: "Joinville",
+      city_code: "4209102",
       result_count: 0,
       reportable: false,
       created_at: now - 6.months - 1.minute
     )
     discarded_failed_row = SearchEvent.create!(
       audit_status: "search_failed",
-      city_code: "Joinville",
+      city_code: "4209102",
       result_count: 0,
       reportable: false,
       created_at: now - 91.days
@@ -103,8 +103,8 @@ RSpec.describe SearchReportingRetentionJob do
 
   it "removes expired search-event deduplication claims" do
     now = Time.zone.parse("2026-08-26 15:00:00")
-    expired_event = SearchEvent.create!(city_code: "Joinville", result_count: 1, created_at: now)
-    retained_event = SearchEvent.create!(city_code: "Joinville", result_count: 1, created_at: now)
+    expired_event = SearchEvent.create!(city_code: "4209102", result_count: 1, created_at: now)
+    retained_event = SearchEvent.create!(city_code: "4209102", result_count: 1, created_at: now)
     expired = PublicSearchEventDeduplication.create!(
       search_event: expired_event,
       subject_digest: "a" * 64,

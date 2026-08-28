@@ -86,7 +86,15 @@ const workspaceData: WorkspaceData = {
       },
     ],
     coverage: {
-      all_joinville: true,
+      city: {
+        code: "4209102",
+        name: "Joinville",
+        slug: "joinville",
+        state_code: "42",
+        state_abbreviation: "SC",
+        state_name: "Santa Catarina",
+      },
+      whole_city: true,
       neighborhoods: [],
     },
   },
@@ -172,7 +180,15 @@ describe("professional workspace API", () => {
           },
         ],
         coverage: {
-          allJoinville: true,
+          city: {
+            code: "4209102",
+            name: "Joinville",
+            slug: "joinville",
+            stateCode: "42",
+            stateAbbreviation: "SC",
+            stateName: "Santa Catarina",
+          },
+          wholeCity: true,
           neighborhoods: [],
         },
       },
@@ -410,8 +426,9 @@ describe("professional workspace API", () => {
       selectedServices: ["Eletricista"],
       serviceNotes: { Eletricista: "Quadros e circuitos" },
       primaryService: "Eletricista",
-      allJoinville: true,
-      selectedNeighborhoods: [],
+      coverageCityCode: "4209102",
+      coversWholeCity: true,
+      selectedNeighborhoodCodes: [],
     };
 
     await updateProfessionalIdentity(client, draft);
@@ -443,33 +460,22 @@ describe("professional workspace API", () => {
       selectedServices: ["Eletricista"],
       serviceNotes: { Eletricista: "Quadros e circuitos" },
       primaryService: "Eletricista",
-      allJoinville: false,
-      selectedNeighborhoods: ["América"],
+      coverageCityCode: "4209102",
+      coversWholeCity: false,
+      selectedNeighborhoodCodes: ["4209102001"],
     };
 
-    await updateProfessionalSupply(
-      client,
-      draft,
-      [
-        {
-          id: "de83e041-286f-4b50-91fa-61a0ee8c1801",
-          name: "Eletricista",
-          slug: "eletricista",
-          category: "instalacoes",
-          icon: "i-lucide-zap",
-          description: "Instalações elétricas.",
-          aliases: [],
-        },
-      ],
-      [
-        {
-          code: "america",
-          name: "América",
-          stateCode: "SC",
-          city: "Joinville",
-        },
-      ],
-    );
+    await updateProfessionalSupply(client, draft, [
+      {
+        id: "de83e041-286f-4b50-91fa-61a0ee8c1801",
+        name: "Eletricista",
+        slug: "eletricista",
+        category: "instalacoes",
+        icon: "i-lucide-zap",
+        description: "Instalações elétricas.",
+        aliases: [],
+      },
+    ]);
 
     expect(client.PATCH).toHaveBeenCalledWith("/api/v1/professional/profile", {
       body: {
@@ -481,8 +487,9 @@ describe("professional workspace API", () => {
           },
         ],
         coverage: {
-          all_joinville: false,
-          neighborhood_codes: ["america"],
+          city_code: "4209102",
+          whole_city: false,
+          neighborhood_codes: ["4209102001"],
         },
       },
     });

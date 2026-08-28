@@ -8,10 +8,6 @@ export type AdminCatalogServiceCreateInput =
   components["schemas"]["AdminCatalogServiceCreateRequest"];
 export type AdminCatalogServiceUpdateInput =
   components["schemas"]["AdminCatalogServiceUpdateRequest"];
-export type AdminCatalogNeighborhoodCreateInput =
-  components["schemas"]["AdminCatalogNeighborhoodCreateRequest"];
-export type AdminCatalogNeighborhoodUpdateInput =
-  components["schemas"]["AdminCatalogNeighborhoodUpdateRequest"];
 
 interface ApiResult {
   data?: { data: AdminCatalogData };
@@ -32,15 +28,6 @@ export function mapAdminCatalog(data: AdminCatalogData): AdminCatalog {
       description: service.description,
       category: service.category_slug,
       active: service.is_active,
-    })),
-    neighborhoods: data.neighborhoods.map((neighborhood) => ({
-      id: neighborhood.code,
-      name: neighborhood.name,
-      identifier: neighborhood.code,
-      description: "",
-      stateCode: neighborhood.state_code,
-      city: neighborhood.city,
-      active: neighborhood.is_active,
     })),
   };
 }
@@ -93,39 +80,6 @@ export async function reorderAdminCatalogServices(
   return requireAdminCatalog(
     await client.PUT("/api/v1/admin/catalog/services/order", {
       body: { ids },
-    }),
-  );
-}
-
-export async function createAdminCatalogNeighborhood(
-  client: BerufeApiClient,
-  input: AdminCatalogNeighborhoodCreateInput,
-): Promise<AdminCatalog> {
-  return requireAdminCatalog(
-    await client.POST("/api/v1/admin/catalog/neighborhoods", { body: input }),
-  );
-}
-
-export async function updateAdminCatalogNeighborhood(
-  client: BerufeApiClient,
-  code: string,
-  input: AdminCatalogNeighborhoodUpdateInput,
-): Promise<AdminCatalog> {
-  return requireAdminCatalog(
-    await client.PATCH("/api/v1/admin/catalog/neighborhoods/{code}", {
-      params: { path: { code } },
-      body: input,
-    }),
-  );
-}
-
-export async function reorderAdminCatalogNeighborhoods(
-  client: BerufeApiClient,
-  codes: string[],
-): Promise<AdminCatalog> {
-  return requireAdminCatalog(
-    await client.PUT("/api/v1/admin/catalog/neighborhoods/order", {
-      body: { codes },
     }),
   );
 }

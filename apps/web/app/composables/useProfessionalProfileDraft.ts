@@ -24,8 +24,11 @@ function createDraft(professional: Professional): ProfessionalProfileDraft {
       ]),
     ),
     primaryService: professional.primaryService,
-    allJoinville: professional.allJoinville,
-    selectedNeighborhoods: [...professional.neighborhoods],
+    coverageCityCode: professional.coverage.city?.code ?? "",
+    coversWholeCity: professional.coverage.wholeCity,
+    selectedNeighborhoodCodes: professional.coverage.neighborhoods.map(
+      (neighborhood) => neighborhood.code,
+    ),
   };
 }
 
@@ -86,13 +89,6 @@ export function useProfessionalProfileDraft(
     markDirty();
   }
 
-  function toggleNeighborhood(name: string) {
-    form.selectedNeighborhoods = form.selectedNeighborhoods.includes(name)
-      ? form.selectedNeighborhoods.filter((item) => item !== name)
-      : [...form.selectedNeighborhoods, name];
-    markDirty();
-  }
-
   function commit(): ProfessionalProfileDraft | null {
     const instagram = validateSocialField("instagram");
     const youtube = validateSocialField("youtube");
@@ -103,7 +99,7 @@ export function useProfessionalProfileDraft(
     return {
       ...form,
       selectedServices: [...form.selectedServices],
-      selectedNeighborhoods: [...form.selectedNeighborhoods],
+      selectedNeighborhoodCodes: [...form.selectedNeighborhoodCodes],
     };
   }
 
@@ -119,7 +115,6 @@ export function useProfessionalProfileDraft(
     validateSocialField,
     clearSocialError,
     toggleService,
-    toggleNeighborhood,
     commit,
     confirmSaved,
     reset,

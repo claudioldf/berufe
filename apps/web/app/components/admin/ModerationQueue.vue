@@ -254,10 +254,10 @@ async function openEvidence() {
     }
     &__status select {
       min-height: 36px;
-      padding: 7px 30px 7px 10px;
+      padding: 7px 2.25rem 7px 10px;
       border: 0;
       border-radius: 9px;
-      background: white;
+      background-color: white;
       color: var(--ink-soft);
       font-size: 0.82rem;
       font-weight: 800;

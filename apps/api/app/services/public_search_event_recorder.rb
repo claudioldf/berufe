@@ -19,7 +19,7 @@ class PublicSearchEventRecorder
     attributes = {
       service:,
       query_text_normalized: nil,
-      city_code: SearchEvent::JOINVILLE,
+      city_code: criteria.locations.first.city_code,
       neighborhood:,
       result_count:,
       reportable: true

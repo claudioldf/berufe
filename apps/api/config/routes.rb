@@ -5,6 +5,9 @@ Rails.application.routes.draw do
     namespace :v1 do
       resource :status, only: :show, controller: :status
       resource :catalog, only: :show, controller: :catalogs
+      get "locations/states", to: "locations#states"
+      get "locations/states/:state_abbreviation/cities", to: "locations#cities"
+      get "locations/cities/:city_code/neighborhoods", to: "locations#neighborhoods"
       get "public/search-location", to: "public_search_locations#show"
       get "public/professionals/featured", to: "public_featured_professionals#index"
       post "public/professional-searches", to: "public_professional_searches#create"
@@ -65,9 +68,6 @@ Rails.application.routes.draw do
         post "catalog/services", to: "catalog_services#create"
         patch "catalog/services/:id", to: "catalog_services#update"
         put "catalog/services/order", to: "catalog_services#reorder"
-        post "catalog/neighborhoods", to: "catalog_neighborhoods#create"
-        patch "catalog/neighborhoods/:code", to: "catalog_neighborhoods#update"
-        put "catalog/neighborhoods/order", to: "catalog_neighborhoods#reorder"
       end
       resources :otp_challenges, only: :create, path: "auth/otp/challenges"
       resources :otp_verifications, only: :create, path: "auth/otp/verifications"

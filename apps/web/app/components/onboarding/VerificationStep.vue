@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { shallowRef } from "vue";
 import type { VerificationSubmission } from "~/types";
 
 defineProps<{
@@ -17,6 +18,9 @@ defineEmits<{
 function submit(submission: VerificationSubmission) {
   return submission.file;
 }
+
+const verificationFormId = "onboarding-identity-verification";
+const hasSelectedFile = shallowRef(false);
 </script>
 
 <template>
@@ -44,9 +48,11 @@ function submit(submission: VerificationSubmission) {
 
     <DesignSystemSurfaceCard v-else class="onboarding-upload-card">
       <DashboardVerificationIdentityUploadForm
-        submit-label="Enviar e concluir"
+        :form-id="verificationFormId"
+        :show-submit="false"
         :submitting="saving"
         @submitted="$emit('complete', submit($event))"
+        @selection-changed="hasSelectedFile = $event"
       />
     </DesignSystemSurfaceCard>
 
@@ -61,28 +67,60 @@ function submit(submission: VerificationSubmission) {
       >
         Voltar
       </UButton>
-      <UButton
-        v-if="!submitted"
-        type="button"
-        color="neutral"
-        variant="outline"
-        :loading="submitting"
-        :disabled="saving || submitting"
-        @click="$emit('skip')"
-      >
-        Agora não — publicar perfil
-      </UButton>
-      <UButton
-        v-else
-        type="button"
-        color="primary"
-        trailing-icon="i-lucide-check"
-        :loading="submitting"
-        :disabled="saving || submitting"
-        @click="$emit('finish')"
-      >
-        Publicar perfil
-      </UButton>
+      <div class="onboarding-verification-actions">
+        <template v-if="!submitted">
+          <UButton
+            type="button"
+            color="neutral"
+            variant="outline"
+            :loading="submitting"
+            :disabled="saving || submitting"
+            @click="$emit('skip')"
+          >
+            Pular verificação e publicar perfil
+          </UButton>
+          <UButton
+            type="submit"
+            :form="verificationFormId"
+            color="primary"
+            :loading="saving"
+            :disabled="saving || submitting || !hasSelectedFile"
+          >
+            Enviar e concluir
+          </UButton>
+        </template>
+        <UButton
+          v-else
+          type="button"
+          color="primary"
+          trailing-icon="i-lucide-check"
+          :loading="submitting"
+          :disabled="saving || submitting"
+          @click="$emit('finish')"
+        >
+          Publicar perfil
+        </UButton>
+      </div>
     </footer>
   </section>
 </template>
+
+<style scoped lang="scss">
+.onboarding-verification-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+@media (width <= 700px) {
+  .onboarding-step-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .onboarding-verification-actions {
+    display: grid;
+  }
+}
+</style>

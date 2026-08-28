@@ -88,7 +88,7 @@ RSpec.describe "Professional profile photo moderation" do
     )
     revision = profile.working_revision
     revision.professional_profile_services.create!(service:, is_primary: true)
-    revision.professional_profile_service_areas.create!(city_code: "Joinville")
+    revision.update!(coverage_city: joinville_city, covers_whole_city: true)
     revision.update!(status: "approved", submitted_at: Time.current, reviewed_at: Time.current)
     profile.update!(
       profile_status: "published",

@@ -13,9 +13,11 @@ class ProfessionalProfileActivitySnapshot
       services: revision.professional_profile_services
         .order(:service_id)
         .pluck(:service_id, :is_primary, :note),
-      coverage: revision.professional_profile_service_areas
-        .order(Arel.sql("neighborhood_code ASC NULLS FIRST"))
-        .pluck(:city_code, :neighborhood_code)
+      coverage: [
+        revision.coverage_city_code,
+        revision.covers_whole_city?,
+        revision.professional_profile_service_areas.order(:neighborhood_code).pluck(:neighborhood_code)
+      ]
     }
   end
 end

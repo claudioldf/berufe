@@ -209,7 +209,7 @@ module Admin
           service = services[row.service_id]
           next if row.service_id.nil? && row.unmatched_query.blank?
 
-          professionals = service ? searchable_supply(service.id, row.neighborhood_code) : 0
+          professionals = service ? searchable_supply(service.id, row.city_code, row.neighborhood_code) : 0
           status = if service.nil?
             "outside_mvp"
           elsif service.is_active?
@@ -219,7 +219,7 @@ module Admin
           end
           {
             service: service&.name || row.unmatched_query.titleize,
-            location: Neighborhood.find_by(code: row.neighborhood_code)&.name || "Joinville",
+            location: Neighborhood.find_by(code: row.neighborhood_code)&.name || City.find_by(code: row.city_code)&.name || "Cidade não informada",
             searches: gap_searches,
             zero_result_searches: row.zero_results,
             thin_result_searches: row.thin_results,
@@ -245,13 +245,20 @@ module Admin
         }
       end
 
-      def searchable_supply(service_id, neighborhood_code)
+      def searchable_supply(service_id, city_code, neighborhood_code)
         relation = ProfessionalProfile.publicly_eligible
-          .joins(published_revision: %i[professional_profile_services professional_profile_service_areas])
+          .joins(published_revision: :professional_profile_services)
           .where(professional_profile_services: {service_id:})
+          .where(professional_profile_revisions: {coverage_city_code: city_code})
         if neighborhood_code
           relation = relation.where(
-            "professional_profile_service_areas.neighborhood_code IS NULL OR professional_profile_service_areas.neighborhood_code = ?",
+            <<~SQL.squish,
+              professional_profile_revisions.covers_whole_city = TRUE OR EXISTS (
+                SELECT 1 FROM professional_profile_service_areas report_areas
+                WHERE report_areas.professional_profile_revision_id = professional_profiles.published_revision_id
+                  AND report_areas.neighborhood_code = ?
+              )
+            SQL
             neighborhood_code
           )
         end

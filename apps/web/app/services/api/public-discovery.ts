@@ -16,6 +16,24 @@ type ContractProfessionalProfile =
 type ContractVerificationLabel =
   components["schemas"]["PublicVerificationLabel"];
 type ContractSearchData = components["schemas"]["PublicProfessionalSearchData"];
+type ContractCoverage = components["schemas"]["PublicProfessionalCoverage"];
+
+function mapCoverage(coverage: ContractCoverage) {
+  return {
+    city: coverage.city
+      ? {
+          code: coverage.city.code,
+          name: coverage.city.name,
+          slug: coverage.city.slug,
+          stateCode: coverage.city.state_code,
+          stateAbbreviation: coverage.city.state_abbreviation,
+          stateName: coverage.city.state_name,
+        }
+      : null,
+    wholeCity: coverage.whole_city,
+    neighborhoods: coverage.neighborhoods,
+  };
+}
 
 function mapVerificationLabel(label: ContractVerificationLabel) {
   return {
@@ -38,10 +56,7 @@ export function mapPublicProfessionalCard(
     photoUrl: card.photo_url,
     primaryService: card.primary_service,
     matchingService: card.matching_service,
-    coverage: {
-      allJoinville: card.coverage.all_joinville,
-      neighborhoods: card.coverage.neighborhoods,
-    },
+    coverage: mapCoverage(card.coverage),
     verificationLabels: card.verification_labels.map(mapVerificationLabel),
     portfolioCount: card.portfolio_count,
     relationshipCount: card.relationship_count,
@@ -51,14 +66,14 @@ export function mapPublicProfessionalCard(
 
 interface PublicProfessionalSearchInput {
   expression: string;
-  defaultLocation?: Pick<SearchLocation, "stateCode" | "city">;
+  defaultLocation?: Pick<SearchLocation, "cityCode">;
   page?: number;
   perPage?: number;
 }
 
 interface StructuredProfessionalSearchInput extends Pick<
   StructuredSearchPayload,
-  "serviceId" | "stateCode" | "city"
+  "serviceId" | "cityCode"
 > {
   page?: number;
   perPage?: number;
@@ -76,7 +91,15 @@ function mapPublicProfessionalSearchResult(
     totalPages: data.meta.total_pages,
     interpretation: {
       services: data.interpretation.services,
+      effectiveLocation: {
+        cityCode: data.interpretation.effective_location.city_code,
+        stateCode: data.interpretation.effective_location.state_code,
+        city: data.interpretation.effective_location.city,
+        stateSlug: data.interpretation.effective_location.state_slug,
+        citySlug: data.interpretation.effective_location.city_slug,
+      },
       locations: data.interpretation.locations.map((location) => ({
+        cityCode: location.city_code,
         stateCode: location.state_code,
         city: location.city,
         neighborhood: location.neighborhood,
@@ -102,8 +125,7 @@ export async function searchPublicProfessionals(
         ...(input.defaultLocation
           ? {
               default_location: {
-                state_code: input.defaultLocation.stateCode,
-                city: input.defaultLocation.city,
+                city_code: input.defaultLocation.cityCode,
               },
             }
           : {}),
@@ -133,8 +155,7 @@ export async function searchStructuredProfessionals(
     {
       body: {
         service_id: input.serviceId,
-        state_code: input.stateCode,
-        city: input.city,
+        city_code: input.cityCode,
         ...(input.page ? { page: input.page } : {}),
         ...(input.perPage ? { per_page: input.perPage } : {}),
       },
@@ -154,10 +175,13 @@ export async function searchStructuredProfessionals(
 
 export async function fetchFeaturedProfessionals(
   client: BerufeApiClient,
+  cityCode?: string,
 ): Promise<PublicProfessionalCard[]> {
-  const { data, error, response } = await client.GET(
-    "/api/v1/public/professionals/featured",
-  );
+  const { data, error, response } = cityCode
+    ? await client.GET("/api/v1/public/professionals/featured", {
+        params: { query: { city_code: cityCode } },
+      })
+    : await client.GET("/api/v1/public/professionals/featured");
   if (error || !data) {
     throw new ApiRequestError(
       normalizeApiError(
@@ -192,10 +216,7 @@ export function mapPublicProfessionalProfile(
     primaryServiceIcon: primaryService?.icon ?? null,
     services: profile.services.map((service) => service.name),
     serviceNotes: profile.services.map((service) => service.note),
-    neighborhoods: profile.coverage.neighborhoods.map(
-      (neighborhood) => neighborhood.name,
-    ),
-    allJoinville: profile.coverage.all_joinville,
+    coverage: mapCoverage(profile.coverage),
     yearsExperience: profile.years_experience,
     evidence: profile.verification_labels.map((label) => ({
       id: label.type,

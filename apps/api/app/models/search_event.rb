@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 class SearchEvent < ApplicationRecord
-  JOINVILLE = "Joinville"
   MAXIMUM_RETAINED_QUERY_LENGTH = 80
   MAXIMUM_INPUT_PROMPT_LENGTH = 200
   AUDIT_STATUSES = %w[
@@ -16,12 +15,12 @@ class SearchEvent < ApplicationRecord
   RESPONSE_SOURCES = %w[provider cache].freeze
 
   belongs_to :service, optional: true
+  belongs_to :city, primary_key: :code, foreign_key: :city_code
   belongs_to :neighborhood,
     primary_key: :code,
     foreign_key: :neighborhood_code,
     optional: true
 
-  validates :city_code, inclusion: {in: [JOINVILLE]}
   validates :query_text_normalized,
     length: {maximum: MAXIMUM_RETAINED_QUERY_LENGTH},
     allow_nil: true

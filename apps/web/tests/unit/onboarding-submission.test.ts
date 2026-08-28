@@ -83,7 +83,18 @@ function completeWorkspace(): ProfessionalWorkspace {
           note: "",
         },
       ],
-      coverage: { allJoinville: true, neighborhoods: [] },
+      coverage: {
+        city: {
+          code: "4209102",
+          name: "Joinville",
+          slug: "joinville",
+          stateCode: "42",
+          stateAbbreviation: "SC",
+          stateName: "Santa Catarina",
+        },
+        wholeCity: true,
+        neighborhoods: [],
+      },
     },
   };
 }
@@ -102,7 +113,14 @@ const VerificationStepStub = defineComponent({
 
 const SuccessStub = defineComponent({
   name: "OnboardingSuccess",
-  template: "<div data-success>Perfil enviado</div>",
+  props: { publicSlug: { type: String, required: true } },
+  emits: ["review"],
+  template: `
+    <div data-success :data-public-slug="publicSlug">
+      Perfil enviado
+      <button data-review type="button" @click="$emit('review')">Revisar</button>
+    </div>
+  `,
 });
 
 describe("professional onboarding submission", () => {
@@ -122,7 +140,6 @@ describe("professional onboarding submission", () => {
             aliases: [],
           },
         ],
-        neighborhoods: [],
         workspace,
         saveIdentity: vi.fn(),
         saveSupply: vi.fn(),
@@ -149,6 +166,7 @@ describe("professional onboarding submission", () => {
     await flushPromises();
 
     expect(wrapper.find("[data-success]").exists()).toBe(false);
+    expect(wrapper.text()).toContain("Fazer depois");
     await wrapper.get("[data-submit]").trigger("click");
     await flushPromises();
     expect(submitProfile).toHaveBeenCalledOnce();
@@ -166,7 +184,10 @@ describe("professional onboarding submission", () => {
       },
     });
     await nextTick();
-    expect(wrapper.find("[data-success]").exists()).toBe(true);
+    expect(wrapper.get("[data-success]").attributes("data-public-slug")).toBe(
+      "ana-souza",
+    );
+    expect(wrapper.text()).not.toContain("Fazer depois");
   });
 
   it("keeps a published external profile in onboarding", async () => {
@@ -189,7 +210,6 @@ describe("professional onboarding submission", () => {
             aliases: [],
           },
         ],
-        neighborhoods: [],
         workspace,
         saveIdentity: vi.fn(),
         saveSupply: vi.fn(),

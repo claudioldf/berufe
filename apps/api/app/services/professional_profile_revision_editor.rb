@@ -55,6 +55,8 @@ class ProfessionalProfileRevisionEditor
       version: profile.revisions.maximum(:version).to_i + 1,
       status: "draft",
       profile_type: source.profile_type,
+      coverage_city_code: source.coverage_city_code,
+      covers_whole_city: source.covers_whole_city,
       display_name: source.display_name,
       headline: source.headline,
       bio: source.bio,
@@ -71,10 +73,7 @@ class ProfessionalProfileRevisionEditor
       )
     end
     source.professional_profile_service_areas.find_each do |area|
-      revision.professional_profile_service_areas.create!(
-        city_code: area.city_code,
-        neighborhood_code: area.neighborhood_code
-      )
+      revision.professional_profile_service_areas.create!(neighborhood_code: area.neighborhood_code)
     end
     revision
   end

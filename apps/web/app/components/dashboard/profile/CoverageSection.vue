@@ -1,9 +1,22 @@
 <script setup lang="ts">
-import type { Neighborhood, ProfessionalProfileDraft } from "~/types";
+import { computed } from "vue";
+import type { LocationCoverageDraft, ProfessionalProfileDraft } from "~/types";
+import LocationCoverageFields from "~/components/location/LocationCoverageFields.vue";
 
 const form = defineModel<ProfessionalProfileDraft>({ required: true });
-defineProps<{ neighborhoods: Neighborhood[] }>();
-defineEmits<{ dirty: []; toggle: [name: string] }>();
+const emit = defineEmits<{ dirty: [] }>();
+const coverage = computed<LocationCoverageDraft>({
+  get: () => ({
+    cityCode: form.value.coverageCityCode,
+    wholeCity: form.value.coversWholeCity,
+    neighborhoodCodes: [...form.value.selectedNeighborhoodCodes],
+  }),
+  set: (value) => {
+    form.value.coverageCityCode = value.cityCode;
+    form.value.coversWholeCity = value.wholeCity;
+    form.value.selectedNeighborhoodCodes = [...value.neighborhoodCodes];
+  },
+});
 </script>
 
 <template>
@@ -16,39 +29,7 @@ defineEmits<{ dirty: []; toggle: [name: string] }>();
           <p>O Finder usa essas escolhas para mostrar seu perfil.</p>
         </div>
       </div>
-      <em>Joinville</em>
     </header>
-    <label class="all-city">
-      <input
-        v-model="form.allJoinville"
-        name="all-joinville"
-        type="checkbox"
-        @change="$emit('dirty')"
-      />
-      <span>
-        <strong>Atendo em toda Joinville</strong>
-        <small>Seu perfil poderá aparecer em buscas de qualquer bairro.</small>
-      </span>
-      <UIcon name="i-lucide-map" />
-    </label>
-    <div v-if="!form.allJoinville" class="neighborhood-picker">
-      <button
-        v-for="item in neighborhoods"
-        :key="item.code"
-        type="button"
-        :class="{ selected: form.selectedNeighborhoods.includes(item.name) }"
-        :aria-pressed="form.selectedNeighborhoods.includes(item.name)"
-        @click="$emit('toggle', item.name)"
-      >
-        <UIcon
-          :name="
-            form.selectedNeighborhoods.includes(item.name)
-              ? 'i-lucide-check'
-              : 'i-lucide-plus'
-          "
-        />
-        {{ item.name }}
-      </button>
-    </div>
+    <LocationCoverageFields v-model="coverage" @dirty="emit('dirty')" />
   </section>
 </template>

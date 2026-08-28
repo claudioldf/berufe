@@ -214,6 +214,23 @@ describe("authenticated route middleware", () => {
     });
   });
 
+  it("keeps the completed onboarding success state on same-route navigation", async () => {
+    mocks.restoreSession.mockResolvedValue(true);
+    mocks.account.value = {
+      role: "professional",
+      registrationCompleted: true,
+      onboardingCompleted: true,
+    };
+    mocks.session.value = { authenticationMethod: "sms_otp" };
+
+    await authenticatedMiddleware(
+      { path: "/app/professional/onboarding" } as never,
+      { path: "/app/professional/onboarding" } as never,
+    );
+
+    expect(mocks.navigateTo).not.toHaveBeenCalled();
+  });
+
   it("waits for pending restoration before resolving the login route", async () => {
     let resolveRestoration: ((authenticated: boolean) => void) | undefined;
     mocks.restoreSession.mockImplementation(

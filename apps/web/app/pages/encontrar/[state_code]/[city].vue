@@ -7,6 +7,7 @@ import type {
   StructuredSearchCity,
 } from "~/types";
 import { useCatalogs } from "~/composables/useCatalogs";
+import { useFinderSearchLocation } from "~/composables/useFinderSearchLocation";
 import { useProfessionalSearch } from "~/composables/useProfessionalSearch";
 import { useToast } from "~/composables/useToast";
 import {
@@ -14,11 +15,9 @@ import {
   buildSearchResultWhatsAppUrl,
 } from "~/utils/publicProfiles";
 import { encodeSearchExpression } from "~/utils/searchExpression";
-import {
-  fallbackSearchLocation,
-  findSearchLocationByRoute,
-  searchLocationPath,
-} from "~/utils/searchLocation";
+import { searchLocationPath } from "~/utils/searchLocation";
+
+definePageMeta({ key: "professional-finder" });
 
 const { showToast } = useToast();
 const runtimeConfig = useRuntimeConfig();
@@ -31,24 +30,13 @@ if (catalogResult.error.value || !catalogResult.data.value) {
     statusMessage: "Descoberta temporariamente indisponível.",
   });
 }
-const initialLocation = findSearchLocationByRoute(
-  [...catalogResult.data.value.cities, fallbackSearchLocation],
-  route.params.state_code,
-  route.params.city,
-);
-if (!initialLocation) {
-  throw createError({ statusCode: 404, statusMessage: "Cidade não atendida." });
-}
-const activeLocation = computed(
-  () =>
-    findSearchLocationByRoute(
-      [...(catalogResult.data.value?.cities ?? []), fallbackSearchLocation],
-      route.params.state_code,
-      route.params.city,
-    ) ?? initialLocation,
-);
+const finderLocation = await useFinderSearchLocation({
+  catalogLocations: () => catalogResult.data.value?.cities ?? [],
+});
+const { location: activeLocation, adopt: adoptLocation } = finderLocation;
 const professionalSearch = await useProfessionalSearch({
   location: activeLocation,
+  onLocationResolved: adoptLocation,
 });
 const {
   expressionInput,
@@ -75,9 +63,11 @@ const fallbackServices = computed(
 );
 const fallbackCities = computed<StructuredSearchCity[]>(() => {
   return (catalogResult.data.value?.cities ?? []).map((location) => ({
-    id: `${location.citySlug}-${location.stateSlug}`,
+    id: location.cityCode,
     name: location.city,
     stateCode: location.stateCode,
+    stateSlug: location.stateSlug,
+    citySlug: location.citySlug,
   }));
 });
 
@@ -148,6 +138,7 @@ function relatedServiceUrl(service: PublicServiceSuggestion) {
 }
 
 async function changeLocation(location: SearchLocation) {
+  adoptLocation(location);
   await router.push({
     path: searchLocationPath(location),
     query: route.query,
@@ -172,7 +163,10 @@ function retrySearch() {
       <DesignSystemContainer class="finder__masthead-inner">
         <DesignSystemEyebrow>Profissionais</DesignSystemEyebrow>
         <h1>
-          <template v-if="!hasSearchTerm">
+          <template v-if="isSearching">
+            Buscando a ajuda certa <em>para você</em>
+          </template>
+          <template v-else-if="!hasSearchTerm">
             Encontre profissionais <em>em {{ activeLocation.city }}</em>
           </template>
           <template v-else-if="primaryInterpretedService">

@@ -4,7 +4,7 @@ module Api
   module V1
     class PublicFeaturedProfessionalsController < BaseController
       def index
-        professionals = FeaturedPublicProfessionalsQuery.new.call
+        professionals = FeaturedPublicProfessionalsQuery.new.call(city_code: params[:city_code])
 
         render json: {
           data: {

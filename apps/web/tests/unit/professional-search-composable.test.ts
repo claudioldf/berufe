@@ -13,6 +13,7 @@ vi.mock("@app/services/api/client", () => ({
 
 const expression = "Preciso de eletricista no bairro América";
 const location = {
+  cityCode: "4209102",
   stateCode: "SC" as const,
   city: "Joinville" as const,
   stateSlug: "sc" as const,
@@ -38,8 +39,16 @@ const professional = {
     slug: "eletricista",
   },
   coverage: {
-    all_joinville: false,
-    neighborhoods: [{ code: "america", name: "América" }],
+    city: {
+      code: "4209102",
+      name: "Joinville",
+      slug: "joinville",
+      state_code: "42",
+      state_abbreviation: "SC",
+      state_name: "Santa Catarina",
+    },
+    whole_city: false,
+    neighborhoods: [{ code: "4209102007", name: "América" }],
   },
   verification_labels: [],
   portfolio_count: 2,
@@ -51,6 +60,13 @@ function successfulResponse(
   professionals = [professional],
   totalCount = 1,
   normalizedRequest: string | null = "Eu preciso de eletricista no América.",
+  effectiveLocation = {
+    city_code: "4209102",
+    state_code: "SC",
+    city: "Joinville",
+    state_slug: "sc",
+    city_slug: "joinville",
+  },
 ) {
   return {
     data: {
@@ -71,11 +87,16 @@ function successfulResponse(
               description: "Instalações elétricas residenciais.",
             },
           ],
+          effective_location: effectiveLocation,
           locations: [
             {
-              state_code: "SC" as const,
-              city: "Joinville" as const,
-              neighborhood: { code: "america", name: "América" },
+              city_code: effectiveLocation.city_code,
+              state_code: effectiveLocation.state_code,
+              city: effectiveLocation.city,
+              neighborhood:
+                effectiveLocation.city_code === "4209102"
+                  ? { code: "4209102007", name: "América" }
+                  : null,
             },
           ],
           normalized_request: normalizedRequest,
@@ -194,11 +215,13 @@ describe("professional search composable", () => {
           description: "Instalações elétricas residenciais.",
         },
       ],
+      effectiveLocation: location,
       locations: [
         {
+          cityCode: "4209102",
           stateCode: "SC",
           city: "Joinville",
-          neighborhood: { code: "america", name: "América" },
+          neighborhood: { code: "4209102007", name: "América" },
         },
       ],
       normalizedRequest: "Eu preciso de eletricista no América.",
@@ -208,7 +231,7 @@ describe("professional search composable", () => {
       {
         body: {
           expression,
-          default_location: { state_code: "SC", city: "Joinville" },
+          default_location: { city_code: "4209102" },
         },
       },
     );
@@ -262,13 +285,17 @@ describe("professional search composable", () => {
     await search.submitStructuredSearch({
       serviceId: professional.matching_service.id,
       serviceName: "Eletricista",
-      stateCode: "SC",
-      city: "Joinville",
+      cityCode: "4106902",
+      city: "Curitiba",
+      stateCode: "PR",
+      stateSlug: "pr",
+      citySlug: "curitiba",
     });
 
-    expect(search.expressionInput.value).toBe("Eletricista em Joinville");
+    expect(search.expressionInput.value).toBe("Eletricista em Curitiba");
+    expect(useRoute().path).toBe("/encontrar/pr/curitiba");
     expect(useRoute().query).toEqual({
-      expressao: encodeSearchExpression("Eletricista em Joinville"),
+      expressao: encodeSearchExpression("Eletricista em Curitiba"),
     });
     expect(search.error.value).toBeNull();
     expect(search.results.value.map((item) => item.name)).toEqual([
@@ -280,8 +307,7 @@ describe("professional search composable", () => {
       {
         body: {
           service_id: professional.matching_service.id,
-          state_code: "SC",
-          city: "Joinville",
+          city_code: "4106902",
         },
       },
     );

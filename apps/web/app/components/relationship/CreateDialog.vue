@@ -2,7 +2,11 @@
 import { computed, shallowRef, watch } from "vue";
 import { useProfessionalRelationships } from "~/composables/useProfessionalRelationships";
 import { useToast } from "~/composables/useToast";
-import type { Neighborhood, ProfessionalRelationship, Service } from "~/types";
+import type {
+  LocationCoverageDraft,
+  ProfessionalRelationship,
+  Service,
+} from "~/types";
 import { normalizeBrazilianMobilePhone } from "~/utils/brazilian-phone";
 import type { ExternalCoverageMode } from "./ExternalProfessionalDetails.vue";
 import type { ProfessionalRelationshipType } from "~/services/api/professional-relationships";
@@ -12,7 +16,6 @@ const CANDIDATE_SEARCH_DEBOUNCE_MS = 500;
 const open = defineModel<boolean>("open", { required: true });
 const props = defineProps<{
   services: Service[];
-  neighborhoods: Neighborhood[];
   eligible: boolean;
 }>();
 const emit = defineEmits<{
@@ -32,7 +35,11 @@ const candidateSearchPending = shallowRef(false);
 const externalPhone = shallowRef("");
 const externalServiceIds = shallowRef<string[]>([]);
 const externalCoverageMode = shallowRef<ExternalCoverageMode>("not_informed");
-const externalNeighborhoodCodes = shallowRef<string[]>([]);
+const externalCoverage = shallowRef<LocationCoverageDraft>({
+  cityCode: "",
+  wholeCity: false,
+  neighborhoodCodes: [],
+});
 const validationError = shallowRef("");
 const normalizedName = computed(() => searchQuery.value.trim());
 const noteLength = computed(() => contextNote.value.length);
@@ -111,7 +118,13 @@ watch([selectedProfessionalId, externalProfessionalSelected], () => {
 });
 
 watch(externalCoverageMode, (selectedMode) => {
-  if (selectedMode !== "neighborhoods") externalNeighborhoodCodes.value = [];
+  if (selectedMode !== "informed") {
+    externalCoverage.value = {
+      cityCode: "",
+      wholeCity: false,
+      neighborhoodCodes: [],
+    };
+  }
 });
 
 watch(open, (isOpen) => {
@@ -129,7 +142,11 @@ function reset() {
   externalPhone.value = "";
   externalServiceIds.value = [];
   externalCoverageMode.value = "not_informed";
-  externalNeighborhoodCodes.value = [];
+  externalCoverage.value = {
+    cityCode: "",
+    wholeCity: false,
+    neighborhoodCodes: [],
+  };
   validationError.value = "";
   relationships.clearCandidates();
   relationships.clearError();
@@ -183,11 +200,13 @@ async function submit() {
       return;
     }
     if (
-      externalCoverageMode.value === "neighborhoods" &&
-      externalNeighborhoodCodes.value.length === 0
+      externalCoverageMode.value === "informed" &&
+      (!externalCoverage.value.cityCode ||
+        (!externalCoverage.value.wholeCity &&
+          externalCoverage.value.neighborhoodCodes.length === 0))
     ) {
       validationError.value =
-        'Selecione ao menos um bairro ou marque "Não sei".';
+        'Selecione a cidade inteira, ao menos um bairro ou marque "Não sei".';
       return;
     }
     target = {
@@ -196,8 +215,17 @@ async function submit() {
       phone: normalizedPhone,
       serviceIds: externalServiceIds.value,
       coverage: {
-        allJoinville: externalCoverageMode.value === "all_joinville",
-        neighborhoodCodes: externalNeighborhoodCodes.value,
+        cityCode:
+          externalCoverageMode.value === "informed"
+            ? externalCoverage.value.cityCode
+            : null,
+        wholeCity:
+          externalCoverageMode.value === "informed" &&
+          externalCoverage.value.wholeCity,
+        neighborhoodCodes:
+          externalCoverageMode.value === "informed"
+            ? externalCoverage.value.neighborhoodCodes
+            : [],
       },
       contactPublicationAttested: true as const,
     };
@@ -309,10 +337,9 @@ async function submit() {
             v-model:phone="externalPhone"
             v-model:service-ids="externalServiceIds"
             v-model:coverage-mode="externalCoverageMode"
-            v-model:neighborhood-codes="externalNeighborhoodCodes"
+            v-model:coverage="externalCoverage"
             :name="normalizedName"
             :services="services"
-            :neighborhoods="neighborhoods"
           />
 
           <div class="relationship-create-dialog__context">

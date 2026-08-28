@@ -80,11 +80,14 @@
     background: var(--color-surface-control);
   }
   .phone-field em {
-    padding: 11px;
+    display: grid;
+    place-items: center;
+    padding: 0 11px;
     border-right: 1px solid var(--line);
     color: var(--ink-soft);
     font-size: 0.82rem;
     font-style: normal;
+    line-height: 1;
   }
   .phone-field input {
     border: 0;

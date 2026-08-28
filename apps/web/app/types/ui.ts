@@ -15,23 +15,29 @@ export interface ExpressionSearchPayload {
 }
 
 export interface SearchLocation {
-  stateCode: "SC";
-  city: "Joinville";
-  stateSlug: "sc";
-  citySlug: "joinville";
+  cityCode: string;
+  stateCode: string;
+  city: string;
+  stateSlug: string;
+  citySlug: string;
 }
 
 export type SearchLocationSource = "ip" | "fallback" | "manual";
 
 export interface StructuredSearchCity {
   id: string;
-  name: "Joinville";
-  stateCode: "SC";
+  name: string;
+  stateCode: string;
+  stateSlug: string;
+  citySlug: string;
 }
 
 export interface StructuredSearchPayload {
   serviceId: string;
   serviceName: string;
-  stateCode: "SC";
-  city: "Joinville";
+  cityCode: string;
+  city: string;
+  stateCode: string;
+  stateSlug: string;
+  citySlug: string;
 }

@@ -1,22 +1,21 @@
 <script setup lang="ts">
-import type { Neighborhood, Service } from "~/types";
+import type { LocationCoverageDraft, Service } from "~/types";
+import LocationCoverageFields from "~/components/location/LocationCoverageFields.vue";
 
-export type ExternalCoverageMode =
-  "not_informed" | "all_joinville" | "neighborhoods";
+export type ExternalCoverageMode = "not_informed" | "informed";
 
 const phone = defineModel<string>("phone", { required: true });
 const serviceIds = defineModel<string[]>("serviceIds", { required: true });
 const coverageMode = defineModel<ExternalCoverageMode>("coverageMode", {
   required: true,
 });
-const neighborhoodCodes = defineModel<string[]>("neighborhoodCodes", {
+const coverage = defineModel<LocationCoverageDraft>("coverage", {
   required: true,
 });
 
 defineProps<{
   name: string;
   services: Service[];
-  neighborhoods: Neighborhood[];
 }>();
 </script>
 
@@ -69,27 +68,14 @@ defineProps<{
           Não sei
         </label>
         <label>
-          <input v-model="coverageMode" type="radio" value="all_joinville" />
-          Toda Joinville
-        </label>
-        <label>
-          <input v-model="coverageMode" type="radio" value="neighborhoods" />
-          Bairros específicos
+          <input v-model="coverageMode" type="radio" value="informed" />
+          Informar localização
         </label>
       </div>
-      <div
-        v-if="coverageMode === 'neighborhoods'"
-        class="external-professional-details__options external-professional-details__options--neighborhoods"
-      >
-        <label v-for="neighborhood in neighborhoods" :key="neighborhood.code">
-          <input
-            v-model="neighborhoodCodes"
-            type="checkbox"
-            :value="neighborhood.code"
-          />
-          <span>{{ neighborhood.name }}</span>
-        </label>
-      </div>
+      <LocationCoverageFields
+        v-if="coverageMode === 'informed'"
+        v-model="coverage"
+      />
     </fieldset>
   </div>
 </template>

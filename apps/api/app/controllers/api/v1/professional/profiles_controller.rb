@@ -92,7 +92,7 @@ module Api
         def supply_params
           params.permit(
             services: %i[service_id is_primary note],
-            coverage: [:all_joinville, {neighborhood_codes: []}]
+            coverage: [:city_code, :whole_city, {neighborhood_codes: []}]
           )
         end
       end

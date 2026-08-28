@@ -7,6 +7,7 @@ RSpec.describe PublicDiscoveryDemoSeed do
   let(:image_root) { described_class.default_image_root }
 
   it "idempotently creates the complete API-backed demo through real media and moderation paths" do
+    LocationSeed.new.call
     CatalogSeed.new.call
     AdminSeed.new.call
     seed = described_class.new(
@@ -24,9 +25,13 @@ RSpec.describe PublicDiscoveryDemoSeed do
       profiles: 10,
       photos: 10,
       portfolio: 22,
-      verifications: 10,
-      relationships: 7
+      verifications: 10
     )
+    expect(counts.fetch(:relationships)).to be >= 7
+    expect(demo_matrix_counts.keys).to match_array(
+      described_class::DEMO_CITY_CODES.product(ServiceCategory.active.pluck(:id))
+    )
+    expect(demo_matrix_counts.values).to all(be >= described_class::PROFESSIONALS_PER_CATEGORY_AND_CITY)
     marcos = ProfessionalProfile.find_by!(public_slug: "marcos-alves")
     expect(marcos).to have_attributes(profile_status: "published")
     expect(marcos.published_revision).to have_attributes(
@@ -86,5 +91,16 @@ RSpec.describe PublicDiscoveryDemoSeed do
       uploads: MediaUpload.count,
       moderation_actions: ModerationAction.count
     }
+  end
+
+  def demo_matrix_counts
+    ProfessionalProfile
+      .publicly_searchable
+      .joins(published_revision: {professional_profile_services: {service: :category}})
+      .where(professional_profile_revisions: {coverage_city_code: described_class::DEMO_CITY_CODES})
+      .where(professional_profile_services: {is_primary: true})
+      .group("professional_profile_revisions.coverage_city_code", "service_categories.id")
+      .distinct
+      .count("professional_profiles.id")
   end
 end

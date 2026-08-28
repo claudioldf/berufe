@@ -313,116 +313,6 @@ paths:
           $ref: "#/components/responses/AdminCatalogInvalid"
         "503":
           $ref: "#/components/responses/AdminCatalogUnavailable"
-  /api/v1/admin/catalog/neighborhoods:
-    post:
-      operationId: createAdminCatalogNeighborhood
-      summary: Add a Joinville neighborhood to the controlled catalog
-      tags:
-        - Catalog
-      security:
-        - applicationSession: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/AdminCatalogNeighborhoodCreateRequest"
-      responses:
-        "201":
-          description: The neighborhood was appended to the controlled catalog.
-          headers:
-            X-Request-Id:
-              $ref: "#/components/headers/RequestId"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AdminCatalogResponse"
-        "401":
-          $ref: "#/components/responses/AdminCatalogUnauthorized"
-        "403":
-          $ref: "#/components/responses/AdminCatalogForbidden"
-        "409":
-          $ref: "#/components/responses/AdminCatalogConflict"
-        "422":
-          $ref: "#/components/responses/AdminCatalogInvalid"
-        "503":
-          $ref: "#/components/responses/AdminCatalogUnavailable"
-  /api/v1/admin/catalog/neighborhoods/order:
-    put:
-      operationId: reorderAdminCatalogNeighborhoods
-      summary: Persist the complete deterministic neighborhood order
-      tags:
-        - Catalog
-      security:
-        - applicationSession: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/AdminCatalogNeighborhoodOrderRequest"
-      responses:
-        "200":
-          description: The complete neighborhood order was persisted.
-          headers:
-            X-Request-Id:
-              $ref: "#/components/headers/RequestId"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AdminCatalogResponse"
-        "401":
-          $ref: "#/components/responses/AdminCatalogUnauthorized"
-        "403":
-          $ref: "#/components/responses/AdminCatalogForbidden"
-        "409":
-          $ref: "#/components/responses/AdminCatalogConflict"
-        "503":
-          $ref: "#/components/responses/AdminCatalogUnavailable"
-  /api/v1/admin/catalog/neighborhoods/{code}:
-    parameters:
-      - name: code
-        in: path
-        required: true
-        schema:
-          type: string
-          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
-          maxLength: 80
-    patch:
-      operationId: updateAdminCatalogNeighborhood
-      summary: Update mutable fields of a controlled Joinville neighborhood
-      tags:
-        - Catalog
-      security:
-        - applicationSession: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/AdminCatalogNeighborhoodUpdateRequest"
-      responses:
-        "200":
-          description: The neighborhood was updated without changing its stable code.
-          headers:
-            X-Request-Id:
-              $ref: "#/components/headers/RequestId"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AdminCatalogResponse"
-        "401":
-          $ref: "#/components/responses/AdminCatalogUnauthorized"
-        "403":
-          $ref: "#/components/responses/AdminCatalogForbidden"
-        "404":
-          $ref: "#/components/responses/AdminCatalogNotFound"
-        "409":
-          $ref: "#/components/responses/AdminCatalogConflict"
-        "422":
-          $ref: "#/components/responses/AdminCatalogInvalid"
-        "503":
-          $ref: "#/components/responses/AdminCatalogUnavailable"
   /api/v1/admin/moderation:
     get:
       operationId: getAdminModerationQueue
@@ -667,7 +557,7 @@ paths:
   /api/v1/catalog:
     get:
       operationId: getPublicCatalog
-      summary: Read the active service and Joinville neighborhood catalog
+      summary: Read the active service catalog and cities with public supply
       tags:
         - Catalog
       security: []
@@ -690,6 +580,92 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/locations/states:
+    get:
+      operationId: getLocationStates
+      summary: List imported Brazilian states
+      tags:
+        - Locations
+      security: []
+      responses:
+        "200":
+          description: States ordered by name.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LocationStatesResponse"
+        "503":
+          description: The location catalog is temporarily unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/locations/states/{state_abbreviation}/cities:
+    parameters:
+      - name: state_abbreviation
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: "^[A-Z]{2}$"
+    get:
+      operationId: getLocationCities
+      summary: List imported cities for one state
+      tags:
+        - Locations
+      security: []
+      responses:
+        "200":
+          description: Cities ordered by name.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LocationCitiesResponse"
+        "404":
+          description: The state abbreviation is unknown.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: The location catalog is temporarily unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/locations/cities/{city_code}/neighborhoods:
+    parameters:
+      - name: city_code
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: "^[0-9]{7}$"
+    get:
+      operationId: getLocationNeighborhoods
+      summary: List imported official neighborhoods for one city
+      tags:
+        - Locations
+      security: []
+      responses:
+        "200":
+          description: Neighborhoods ordered by name; the list can be empty.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LocationNeighborhoodsResponse"
+        "404":
+          description: The city code is unknown.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: The location catalog is temporarily unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/public/professionals/featured:
     get:
       operationId: getFeaturedPublicProfessionals
@@ -697,6 +673,13 @@ paths:
       tags:
         - Public discovery
       security: []
+      parameters:
+        - name: city_code
+          in: query
+          required: false
+          schema:
+            type: string
+            pattern: "^[0-9]{7}$"
       responses:
         "200":
           description: Up to three publicly eligible professional cards in deterministic order.
@@ -754,7 +737,7 @@ paths:
                 - $ref: "#/components/schemas/PublicProfessionalStructuredSearchRequest"
       responses:
         "200":
-          description: Public professional cards matching the parsed service and Joinville location criteria.
+          description: Public professional cards matching the parsed service and location criteria.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
@@ -4680,17 +4663,23 @@ components:
       type: object
       additionalProperties: false
       required:
-        - all_joinville
+        - city_code
+        - whole_city
         - neighborhood_codes
       properties:
-        all_joinville:
+        city_code:
+          type:
+            - string
+            - "null"
+          pattern: "^[0-9]{7}$"
+        whole_city:
           type: boolean
         neighborhood_codes:
           type: array
           uniqueItems: true
           items:
             type: string
-            pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+            pattern: "^[0-9]{10}$"
     ProfessionalRelationshipResponseRequest:
       type: object
       additionalProperties: false
@@ -5132,17 +5121,21 @@ components:
       type: object
       additionalProperties: false
       required:
-        - all_joinville
+        - city_code
+        - whole_city
         - neighborhood_codes
       properties:
-        all_joinville:
+        city_code:
+          type: string
+          pattern: "^[0-9]{7}$"
+        whole_city:
           type: boolean
         neighborhood_codes:
           type: array
           uniqueItems: true
           items:
             type: string
-            pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+            pattern: "^[0-9]{10}$"
     ProfessionalServiceSelection:
       type: object
       additionalProperties: false
@@ -5170,10 +5163,15 @@ components:
       type: object
       additionalProperties: false
       required:
-        - all_joinville
+        - city
+        - whole_city
         - neighborhoods
       properties:
-        all_joinville:
+        city:
+          oneOf:
+            - $ref: "#/components/schemas/LocationCity"
+            - type: "null"
+        whole_city:
           type: boolean
         neighborhoods:
           type: array
@@ -5188,7 +5186,7 @@ components:
       properties:
         code:
           type: string
-          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          pattern: "^[0-9]{10}$"
         name:
           type: string
           minLength: 1
@@ -5459,6 +5457,108 @@ components:
         absolute_expires_at:
           type: string
           format: date-time
+    LocationStatesResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/LocationState"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    LocationCitiesResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/LocationCity"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    LocationNeighborhoodsResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/LocationNeighborhood"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    LocationState:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - abbreviation
+        - name
+      properties:
+        code:
+          type: string
+          pattern: "^[0-9]{2}$"
+        abbreviation:
+          type: string
+          pattern: "^[A-Z]{2}$"
+        name:
+          type: string
+          minLength: 1
+    LocationCity:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - name
+        - slug
+        - state_code
+        - state_abbreviation
+        - state_name
+      properties:
+        code:
+          type: string
+          pattern: "^[0-9]{7}$"
+        name:
+          type: string
+          minLength: 1
+        slug:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        state_code:
+          type: string
+          pattern: "^[0-9]{2}$"
+        state_abbreviation:
+          type: string
+          pattern: "^[A-Z]{2}$"
+        state_name:
+          type: string
+          minLength: 1
+    LocationNeighborhood:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - city_code
+        - name
+      properties:
+        code:
+          type: string
+          pattern: "^[0-9]{10}$"
+        city_code:
+          type: string
+          pattern: "^[0-9]{7}$"
+        name:
+          type: string
+          minLength: 1
     CatalogResponse:
       type: object
       additionalProperties: false
@@ -5487,7 +5587,6 @@ components:
       required:
         - categories
         - services
-        - neighborhoods
       properties:
         categories:
           type: array
@@ -5497,10 +5596,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/AdminCatalogService"
-        neighborhoods:
-          type: array
-          items:
-            $ref: "#/components/schemas/AdminCatalogNeighborhood"
     AdminCatalogCategory:
       type: object
       additionalProperties: false
@@ -5551,36 +5646,6 @@ components:
           type: string
           minLength: 1
           maxLength: 240
-        is_active:
-          type: boolean
-        sort_order:
-          type: integer
-          minimum: 0
-    AdminCatalogNeighborhood:
-      type: object
-      additionalProperties: false
-      required:
-        - code
-        - name
-        - state_code
-        - city
-        - is_active
-        - sort_order
-      properties:
-        code:
-          type: string
-          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
-          maxLength: 80
-        name:
-          type: string
-          minLength: 1
-          maxLength: 80
-        state_code:
-          type: string
-          const: SC
-        city:
-          type: string
-          const: Joinville
         is_active:
           type: boolean
         sort_order:
@@ -5643,60 +5708,6 @@ components:
           items:
             type: string
             format: uuid
-    AdminCatalogNeighborhoodCreateRequest:
-      type: object
-      additionalProperties: false
-      required:
-        - name
-        - code
-        - state_code
-        - city
-      properties:
-        name:
-          type: string
-          minLength: 1
-          maxLength: 80
-        code:
-          type: string
-          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
-          maxLength: 80
-        state_code:
-          type: string
-          const: SC
-        city:
-          type: string
-          const: Joinville
-    AdminCatalogNeighborhoodUpdateRequest:
-      type: object
-      additionalProperties: false
-      minProperties: 1
-      properties:
-        name:
-          type: string
-          minLength: 1
-          maxLength: 80
-        state_code:
-          type: string
-          const: SC
-        city:
-          type: string
-          const: Joinville
-        is_active:
-          type: boolean
-    AdminCatalogNeighborhoodOrderRequest:
-      type: object
-      additionalProperties: false
-      required:
-        - codes
-      properties:
-        codes:
-          type: array
-          minItems: 1
-          uniqueItems: true
-          items:
-            type: string
-            pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
-            maxLength: 80
     AdminModerationResponse:
       type: object
       additionalProperties: false
@@ -5868,7 +5879,6 @@ components:
       required:
         - categories
         - services
-        - neighborhoods
         - cities
       properties:
         categories:
@@ -5879,10 +5889,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PublicService"
-        neighborhoods:
-          type: array
-          items:
-            $ref: "#/components/schemas/PublicNeighborhood"
         cities:
           type: array
           items:
@@ -5943,48 +5949,31 @@ components:
           items:
             type: string
             minLength: 1
-    PublicNeighborhood:
-      type: object
-      additionalProperties: false
-      required:
-        - code
-        - name
-        - state_code
-        - city
-      properties:
-        code:
-          type: string
-          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
-        name:
-          type: string
-          minLength: 1
-        state_code:
-          type: string
-          const: SC
-        city:
-          type: string
-          const: Joinville
     PublicSearchCity:
       type: object
       additionalProperties: false
       required:
+        - city_code
         - state_code
         - city
         - state_slug
         - city_slug
       properties:
+        city_code:
+          type: string
+          pattern: "^[0-9]{7}$"
         state_code:
           type: string
-          const: SC
+          pattern: "^[A-Z]{2}$"
         city:
           type: string
-          const: Joinville
+          minLength: 1
         state_slug:
           type: string
-          const: sc
+          pattern: "^[a-z]{2}$"
         city_slug:
           type: string
-          const: joinville
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
     PublicSearchLocationResponse:
       type: object
       additionalProperties: false
@@ -6000,24 +5989,28 @@ components:
       type: object
       additionalProperties: false
       required:
+        - city_code
         - state_code
         - city
         - state_slug
         - city_slug
         - source
       properties:
+        city_code:
+          type: string
+          pattern: "^[0-9]{7}$"
         state_code:
           type: string
-          const: SC
+          pattern: "^[A-Z]{2}$"
         city:
           type: string
-          const: Joinville
+          minLength: 1
         state_slug:
           type: string
-          const: sc
+          pattern: "^[a-z]{2}$"
         city_slug:
           type: string
-          const: joinville
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
         source:
           type: string
           enum:
@@ -6068,32 +6061,24 @@ components:
       type: object
       additionalProperties: false
       required:
-        - state_code
-        - city
+        - city_code
       properties:
-        state_code:
+        city_code:
           type: string
-          const: SC
-        city:
-          type: string
-          const: Joinville
+          pattern: "^[0-9]{7}$"
     PublicProfessionalStructuredSearchRequest:
       type: object
       additionalProperties: false
       required:
         - service_id
-        - state_code
-        - city
+        - city_code
       properties:
         service_id:
           type: string
           format: uuid
-        state_code:
+        city_code:
           type: string
-          const: SC
-        city:
-          type: string
-          const: Joinville
+          pattern: "^[0-9]{7}$"
         page:
           type: integer
           minimum: 1
@@ -6146,6 +6131,7 @@ components:
       additionalProperties: false
       required:
         - services
+        - effective_location
         - locations
         - normalized_request
       properties:
@@ -6153,6 +6139,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PublicServiceSuggestion"
+        effective_location:
+          $ref: "#/components/schemas/PublicProfessionalSearchEffectiveLocation"
         locations:
           type: array
           items:
@@ -6164,22 +6152,49 @@ components:
               minLength: 1
               maxLength: 240
             - type: "null"
+    PublicProfessionalSearchEffectiveLocation:
+      type: object
+      additionalProperties: false
+      required:
+        - city_code
+        - state_code
+        - city
+        - state_slug
+        - city_slug
+      properties:
+        city_code:
+          type: string
+          pattern: "^[0-9]{7}$"
+        state_code:
+          type: string
+          pattern: "^[A-Z]{2}$"
+        city:
+          type: string
+          minLength: 1
+        state_slug:
+          type: string
+          pattern: "^[a-z]{2}$"
+        city_slug:
+          type: string
+          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
     PublicProfessionalSearchLocation:
       type: object
       additionalProperties: false
       required:
+        - city_code
         - state_code
         - city
         - neighborhood
       properties:
+        city_code:
+          type: string
+          pattern: "^[0-9]{7}$"
         state_code:
           type: string
-          enum:
-            - SC
+          pattern: "^[A-Z]{2}$"
         city:
           type: string
-          enum:
-            - Joinville
+          minLength: 1
         neighborhood:
           oneOf:
             - $ref: "#/components/schemas/PublicProfessionalNeighborhoodSummary"
@@ -6232,7 +6247,7 @@ components:
       properties:
         code:
           type: string
-          pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          pattern: "^[0-9]{10}$"
         name:
           type: string
           minLength: 1
@@ -6329,10 +6344,15 @@ components:
       type: object
       additionalProperties: false
       required:
-        - all_joinville
+        - city
+        - whole_city
         - neighborhoods
       properties:
-        all_joinville:
+        city:
+          oneOf:
+            - $ref: "#/components/schemas/LocationCity"
+            - type: "null"
+        whole_city:
           type: boolean
         neighborhoods:
           type: array
@@ -6345,7 +6365,7 @@ components:
             properties:
               code:
                 type: string
-                pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                pattern: "^[0-9]{10}$"
               name:
                 type: string
                 minLength: 1

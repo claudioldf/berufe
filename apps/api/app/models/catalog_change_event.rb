@@ -2,7 +2,7 @@
 
 class CatalogChangeEvent < ApplicationRecord
   ACTIONS = %w[activated created deactivated reordered updated].freeze
-  CATALOG_TYPES = %w[neighborhood service].freeze
+  CATALOG_TYPES = %w[service].freeze
 
   belongs_to :admin_user, class_name: "UserAccount", inverse_of: :catalog_change_events
 

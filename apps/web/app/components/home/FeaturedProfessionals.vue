@@ -67,8 +67,8 @@ function connectionCountLabel(count: number) {
               <small>
                 <UIcon name="i-lucide-map-pin" />
                 {{
-                  professional.coverage.allJoinville
-                    ? "Toda Joinville"
+                  professional.coverage.wholeCity
+                    ? `Toda ${professional.coverage.city?.name ?? "a cidade"}`
                     : professional.coverage.neighborhoods
                         .slice(0, 2)
                         .map((neighborhood) => neighborhood.name)

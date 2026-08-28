@@ -37,20 +37,7 @@ function catalog() {
           aliases: [],
         },
       ],
-      neighborhoods: [
-        {
-          code: "all",
-          name: "Toda Joinville",
-          stateCode: "SC",
-          city: "Joinville",
-        },
-        {
-          code: "america",
-          name: "América",
-          stateCode: "SC",
-          city: "Joinville",
-        },
-      ],
+      cities: [],
     }),
     error: shallowRef(null),
   };
@@ -114,8 +101,16 @@ function workspace() {
           },
         ],
         coverage: {
-          allJoinville: false,
-          neighborhoods: [{ code: "america", name: "América" }],
+          city: {
+            code: "4209102",
+            name: "Joinville",
+            slug: "joinville",
+            stateCode: "42",
+            stateAbbreviation: "SC",
+            stateName: "Santa Catarina",
+          },
+          wholeCity: false,
+          neighborhoods: [{ code: "4209102001", name: "América" }],
         },
       },
     }),
@@ -169,8 +164,10 @@ describe("professional profile editor page", () => {
       primaryService: "Eletricista do painel",
       primaryServiceSlug: "eletricista-painel",
       yearsExperience: 8,
-      allJoinville: false,
-      neighborhoods: ["América"],
+      coverage: expect.objectContaining({
+        city: expect.objectContaining({ code: "4209102" }),
+        wholeCity: false,
+      }),
     });
 
     // Nothing may survive from data/professionals.json, whichever fields the

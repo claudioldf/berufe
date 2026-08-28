@@ -516,6 +516,8 @@ test("an indicated professional claims the external profile and publishes the co
       name: "Escolha o que você oferece.",
     }),
   ).toBeVisible();
+  await recipientPage.getByLabel("Estado").selectOption("42");
+  await recipientPage.getByLabel("Cidade").selectOption("4209102");
   await recipientPage.getByLabel("Atendo em toda Joinville").check();
   await recipientPage
     .getByRole("button", { name: "Salvar e continuar" })
@@ -526,7 +528,9 @@ test("an indicated professional claims the external profile and publishes the co
       response.request().method() === "POST",
   );
   await recipientPage
-    .getByRole("button", { name: "Agora não — publicar perfil" })
+    .getByRole("button", {
+      name: "Pular verificação e publicar perfil",
+    })
     .click();
   expect((await publishResponsePromise).status()).toBe(200);
   await expect(

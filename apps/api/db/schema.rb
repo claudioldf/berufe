@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_26_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_27_110000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -78,10 +78,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_26_100000) do
     t.index ["admin_user_id"], name: "index_catalog_change_events_on_admin_user_id"
     t.index ["catalog_type", "target_identifier", "created_at"], name: "index_catalog_changes_on_target_and_created_at"
     t.check_constraint "action = ANY (ARRAY['created'::text, 'updated'::text, 'activated'::text, 'deactivated'::text, 'reordered'::text])", name: "catalog_change_events_known_action"
-    t.check_constraint "catalog_type = ANY (ARRAY['service'::text, 'neighborhood'::text])", name: "catalog_change_events_known_catalog_type"
+    t.check_constraint "catalog_type = 'service'::text", name: "catalog_change_events_known_catalog_type"
     t.check_constraint "jsonb_typeof(change_data) = 'object'::text", name: "catalog_change_events_change_data_object"
     t.check_constraint "request_id ~ '^[A-Za-z0-9._-]{1,100}$'::text", name: "catalog_change_events_request_id_format"
     t.check_constraint "target_identifier <> ''::text", name: "catalog_change_events_target_present"
+  end
+
+  create_table "cities", primary_key: "code", id: :text, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "name", null: false
+    t.text "slug", null: false
+    t.text "state_code", null: false
+    t.datetime "updated_at", null: false
+    t.index "state_code, lower(name)", name: "index_cities_on_state_and_name", unique: true
+    t.index ["state_code", "slug"], name: "index_cities_on_state_code_and_slug", unique: true
+    t.check_constraint "btrim(name) <> ''::text", name: "cities_name_present"
+    t.check_constraint "code ~ '^[0-9]{7}$'::text", name: "cities_ibge_code_format"
+    t.check_constraint "slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'::text", name: "cities_slug_format"
   end
 
   create_table "customer_recommendation_requests", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -373,21 +386,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_26_100000) do
   create_table "neighborhoods", primary_key: "code", id: :text, force: :cascade do |t|
     t.text "city_code", null: false
     t.datetime "created_at", null: false
-    t.boolean "is_active", default: true, null: false
     t.text "name", null: false
-    t.integer "sort_order", limit: 2, null: false
-    t.string "state_code", limit: 2, null: false
     t.datetime "updated_at", null: false
-    t.index "state_code, city_code, lower(name)", name: "index_active_neighborhoods_on_location_and_name", unique: true, where: "is_active"
-    t.index ["sort_order", "code"], name: "index_neighborhoods_on_sort_order_and_code"
+    t.index "city_code, lower(name)", name: "index_neighborhoods_on_city_and_name"
+    t.index ["city_code", "code"], name: "index_neighborhoods_on_city_code_and_code"
     t.check_constraint "btrim(name) <> ''::text", name: "neighborhoods_name_present"
-    t.check_constraint "char_length(city_code) <= 80", name: "neighborhoods_city_length"
-    t.check_constraint "char_length(code) <= 80", name: "neighborhoods_code_length"
-    t.check_constraint "char_length(name) <= 80", name: "neighborhoods_name_length"
-    t.check_constraint "city_code = 'Joinville'::text", name: "neighborhoods_launch_city"
-    t.check_constraint "code ~ '^[a-z0-9]+(-[a-z0-9]+)*$'::text", name: "neighborhoods_code_format"
-    t.check_constraint "sort_order >= 0", name: "neighborhoods_sort_order_nonnegative"
-    t.check_constraint "state_code::text = 'SC'::text", name: "neighborhoods_launch_state"
+    t.check_constraint "code ~ '^[0-9]{10}$'::text", name: "neighborhoods_ibge_code_format"
   end
 
   create_table "otp_challenges", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -516,6 +520,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_26_100000) do
 
   create_table "professional_profile_revisions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.text "bio"
+    t.text "coverage_city_code"
+    t.boolean "covers_whole_city", default: false, null: false
     t.datetime "created_at", null: false
     t.text "display_name", null: false
     t.text "headline"
@@ -531,6 +537,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_26_100000) do
     t.text "whatsapp_e164"
     t.integer "years_experience"
     t.text "youtube_url"
+    t.index ["coverage_city_code"], name: "index_professional_profile_revisions_on_coverage_city_code"
     t.index ["professional_profile_id", "profile_type"], name: "idx_profile_revisions_one_working_per_type", unique: true, where: "(status = ANY (ARRAY['draft'::text, 'pending_review'::text]))"
     t.index ["professional_profile_id", "version"], name: "idx_profile_revisions_unique_version", unique: true
     t.index ["professional_profile_id"], name: "idx_on_professional_profile_id_7926e53c9d"
@@ -544,16 +551,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_26_100000) do
   end
 
   create_table "professional_profile_service_areas", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.text "city_code", default: "Joinville", null: false
     t.datetime "created_at", null: false
-    t.text "neighborhood_code"
+    t.text "neighborhood_code", null: false
     t.uuid "professional_profile_revision_id", null: false
     t.datetime "updated_at", null: false
     t.index ["neighborhood_code", "professional_profile_revision_id"], name: "idx_revision_service_areas_neighborhood_revision", where: "(neighborhood_code IS NOT NULL)"
-    t.index ["professional_profile_revision_id", "city_code", "neighborhood_code"], name: "idx_revision_service_areas_unique_neighborhood", unique: true, where: "(neighborhood_code IS NOT NULL)"
-    t.index ["professional_profile_revision_id", "city_code"], name: "idx_revision_service_areas_unique_all_city", unique: true, where: "(neighborhood_code IS NULL)"
+    t.index ["professional_profile_revision_id", "neighborhood_code"], name: "idx_revision_service_areas_unique_neighborhood", unique: true
     t.index ["professional_profile_revision_id"], name: "idx_revision_service_areas_revision"
-    t.check_constraint "city_code = 'Joinville'::text", name: "professional_profile_service_areas_joinville_only"
   end
 
   create_table "professional_profile_services", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -728,6 +732,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_26_100000) do
   end
 
   create_table "search_daily_rollups", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.text "city_code", null: false
     t.datetime "created_at", null: false
     t.text "neighborhood_code"
     t.date "report_date", null: false
@@ -741,8 +746,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_26_100000) do
     t.integer "with_three_results", default: 0, null: false
     t.integer "with_whatsapp_handoff", default: 0, null: false
     t.integer "zero_results", default: 0, null: false
+    t.index ["city_code", "report_date"], name: "index_search_daily_rollups_on_city_code_and_report_date"
     t.index ["neighborhood_code", "report_date"], name: "idx_on_neighborhood_code_report_date_981793e93c"
-    t.index ["report_date", "service_id", "neighborhood_code", "unmatched_query"], name: "idx_search_daily_rollups_unique_dimensions", unique: true, nulls_not_distinct: true
+    t.index ["report_date", "city_code", "service_id", "neighborhood_code", "unmatched_query"], name: "idx_search_daily_rollups_unique_dimensions", unique: true, nulls_not_distinct: true
     t.index ["service_id", "report_date"], name: "index_search_daily_rollups_on_service_id_and_report_date"
     t.index ["service_id"], name: "index_search_daily_rollups_on_service_id"
     t.check_constraint "searches >= 0 AND with_results >= 0 AND with_three_results >= 0 AND with_profile_open >= 0 AND with_whatsapp_handoff >= 0 AND zero_results >= 0 AND thin_results >= 0", name: "search_daily_rollups_nonnegative"
@@ -771,16 +777,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_26_100000) do
     t.uuid "service_id"
     t.datetime "updated_at", null: false
     t.boolean "whatsapp_handoff_occurred", default: false, null: false
+    t.index ["city_code", "created_at"], name: "index_search_events_on_city_code_and_created_at"
     t.index ["created_at", "id"], name: "index_search_events_on_recent_llm_audits", order: :desc, where: "(input_prompt IS NOT NULL)"
     t.index ["created_at", "service_id", "neighborhood_code"], name: "index_search_events_on_time_service_and_neighborhood"
     t.index ["service_id"], name: "index_search_events_on_service_id"
-    t.check_constraint "audit_status IS NULL OR (audit_status::text = ANY (ARRAY['processing'::character varying, 'completed'::character varying, 'application_rate_limited'::character varying, 'provider_rate_limited'::character varying, 'provider_unavailable'::character varying, 'response_rejected'::character varying, 'search_failed'::character varying]::text[]))", name: "search_events_known_audit_status"
-    t.check_constraint "city_code = 'Joinville'::text", name: "search_events_launch_city"
+    t.check_constraint "audit_status IS NULL OR (audit_status::text = ANY (ARRAY['processing'::character varying::text, 'completed'::character varying::text, 'application_rate_limited'::character varying::text, 'provider_rate_limited'::character varying::text, 'provider_unavailable'::character varying::text, 'response_rejected'::character varying::text, 'search_failed'::character varying::text]))", name: "search_events_known_audit_status"
     t.check_constraint "input_prompt IS NOT NULL OR raw_llm_response IS NULL AND parsed_response IS NULL AND response_source IS NULL AND llm_adapter IS NULL AND llm_model IS NULL AND llm_provider_request_id IS NULL AND llm_prompt_digest IS NULL", name: "search_events_audit_fields_require_prompt"
     t.check_constraint "input_prompt IS NULL OR char_length(input_prompt) >= 1 AND char_length(input_prompt) <= 200", name: "search_events_input_prompt_length"
     t.check_constraint "llm_prompt_digest IS NULL OR llm_prompt_digest::text ~ '^[0-9a-f]{64}$'::text", name: "search_events_llm_prompt_digest_format"
     t.check_constraint "query_text_normalized IS NULL OR query_text_normalized ~ '^[a-z0-9]+( [a-z0-9]+)*$'::text AND char_length(query_text_normalized) <= 80", name: "search_events_normalized_query_format"
-    t.check_constraint "response_source IS NULL OR (response_source::text = ANY (ARRAY['provider'::character varying, 'cache'::character varying]::text[]))", name: "search_events_known_response_source"
+    t.check_constraint "response_source IS NULL OR (response_source::text = ANY (ARRAY['provider'::character varying::text, 'cache'::character varying::text]))", name: "search_events_known_response_source"
     t.check_constraint "result_count >= 0", name: "search_events_result_count_nonnegative"
   end
 
@@ -840,6 +846,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_26_100000) do
     t.check_constraint "char_length(slug) <= 80", name: "services_slug_length"
     t.check_constraint "slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'::text", name: "services_slug_format"
     t.check_constraint "sort_order >= 0", name: "services_sort_order_nonnegative"
+  end
+
+  create_table "states", primary_key: "code", id: :text, force: :cascade do |t|
+    t.string "abbreviation", limit: 2, null: false
+    t.datetime "created_at", null: false
+    t.text "name", null: false
+    t.datetime "updated_at", null: false
+    t.index "lower(name)", name: "index_states_on_lower_name", unique: true
+    t.index ["abbreviation"], name: "index_states_on_abbreviation", unique: true
+    t.check_constraint "abbreviation::text ~ '^[A-Z]{2}$'::text", name: "states_abbreviation_format"
+    t.check_constraint "btrim(name) <> ''::text", name: "states_name_present"
+    t.check_constraint "code ~ '^[0-9]{2}$'::text", name: "states_ibge_code_format"
   end
 
   create_table "user_accounts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -929,6 +947,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_26_100000) do
   add_foreign_key "admin_access_events", "user_accounts", column: "admin_user_id"
   add_foreign_key "application_sessions", "user_accounts"
   add_foreign_key "catalog_change_events", "user_accounts", column: "admin_user_id"
+  add_foreign_key "cities", "states", column: "state_code", primary_key: "code"
   add_foreign_key "customer_recommendation_requests", "service_jobs"
   add_foreign_key "customer_recommendations", "customers"
   add_foreign_key "customer_recommendations", "service_jobs"
@@ -936,6 +955,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_26_100000) do
   add_foreign_key "media_uploads", "professional_profiles"
   add_foreign_key "moderation_actions", "user_accounts", column: "admin_user_id"
   add_foreign_key "moderation_media_access_events", "user_accounts", column: "admin_user_id"
+  add_foreign_key "neighborhoods", "cities", column: "city_code", primary_key: "code"
   add_foreign_key "portfolio_items", "media_uploads"
   add_foreign_key "portfolio_items", "professional_profiles"
   add_foreign_key "portfolio_items", "services"
@@ -943,6 +963,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_26_100000) do
   add_foreign_key "professional_daily_metrics", "professional_profiles", column: "professional_id"
   add_foreign_key "professional_profile_photos", "media_uploads"
   add_foreign_key "professional_profile_photos", "professional_profiles"
+  add_foreign_key "professional_profile_revisions", "cities", column: "coverage_city_code", primary_key: "code"
   add_foreign_key "professional_profile_revisions", "professional_profiles"
   add_foreign_key "professional_profile_service_areas", "neighborhoods", column: "neighborhood_code", primary_key: "code"
   add_foreign_key "professional_profile_service_areas", "professional_profile_revisions"
@@ -962,8 +983,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_26_100000) do
   add_foreign_key "quote_items", "quotes", on_delete: :cascade
   add_foreign_key "quotes", "customers", column: ["customer_id", "professional_id"], primary_key: ["id", "professional_id"], name: "quotes_customer_owned_by_professional"
   add_foreign_key "quotes", "professional_profiles", column: "professional_id"
+  add_foreign_key "search_daily_rollups", "cities", column: "city_code", primary_key: "code"
   add_foreign_key "search_daily_rollups", "neighborhoods", column: "neighborhood_code", primary_key: "code"
   add_foreign_key "search_daily_rollups", "services"
+  add_foreign_key "search_events", "cities", column: "city_code", primary_key: "code"
   add_foreign_key "search_events", "neighborhoods", column: "neighborhood_code", primary_key: "code"
   add_foreign_key "search_events", "services"
   add_foreign_key "service_jobs", "quotes"

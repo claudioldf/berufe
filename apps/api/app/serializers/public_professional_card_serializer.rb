@@ -9,7 +9,6 @@ class PublicProfessionalCardSerializer
   def as_json(*)
     revision = profile.published_revision
     primary_service = revision.professional_profile_services.find(&:is_primary)
-    areas = revision.professional_profile_service_areas
     verification = PublicVerificationSerializer.new(profile).as_json
 
     {
@@ -26,14 +25,7 @@ class PublicProfessionalCardSerializer
         slug: primary_service.service.slug
       },
       matching_service: serialize_service(matching_service || primary_service&.service),
-      coverage: {
-        all_joinville: areas.any? { |area| area.neighborhood_code.nil? },
-        neighborhoods: areas.filter_map do |area|
-          next unless area.neighborhood
-
-          {code: area.neighborhood.code, name: area.neighborhood.name}
-        end
-      },
+      coverage: ProfessionalCoverageSerializer.new(revision).as_json,
       verification_labels: verification_labels(verification),
       portfolio_count: profile.portfolio_items.count do |item|
         item.status.in?(%w[pending_review approved]) && item.deleted_at.nil?

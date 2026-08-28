@@ -28,7 +28,7 @@ RSpec.describe ProfessionalDashboardReadiness do
 
     service = create_service
     profile.working_revision.professional_profile_services.create!(service:, is_primary: true)
-    profile.working_revision.professional_profile_service_areas.create!(neighborhood_code: nil)
+    profile.working_revision.update!(coverage_city: joinville_city, covers_whole_city: true)
     expect(readiness).to include(percentage: 50)
 
     portfolio = create_portfolio(service:, status: "pending_review")
@@ -60,14 +60,8 @@ RSpec.describe ProfessionalDashboardReadiness do
     service = create_service
     service.update!(is_active: false)
     profile.working_revision.professional_profile_services.create!(service:, is_primary: true)
-    neighborhood = Neighborhood.create!(
-      code: "inactive-readiness",
-      state_code: "SC",
-      city_code: "Joinville",
-      name: "Bairro Inativo",
-      is_active: false,
-      sort_order: 0
-    )
+    neighborhood = create_location_neighborhood(code: "4209102016", name: "Readiness")
+    profile.working_revision.update!(coverage_city: joinville_city, covers_whole_city: false)
     profile.working_revision.professional_profile_service_areas.create!(neighborhood_code: neighborhood.code)
 
     %w[rejected hidden].each do |status|

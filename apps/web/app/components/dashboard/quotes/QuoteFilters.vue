@@ -122,7 +122,7 @@ function inputValue(event: Event) {
     min-height: 44px;
     border: 1px solid var(--line);
     border-radius: 11px;
-    background: var(--color-surface-control);
+    background-color: var(--color-surface-control);
     color: var(--ink);
   }
 
@@ -131,7 +131,7 @@ function inputValue(event: Event) {
   }
 
   &__select {
-    padding: 10px 36px 10px 13px;
+    padding: 10px 2.75rem 10px 13px;
   }
 
   &__date-input {

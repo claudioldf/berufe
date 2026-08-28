@@ -100,12 +100,16 @@ defineSlots<{
     padding: 12px;
     border: 1px solid var(--line);
     border-radius: var(--radius-md);
-    background: var(--color-surface);
+    background-color: var(--color-surface);
     color: var(--ink);
     outline: none;
     transition:
       border-color var(--motion-fast) ease,
       box-shadow var(--motion-fast) ease;
+  }
+
+  & :slotted(select) {
+    padding-right: 2.75rem;
   }
 
   & :slotted(input:focus-visible),

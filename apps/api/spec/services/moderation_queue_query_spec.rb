@@ -95,10 +95,7 @@ RSpec.describe ModerationQueueQuery do
       service: created,
       is_primary: true
     )
-    ProfessionalProfileServiceArea.create!(
-      professional_profile_revision: profile.working_revision,
-      neighborhood_code: nil
-    )
+    profile.working_revision.update!(coverage_city: joinville_city, covers_whole_city: true)
     created
   end
 

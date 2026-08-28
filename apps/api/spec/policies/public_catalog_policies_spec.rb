@@ -8,8 +8,6 @@ RSpec.describe "Public catalog policies" do
   let!(:active_service) { create_service(category: active_category, name: "Eletricista", slug: "eletricista") }
   let!(:inactive_service) { create_service(category: active_category, name: "Inativo", slug: "inativo", active: false, order: 1) }
   let!(:hidden_category_service) { create_service(category: inactive_category, name: "Oculto", slug: "oculto", order: 2) }
-  let!(:active_neighborhood) { create_neighborhood(code: "america", name: "América") }
-  let!(:inactive_neighborhood) { create_neighborhood(code: "atiradores", name: "Atiradores", active: false, order: 1) }
 
   it "returns only active approved public data for every kind of visitor" do
     actors = [
@@ -22,7 +20,6 @@ RSpec.describe "Public catalog policies" do
     actors.each do |actor|
       expect(ServiceCategoryPolicy::Scope.new(actor, ServiceCategory).resolve).to contain_exactly(active_category)
       expect(ServicePolicy::Scope.new(actor, Service).resolve).to contain_exactly(active_service)
-      expect(NeighborhoodPolicy::Scope.new(actor, Neighborhood).resolve).to contain_exactly(active_neighborhood)
     end
   end
 
@@ -32,8 +29,6 @@ RSpec.describe "Public catalog policies" do
     expect(ServicePolicy.new(nil, active_service).show?).to be(true)
     expect(ServicePolicy.new(nil, inactive_service).show?).to be(false)
     expect(ServicePolicy.new(nil, hidden_category_service).show?).to be(false)
-    expect(NeighborhoodPolicy.new(nil, active_neighborhood).show?).to be(true)
-    expect(NeighborhoodPolicy.new(nil, inactive_neighborhood).show?).to be(false)
   end
 
   private
@@ -64,17 +59,6 @@ RSpec.describe "Public catalog policies" do
       icon: "i-lucide-zap",
       description: "Descrição pública.",
       aliases: [],
-      is_active: active,
-      sort_order: order
-    )
-  end
-
-  def create_neighborhood(code:, name:, active: true, order: 0)
-    Neighborhood.create!(
-      code:,
-      name:,
-      state_code: "SC",
-      city_code: "Joinville",
       is_active: active,
       sort_order: order
     )

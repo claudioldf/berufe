@@ -15,8 +15,9 @@ const draft: ProfessionalProfileDraft = {
   selectedServices: [],
   serviceNotes: {},
   primaryService: "",
-  allJoinville: false,
-  selectedNeighborhoods: [],
+  coverageCityCode: "",
+  coversWholeCity: false,
+  selectedNeighborhoodCodes: [],
 };
 
 const ModalStub = defineComponent({

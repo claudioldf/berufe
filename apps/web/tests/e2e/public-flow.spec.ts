@@ -87,7 +87,7 @@ test("public header makes login and professional signup easy to find", async ({
   const signupAction = isMobile
     ? page.locator(".header__mobile-signup-button")
     : page.locator(".header__desktop-auth").getByRole("link", {
-        name: "Criar perfil grátis",
+        name: "Criar meu perfil",
         exact: true,
       });
 
@@ -123,6 +123,89 @@ test("visitor can choose the launch city from the home and finder pages", async 
   await waitForNuxtHydration(page);
   await expect(page).toHaveURL(/\/encontrar\/sc\/joinville$/);
   await selectLaunchCityFromModal(page);
+});
+
+test("an explicit search city overrides the selected finder city", async ({
+  page,
+}) => {
+  const searchRequests: import("@playwright/test").Request[] = [];
+  page.on("request", (request) => {
+    if (
+      request.url().includes("/api/v1/public/professional-searches") &&
+      request.method() === "POST"
+    ) {
+      searchRequests.push(request);
+    }
+  });
+  await page.goto("/encontrar/sc/joinville");
+  await waitForNuxtHydration(page);
+  await page.evaluate(() => {
+    const state = window as typeof window & {
+      __finderHeadingHistory?: string[];
+    };
+    const headings: string[] = [];
+    const recordHeading = () => {
+      const heading = document
+        .querySelector(".finder__masthead h1")
+        ?.textContent?.replace(/\s+/g, " ")
+        .trim();
+      if (heading && headings.at(-1) !== heading) headings.push(heading);
+    };
+    state.__finderHeadingHistory = headings;
+    new MutationObserver(recordHeading).observe(document.body, {
+      childList: true,
+      characterData: true,
+      subtree: true,
+    });
+    recordHeading();
+  });
+  await fillExpressionSearch(page, "Pintor em Curitiba");
+  const searchResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/public/professional-searches") &&
+      response.request().method() === "POST",
+  );
+  await page.getByRole("button", { name: "Encontrar" }).click();
+  const searchResponse = await searchResponsePromise;
+  expect(searchResponse.status()).toBe(200);
+  const searchPayload = await searchResponse.json();
+  expect(searchPayload.data.interpretation.effective_location).toMatchObject({
+    city_code: "4106902",
+    state_code: "PR",
+    city: "Curitiba",
+  });
+
+  await expect(page).toHaveURL(
+    /\/encontrar\/pr\/curitiba\?expressao=[A-Za-z0-9_-]+$/,
+  );
+  await expect(
+    page.getByRole("heading", { level: 1, name: /pintor em curitiba/i }),
+  ).toBeVisible();
+  await expect(page.getByText(/buscando em\s+curitiba, pr/i)).toBeVisible();
+  await expect(
+    page.getByText(
+      /\d+ (?:profissional encontrado|profissionais encontrados)/i,
+    ),
+  ).toBeVisible();
+  expect(searchRequests).toHaveLength(1);
+  expect(searchRequests[0]?.postDataJSON()).toMatchObject({
+    expression: "Pintor em Curitiba",
+    default_location: { city_code: "4209102" },
+  });
+  const headingHistory = await page.evaluate(
+    () =>
+      (
+        window as typeof window & {
+          __finderHeadingHistory?: string[];
+        }
+      ).__finderHeadingHistory ?? [],
+  );
+  expect(headingHistory).toContain("Buscando a ajuda certa para você");
+  expect(
+    headingHistory.some((heading) =>
+      /encontre a ajuda certa em curitiba/i.test(heading),
+    ),
+  ).toBe(false);
 });
 
 test("visitor can search, open a profile, and inspect the WhatsApp redirect", async ({
@@ -280,6 +363,8 @@ test("professional completes onboarding and retains the published state", async 
     page.getByRole("heading", { name: "Escolha o que você oferece." }),
   ).toBeVisible();
   await page.getByRole("button", { name: /Eletricista/ }).click();
+  await page.getByLabel("Estado").selectOption("42");
+  await page.getByLabel("Cidade").selectOption("4209102");
   await page.getByLabel("Atendo em toda Joinville").check();
   await page.getByRole("button", { name: "Salvar e continuar" }).click();
 

@@ -45,8 +45,21 @@ function professional(
     primaryServiceIcon: "i-lucide-zap",
     services: ["Eletricista", "Marido de aluguel"],
     serviceNotes: ["Quadros elétricos", null],
-    neighborhoods: ["América", "Centro"],
-    allJoinville: false,
+    coverage: {
+      city: {
+        code: "4209102",
+        name: "Joinville",
+        slug: "joinville",
+        stateCode: "42",
+        stateAbbreviation: "SC",
+        stateName: "Santa Catarina",
+      },
+      wholeCity: false,
+      neighborhoods: [
+        { code: "4209102001", name: "América" },
+        { code: "4209102002", name: "Centro" },
+      ],
+    },
     yearsExperience: 11,
     evidence: [
       {

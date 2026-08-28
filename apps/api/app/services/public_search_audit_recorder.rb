@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
 class PublicSearchAuditRecorder
-  def start(expression:)
+  def start(expression:, city_code:)
     normalized_expression = LlmSearchParser.normalize_expression!(expression)
     SearchEvent.create!(
       input_prompt: normalized_expression,
-      city_code: SearchEvent::JOINVILLE,
+      city_code:,
       result_count: 0,
       reportable: false,
       audit_status: "processing"
@@ -82,6 +82,7 @@ class PublicSearchAuditRecorder
       locations: criteria.locations.map do |location|
         neighborhood = neighborhoods_by_code[location.neighborhood_code]
         {
+          city_code: location.city_code,
           state_code: location.state_code,
           city: location.city,
           neighborhood: neighborhood && {code: neighborhood.code, name: neighborhood.name}

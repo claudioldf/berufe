@@ -14,7 +14,6 @@ class PublicProfessionalProfileSerializer
     selections = revision.professional_profile_services.sort_by do |selection|
       [selection.is_primary? ? 0 : 1, selection.service.name, selection.id]
     end
-    areas = revision.professional_profile_service_areas
     verification = PublicVerificationSerializer.new(profile).as_json
 
     {
@@ -37,14 +36,7 @@ class PublicProfessionalProfileSerializer
           note: selection.note
         }
       end,
-      coverage: {
-        all_joinville: areas.any? { |area| area.neighborhood_code.nil? },
-        neighborhoods: areas.filter_map do |area|
-          next unless area.neighborhood
-
-          {code: area.neighborhood.code, name: area.neighborhood.name}
-        end.sort_by { |area| [area[:name], area[:code]] }
-      },
+      coverage: ProfessionalCoverageSerializer.new(revision).as_json,
       verification_labels: verification_labels(verification),
       evidence_summary: public_evidence_summary,
       customer_recommendations: public_customer_recommendations,

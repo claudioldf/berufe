@@ -125,59 +125,6 @@ export interface paths {
         patch: operations["updateAdminCatalogService"];
         trace?: never;
     };
-    "/api/v1/admin/catalog/neighborhoods": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Add a Joinville neighborhood to the controlled catalog */
-        post: operations["createAdminCatalogNeighborhood"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/catalog/neighborhoods/order": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Persist the complete deterministic neighborhood order */
-        put: operations["reorderAdminCatalogNeighborhoods"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/catalog/neighborhoods/{code}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                code: string;
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Update mutable fields of a controlled Joinville neighborhood */
-        patch: operations["updateAdminCatalogNeighborhood"];
-        trace?: never;
-    };
     "/api/v1/admin/moderation": {
         parameters: {
             query?: never;
@@ -295,8 +242,63 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Read the active service and Joinville neighborhood catalog */
+        /** Read the active service catalog and cities with public supply */
         get: operations["getPublicCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/locations/states": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List imported Brazilian states */
+        get: operations["getLocationStates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/locations/states/{state_abbreviation}/cities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                state_abbreviation: string;
+            };
+            cookie?: never;
+        };
+        /** List imported cities for one state */
+        get: operations["getLocationCities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/locations/cities/{city_code}/neighborhoods": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                city_code: string;
+            };
+            cookie?: never;
+        };
+        /** List imported official neighborhoods for one city */
+        get: operations["getLocationNeighborhoods"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1844,7 +1846,8 @@ export interface components {
             contact_publication_attested: true;
         };
         ProfessionalRelationshipExternalCoverage: {
-            all_joinville: boolean;
+            city_code: string | null;
+            whole_city: boolean;
             neighborhood_codes: string[];
         };
         ProfessionalRelationshipResponseRequest: {
@@ -1990,7 +1993,8 @@ export interface components {
             note?: string | null;
         };
         ProfessionalCoverageUpdate: {
-            all_joinville: boolean;
+            city_code: string;
+            whole_city: boolean;
             neighborhood_codes: string[];
         };
         ProfessionalServiceSelection: {
@@ -2001,7 +2005,8 @@ export interface components {
             note: string | null;
         };
         ProfessionalCoverage: {
-            all_joinville: boolean;
+            city: components["schemas"]["LocationCity"] | null;
+            whole_city: boolean;
             neighborhoods: components["schemas"]["ProfessionalCoverageNeighborhood"][];
         };
         ProfessionalCoverageNeighborhood: {
@@ -2094,6 +2099,36 @@ export interface components {
             /** Format: date-time */
             absolute_expires_at: string;
         };
+        LocationStatesResponse: {
+            data: components["schemas"]["LocationState"][];
+            request_id: components["schemas"]["RequestId"];
+        };
+        LocationCitiesResponse: {
+            data: components["schemas"]["LocationCity"][];
+            request_id: components["schemas"]["RequestId"];
+        };
+        LocationNeighborhoodsResponse: {
+            data: components["schemas"]["LocationNeighborhood"][];
+            request_id: components["schemas"]["RequestId"];
+        };
+        LocationState: {
+            code: string;
+            abbreviation: string;
+            name: string;
+        };
+        LocationCity: {
+            code: string;
+            name: string;
+            slug: string;
+            state_code: string;
+            state_abbreviation: string;
+            state_name: string;
+        };
+        LocationNeighborhood: {
+            code: string;
+            city_code: string;
+            name: string;
+        };
         CatalogResponse: {
             data: components["schemas"]["CatalogData"];
             request_id: components["schemas"]["RequestId"];
@@ -2105,7 +2140,6 @@ export interface components {
         AdminCatalogData: {
             categories: components["schemas"]["AdminCatalogCategory"][];
             services: components["schemas"]["AdminCatalogService"][];
-            neighborhoods: components["schemas"]["AdminCatalogNeighborhood"][];
         };
         AdminCatalogCategory: {
             /** Format: uuid */
@@ -2123,16 +2157,6 @@ export interface components {
             is_active: boolean;
             sort_order: number;
         };
-        AdminCatalogNeighborhood: {
-            code: string;
-            name: string;
-            /** @constant */
-            state_code: "SC";
-            /** @constant */
-            city: "Joinville";
-            is_active: boolean;
-            sort_order: number;
-        };
         AdminCatalogServiceCreateRequest: {
             name: string;
             slug: string;
@@ -2147,25 +2171,6 @@ export interface components {
         };
         AdminCatalogServiceOrderRequest: {
             ids: string[];
-        };
-        AdminCatalogNeighborhoodCreateRequest: {
-            name: string;
-            code: string;
-            /** @constant */
-            state_code: "SC";
-            /** @constant */
-            city: "Joinville";
-        };
-        AdminCatalogNeighborhoodUpdateRequest: {
-            name?: string;
-            /** @constant */
-            state_code?: "SC";
-            /** @constant */
-            city?: "Joinville";
-            is_active?: boolean;
-        };
-        AdminCatalogNeighborhoodOrderRequest: {
-            codes: string[];
         };
         AdminModerationResponse: {
             data: components["schemas"]["AdminModerationData"];
@@ -2224,7 +2229,6 @@ export interface components {
         CatalogData: {
             categories: components["schemas"]["PublicServiceCategory"][];
             services: components["schemas"]["PublicService"][];
-            neighborhoods: components["schemas"]["PublicNeighborhood"][];
             cities: components["schemas"]["PublicSearchCity"][];
         };
         PublicServiceCategory: {
@@ -2244,37 +2248,23 @@ export interface components {
             description: string;
             aliases: string[];
         };
-        PublicNeighborhood: {
-            code: string;
-            name: string;
-            /** @constant */
-            state_code: "SC";
-            /** @constant */
-            city: "Joinville";
-        };
         PublicSearchCity: {
-            /** @constant */
-            state_code: "SC";
-            /** @constant */
-            city: "Joinville";
-            /** @constant */
-            state_slug: "sc";
-            /** @constant */
-            city_slug: "joinville";
+            city_code: string;
+            state_code: string;
+            city: string;
+            state_slug: string;
+            city_slug: string;
         };
         PublicSearchLocationResponse: {
             data: components["schemas"]["PublicSearchLocation"];
             request_id: components["schemas"]["RequestId"];
         };
         PublicSearchLocation: {
-            /** @constant */
-            state_code: "SC";
-            /** @constant */
-            city: "Joinville";
-            /** @constant */
-            state_slug: "sc";
-            /** @constant */
-            city_slug: "joinville";
+            city_code: string;
+            state_code: string;
+            city: string;
+            state_slug: string;
+            city_slug: string;
             /** @enum {string} */
             source: "ip" | "fallback";
         };
@@ -2293,18 +2283,12 @@ export interface components {
             per_page?: number;
         };
         PublicSearchDefaultLocation: {
-            /** @constant */
-            state_code: "SC";
-            /** @constant */
-            city: "Joinville";
+            city_code: string;
         };
         PublicProfessionalStructuredSearchRequest: {
             /** Format: uuid */
             service_id: string;
-            /** @constant */
-            state_code: "SC";
-            /** @constant */
-            city: "Joinville";
+            city_code: string;
             /** @description One-based page of matching professionals; defaults to 1. */
             page?: number;
             /** @description Professionals per page; defaults to 20. */
@@ -2323,15 +2307,22 @@ export interface components {
         };
         PublicProfessionalSearchInterpretation: {
             services: components["schemas"]["PublicServiceSuggestion"][];
+            effective_location: components["schemas"]["PublicProfessionalSearchEffectiveLocation"];
             locations: components["schemas"]["PublicProfessionalSearchLocation"][];
             /** @description Sanitized first-person contact request produced for expression search; null for structured search. */
             normalized_request: string | null;
         };
+        PublicProfessionalSearchEffectiveLocation: {
+            city_code: string;
+            state_code: string;
+            city: string;
+            state_slug: string;
+            city_slug: string;
+        };
         PublicProfessionalSearchLocation: {
-            /** @enum {string} */
-            state_code: "SC";
-            /** @enum {string} */
-            city: "Joinville";
+            city_code: string;
+            state_code: string;
+            city: string;
             neighborhood: components["schemas"]["PublicProfessionalNeighborhoodSummary"] | null;
         };
         PublicSearchInteraction: {
@@ -2378,7 +2369,8 @@ export interface components {
             slug: string;
         };
         PublicProfessionalCoverage: {
-            all_joinville: boolean;
+            city: components["schemas"]["LocationCity"] | null;
+            whole_city: boolean;
             neighborhoods: {
                 code: string;
                 name: string;
@@ -3037,98 +3029,6 @@ export interface operations {
             503: components["responses"]["AdminCatalogUnavailable"];
         };
     };
-    createAdminCatalogNeighborhood: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AdminCatalogNeighborhoodCreateRequest"];
-            };
-        };
-        responses: {
-            /** @description The neighborhood was appended to the controlled catalog. */
-            201: {
-                headers: {
-                    "X-Request-Id": components["headers"]["RequestId"];
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AdminCatalogResponse"];
-                };
-            };
-            401: components["responses"]["AdminCatalogUnauthorized"];
-            403: components["responses"]["AdminCatalogForbidden"];
-            409: components["responses"]["AdminCatalogConflict"];
-            422: components["responses"]["AdminCatalogInvalid"];
-            503: components["responses"]["AdminCatalogUnavailable"];
-        };
-    };
-    reorderAdminCatalogNeighborhoods: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AdminCatalogNeighborhoodOrderRequest"];
-            };
-        };
-        responses: {
-            /** @description The complete neighborhood order was persisted. */
-            200: {
-                headers: {
-                    "X-Request-Id": components["headers"]["RequestId"];
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AdminCatalogResponse"];
-                };
-            };
-            401: components["responses"]["AdminCatalogUnauthorized"];
-            403: components["responses"]["AdminCatalogForbidden"];
-            409: components["responses"]["AdminCatalogConflict"];
-            503: components["responses"]["AdminCatalogUnavailable"];
-        };
-    };
-    updateAdminCatalogNeighborhood: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                code: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AdminCatalogNeighborhoodUpdateRequest"];
-            };
-        };
-        responses: {
-            /** @description The neighborhood was updated without changing its stable code. */
-            200: {
-                headers: {
-                    "X-Request-Id": components["headers"]["RequestId"];
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AdminCatalogResponse"];
-                };
-            };
-            401: components["responses"]["AdminCatalogUnauthorized"];
-            403: components["responses"]["AdminCatalogForbidden"];
-            404: components["responses"]["AdminCatalogNotFound"];
-            409: components["responses"]["AdminCatalogConflict"];
-            422: components["responses"]["AdminCatalogInvalid"];
-            503: components["responses"]["AdminCatalogUnavailable"];
-        };
-    };
     getAdminModerationQueue: {
         parameters: {
             query?: {
@@ -3365,9 +3265,120 @@ export interface operations {
             };
         };
     };
-    getFeaturedPublicProfessionals: {
+    getLocationStates: {
         parameters: {
             query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description States ordered by name. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocationStatesResponse"];
+                };
+            };
+            /** @description The location catalog is temporarily unavailable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getLocationCities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                state_abbreviation: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Cities ordered by name. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocationCitiesResponse"];
+                };
+            };
+            /** @description The state abbreviation is unknown. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The location catalog is temporarily unavailable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getLocationNeighborhoods: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                city_code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Neighborhoods ordered by name; the list can be empty. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocationNeighborhoodsResponse"];
+                };
+            };
+            /** @description The city code is unknown. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The location catalog is temporarily unavailable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getFeaturedPublicProfessionals: {
+        parameters: {
+            query?: {
+                city_code?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -3431,7 +3442,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Public professional cards matching the parsed service and Joinville location criteria. */
+            /** @description Public professional cards matching the parsed service and location criteria. */
             200: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];

@@ -55,9 +55,12 @@ const identityVerified = computed(() =>
               <span>
                 <UIcon name="i-lucide-map-pin" />
                 {{
-                  professional.allJoinville
-                    ? "Atende toda Joinville"
-                    : professional.neighborhoods.slice(0, 4).join(", ")
+                  professional.coverage.wholeCity
+                    ? `Atende toda ${professional.coverage.city?.name ?? "a cidade"}`
+                    : professional.coverage.neighborhoods
+                        .slice(0, 4)
+                        .map((neighborhood) => neighborhood.name)
+                        .join(", ")
                 }}
               </span>
               <span v-if="professional.yearsExperience !== null">

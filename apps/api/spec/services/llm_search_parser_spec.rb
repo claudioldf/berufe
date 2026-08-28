@@ -25,13 +25,13 @@ RSpec.describe LlmSearchParser do
     )
   end
   let!(:america) do
-    Neighborhood.create!(
-      code: "america-parser",
-      name: "América Parser",
-      state_code: "SC",
-      city_code: "Joinville",
-      is_active: true,
-      sort_order: 0
+    create_location_neighborhood(code: "4209102012", name: "América Parser")
+  end
+  let!(:batel) do
+    create_location_neighborhood(
+      code: "4106902012",
+      name: "Batel Parser",
+      city: curitiba_city
     )
   end
   let(:settings) do
@@ -68,10 +68,10 @@ RSpec.describe LlmSearchParser do
     parser = described_class.new(client:, settings:)
     expression = "Preciso trocar a fiação da casa da Ana no América Parser"
     recorder = PublicSearchAuditRecorder.new
-    first_event = recorder.start(expression:)
+    first_event = recorder.start(expression:, city_code: joinville_city.code)
 
     first = parser.call(expression:, audit_event: first_event)
-    second_event = recorder.start(expression:)
+    second_event = recorder.start(expression:, city_code: joinville_city.code)
     second = parser.call(expression:, audit_event: second_event)
 
     expect(first).to eq(
@@ -79,6 +79,7 @@ RSpec.describe LlmSearchParser do
         service_ids: [service.id],
         locations: [
           described_class::Location.new(
+            city_code: joinville_city.code,
             state_code: "SC",
             city: "Joinville",
             neighborhood_code: america.code
@@ -92,7 +93,7 @@ RSpec.describe LlmSearchParser do
     expect(client).to have_received(:parse).once
     expect(client).to have_received(:parse).with(
       hash_including(
-        prompt: include("Se o usuário não informar localização, use SC e Joinville"),
+        prompt: include("Se o usuário não informar cidade, use SC e Joinville"),
         default_location: have_attributes(state_code: "SC", city: "Joinville")
       )
     )
@@ -123,7 +124,7 @@ RSpec.describe LlmSearchParser do
     expect(analysis.attributes.to_json).not_to include(expression, "Ana")
   end
 
-  it "defaults missing locations to all Joinville and rejects unsupported or unknown locations" do
+  it "uses the selected city only as fallback and resolves an explicit city and its neighborhoods" do
     parser = described_class.new(client:, settings:)
     allow(client).to receive(:parse).and_return(
       provider_response.with(
@@ -136,21 +137,32 @@ RSpec.describe LlmSearchParser do
       )
     )
     expect(parser.call(expression: "Preciso de eletricista").locations).to eq([
-      described_class::Location.new(state_code: "SC", city: "Joinville", neighborhood_code: nil)
+      described_class::Location.new(
+        city_code: joinville_city.code,
+        state_code: "SC",
+        city: "Joinville",
+        neighborhood_code: nil
+      )
     ])
 
     allow(client).to receive(:parse).and_return(
       provider_response.with(
         payload: {
           "service_ids" => [service.id],
-          "locations" => [{"state_code" => "PR", "city" => "Curitiba", "neighborhood" => nil}],
+          "locations" => [{"state_code" => nil, "city" => "Curitiba", "neighborhood" => "Batel Parser"}],
           "keywords" => [],
-          "normalized_request" => "Eu preciso de eletricista em Curitiba."
+          "normalized_request" => "Eu preciso de eletricista no Batel."
         }
       )
     )
-    expect { parser.call(expression: "Eletricista em Curitiba") }
-      .to raise_error(described_class::LocationUnsupported)
+    expect(parser.call(expression: "Eletricista no Batel em Curitiba").locations).to eq([
+      described_class::Location.new(
+        city_code: curitiba_city.code,
+        state_code: "PR",
+        city: "Curitiba",
+        neighborhood_code: batel.code
+      )
+    ])
 
     allow(client).to receive(:parse).and_return(
       provider_response.with(
@@ -164,6 +176,32 @@ RSpec.describe LlmSearchParser do
     )
     expect { parser.call(expression: "Eletricista no Bairro inventado") }
       .to raise_error(described_class::LocationUnrecognized)
+  end
+
+  it "uses only the first explicitly parsed city" do
+    parser = described_class.new(client:, settings:)
+    allow(client).to receive(:parse).and_return(
+      provider_response.with(
+        payload: {
+          "service_ids" => [service.id],
+          "locations" => [
+            {"state_code" => "PR", "city" => "Curitiba", "neighborhood" => nil},
+            {"state_code" => "SC", "city" => "Joinville", "neighborhood" => nil}
+          ],
+          "keywords" => [],
+          "normalized_request" => "Eu preciso de eletricista em Curitiba."
+        }
+      )
+    )
+
+    expect(parser.call(expression: "Eletricista em Curitiba ou Joinville").locations).to eq([
+      described_class::Location.new(
+        city_code: curitiba_city.code,
+        state_code: "PR",
+        city: "Curitiba",
+        neighborhood_code: nil
+      )
+    ])
   end
 
   it "drops unsafe or malformed normalized contact requests before caching them" do
@@ -207,7 +245,10 @@ RSpec.describe LlmSearchParser do
         provider_request_id: "req_invalid"
       )
     )
-    event = PublicSearchAuditRecorder.new.start(expression: "Preciso de eletricista")
+    event = PublicSearchAuditRecorder.new.start(
+      expression: "Preciso de eletricista",
+      city_code: joinville_city.code
+    )
 
     expect {
       described_class.new(client:, settings:).call(

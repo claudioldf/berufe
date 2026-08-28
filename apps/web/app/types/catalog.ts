@@ -1,7 +1,7 @@
-import type { Neighborhood, Service } from "./professional";
+import type { Service } from "./professional";
 import type { SearchLocation } from "./ui";
 
-export type CatalogTab = "services" | "neighborhoods";
+export type CatalogTab = "services";
 
 export interface CatalogCategoryOption {
   id: string;
@@ -15,7 +15,6 @@ export interface PublicServiceCategory extends CatalogCategoryOption {
 export interface PublicCatalog {
   categories: PublicServiceCategory[];
   services: Service[];
-  neighborhoods: Neighborhood[];
   cities: SearchLocation[];
 }
 
@@ -42,5 +41,4 @@ export interface CatalogEntryDraft {
 export interface AdminCatalog {
   categories: CatalogCategoryOption[];
   services: CatalogEntry[];
-  neighborhoods: CatalogEntry[];
 }

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type {
-  Neighborhood,
   Professional,
   ProfessionalProfileDraft,
   ProfessionalProfilePhotoState,
@@ -11,7 +10,6 @@ import { useProfessionalProfileDraft } from "~/composables/useProfessionalProfil
 const props = defineProps<{
   professional: Professional;
   services: Service[];
-  neighborhoods: Neighborhood[];
   saving?: boolean;
   photo?: ProfessionalProfilePhotoState;
   photoUploading?: boolean;
@@ -33,7 +31,6 @@ const {
   validateSocialField,
   clearSocialError,
   toggleService,
-  toggleNeighborhood,
   commit,
   confirmSaved,
 } = useProfessionalProfileDraft(() => props.professional);
@@ -69,12 +66,7 @@ function save() {
         :services="props.services"
         @toggle="toggleService"
       />
-      <DashboardProfileCoverageSection
-        v-model="form"
-        :neighborhoods="props.neighborhoods"
-        @dirty="markDirty"
-        @toggle="toggleNeighborhood"
-      />
+      <DashboardProfileCoverageSection v-model="form" @dirty="markDirty" />
     </DashboardProfileFormLayout>
     <DashboardProfileSaveBar :saved="saved" :saving="props.saving" />
   </form>

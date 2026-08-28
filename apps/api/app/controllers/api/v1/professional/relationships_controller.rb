@@ -90,7 +90,7 @@ module Api
               :name,
               :phone,
               :contact_publication_attested,
-              {service_ids: [], coverage: [:all_joinville, {neighborhood_codes: []}]}
+              {service_ids: [], coverage: [:city_code, :whole_city, {neighborhood_codes: []}]}
             ]
           ).to_h.deep_symbolize_keys
         end

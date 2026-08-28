@@ -60,7 +60,7 @@ RSpec.describe "Public professional WhatsApp handoffs", type: :request, openapi:
     event = SearchEvent.create!(
       service:,
       query_text_normalized: "instalacao eletrica publica",
-      city_code: "Joinville",
+      city_code: "4209102",
       result_count: 1
     )
     token = PublicInteractionToken.new.issue(search_event_id: event.id, service_id: service.id)
@@ -90,7 +90,7 @@ RSpec.describe "Public professional WhatsApp handoffs", type: :request, openapi:
     event = SearchEvent.create!(
       service:,
       query_text_normalized: nil,
-      city_code: "Joinville",
+      city_code: "4209102",
       result_count: 1
     )
     token = PublicInteractionToken.new.issue(search_event_id: event.id, service_id: service.id)
@@ -111,7 +111,7 @@ RSpec.describe "Public professional WhatsApp handoffs", type: :request, openapi:
     event = SearchEvent.create!(
       service:,
       query_text_normalized: nil,
-      city_code: "Joinville",
+      city_code: "4209102",
       result_count: 1
     )
     token = PublicProfileInteractionToken.new.issue(

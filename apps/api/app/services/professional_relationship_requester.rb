@@ -113,15 +113,25 @@ class ProfessionalRelationshipRequester
 
   def resolve_coverage!(coverage)
     values = coverage.to_h.deep_symbolize_keys
-    all_joinville = values[:all_joinville] == true
+    city_code = values[:city_code].to_s.presence
+    whole_city = values[:whole_city] == true
     codes = Array(values[:neighborhood_codes]).map(&:to_s).reject(&:blank?).uniq
-    if all_joinville && codes.any?
-      raise Invalid.new(coverage: ["não combine toda Joinville com bairros específicos"])
+    if whole_city && codes.any?
+      raise Invalid.new(coverage: ["não combine a cidade inteira com bairros específicos"])
     end
-    neighborhoods = Neighborhood.active.where(code: codes).order(:sort_order, :name, :code).to_a
-    return {all_joinville:, neighborhoods:} if neighborhoods.length == codes.length
+    return {city: nil, whole_city: false, neighborhoods: []} if city_code.nil? && !whole_city && codes.empty?
+    raise Invalid.new(coverage: ["selecione uma cidade"]) unless city_code
 
-    raise Invalid.new(coverage: ["escolha apenas bairros ativos de Joinville"])
+    city = City.find_by(code: city_code)
+    raise Invalid.new(coverage: ["selecione uma cidade disponível"]) unless city
+    if !whole_city && codes.empty?
+      raise Invalid.new(coverage: ["escolha a cidade inteira ou ao menos um bairro"])
+    end
+
+    neighborhoods = city.neighborhoods.where(code: codes).ordered.to_a
+    return {city:, whole_city:, neighborhoods:} if neighborhoods.length == codes.length
+
+    raise Invalid.new(coverage: ["escolha apenas bairros da cidade selecionada"])
   end
 
   def create_external_profile!(account:, name:, phone_e164:, services:, coverage:, now:)
@@ -136,21 +146,16 @@ class ProfessionalRelationshipRequester
     revision = profile.working_revision
     revision.update!(
       profile_type: "external",
+      coverage_city_code: coverage[:city]&.code,
+      covers_whole_city: coverage[:whole_city],
       status: "pending_review",
       submitted_at: now
     )
     services.each_with_index do |service, index|
       revision.professional_profile_services.create!(service:, is_primary: index.zero?)
     end
-    if coverage[:all_joinville]
-      revision.professional_profile_service_areas.create!(city_code: ProfessionalProfileServiceArea::JOINVILLE)
-    else
-      coverage[:neighborhoods].each do |neighborhood|
-        revision.professional_profile_service_areas.create!(
-          city_code: ProfessionalProfileServiceArea::JOINVILLE,
-          neighborhood_code: neighborhood.code
-        )
-      end
+    coverage[:neighborhoods].each do |neighborhood|
+      revision.professional_profile_service_areas.create!(neighborhood_code: neighborhood.code)
     end
     profile.update!(published_revision: revision, working_revision: revision)
     profile
