@@ -418,6 +418,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/sitemap-professionals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List every self-service published professional slug for the sitemap */
+        get: operations["getPublicSitemapProfessionals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/professionals/{slug}": {
         parameters: {
             query?: {
@@ -2398,6 +2415,16 @@ export interface components {
             };
             request_id: components["schemas"]["RequestId"];
         };
+        PublicSitemapProfessionalsResponse: {
+            data: {
+                professionals: {
+                    slug: string;
+                    /** Format: date-time */
+                    updated_at: string | null;
+                }[];
+            };
+            request_id: components["schemas"]["RequestId"];
+        };
         PublicProfessionalSearchInterpretation: {
             services: components["schemas"]["PublicServiceSuggestion"][];
             effective_location: components["schemas"]["PublicProfessionalSearchEffectiveLocation"];
@@ -3711,6 +3738,38 @@ export interface operations {
                 };
             };
             /** @description The public demand query is temporarily unavailable. */
+            503: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getPublicSitemapProfessionals: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The slug and last-updated timestamp of every self-service published professional. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Cache-Control"?: "max-age=0, public, must-revalidate";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicSitemapProfessionalsResponse"];
+                };
+            };
+            /** @description The public sitemap query is temporarily unavailable. */
             503: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];

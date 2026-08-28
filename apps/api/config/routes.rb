@@ -14,6 +14,7 @@ Rails.application.routes.draw do
       get "public/professional-listings", to: "public_professional_listings#index"
       get "public/service-coverage", to: "public_service_coverage#index"
       get "public/service-demand", to: "public_service_demand#show"
+      get "public/sitemap-professionals", to: "public_sitemap_professionals#index"
       get "public/professionals/:slug", to: "public_professionals#show"
       post "public/professionals/:id/views", to: "public_professional_views#create"
       get "public/professionals/:id/whatsapp", to: "public_professional_whatsapp#show"
