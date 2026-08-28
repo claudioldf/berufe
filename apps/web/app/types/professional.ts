@@ -359,6 +359,7 @@ export interface ProfessionalWorkspace {
     presentationType: "self_service" | "external";
     isPublic: boolean;
     isSearchEligible: boolean;
+    isIndexable: boolean;
     publicationBlockers: Array<"identity" | "photo" | "services" | "coverage">;
     revisionStatus:
       "draft" | "pending_review" | "approved" | "rejected" | "superseded";

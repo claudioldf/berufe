@@ -357,6 +357,24 @@ async function respondRelationship(
             :publishing="professionalWorkspace.submissionSaving.value"
             @publish="publishProfile"
           />
+          <DesignSystemSurfaceCard
+            v-if="
+              workspace?.profile.isPublic && !workspace?.profile.isIndexable
+            "
+            class="seo-nudge"
+          >
+            <UIcon name="i-lucide-scan-search" aria-hidden="true" />
+            <div>
+              <strong>Seu perfil ainda não aparece no Google.</strong>
+              <p>
+                Adicione uma foto de perfil, um trabalho no portfólio ou
+                confirme sua identidade para começar a aparecer em buscas.
+              </p>
+              <NuxtLink to="/app/professional/profile">
+                Completar perfil
+              </NuxtLink>
+            </div>
+          </DesignSystemSurfaceCard>
           <DashboardQuickActions @recommend="relationshipOpen = true" />
         </aside>
       </div>
@@ -446,6 +464,37 @@ async function respondRelationship(
   display: grid;
   gap: 12px;
   min-width: 0;
+}
+.seo-nudge {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+
+  > svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+    color: var(--color-brand);
+    font-size: 1.3rem;
+  }
+
+  strong {
+    display: block;
+    font-size: 0.9rem;
+  }
+
+  p {
+    margin: 6px 0 10px;
+    color: var(--ink-soft);
+    font-size: 0.84rem;
+    line-height: 1.5;
+  }
+
+  a {
+    color: var(--color-brand);
+    font-size: 0.84rem;
+    font-weight: 800;
+    text-decoration: none;
+  }
 }
 .status-banner {
   grid-row: 1;
