@@ -185,6 +185,18 @@ export default defineNuxtConfig({
     strict: true,
     typeCheck: true,
   },
+  experimental: {
+    defaults: {
+      nuxtLink: {
+        // Catalog grids (services, guides, city hubs) render 25+ links on
+        // one screen; the framework default prefetches every one of them as
+        // soon as it's visible, firing a full SSR render per link. Prefetch
+        // on hover/focus/touchstart instead — still instant for the link the
+        // visitor actually intends to follow.
+        prefetchOn: { visibility: false, interaction: true },
+      },
+    },
+  },
   app: {
     head: {
       htmlAttrs: { lang: "pt-BR" },
@@ -211,8 +223,13 @@ export default defineNuxtConfig({
     "/encontrar": { prerender: false },
     "/encontrar/**": { prerender: false, swr: 300 },
     "/profissionais/**": { prerender: false, swr: 300 },
+    // The "/**" rules below don't match their own bare parent path, so each
+    // needs an explicit entry or the index page never gets SWR caching.
+    "/servicos": { prerender: false, swr: 300 },
     "/servicos/**": { prerender: false, swr: 300 },
+    "/para-profissionais": { prerender: false, swr: 900 },
     "/para-profissionais/**": { prerender: false, swr: 900 },
+    "/guias": { prerender: false, swr: 900 },
     "/guias/**": { prerender: false, swr: 900 },
     "/foundation": {
       prerender: false,
