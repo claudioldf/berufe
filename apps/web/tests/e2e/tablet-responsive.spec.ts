@@ -142,7 +142,7 @@ test("featured professional photos fill portrait cards across responsive layouts
   await expect(
     page.getByRole("heading", {
       level: 2,
-      name: "Gente boa, trabalho bem feito.",
+      name: "Veja quem atende na sua região.",
     }),
   ).toBeVisible();
 

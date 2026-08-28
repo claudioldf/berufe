@@ -17,7 +17,7 @@ async function fillExpressionSearch(
   expression: string,
 ) {
   const input = page.getByRole("searchbox", { name: "O que você precisa?" });
-  const submit = page.getByRole("button", { name: "Encontrar" });
+  const submit = page.getByRole("button", { name: "Buscar profissionais" });
 
   await expect(async () => {
     await input.fill(expression);
@@ -28,12 +28,12 @@ async function fillExpressionSearch(
 async function selectLaunchCityFromModal(
   page: import("@playwright/test").Page,
 ) {
-  await page.getByRole("button", { name: "alterar cidade" }).click();
+  await page.getByRole("button", { name: "Alterar cidade" }).click();
 
   const dialog = page.getByRole("dialog", { name: "Escolha sua cidade" });
   await expect(dialog).toBeVisible();
   await expect(
-    dialog.getByText("Mostramos apenas cidades com profissionais disponíveis."),
+    dialog.getByText("Veja onde já há profissionais disponíveis na Berufe."),
   ).toBeVisible();
   await expect(dialog.locator("select")).toHaveCount(0);
   await dialog.getByRole("button", { name: /Joinville\s+SC/i }).click();
@@ -77,6 +77,20 @@ test("public header makes login and professional signup easy to find", async ({
   await page.goto("/");
   await waitForNuxtHydration(page);
 
+  await expect(page).toHaveTitle(
+    "Encontre profissionais perto de você · Berufe",
+  );
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute(
+    "content",
+    "Encontre profissionais para sua casa e seu dia a dia. Veja trabalhos e referências e fale diretamente pelo WhatsApp.",
+  );
+  await expect(page.locator(".hero__copy")).toContainText(
+    "Conheça o trabalho e as referências de cada profissional antes de escolher.",
+  );
+  await expect(page.locator(".hero__trust-chip")).toContainText(
+    "Contato direto pelo WhatsApp",
+  );
+
   const isMobile = (page.viewportSize()?.width ?? 0) <= 900;
   const loginAction = isMobile
     ? page.locator(".header__mobile-login")
@@ -87,7 +101,7 @@ test("public header makes login and professional signup easy to find", async ({
   const signupAction = isMobile
     ? page.locator(".header__mobile-signup-button")
     : page.locator(".header__desktop-auth").getByRole("link", {
-        name: "Criar meu perfil",
+        name: "Criar perfil grátis",
         exact: true,
       });
 
@@ -165,7 +179,7 @@ test("an explicit search city overrides the selected finder city", async ({
       response.url().includes("/api/v1/public/professional-searches") &&
       response.request().method() === "POST",
   );
-  await page.getByRole("button", { name: "Encontrar" }).click();
+  await page.getByRole("button", { name: "Buscar profissionais" }).click();
   const searchResponse = await searchResponsePromise;
   expect(searchResponse.status()).toBe(200);
   const searchPayload = await searchResponse.json();
@@ -250,7 +264,7 @@ test("visitor can search, open a profile, and inspect the WhatsApp redirect", as
   ).toHaveCount(0);
 
   await fillExpressionSearch(page, "Preciso de um eletricista em Joinville");
-  await page.getByRole("button", { name: "Encontrar" }).click();
+  await page.getByRole("button", { name: "Buscar profissionais" }).click();
   await expect(page).toHaveURL(
     /\/encontrar\/sc\/joinville\?expressao=[A-Za-z0-9_-]+$/,
   );

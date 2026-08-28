@@ -39,12 +39,9 @@ function searchUrl(service: Service) {
             >O que você precisa resolver?</DesignSystemEyebrow
           >
           <DesignSystemHeading>
-            Serviços para cada<br />canto da casa.
+            Serviços para sua casa<br />e seu dia a dia.
           </DesignSystemHeading>
         </div>
-        <DesignSystemSectionCopy>
-          Escolha um serviço e veja profissionais que atendem sua região.
-        </DesignSystemSectionCopy>
       </div>
 
       <div id="home-service-categories" class="category-grid">
@@ -72,9 +69,7 @@ function searchUrl(service: Service) {
         :aria-expanded="expanded"
         @click="expanded = !expanded"
       >
-        <span>{{
-          expanded ? "Mostrar menos" : "Ver todas as categorias"
-        }}</span>
+        <span>{{ expanded ? "Mostrar menos" : "Ver todos os serviços" }}</span>
         <UIcon
           name="i-lucide-chevron-down"
           class="categories__toggle-icon"

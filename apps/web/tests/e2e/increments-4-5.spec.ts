@@ -440,7 +440,7 @@ test("an indicated professional claims the external profile and publishes the co
   await page
     .getByRole("searchbox", { name: "O que você precisa?" })
     .fill(externalService.name);
-  await page.getByRole("button", { name: "Encontrar" }).click();
+  await page.getByRole("button", { name: "Buscar profissionais" }).click();
   const externalCard = page
     .locator(".professional-card")
     .filter({ hasText: externalName });

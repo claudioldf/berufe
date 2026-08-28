@@ -14,7 +14,7 @@ const emit = defineEmits<{
 
 const open = shallowRef(false);
 const prefix = computed(() =>
-  props.source === "ip" ? "Localização aproximada" : "Buscando em",
+  props.source === "ip" ? "Sua localização aproximada:" : "Buscando em:",
 );
 
 function isCurrentLocation(candidate: SearchLocation) {
@@ -46,13 +46,13 @@ function selectLocation(location: SearchLocation) {
       :aria-expanded="open"
       @click="open = true"
     >
-      alterar cidade
+      Alterar cidade
     </UButton>
 
     <UModal
       v-model:open="open"
       title="Escolha sua cidade"
-      description="Mostramos apenas cidades com profissionais disponíveis."
+      description="Veja onde já há profissionais disponíveis na Berufe."
       :ui="{ content: 'sm:max-w-sm' }"
     >
       <template #body>
@@ -93,8 +93,10 @@ function selectLocation(location: SearchLocation) {
           <span aria-hidden="true">
             <UIcon name="i-lucide-map-pin-off" />
           </span>
-          <strong>Nenhuma cidade disponível</strong>
-          <p>Nenhuma cidade com profissionais disponíveis no momento.</p>
+          <strong>Ainda não há cidades disponíveis</strong>
+          <p>
+            No momento, não encontramos cidades com profissionais cadastrados.
+          </p>
         </div>
       </template>
     </UModal>

@@ -46,7 +46,7 @@ describe("search location hint", () => {
       global: { stubs },
     });
 
-    expect(wrapper.text()).toContain("Localização aproximada");
+    expect(wrapper.text()).toContain("Sua localização aproximada:");
     expect(wrapper.text()).toContain("Joinville, SC");
     expect(wrapper.find("select").exists()).toBe(false);
     expect(wrapper.find('[role="dialog"]').exists()).toBe(false);
@@ -59,7 +59,7 @@ describe("search location hint", () => {
     expect(trigger.attributes("aria-expanded")).toBe("true");
     expect(dialog.attributes("aria-label")).toBe("Escolha sua cidade");
     expect(dialog.text()).toContain(
-      "Mostramos apenas cidades com profissionais disponíveis.",
+      "Veja onde já há profissionais disponíveis na Berufe.",
     );
     expect(dialog.text()).toContain("Joinville");
     expect(dialog.text()).toContain("SC");
@@ -82,8 +82,8 @@ describe("search location hint", () => {
       global: { stubs },
     });
 
-    expect(wrapper.text()).toContain("Buscando em Joinville, SC");
-    expect(wrapper.text()).toContain("alterar cidade");
+    expect(wrapper.text()).toContain("Buscando em: Joinville, SC");
+    expect(wrapper.text()).toContain("Alterar cidade");
   });
 
   it("opens a friendly empty state when no city has available professionals", async () => {
@@ -99,9 +99,9 @@ describe("search location hint", () => {
     await wrapper.get(".search-location__change").trigger("click");
 
     const dialog = wrapper.get('[role="dialog"]');
-    expect(dialog.text()).toContain("Nenhuma cidade disponível");
+    expect(dialog.text()).toContain("Ainda não há cidades disponíveis");
     expect(dialog.text()).toContain(
-      "Nenhuma cidade com profissionais disponíveis no momento.",
+      "No momento, não encontramos cidades com profissionais cadastrados.",
     );
     expect(dialog.find(".search-location__option").exists()).toBe(false);
     expect(dialog.find("select").exists()).toBe(false);

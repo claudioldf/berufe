@@ -14,46 +14,52 @@
         <div class="trust__label">
           <UIcon name="i-lucide-scan-search" />
           <span>
-            <strong>Evidência, não promessa.</strong>
-            <small>Você vê o que foi conferido.</small>
+            <strong>Mais clareza para escolher.</strong>
+            <small>Veja os detalhes de cada perfil.</small>
           </span>
         </div>
       </div>
       <div class="trust__copy">
         <DesignSystemEyebrow tone="inverse">
-          Confiança do jeito certo
+          Como a Berufe ajuda
         </DesignSystemEyebrow>
         <DesignSystemHeading tone="inverse">
-          Escolha pelo que<br />você pode ver.
+          Conheça melhor antes<br />de escolher.
         </DesignSystemHeading>
         <DesignSystemSectionCopy>
-          Nada de nota misteriosa. A Berufe mostra cada sinal de confiança
-          separadamente para você decidir com clareza.
+          Aqui, a confiança não se resume a uma nota. Você vê separadamente o
+          que foi verificado, os trabalhos publicados e as referências de cada
+          profissional.
         </DesignSystemSectionCopy>
         <ol class="trust__steps">
           <li>
             <span>01</span>
             <div>
-              <strong>Busque pelo serviço</strong>
-              <p>Descreva seu pedido e informe o bairro quando quiser.</p>
+              <strong>Conte o que você precisa</strong>
+              <p>
+                Descreva o serviço que você precisa realizar, a cidade e o
+                bairro.
+              </p>
             </div>
           </li>
           <li>
             <span>02</span>
             <div>
-              <strong>Compare evidências reais</strong>
+              <strong>Compare os profissionais</strong>
               <p>
-                Veja a identidade verificada, o portfólio e as conexões
-                profissionais.
+                Confira cada profissional que atende na sua cidade, compare os
+                serviços, os trabalhos publicados e as referências de cada
+                perfil.
               </p>
             </div>
           </li>
           <li>
             <span>03</span>
             <div>
-              <strong>Converse diretamente</strong>
+              <strong>Fale direto pelo WhatsApp</strong>
               <p>
-                Abra o WhatsApp do profissional escolhido. Sem intermediários.
+                Escolha o profissional e inicie a conversa pelo WhatsApp, sem
+                intermediários. Simples e rápido.
               </p>
             </div>
           </li>

@@ -62,13 +62,14 @@ onMounted(() => {
     </div>
     <DesignSystemContainer class="hero__inner">
       <div class="hero__copy">
-        <DesignSystemEyebrow>Rede de confiança</DesignSystemEyebrow>
+        <DesignSystemEyebrow>Profissionais perto de você</DesignSystemEyebrow>
         <DesignSystemHeading as="h1" variant="display">
           Sua casa em<br /><em>boas mãos.</em>
         </DesignSystemHeading>
         <p class="hero__lead">
-          Encontre profissionais de reforma e manutenção com evidências claras,
-          trabalhos reais e conexões profissionais confirmadas.
+          Encontre profissionais para cuidar da sua casa e do seu dia a dia.
+          Conheça o trabalho e as referências de cada profissional antes de
+          escolher.
         </p>
         <PublicExpressionSearch
           :location="location"
@@ -91,20 +92,19 @@ onMounted(() => {
         </div>
         <div class="hero__profile-chip">
           <DesignSystemAvatar
-            name="Marcos Alves"
+            :name="`Profissionais em ${location.city}`"
             alt=""
             size="sm"
             shape="rounded"
           />
           <span>
-            <strong>Marcos Alves</strong>
-            <small>Eletricista · {{ location.city }}</small>
+            <strong>Profissionais em {{ location.city }}</strong>
+            <small>Serviços para a casa e o dia a dia</small>
           </span>
           <UIcon name="i-lucide-badge-check" />
         </div>
         <div class="hero__trust-chip">
-          <strong>+50.000</strong>
-          <span>profissionais<br />ativos</span>
+          <strong>Contato</strong>{{ " " }}<span>direto pelo WhatsApp</span>
         </div>
       </div>
     </DesignSystemContainer>

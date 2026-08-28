@@ -106,9 +106,10 @@ describe("home featured professionals", () => {
     expect(wrapper.text()).toContain("Eletricista");
     expect(wrapper.text()).toContain("América e Saguaçu");
     expect(wrapper.text()).toContain("Toda Joinville");
-    expect(wrapper.text()).toContain("2 conexões profissionais");
-    expect(wrapper.text()).toContain("0 conexões profissionais");
+    expect(wrapper.text()).toContain("2 referências profissionais");
+    expect(wrapper.text()).not.toContain("0 referências profissionais");
     expect(wrapper.text().match(/Identidade verificada/g)).toHaveLength(1);
+    expect(wrapper.findAll(".featured-card__proof")).toHaveLength(1);
     const serviceBadges = wrapper.findAll(".featured-card__service");
     expect(serviceBadges).toHaveLength(1);
     expect(serviceBadges[0]?.text()).toBe("Eletricista");

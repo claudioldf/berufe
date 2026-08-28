@@ -11,12 +11,22 @@ const props = defineProps<{
   location?: SearchLocation;
 }>();
 
-function connectionCountLabel(count: number) {
+function referenceCountLabel(count: number) {
   return formatCountLabel(
     count,
-    "conexão profissional",
-    "conexões profissionais",
+    "referência profissional",
+    "referências profissionais",
   );
+}
+
+function hasIdentityVerification(professional: PublicProfessionalCard) {
+  return professional.verificationLabels.some(
+    (label) => label.type === "identity",
+  );
+}
+
+function hasProfileReferences(professional: PublicProfessionalCard) {
+  return professional.relationshipCount > 0;
 }
 </script>
 
@@ -26,16 +36,16 @@ function connectionCountLabel(count: number) {
       <div class="section-heading section-heading--compact">
         <div>
           <DesignSystemEyebrow>Profissionais em destaque</DesignSystemEyebrow>
-          <DesignSystemHeading
-            >Gente boa, trabalho bem feito.</DesignSystemHeading
-          >
+          <DesignSystemHeading>
+            Veja quem atende na sua região.
+          </DesignSystemHeading>
         </div>
         <UButton
           :to="searchLocationPath(props.location ?? fallbackSearchLocation)"
           variant="link"
           trailing-icon="i-lucide-arrow-right"
         >
-          Explorar a rede
+          Ver todos os profissionais
         </UButton>
       </div>
       <div class="featured__grid">
@@ -78,18 +88,18 @@ function connectionCountLabel(count: number) {
             </div>
             <UIcon name="i-lucide-arrow-up-right" />
           </div>
-          <div class="featured-card__proof">
-            <span
-              v-if="
-                professional.verificationLabels.some(
-                  (label) => label.type === 'identity',
-                )
-              "
-            >
+          <div
+            v-if="
+              hasIdentityVerification(professional) ||
+              hasProfileReferences(professional)
+            "
+            class="featured-card__proof"
+          >
+            <span v-if="hasIdentityVerification(professional)">
               <UIcon name="i-lucide-badge-check" /> Identidade verificada
             </span>
-            <span>
-              {{ connectionCountLabel(professional.relationshipCount) }}
+            <span v-if="hasProfileReferences(professional)">
+              {{ referenceCountLabel(professional.relationshipCount) }}
             </span>
           </div>
         </NuxtLink>
