@@ -57,6 +57,11 @@ export default defineNuxtConfig({
   },
   sitemap: {
     exclude: ["/app/**", "/orcamento/**", "/recomendacao/**", "/foundation"],
+    sources: [
+      "/api/__sitemap__/professionals",
+      "/api/__sitemap__/listings",
+      "/api/__sitemap__/para-profissionais",
+    ],
   },
   linkChecker: {
     enabled: true,
