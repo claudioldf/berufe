@@ -53,6 +53,7 @@ useSeoMeta({
   twitterCard: "summary_large_image",
 });
 useHead(() => ({ link: [{ rel: "canonical", href: canonicalUrl.value }] }));
+defineOgImageSafely("BerufeDefault", { title, description });
 
 async function search(payload: ExpressionSearchPayload) {
   await router.push({
