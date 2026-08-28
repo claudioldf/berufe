@@ -54,7 +54,7 @@ function submit() {
             autocomplete="off"
             required
             :maxlength="MAXIMUM_EXPRESSION_LENGTH"
-            placeholder="Ex.: quero pintar um quarto infantil"
+            placeholder="Ex.: Preciso pintar um quarto infantil"
             :ui="{
               base: 'rounded-none p-0 border-0 ring-0 shadow-none bg-transparent focus-visible:outline-none focus-visible:ring-0',
             }"
@@ -68,7 +68,7 @@ function submit() {
         color="primary"
         class="expression-search__button"
       >
-        <span>Encontrar</span>
+        <span>Buscar profissionais</span>
         <UIcon name="i-lucide-arrow-right" aria-hidden="true" />
       </UButton>
     </form>

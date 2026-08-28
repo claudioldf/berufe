@@ -7,13 +7,13 @@ import { professionalSignupPath } from "~/utils/professional-auth";
     <DesignSystemContainer class="footer__inner">
       <div>
         <DesignSystemBrand size="lg" />
-        <p>Confiança para cuidar da sua casa.</p>
+        <p>Profissionais para sua casa e seu dia a dia.</p>
       </div>
       <div class="footer__links">
-        <NuxtLink to="/encontrar">Encontrar profissional</NuxtLink>
-        <NuxtLink :to="professionalSignupPath">Criar meu perfil</NuxtLink>
+        <NuxtLink to="/encontrar">Buscar profissionais</NuxtLink>
+        <NuxtLink :to="professionalSignupPath">Criar perfil grátis</NuxtLink>
         <NuxtLink to="/privacidade">Privacidade</NuxtLink>
-        <NuxtLink to="/termos-de-uso">Termos</NuxtLink>
+        <NuxtLink to="/termos-de-uso">Termos de uso</NuxtLink>
       </div>
       <p class="footer__note">Berufe · Brasil</p>
     </DesignSystemContainer>

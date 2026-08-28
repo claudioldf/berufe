@@ -38,7 +38,7 @@
       "slug": "eletricista",
       "category": "instalacoes",
       "icon": "i-lucide-zap",
-      "description": "Instalações, reparos, quadros elétricos e iluminação residencial.",
+      "description": "Instalações, reparos, quadros elétricos e iluminação.",
       "aliases": ["eletrica", "eletricidade", "luz", "tomada"]
     },
     {
@@ -47,7 +47,7 @@
       "slug": "encanador",
       "category": "instalacoes",
       "icon": "i-lucide-pipette",
-      "description": "Reparos hidráulicos, instalações e solução de vazamentos.",
+      "description": "Instalações e reparos hidráulicos, incluindo vazamentos.",
       "aliases": ["hidraulica", "canos", "vazamento"]
     },
     {
@@ -92,7 +92,7 @@
       "slug": "marceneiro",
       "category": "montagem",
       "icon": "i-lucide-hammer",
-      "description": "Móveis sob medida, ajustes e reparos de madeira.",
+      "description": "Móveis sob medida, ajustes e reparos em madeira.",
       "aliases": ["marcenaria", "moveis", "madeira"]
     },
     {
@@ -101,7 +101,7 @@
       "slug": "montador-de-moveis",
       "category": "montagem",
       "icon": "i-lucide-armchair",
-      "description": "Montagem, desmontagem e regulagem de móveis residenciais.",
+      "description": "Montagem, desmontagem e regulagem de móveis.",
       "aliases": ["montagem", "armario", "guarda roupa"]
     },
     {
@@ -110,7 +110,7 @@
       "slug": "arquiteto",
       "category": "projetos",
       "icon": "i-lucide-ruler",
-      "description": "Projetos de reforma, interiores e acompanhamento de obra.",
+      "description": "Projetos arquitetônicos e de interiores, com acompanhamento de obra.",
       "aliases": ["arquitetura", "projeto", "planta"]
     },
     {
@@ -119,16 +119,16 @@
       "slug": "designer-de-interiores",
       "category": "projetos",
       "icon": "i-lucide-lamp-floor",
-      "description": "Planejamento funcional e estético de ambientes residenciais.",
+      "description": "Planejamento funcional e estético de ambientes.",
       "aliases": ["interiores", "decoracao", "ambiente"]
     },
     {
       "id": "svc-marido-aluguel",
-      "name": "Marido de aluguel",
+      "name": "Pequenos reparos",
       "slug": "marido-de-aluguel",
       "category": "instalacoes",
       "icon": "i-lucide-drill",
-      "description": "Pequenas instalações, ajustes e reparos do dia a dia.",
+      "description": "Instalações, ajustes e consertos do dia a dia.",
       "aliases": ["faz tudo", "reparos", "manutencao"]
     },
     {
@@ -137,7 +137,7 @@
       "slug": "telhados-e-calhas",
       "category": "acabamentos",
       "icon": "i-lucide-house",
-      "description": "Instalação, manutenção e reparo de telhados, calhas e rufos residenciais.",
+      "description": "Instalação e reparo de telhados, calhas e rufos.",
       "aliases": ["telhado", "calha", "rufo", "goteira", "cobertura"]
     },
     {
@@ -146,7 +146,7 @@
       "slug": "ar-condicionado",
       "category": "instalacoes",
       "icon": "i-lucide-air-vent",
-      "description": "Instalação, limpeza e manutenção de ar-condicionado residencial.",
+      "description": "Instalação, limpeza e manutenção de ar-condicionado.",
       "aliases": ["ar condicionado", "climatizacao", "split", "limpeza de ar"]
     },
     {
@@ -155,7 +155,7 @@
       "slug": "serralheiro",
       "category": "acabamentos",
       "icon": "i-lucide-anvil",
-      "description": "Portões, grades, corrimãos e estruturas metálicas residenciais.",
+      "description": "Portões, grades, corrimãos e estruturas metálicas.",
       "aliases": [
         "serralheria",
         "portao",
@@ -170,7 +170,7 @@
       "slug": "vidraceiro",
       "category": "acabamentos",
       "icon": "i-lucide-square-stack",
-      "description": "Instalação e substituição de vidros, espelhos e boxes residenciais.",
+      "description": "Instalação e troca de vidros, espelhos e boxes.",
       "aliases": ["vidracaria", "vidro", "espelho", "box"]
     },
     {
@@ -179,7 +179,7 @@
       "slug": "impermeabilizacao",
       "category": "acabamentos",
       "icon": "i-lucide-droplets",
-      "description": "Tratamento de infiltrações e impermeabilização de áreas residenciais.",
+      "description": "Tratamento de infiltrações e impermeabilização de áreas da casa.",
       "aliases": ["impermeabilizacao", "infiltracao", "umidade", "vedacao"]
     },
     {
@@ -193,11 +193,11 @@
     },
     {
       "id": "svc-limpeza-residencial",
-      "name": "Limpeza Residencial",
+      "name": "Limpeza residencial",
       "slug": "limpeza-residencial",
       "category": "servicos-domesticos",
       "icon": "i-lucide-brush-cleaning",
-      "description": "Limpeza completa e recorrente de casas e apartamentos.",
+      "description": "Limpeza completa ou recorrente de casas e apartamentos.",
       "aliases": ["limpeza de casa", "limpeza residencial", "limpeza domestica"]
     },
     {
@@ -206,12 +206,12 @@
       "slug": "chaveiro",
       "category": "instalacoes",
       "icon": "i-lucide-key-round",
-      "description": "Abertura, troca e instalação de fechaduras residenciais.",
+      "description": "Abertura de portas, troca e instalação de fechaduras.",
       "aliases": ["chaves", "fechadura", "abertura de porta"]
     },
     {
       "id": "svc-desentupidor",
-      "name": "Desentupidor",
+      "name": "Desentupimento",
       "slug": "desentupidor",
       "category": "instalacoes",
       "icon": "i-lucide-pipette",
@@ -233,7 +233,7 @@
       "slug": "jardinagem",
       "category": "servicos-domesticos",
       "icon": "i-lucide-trees",
-      "description": "Manutenção, poda e cuidados com jardins residenciais.",
+      "description": "Manutenção, poda e cuidados com jardins.",
       "aliases": ["jardineiro", "jardim", "poda", "paisagismo"]
     },
     {
@@ -247,11 +247,11 @@
     },
     {
       "id": "svc-petsitter",
-      "name": "Petsitter",
+      "name": "Cuidados para pets",
       "slug": "petsitter",
       "category": "servicos-domesticos",
       "icon": "i-lucide-paw-print",
-      "description": "Cuidados, visitas e companhia para pets.",
+      "description": "Visitas, companhia e cuidados para pets em casa.",
       "aliases": ["pet sitter", "cuidador de pets", "cuidadora de animais"]
     },
     {
@@ -260,7 +260,7 @@
       "slug": "freelancer",
       "category": "outros-servicos",
       "icon": "i-lucide-briefcase-business",
-      "description": "Serviços profissionais independentes e sob demanda.",
+      "description": "Serviços profissionais para demandas pontuais.",
       "aliases": ["freela", "autonomo", "profissional freelancer"]
     }
   ],

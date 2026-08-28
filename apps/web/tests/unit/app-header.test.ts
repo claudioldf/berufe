@@ -118,12 +118,12 @@ describe("application header", () => {
   it("separates public information, login, and signup navigation", async () => {
     const wrapper = await mountHeader("/encontrar");
 
-    expect(wrapper.text()).toContain("Encontrar profissional");
+    expect(wrapper.text()).toContain("Buscar profissionais");
     expect(wrapper.text()).toContain("Como funciona");
     expect(wrapper.text()).toContain("Para profissionais");
     expect(wrapper.text()).not.toContain("Sou um profissional");
     expect(wrapper.text()).toContain("Entrar");
-    expect(wrapper.text()).toContain("Criar meu perfil");
+    expect(wrapper.text()).toContain("Criar perfil grátis");
     expect(wrapper.get('a[href="/#para-profissionais"]')).toBeDefined();
     expect(wrapper.findAll('a[href="/app/professional/login"]')).toHaveLength(
       2,
@@ -133,7 +133,7 @@ describe("application header", () => {
     ).toHaveLength(2);
     expect(wrapper.get(".header__mobile-login").text()).toBe("Entrar");
     expect(wrapper.get(".header__mobile-signup-button").text()).toBe(
-      "Criar meu perfil",
+      "Criar perfil grátis",
     );
     expect(wrapper.find(".logout-stub").exists()).toBe(false);
     expect(mocks.readSession).toHaveBeenCalledOnce();
@@ -160,7 +160,7 @@ describe("application header", () => {
       expect(wrapper.findAll(`a[href="${expectedPath}"]`)).toHaveLength(2);
       expect(wrapper.get(".header__desktop-auth").text()).toBe(expectedLabel);
       expect(wrapper.get(".header__mobile-login").text()).toBe(expectedLabel);
-      expect(wrapper.text()).not.toContain("Criar meu perfil");
+      expect(wrapper.text()).not.toContain("Criar perfil grátis");
       expect(wrapper.find(".header__mobile-signup").exists()).toBe(false);
     },
   );
@@ -171,7 +171,7 @@ describe("application header", () => {
     const wrapper = await mountHeader("/encontrar");
 
     expect(wrapper.text()).toContain("Entrar");
-    expect(wrapper.text()).toContain("Criar meu perfil");
+    expect(wrapper.text()).toContain("Criar perfil grátis");
   });
 
   it("does not repeat public authentication actions on the auth page", async () => {
@@ -229,7 +229,7 @@ describe("application header", () => {
 
     expect(wrapper.classes()).not.toContain("header--workspace");
     expect(wrapper.text()).not.toContain("Moderação");
-    expect(wrapper.text()).not.toContain("Criar meu perfil");
+    expect(wrapper.text()).not.toContain("Criar perfil grátis");
     expect(wrapper.find(".logout-stub").exists()).toBe(false);
   });
 });

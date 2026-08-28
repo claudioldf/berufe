@@ -8,6 +8,7 @@ const InputStub = defineComponent({
   props: {
     modelValue: { type: String, default: "" },
     name: { type: String, default: undefined },
+    placeholder: { type: String, default: undefined },
     required: { type: Boolean, default: false },
     maxlength: { type: [String, Number], default: undefined },
     ui: { type: Object, default: () => ({}) },
@@ -18,6 +19,7 @@ const InputStub = defineComponent({
       :name="name"
       :required="required"
       :maxlength="maxlength"
+      :placeholder="placeholder"
       :value="modelValue"
       :class="ui.base"
       @input="$emit('update:modelValue', $event.target.value)"
@@ -45,6 +47,7 @@ describe("expression search", () => {
     expect(wrapper.get('input[name="expression"]').attributes()).toMatchObject({
       required: "",
       maxlength: "200",
+      placeholder: "Ex.: Preciso pintar um quarto infantil",
     });
     expect(wrapper.find('button[type="submit"]').exists()).toBe(false);
     expect(wrapper.get('input[name="expression"]').classes()).toContain(
@@ -67,6 +70,9 @@ describe("expression search", () => {
       .get('input[name="expression"]')
       .setValue("  preciso de um pintor no América  ");
     expect(wrapper.find('button[type="submit"]').exists()).toBe(true);
+    expect(wrapper.get('button[type="submit"]').text()).toContain(
+      "Buscar profissionais",
+    );
     await wrapper.get("form").trigger("submit");
 
     expect(wrapper.emitted("submit")?.[0]?.[0]).toEqual({

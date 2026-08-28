@@ -58,7 +58,7 @@ const links = computed(() => {
     ];
   }
   return [
-    { label: "Encontrar profissional", to: "/encontrar" },
+    { label: "Buscar profissionais", to: "/encontrar" },
     { label: "Como funciona", to: "/#como-funciona" },
     { label: "Para profissionais", to: "/#para-profissionais" },
   ];
@@ -125,7 +125,7 @@ function isLinkActive(to: string) {
             v-if="!isAuthenticatedProfessional"
             :to="professionalSignupPath"
             color="primary"
-            label="Criar meu perfil"
+            label="Criar perfil grátis"
           />
         </div>
         <UButton
@@ -169,7 +169,7 @@ function isLinkActive(to: string) {
       <UButton
         :to="professionalSignupPath"
         color="primary"
-        label="Criar meu perfil"
+        label="Criar perfil grátis"
         class="header__mobile-signup-button"
       />
     </DesignSystemContainer>

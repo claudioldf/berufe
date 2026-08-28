@@ -41,7 +41,7 @@ describe("home categories", () => {
     expect(wrapper.findAll(".category-card")).toHaveLength(8);
     expect(wrapper.text()).not.toContain("Serviço 9");
     expect(toggle.attributes("aria-expanded")).toBe("false");
-    expect(toggle.text()).toContain("Ver todas as categorias");
+    expect(toggle.text()).toContain("Ver todos os serviços");
 
     await toggle.trigger("click");
 

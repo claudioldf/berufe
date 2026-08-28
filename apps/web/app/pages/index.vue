@@ -39,9 +39,9 @@ onMounted(() => {
   void resolveLocation();
 });
 
-const title = "Profissionais de confiança perto de você";
+const title = "Encontre profissionais perto de você";
 const description =
-  "Encontre profissionais verificados para reformas e manutenção residencial na sua cidade.";
+  "Encontre profissionais para sua casa e seu dia a dia. Veja trabalhos e referências e fale diretamente pelo WhatsApp.";
 const siteUrl = String(
   runtimeConfig.public.siteUrl || "http://localhost:3000",
 ).replace(/\/$/, "");
