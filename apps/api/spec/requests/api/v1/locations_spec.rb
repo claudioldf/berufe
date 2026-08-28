@@ -51,4 +51,28 @@ RSpec.describe "Locations", type: :request, openapi: true do
     get "/api/v1/locations/cities/0000000/neighborhoods"
     expect(response).to have_http_status(:not_found)
   end
+
+  it "returns unavailable responses when location queries fail" do
+    allow(State).to receive(:ordered).and_raise(ActiveRecord::ConnectionNotEstablished)
+
+    get "/api/v1/locations/states", headers: {"X-Request-Id" => "locations-states-unavailable"}
+    expect(response).to have_http_status(:service_unavailable)
+    expect(response.parsed_body.dig("error", "code")).to eq("service_unavailable")
+    assert_api_conform(status: 503)
+
+    allow(State).to receive(:find_by!).and_raise(ActiveRecord::ConnectionNotEstablished)
+
+    get "/api/v1/locations/states/SC/cities", headers: {"X-Request-Id" => "locations-cities-unavailable"}
+    expect(response).to have_http_status(:service_unavailable)
+    expect(response.parsed_body.dig("error", "code")).to eq("service_unavailable")
+    assert_api_conform(status: 503)
+
+    allow(City).to receive(:find).and_raise(ActiveRecord::ConnectionNotEstablished)
+
+    get "/api/v1/locations/cities/#{joinville.code}/neighborhoods",
+      headers: {"X-Request-Id" => "locations-neighborhoods-unavailable"}
+    expect(response).to have_http_status(:service_unavailable)
+    expect(response.parsed_body.dig("error", "code")).to eq("service_unavailable")
+    assert_api_conform(status: 503)
+  end
 end

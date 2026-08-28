@@ -59,17 +59,53 @@ RSpec.describe "Administrator service catalog management", type: :request, opena
     assert_api_conform(status: 200)
   end
 
-  it "rejects anonymous callers and untrusted mutation origins" do
+  it "rejects anonymous callers" do
     get "/api/v1/admin/catalog", headers: {"X-Request-Id" => "catalog-anonymous"}
     expect(response).to have_http_status(:unauthorized)
     assert_api_conform(status: 401)
 
+    anonymous_mutate :post, "/api/v1/admin/catalog/services",
+      params: valid_service_params,
+      request_id: "catalog-service-create-anonymous"
+    expect(response).to have_http_status(:unauthorized)
+    assert_api_conform(status: 401)
+
+    anonymous_mutate :patch, "/api/v1/admin/catalog/services/#{electrician.id}",
+      params: {name: "Eletricista residencial"},
+      request_id: "catalog-service-update-anonymous"
+    expect(response).to have_http_status(:unauthorized)
+    assert_api_conform(status: 401)
+
+    anonymous_mutate :put, "/api/v1/admin/catalog/services/order",
+      params: {ids: [electrician.id, painter.id].map(&:to_s)},
+      request_id: "catalog-services-reorder-anonymous"
+    expect(response).to have_http_status(:unauthorized)
+    assert_api_conform(status: 401)
+  end
+
+  it "rejects untrusted mutation origins" do
     mutate :post, "/api/v1/admin/catalog/services",
       params: valid_service_params,
       request_id: "catalog-origin-denied",
       origin: "https://untrusted.example"
     expect(response).to have_http_status(:forbidden)
     expect(Service.find_by(slug: "encanador")).to be_nil
+    assert_api_conform(status: 403)
+
+    mutate :patch, "/api/v1/admin/catalog/services/#{electrician.id}",
+      params: {name: "Eletricista residencial"},
+      request_id: "catalog-service-update-origin-denied",
+      origin: "https://untrusted.example"
+    expect(response).to have_http_status(:forbidden)
+    expect(electrician.reload.name).to eq("Eletricista")
+    assert_api_conform(status: 403)
+
+    mutate :put, "/api/v1/admin/catalog/services/order",
+      params: {ids: [painter.id, electrician.id].map(&:to_s)},
+      request_id: "catalog-services-reorder-origin-denied",
+      origin: "https://untrusted.example"
+    expect(response).to have_http_status(:forbidden)
+    expect(Service.ordered).to eq([electrician, painter])
     assert_api_conform(status: 403)
   end
 
@@ -81,14 +117,33 @@ RSpec.describe "Administrator service catalog management", type: :request, opena
     assert_api_conform(status: 404)
 
     mutate :post, "/api/v1/admin/catalog/services",
+      params: valid_service_params.merge(category_slug: "categoria-ausente"),
+      request_id: "catalog-category-missing"
+    expect(response).to have_http_status(:not_found)
+    assert_api_conform(status: 404)
+
+    mutate :post, "/api/v1/admin/catalog/services",
       params: valid_service_params.merge(slug: electrician.slug),
       request_id: "catalog-conflict"
+    expect(response).to have_http_status(:conflict)
+    assert_api_conform(status: 409)
+
+    mutate :put, "/api/v1/admin/catalog/services/order",
+      params: {ids: [electrician.id.to_s]},
+      request_id: "catalog-order-conflict"
     expect(response).to have_http_status(:conflict)
     assert_api_conform(status: 409)
 
     mutate :post, "/api/v1/admin/catalog/services",
       params: valid_service_params.merge(description: " "),
       request_id: "catalog-invalid"
+    expect(response).to have_http_status(:unprocessable_entity)
+    expect(response.parsed_body.dig("error", "field_errors")).to include("description")
+    assert_api_conform(status: 422)
+
+    mutate :patch, "/api/v1/admin/catalog/services/#{electrician.id}",
+      params: {description: " "},
+      request_id: "catalog-update-invalid"
     expect(response).to have_http_status(:unprocessable_entity)
     expect(response.parsed_body.dig("error", "field_errors")).to include("description")
     assert_api_conform(status: 422)
@@ -100,6 +155,24 @@ RSpec.describe "Administrator service catalog management", type: :request, opena
     get_admin_catalog(request_id: "catalog-unavailable")
     expect(response).to have_http_status(:service_unavailable)
     expect(response.parsed_body.dig("error", "code")).to eq("catalog_unavailable")
+    assert_api_conform(status: 503)
+
+    mutate :post, "/api/v1/admin/catalog/services",
+      params: valid_service_params,
+      request_id: "catalog-service-create-unavailable"
+    expect(response).to have_http_status(:service_unavailable)
+    assert_api_conform(status: 503)
+
+    mutate :patch, "/api/v1/admin/catalog/services/#{electrician.id}",
+      params: {name: "Eletricista residencial"},
+      request_id: "catalog-service-update-unavailable"
+    expect(response).to have_http_status(:service_unavailable)
+    assert_api_conform(status: 503)
+
+    mutate :put, "/api/v1/admin/catalog/services/order",
+      params: {ids: [electrician.id, painter.id].map(&:to_s)},
+      request_id: "catalog-services-reorder-unavailable"
+    expect(response).to have_http_status(:service_unavailable)
     assert_api_conform(status: 503)
   end
 
@@ -122,6 +195,16 @@ RSpec.describe "Administrator service catalog management", type: :request, opena
     headers = session_headers(request_id:)
     headers["Origin"] = origin if origin
     public_send(method, path, params:, headers:, as: :json)
+  end
+
+  def anonymous_mutate(method, path, params:, request_id:)
+    public_send(
+      method,
+      path,
+      params:,
+      headers: {"Origin" => ENV.fetch("WEB_ORIGIN"), "X-Request-Id" => request_id},
+      as: :json
+    )
   end
 
   def session_headers(request_id:)
