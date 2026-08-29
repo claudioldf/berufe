@@ -191,6 +191,7 @@ describe("application header", () => {
     expect(wrapper.text()).toContain("Visão geral");
     expect(wrapper.text()).toContain("Gerenciar");
     expect(wrapper.text()).toContain("Orçamentos");
+    expect(wrapper.text()).toContain("Conta");
     expect(wrapper.get('a[href="/app/professional/quotes"]')).toBeDefined();
     expect(wrapper.findAll(".logout-stub")).toHaveLength(1);
 

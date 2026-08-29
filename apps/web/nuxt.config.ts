@@ -53,10 +53,22 @@ export default defineNuxtConfig({
     defaultLocale: "pt-BR",
   },
   robots: {
-    disallow: ["/app", "/orcamento", "/recomendacao", "/foundation"],
+    disallow: [
+      "/app",
+      "/exclusao-de-conta",
+      "/orcamento",
+      "/recomendacao",
+      "/foundation",
+    ],
   },
   sitemap: {
-    exclude: ["/app/**", "/orcamento/**", "/recomendacao/**", "/foundation"],
+    exclude: [
+      "/app/**",
+      "/exclusao-de-conta/**",
+      "/orcamento/**",
+      "/recomendacao/**",
+      "/foundation",
+    ],
     sources: [
       "/api/__sitemap__/professionals",
       "/api/__sitemap__/listings",
@@ -248,6 +260,15 @@ export default defineNuxtConfig({
       },
     },
     "/orcamento/**": {
+      prerender: false,
+      headers: {
+        ...browserSecurityHeaders,
+        "cache-control": "private, no-store",
+        "referrer-policy": "no-referrer",
+        "x-robots-tag": "noindex, nofollow",
+      },
+    },
+    "/exclusao-de-conta/**": {
       prerender: false,
       headers: {
         ...browserSecurityHeaders,

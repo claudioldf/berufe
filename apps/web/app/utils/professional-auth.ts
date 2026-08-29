@@ -1,6 +1,6 @@
 import type { CurrentAccount } from "~/services/api/application-session";
 
-export type ProfessionalAuthIntent = "login" | "signup";
+export type ProfessionalAuthIntent = "login" | "signup" | "reauthentication";
 
 export interface ProfessionalPhoneStepContent {
   eyebrow: string;
@@ -17,6 +17,8 @@ export const professionalLoginPath = "/app/professional/login";
 export const professionalSignupPath = `${professionalLoginPath}?intent=signup`;
 export const professionalDashboardPath = "/app/professional";
 export const professionalOnboardingPath = "/app/professional/onboarding";
+export const professionalAccountPath = "/app/professional/account";
+export const professionalReauthenticationPath = `${professionalLoginPath}?intent=reauthentication`;
 
 type ProfessionalEntryAccount = Pick<
   CurrentAccount,
@@ -60,10 +62,22 @@ export const professionalPhoneStepContent: Record<
     alternateTo: professionalLoginPath,
     pageTitle: "Criar perfil profissional",
   },
+  reauthentication: {
+    eyebrow: "Confirmação de segurança",
+    title: "Confirme seu telefone.",
+    description:
+      "Para excluir a conta, confirme novamente o celular vinculado ao seu perfil.",
+    submitLabel: "Receber código de confirmação",
+    alternatePrompt: "Não quer excluir a conta agora?",
+    alternateLabel: "Voltar para a conta",
+    alternateTo: professionalAccountPath,
+    pageTitle: "Confirmar telefone para excluir conta",
+  },
 };
 
 export function resolveProfessionalAuthIntent(
   intent: unknown,
 ): ProfessionalAuthIntent {
-  return intent === "signup" ? "signup" : "login";
+  if (intent === "signup" || intent === "reauthentication") return intent;
+  return "login";
 }
