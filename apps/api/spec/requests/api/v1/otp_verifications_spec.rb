@@ -59,6 +59,7 @@ RSpec.describe "Phone OTP verification", type: :request, openapi: true do
     expect(account.phone_verified_at).to eq(now)
     expect(account.registered_at).to be_nil
     expect(account.last_login_at).to eq(now)
+    expect(account.login_count).to eq(1)
     expect(session.user_account).to eq(account)
     expect(session.authentication_method).to eq("sms_otp")
     expect(session.token_digest).to eq(ApplicationSession.digest_token(raw_session_token))
@@ -79,7 +80,8 @@ RSpec.describe "Phone OTP verification", type: :request, openapi: true do
     account = UserAccount.create!(
       phone_e164: "+5547999991111",
       role: "professional",
-      status: "active"
+      status: "active",
+      login_count: 2
     )
     _challenge, challenge_token = issue_challenge(provider_reference: account.id)
     allow_verified_provider(reference: account.id)
@@ -92,6 +94,7 @@ RSpec.describe "Phone OTP verification", type: :request, openapi: true do
     expect(UserAccount.find_by(id: account.id)).to eq(account)
     expect(account.reload.phone_verified_at).to be_present
     expect(account.registered_at).to be_nil
+    expect(account.login_count).to eq(3)
   end
 
   it "uses one generic outcome for malformed, unknown, expired, consumed, and incorrect codes" do
