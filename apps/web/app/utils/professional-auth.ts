@@ -17,7 +17,8 @@ export const professionalLoginPath = "/app/professional/login";
 export const professionalSignupPath = `${professionalLoginPath}?intent=signup`;
 export const professionalDashboardPath = "/app/professional";
 export const professionalOnboardingPath = "/app/professional/onboarding";
-export const professionalAccountPath = "/app/professional/account";
+export const professionalAccountExclusionPath =
+  "/app/professional/account/exclusion";
 
 type ProfessionalEntryAccount = Pick<
   CurrentAccount,

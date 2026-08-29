@@ -10,7 +10,7 @@ import { useApplicationSession } from "~/composables/useApplicationSession";
 import { useToast } from "~/composables/useToast";
 import { ApiRequestError } from "~/services/api/errors";
 import type { ProfessionalRelationshipResponse } from "~/services/api/professional-relationships";
-import { professionalAccountPath } from "~/utils/professional-auth";
+import { professionalAccountExclusionPath } from "~/utils/professional-auth";
 
 const route = useRoute();
 const { showToast } = useToast();
@@ -385,7 +385,7 @@ async function handleRelationshipRemove(id: string) {
           @submitted="handleVerificationSubmission"
         />
         <div v-if="activeTab === 'dados'" class="profile-workspace__account">
-          <NuxtLink :to="professionalAccountPath">
+          <NuxtLink :to="professionalAccountExclusionPath">
             Excluir minha conta <UIcon name="i-lucide-arrow-right" />
           </NuxtLink>
         </div>

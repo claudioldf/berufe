@@ -48,7 +48,12 @@ test("professional can irreversibly erase the account and follow a privacy-safe 
 
   await page.goto("/app/professional/profile");
   await page.getByRole("link", { name: "Excluir minha conta" }).click();
-  await expect(page).toHaveURL(/\/app\/professional\/account$/);
+  await expect(page).toHaveURL(/\/app\/professional\/account\/exclusion$/);
+  await expect(
+    page.getByRole("heading", {
+      name: "Excluir sua conta permanentemente.",
+    }),
+  ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Excluir minha conta" }),
   ).toBeVisible();
@@ -102,4 +107,8 @@ test("account deletion is reachable from the profile page, not the main navigati
   await expect(
     page.getByRole("link", { name: "Excluir minha conta" }),
   ).toBeVisible();
+  await page.getByRole("link", { name: "Excluir minha conta" }).click();
+  await expect(page).toHaveURL(/\/app\/professional\/account\/exclusion$/);
+  await page.getByRole("link", { name: "Cancelar" }).click();
+  await expect(page).toHaveURL(/\/app\/professional\/profile$/);
 });

@@ -24,7 +24,7 @@ function submit() {
     <div class="erasure-form__heading">
       <span><UIcon name="i-lucide-shield-alert" aria-hidden="true" /></span>
       <div>
-        <DesignSystemEyebrow>Zona de risco</DesignSystemEyebrow>
+        <DesignSystemEyebrow>Conta</DesignSystemEyebrow>
         <h2>Excluir minha conta</h2>
         <p>
           Esta ação é irreversível. Antes de confirmar, entenda o que acontece
@@ -79,7 +79,11 @@ function submit() {
       </p>
 
       <div class="erasure-form__actions">
-        <UButton to="/app/professional" color="neutral" variant="ghost">
+        <UButton
+          to="/app/professional/profile"
+          color="neutral"
+          variant="ghost"
+        >
           Cancelar
         </UButton>
         <UButton

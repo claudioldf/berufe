@@ -380,11 +380,11 @@ useSeoMeta({
       </p>
       <p>
         O profissional cadastrado pode iniciar esse pedido em
-        <strong>Conta e privacidade</strong>, acessível a partir do perfil,
-        mediante confirmação explícita de que a exclusão é irreversível. A tela
-        fornece um protocolo sem identificadores pessoais para acompanhar o
-        processamento. O suporte permanece disponível quando o autoatendimento
-        não puder ser usado.
+        <strong>Exclusão de conta</strong>, acessível pelo link Excluir minha
+        conta no perfil, mediante confirmação explícita de que a exclusão é
+        irreversível. A tela fornece um protocolo sem identificadores pessoais
+        para acompanhar o processamento. O suporte permanece disponível quando o
+        autoatendimento não puder ser usado.
       </p>
     </section>
 
@@ -422,7 +422,7 @@ useSeoMeta({
       </p>
       <p>
         Profissionais cadastrados podem solicitar a exclusão irreversível em
-        <strong>Conta e privacidade</strong>. Os demais direitos, pedidos de
+        <strong>Exclusão de conta</strong>. Os demais direitos, pedidos de
         pessoas sem acesso ao autoatendimento e dúvidas podem ser enviados para
         <a href="mailto:suporte@berufe.com.br">suporte@berufe.com.br</a>. A
         Berufe confirmará a identidade sem pedir dados excessivos, responderá de

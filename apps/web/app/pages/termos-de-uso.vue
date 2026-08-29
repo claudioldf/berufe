@@ -237,7 +237,7 @@ useSeoMeta({
         A Berufe pode advertir, limitar, ocultar, suspender ou encerrar acesso
         de forma compatível com a gravidade e o risco. O titular cadastrado pode
         solicitar a despublicação e a exclusão irreversível dos dados elegíveis
-        em <strong>Conta e privacidade</strong>, acessível a partir do perfil,
+        em <strong>Exclusão de conta</strong>, acessível a partir do perfil,
         mediante confirmação explícita; o suporte permanece disponível quando o
         autoatendimento não puder ser usado. Registros mínimos podem ser
         preservados quando exigidos por lei, segurança, auditoria ou exercício

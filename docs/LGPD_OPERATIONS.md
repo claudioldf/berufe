@@ -15,7 +15,7 @@ adding a provider or changing a region, purpose, data category, or subprocessor.
 ## Rights-request intake
 
 1. Direct a registered professional who can access the account to the **Excluir minha conta**
-   link at the bottom of **Meu perfil**, which opens **Conta e privacidade** for irreversible
+   link at the bottom of **Meu perfil**, which opens **Exclusão de conta** for irreversible
    account erasure. Do not open a support ticket merely to operate that self-service flow.
 2. For a request that requires Support, open a ticket with a non-personal reference containing only letters, numbers,
    `.`, `_`, `/`, or `-`. Keep the original message in the controlled support mailbox.
@@ -60,7 +60,7 @@ minimal pseudonymous records described below remain for five years.
 
 ### Registered-professional self-service
 
-The professional opens **Conta e privacidade** from the **Excluir minha conta** link at the
+The professional opens **Exclusão de conta** from the **Excluir minha conta** link at the
 bottom of **Meu perfil**. The confirmation screen explains immediate unpublication,
 irreversibility, the 30-day maximum, and the five-year minimal retention exception. Submission
 requires only the signed-in session and an explicit acknowledgement checkbox — there is no

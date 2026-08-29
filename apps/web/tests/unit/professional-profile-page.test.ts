@@ -292,8 +292,8 @@ describe("professional profile editor page", () => {
       global: { renderStubDefaultSlot: true },
     });
 
-    expect(wrapper.get('[to="/app/professional/account"]').text()).toContain(
-      "Excluir minha conta",
-    );
+    expect(
+      wrapper.get('[to="/app/professional/account/exclusion"]').text(),
+    ).toContain("Excluir minha conta");
   });
 });

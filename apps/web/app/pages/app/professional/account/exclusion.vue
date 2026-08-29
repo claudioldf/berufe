@@ -7,7 +7,7 @@ const erasure = useProfessionalDataErasure();
 definePageMeta({ layout: "workspace" });
 
 useSeoMeta({
-  title: "Conta e privacidade",
+  title: "Excluir conta",
   robots: "noindex, nofollow",
 });
 
@@ -23,19 +23,19 @@ async function submit() {
 </script>
 
 <template>
-  <div class="account-page">
-    <header class="account-page__header">
+  <div class="account-exclusion-page">
+    <header class="account-exclusion-page__header">
       <DesignSystemContainer>
-        <DesignSystemEyebrow>Conta e privacidade</DesignSystemEyebrow>
-        <h1>Controle os dados da sua conta.</h1>
+        <DesignSystemEyebrow>Exclusão de conta</DesignSystemEyebrow>
+        <h1>Excluir sua conta permanentemente.</h1>
         <p>
-          Revise as consequências antes de confirmar quando quiser encerrar
-          definitivamente sua presença na Berufe.
+          Confira o que será removido e quais registros mínimos precisam
+          permanecer antes de confirmar a exclusão irreversível.
         </p>
       </DesignSystemContainer>
     </header>
 
-    <DesignSystemContainer class="account-page__content">
+    <DesignSystemContainer class="account-exclusion-page__content">
       <AccountErasureForm
         :submitting="erasure.submitting.value"
         :error="erasure.error.value"
@@ -46,7 +46,7 @@ async function submit() {
 </template>
 
 <style scoped lang="scss">
-.account-page {
+.account-exclusion-page {
   min-height: calc(100vh - 76px);
   background: var(--color-surface-canvas);
 

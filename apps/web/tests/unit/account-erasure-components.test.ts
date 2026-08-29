@@ -33,10 +33,16 @@ describe("account erasure components", () => {
     });
 
     expect(wrapper.text()).toContain("Esta ação é irreversível");
+    expect(wrapper.text()).toContain("Conta");
+    expect(wrapper.text()).not.toContain("Zona de risco");
     expect(wrapper.text()).toContain(
       "apagado dos nossos sistemas em até 30 dias",
     );
     expect(wrapper.text()).toContain("permanecem por cinco anos");
+    expect(
+      wrapper.findAll("button").find((button) => button.text() === "Cancelar")
+        ?.attributes("data-to"),
+    ).toBe("/app/professional/profile");
   });
 
   it("requires acknowledgement before emitting one submission", async () => {
