@@ -20,7 +20,7 @@ class AdminPasswordAuthenticator
       password_matches = password_matches?(account, password)
       raise Invalid unless account&.active? && password_matches
 
-      account.update!(last_login_at: now)
+      account.update!(last_login_at: now, login_count: account.login_count + 1)
       session, session_token = ApplicationSession.issue!(user_account: account, now:)
       @rate_limiter.clear_email!(email: throttle_subject, now:)
       Result.new(session:, session_token:)
