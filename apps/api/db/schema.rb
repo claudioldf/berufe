@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_28_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_29_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -153,22 +153,31 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_28_100000) do
 
   create_table "data_erasure_requests", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.datetime "completed_at"
+    t.string "confirmation_version", limit: 16
     t.datetime "created_at", null: false
     t.string "failure_code", limit: 40
+    t.string "request_source", limit: 20, default: "support", null: false
     t.datetime "requested_at", null: false
     t.datetime "retained_until", null: false
     t.string "status", limit: 16, default: "requested", null: false
+    t.text "status_token_ciphertext"
+    t.string "status_token_hash", limit: 64
     t.string "subject_digest", limit: 64, null: false
-    t.uuid "target_user_account_id", null: false
+    t.uuid "target_user_account_id"
     t.string "ticket_reference", limit: 100, null: false
     t.datetime "unpublished_at", null: false
     t.datetime "updated_at", null: false
     t.string "verification_method", limit: 32, null: false
     t.datetime "verified_at", null: false
     t.index ["retained_until"], name: "index_data_erasure_requests_on_retained_until"
+    t.index ["status_token_hash"], name: "index_data_erasure_requests_on_status_token_hash", unique: true
     t.index ["subject_digest"], name: "index_data_erasure_requests_on_subject_digest"
     t.index ["target_user_account_id"], name: "idx_data_erasure_requests_one_active_account", unique: true, where: "((status)::text = ANY (ARRAY[('requested'::character varying)::text, ('processing'::character varying)::text, ('failed'::character varying)::text]))"
+    t.check_constraint "(status_token_hash IS NULL) = (status_token_ciphertext IS NULL)", name: "data_erasure_requests_status_token_pair"
+    t.check_constraint "request_source::text <> 'self_service'::text OR confirmation_version IS NOT NULL AND status_token_hash IS NOT NULL", name: "data_erasure_requests_self_service_evidence"
+    t.check_constraint "request_source::text = ANY (ARRAY['support'::character varying, 'self_service'::character varying]::text[])", name: "data_erasure_requests_known_source"
     t.check_constraint "status::text = ANY (ARRAY['requested'::character varying::text, 'processing'::character varying::text, 'failed'::character varying::text, 'completed'::character varying::text])", name: "data_erasure_requests_known_status"
+    t.check_constraint "status_token_hash IS NULL OR status_token_hash::text ~ '^[0-9a-f]{64}$'::text", name: "data_erasure_requests_status_digest_format"
     t.check_constraint "subject_digest::text ~ '^[0-9a-f]{64}$'::text", name: "data_erasure_requests_digest_format"
     t.check_constraint "ticket_reference::text ~ '^[A-Za-z0-9._/-]{1,100}$'::text", name: "data_erasure_requests_ticket_format"
   end

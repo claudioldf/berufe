@@ -57,6 +57,11 @@ Rails.application.configure do
       class: "CustomerRecommendationRetentionCleanupJob",
       description: "Expire recommendation invitations and remove operational records after thirty days"
     },
+    data_erasure_recovery: {
+      cron: "*/10 * * * *",
+      class: "DataErasureRecoveryJob",
+      description: "Recover professional erasure requests that still need processing"
+    },
     lgpd_audit_retention_cleanup: {
       cron: "29 4 * * *",
       class: "LgpdAuditRetentionCleanupJob",

@@ -23,6 +23,7 @@ Rails.application.routes.draw do
       put "professional-registration", to: "professional_registrations#update"
       namespace :professional do
         resource :workspace, only: :show, controller: :workspaces
+        resource :data_erasure_request, only: :create, path: "data-erasure-request"
         resource :profile, only: :update, controller: :profiles
         post "profile/submission", to: "profiles#submission"
         put "profile/photo", to: "profile_photos#update"
@@ -54,6 +55,7 @@ Rails.application.routes.draw do
           end
         end
       end
+      get "data-erasure-requests/:status_token", to: "data_erasure_requests#show"
       resource :session, only: %i[show destroy]
       post "shared-quotes/resolve", to: "shared_quotes#resolve"
       post "shared-quotes/decisions", to: "shared_quotes#decide"

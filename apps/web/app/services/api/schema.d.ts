@@ -1124,6 +1124,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/professional/data-erasure-request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Irreversibly unpublish and queue erasure of the authenticated professional account */
+        post: operations["requestProfessionalDataErasure"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/data-erasure-requests/{status_token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                status_token: string;
+            };
+            cookie?: never;
+        };
+        /** Read a privacy-safe erasure status using its opaque bearer token */
+        get: operations["getDataErasureRequestStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/session": {
         parameters: {
             query?: never;
@@ -1423,6 +1459,35 @@ export interface components {
         ProfessionalRegistrationRequest: {
             display_name: string;
             accepted: boolean;
+        };
+        ProfessionalDataErasureRequest: {
+            /** @description Must equal the exact uppercase phrase EXCLUIR. */
+            confirmation: string;
+        };
+        DataErasureSubmissionResponse: {
+            data: {
+                status_token: string;
+                request: components["schemas"]["DataErasureRequestStatus"];
+            };
+            request_id: components["schemas"]["RequestId"];
+        };
+        DataErasureStatusResponse: {
+            data: components["schemas"]["DataErasureRequestStatus"];
+            request_id: components["schemas"]["RequestId"];
+        };
+        DataErasureRequestStatus: {
+            /** Format: uuid */
+            reference: string;
+            /** @enum {string} */
+            status: "requested" | "processing" | "retrying" | "completed";
+            /** Format: date-time */
+            requested_at: string;
+            /** Format: date-time */
+            unpublished_at: string;
+            /** Format: date-time */
+            completion_deadline_at: string;
+            /** Format: date-time */
+            completed_at: string | null;
         };
         ProfessionalRegistrationResponse: {
             data: components["schemas"]["ProfessionalRegistration"];
@@ -6022,6 +6087,125 @@ export interface operations {
             404: components["responses"]["ProfessionalMediaNotFound"];
             409: components["responses"]["ProfessionalMediaConflict"];
             503: components["responses"]["ProfessionalMediaUnavailable"];
+        };
+    };
+    requestProfessionalDataErasure: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfessionalDataErasureRequest"];
+            };
+        };
+        responses: {
+            /** @description The profile and shared links were disabled immediately and erasure was queued. */
+            202: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Set-Cookie": components["headers"]["ApplicationSessionCookie"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DataErasureSubmissionResponse"];
+                };
+            };
+            /** @description The application session is missing or no longer active. */
+            401: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The exact browser origin is invalid or the account is not an eligible professional. */
+            403: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The explicit irreversible-action confirmation is missing. */
+            422: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The current professional session was not confirmed by SMS in the previous 30 minutes. */
+            428: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The erasure request could not be persisted. */
+            503: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getDataErasureRequestStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                status_token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The request status without account or subject identifiers. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DataErasureStatusResponse"];
+                };
+            };
+            /** @description The token is invalid, unknown, or its minimal retention period ended. */
+            404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request status is temporarily unavailable. */
+            503: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
         };
     };
     getCurrentSession: {
