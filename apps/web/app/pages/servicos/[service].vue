@@ -97,25 +97,12 @@ function listingPath(entry: {
             </NuxtLink>
           </div>
         </template>
-        <DesignSystemSurfaceCard v-else class="service-hub__empty">
-          <h2>
-            Ainda não temos profissionais de
-            {{ serviceName.toLocaleLowerCase("pt-BR") }} publicados.
-          </h2>
-          <p>Busque diretamente ou seja o primeiro a criar um perfil.</p>
-          <div class="service-hub__empty-actions">
-            <UButton to="/encontrar" color="neutral" variant="outline">
-              Buscar mesmo assim
-            </UButton>
-            <UButton
-              :to="`/para-profissionais/${serviceSlug}`"
-              color="primary"
-              trailing-icon="i-lucide-arrow-right"
-            >
-              Criar perfil grátis
-            </UButton>
-          </div>
-        </DesignSystemSurfaceCard>
+        <PublicServiceHubEmptyState
+          v-else
+          :service-name="serviceName"
+          :service-slug="serviceSlug"
+          :service-icon="service.icon"
+        />
       </DesignSystemContainer>
     </DesignSystemPageSection>
   </div>
@@ -154,27 +141,6 @@ function listingPath(entry: {
     margin: 0 0 18px;
     font-family: var(--font-display);
     font-size: 1.3rem;
-  }
-
-  &__empty {
-    padding: 40px;
-    text-align: center;
-  }
-
-  &__empty h2 {
-    margin: 0 0 8px;
-  }
-
-  &__empty p {
-    margin: 0 0 20px;
-    color: var(--ink-soft);
-  }
-
-  &__empty-actions {
-    display: flex;
-    justify-content: center;
-    gap: 12px;
-    flex-wrap: wrap;
   }
 }
 
