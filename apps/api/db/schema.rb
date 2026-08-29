@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_29_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_29_110000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -175,7 +175,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_100000) do
     t.index ["target_user_account_id"], name: "idx_data_erasure_requests_one_active_account", unique: true, where: "((status)::text = ANY (ARRAY[('requested'::character varying)::text, ('processing'::character varying)::text, ('failed'::character varying)::text]))"
     t.check_constraint "(status_token_hash IS NULL) = (status_token_ciphertext IS NULL)", name: "data_erasure_requests_status_token_pair"
     t.check_constraint "request_source::text <> 'self_service'::text OR confirmation_version IS NOT NULL AND status_token_hash IS NOT NULL", name: "data_erasure_requests_self_service_evidence"
-    t.check_constraint "request_source::text = ANY (ARRAY['support'::character varying, 'self_service'::character varying]::text[])", name: "data_erasure_requests_known_source"
+    t.check_constraint "request_source::text = ANY (ARRAY['support'::character varying::text, 'self_service'::character varying::text])", name: "data_erasure_requests_known_source"
     t.check_constraint "status::text = ANY (ARRAY['requested'::character varying::text, 'processing'::character varying::text, 'failed'::character varying::text, 'completed'::character varying::text])", name: "data_erasure_requests_known_status"
     t.check_constraint "status_token_hash IS NULL OR status_token_hash::text ~ '^[0-9a-f]{64}$'::text", name: "data_erasure_requests_status_digest_format"
     t.check_constraint "subject_digest::text ~ '^[0-9a-f]{64}$'::text", name: "data_erasure_requests_digest_format"
@@ -873,6 +873,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_100000) do
     t.datetime "created_at", null: false
     t.text "email"
     t.datetime "last_login_at"
+    t.integer "login_count", default: 0, null: false
     t.text "password_digest"
     t.text "phone_e164"
     t.datetime "phone_verified_at"
@@ -889,6 +890,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_100000) do
     t.index ["registered_at"], name: "index_user_accounts_on_registered_at"
     t.index ["role", "status"], name: "index_user_accounts_on_role_and_status"
     t.check_constraint "email IS NULL OR email = lower(email) AND email = btrim(email)", name: "user_accounts_normalized_email"
+    t.check_constraint "login_count >= 0", name: "user_accounts_nonnegative_login_count"
     t.check_constraint "phone_e164 ~ '^\\+55[1-9][1-9]9[0-9]{8}$'::text", name: "user_accounts_brazilian_mobile_phone"
     t.check_constraint "registered_at IS NULL OR phone_verified_at IS NOT NULL", name: "user_accounts_registration_requires_verified_phone"
     t.check_constraint "role = 'professional'::text AND phone_e164 IS NOT NULL AND email IS NULL AND password_digest IS NULL OR role = 'admin'::text AND phone_e164 IS NULL AND email IS NOT NULL AND email <> ''::text AND password_digest IS NOT NULL AND password_digest <> ''::text", name: "user_accounts_role_credentials"

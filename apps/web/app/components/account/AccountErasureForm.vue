@@ -79,11 +79,7 @@ function submit() {
       </p>
 
       <div class="erasure-form__actions">
-        <UButton
-          to="/app/professional/profile"
-          color="neutral"
-          variant="ghost"
-        >
+        <UButton to="/app/professional/profile" color="neutral" variant="ghost">
           Cancelar
         </UButton>
         <UButton

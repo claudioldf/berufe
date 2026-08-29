@@ -67,6 +67,8 @@ Rails.application.routes.draw do
         resource :catalog, only: :show
         get "reports/growth", to: "reports#growth"
         get "search-audits", to: "search_audits#index"
+        get "professionals", to: "professionals#index"
+        post "professionals/:id/publication", to: "professional_publications#create"
         get "moderation", to: "moderation#index"
         post "moderation/:target_type/:target_id/decisions", to: "moderation_decisions#create"
         get "moderation/:target_type/:target_id/media", to: "moderation_media#show"

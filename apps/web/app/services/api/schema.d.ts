@@ -235,6 +235,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/professionals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read the administrator directory of every professional account */
+        get: operations["getAdminProfessionals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/professionals/{id}/publication": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Professional profile identifier. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Publish or unpublish a professional profile and refresh the directory */
+        post: operations["setAdminProfessionalPublication"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/catalog": {
         parameters: {
             query?: never;
@@ -1251,6 +1288,57 @@ export interface components {
             }[];
             keywords: string[];
             normalized_request: string | null;
+        };
+        AdminProfessionalsResponse: {
+            data: components["schemas"]["AdminProfessionalsData"];
+            request_id: components["schemas"]["RequestId"];
+        };
+        AdminProfessionalsData: {
+            items: components["schemas"]["AdminProfessionalItem"][];
+            summary: components["schemas"]["AdminProfessionalsSummary"];
+            meta: components["schemas"]["PageMeta"];
+        };
+        AdminProfessionalsSummary: {
+            total: number;
+            published: number;
+            suspended: number;
+            onboarding_finished: number;
+            identity_verified: number;
+        };
+        AdminProfessionalItem: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            professional_profile_id: string | null;
+            public_slug: string | null;
+            display_name: string | null;
+            /** @enum {string|null} */
+            profile_status: "draft" | "pending_review" | "published" | "suspended" | null;
+            city: string | null;
+            state: string | null;
+            phone_verified: boolean;
+            phone_last4: string | null;
+            identity_verified: boolean;
+            /** @enum {string} */
+            account_status: "active" | "suspended";
+            portfolio_count: number;
+            reference_count: number;
+            customer_count: number;
+            quote_count: number;
+            /** Format: date-time */
+            registered_at: string | null;
+            /** Format: date-time */
+            last_login_at: string | null;
+            login_count: number;
+            /** Format: date-time */
+            published_at: string | null;
+        };
+        AdminProfessionalPublicationRequest: {
+            publication: components["schemas"]["AdminProfessionalPublicationInput"];
+        };
+        AdminProfessionalPublicationInput: {
+            published: boolean;
+            reason?: string | null;
         };
         /** @enum {string} */
         AdminGrowthReportPeriodKey: "since_launch" | "last_30_days" | "last_7_days";
@@ -2896,6 +2984,20 @@ export interface components {
         ModerationTargetType: components["schemas"]["ModerationTargetType"];
         ModerationMediaTargetType: "profile_photo" | "portfolio_item";
         ModerationTargetId: string;
+        /** @description Case-insensitive, accent-insensitive professional name search. */
+        AdminProfessionalQuery: string;
+        /** @description Digits-matched search across the account and coverage WhatsApp numbers. */
+        AdminProfessionalPhone: string;
+        /** @description IBGE city code of the professional's coverage area. */
+        AdminProfessionalCity: string;
+        /** @description Two-letter state abbreviation of the professional's coverage area. */
+        AdminProfessionalState: string;
+        /** @description Filter by approved identity verification. */
+        AdminProfessionalIdentityVerified: "all" | "yes" | "no";
+        /** @description Filter by whether the professional submitted their profile at least once. */
+        AdminProfessionalOnboardingFinished: "all" | "yes" | "no";
+        /** @description Directory table column used for deterministic ordering. */
+        AdminProfessionalSort: "recent" | "last_login_desc" | "name_asc";
     };
     requestBodies: never;
     headers: {
@@ -3417,6 +3519,100 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
+        };
+    };
+    getAdminProfessionals: {
+        parameters: {
+            query?: {
+                /** @description One-based result page. */
+                page?: components["parameters"]["Page"];
+                /** @description Result count per page. */
+                per_page?: components["parameters"]["PageSize"];
+                /** @description Case-insensitive, accent-insensitive professional name search. */
+                q?: components["parameters"]["AdminProfessionalQuery"];
+                /** @description Digits-matched search across the account and coverage WhatsApp numbers. */
+                phone?: components["parameters"]["AdminProfessionalPhone"];
+                /** @description IBGE city code of the professional's coverage area. */
+                city?: components["parameters"]["AdminProfessionalCity"];
+                /** @description Two-letter state abbreviation of the professional's coverage area. */
+                state?: components["parameters"]["AdminProfessionalState"];
+                /** @description Filter by approved identity verification. */
+                identity_verified?: components["parameters"]["AdminProfessionalIdentityVerified"];
+                /** @description Filter by whether the professional submitted their profile at least once. */
+                onboarding_finished?: components["parameters"]["AdminProfessionalOnboardingFinished"];
+                /** @description Directory table column used for deterministic ordering. */
+                sort?: components["parameters"]["AdminProfessionalSort"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Filtered professional accounts with directory counts, contact status, and a filtered summary. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminProfessionalsResponse"];
+                };
+            };
+            401: components["responses"]["AdminModerationUnauthorized"];
+            422: components["responses"]["AdminModerationInvalid"];
+        };
+    };
+    setAdminProfessionalPublication: {
+        parameters: {
+            query?: {
+                /** @description One-based result page. */
+                page?: components["parameters"]["Page"];
+                /** @description Result count per page. */
+                per_page?: components["parameters"]["PageSize"];
+                /** @description Case-insensitive, accent-insensitive professional name search. */
+                q?: components["parameters"]["AdminProfessionalQuery"];
+                /** @description Digits-matched search across the account and coverage WhatsApp numbers. */
+                phone?: components["parameters"]["AdminProfessionalPhone"];
+                /** @description IBGE city code of the professional's coverage area. */
+                city?: components["parameters"]["AdminProfessionalCity"];
+                /** @description Two-letter state abbreviation of the professional's coverage area. */
+                state?: components["parameters"]["AdminProfessionalState"];
+                /** @description Filter by approved identity verification. */
+                identity_verified?: components["parameters"]["AdminProfessionalIdentityVerified"];
+                /** @description Filter by whether the professional submitted their profile at least once. */
+                onboarding_finished?: components["parameters"]["AdminProfessionalOnboardingFinished"];
+                /** @description Directory table column used for deterministic ordering. */
+                sort?: components["parameters"]["AdminProfessionalSort"];
+            };
+            header?: never;
+            path: {
+                /** @description Professional profile identifier. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminProfessionalPublicationRequest"];
+            };
+        };
+        responses: {
+            /** @description The publication decision and its immutable audit record were committed together. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminProfessionalsResponse"];
+                };
+            };
+            401: components["responses"]["AdminModerationUnauthorized"];
+            403: components["responses"]["AdminModerationForbidden"];
+            404: components["responses"]["AdminModerationNotFound"];
+            409: components["responses"]["AdminModerationConflict"];
+            422: components["responses"]["AdminModerationInvalid"];
         };
     };
     getPublicCatalog: {

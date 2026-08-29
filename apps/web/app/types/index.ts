@@ -1,3 +1,4 @@
+export * from "./admin-professional";
 export * from "./catalog";
 export * from "./customer";
 export * from "./moderation";

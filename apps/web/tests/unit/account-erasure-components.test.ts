@@ -40,7 +40,9 @@ describe("account erasure components", () => {
     );
     expect(wrapper.text()).toContain("permanecem por cinco anos");
     expect(
-      wrapper.findAll("button").find((button) => button.text() === "Cancelar")
+      wrapper
+        .findAll("button")
+        .find((button) => button.text() === "Cancelar")
         ?.attributes("data-to"),
     ).toBe("/app/professional/profile");
   });

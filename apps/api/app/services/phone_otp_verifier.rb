@@ -33,12 +33,13 @@ class PhoneOtpVerifier
         }],
         unique_by: :index_user_accounts_on_phone_e164
       )
-      account = UserAccount.find_by!(phone_e164:)
+      account = UserAccount.lock.find_by!(phone_e164:)
       raise Invalid unless account.professional?
 
       account.update!(
         phone_verified_at: account.phone_verified_at || now,
-        last_login_at: now
+        last_login_at: now,
+        login_count: account.login_count + 1
       )
       session, session_token = ApplicationSession.issue!(user_account: account, now:)
       challenge.update!(consumed_at: now)
