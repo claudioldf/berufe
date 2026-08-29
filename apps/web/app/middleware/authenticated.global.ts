@@ -23,8 +23,6 @@ function requiresApplicationSession(path: string) {
 export default defineNuxtRouteMiddleware(async (to, from) => {
   const requiredRole = requiredWorkspaceRole(to.path);
   const isProfessionalAuthRoute = to.path === professionalLoginPath;
-  const isProfessionalReauthentication =
-    isProfessionalAuthRoute && to.query?.intent === "reauthentication";
   if (
     typeof window === "undefined" ||
     (!requiredRole && !isProfessionalAuthRoute)
@@ -51,7 +49,6 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
 
   if (isProfessionalAuthRoute) {
     if (account.value?.role !== "professional") return;
-    if (isProfessionalReauthentication) return;
     const destination = resolveProfessionalEntryPath(account.value);
     if (destination !== professionalLoginPath) {
       return navigateTo(destination, { replace: true });

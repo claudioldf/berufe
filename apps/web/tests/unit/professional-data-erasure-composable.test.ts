@@ -1,21 +1,13 @@
-import { effectScope, ref } from "vue";
-import type { Ref } from "vue";
+import { effectScope } from "vue";
 import { ApiRequestError } from "~/services/api/errors";
 import { useProfessionalDataErasure } from "~/composables/useProfessionalDataErasure";
 
 const mocks = vi.hoisted(() => ({
-  session: undefined as
-    | Ref<{
-        authenticationMethod: "sms_otp" | "password";
-        authenticatedAt: string;
-      } | null>
-    | undefined,
   clearSession: vi.fn(),
 }));
 
 vi.mock("~/composables/useApplicationSession", () => ({
   useApplicationSession: () => ({
-    session: mocks.session!,
     clearSession: mocks.clearSession,
   }),
 }));
@@ -34,31 +26,9 @@ const submittedRequest = {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mocks.session = ref(null);
 });
 
 describe("professional data erasure workflow", () => {
-  it("derives the 30-minute SMS reauthentication window", () => {
-    vi.useFakeTimers();
-    let now = Date.parse("2026-08-29T15:00:00.000Z");
-    const scope = effectScope();
-    const workflow = scope.run(() =>
-      useProfessionalDataErasure({ now: () => now }),
-    )!;
-
-    expect(workflow.isRecentlyVerified.value).toBe(false);
-    mocks.session!.value = {
-      authenticationMethod: "sms_otp",
-      authenticatedAt: "2026-08-29T14:30:00.000Z",
-    };
-    expect(workflow.isRecentlyVerified.value).toBe(true);
-    now += 1_001;
-    vi.advanceTimersByTime(1_000);
-    expect(workflow.isRecentlyVerified.value).toBe(false);
-    scope.stop();
-    vi.useRealTimers();
-  });
-
   it("prevents duplicate submissions and clears local auth after acceptance", async () => {
     let resolveRequest: ((value: typeof submittedRequest) => void) | undefined;
     const request = vi.fn(
@@ -70,8 +40,8 @@ describe("professional data erasure workflow", () => {
     const scope = effectScope();
     const workflow = scope.run(() => useProfessionalDataErasure({ request }))!;
 
-    const first = workflow.submit("EXCLUIR");
-    await expect(workflow.submit("EXCLUIR")).resolves.toBeNull();
+    const first = workflow.submit();
+    await expect(workflow.submit()).resolves.toBeNull();
     expect(request).toHaveBeenCalledOnce();
     expect(workflow.submitting.value).toBe(true);
 
@@ -85,18 +55,18 @@ describe("professional data erasure workflow", () => {
   it("keeps contracted errors safe and leaves the session available to retry", async () => {
     const request = vi.fn().mockRejectedValue(
       new ApiRequestError({
-        code: "recent_verification_required",
-        message: "Confirme seu telefone por SMS novamente para continuar.",
+        code: "erasure_request_unavailable",
+        message: "Não foi possível registrar a solicitação agora.",
         fieldErrors: {},
-        requestId: "erasure-428",
+        requestId: "erasure-503",
       }),
     );
     const scope = effectScope();
     const workflow = scope.run(() => useProfessionalDataErasure({ request }))!;
 
-    await expect(workflow.submit("EXCLUIR")).resolves.toBeNull();
+    await expect(workflow.submit()).resolves.toBeNull();
     expect(workflow.error.value).toBe(
-      "Confirme seu telefone por SMS novamente para continuar.",
+      "Não foi possível registrar a solicitação agora.",
     );
     expect(mocks.clearSession).not.toHaveBeenCalled();
     scope.stop();

@@ -11,7 +11,7 @@ class ProfessionalDataErasureRequester
     phone_e164:,
     ticket_reference:,
     now: Time.current,
-    verification_session: nil,
+    require_recent_verification: true,
     request_source: "support",
     confirmation_version: nil,
     issue_status_token: false
@@ -19,7 +19,7 @@ class ProfessionalDataErasureRequester
     phone = BrazilianPhoneNumber.normalize(phone_e164)
     account = UserAccount.includes(:professional_profile).find_by(phone_e164: phone, role: "professional")
     raise NotFound unless account&.professional_profile
-    raise VerificationRequired unless recently_verified?(account, verification_session:, now:)
+    raise VerificationRequired if require_recent_verification && !recently_verified?(account, now:)
 
     request_record = nil
     ApplicationRecord.transaction do
@@ -44,7 +44,7 @@ class ProfessionalDataErasureRequester
         subject_digest: PrivacySubjectDigest.call(phone),
         ticket_reference:,
         status: "requested",
-        verification_method: "recent_sms_otp",
+        verification_method: require_recent_verification ? "recent_sms_otp" : "authenticated_session",
         request_source:,
         confirmation_version:,
         status_token_hash: status_token && DataErasureStatusToken.digest(status_token),
@@ -72,13 +72,7 @@ class ProfessionalDataErasureRequester
     Rails.error.report(error, context: {data_erasure_request_id: request_record.id})
   end
 
-  def recently_verified?(account, verification_session:, now:)
-    if verification_session
-      return verification_session.user_account_id == account.id &&
-          verification_session.authentication_method == "sms_otp" &&
-          verification_session.authenticated_at.between?(now - RECENT_VERIFICATION_WINDOW, now)
-    end
-
+  def recently_verified?(account, now:)
     account.application_sessions.where(authentication_method: "sms_otp")
       .where(authenticated_at: (now - RECENT_VERIFICATION_WINDOW)..now)
       .exists?

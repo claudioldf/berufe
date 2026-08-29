@@ -7,7 +7,6 @@ import { useProfessionalOnboarding } from "~/composables/useProfessionalOnboardi
 import { useToast } from "~/composables/useToast";
 import {
   professionalPhoneStepContent,
-  professionalAccountPath,
   resolveProfessionalEntryPath,
   resolveProfessionalAuthIntent,
 } from "~/utils/professional-auth";
@@ -49,14 +48,6 @@ useSeoMeta({
 async function enterProfessionalWorkspace() {
   const currentAccount = account.value;
   if (!currentAccount) return;
-  if (
-    authIntent.value === "reauthentication" &&
-    currentAccount.role === "professional" &&
-    currentAccount.registrationCompleted
-  ) {
-    await router.replace(professionalAccountPath);
-    return;
-  }
   await router.replace(resolveProfessionalEntryPath(currentAccount));
 }
 
@@ -117,7 +108,7 @@ async function register() {
 
 onMounted(async () => {
   try {
-    if ((await restoreSession()) && authIntent.value !== "reauthentication") {
+    if (await restoreSession()) {
       await continueAuthenticatedFlow();
     }
   } catch {

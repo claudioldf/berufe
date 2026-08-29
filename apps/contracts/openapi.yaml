@@ -3049,12 +3049,6 @@ paths:
         - Professional account
       security:
         - applicationSession: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ProfessionalDataErasureRequest"
       responses:
         "202":
           description: The profile and shared links were disabled immediately and erasure was queued.
@@ -3078,24 +3072,6 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "403":
           description: The exact browser origin is invalid or the account is not an eligible professional.
-          headers:
-            X-Request-Id:
-              $ref: "#/components/headers/RequestId"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "422":
-          description: The explicit irreversible-action confirmation is missing.
-          headers:
-            X-Request-Id:
-              $ref: "#/components/headers/RequestId"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "428":
-          description: The current professional session was not confirmed by SMS in the previous 30 minutes.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
@@ -4091,17 +4067,6 @@ components:
           maxLength: 70
         accepted:
           type: boolean
-    ProfessionalDataErasureRequest:
-      type: object
-      additionalProperties: false
-      required:
-        - confirmation
-      properties:
-        confirmation:
-          type: string
-          minLength: 1
-          maxLength: 20
-          description: Must equal the exact uppercase phrase EXCLUIR.
     DataErasureSubmissionResponse:
       type: object
       additionalProperties: false

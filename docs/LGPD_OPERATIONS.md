@@ -14,16 +14,18 @@ adding a provider or changing a region, purpose, data category, or subprocessor.
 
 ## Rights-request intake
 
-1. Direct a registered professional who can access the account to **Conta e privacidade**
-   for irreversible account erasure. Do not open a support ticket merely to operate that
-   self-service flow.
+1. Direct a registered professional who can access the account to the **Excluir minha conta**
+   link at the bottom of **Meu perfil**, which opens **Conta e privacidade** for irreversible
+   account erasure. Do not open a support ticket merely to operate that self-service flow.
 2. For a request that requires Support, open a ticket with a non-personal reference containing only letters, numbers,
    `.`, `_`, `/`, or `-`. Keep the original message in the controlled support mailbox.
 3. Identify the request type and the affected data. Do not request an identity document when
    control of the registered phone or author e-mail is sufficient.
-4. For a professional account or referred profile, ask the claimant to complete an SMS login.
-   The destructive workflow accepts only an SMS-authenticated session created in the prior
-   30 minutes.
+4. For a professional account or referred profile handled through the Support fallback below,
+   ask the claimant to complete an SMS login. That workflow accepts only an SMS-authenticated
+   session created in the prior 30 minutes. The self-service flow inside the authenticated
+   workspace does not require a fresh SMS login — the signed-in session and an explicit
+   acknowledgement are the confirmation.
 5. For a recommendation withdrawal, require the request from, or a verification sent to, the
    same e-mail used for the recommendation. Match it with the profile slug; the application
    compares only the keyed e-mail fingerprint.
@@ -58,11 +60,11 @@ minimal pseudonymous records described below remain for five years.
 
 ### Registered-professional self-service
 
-The professional opens **Conta e privacidade** from the authenticated workspace. If the
-current SMS authentication is more than 30 minutes old, the product sends the professional
-through the existing OTP flow again. The confirmation screen explains immediate
-unpublication, irreversibility, the 30-day maximum, backup lifecycle, and five-year minimal
-retention. Submission requires both an acknowledgement and the exact phrase `EXCLUIR`.
+The professional opens **Conta e privacidade** from the **Excluir minha conta** link at the
+bottom of **Meu perfil**. The confirmation screen explains immediate unpublication,
+irreversibility, the 30-day maximum, and the five-year minimal retention exception. Submission
+requires only the signed-in session and an explicit acknowledgement checkbox — there is no
+SMS re-confirmation step and no typed confirmation phrase.
 
 The product clears the browser session after acceptance and provides an opaque status link.
 That status exposes only a non-personal request reference, public processing state, and

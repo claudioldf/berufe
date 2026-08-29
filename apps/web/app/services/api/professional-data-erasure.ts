@@ -20,11 +20,9 @@ export interface SubmittedDataErasureRequest {
 
 export async function requestProfessionalDataErasure(
   client: BerufeApiClient,
-  confirmation: string,
 ): Promise<SubmittedDataErasureRequest> {
   const { data, error, response } = await client.POST(
     "/api/v1/professional/data-erasure-request",
-    { body: { confirmation } },
   );
   if (error || !data) {
     throw new ApiRequestError(

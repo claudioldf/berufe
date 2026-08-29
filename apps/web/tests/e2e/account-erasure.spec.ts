@@ -46,16 +46,17 @@ test("professional can irreversibly erase the account and follow a privacy-safe 
 }, testInfo) => {
   const phone = await registerProfessional(page, testInfo.project.name, "1");
 
-  await page.goto("/app/professional/account");
+  await page.goto("/app/professional/profile");
+  await page.getByRole("link", { name: "Excluir minha conta" }).click();
+  await expect(page).toHaveURL(/\/app\/professional\/account$/);
   await expect(
     page.getByRole("heading", { name: "Excluir minha conta" }),
   ).toBeVisible();
   await expect(page.getByText("Esta ação é irreversível")).toBeVisible();
-  await expect(page.getByText(/excluídos em até 30 dias/)).toBeVisible();
-  await expect(page.getByText(/permanecem por cinco anos/)).toBeVisible();
   await expect(
-    page.getByText("Telefone confirmado recentemente"),
+    page.getByText(/apagado dos nossos sistemas em até 30 dias/),
   ).toBeVisible();
+  await expect(page.getByText(/permanecem por cinco anos/)).toBeVisible();
 
   const deleteButton = page.getByRole("button", {
     name: "Excluir conta irreversivelmente",
@@ -64,7 +65,6 @@ test("professional can irreversibly erase the account and follow a privacy-safe 
   await page
     .getByLabel(/Entendo que a conta não poderá ser recuperada/)
     .check();
-  await page.getByLabel("Digite EXCLUIR para confirmar").fill("EXCLUIR");
   await expect(deleteButton).toBeEnabled();
 
   const submissionResponse = page.waitForResponse(
@@ -90,29 +90,16 @@ test("professional can irreversibly erase the account and follow a privacy-safe 
   await expect(page).toHaveURL(/\/app\/professional\/login$/);
 });
 
-test("stale professional session is routed to SMS reauthentication", async ({
+test("account deletion is reachable from the profile page, not the main navigation", async ({
   page,
 }, testInfo) => {
-  test.skip(
-    testInfo.project.name.startsWith("mobile"),
-    "The complete deletion scenario already covers the mobile account UI.",
-  );
   await registerProfessional(page, testInfo.project.name, "2");
 
-  await page.clock.setFixedTime(new Date(Date.now() + 31 * 60 * 1_000));
-  await page.goto("/app/professional/account");
+  await page.goto("/app/professional/profile");
   await expect(
-    page.getByText("Confirmação recente por SMS necessária"),
-  ).toBeVisible();
-  await page.getByRole("button", { name: "Confirmar por SMS" }).click();
-
-  await expect(page).toHaveURL(
-    /\/app\/professional\/login\?intent=reauthentication$/,
-  );
+    page.getByRole("navigation").getByText("Conta"),
+  ).not.toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Confirme seu telefone." }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "Receber código de confirmação" }),
+    page.getByRole("link", { name: "Excluir minha conta" }),
   ).toBeVisible();
 });

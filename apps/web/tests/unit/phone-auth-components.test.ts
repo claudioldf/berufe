@@ -61,16 +61,7 @@ describe("phone authentication components", () => {
       "/app/professional/login",
     );
     expect(resolveProfessionalAuthIntent("signup")).toBe("signup");
-    expect(resolveProfessionalAuthIntent("reauthentication")).toBe(
-      "reauthentication",
-    );
     expect(resolveProfessionalAuthIntent("unexpected")).toBe("login");
-
-    await wrapper.setProps({
-      content: professionalPhoneStepContent.reauthentication,
-    });
-    expect(wrapper.get("h1").text()).toBe("Confirme seu telefone.");
-    expect(wrapper.get("button").text()).toBe("Receber código de confirmação");
   });
 
   it("keeps short and daily resend timing in the existing control", async () => {

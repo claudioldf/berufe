@@ -47,7 +47,6 @@ const links = computed(() => {
       { label: "Visão geral", to: "/app/professional" },
       { label: "Gerenciar", to: "/app/professional/profile" },
       { label: "Orçamentos", to: "/app/professional/quotes" },
-      { label: "Conta", to: "/app/professional/account" },
     ];
   }
   if (isAdmin.value) {

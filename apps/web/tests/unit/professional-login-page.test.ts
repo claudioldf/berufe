@@ -149,38 +149,6 @@ describe("professional login page", () => {
     expect(mocks.replace).toHaveBeenCalledWith("/app/professional");
   });
 
-  it("keeps a signed-in professional in the forced SMS reauthentication flow", async () => {
-    mocks.state!.account.value = {
-      role: "professional",
-      registrationCompleted: true,
-      onboardingCompleted: true,
-    };
-    mocks.restoreSession.mockResolvedValue(true);
-    mocks.verifyCode.mockImplementation(async () => {
-      mocks.state!.step.value = 3;
-    });
-
-    const wrapper = await mountPage(
-      "/app/professional/login?intent=reauthentication",
-    );
-
-    expect(mocks.replace).not.toHaveBeenCalledWith("/app/professional");
-    expect(mocks.replace).not.toHaveBeenCalledWith("/app/professional/account");
-    mocks.replace.mockClear();
-    expect(
-      (
-        wrapper.vm as unknown as {
-          phoneStepContent: { title: string };
-        }
-      ).phoneStepContent.title,
-    ).toBe("Confirme seu telefone.");
-
-    await (
-      wrapper.vm as unknown as { confirmCode: () => Promise<void> }
-    ).confirmCode();
-    expect(mocks.replace).toHaveBeenCalledWith("/app/professional/account");
-  });
-
   it("resumes the existing final step for an incomplete professional", async () => {
     mocks.state!.account.value = {
       role: "professional",

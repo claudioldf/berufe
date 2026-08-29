@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import AccountErasureForm from "~/components/account/AccountErasureForm.vue";
 import { useProfessionalDataErasure } from "~/composables/useProfessionalDataErasure";
-import { professionalReauthenticationPath } from "~/utils/professional-auth";
 
 const erasure = useProfessionalDataErasure();
 
@@ -12,12 +11,8 @@ useSeoMeta({
   robots: "noindex, nofollow",
 });
 
-async function reauthenticate() {
-  await navigateTo(professionalReauthenticationPath);
-}
-
-async function submit(confirmation: string) {
-  const result = await erasure.submit(confirmation);
+async function submit() {
+  const result = await erasure.submit();
   if (!result) return;
 
   await navigateTo(
@@ -34,18 +29,16 @@ async function submit(confirmation: string) {
         <DesignSystemEyebrow>Conta e privacidade</DesignSystemEyebrow>
         <h1>Controle os dados da sua conta.</h1>
         <p>
-          Revise as consequências e use o fluxo protegido por SMS quando quiser
-          encerrar definitivamente sua presença na Berufe.
+          Revise as consequências antes de confirmar quando quiser encerrar
+          definitivamente sua presença na Berufe.
         </p>
       </DesignSystemContainer>
     </header>
 
     <DesignSystemContainer class="account-page__content">
       <AccountErasureForm
-        :recently-verified="erasure.isRecentlyVerified.value"
         :submitting="erasure.submitting.value"
         :error="erasure.error.value"
-        @reauthenticate="reauthenticate"
         @submit="submit"
       />
     </DesignSystemContainer>

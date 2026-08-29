@@ -65,12 +65,11 @@ RSpec.describe ProfessionalDataErasureRequester do
 
   it "returns the same privacy-safe status token for duplicate self-service submissions" do
     profile
-    session, = ApplicationSession.issue!(user_account: account, now: now - 5.minutes)
 
     first_request = described_class.new.call(
       phone_e164: account.phone_e164,
       ticket_reference: "SELF-request-1",
-      verification_session: session,
+      require_recent_verification: false,
       request_source: "self_service",
       confirmation_version: DataErasureRequest::SELF_SERVICE_CONFIRMATION_VERSION,
       issue_status_token: true,
@@ -79,13 +78,14 @@ RSpec.describe ProfessionalDataErasureRequester do
     second_request = described_class.new.call(
       phone_e164: account.phone_e164,
       ticket_reference: "SELF-request-2",
-      verification_session: session,
+      require_recent_verification: false,
       request_source: "self_service",
       confirmation_version: DataErasureRequest::SELF_SERVICE_CONFIRMATION_VERSION,
       issue_status_token: true,
       now:
     )
 
+    expect(first_request.verification_method).to eq("authenticated_session")
     expect(second_request.id).to eq(first_request.id)
     expect(second_request.status_token).to eq(first_request.status_token)
     expect(second_request.status_token).to match(DataErasureStatusToken::PATTERN)
@@ -94,14 +94,13 @@ RSpec.describe ProfessionalDataErasureRequester do
 
   it "marks an accepted request for recovery when initial enqueueing fails" do
     profile
-    session, = ApplicationSession.issue!(user_account: account, now: now - 5.minutes)
     allow(ProfessionalDataErasureJob).to receive(:perform_later).and_raise(ActiveJob::EnqueueError, "offline")
     allow(Rails.error).to receive(:report)
 
     request_record = described_class.new.call(
       phone_e164: account.phone_e164,
       ticket_reference: "SELF-request-3",
-      verification_session: session,
+      require_recent_verification: false,
       request_source: "self_service",
       confirmation_version: DataErasureRequest::SELF_SERVICE_CONFIRMATION_VERSION,
       issue_status_token: true,

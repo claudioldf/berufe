@@ -2,29 +2,20 @@
 import { computed, shallowRef } from "vue";
 
 const props = defineProps<{
-  recentlyVerified: boolean;
   submitting: boolean;
   error: string;
 }>();
 
 const emit = defineEmits<{
-  reauthenticate: [];
-  submit: [confirmation: string];
+  submit: [];
 }>();
 
 const understood = shallowRef(false);
-const confirmation = shallowRef("");
-const canSubmit = computed(
-  () =>
-    props.recentlyVerified &&
-    understood.value &&
-    confirmation.value === "EXCLUIR" &&
-    !props.submitting,
-);
+const canSubmit = computed(() => understood.value && !props.submitting);
 
 function submit() {
   if (!canSubmit.value) return;
-  emit("submit", confirmation.value);
+  emit("submit");
 }
 </script>
 
@@ -60,63 +51,21 @@ function submit() {
       <li>
         <UIcon name="i-lucide-trash-2" aria-hidden="true" />
         <span
-          >Dados elegíveis do banco e do armazenamento são excluídos em até 30
-          dias.</span
+          >Tudo que você criou — perfil, fotos, portfólio, orçamentos e clientes
+          — é apagado dos nossos sistemas em até 30 dias, exceto os registros
+          mínimos abaixo.</span
         >
       </li>
       <li>
         <UIcon name="i-lucide-file-lock-2" aria-hidden="true" />
         <span
           >Somente registros mínimos pseudonimizados de aceite, consentimento,
-          auditoria, fraude e defesa permanecem por cinco anos. Backups seguem o
-          ciclo contratado do provedor.</span
+          auditoria, fraude e defesa permanecem por cinco anos.</span
         >
       </li>
     </ul>
 
-    <div
-      class="erasure-form__verification"
-      :class="{
-        'erasure-form__verification--ready': recentlyVerified,
-      }"
-    >
-      <UIcon
-        :name="
-          recentlyVerified ? 'i-lucide-shield-check' : 'i-lucide-smartphone'
-        "
-        aria-hidden="true"
-      />
-      <div>
-        <strong>
-          {{
-            recentlyVerified
-              ? "Telefone confirmado recentemente"
-              : "Confirmação recente por SMS necessária"
-          }}
-        </strong>
-        <p v-if="recentlyVerified">
-          A confirmação vale por 30 minutos para esta ação destrutiva.
-        </p>
-        <p v-else>
-          Confirme novamente o celular vinculado à conta antes de continuar.
-        </p>
-      </div>
-      <UButton
-        v-if="!recentlyVerified"
-        type="button"
-        color="primary"
-        icon="i-lucide-smartphone"
-        @click="emit('reauthenticate')"
-      >
-        Confirmar por SMS
-      </UButton>
-    </div>
-
-    <form
-      v-if="recentlyVerified"
-      class="erasure-form__confirmation"
-      @submit.prevent="submit"
-    >
+    <form class="erasure-form__confirmation" @submit.prevent="submit">
       <label class="erasure-form__acknowledgement">
         <input v-model="understood" type="checkbox" />
         <span
@@ -124,27 +73,6 @@ function submit() {
           elegíveis serão excluídos.</span
         >
       </label>
-
-      <DesignSystemFormField
-        id="account-erasure-confirmation"
-        v-slot="field"
-        label="Digite EXCLUIR para confirmar"
-        hint="Use letras maiúsculas, exatamente como mostrado."
-        required
-      >
-        <input
-          :id="field.controlId"
-          v-model="confirmation"
-          class="erasure-form__input"
-          name="confirmation"
-          type="text"
-          autocomplete="off"
-          autocapitalize="characters"
-          spellcheck="false"
-          :aria-describedby="field.describedBy"
-          required
-        />
-      </DesignSystemFormField>
 
       <p v-if="error" class="erasure-form__error" role="alert">
         <UIcon name="i-lucide-circle-alert" aria-hidden="true" /> {{ error }}
@@ -200,8 +128,7 @@ function submit() {
     letter-spacing: -0.035em;
   }
 
-  &__heading p,
-  &__verification p {
+  &__heading p {
     margin: 0;
     color: var(--ink-soft);
     line-height: 1.65;
@@ -228,32 +155,6 @@ function submit() {
     color: var(--ui-error);
   }
 
-  &__verification {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    gap: 14px;
-    align-items: center;
-    padding: 18px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-md);
-    background: var(--color-surface-warm);
-  }
-
-  &__verification--ready {
-    border-color: color-mix(in srgb, var(--color-brand) 35%, var(--line));
-    background: var(--mint);
-  }
-
-  &__verification > svg {
-    color: var(--color-brand);
-    font-size: 1.3rem;
-  }
-
-  &__verification strong {
-    display: block;
-    margin-bottom: 3px;
-  }
-
   &__confirmation {
     display: grid;
     gap: 20px;
@@ -275,24 +176,6 @@ function submit() {
     accent-color: var(--ui-error);
   }
 
-  &__input {
-    width: 100%;
-    min-height: 46px;
-    padding: 11px 13px;
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    background: white;
-    color: var(--ink);
-    font: inherit;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-  }
-
-  &__input:focus {
-    border-color: var(--ui-error);
-    outline: 3px solid color-mix(in srgb, var(--ui-error) 14%, transparent);
-  }
-
   &__error {
     display: flex;
     gap: 7px;
@@ -312,14 +195,8 @@ function submit() {
 
 @media (width <= 680px) {
   .erasure-form {
-    &__heading,
-    &__verification {
+    &__heading {
       grid-template-columns: 1fr;
-    }
-
-    &__verification :deep(.u-button) {
-      justify-content: center;
-      width: 100%;
     }
 
     &__actions {

@@ -2,7 +2,7 @@
 
 class DataErasureRequest < ApplicationRecord
   STATUSES = %w[requested processing failed completed].freeze
-  VERIFICATION_METHODS = %w[recent_sms_otp].freeze
+  VERIFICATION_METHODS = %w[recent_sms_otp authenticated_session].freeze
   REQUEST_SOURCES = %w[support self_service].freeze
   SELF_SERVICE_CONFIRMATION_VERSION = "1.0"
 

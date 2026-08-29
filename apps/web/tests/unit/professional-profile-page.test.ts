@@ -285,4 +285,15 @@ describe("professional profile editor page", () => {
         "Ela não aparece mais no perfil. Adicione outra foto para publicá-lo novamente.",
     });
   });
+
+  it("links to the account deletion page", async () => {
+    const wrapper = await mountSuspended(ProfessionalProfilePage, {
+      shallow: true,
+      global: { renderStubDefaultSlot: true },
+    });
+
+    expect(wrapper.get('[to="/app/professional/account"]').text()).toContain(
+      "Excluir minha conta",
+    );
+  });
 });

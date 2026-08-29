@@ -115,25 +115,6 @@ describe("authenticated route middleware", () => {
     },
   );
 
-  it("allows an authenticated professional to deliberately reauthenticate by SMS", async () => {
-    mocks.restoreSession.mockResolvedValue(true);
-    mocks.account.value = {
-      role: "professional",
-      registrationCompleted: true,
-      onboardingCompleted: true,
-    };
-
-    await authenticatedMiddleware(
-      {
-        path: "/app/professional/login",
-        query: { intent: "reauthentication" },
-      } as never,
-      {} as never,
-    );
-
-    expect(mocks.navigateTo).not.toHaveBeenCalled();
-  });
-
   it("redirects anonymous users to the login dedicated to the requested role", async () => {
     mocks.restoreSession.mockResolvedValue(false);
     mocks.navigateTo.mockResolvedValue(undefined);

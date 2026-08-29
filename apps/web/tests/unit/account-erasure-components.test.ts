@@ -6,11 +6,6 @@ import ErasureRequestStatus from "~/components/account/ErasureRequestStatus.vue"
 const SurfaceCardStub = defineComponent({
   template: "<section><slot /></section>",
 });
-const FieldStub = defineComponent({
-  props: { id: { type: String, required: true }, label: { type: String } },
-  template:
-    '<label>{{ label }}<slot :control-id="id" :described-by="undefined" /></label>',
-});
 const ButtonStub = defineComponent({
   props: {
     disabled: { type: Boolean, default: false },
@@ -24,7 +19,6 @@ const ButtonStub = defineComponent({
 const global = {
   stubs: {
     DesignSystemSurfaceCard: SurfaceCardStub,
-    DesignSystemFormField: FieldStub,
     DesignSystemEyebrow: { template: "<span><slot /></span>" },
     UButton: ButtonStub,
     UIcon: true,
@@ -32,27 +26,22 @@ const global = {
 };
 
 describe("account erasure components", () => {
-  it("explains irreversible consequences before requesting SMS reauthentication", async () => {
+  it("explains irreversible consequences", () => {
     const wrapper = mount(AccountErasureForm, {
-      props: { recentlyVerified: false, submitting: false, error: "" },
+      props: { submitting: false, error: "" },
       global,
     });
 
     expect(wrapper.text()).toContain("Esta ação é irreversível");
-    expect(wrapper.text()).toContain("excluídos em até 30 dias");
+    expect(wrapper.text()).toContain(
+      "apagado dos nossos sistemas em até 30 dias",
+    );
     expect(wrapper.text()).toContain("permanecem por cinco anos");
-    expect(wrapper.find('input[name="confirmation"]').exists()).toBe(false);
-
-    await wrapper
-      .findAll("button")
-      .find((button) => button.text().includes("Confirmar por SMS"))!
-      .trigger("click");
-    expect(wrapper.emitted("reauthenticate")).toHaveLength(1);
   });
 
-  it("requires acknowledgement and the exact phrase before emitting one submission", async () => {
+  it("requires acknowledgement before emitting one submission", async () => {
     const wrapper = mount(AccountErasureForm, {
-      props: { recentlyVerified: true, submitting: false, error: "" },
+      props: { submitting: false, error: "" },
       global,
     });
     const submit = wrapper
@@ -61,13 +50,10 @@ describe("account erasure components", () => {
 
     expect(submit.attributes("disabled")).toBeDefined();
     await wrapper.get('input[type="checkbox"]').setValue(true);
-    await wrapper.get('input[name="confirmation"]').setValue("excluir");
-    expect(submit.attributes("disabled")).toBeDefined();
-
-    await wrapper.get('input[name="confirmation"]').setValue("EXCLUIR");
     expect(submit.attributes("disabled")).toBeUndefined();
+
     await wrapper.get("form").trigger("submit");
-    expect(wrapper.emitted("submit")?.[0]).toEqual(["EXCLUIR"]);
+    expect(wrapper.emitted("submit")).toHaveLength(1);
   });
 
   it("renders retry state and only privacy-safe request details", async () => {

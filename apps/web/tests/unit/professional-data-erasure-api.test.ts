@@ -21,7 +21,7 @@ function apiClientReturning(result: object) {
 }
 
 describe("professional data erasure API", () => {
-  it("submits only the explicit confirmation and maps the privacy-safe status", async () => {
+  it("submits with no body and maps the privacy-safe status", async () => {
     const client = apiClientReturning({
       data: {
         data: {
@@ -34,9 +34,7 @@ describe("professional data erasure API", () => {
       response: new Response(null, { status: 202 }),
     });
 
-    await expect(
-      requestProfessionalDataErasure(client, "EXCLUIR"),
-    ).resolves.toEqual({
+    await expect(requestProfessionalDataErasure(client)).resolves.toEqual({
       statusToken: "be_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQ",
       request: {
         reference: "23a94f5e-1429-4ec7-bbc4-a6f805d5182d",
@@ -49,7 +47,6 @@ describe("professional data erasure API", () => {
     });
     expect(client.POST).toHaveBeenCalledWith(
       "/api/v1/professional/data-erasure-request",
-      { body: { confirmation: "EXCLUIR" } },
     );
   });
 
@@ -74,30 +71,28 @@ describe("professional data erasure API", () => {
       data: undefined,
       error: {
         error: {
-          code: "recent_verification_required",
-          message: "Confirme seu telefone por SMS novamente para continuar.",
-          request_id: "erasure-428",
+          code: "erasure_request_unavailable",
+          message: "Não foi possível registrar a solicitação agora.",
+          request_id: "erasure-503",
         },
       },
       response: new Response(null, {
-        status: 428,
-        headers: { "X-Request-Id": "erasure-428" },
+        status: 503,
+        headers: { "X-Request-Id": "erasure-503" },
       }),
     };
     const client = apiClientReturning(result);
 
-    await expect(
-      requestProfessionalDataErasure(client, "EXCLUIR"),
-    ).rejects.toMatchObject({
+    await expect(requestProfessionalDataErasure(client)).rejects.toMatchObject({
       name: "ApiRequestError",
-      code: "recent_verification_required",
-      requestId: "erasure-428",
+      code: "erasure_request_unavailable",
+      requestId: "erasure-503",
     });
     await expect(
       getDataErasureRequestStatus(client, "be_status-token"),
     ).rejects.toMatchObject({
       name: "ApiRequestError",
-      code: "recent_verification_required",
+      code: "erasure_request_unavailable",
     });
   });
 });

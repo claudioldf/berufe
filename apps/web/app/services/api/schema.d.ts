@@ -1460,10 +1460,6 @@ export interface components {
             display_name: string;
             accepted: boolean;
         };
-        ProfessionalDataErasureRequest: {
-            /** @description Must equal the exact uppercase phrase EXCLUIR. */
-            confirmation: string;
-        };
         DataErasureSubmissionResponse: {
             data: {
                 status_token: string;
@@ -6096,11 +6092,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProfessionalDataErasureRequest"];
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description The profile and shared links were disabled immediately and erasure was queued. */
             202: {
@@ -6125,26 +6117,6 @@ export interface operations {
             };
             /** @description The exact browser origin is invalid or the account is not an eligible professional. */
             403: {
-                headers: {
-                    "X-Request-Id": components["headers"]["RequestId"];
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description The explicit irreversible-action confirmation is missing. */
-            422: {
-                headers: {
-                    "X-Request-Id": components["headers"]["RequestId"];
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description The current professional session was not confirmed by SMS in the previous 30 minutes. */
-            428: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;

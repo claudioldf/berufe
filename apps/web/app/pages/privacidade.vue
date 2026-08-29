@@ -380,10 +380,11 @@ useSeoMeta({
       </p>
       <p>
         O profissional cadastrado pode iniciar esse pedido em
-        <strong>Conta e privacidade</strong>, após nova confirmação do telefone
-        por SMS. A tela fornece um protocolo sem identificadores pessoais para
-        acompanhar o processamento. O suporte permanece disponível quando o
-        autoatendimento não puder ser usado.
+        <strong>Conta e privacidade</strong>, acessível a partir do perfil,
+        mediante confirmação explícita de que a exclusão é irreversível. A tela
+        fornece um protocolo sem identificadores pessoais para acompanhar o
+        processamento. O suporte permanece disponível quando o autoatendimento
+        não puder ser usado.
       </p>
     </section>
 
