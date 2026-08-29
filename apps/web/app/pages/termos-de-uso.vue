@@ -31,7 +31,7 @@ useSeoMeta({
     description="Estas regras explicam como a Berufe funciona, as responsabilidades de cada pessoa e os limites da plataforma."
     version="1.0"
     effective-at="1º de agosto de 2026"
-    updated-at="23 de agosto de 2026"
+    updated-at="29 de agosto de 2026"
     :sections="sections"
   >
     <div class="legal-lead">
@@ -235,9 +235,11 @@ useSeoMeta({
       </ul>
       <p>
         A Berufe pode advertir, limitar, ocultar, suspender ou encerrar acesso
-        de forma compatível com a gravidade e o risco. O titular pode solicitar
-        despublicação e exclusão irreversível dos dados elegíveis pelo suporte.
-        Registros mínimos podem ser preservados quando exigidos por lei,
+        de forma compatível com a gravidade e o risco. O titular cadastrado pode
+        solicitar a despublicação e a exclusão irreversível dos dados elegíveis
+        em <strong>Conta e privacidade</strong>, após nova confirmação por SMS;
+        o suporte permanece disponível quando o autoatendimento não puder ser
+        usado. Registros mínimos podem ser preservados quando exigidos por lei,
         segurança, auditoria ou exercício regular de direitos.
       </p>
     </section>
