@@ -1,4 +1,4 @@
-import { mountSuspended } from "@nuxt/test-utils/runtime";
+import { mockNuxtImport, mountSuspended } from "@nuxt/test-utils/runtime";
 import { mount } from "@vue/test-utils";
 import { defineComponent, ref, shallowRef } from "vue";
 import DashboardChecklist from "@app/components/dashboard/DashboardChecklist.vue";
@@ -25,6 +25,11 @@ vi.mock("@app/composables/useToast", () => ({
 vi.mock("@app/composables/useShare", () => ({
   useShare: () => ({ share: mocks.share }),
 }));
+// withSiteUrl resolves relatively (no request host) outside a real SSR
+// request context; pin it to an absolute origin to match production.
+mockNuxtImport("withSiteUrl", () => {
+  return (path: string) => ({ value: `http://localhost:3000${path}` });
+});
 
 const ButtonStub = defineComponent({
   props: {
@@ -116,6 +121,7 @@ function workspace(options: { pending?: boolean; failed?: boolean } = {}) {
         presentationType: "self_service" as const,
         isPublic: true,
         isSearchEligible: true,
+        isIndexable: true,
         publicationBlockers: [],
         revisionStatus: "approved",
         revisionRejectionReason: null,
@@ -358,6 +364,36 @@ describe("professional dashboard", () => {
     expect(wrapper.text()).toContain("A imagem não está legível.");
     expect(wrapper.findComponent(DashboardChecklist).props("readiness")).toBe(
       25,
+    );
+  });
+
+  it("nudges toward search visibility for a published profile that is not yet indexable", async () => {
+    const currentWorkspace = workspace();
+    currentWorkspace.data.value.profile.isPublic = true;
+    currentWorkspace.data.value.profile.isIndexable = false;
+    mocks.useWorkspace.mockResolvedValue(currentWorkspace);
+
+    const wrapper = await mountSuspended(
+      ProfessionalDashboardPage,
+      mountOptions,
+    );
+
+    expect(wrapper.text()).toContain("Seu perfil ainda não aparece no Google.");
+  });
+
+  it("does not show the search-visibility nudge once the profile is indexable", async () => {
+    const currentWorkspace = workspace();
+    currentWorkspace.data.value.profile.isPublic = true;
+    currentWorkspace.data.value.profile.isIndexable = true;
+    mocks.useWorkspace.mockResolvedValue(currentWorkspace);
+
+    const wrapper = await mountSuspended(
+      ProfessionalDashboardPage,
+      mountOptions,
+    );
+
+    expect(wrapper.text()).not.toContain(
+      "Seu perfil ainda não aparece no Google.",
     );
   });
 

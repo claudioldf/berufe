@@ -8,7 +8,6 @@ import { encodeSearchExpression } from "~/utils/searchExpression";
 import { searchLocationPath } from "~/utils/searchLocation";
 
 const router = useRouter();
-const runtimeConfig = useRuntimeConfig();
 const [catalogResult, featuredResult] = await Promise.all([
   useCatalogs(),
   useFeaturedProfessionals(),
@@ -42,21 +41,19 @@ onMounted(() => {
 const title = "Encontre profissionais perto de você";
 const description =
   "Encontre profissionais para sua casa e seu dia a dia. Veja trabalhos e referências e fale diretamente pelo WhatsApp.";
-const siteUrl = String(
-  runtimeConfig.public.siteUrl || "http://localhost:3000",
-).replace(/\/$/, "");
-const canonicalUrl = `${siteUrl}/`;
+const canonicalUrl = withSiteUrl("/");
 
 useSeoMeta({
   title,
   description,
   ogTitle: title,
   ogDescription: description,
-  ogUrl: canonicalUrl,
+  ogUrl: () => canonicalUrl.value,
   ogType: "website",
   twitterCard: "summary_large_image",
 });
-useHead({ link: [{ rel: "canonical", href: canonicalUrl }] });
+useHead(() => ({ link: [{ rel: "canonical", href: canonicalUrl.value }] }));
+defineOgImageSafely("BerufeDefault", { title, description });
 
 async function search(payload: ExpressionSearchPayload) {
   await router.push({

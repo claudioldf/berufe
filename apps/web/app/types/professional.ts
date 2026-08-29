@@ -146,6 +146,30 @@ export interface PublicProfessionalSearchResult {
   } | null;
 }
 
+export interface PublicProfessionalListing {
+  service: PublicServiceSuggestion;
+  location: SearchLocation;
+  professionals: PublicProfessionalCard[];
+  relatedServices: PublicServiceSuggestion[];
+  page: number;
+  perPage: number;
+  totalCount: number;
+  totalPages: number;
+  indexable: boolean;
+}
+
+export interface PublicServiceCoverageEntry {
+  service: PublicServiceSuggestion;
+  location: SearchLocation;
+  professionalCount: number;
+  indexable: boolean;
+}
+
+export interface PublicServiceDemand {
+  released: boolean;
+  searches: number | null;
+}
+
 export interface PublicProfessionalProfile {
   id: string;
   slug: string;
@@ -197,6 +221,7 @@ export interface PublicProfessionalProfile {
     note: string | null;
   }>;
   updatedAt: string | null;
+  indexable: boolean;
   instagram?: string;
   youtube?: string;
 }
@@ -334,6 +359,7 @@ export interface ProfessionalWorkspace {
     presentationType: "self_service" | "external";
     isPublic: boolean;
     isSearchEligible: boolean;
+    isIndexable: boolean;
     publicationBlockers: Array<"identity" | "photo" | "services" | "coverage">;
     revisionStatus:
       "draft" | "pending_review" | "approved" | "rejected" | "superseded";

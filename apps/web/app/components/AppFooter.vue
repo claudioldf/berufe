@@ -11,7 +11,10 @@ import { professionalSignupPath } from "~/utils/professional-auth";
       </div>
       <div class="footer__links">
         <NuxtLink to="/encontrar">Buscar profissionais</NuxtLink>
+        <NuxtLink to="/servicos">Serviços</NuxtLink>
+        <NuxtLink to="/para-profissionais">Para profissionais</NuxtLink>
         <NuxtLink :to="professionalSignupPath">Criar perfil grátis</NuxtLink>
+        <NuxtLink to="/guias">Guias</NuxtLink>
         <NuxtLink to="/privacidade">Privacidade</NuxtLink>
         <NuxtLink to="/termos-de-uso">Termos de uso</NuxtLink>
       </div>

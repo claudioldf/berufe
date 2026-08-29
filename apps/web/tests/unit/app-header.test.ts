@@ -124,7 +124,7 @@ describe("application header", () => {
     expect(wrapper.text()).not.toContain("Sou um profissional");
     expect(wrapper.text()).toContain("Entrar");
     expect(wrapper.text()).toContain("Criar perfil grátis");
-    expect(wrapper.get('a[href="/#para-profissionais"]')).toBeDefined();
+    expect(wrapper.get('a[href="/para-profissionais"]')).toBeDefined();
     expect(wrapper.findAll('a[href="/app/professional/login"]')).toHaveLength(
       2,
     );

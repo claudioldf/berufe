@@ -52,6 +52,7 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
           "has_published_revision" => false,
           "is_public" => false,
           "is_search_eligible" => false,
+          "is_indexable" => false,
           "publication_blockers" => %w[identity photo services coverage],
           "photo" => {
             "current" => nil,

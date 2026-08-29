@@ -10,6 +10,8 @@ import { useCatalogs } from "~/composables/useCatalogs";
 import { useFinderSearchLocation } from "~/composables/useFinderSearchLocation";
 import { useProfessionalSearch } from "~/composables/useProfessionalSearch";
 import { useToast } from "~/composables/useToast";
+import { fetchPublicServiceCoverage } from "~/services/api/public-discovery";
+import { useApiClient } from "~/services/api/client";
 import {
   buildPublicProfileResultUrl,
   buildSearchResultWhatsAppUrl,
@@ -106,11 +108,45 @@ const canRetrySearch = computed(() => {
   return failure?.code !== "validation_failed";
 });
 
+const client = useApiClient();
+const { data: coverage } = await useAsyncData(
+  () =>
+    `city-hub-coverage-${activeLocation.value.stateSlug}-${activeLocation.value.citySlug}`,
+  () =>
+    fetchPublicServiceCoverage(client, {
+      stateSlug: activeLocation.value.stateSlug,
+      citySlug: activeLocation.value.citySlug,
+    }),
+  { watch: [activeLocation] },
+);
+const indexableCityServices = computed(
+  () => coverage.value?.filter((entry) => entry.indexable) ?? [],
+);
+
+const siteUrl = withSiteUrl("/");
+const canonicalUrl = computed(
+  () => `${siteUrl.value.replace(/\/$/, "")}${route.path}`,
+);
+
 useSeoMeta({
   title: () => `Encontrar profissionais em ${activeLocation.value.city}`,
   description: () =>
     `Descreva o serviço que você precisa e encontre profissionais que atendem sua região em ${activeLocation.value.city}.`,
+  ogUrl: () => canonicalUrl.value,
+  ogType: "website",
+  // A page with a search term reflects one visitor's free-text query --
+  // never indexable, and always canonicalized back to the clean city URL.
+  robots: () => (hasSearchTerm.value ? "noindex, follow" : "index, follow"),
 });
+useHead(() => ({ link: [{ rel: "canonical", href: canonicalUrl.value }] }));
+useSchemaOrg([
+  defineBreadcrumb({
+    itemListElement: [
+      { name: "Berufe", item: "/" },
+      { name: activeLocation.value.city, item: canonicalUrl.value },
+    ],
+  }),
+]);
 
 function profileUrl(professional: PublicProfessionalCard) {
   return buildPublicProfileResultUrl({
@@ -203,6 +239,21 @@ function retrySearch() {
     <DesignSystemPageSection class="finder__content">
       <DesignSystemContainer v-if="!hasSearchTerm">
         <PublicProfessionalSearchPrompt />
+        <div v-if="indexableCityServices.length" class="finder__city-services">
+          <h2>Serviços disponíveis em {{ activeLocation.city }}</h2>
+          <div class="finder__city-services-grid">
+            <NuxtLink
+              v-for="entry in indexableCityServices"
+              :key="entry.service.id"
+              :to="`/encontrar/${activeLocation.stateSlug}/${activeLocation.citySlug}/${entry.service.slug}`"
+              class="city-service-chip"
+            >
+              <UIcon :name="entry.service.icon" aria-hidden="true" />
+              {{ entry.service.name }}
+              <span>{{ entry.professionalCount }}</span>
+            </NuxtLink>
+          </div>
+        </div>
       </DesignSystemContainer>
 
       <DesignSystemContainer
@@ -378,6 +429,25 @@ function retrySearch() {
     background: #dff1eb;
   }
 
+  &__city-services {
+    max-width: 760px;
+    margin: 32px auto 0;
+
+    h2 {
+      margin: 0 0 14px;
+      text-align: center;
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+    }
+  }
+
+  &__city-services-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+  }
+
   &__masthead h1 {
     margin: 0;
     font-family: var(--font-display);
@@ -483,6 +553,28 @@ function retrySearch() {
     margin: 3px 0 0;
     color: var(--ink-soft);
     font-size: 0.82rem;
+  }
+}
+
+.city-service-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 14px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  color: var(--ink);
+  font-size: 0.86rem;
+  font-weight: 700;
+  text-decoration: none;
+
+  svg {
+    color: var(--color-brand);
+  }
+
+  span {
+    color: var(--ink-soft);
+    font-weight: 800;
   }
 }
 

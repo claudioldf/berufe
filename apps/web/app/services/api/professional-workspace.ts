@@ -72,6 +72,7 @@ export function mapProfessionalWorkspace(
       presentationType: data.profile.presentation_type,
       isPublic: data.profile.is_public,
       isSearchEligible: data.profile.is_search_eligible,
+      isIndexable: data.profile.is_indexable,
       publicationBlockers: data.profile.publication_blockers,
       revisionStatus: data.profile.revision_status,
       revisionRejectionReason: data.profile.revision_rejection_reason,

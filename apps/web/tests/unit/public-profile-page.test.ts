@@ -65,6 +65,7 @@ const result: PublicProfessionalProfileResult = {
     portfolio: [],
     relationships: [],
     updatedAt: "2026-08-17T12:00:00Z",
+    indexable: true,
   },
   interactionToken: "signed-profile-interaction",
 };

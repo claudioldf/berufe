@@ -60,7 +60,7 @@ const links = computed(() => {
   return [
     { label: "Buscar profissionais", to: "/encontrar" },
     { label: "Como funciona", to: "/#como-funciona" },
-    { label: "Para profissionais", to: "/#para-profissionais" },
+    { label: "Para profissionais", to: "/para-profissionais" },
   ];
 });
 
@@ -77,7 +77,7 @@ function isLinkActive(to: string) {
   if (to === "/app/admin/search-audits") {
     return route.path === "/app/admin/search-audits";
   }
-  if (to === "/app/professional/quotes") {
+  if (to === "/app/professional/quotes" || to === "/para-profissionais") {
     return route.path === to || route.path.startsWith(`${to}/`);
   }
   return route.path === to;
