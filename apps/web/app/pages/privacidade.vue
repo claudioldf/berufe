@@ -29,7 +29,7 @@ useSeoMeta({
     description="Este aviso explica quais dados pessoais a Berufe trata, para quais finalidades, com quem compartilha e como exercer seus direitos."
     version="1.0"
     effective-at="1º de agosto de 2026"
-    updated-at="26 de agosto de 2026"
+    updated-at="29 de agosto de 2026"
     :sections="sections"
   >
     <div class="legal-lead">
@@ -378,6 +378,14 @@ useSeoMeta({
         dias. A exclusão é irreversível; cópias de segurança deixam de conter os
         dados conforme o ciclo contratado do provedor.
       </p>
+      <p>
+        O profissional cadastrado pode iniciar esse pedido em
+        <strong>Exclusão de conta</strong>, acessível pelo link Excluir minha
+        conta no perfil, mediante confirmação explícita de que a exclusão é
+        irreversível. A tela fornece um protocolo sem identificadores pessoais
+        para acompanhar o processamento. O suporte permanece disponível quando o
+        autoatendimento não puder ser usado.
+      </p>
     </section>
 
     <section id="seguranca" class="legal-section">
@@ -413,7 +421,9 @@ useSeoMeta({
         consentimento. Também pode reclamar à ANPD.
       </p>
       <p>
-        Solicitações devem ser enviadas para
+        Profissionais cadastrados podem solicitar a exclusão irreversível em
+        <strong>Exclusão de conta</strong>. Os demais direitos, pedidos de
+        pessoas sem acesso ao autoatendimento e dúvidas podem ser enviados para
         <a href="mailto:suporte@berufe.com.br">suporte@berufe.com.br</a>. A
         Berufe confirmará a identidade sem pedir dados excessivos, responderá de
         forma simplificada quando possível e fornecerá declaração completa de

@@ -10,6 +10,7 @@ import { useApplicationSession } from "~/composables/useApplicationSession";
 import { useToast } from "~/composables/useToast";
 import { ApiRequestError } from "~/services/api/errors";
 import type { ProfessionalRelationshipResponse } from "~/services/api/professional-relationships";
+import { professionalAccountExclusionPath } from "~/utils/professional-auth";
 
 const route = useRoute();
 const { showToast } = useToast();
@@ -341,47 +342,54 @@ async function handleRelationshipRemove(id: string) {
         :portfolio-count="workspace?.profile.portfolioItems.length ?? 0"
         :relationship-count="workspace?.relationships.length ?? 0"
       />
-      <DashboardProfileEditor
-        v-if="activeTab === 'dados'"
-        :professional="professional"
-        :services="services"
-        :saving="saving"
-        :photo="workspace?.profile.photo"
-        :photo-uploading="photoUploading"
-        :photo-removing="photoRemoving"
-        :photo-error="photoError"
-        @save="saveProfile"
-        @photo-select="handlePhoto"
-        @photo-retry="handlePhotoRetry"
-        @photo-remove="handlePhotoRemove"
-      />
-      <DashboardPortfolioManager
-        v-else-if="activeTab === 'portfolio'"
-        :items="workspace?.profile.portfolioItems ?? []"
-        :service-options="professional.services"
-        :submitting="portfolioSaving"
-        @added="handlePortfolioAdd"
-        @removed="handlePortfolioRemove"
-      />
-      <DashboardRelationshipManager
-        v-else-if="activeTab === 'relacoes'"
-        :relationships="workspace?.relationships ?? []"
-        :owner-id="workspace?.profile.id ?? ''"
-        :responding-id="relationshipRespondingId"
-        :removing-id="relationshipRemovingId"
-        :error="relationshipError"
-        @add="relationshipOpen = true"
-        @respond="handleRelationshipResponse"
-        @remove="handleRelationshipRemove"
-      />
-      <DashboardVerificationPanel
-        v-else
-        :evidence="professional.evidence"
-        :verification="workspace?.profile.verification ?? { current: null }"
-        :submitting="verificationSaving"
-        :server-error="verificationError"
-        @submitted="handleVerificationSubmission"
-      />
+      <div class="profile-workspace__panel">
+        <DashboardProfileEditor
+          v-if="activeTab === 'dados'"
+          :professional="professional"
+          :services="services"
+          :saving="saving"
+          :photo="workspace?.profile.photo"
+          :photo-uploading="photoUploading"
+          :photo-removing="photoRemoving"
+          :photo-error="photoError"
+          @save="saveProfile"
+          @photo-select="handlePhoto"
+          @photo-retry="handlePhotoRetry"
+          @photo-remove="handlePhotoRemove"
+        />
+        <DashboardPortfolioManager
+          v-else-if="activeTab === 'portfolio'"
+          :items="workspace?.profile.portfolioItems ?? []"
+          :service-options="professional.services"
+          :submitting="portfolioSaving"
+          @added="handlePortfolioAdd"
+          @removed="handlePortfolioRemove"
+        />
+        <DashboardRelationshipManager
+          v-else-if="activeTab === 'relacoes'"
+          :relationships="workspace?.relationships ?? []"
+          :owner-id="workspace?.profile.id ?? ''"
+          :responding-id="relationshipRespondingId"
+          :removing-id="relationshipRemovingId"
+          :error="relationshipError"
+          @add="relationshipOpen = true"
+          @respond="handleRelationshipResponse"
+          @remove="handleRelationshipRemove"
+        />
+        <DashboardVerificationPanel
+          v-else
+          :evidence="professional.evidence"
+          :verification="workspace?.profile.verification ?? { current: null }"
+          :submitting="verificationSaving"
+          :server-error="verificationError"
+          @submitted="handleVerificationSubmission"
+        />
+        <div v-if="activeTab === 'dados'" class="profile-workspace__account">
+          <NuxtLink :to="professionalAccountExclusionPath">
+            Excluir minha conta <UIcon name="i-lucide-arrow-right" />
+          </NuxtLink>
+        </div>
+      </div>
     </DesignSystemContainer>
     <RelationshipCreateDialog
       v-model:open="relationshipOpen"
@@ -462,6 +470,29 @@ async function handleRelationshipRemove(id: string) {
     grid-template-columns: 190px minmax(0, 1fr);
     gap: 28px;
     padding-top: 26px;
+  }
+
+  &__panel {
+    min-width: 0;
+  }
+
+  &__account {
+    margin-top: 14px;
+    padding-inline: 26px;
+  }
+
+  &__account a {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--ui-error);
+    font-size: 0.86rem;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  &__account a:hover {
+    color: color-mix(in srgb, var(--ui-error) 80%, black);
   }
 }
 @media (width <= 760px) {

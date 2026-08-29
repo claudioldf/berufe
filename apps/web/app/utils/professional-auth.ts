@@ -17,6 +17,8 @@ export const professionalLoginPath = "/app/professional/login";
 export const professionalSignupPath = `${professionalLoginPath}?intent=signup`;
 export const professionalDashboardPath = "/app/professional";
 export const professionalOnboardingPath = "/app/professional/onboarding";
+export const professionalAccountExclusionPath =
+  "/app/professional/account/exclusion";
 
 type ProfessionalEntryAccount = Pick<
   CurrentAccount,
@@ -65,5 +67,6 @@ export const professionalPhoneStepContent: Record<
 export function resolveProfessionalAuthIntent(
   intent: unknown,
 ): ProfessionalAuthIntent {
-  return intent === "signup" ? "signup" : "login";
+  if (intent === "signup") return intent;
+  return "login";
 }

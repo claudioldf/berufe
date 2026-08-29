@@ -63,6 +63,59 @@ RSpec.describe ProfessionalDataErasureRequester do
     )
   end
 
+  it "returns the same privacy-safe status token for duplicate self-service submissions" do
+    profile
+
+    first_request = described_class.new.call(
+      phone_e164: account.phone_e164,
+      ticket_reference: "SELF-request-1",
+      require_recent_verification: false,
+      request_source: "self_service",
+      confirmation_version: DataErasureRequest::SELF_SERVICE_CONFIRMATION_VERSION,
+      issue_status_token: true,
+      now:
+    )
+    second_request = described_class.new.call(
+      phone_e164: account.phone_e164,
+      ticket_reference: "SELF-request-2",
+      require_recent_verification: false,
+      request_source: "self_service",
+      confirmation_version: DataErasureRequest::SELF_SERVICE_CONFIRMATION_VERSION,
+      issue_status_token: true,
+      now:
+    )
+
+    expect(first_request.verification_method).to eq("authenticated_session")
+    expect(second_request.id).to eq(first_request.id)
+    expect(second_request.status_token).to eq(first_request.status_token)
+    expect(second_request.status_token).to match(DataErasureStatusToken::PATTERN)
+    expect(DataErasureRequest.where(target_user_account_id: account.id).count).to eq(1)
+  end
+
+  it "marks an accepted request for recovery when initial enqueueing fails" do
+    profile
+    allow(ProfessionalDataErasureJob).to receive(:perform_later).and_raise(ActiveJob::EnqueueError, "offline")
+    allow(Rails.error).to receive(:report)
+
+    request_record = described_class.new.call(
+      phone_e164: account.phone_e164,
+      ticket_reference: "SELF-request-3",
+      require_recent_verification: false,
+      request_source: "self_service",
+      confirmation_version: DataErasureRequest::SELF_SERVICE_CONFIRMATION_VERSION,
+      issue_status_token: true,
+      now:
+    )
+
+    expect(request_record.reload).to have_attributes(status: "failed", failure_code: "enqueue_error")
+    expect(account.reload.status).to eq("suspended")
+    expect(request_record.status_token).to match(DataErasureStatusToken::PATTERN)
+    expect(Rails.error).to have_received(:report).with(
+      instance_of(ActiveJob::EnqueueError),
+      context: {data_erasure_request_id: request_record.id}
+    )
+  end
+
   private
 
   def create_shared_quote

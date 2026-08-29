@@ -3125,6 +3125,95 @@ paths:
           $ref: "#/components/responses/ProfessionalMediaConflict"
         "503":
           $ref: "#/components/responses/ProfessionalMediaUnavailable"
+  /api/v1/professional/data-erasure-request:
+    post:
+      operationId: requestProfessionalDataErasure
+      summary: Irreversibly unpublish and queue erasure of the authenticated professional account
+      tags:
+        - Professional account
+      security:
+        - applicationSession: []
+      responses:
+        "202":
+          description: The profile and shared links were disabled immediately and erasure was queued.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Set-Cookie:
+              $ref: "#/components/headers/ApplicationSessionCookie"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataErasureSubmissionResponse"
+        "401":
+          description: The application session is missing or no longer active.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: The exact browser origin is invalid or the account is not an eligible professional.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: The erasure request could not be persisted.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/data-erasure-requests/{status_token}:
+    parameters:
+      - name: status_token
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: "^be_[A-Za-z0-9_-]{43}$"
+    get:
+      operationId: getDataErasureRequestStatus
+      summary: Read a privacy-safe erasure status using its opaque bearer token
+      tags:
+        - Privacy
+      security: []
+      responses:
+        "200":
+          description: The request status without account or subject identifiers.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataErasureStatusResponse"
+        "404":
+          description: The token is invalid, unknown, or its minimal retention period ended.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: The request status is temporarily unavailable.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/session:
     get:
       operationId: getCurrentSession
@@ -4214,6 +4303,73 @@ components:
           maxLength: 70
         accepted:
           type: boolean
+    DataErasureSubmissionResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required:
+            - status_token
+            - request
+          properties:
+            status_token:
+              type: string
+              pattern: "^be_[A-Za-z0-9_-]{43}$"
+            request:
+              $ref: "#/components/schemas/DataErasureRequestStatus"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    DataErasureStatusResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          $ref: "#/components/schemas/DataErasureRequestStatus"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    DataErasureRequestStatus:
+      type: object
+      additionalProperties: false
+      required:
+        - reference
+        - status
+        - requested_at
+        - unpublished_at
+        - completion_deadline_at
+        - completed_at
+      properties:
+        reference:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+            - requested
+            - processing
+            - retrying
+            - completed
+        requested_at:
+          type: string
+          format: date-time
+        unpublished_at:
+          type: string
+          format: date-time
+        completion_deadline_at:
+          type: string
+          format: date-time
+        completed_at:
+          type:
+            - string
+            - "null"
+          format: date-time
     ProfessionalRegistrationResponse:
       type: object
       additionalProperties: false

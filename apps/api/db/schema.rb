@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_29_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_29_110000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -175,7 +175,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_100000) do
     t.index ["target_user_account_id"], name: "idx_data_erasure_requests_one_active_account", unique: true, where: "((status)::text = ANY (ARRAY[('requested'::character varying)::text, ('processing'::character varying)::text, ('failed'::character varying)::text]))"
     t.check_constraint "(status_token_hash IS NULL) = (status_token_ciphertext IS NULL)", name: "data_erasure_requests_status_token_pair"
     t.check_constraint "request_source::text <> 'self_service'::text OR confirmation_version IS NOT NULL AND status_token_hash IS NOT NULL", name: "data_erasure_requests_self_service_evidence"
-    t.check_constraint "request_source::text = ANY (ARRAY['support'::character varying, 'self_service'::character varying]::text[])", name: "data_erasure_requests_known_source"
+    t.check_constraint "request_source::text = ANY (ARRAY['support'::character varying::text, 'self_service'::character varying::text])", name: "data_erasure_requests_known_source"
     t.check_constraint "status::text = ANY (ARRAY['requested'::character varying::text, 'processing'::character varying::text, 'failed'::character varying::text, 'completed'::character varying::text])", name: "data_erasure_requests_known_status"
     t.check_constraint "status_token_hash IS NULL OR status_token_hash::text ~ '^[0-9a-f]{64}$'::text", name: "data_erasure_requests_status_digest_format"
     t.check_constraint "subject_digest::text ~ '^[0-9a-f]{64}$'::text", name: "data_erasure_requests_digest_format"
