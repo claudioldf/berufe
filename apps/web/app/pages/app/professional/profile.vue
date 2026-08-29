@@ -478,6 +478,7 @@ async function handleRelationshipRemove(id: string) {
 
   &__account {
     margin-top: 14px;
+    padding-inline: 26px;
   }
 
   &__account a {
