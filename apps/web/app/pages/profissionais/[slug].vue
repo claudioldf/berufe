@@ -108,36 +108,89 @@ const socialLinks = computed<SocialLink[]>(() => {
   return links;
 });
 
-const siteUrl = String(
-  runtimeConfig.public.siteUrl || "http://localhost:3000",
-).replace(/\/$/, "");
+const siteUrlRef = withSiteUrl("/");
 const canonicalUrl = computed(
-  () => `${siteUrl}/profissionais/${professional.value.slug}`,
+  () =>
+    `${siteUrlRef.value.replace(/\/$/, "")}/profissionais/${professional.value.slug}`,
 );
 const professionalCity = computed(
   () => professional.value.coverage.city?.name ?? "sua cidade",
 );
+const professionalTitle = computed(() =>
+  professional.value.primaryService
+    ? `${professional.value.name} — ${professional.value.primaryService}`
+    : `${professional.value.name} — profissional em ${professionalCity.value}`,
+);
 useSeoMeta({
-  title: () =>
-    professional.value.primaryService
-      ? `${professional.value.name} — ${professional.value.primaryService}`
-      : `${professional.value.name} — profissional em ${professionalCity.value}`,
+  title: () => professionalTitle.value,
   description: () =>
     professional.value.headline ?? professional.value.bio ?? undefined,
-  ogTitle: () =>
-    professional.value.primaryService
-      ? `${professional.value.name} — ${professional.value.primaryService}`
-      : `${professional.value.name} — profissional em ${professionalCity.value}`,
+  ogTitle: () => professionalTitle.value,
   ogDescription: () =>
     professional.value.headline ?? professional.value.bio ?? undefined,
   ogImage: () => professional.value.avatar ?? undefined,
   ogUrl: () => canonicalUrl.value,
   ogType: "profile",
   twitterCard: "summary_large_image",
+  // External (unclaimed, referral-created) or evidence-thin profiles are
+  // never indexed -- see PublicIndexability on the API side, which is the
+  // single source of truth this reads from. Indexing follows from claiming
+  // the profile, which is also the conversion mechanic.
+  robots: () =>
+    professional.value.indexable ? "index, follow" : "noindex, follow",
 });
 useHead(() => ({
   link: [{ rel: "canonical", href: canonicalUrl.value }],
 }));
+const breadcrumbItems = computed(() => {
+  const city = professional.value.coverage.city;
+  const items: Array<{ name: string; item: string }> = [
+    { name: "Berufe", item: "/" },
+  ];
+  if (city) {
+    items.push({
+      name: city.name,
+      item: `/encontrar/${city.stateAbbreviation.toLowerCase()}/${city.slug}`,
+    });
+  }
+  items.push({ name: professional.value.name, item: canonicalUrl.value });
+  return items;
+});
+useSchemaOrg([
+  definePerson({
+    // An explicit @id, distinct from the site's own Organization identity
+    // (which also defaults to an "#identity" id) -- without this the two
+    // nodes collide and merge into one incoherent node.
+    "@id": `${canonicalUrl.value}#person`,
+    name: professional.value.name,
+    description:
+      professional.value.headline ?? professional.value.bio ?? undefined,
+    image: professional.value.avatar ?? undefined,
+    jobTitle: professional.value.primaryService ?? undefined,
+    knowsAbout: professional.value.services,
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: professionalCity.value,
+      addressRegion: professional.value.coverage.city?.stateAbbreviation,
+      addressCountry: "BR",
+    },
+  }),
+  defineWebPage({
+    "@type": "ProfilePage",
+    name: () => professionalTitle.value,
+    description: () =>
+      professional.value.headline ?? professional.value.bio ?? undefined,
+    mainEntity: { "@id": `${canonicalUrl.value}#person` },
+  }),
+  defineBreadcrumb({
+    itemListElement: breadcrumbItems.value,
+  }),
+]);
+defineOgImageSafely("BerufeProfessional", {
+  name: professional.value.name,
+  service: professional.value.primaryService ?? undefined,
+  city: professionalCity.value,
+});
 
 onMounted(() => {
   void recordPublicProfessionalProfileView(

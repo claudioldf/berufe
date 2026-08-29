@@ -1,8 +1,11 @@
 import type {
   PublicProfessionalCard,
+  PublicProfessionalListing,
   PublicProfessionalProfile,
   PublicProfessionalProfileResult,
   PublicProfessionalSearchResult,
+  PublicServiceCoverageEntry,
+  PublicServiceDemand,
   SearchLocation,
   StructuredSearchPayload,
 } from "~/types";
@@ -17,6 +20,12 @@ type ContractVerificationLabel =
   components["schemas"]["PublicVerificationLabel"];
 type ContractSearchData = components["schemas"]["PublicProfessionalSearchData"];
 type ContractCoverage = components["schemas"]["PublicProfessionalCoverage"];
+type ContractListingData =
+  components["schemas"]["PublicProfessionalListingData"];
+type ContractCoverageEntry =
+  components["schemas"]["PublicServiceCoverageEntry"];
+type ContractEffectiveLocation =
+  components["schemas"]["PublicProfessionalSearchEffectiveLocation"];
 
 function mapCoverage(coverage: ContractCoverage) {
   return {
@@ -254,6 +263,7 @@ export function mapPublicProfessionalProfile(
       note: relationship.note,
     })),
     updatedAt: profile.public_snapshot_updated_at,
+    indexable: profile.indexable,
     ...(profile.social_links.instagram
       ? { instagram: profile.social_links.instagram }
       : {}),
@@ -290,6 +300,151 @@ export async function fetchPublicProfessionalProfile(
     professional: mapPublicProfessionalProfile(data.data.professional),
     interactionToken: data.data.interaction.token,
   };
+}
+
+function mapEffectiveLocation(
+  location: ContractEffectiveLocation,
+): SearchLocation {
+  return {
+    cityCode: location.city_code,
+    stateCode: location.state_code,
+    city: location.city,
+    stateSlug: location.state_slug,
+    citySlug: location.city_slug,
+  };
+}
+
+function mapPublicProfessionalListing(
+  data: ContractListingData,
+): PublicProfessionalListing {
+  return {
+    service: data.service,
+    location: mapEffectiveLocation(data.location),
+    professionals: data.professionals.map(mapPublicProfessionalCard),
+    relatedServices: data.related_services,
+    page: data.meta.page,
+    perPage: data.meta.per_page,
+    totalCount: data.meta.total_count,
+    totalPages: data.meta.total_pages,
+    indexable: data.indexable,
+  };
+}
+
+interface PublicProfessionalListingInput {
+  serviceSlug: string;
+  stateSlug: string;
+  citySlug: string;
+  page?: number;
+  perPage?: number;
+}
+
+export async function fetchPublicProfessionalListing(
+  client: BerufeApiClient,
+  input: PublicProfessionalListingInput,
+): Promise<PublicProfessionalListing> {
+  const { data, error, response } = await client.GET(
+    "/api/v1/public/professional-listings",
+    {
+      params: {
+        query: {
+          service_slug: input.serviceSlug,
+          state_slug: input.stateSlug,
+          city_slug: input.citySlug,
+          ...(input.page ? { page: input.page } : {}),
+          ...(input.perPage ? { per_page: input.perPage } : {}),
+        },
+      },
+    },
+  );
+  if (error || !data) {
+    throw new ApiRequestError(
+      normalizeApiError(
+        error,
+        response.headers.get("X-Request-Id") ?? "client",
+      ),
+    );
+  }
+
+  return mapPublicProfessionalListing(data.data);
+}
+
+function mapServiceCoverageEntry(
+  entry: ContractCoverageEntry,
+): PublicServiceCoverageEntry {
+  return {
+    service: entry.service,
+    location: mapEffectiveLocation(entry.location),
+    professionalCount: entry.professional_count,
+    indexable: entry.indexable,
+  };
+}
+
+interface PublicServiceCoverageInput {
+  serviceSlug?: string;
+  stateSlug?: string;
+  citySlug?: string;
+}
+
+export async function fetchPublicServiceCoverage(
+  client: BerufeApiClient,
+  input: PublicServiceCoverageInput = {},
+): Promise<PublicServiceCoverageEntry[]> {
+  const { data, error, response } = await client.GET(
+    "/api/v1/public/service-coverage",
+    {
+      params: {
+        query: {
+          ...(input.serviceSlug ? { service_slug: input.serviceSlug } : {}),
+          ...(input.stateSlug ? { state_slug: input.stateSlug } : {}),
+          ...(input.citySlug ? { city_slug: input.citySlug } : {}),
+        },
+      },
+    },
+  );
+  if (error || !data) {
+    throw new ApiRequestError(
+      normalizeApiError(
+        error,
+        response.headers.get("X-Request-Id") ?? "client",
+      ),
+    );
+  }
+
+  return data.data.entries.map(mapServiceCoverageEntry);
+}
+
+interface PublicServiceDemandInput {
+  serviceSlug: string;
+  stateSlug: string;
+  citySlug: string;
+}
+
+export async function fetchPublicServiceDemand(
+  client: BerufeApiClient,
+  input: PublicServiceDemandInput,
+): Promise<PublicServiceDemand> {
+  const { data, error, response } = await client.GET(
+    "/api/v1/public/service-demand",
+    {
+      params: {
+        query: {
+          service_slug: input.serviceSlug,
+          state_slug: input.stateSlug,
+          city_slug: input.citySlug,
+        },
+      },
+    },
+  );
+  if (error || !data) {
+    throw new ApiRequestError(
+      normalizeApiError(
+        error,
+        response.headers.get("X-Request-Id") ?? "client",
+      ),
+    );
+  }
+
+  return { released: data.data.released, searches: data.data.searches };
 }
 
 export async function recordPublicProfessionalProfileView(

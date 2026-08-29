@@ -87,20 +87,7 @@ Former MVP story and feature IDs are recorded for traceability and are not reuse
 
 ### V2-006 — Publish dedicated SEO category landing pages
 
-**Former scope:** Feature B1 and S032 partial.
-
-**Story:** As a customer arriving through search or a shared category link, I want a stable service page so that I understand the category and can reach matching professionals.
-
-**Preserved acceptance criteria:**
-
-- Stable category routes show the service name, a short reviewed explanation, and a path to filtered results.
-- Routes use active catalog services and provide correct title, description, canonical URL, and share metadata.
-- Inactive or unknown categories do not expose stale or fabricated content.
-- The feature does not become complex generated SEO content or a CMS by default.
-
-**Depends on:** MVP S010 and S032–S035.
-
-**Revisit when:** organic acquisition becomes an explicit channel with enough approved profiles per category.
+**Promoted 2026-08-28** into `docs/Berufe_Increment_8_Implementation_Plan.md` (S059+): organic acquisition became the explicit channel this trigger named, so the story left the deferred backlog. The identifier is retired, not reused.
 
 ### V2-007 — Accept and triage in-product content reports
 

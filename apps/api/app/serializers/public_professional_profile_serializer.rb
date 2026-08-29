@@ -16,7 +16,7 @@ class PublicProfessionalProfileSerializer
     end
     verification = PublicVerificationSerializer.new(profile).as_json
 
-    {
+    payload = {
       id: profile.id,
       public_slug: profile.public_slug,
       profile_type: revision.profile_type,
@@ -48,6 +48,8 @@ class PublicProfessionalProfileSerializer
       },
       public_snapshot_updated_at: (revision.submitted_at || revision.created_at).iso8601
     }
+    payload[:indexable] = PublicIndexability.profile_indexable?(payload)
+    payload
   end
 
   private

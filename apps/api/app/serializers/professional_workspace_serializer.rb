@@ -17,6 +17,7 @@ class ProfessionalWorkspaceSerializer
         presentation_type: profile.published_revision&.profile_type || "self_service",
         is_public: profile.publicly_available?,
         is_search_eligible: profile.search_eligible?,
+        is_indexable: indexable?,
         publication_blockers: profile.publication_blockers,
         revision_status: profile.working_revision.status,
         revision_rejection_reason: profile.working_revision.rejection_reason,
@@ -43,6 +44,12 @@ class ProfessionalWorkspaceSerializer
   private
 
   attr_reader :profile
+
+  def indexable?
+    return false unless profile.publicly_available?
+
+    PublicIndexability.profile_indexable?(PublicProfessionalProfileSerializer.new(profile).as_json)
+  end
 
   def serialized_dashboard
     {

@@ -358,6 +358,83 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/professional-listings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read a deterministic, indexable professional listing for one service in one city
+         * @description A GET, cacheable counterpart to POST /public/professional-searches's structured mode, built for server-rendered landing pages: it neither records a SearchEvent nor consumes the search rate limit, and it reports whether Rails considers the page substantial enough to be indexed by search engines.
+         */
+        get: operations["getPublicProfessionalListing"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/service-coverage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read the service-by-city professional count matrix
+         * @description Powers service and city hub pages, the footer link mesh, and the sitemap: for every (service, city) combination with at least one publicly searchable professional, the professional count and whether that combination is indexable.
+         */
+        get: operations["getPublicServiceCoverage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/service-demand": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read 30-day search demand for one service in one city, above a privacy release threshold
+         * @description Powers the "N people searched for this near you" proof-of-demand line on professional-acquisition pages. Never releases a raw count below the privacy threshold -- below it, `searches` is null.
+         */
+        get: operations["getPublicServiceDemand"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/sitemap-professionals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List every self-service published professional slug for the sitemap */
+        get: operations["getPublicSitemapProfessionals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/professionals/{slug}": {
         parameters: {
             query?: {
@@ -1809,6 +1886,8 @@ export interface components {
             presentation_type: "self_service" | "external";
             is_public: boolean;
             is_search_eligible: boolean;
+            /** @description Whether this profile currently meets the bar to be indexed by search engines (see PublicIndexability on the API side). */
+            is_indexable: boolean;
             publication_blockers: ("identity" | "photo" | "services" | "coverage")[];
             /** @enum {string} */
             revision_status: "draft" | "pending_review" | "approved" | "rejected" | "superseded";
@@ -2305,6 +2384,49 @@ export interface components {
             interpretation: components["schemas"]["PublicProfessionalSearchInterpretation"];
             interaction: components["schemas"]["PublicSearchInteraction"] | null;
         };
+        PublicProfessionalListingResponse: {
+            data: components["schemas"]["PublicProfessionalListingData"];
+            request_id: components["schemas"]["RequestId"];
+        };
+        PublicProfessionalListingData: {
+            service: components["schemas"]["PublicServiceSuggestion"];
+            location: components["schemas"]["PublicProfessionalSearchEffectiveLocation"];
+            professionals: components["schemas"]["PublicProfessionalCard"][];
+            related_services: components["schemas"]["PublicServiceSuggestion"][];
+            meta: components["schemas"]["PageMeta"];
+            /** @description Whether this service/city combination has enough supply to be worth indexing. */
+            indexable: boolean;
+        };
+        PublicServiceCoverageResponse: {
+            data: components["schemas"]["PublicServiceCoverageData"];
+            request_id: components["schemas"]["RequestId"];
+        };
+        PublicServiceCoverageData: {
+            entries: components["schemas"]["PublicServiceCoverageEntry"][];
+        };
+        PublicServiceCoverageEntry: {
+            service: components["schemas"]["PublicServiceSuggestion"];
+            location: components["schemas"]["PublicProfessionalSearchEffectiveLocation"];
+            professional_count: number;
+            indexable: boolean;
+        };
+        PublicServiceDemandResponse: {
+            data: {
+                released: boolean;
+                searches: number | null;
+            };
+            request_id: components["schemas"]["RequestId"];
+        };
+        PublicSitemapProfessionalsResponse: {
+            data: {
+                professionals: {
+                    slug: string;
+                    /** Format: date-time */
+                    updated_at: string | null;
+                }[];
+            };
+            request_id: components["schemas"]["RequestId"];
+        };
         PublicProfessionalSearchInterpretation: {
             services: components["schemas"]["PublicServiceSuggestion"][];
             effective_location: components["schemas"]["PublicProfessionalSearchEffectiveLocation"];
@@ -2414,6 +2536,8 @@ export interface components {
             social_links: components["schemas"]["PublicProfessionalSocialLinks"];
             /** Format: date-time */
             public_snapshot_updated_at: string | null;
+            /** @description Whether Rails considers this profile substantial enough to be indexed by search engines (self-service, published, with a photo and at least one piece of evidence). External or unclaimed profiles are never indexable. */
+            indexable: boolean;
         };
         PublicProfessionalEvidenceSummary: {
             completed_services: number;
@@ -3484,6 +3608,170 @@ export interface operations {
                 };
             };
             /** @description The public professional query is temporarily unavailable. */
+            503: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getPublicProfessionalListing: {
+        parameters: {
+            query: {
+                service_slug: string;
+                state_slug: string;
+                city_slug: string;
+                page?: number;
+                per_page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Professional cards matching the service and city, with the page's indexability. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Cache-Control"?: "max-age=0, public, must-revalidate";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicProfessionalListingResponse"];
+                };
+            };
+            /** @description The service slug or the state/city route is unknown or unsupported. */
+            404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The public listing query is temporarily unavailable. */
+            503: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getPublicServiceCoverage: {
+        parameters: {
+            query?: {
+                /** @description Restrict to one service's coverage across all cities. */
+                service_slug?: string;
+                /** @description Restrict to one city's coverage across all services; requires state_slug. */
+                city_slug?: string;
+                state_slug?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The service-by-city coverage matrix. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Cache-Control"?: "max-age=0, public, must-revalidate";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicServiceCoverageResponse"];
+                };
+            };
+            /** @description The public coverage query is temporarily unavailable. */
+            503: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getPublicServiceDemand: {
+        parameters: {
+            query: {
+                service_slug: string;
+                state_slug: string;
+                city_slug: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The release decision and, when released, the 30-day search count. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Cache-Control"?: "max-age=0, public, must-revalidate";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicServiceDemandResponse"];
+                };
+            };
+            /** @description The service slug or the state/city route is unknown or unsupported. */
+            404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The public demand query is temporarily unavailable. */
+            503: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getPublicSitemapProfessionals: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The slug and last-updated timestamp of every self-service published professional. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Cache-Control"?: "max-age=0, public, must-revalidate";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicSitemapProfessionalsResponse"];
+                };
+            };
+            /** @description The public sitemap query is temporarily unavailable. */
             503: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];

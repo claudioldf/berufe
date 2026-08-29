@@ -784,6 +784,231 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/public/professional-listings:
+    get:
+      operationId: getPublicProfessionalListing
+      summary: Read a deterministic, indexable professional listing for one service in one city
+      description: >-
+        A GET, cacheable counterpart to POST /public/professional-searches's
+        structured mode, built for server-rendered landing pages: it neither
+        records a SearchEvent nor consumes the search rate limit, and it
+        reports whether Rails considers the page substantial enough to be
+        indexed by search engines.
+      tags:
+        - Public discovery
+      security: []
+      parameters:
+        - name: service_slug
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        - name: state_slug
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: "^[a-z]{2}$"
+        - name: city_slug
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+        - name: per_page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+      responses:
+        "200":
+          description: Professional cards matching the service and city, with the page's indexability.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              schema:
+                type: string
+                const: "max-age=0, public, must-revalidate"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicProfessionalListingResponse"
+        "404":
+          description: The service slug or the state/city route is unknown or unsupported.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: The public listing query is temporarily unavailable.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/public/service-coverage:
+    get:
+      operationId: getPublicServiceCoverage
+      summary: Read the service-by-city professional count matrix
+      description: >-
+        Powers service and city hub pages, the footer link mesh, and the
+        sitemap: for every (service, city) combination with at least one
+        publicly searchable professional, the professional count and
+        whether that combination is indexable.
+      tags:
+        - Public discovery
+      security: []
+      parameters:
+        - name: service_slug
+          in: query
+          required: false
+          description: Restrict to one service's coverage across all cities.
+          schema:
+            type: string
+            pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        - name: city_slug
+          in: query
+          required: false
+          description: Restrict to one city's coverage across all services; requires state_slug.
+          schema:
+            type: string
+            pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        - name: state_slug
+          in: query
+          required: false
+          schema:
+            type: string
+            pattern: "^[a-z]{2}$"
+      responses:
+        "200":
+          description: The service-by-city coverage matrix.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              schema:
+                type: string
+                const: "max-age=0, public, must-revalidate"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicServiceCoverageResponse"
+        "503":
+          description: The public coverage query is temporarily unavailable.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/public/service-demand:
+    get:
+      operationId: getPublicServiceDemand
+      summary: Read 30-day search demand for one service in one city, above a privacy release threshold
+      description: >-
+        Powers the "N people searched for this near you" proof-of-demand
+        line on professional-acquisition pages. Never releases a raw count
+        below the privacy threshold -- below it, `searches` is null.
+      tags:
+        - Public discovery
+      security: []
+      parameters:
+        - name: service_slug
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        - name: state_slug
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: "^[a-z]{2}$"
+        - name: city_slug
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+      responses:
+        "200":
+          description: The release decision and, when released, the 30-day search count.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              schema:
+                type: string
+                const: "max-age=0, public, must-revalidate"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicServiceDemandResponse"
+        "404":
+          description: The service slug or the state/city route is unknown or unsupported.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: The public demand query is temporarily unavailable.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/public/sitemap-professionals:
+    get:
+      operationId: getPublicSitemapProfessionals
+      summary: List every self-service published professional slug for the sitemap
+      tags:
+        - Public discovery
+      security: []
+      responses:
+        "200":
+          description: The slug and last-updated timestamp of every self-service published professional.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              schema:
+                type: string
+                const: "max-age=0, public, must-revalidate"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicSitemapProfessionalsResponse"
+        "503":
+          description: The public sitemap query is temporarily unavailable.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/public/professionals/{slug}:
     parameters:
       - name: slug
@@ -4508,6 +4733,7 @@ components:
         - presentation_type
         - is_public
         - is_search_eligible
+        - is_indexable
         - publication_blockers
         - revision_status
         - revision_rejection_reason
@@ -4542,6 +4768,11 @@ components:
           type: boolean
         is_search_eligible:
           type: boolean
+        is_indexable:
+          type: boolean
+          description: >-
+            Whether this profile currently meets the bar to be indexed by
+            search engines (see PublicIndexability on the API side).
         publication_blockers:
           type: array
           uniqueItems: true
@@ -6126,6 +6357,138 @@ components:
           oneOf:
             - $ref: "#/components/schemas/PublicSearchInteraction"
             - type: "null"
+    PublicProfessionalListingResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          $ref: "#/components/schemas/PublicProfessionalListingData"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    PublicProfessionalListingData:
+      type: object
+      additionalProperties: false
+      required:
+        - service
+        - location
+        - professionals
+        - related_services
+        - meta
+        - indexable
+      properties:
+        service:
+          $ref: "#/components/schemas/PublicServiceSuggestion"
+        location:
+          $ref: "#/components/schemas/PublicProfessionalSearchEffectiveLocation"
+        professionals:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicProfessionalCard"
+        related_services:
+          type: array
+          maxItems: 3
+          items:
+            $ref: "#/components/schemas/PublicServiceSuggestion"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+        indexable:
+          type: boolean
+          description: Whether this service/city combination has enough supply to be worth indexing.
+    PublicServiceCoverageResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          $ref: "#/components/schemas/PublicServiceCoverageData"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    PublicServiceCoverageData:
+      type: object
+      additionalProperties: false
+      required:
+        - entries
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicServiceCoverageEntry"
+    PublicServiceCoverageEntry:
+      type: object
+      additionalProperties: false
+      required:
+        - service
+        - location
+        - professional_count
+        - indexable
+      properties:
+        service:
+          $ref: "#/components/schemas/PublicServiceSuggestion"
+        location:
+          $ref: "#/components/schemas/PublicProfessionalSearchEffectiveLocation"
+        professional_count:
+          type: integer
+          minimum: 1
+        indexable:
+          type: boolean
+    PublicServiceDemandResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required:
+            - released
+            - searches
+          properties:
+            released:
+              type: boolean
+            searches:
+              type:
+                - integer
+                - "null"
+              minimum: 0
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    PublicSitemapProfessionalsResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required:
+            - professionals
+          properties:
+            professionals:
+              type: array
+              items:
+                type: object
+                additionalProperties: false
+                required: [slug, updated_at]
+                properties:
+                  slug:
+                    type: string
+                    pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                  updated_at:
+                    type:
+                      - string
+                      - "null"
+                    format: date-time
+        request_id:
+          $ref: "#/components/schemas/RequestId"
     PublicProfessionalSearchInterpretation:
       type: object
       additionalProperties: false
@@ -6434,6 +6797,7 @@ components:
         - relationships
         - social_links
         - public_snapshot_updated_at
+        - indexable
       properties:
         id:
           type: string
@@ -6508,6 +6872,13 @@ components:
             - string
             - "null"
           format: date-time
+        indexable:
+          type: boolean
+          description: >-
+            Whether Rails considers this profile substantial enough to be
+            indexed by search engines (self-service, published, with a
+            photo and at least one piece of evidence). External or
+            unclaimed profiles are never indexable.
     PublicProfessionalEvidenceSummary:
       type: object
       additionalProperties: false
