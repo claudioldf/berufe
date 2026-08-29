@@ -300,40 +300,40 @@ async function respondRelationship(
       </p>
     </DesignSystemContainer>
     <DesignSystemContainer v-else class="dashboard-content">
-      <div class="dashboard-layout">
-        <section
-          class="status-banner"
-          :class="`status-banner--${dashboardStatus.tone}`"
+      <section
+        class="status-banner"
+        :class="`status-banner--${dashboardStatus.tone}`"
+      >
+        <span class="status-banner__icon">
+          <UIcon :name="dashboardStatus.icon" />
+        </span>
+        <div class="status-banner__content">
+          <strong>{{ dashboardStatus.title }}</strong>
+          <p>{{ dashboardStatus.description }}</p>
+        </div>
+        <UButton
+          v-if="canPublish"
+          class="status-banner__action"
+          type="button"
+          color="primary"
+          icon="i-lucide-megaphone"
+          :loading="professionalWorkspace.submissionSaving.value"
+          :disabled="professionalWorkspace.submissionSaving.value"
+          @click="publishProfile"
         >
-          <span class="status-banner__icon">
-            <UIcon :name="dashboardStatus.icon" />
-          </span>
-          <div class="status-banner__content">
-            <strong>{{ dashboardStatus.title }}</strong>
-            <p>{{ dashboardStatus.description }}</p>
-          </div>
-          <UButton
-            v-if="canPublish"
-            class="status-banner__action"
-            type="button"
-            color="primary"
-            icon="i-lucide-megaphone"
-            :loading="professionalWorkspace.submissionSaving.value"
-            :disabled="professionalWorkspace.submissionSaving.value"
-            @click="publishProfile"
-          >
-            Publicar perfil
-          </UButton>
-          <NuxtLink
-            v-else-if="dashboardStatus.publicAvailable"
-            class="status-banner__action"
-            :to="`/profissionais/${workspace.profile.publicSlug}`"
-            target="_blank"
-          >
-            Ver perfil público <UIcon name="i-lucide-arrow-up-right" />
-          </NuxtLink>
-        </section>
+          Publicar perfil
+        </UButton>
+        <NuxtLink
+          v-else-if="dashboardStatus.publicAvailable"
+          class="status-banner__action"
+          :to="`/profissionais/${workspace.profile.publicSlug}`"
+          target="_blank"
+        >
+          Ver perfil público <UIcon name="i-lucide-arrow-up-right" />
+        </NuxtLink>
+      </section>
 
+      <div class="dashboard-layout">
         <div class="dashboard-operational">
           <DashboardActivitySections
             :workspace="workspace"
@@ -447,19 +447,18 @@ async function respondRelationship(
 .dashboard-layout {
   display: grid;
   grid-template-columns: minmax(260px, 1fr) minmax(0, 2fr);
-  grid-template-rows: max-content minmax(0, 1fr);
-  gap: 12px 28px;
+  gap: 28px;
   align-items: start;
 }
 .dashboard-operational {
-  grid-row: 1 / span 2;
+  grid-row: 1;
   grid-column: 2;
   display: grid;
   gap: 48px;
   min-width: 0;
 }
 .dashboard-sidebar {
-  grid-row: 2;
+  grid-row: 1;
   grid-column: 1;
   display: grid;
   gap: 12px;
@@ -470,11 +469,11 @@ async function respondRelationship(
   gap: 12px;
   padding: 16px;
 
-  > svg {
+  > .iconify {
     flex-shrink: 0;
     margin-top: 2px;
     color: var(--color-brand);
-    font-size: 1.3rem;
+    font-size: 1.5rem;
   }
 
   strong {
@@ -497,12 +496,11 @@ async function respondRelationship(
   }
 }
 .status-banner {
-  grid-row: 1;
-  grid-column: 1;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: start;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
   gap: 11px;
+  margin-bottom: 28px;
   padding: 14px;
   border: 1px solid #b6d9cd;
   border-radius: 16px;
@@ -542,8 +540,8 @@ async function respondRelationship(
     text-decoration: none;
   }
   &__action {
-    grid-column: 2;
-    justify-self: start;
+    grid-column: 3;
+    justify-self: end;
   }
   &--pending {
     border-color: #ead9a5;
@@ -563,10 +561,8 @@ async function respondRelationship(
     grid-template-rows: auto;
     gap: 32px;
   }
-  .status-banner,
   .dashboard-operational,
   .dashboard-sidebar {
-    grid-row: auto;
     grid-column: 1;
   }
   .dashboard-operational {
@@ -597,6 +593,16 @@ async function respondRelationship(
   }
   .dashboard-sidebar {
     grid-template-columns: 1fr;
+  }
+  .status-banner {
+    grid-template-columns: auto minmax(0, 1fr);
+    &__action {
+      grid-column: 1 / -1;
+      justify-self: stretch;
+    }
+    & a.status-banner__action {
+      justify-content: center;
+    }
   }
 }
 </style>
