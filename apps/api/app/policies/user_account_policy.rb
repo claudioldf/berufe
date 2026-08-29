@@ -13,6 +13,10 @@ class UserAccountPolicy < ApplicationPolicy
     active_user? && owns_account? && user.professional?
   end
 
+  def request_data_erasure?
+    active_user? && owns_account? && user.professional? && record.professional_profile.present?
+  end
+
   def suspend?
     active_admin?
   end

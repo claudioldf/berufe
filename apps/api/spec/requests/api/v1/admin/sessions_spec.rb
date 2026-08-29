@@ -32,6 +32,7 @@ RSpec.describe "Administrator password sessions", type: :request, openapi: true 
     expect(session.idle_expires_at).to eq(now + 30.minutes)
     expect(session.absolute_expires_at).to eq(now + 12.hours)
     expect(account.reload.last_login_at).to eq(now)
+    expect(account.login_count).to eq(1)
     expect(normalized_cookie_header).to include("path=/", "secure", "httponly", "samesite=lax")
     expect(normalized_cookie_header).not_to include("domain=")
     expect(response.body).not_to include(account.email, password, account.password_digest, raw_session_token)

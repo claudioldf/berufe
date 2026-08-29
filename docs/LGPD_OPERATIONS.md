@@ -3,8 +3,10 @@
 ## Scope and owners
 
 Rising Consultoria de Software LTDA., CNPJ 36.443.360/0001-05, is the controller for
-Berufe. The Support Team receives privacy requests at `suporte@berufe.com.br`. Only an
-authorized operator with production Rails access may run the procedures below.
+Berufe. Registered professionals can request account erasure in the authenticated product.
+The Support Team receives other privacy requests and self-service exceptions at
+`suporte@berufe.com.br`. Only an authorized operator with production Rails access may run
+the fallback procedures below.
 
 The product owner confirmed the production provider register, processing regions,
 contractual safeguards, and privacy settings on 23 August 2026. Recheck that evidence before
@@ -12,17 +14,22 @@ adding a provider or changing a region, purpose, data category, or subprocessor.
 
 ## Rights-request intake
 
-1. Open a support ticket with a non-personal reference containing only letters, numbers,
+1. Direct a registered professional who can access the account to the **Excluir minha conta**
+   link at the bottom of **Meu perfil**, which opens **Exclusão de conta** for irreversible
+   account erasure. Do not open a support ticket merely to operate that self-service flow.
+2. For a request that requires Support, open a ticket with a non-personal reference containing only letters, numbers,
    `.`, `_`, `/`, or `-`. Keep the original message in the controlled support mailbox.
-2. Identify the request type and the affected data. Do not request an identity document when
+3. Identify the request type and the affected data. Do not request an identity document when
    control of the registered phone or author e-mail is sufficient.
-3. For a professional account or referred profile, ask the claimant to complete an SMS login.
-   The destructive workflow accepts only an SMS-authenticated session created in the prior
-   30 minutes.
-4. For a recommendation withdrawal, require the request from, or a verification sent to, the
+4. For a professional account or referred profile handled through the Support fallback below,
+   ask the claimant to complete an SMS login. That workflow accepts only an SMS-authenticated
+   session created in the prior 30 minutes. The self-service flow inside the authenticated
+   workspace does not require a fresh SMS login — the signed-in session and an explicit
+   acknowledgement are the confirmation.
+5. For a recommendation withdrawal, require the request from, or a verification sent to, the
    same e-mail used for the recommendation. Match it with the profile slug; the application
    compares only the keyed e-mail fingerprint.
-5. Acknowledge the request and record the decision in the support ticket. Provide simplified
+6. Acknowledge the request and record the decision in the support ticket. Provide simplified
    access promptly when possible and a complete access declaration within the applicable
    LGPD period of up to 15 days.
 
@@ -51,13 +58,30 @@ Explain before proceeding that erasure is irreversible, public content and share
 working immediately, eligible application data is erased by a retry-safe job, and only the
 minimal pseudonymous records described below remain for five years.
 
-After a fresh SMS login and explicit confirmation, run:
+### Registered-professional self-service
+
+The professional opens **Exclusão de conta** from the **Excluir minha conta** link at the
+bottom of **Meu perfil**. The confirmation screen explains immediate unpublication,
+irreversibility, the 30-day maximum, and the five-year minimal retention exception. Submission
+requires only the signed-in session and an explicit acknowledgement checkbox — there is no
+SMS re-confirmation step and no typed confirmation phrase.
+
+The product clears the browser session after acceptance and provides an opaque status link.
+That status exposes only a non-personal request reference, public processing state, and
+timestamps. Treat the status token as bearer material: do not copy it into tickets, logs,
+analytics, or monitoring metadata.
+
+### Support fallback
+
+Use the fallback for an unclaimed referred profile, a verified accessibility/availability
+exception, or operational recovery. After a fresh SMS login and explicit confirmation, run:
 
 ```bash
 bin/rake privacy:request_professional_erasure
 ```
 
-Enter the phone and support ticket reference only at the interactive prompts. The task:
+Enter the phone and support ticket reference only at the interactive prompts. Both the
+self-service endpoint and this task invoke `ProfessionalDataErasureRequester`; the task:
 
 - verifies a successful SMS authentication in the previous 30 minutes;
 - suspends the account and profile immediately;
@@ -68,11 +92,13 @@ Enter the phone and support ticket reference only at the interactive prompts. Th
 - preserves only pseudonymous acceptance, consent, referral-attestation, quote-acceptance,
   and moderation-event facts needed for audit or defense.
 
-Check the result using the non-personal ticket reference in `data_erasure_requests`. A
+Check operational results using the non-personal ticket reference or request UUID in
+`data_erasure_requests`. A
 `completed` status is final. A `failed` status leaves the account/profile suspended and is
-retried automatically; inspect the error by request UUID, resolve the storage or database
-cause, and retry the GoodJob entry. Do not reactivate the account while erasure is pending.
-The maximum operational deadline is 30 days from the verified request.
+retried automatically by the job and the ten-minute recovery sweep; inspect the error by
+request UUID, resolve the storage or database cause, and retry the GoodJob entry if needed.
+Do not reactivate the account while erasure is pending. The maximum operational deadline is
+30 days from the verified request.
 
 ## Retention matrix
 
@@ -94,7 +120,7 @@ The maximum operational deadline is 30 days from the verified request.
 | Identity evidence after a decision                         | 30 days                                                                            | Daily identity-file cleanup                   |
 | Recommendation invitation                                  | 14-day validity; operational row removed within 30 days after completion or expiry | Daily recommendation cleanup                  |
 | Published recommendation                                   | Until publication consent is withdrawn                                             | Timestamped withdrawal and public query scope |
-| Active account, profile, customer, quote, and service data | While required for the relationship; eligible data erased after a verified request | Support erasure workflow                      |
+| Active account, profile, customer, quote, and service data | While required for the relationship; eligible data erased after a verified request | Shared self-service/Support erasure workflow  |
 | Minimal pseudonymous legal/audit records                   | Five years                                                                         | Daily LGPD audit cleanup                      |
 | Support correspondence                                     | Only while required to answer, evidence, or defend the request                     | Controlled mailbox review                     |
 | Database backups                                           | Provider's verified production backup cycle                                        | Railway configuration and restore tests       |

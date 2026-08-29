@@ -554,6 +554,90 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/admin/professionals:
+    get:
+      operationId: getAdminProfessionals
+      summary: Read the administrator directory of every professional account
+      tags:
+        - Professional supply
+      security:
+        - applicationSession: []
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+        - $ref: "#/components/parameters/AdminProfessionalQuery"
+        - $ref: "#/components/parameters/AdminProfessionalPhone"
+        - $ref: "#/components/parameters/AdminProfessionalCity"
+        - $ref: "#/components/parameters/AdminProfessionalState"
+        - $ref: "#/components/parameters/AdminProfessionalIdentityVerified"
+        - $ref: "#/components/parameters/AdminProfessionalOnboardingFinished"
+        - $ref: "#/components/parameters/AdminProfessionalSort"
+      responses:
+        "200":
+          description: Filtered professional accounts with directory counts, contact status, and a filtered summary.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminProfessionalsResponse"
+        "401":
+          $ref: "#/components/responses/AdminModerationUnauthorized"
+        "422":
+          $ref: "#/components/responses/AdminModerationInvalid"
+  /api/v1/admin/professionals/{id}/publication:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Professional profile identifier.
+        schema:
+          type: string
+          format: uuid
+    post:
+      operationId: setAdminProfessionalPublication
+      summary: Publish or unpublish a professional profile and refresh the directory
+      tags:
+        - Professional supply
+      security:
+        - applicationSession: []
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+        - $ref: "#/components/parameters/AdminProfessionalQuery"
+        - $ref: "#/components/parameters/AdminProfessionalPhone"
+        - $ref: "#/components/parameters/AdminProfessionalCity"
+        - $ref: "#/components/parameters/AdminProfessionalState"
+        - $ref: "#/components/parameters/AdminProfessionalIdentityVerified"
+        - $ref: "#/components/parameters/AdminProfessionalOnboardingFinished"
+        - $ref: "#/components/parameters/AdminProfessionalSort"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminProfessionalPublicationRequest"
+      responses:
+        "200":
+          description: The publication decision and its immutable audit record were committed together.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminProfessionalsResponse"
+        "401":
+          $ref: "#/components/responses/AdminModerationUnauthorized"
+        "403":
+          $ref: "#/components/responses/AdminModerationForbidden"
+        "404":
+          $ref: "#/components/responses/AdminModerationNotFound"
+        "409":
+          $ref: "#/components/responses/AdminModerationConflict"
+        "422":
+          $ref: "#/components/responses/AdminModerationInvalid"
   /api/v1/catalog:
     get:
       operationId: getPublicCatalog
@@ -3041,6 +3125,95 @@ paths:
           $ref: "#/components/responses/ProfessionalMediaConflict"
         "503":
           $ref: "#/components/responses/ProfessionalMediaUnavailable"
+  /api/v1/professional/data-erasure-request:
+    post:
+      operationId: requestProfessionalDataErasure
+      summary: Irreversibly unpublish and queue erasure of the authenticated professional account
+      tags:
+        - Professional account
+      security:
+        - applicationSession: []
+      responses:
+        "202":
+          description: The profile and shared links were disabled immediately and erasure was queued.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Set-Cookie:
+              $ref: "#/components/headers/ApplicationSessionCookie"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataErasureSubmissionResponse"
+        "401":
+          description: The application session is missing or no longer active.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: The exact browser origin is invalid or the account is not an eligible professional.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: The erasure request could not be persisted.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/data-erasure-requests/{status_token}:
+    parameters:
+      - name: status_token
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: "^be_[A-Za-z0-9_-]{43}$"
+    get:
+      operationId: getDataErasureRequestStatus
+      summary: Read a privacy-safe erasure status using its opaque bearer token
+      tags:
+        - Privacy
+      security: []
+      responses:
+        "200":
+          description: The request status without account or subject identifiers.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataErasureStatusResponse"
+        "404":
+          description: The token is invalid, unknown, or its minimal retention period ended.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: The request status is temporarily unavailable.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/session:
     get:
       operationId: getCurrentSession
@@ -3339,6 +3512,58 @@ components:
       schema:
         type: string
         format: uuid
+    AdminProfessionalQuery:
+      name: q
+      in: query
+      description: Case-insensitive, accent-insensitive professional name search.
+      schema:
+        type: string
+        maxLength: 100
+    AdminProfessionalPhone:
+      name: phone
+      in: query
+      description: Digits-matched search across the account and coverage WhatsApp numbers.
+      schema:
+        type: string
+        maxLength: 20
+    AdminProfessionalCity:
+      name: city
+      in: query
+      description: IBGE city code of the professional's coverage area.
+      schema:
+        type: string
+        pattern: "^[0-9]{7}$"
+    AdminProfessionalState:
+      name: state
+      in: query
+      description: Two-letter state abbreviation of the professional's coverage area.
+      schema:
+        type: string
+        pattern: "^[A-Z]{2}$"
+    AdminProfessionalIdentityVerified:
+      name: identity_verified
+      in: query
+      description: Filter by approved identity verification.
+      schema:
+        type: string
+        default: all
+        enum: [all, "yes", "no"]
+    AdminProfessionalOnboardingFinished:
+      name: onboarding_finished
+      in: query
+      description: Filter by whether the professional submitted their profile at least once.
+      schema:
+        type: string
+        default: all
+        enum: [all, "yes", "no"]
+    AdminProfessionalSort:
+      name: sort
+      in: query
+      description: Directory table column used for deterministic ordering.
+      schema:
+        type: string
+        default: recent
+        enum: [recent, last_login_desc, name_asc]
   responses:
     ProfessionalMediaUnauthorized:
       description: An active Rails application session is required.
@@ -3594,6 +3819,106 @@ components:
         normalized_request:
           type: [string, "null"]
           maxLength: 240
+    AdminProfessionalsResponse:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data:
+          $ref: "#/components/schemas/AdminProfessionalsData"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    AdminProfessionalsData:
+      type: object
+      additionalProperties: false
+      required: [items, summary, meta]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminProfessionalItem"
+        summary:
+          $ref: "#/components/schemas/AdminProfessionalsSummary"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    AdminProfessionalsSummary:
+      type: object
+      additionalProperties: false
+      required: [total, published, suspended, onboarding_finished, identity_verified]
+      properties:
+        total: { type: integer, minimum: 0 }
+        published: { type: integer, minimum: 0 }
+        suspended: { type: integer, minimum: 0 }
+        onboarding_finished: { type: integer, minimum: 0 }
+        identity_verified: { type: integer, minimum: 0 }
+    AdminProfessionalItem:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - professional_profile_id
+        - public_slug
+        - display_name
+        - profile_status
+        - city
+        - state
+        - phone_verified
+        - phone_last4
+        - identity_verified
+        - account_status
+        - portfolio_count
+        - reference_count
+        - customer_count
+        - quote_count
+        - registered_at
+        - last_login_at
+        - login_count
+        - published_at
+      properties:
+        id: { type: string, format: uuid }
+        professional_profile_id: { type: [string, "null"], format: uuid }
+        public_slug: { type: [string, "null"] }
+        display_name: { type: [string, "null"] }
+        profile_status:
+          type: [string, "null"]
+          enum: [draft, pending_review, published, suspended, null]
+        city: { type: [string, "null"] }
+        state: { type: [string, "null"], minLength: 2, maxLength: 2 }
+        phone_verified: { type: boolean }
+        phone_last4:
+          type: [string, "null"]
+          pattern: "^[0-9]{4}$"
+        identity_verified: { type: boolean }
+        account_status:
+          type: string
+          enum: [active, suspended]
+        portfolio_count: { type: integer, minimum: 0 }
+        reference_count: { type: integer, minimum: 0 }
+        customer_count: { type: integer, minimum: 0 }
+        quote_count: { type: integer, minimum: 0 }
+        registered_at: { type: [string, "null"], format: date-time }
+        last_login_at: { type: [string, "null"], format: date-time }
+        login_count: { type: integer, minimum: 0 }
+        published_at: { type: [string, "null"], format: date-time }
+    AdminProfessionalPublicationRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - publication
+      properties:
+        publication:
+          $ref: "#/components/schemas/AdminProfessionalPublicationInput"
+    AdminProfessionalPublicationInput:
+      type: object
+      additionalProperties: false
+      required:
+        - published
+      properties:
+        published:
+          type: boolean
+        reason:
+          type: [string, "null"]
+          maxLength: 500
     AdminGrowthReportPeriodKey:
       type: string
       enum: [since_launch, last_30_days, last_7_days]
@@ -3978,6 +4303,73 @@ components:
           maxLength: 70
         accepted:
           type: boolean
+    DataErasureSubmissionResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required:
+            - status_token
+            - request
+          properties:
+            status_token:
+              type: string
+              pattern: "^be_[A-Za-z0-9_-]{43}$"
+            request:
+              $ref: "#/components/schemas/DataErasureRequestStatus"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    DataErasureStatusResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          $ref: "#/components/schemas/DataErasureRequestStatus"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    DataErasureRequestStatus:
+      type: object
+      additionalProperties: false
+      required:
+        - reference
+        - status
+        - requested_at
+        - unpublished_at
+        - completion_deadline_at
+        - completed_at
+      properties:
+        reference:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+            - requested
+            - processing
+            - retrying
+            - completed
+        requested_at:
+          type: string
+          format: date-time
+        unpublished_at:
+          type: string
+          format: date-time
+        completion_deadline_at:
+          type: string
+          format: date-time
+        completed_at:
+          type:
+            - string
+            - "null"
+          format: date-time
     ProfessionalRegistrationResponse:
       type: object
       additionalProperties: false

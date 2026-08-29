@@ -8,18 +8,21 @@ class ProfessionalDataErasureJob < ApplicationJob
   def perform(request_id, now: Time.current, storage: MediaStorage.build)
     request_record = DataErasureRequest.find_by(id: request_id)
     return unless request_record
-    return if request_record.status == "completed"
 
-    request_record.update!(status: "processing", failure_code: nil)
-    account = UserAccount.includes(:professional_profile).find_by(id: request_record.target_user_account_id)
-    unless account&.professional_profile
-      request_record.update!(status: "completed", completed_at: now)
-      return
+    request_record.with_lock do
+      return if request_record.status == "completed"
+
+      request_record.update!(status: "processing", failure_code: nil)
+      account = UserAccount.includes(:professional_profile).find_by(id: request_record.target_user_account_id)
+      unless account&.professional_profile
+        request_record.update!(status: "completed", completed_at: now, target_user_account_id: nil)
+        return
+      end
+
+      profile = account.professional_profile
+      delete_storage_objects!(profile, storage:)
+      erase_database_records!(request_record:, account:, profile:, now:)
     end
-
-    profile = account.professional_profile
-    delete_storage_objects!(profile, storage:)
-    erase_database_records!(request_record:, account:, profile:, now:)
   rescue => error
     request_record&.update_columns(status: "failed", failure_code: "processing_error", updated_at: now)
     Rails.error.report(error, context: {data_erasure_request_id: request_id})
@@ -100,7 +103,12 @@ class ProfessionalDataErasureJob < ApplicationJob
       profile.delete
       ApplicationSession.where(user_account_id: account.id).delete_all
       account.delete
-      request_record.update!(status: "completed", completed_at: now, failure_code: nil)
+      request_record.update!(
+        status: "completed",
+        completed_at: now,
+        failure_code: nil,
+        target_user_account_id: nil
+      )
     end
   end
 

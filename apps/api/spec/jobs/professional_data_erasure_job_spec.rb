@@ -69,6 +69,7 @@ RSpec.describe ProfessionalDataErasureJob do
     expect(MediaUpload.exists?(upload.id)).to be(false)
     expect(ProfessionalProfilePhoto.exists?(photo.id)).to be(false)
     expect(request_record.reload).to have_attributes(status: "completed", completed_at: now)
+    expect(request_record.target_user_account_id).to be_nil
     expect(LegalRetentionRecord.sole).to have_attributes(
       subject_digest: request_record.subject_digest,
       record_type: "legal_acceptance",
@@ -80,5 +81,62 @@ RSpec.describe ProfessionalDataErasureJob do
     )
     expect(storage).to have_received(:delete).with(scope: :private, key: upload.quarantine_key)
     expect(storage).to have_received(:delete).with(scope: :private, key: upload.sanitized_key)
+  end
+
+  it "is idempotent when a duplicate job runs after completion" do
+    profile
+    request_record = create_request
+
+    described_class.perform_now(request_record.id, now:, storage:)
+    described_class.perform_now(request_record.id, now:, storage:)
+
+    expect(request_record.reload.status).to eq("completed")
+    expect(LegalRetentionRecord.where(subject_digest: request_record.subject_digest).count).to eq(1)
+  end
+
+  it "keeps the profile unpublished and safely retries after a storage failure" do
+    upload = MediaUpload.create!(
+      professional_profile: profile,
+      purpose: "profile_photo",
+      state: "authorized",
+      declared_content_type: "image/jpeg",
+      declared_byte_size: 100,
+      quarantine_key: "quarantine/#{profile.id}/retry-photo",
+      authorization_expires_at: now + 5.minutes
+    )
+    request_record = create_request
+    failed_storage = instance_double(LocalDiskStorage)
+    allow(failed_storage).to receive(:delete).and_raise(Aws::S3::Errors::ServiceError.new(nil, "offline"))
+    allow(Rails.error).to receive(:report)
+
+    expect do
+      described_class.new.perform(request_record.id, now:, storage: failed_storage)
+    end.to raise_error(Aws::S3::Errors::ServiceError)
+
+    expect(request_record.reload).to have_attributes(status: "failed", failure_code: "processing_error")
+    expect(account.reload.status).to eq("suspended")
+    expect(profile.reload.profile_status).to eq("draft")
+
+    described_class.perform_now(request_record.id, now: now + 1.minute, storage:)
+
+    expect(request_record.reload.status).to eq("completed")
+    expect(MediaUpload.exists?(upload.id)).to be(false)
+    expect(UserAccount.exists?(account.id)).to be(false)
+  end
+
+  private
+
+  def create_request
+    DataErasureRequest.create!(
+      target_user_account_id: account.id,
+      subject_digest: PrivacySubjectDigest.call(account.phone_e164),
+      ticket_reference: "SUP-2026-retry",
+      status: "requested",
+      verification_method: "recent_sms_otp",
+      requested_at: now,
+      verified_at: now,
+      unpublished_at: now,
+      retained_until: now + 5.years
+    )
   end
 end

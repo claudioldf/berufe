@@ -108,7 +108,9 @@ async function register() {
 
 onMounted(async () => {
   try {
-    if (await restoreSession()) await continueAuthenticatedFlow();
+    if (await restoreSession()) {
+      await continueAuthenticatedFlow();
+    }
   } catch {
     // The OTP flow remains available when a prior session cannot be restored.
   }

@@ -1008,6 +1008,23 @@ The MVP report includes only implemented launch domains: professional supply and
 
 **Covers:** Features A2–A4, A6, C1, and E1; post-publication moderation decision.
 
+### S059 — Browse and manage the professional directory
+
+**Story:** As an administrator, I want one paginated, filterable list of every professional account so that I can see how far each one got, verify contact and identity signals, and publish or unpublish a profile without opening the moderation queue.
+
+**Acceptance criteria:**
+
+- The directory lists every professional account, including one that never started a profile, with name, phone-verified status (masked to the last four digits), identity-verified status, portfolio/references/customers/quotes counts, signup time, last-login time, login count, and city/state.
+- References count only mutually accepted professional relationships; portfolio counts exclude deleted items.
+- Administrators filter by name and phone (accent- and digit-insensitive, server-side), city, state, identity-verified (yes/no/all), and onboarding-finished (yes/no/all — a professional who never submitted a profile counts as unfinished), and sort by recency, last login, or name. Filter state lives in the URL.
+- Publish/unpublish only transitions a profile between `published` and `suspended`; unpublishing requires a private reason of 10–500 characters. A profile that never submitted (`draft` or `pending_review`) shows the control disabled with the reason why. Both transitions append an immutable `moderation_actions` row (`hidden`/`restored`) with the acting administrator and request ID, reusing the Feature E1 audit trail — no new moderation concept.
+- `login_count` is a new persisted counter on the account, incremented on every successful authentication (SMS OTP or admin password) alongside the existing `last_login_at`. It is operational-identity information only: it is never surfaced in or added to the growth report (R008, R013 continue to exclude logins from meaningful activity).
+- The full phone number never leaves the API; access to the directory is logged the same way as the search-audit surface.
+
+**Depends on:** S017, S018, S023, S024, and S058.
+
+**Covers:** Extends Feature E1 (administrator operations).
+
 ## 12. Increment summary
 
 | Increment               | Stories         | Demonstrable result                                                                                            |

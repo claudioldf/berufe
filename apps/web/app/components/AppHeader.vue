@@ -52,6 +52,7 @@ const links = computed(() => {
   if (isAdmin.value) {
     return [
       { label: "Moderação", to: "/app/admin" },
+      { label: "Profissionais", to: "/app/admin/professionals" },
       { label: "Catálogo", to: "/app/admin/catalog" },
       { label: "Relatórios", to: "/app/admin/reports" },
       { label: "Auditoria de buscas", to: "/app/admin/search-audits" },
@@ -73,6 +74,9 @@ function isLinkActive(to: string) {
   }
   if (to === "/app/admin/catalog") {
     return route.path === "/app/admin/catalog";
+  }
+  if (to === "/app/admin/professionals") {
+    return route.path === "/app/admin/professionals";
   }
   if (to === "/app/admin/search-audits") {
     return route.path === "/app/admin/search-audits";
