@@ -2,6 +2,7 @@ export * from "./admin-professional";
 export * from "./catalog";
 export * from "./customer";
 export * from "./moderation";
+export * from "./notification";
 export * from "./onboarding";
 export * from "./professional";
 export * from "./quote";
