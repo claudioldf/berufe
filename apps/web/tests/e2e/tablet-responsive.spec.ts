@@ -116,9 +116,20 @@ async function expectQuickActionsOnOneRow(quickActions: Locator) {
     .evaluateAll((actions) =>
       actions.map((action) => {
         const box = action.getBoundingClientRect();
+        const iconBox = action
+          .querySelector(".actions-card__icon")!
+          .getBoundingClientRect();
+        const labelBox = action
+          .querySelector("strong")!
+          .getBoundingClientRect();
         return {
           top: Math.round(box.top),
+          height: box.height,
           width: box.width,
+          iconRight: iconBox.right,
+          iconCenterY: iconBox.top + iconBox.height / 2,
+          labelLeft: labelBox.left,
+          labelCenterY: labelBox.top + labelBox.height / 2,
         };
       }),
     );
@@ -126,6 +137,11 @@ async function expectQuickActionsOnOneRow(quickActions: Locator) {
   expect(boxes).toHaveLength(5);
   expect(new Set(boxes.map((box) => box.top)).size).toBe(1);
   expect(boxes.every((box) => box.width >= 44)).toBe(true);
+  expect(boxes.every((box) => box.height <= 64)).toBe(true);
+  expect(boxes.every((box) => box.labelLeft >= box.iconRight)).toBe(true);
+  expect(
+    boxes.every((box) => Math.abs(box.iconCenterY - box.labelCenterY) <= 1),
+  ).toBe(true);
 }
 
 async function expectProgressStepsOnOneRow(page: Page) {

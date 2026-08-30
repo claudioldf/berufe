@@ -282,7 +282,7 @@ describe("professional dashboard", () => {
     expect(relationshipRow!.findAll("button")).toHaveLength(0);
   });
 
-  it("places quick actions before status and operational work", async () => {
+  it("continues the hero with quick actions before dashboard content", async () => {
     mocks.useWorkspace.mockResolvedValue(workspace());
     const wrapper = await mountSuspended(
       ProfessionalDashboardPage,
@@ -291,7 +291,7 @@ describe("professional dashboard", () => {
 
     const visibleText = wrapper.text();
     const statusIndex = visibleText.indexOf("Seu perfil está publicado");
-    const quickActionsIndex = visibleText.indexOf("Ações rápidas");
+    const quickActionsIndex = visibleText.indexOf("Editar perfil");
     const activityIndex = visibleText.indexOf("Para resolver.");
     const quoteEmptyIndex = visibleText.indexOf(
       "Transforme pedidos em trabalhos fechados.",
@@ -305,8 +305,15 @@ describe("professional dashboard", () => {
     expect(quoteEmptyIndex).toBeGreaterThan(activityIndex);
     expect(visibleText).not.toContain("Ferramentas");
     expect(visibleText).not.toContain("Orçamentos recentes.");
+    expect(visibleText).not.toContain("Ações rápidas");
     expect(progressIndex).toBeGreaterThan(quoteEmptyIndex);
     expect(wrapper.findAll(".actions-card")).toHaveLength(1);
+    expect(wrapper.find(".dashboard-welcome .actions-card").exists()).toBe(
+      true,
+    );
+    expect(wrapper.find(".dashboard-content .actions-card").exists()).toBe(
+      false,
+    );
     expect(wrapper.find(".dashboard-sidebar .actions-card").exists()).toBe(
       false,
     );
@@ -500,7 +507,10 @@ describe("professional dashboard", () => {
         "/app/professional/services",
       ],
     );
-    expect(wrapper.get("h2").text()).toBe("Ações rápidas");
+    expect(wrapper.get(".actions-card").attributes("aria-label")).toBe(
+      "Ações rápidas",
+    );
+    expect(wrapper.text()).not.toContain("Ações rápidas");
     expect(
       wrapper.findAll("a").map((link) => link.attributes("aria-label")),
     ).toEqual([

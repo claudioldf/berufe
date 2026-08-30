@@ -20,6 +20,12 @@ const relationshipEligible = computed(
   () => account.value?.relationshipEligible ?? false,
 );
 const workspace = computed(() => professionalWorkspace.data.value);
+const dashboardReady = computed(
+  () =>
+    professionalWorkspace.status.value !== "pending" &&
+    !professionalWorkspace.error.value &&
+    Boolean(workspace.value),
+);
 const professionalFirstName = computed(
   () =>
     workspace.value?.profile.identity.name.trim().split(" ")[0] ??
@@ -260,27 +266,34 @@ async function respondRelationship(
 <template>
   <div class="dashboard-page">
     <section class="dashboard-welcome">
-      <DesignSystemContainer class="dashboard-welcome__inner">
-        <div>
-          <p>{{ localDateLabel || "Painel profissional" }}</p>
-          <h1>Olá, {{ professionalFirstName }}.</h1>
+      <DesignSystemContainer class="dashboard-welcome__container">
+        <div class="dashboard-welcome__inner">
+          <div>
+            <p>{{ localDateLabel || "Painel profissional" }}</p>
+            <h1>Olá, {{ professionalFirstName }}.</h1>
+          </div>
+          <div class="dashboard-welcome__actions">
+            <UButton
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-share-2"
+              :disabled="!dashboardStatus.publicAvailable"
+              @click="shareProfile"
+              >Compartilhar perfil</UButton
+            >
+            <UButton
+              to="/app/professional/quotes/new"
+              color="secondary"
+              icon="i-lucide-plus"
+              >Novo orçamento</UButton
+            >
+          </div>
         </div>
-        <div class="dashboard-welcome__actions">
-          <UButton
-            color="neutral"
-            variant="outline"
-            icon="i-lucide-share-2"
-            :disabled="!dashboardStatus.publicAvailable"
-            @click="shareProfile"
-            >Compartilhar perfil</UButton
-          >
-          <UButton
-            to="/app/professional/quotes/new"
-            color="secondary"
-            icon="i-lucide-plus"
-            >Novo orçamento</UButton
-          >
-        </div>
+        <DashboardQuickActions
+          v-if="dashboardReady"
+          class="dashboard-welcome__quick-actions"
+          @recommend="relationshipOpen = true"
+        />
       </DesignSystemContainer>
     </section>
 
@@ -300,11 +313,6 @@ async function respondRelationship(
       </p>
     </DesignSystemContainer>
     <DesignSystemContainer v-else class="dashboard-content">
-      <DashboardQuickActions
-        class="dashboard-quick-actions"
-        @recommend="relationshipOpen = true"
-      />
-
       <section
         class="status-banner"
         :class="`status-banner--${dashboardStatus.tone}`"
@@ -398,7 +406,7 @@ async function respondRelationship(
   background: var(--color-surface-canvas);
 }
 .dashboard-welcome {
-  padding: 40px 0 44px;
+  padding: 40px 0 0;
   background: var(--color-brand-strong);
   color: white;
   &__inner {
@@ -429,13 +437,13 @@ async function respondRelationship(
     display: flex;
     gap: 9px;
   }
+  &__quick-actions {
+    margin-top: 28px;
+  }
 }
 .dashboard-content {
   padding-top: 24px;
   padding-bottom: 80px;
-}
-.dashboard-quick-actions {
-  margin-bottom: 16px;
 }
 .dashboard-state {
   & p {
@@ -596,6 +604,13 @@ async function respondRelationship(
 }
 
 @media (width <= 700px) {
+  .dashboard-welcome {
+    padding-top: 28px;
+
+    &__quick-actions {
+      margin-top: 22px;
+    }
+  }
   .dashboard-layout,
   .dashboard-operational {
     gap: 28px;

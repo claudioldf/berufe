@@ -68,10 +68,12 @@ test("professional dashboard prioritizes operational work responsively", async (
   await expect(
     operational.getByText("Ferramentas", { exact: true }),
   ).toHaveCount(0);
+  await expect(quickActions).toHaveAttribute("aria-label", "Ações rápidas");
   await expect(
-    quickActions.getByRole("heading", { level: 2, name: "Ações rápidas" }),
-  ).toBeVisible();
+    quickActions.getByRole("heading", { name: "Ações rápidas" }),
+  ).toHaveCount(0);
   await expect(page.locator(".actions-card")).toHaveCount(1);
+  await expect(page.locator(".dashboard-welcome .actions-card")).toHaveCount(1);
   await expect(sidebar.getByText("Ações rápidas")).toHaveCount(0);
 
   const quickActionsBox = await quickActions.boundingBox();

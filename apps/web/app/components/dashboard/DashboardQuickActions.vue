@@ -8,11 +8,8 @@ defineEmits<{
   <DesignSystemSurfaceCard
     as="section"
     class="actions-card"
-    aria-labelledby="quick-actions-title"
+    aria-label="Ações rápidas"
   >
-    <header class="actions-card__header">
-      <h2 id="quick-actions-title">Ações rápidas</h2>
-    </header>
     <div class="actions-card__list">
       <NuxtLink to="/app/professional/profile" aria-label="Editar perfil">
         <span class="actions-card__icon">
@@ -69,7 +66,7 @@ defineEmits<{
         </span>
         <strong>
           <span class="actions-card__label-full">Recomendar profissional</span>
-          <span class="actions-card__label-compact">Recomendar</span>
+          <span class="actions-card__label-compact">Indicar</span>
         </strong>
       </button>
     </div>
@@ -78,25 +75,12 @@ defineEmits<{
 
 <style scoped lang="scss">
 .actions-card {
-  display: grid;
-  grid-template-columns: minmax(150px, 0.75fr) minmax(0, 4fr);
   overflow: hidden;
-
-  &__header {
-    display: flex;
-    align-items: center;
-    padding: 18px 20px;
-    border-right: 1px solid var(--line);
-    background: var(--color-surface-neutral);
-  }
-
-  &__header h2 {
-    margin: 0;
-    font-family: var(--font-display);
-    font-size: 1.25rem;
-    font-weight: 600;
-    letter-spacing: -0.02em;
-  }
+  border-color: rgb(255 255 255 / 16%);
+  border-bottom: 0;
+  border-radius: 16px 16px 0 0;
+  background: rgb(255 255 255 / 6%);
+  box-shadow: none;
 
   &__list {
     display: grid;
@@ -108,16 +92,15 @@ defineEmits<{
   &__list button {
     display: flex;
     min-width: 0;
-    min-height: 92px;
-    flex-direction: column;
+    min-height: 60px;
     justify-content: center;
     align-items: center;
     gap: 8px;
-    padding: 12px 8px;
+    padding: 10px 12px;
     border: 0;
-    border-left: 1px solid var(--line);
+    border-left: 1px solid rgb(255 255 255 / 14%);
     background: transparent;
-    color: var(--ink);
+    color: white;
     text-align: center;
     text-decoration: none;
     cursor: pointer;
@@ -132,21 +115,21 @@ defineEmits<{
 
   &__list a:hover,
   &__list button:hover {
-    background: var(--color-brand-tint-subtle);
-    color: var(--color-brand);
+    background: rgb(255 255 255 / 9%);
+    color: white;
   }
 
   &__list a:focus-visible,
   &__list button:focus-visible {
     z-index: 1;
-    outline: 2px solid var(--color-focus);
+    outline: 2px solid var(--color-brand-muted);
     outline-offset: -3px;
   }
 
   &__list strong {
     min-width: 0;
     font-size: 0.82rem;
-    line-height: 1.25;
+    line-height: 1.15;
     text-wrap: balance;
   }
 
@@ -157,45 +140,33 @@ defineEmits<{
   &__icon {
     display: grid;
     place-items: center;
-    width: 34px;
-    height: 34px;
+    width: 30px;
+    height: 30px;
     flex-shrink: 0;
-    border-radius: 10px;
-    background: var(--mint);
-    color: var(--color-brand);
+    border-radius: 9px;
+    background: rgb(255 255 255 / 10%);
+    color: var(--color-brand-muted);
   }
 }
 
 @media (width <= 700px) {
   .actions-card {
-    grid-template-columns: minmax(0, 1fr);
-
-    &__header {
-      justify-content: center;
-      padding: 11px 14px;
-      border-right: 0;
-      border-bottom: 1px solid var(--line);
-    }
-
-    &__header h2 {
-      font-size: 1rem;
-    }
-
     &__list a,
     &__list button {
-      min-height: 80px;
-      gap: 6px;
-      padding: 9px 3px;
+      min-height: 54px;
+      gap: 4px;
+      padding: 8px 3px;
     }
 
     &__list strong {
-      font-size: 0.7rem;
+      font-size: 0.64rem;
+      white-space: nowrap;
     }
 
     &__icon {
-      width: 29px;
-      height: 29px;
-      border-radius: 9px;
+      width: 24px;
+      height: 24px;
+      border-radius: 7px;
     }
 
     &__label-full {
