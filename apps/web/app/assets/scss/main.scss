@@ -96,6 +96,23 @@
     font: inherit;
   }
 
+  // Mobile Safari zooms the page when a focused form control renders below
+  // 16px. Keep controls at that threshold on touch devices without disabling
+  // pinch-to-zoom, which remains important for accessibility.
+  @media (hover: none) and (pointer: coarse) {
+    input:not(
+      [type="checkbox"],
+      [type="radio"],
+      [type="range"],
+      [type="color"]
+    ),
+    textarea,
+    select {
+      // Component-scoped form styles often have greater specificity.
+      font-size: max(1rem, 16px) !important;
+    }
+  }
+
   select:not([multiple]) {
     appearance: none;
     padding-right: 2.75rem;
