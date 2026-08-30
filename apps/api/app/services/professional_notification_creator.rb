@@ -27,7 +27,7 @@ class ProfessionalNotificationCreator
     "customer_recommendation_published" => ["Nova recomendação publicada", "Uma recomendação de cliente foi publicada no seu perfil."]
   }.freeze
 
-  def call(recipient:, notification_type:, route:, idempotency_key:, occurred_at: Time.current)
+  def call(recipient:, notification_type:, idempotency_key:, route_params: {}, occurred_at: Time.current)
     return unless eligible?(recipient)
 
     title, description = COPY.fetch(notification_type)
@@ -38,7 +38,7 @@ class ProfessionalNotificationCreator
         status: "unread",
         title:,
         description:,
-        route:,
+        route_params: route_params.to_h.stringify_keys,
         occurred_at:
       )
     end

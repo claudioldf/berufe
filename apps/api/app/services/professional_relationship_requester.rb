@@ -44,7 +44,6 @@ class ProfessionalRelationshipRequester
       @notifier.call(
         recipient: recipient.user_account,
         notification_type: "relationship_request_received",
-        route: "/app/professional/profile?tab=relacoes",
         idempotency_key: "relationship:#{relationship.id}:requested",
         occurred_at: now
       )

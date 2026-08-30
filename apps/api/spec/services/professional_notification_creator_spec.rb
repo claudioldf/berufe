@@ -11,7 +11,6 @@ RSpec.describe ProfessionalNotificationCreator do
       described_class.new.call(
         recipient: account,
         notification_type: "relationship_request_received",
-        route: "/app/professional/profile?tab=relacoes",
         idempotency_key: "relationship:relationship-id:requested",
         occurred_at: now
       )
@@ -23,7 +22,7 @@ RSpec.describe ProfessionalNotificationCreator do
       status: "unread",
       title: "Nova solicitação de conexão",
       description: "Um profissional quer adicionar uma conexão com você.",
-      route: "/app/professional/profile?tab=relacoes",
+      route_params: {},
       occurred_at: now,
       read_at: nil
     )
@@ -51,7 +50,6 @@ RSpec.describe ProfessionalNotificationCreator do
       described_class.new.call(
         recipient: account,
         notification_type: "quote_approved",
-        route: "/app/professional/quotes",
         idempotency_key: "ineligible:#{index}"
       )
     end

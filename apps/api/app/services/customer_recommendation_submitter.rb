@@ -50,7 +50,6 @@ class CustomerRecommendationSubmitter
       @notifier.call(
         recipient: professional.user_account,
         notification_type: "customer_recommendation_published",
-        route: "/profissionais/#{professional.public_slug}#customer-recommendations-title",
         idempotency_key: "customer-recommendation:#{recommendation.id}:published",
         occurred_at: now
       )

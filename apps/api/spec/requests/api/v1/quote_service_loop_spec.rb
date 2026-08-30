@@ -64,7 +64,7 @@ RSpec.describe "Quote service loop", type: :request, openapi: true do
     expect(quote.service_job).to be_nil
     expect(Notification.find_by!(notification_type: "quote_change_requested")).to have_attributes(
       recipient_user_account: account,
-      route: "/app/professional/quotes/new?quote=#{quote.id}"
+      route_params: {"quote_id" => quote.id}
     )
     assert_api_conform(status: 200)
 
@@ -144,7 +144,7 @@ RSpec.describe "Quote service loop", type: :request, openapi: true do
     expect(ServiceJob.where(quote:).count).to eq(1)
     expect(Notification.find_by!(notification_type: "quote_approved")).to have_attributes(
       recipient_user_account: account,
-      route: "/app/professional/quotes/new?quote=#{quote.id}"
+      route_params: {"quote_id" => quote.id}
     )
     assert_api_conform(status: 200)
 
@@ -231,7 +231,7 @@ RSpec.describe "Quote service loop", type: :request, openapi: true do
     )
     expect(Notification.find_by!(notification_type: "service_completion_issue_reported")).to have_attributes(
       recipient_user_account: account,
-      route: "/app/professional/services/#{service_job.id}"
+      route_params: {"service_job_id" => service_job.id}
     )
     assert_api_conform(status: 200)
 
@@ -254,7 +254,7 @@ RSpec.describe "Quote service loop", type: :request, openapi: true do
     )
     expect(Notification.find_by!(notification_type: "service_completion_confirmed")).to have_attributes(
       recipient_user_account: account,
-      route: "/app/professional/services/#{service_job.id}"
+      route_params: {"service_job_id" => service_job.id}
     )
     recommendation_request = service_job.customer_recommendation_request
     expect(recommendation_request).to have_attributes(status: "open", sent_at: nil)
@@ -315,7 +315,7 @@ RSpec.describe "Quote service loop", type: :request, openapi: true do
     )
     expect(Notification.find_by!(notification_type: "customer_recommendation_published")).to have_attributes(
       recipient_user_account: account,
-      route: "/profissionais/#{profile.public_slug}#customer-recommendations-title"
+      route_params: {}
     )
     assert_api_conform(status: 201)
 

@@ -22,6 +22,10 @@ RSpec.describe "Professional notifications", type: :request, openapi: true do
     expect(response).to have_http_status(:ok)
     expect(response.headers["Cache-Control"]).to eq("no-store")
     expect(response.parsed_body.dig("data", "notifications").pluck("id")).to eq([newer.id, middle.id])
+    expect(response.parsed_body.dig("data", "notifications").first).to include(
+      "route" => "/app/professional/quotes/new?quote=#{newer.route_params.fetch("quote_id")}"
+    )
+    expect(response.body).not_to include("route_params")
     expect(response.parsed_body.dig("data", "unread_count")).to eq(3)
     cursor = response.parsed_body.dig("data", "next_cursor")
     expect(cursor).to be_present
@@ -35,6 +39,31 @@ RSpec.describe "Professional notifications", type: :request, openapi: true do
     expect(response.parsed_body.dig("data", "notifications").pluck("id")).to eq([older.id])
     expect(response.parsed_body.dig("data", "unread_count")).to eq(3)
     expect(response.parsed_body.dig("data", "next_cursor")).to be_nil
+    assert_api_conform(status: 200)
+  end
+
+  it "resolves a recommendation destination from the recipient's current profile slug" do
+    profile = ProfessionalProfile.create!(user_account: account, display_name: "Ana Inicial")
+    notification = Notification.create!(
+      recipient_user_account: account,
+      notification_type: "customer_recommendation_published",
+      title: "Nova recomendação publicada",
+      description: "Uma recomendação de cliente foi publicada no seu perfil.",
+      route_params: {},
+      idempotency_key: "recommendation:current-slug",
+      occurred_at: Time.current
+    )
+    profile.update!(public_slug: "ana-atualizada")
+
+    get "/api/v1/professional/notifications",
+      headers: session_headers(request_id: "notification-current-slug")
+
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body.dig("data", "notifications").sole).to include(
+      "id" => notification.id,
+      "route" => "/profissionais/ana-atualizada#customer-recommendations-title"
+    )
+    expect(response.body).not_to include("route_params")
     assert_api_conform(status: 200)
   end
 
@@ -173,12 +202,13 @@ RSpec.describe "Professional notifications", type: :request, openapi: true do
   end
 
   def create_notification(account:, key:, occurred_at:, created_at: Time.current)
+    quote_id = SecureRandom.uuid
     Notification.create!(
       recipient_user_account: account,
       notification_type: "quote_approved",
       title: "Orçamento aprovado",
       description: "Um cliente aprovou um orçamento.",
-      route: "/app/professional/quotes/new?quote=quote-id",
+      route_params: {quote_id:},
       idempotency_key: key,
       occurred_at:,
       created_at:,
