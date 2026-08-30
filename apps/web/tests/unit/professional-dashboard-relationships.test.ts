@@ -314,6 +314,9 @@ describe("professional dashboard", () => {
     expect(wrapper.find(".dashboard-content .actions-card").exists()).toBe(
       false,
     );
+    expect(wrapper.find('a[aria-label="Ver verificações"]').exists()).toBe(
+      false,
+    );
     expect(wrapper.find(".dashboard-sidebar .actions-card").exists()).toBe(
       false,
     );
@@ -523,6 +526,12 @@ describe("professional dashboard", () => {
       "Recomendar um profissional",
     );
     expect(wrapper.text()).not.toContain("Fortaleça seu perfil");
+
+    await wrapper.setProps({ identityVerified: true });
+    expect(wrapper.find('a[aria-label="Ver verificações"]').exists()).toBe(
+      false,
+    );
+    expect(wrapper.findAll(".actions-card__list > *")).toHaveLength(4);
 
     await wrapper.get("button").trigger("click");
     expect(wrapper.emitted("recommend")).toEqual([[]]);

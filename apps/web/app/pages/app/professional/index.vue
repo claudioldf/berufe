@@ -26,6 +26,9 @@ const dashboardReady = computed(
     !professionalWorkspace.error.value &&
     Boolean(workspace.value),
 );
+const identityVerified = computed(
+  () => workspace.value?.dashboard.readiness.steps.approvedIdentity ?? false,
+);
 const professionalFirstName = computed(
   () =>
     workspace.value?.profile.identity.name.trim().split(" ")[0] ??
@@ -295,6 +298,7 @@ async function respondRelationship(
         <DashboardQuickActions
           v-if="dashboardReady"
           class="dashboard-welcome__quick-actions"
+          :identity-verified="identityVerified"
           @recommend="relationshipOpen = true"
         />
       </DesignSystemContainer>

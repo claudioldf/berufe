@@ -1,4 +1,12 @@
 <script setup lang="ts">
+interface Props {
+  identityVerified?: boolean;
+}
+
+withDefaults(defineProps<Props>(), {
+  identityVerified: false,
+});
+
 defineEmits<{
   recommend: [];
 }>();
@@ -10,7 +18,12 @@ defineEmits<{
     class="actions-card"
     aria-label="Ações rápidas"
   >
-    <div class="actions-card__list">
+    <div
+      class="actions-card__list"
+      :class="{
+        'actions-card__list--without-verification': identityVerified,
+      }"
+    >
       <NuxtLink to="/app/professional/profile" aria-label="Editar perfil">
         <span class="actions-card__icon">
           <UIcon name="i-lucide-pencil" aria-hidden="true" />
@@ -33,6 +46,7 @@ defineEmits<{
         </strong>
       </NuxtLink>
       <NuxtLink
+        v-if="!identityVerified"
         to="/app/professional/profile?tab=verificacoes"
         aria-label="Ver verificações"
       >
@@ -86,6 +100,10 @@ defineEmits<{
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
     min-width: 0;
+  }
+
+  &__list--without-verification {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   &__list a,
