@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { reactive, shallowRef, watch } from "vue";
+import { reactive, shallowRef, useTemplateRef, watch } from "vue";
 import type { PortfolioItemDraft } from "~/types";
 import { useImagePreview } from "~/composables/useImagePreview";
+import { useInlineFormValidation } from "~/composables/useInlineFormValidation";
 import { validateOnboardingImage } from "~/composables/useProfessionalOnboarding";
 
 const props = withDefaults(
@@ -27,6 +28,8 @@ const title = shallowRef("");
 const service = shallowRef("");
 const description = shallowRef("");
 const errors = reactive({ file: "", title: "", service: "" });
+const formRoot = useTemplateRef<HTMLFormElement>("formRoot");
+const { revealValidation, resetValidation } = useInlineFormValidation(formRoot);
 const { previewUrl, setPreviewFile, clearPreview } = useImagePreview();
 
 watch(
@@ -53,6 +56,7 @@ function reset() {
   errors.file = "";
   errors.title = "";
   errors.service = "";
+  resetValidation();
 }
 
 function cancel() {
@@ -61,16 +65,18 @@ function cancel() {
 }
 
 function submit() {
-  const fileValidation = validateOnboardingImage(file.value);
+  const selectedFile = file.value;
+  const fileValidation = validateOnboardingImage(selectedFile);
   errors.file = fileValidation.error;
   errors.title = title.value.trim() ? "" : "Informe o título do trabalho.";
   errors.service = service.value ? "" : "Selecione o serviço realizado.";
-  if (!fileValidation.valid || errors.title || errors.service || !file.value) {
-    return;
-  }
+  const valid = Boolean(
+    fileValidation.valid && !errors.title && !errors.service && selectedFile,
+  );
+  if (!revealValidation(valid) || !selectedFile) return;
 
   emit("submitted", {
-    file: file.value,
+    file: selectedFile,
     title: title.value.trim(),
     service: service.value,
     description: description.value.trim(),
@@ -80,8 +86,16 @@ function submit() {
 </script>
 
 <template>
-  <form class="portfolio-upload" @submit.prevent="submit">
-    <label class="portfolio-upload__drop">
+  <form
+    ref="formRoot"
+    class="portfolio-upload"
+    novalidate
+    @submit.prevent="submit"
+  >
+    <label
+      class="portfolio-upload__drop"
+      :class="{ 'portfolio-upload__drop--invalid': errors.file }"
+    >
       <img
         v-if="previewUrl"
         class="portfolio-upload__preview"
@@ -183,7 +197,7 @@ function submit() {
         type="submit"
         color="primary"
         :loading="props.submitting"
-        :disabled="props.submitting || !file || !title.trim() || !service"
+        :disabled="props.submitting"
       >
         {{ submitLabel }}
       </UButton>
@@ -223,6 +237,13 @@ function submit() {
     inset: 0;
     opacity: 0;
     cursor: pointer;
+  }
+  &__drop--invalid {
+    border-color: var(--color-danger);
+    background: var(--color-danger-tint);
+  }
+  &__drop--invalid:focus-within {
+    box-shadow: 0 0 0 3px rgb(180 35 24 / 16%);
   }
   &__preview {
     width: 100%;
