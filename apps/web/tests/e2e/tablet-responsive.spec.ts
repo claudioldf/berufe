@@ -110,7 +110,10 @@ async function expectStatusContentFollowsIcon(status: Locator) {
   expect(contentBox.x - (iconBox.x + iconBox.width)).toBeLessThanOrEqual(16);
 }
 
-async function expectQuickActionsOnOneRow(quickActions: Locator) {
+async function expectQuickActionsOnOneRow(
+  quickActions: Locator,
+  orientation: "horizontal" | "vertical" = "horizontal",
+) {
   const boxes = await quickActions
     .locator(".actions-card__list > *")
     .evaluateAll((actions) =>
@@ -126,9 +129,13 @@ async function expectQuickActionsOnOneRow(quickActions: Locator) {
           top: Math.round(box.top),
           height: box.height,
           width: box.width,
+          iconBottom: iconBox.bottom,
           iconRight: iconBox.right,
+          iconCenterX: iconBox.left + iconBox.width / 2,
           iconCenterY: iconBox.top + iconBox.height / 2,
           labelLeft: labelBox.left,
+          labelTop: labelBox.top,
+          labelCenterX: labelBox.left + labelBox.width / 2,
           labelCenterY: labelBox.top + labelBox.height / 2,
         };
       }),
@@ -138,9 +145,16 @@ async function expectQuickActionsOnOneRow(quickActions: Locator) {
   expect(new Set(boxes.map((box) => box.top)).size).toBe(1);
   expect(boxes.every((box) => box.width >= 44)).toBe(true);
   expect(boxes.every((box) => box.height <= 64)).toBe(true);
-  expect(boxes.every((box) => box.labelLeft >= box.iconRight)).toBe(true);
+  if (orientation === "horizontal") {
+    expect(boxes.every((box) => box.labelLeft >= box.iconRight)).toBe(true);
+    expect(
+      boxes.every((box) => Math.abs(box.iconCenterY - box.labelCenterY) <= 1),
+    ).toBe(true);
+    return;
+  }
+  expect(boxes.every((box) => box.labelTop >= box.iconBottom)).toBe(true);
   expect(
-    boxes.every((box) => Math.abs(box.iconCenterY - box.labelCenterY) <= 1),
+    boxes.every((box) => Math.abs(box.iconCenterX - box.labelCenterX) <= 1),
   ).toBe(true);
 }
 
@@ -286,7 +300,7 @@ test("onboarding and dashboard remain spacious across responsive layouts", async
   await expectStatusContentFollowsIcon(status);
   await expectSameWidth(operational, recentWork);
   await expectSameWidth(sidebar, checklist);
-  await expectQuickActionsOnOneRow(quickActions);
+  await expectQuickActionsOnOneRow(quickActions, "vertical");
   await expect(
     page.locator(".dashboard-operational .feature-empty__visual"),
   ).toBeHidden();

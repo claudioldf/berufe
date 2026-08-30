@@ -265,7 +265,10 @@ async function respondRelationship(
 
 <template>
   <div class="dashboard-page">
-    <section class="dashboard-welcome">
+    <section
+      class="dashboard-welcome"
+      :class="{ 'dashboard-welcome--ready': dashboardReady }"
+    >
       <DesignSystemContainer class="dashboard-welcome__container">
         <div class="dashboard-welcome__inner">
           <div>
@@ -406,9 +409,12 @@ async function respondRelationship(
   background: var(--color-surface-canvas);
 }
 .dashboard-welcome {
-  padding: 40px 0 0;
+  padding: 40px 0 44px;
   background: var(--color-brand-strong);
   color: white;
+  &--ready {
+    padding-bottom: 0;
+  }
   &__inner {
     display: flex;
     justify-content: space-between;

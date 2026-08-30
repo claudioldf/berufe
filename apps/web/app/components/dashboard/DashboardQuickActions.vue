@@ -153,9 +153,10 @@ defineEmits<{
   .actions-card {
     &__list a,
     &__list button {
-      min-height: 54px;
-      gap: 4px;
-      padding: 8px 3px;
+      min-height: 58px;
+      flex-direction: column;
+      gap: 3px;
+      padding: 6px 2px;
     }
 
     &__list strong {
