@@ -21,6 +21,10 @@ interface PublicProfileResultUrlOptions {
   requestMessage?: string;
 }
 
+export function buildPublicProfilePath(slug: string) {
+  return `/be/${slug}`;
+}
+
 export function buildPublicProfileResultUrl(
   options: PublicProfileResultUrlOptions,
 ) {
@@ -32,7 +36,7 @@ export function buildPublicProfileResultUrl(
     query.set("pedido", options.requestMessage);
   }
 
-  return `/profissionais/${options.slug}?${query.toString()}`;
+  return `${buildPublicProfilePath(options.slug)}?${query.toString()}`;
 }
 
 interface SearchResultWhatsAppUrlOptions {

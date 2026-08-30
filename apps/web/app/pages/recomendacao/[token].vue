@@ -87,7 +87,7 @@ async function submit() {
           Obrigado por compartilhar sua experiência. Ela já pode aparecer no
           perfil público de {{ context.professional.name }}.
         </p>
-        <UButton :to="`/profissionais/${context.professional.slug}`">
+        <UButton :to="buildPublicProfilePath(context.professional.slug)">
           Ver perfil profissional
         </UButton>
       </DesignSystemSurfaceCard>

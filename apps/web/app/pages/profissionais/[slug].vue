@@ -22,6 +22,7 @@ const client = useApiClient();
 const runtimeConfig = useRuntimeConfig();
 const { share } = useShare();
 const { showToast } = useToast();
+definePageMeta({ alias: "/be/:slug" });
 const requestedSlug = computed(() =>
   String(
     Array.isArray(route.params.slug) ? route.params.slug[0] : route.params.slug,
@@ -111,7 +112,7 @@ const socialLinks = computed<SocialLink[]>(() => {
 const siteUrlRef = withSiteUrl("/");
 const canonicalUrl = computed(
   () =>
-    `${siteUrlRef.value.replace(/\/$/, "")}/profissionais/${professional.value.slug}`,
+    `${siteUrlRef.value.replace(/\/$/, "")}${buildPublicProfilePath(professional.value.slug)}`,
 );
 const professionalCity = computed(
   () => professional.value.coverage.city?.name ?? "sua cidade",

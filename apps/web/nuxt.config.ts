@@ -239,6 +239,7 @@ export default defineNuxtConfig({
     "/": { prerender: false },
     "/encontrar": { prerender: false },
     "/encontrar/**": { prerender: false, swr: 300 },
+    "/be/**": { prerender: false, swr: 300 },
     "/profissionais/**": { prerender: false, swr: 300 },
     // The "/**" rules below don't match their own bare parent path, so each
     // needs an explicit entry or the index page never gets SWR caching.

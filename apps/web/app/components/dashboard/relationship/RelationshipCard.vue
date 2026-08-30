@@ -55,7 +55,7 @@ const removalLabel = computed(() =>
         <div>
           <NuxtLink
             v-if="otherProfessional.profileAvailable"
-            :to="`/profissionais/${otherProfessional.publicSlug}`"
+            :to="buildPublicProfilePath(otherProfessional.publicSlug)"
           >
             {{ otherProfessional.displayName }}
             <UIcon name="i-lucide-arrow-up-right" aria-hidden="true" />

@@ -89,7 +89,7 @@ describe("onboarding step contracts", () => {
       },
     });
 
-    const publicProfile = wrapper.get('a[href="/profissionais/ana-souza"]');
+    const publicProfile = wrapper.get('a[href="/be/ana-souza"]');
     expect(publicProfile.text()).toContain("Ver perfil público");
     expect(publicProfile.attributes("target")).toBe("_blank");
     expect(publicProfile.attributes("rel")).toBe("noopener noreferrer");

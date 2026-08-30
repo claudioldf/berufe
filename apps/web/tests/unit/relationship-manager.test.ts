@@ -105,9 +105,7 @@ describe("professional relationship manager", () => {
     expect(wrapper.text()).toContain("Aguardando sua resposta");
     expect(wrapper.text()).toContain("Caio Costa");
     expect(wrapper.text()).toContain("Perfil público indisponível");
-    expect(wrapper.find('a[href="/profissionais/ana-souza"]').exists()).toBe(
-      true,
-    );
+    expect(wrapper.find('a[href="/be/ana-souza"]').exists()).toBe(true);
 
     const inboundCard = wrapper
       .findAll("article")

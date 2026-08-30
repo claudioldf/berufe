@@ -308,7 +308,7 @@ test("existing members publish a relationship by confirming it together", async 
   await pending.getByRole("button", { name: "Conectar" }).click();
   expect((await responseRequest).status()).toBe(200);
 
-  await recipientPage.goto(`/profissionais/${recipient.slug}`);
+  await recipientPage.goto(`/be/${recipient.slug}`);
   await expect(recipientPage.getByText(note)).toBeVisible();
   await expect(
     recipientPage.getByText(`Recomendado por ${initiator.name}`),
@@ -359,7 +359,7 @@ test("existing members publish a relationship by confirming it together", async 
     .click();
   expect((await replacementResponse).status()).toBe(201);
 
-  await recipientPage.goto(`/profissionais/${recipient.slug}`);
+  await recipientPage.goto(`/be/${recipient.slug}`);
   await expect(recipientPage.getByText(note)).toHaveCount(0);
   await expect(recipientPage.getByText(replacementNote)).toHaveCount(0);
 
@@ -431,7 +431,7 @@ test("an indicated professional claims the external profile and publishes the co
     public_slug: string;
   };
 
-  await page.goto(`/profissionais/${externalProfile.public_slug}`);
+  await page.goto(`/be/${externalProfile.public_slug}`);
   await expect(
     page.getByRole("heading", { level: 1, name: externalName }),
   ).toBeVisible();
@@ -487,7 +487,7 @@ test("an indicated professional claims the external profile and publishes the co
   await recipientPage.getByRole("button", { name: "Criar meu perfil" }).click();
   await expect(recipientPage).toHaveURL(/\/app\/professional\/onboarding$/);
 
-  await recipientPage.goto(`/profissionais/${externalProfile.public_slug}`);
+  await recipientPage.goto(`/be/${externalProfile.public_slug}`);
   await expect(
     recipientPage.getByText("Telefone confirmado pelo profissional"),
   ).toBeVisible();
@@ -508,7 +508,7 @@ test("an indicated professional claims the external profile and publishes the co
   await pending.getByRole("button", { name: "Conectar" }).click();
   expect((await acceptResponsePromise).status()).toBe(200);
 
-  await recipientPage.goto(`/profissionais/${externalProfile.public_slug}`);
+  await recipientPage.goto(`/be/${externalProfile.public_slug}`);
   await expect(recipientPage.getByText(note)).toBeVisible();
   await expect(
     recipientPage.getByText(`Recomendado por ${initiator.name}`),
@@ -560,7 +560,7 @@ test("an indicated professional claims the external profile and publishes the co
     }),
   ).toBeVisible();
 
-  await recipientPage.goto(`/profissionais/${externalProfile.public_slug}`);
+  await recipientPage.goto(`/be/${externalProfile.public_slug}`);
   await expect(
     recipientPage.getByRole("heading", { level: 1, name: externalName }),
   ).toBeVisible();

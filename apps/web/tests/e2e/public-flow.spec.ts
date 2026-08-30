@@ -301,6 +301,7 @@ test("visitor can search, open a profile, and inspect the WhatsApp redirect", as
   await page.getByRole("link", { name: "Ver perfil" }).first().click();
   await expect((await profileResponsePromise).status()).toBe(200);
   await expect((await profileViewResponsePromise).status()).toBe(204);
+  await expect(page).toHaveURL(/\/be\/marcos-alves(?:\?|$)/);
   await expect(
     page.getByRole("heading", { level: 1, name: "Marcos Alves" }),
   ).toBeVisible();
@@ -330,6 +331,18 @@ test("visitor can search, open a profile, and inspect the WhatsApp redirect", as
       "Eu preciso de eletricista em Joinville, SC.",
   );
   expect(browserErrors).toEqual([]);
+});
+
+test("legacy professional profile URLs remain available", async ({ page }) => {
+  await page.goto("/profissionais/marcos-alves");
+
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Marcos Alves" }),
+  ).toBeVisible();
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+    "href",
+    /\/be\/marcos-alves$/,
+  );
 });
 
 test("an incomplete professional sees onboarding and can skip it", async ({

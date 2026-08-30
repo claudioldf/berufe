@@ -53,7 +53,7 @@ function hasProfileReferences(professional: PublicProfessionalCard) {
           v-for="professional in professionals"
           :key="professional.id"
           class="featured-card"
-          :to="`/profissionais/${professional.slug}`"
+          :to="buildPublicProfilePath(professional.slug)"
         >
           <div class="featured-card__image">
             <DesignSystemAvatar

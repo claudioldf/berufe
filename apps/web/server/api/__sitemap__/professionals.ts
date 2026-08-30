@@ -12,7 +12,7 @@ export default defineSitemapEventHandler(async () => {
   );
 
   return response.data.professionals.map((professional) => ({
-    loc: `/profissionais/${professional.slug}`,
+    loc: `/be/${professional.slug}`,
     lastmod: professional.updated_at ?? undefined,
   }));
 });

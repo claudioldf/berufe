@@ -121,7 +121,9 @@ const connectionCountLabel = computed(() =>
               }}
             </span>
             <p v-if="relationship.note">“{{ relationship.note }}”</p>
-            <NuxtLink :to="`/profissionais/${relationship.professionalSlug}`">
+            <NuxtLink
+              :to="buildPublicProfilePath(relationship.professionalSlug)"
+            >
               {{ relationship.professionalName }}
               <UIcon name="i-lucide-arrow-up-right" />
             </NuxtLink>
