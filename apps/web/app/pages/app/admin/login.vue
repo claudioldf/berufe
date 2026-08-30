@@ -228,9 +228,13 @@ onMounted(async () => {
     background: white;
     color: var(--ink);
     font-weight: 750;
+    outline: none;
   }
-  .auth-field input:focus {
+  .auth-field input:focus,
+  .auth-field > div:focus-within {
     border-color: var(--color-brand);
+  }
+  .auth-field > input:focus {
     box-shadow: 0 0 0 3px rgb(57 122 105 / 12%);
   }
   .auth-error {
