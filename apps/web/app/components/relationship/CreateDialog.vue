@@ -90,14 +90,9 @@ const phoneValidationError = computed(() =>
 );
 const coverageValidationError = computed(() => {
   if (externalCoverageMode.value !== "informed") return "";
-  if (
-    externalCoverage.value.cityCode &&
-    (externalCoverage.value.wholeCity ||
-      externalCoverage.value.neighborhoodCodes.length > 0)
-  ) {
-    return "";
-  }
-  return 'Selecione a cidade inteira, ao menos um bairro ou marque "Não sei".';
+  return externalCoverage.value.cityCode
+    ? ""
+    : 'Selecione o estado e a cidade ou marque "Não sei".';
 });
 const displayedLookupError = computed(() =>
   validationAttempted.value ? lookupValidationError.value : "",
@@ -232,11 +227,8 @@ async function submit() {
             : null,
         wholeCity:
           externalCoverageMode.value === "informed" &&
-          externalCoverage.value.wholeCity,
-        neighborhoodCodes:
-          externalCoverageMode.value === "informed"
-            ? externalCoverage.value.neighborhoodCodes
-            : [],
+          Boolean(externalCoverage.value.cityCode),
+        neighborhoodCodes: [],
       },
       contactPublicationAttested: true as const,
     };

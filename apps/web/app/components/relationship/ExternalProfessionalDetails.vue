@@ -63,6 +63,7 @@ const props = withDefaults(
         v-if="coverageMode === 'informed'"
         v-model="coverage"
         :validation-error="props.coverageError"
+        city-selection-covers-whole-city
       />
     </fieldset>
   </div>

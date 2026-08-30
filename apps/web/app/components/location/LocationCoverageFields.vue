@@ -4,9 +4,16 @@ import type { LocationCoverageDraft } from "~/types";
 import { useLocations } from "~/composables/useLocations";
 
 const model = defineModel<LocationCoverageDraft>({ required: true });
-const props = withDefaults(defineProps<{ validationError?: string }>(), {
-  validationError: "",
-});
+const props = withDefaults(
+  defineProps<{
+    validationError?: string;
+    citySelectionCoversWholeCity?: boolean;
+  }>(),
+  {
+    validationError: "",
+    citySelectionCoversWholeCity: false,
+  },
+);
 const emit = defineEmits<{ dirty: [] }>();
 const selectedStateCode = shallowRef("");
 const {
@@ -32,6 +39,10 @@ const stateValidationError = computed(() =>
 const cityValidationError = computed(() =>
   selectedStateCode.value ? locationValidationError.value : "",
 );
+const stateInvalid = computed(() =>
+  Boolean(locationValidationError.value && !selectedStateCode.value),
+);
+const cityInvalid = computed(() => Boolean(locationValidationError.value));
 const areaValidationError = computed(() =>
   model.value.cityCode ? props.validationError : "",
 );
@@ -39,7 +50,12 @@ const areaValidationError = computed(() =>
 onMounted(async () => {
   const selected = await initialize(model.value.cityCode);
   selectedStateCode.value = selected?.state.code ?? "";
-  if (selected && neighborhoods.value.length === 0) setWholeCity(true);
+  if (
+    selected &&
+    (props.citySelectionCoversWholeCity || neighborhoods.value.length === 0)
+  ) {
+    setWholeCity(true);
+  }
 });
 
 async function changeState(event: Event) {
@@ -53,8 +69,12 @@ async function changeState(event: Event) {
 
 async function changeCity(event: Event) {
   const cityCode = (event.target as HTMLSelectElement).value;
-  model.value = { cityCode, wholeCity: false, neighborhoodCodes: [] };
-  if (cityCode) {
+  model.value = {
+    cityCode,
+    wholeCity: Boolean(cityCode && props.citySelectionCoversWholeCity),
+    neighborhoodCodes: [],
+  };
+  if (cityCode && !props.citySelectionCoversWholeCity) {
     const loaded = await loadNeighborhoods(cityCode);
     if (loaded.length === 0) setWholeCity(true);
   }
@@ -98,12 +118,15 @@ function toggleNeighborhood(code: string) {
       >
         <select
           :id="field.controlId"
+          :class="{
+            'location-coverage-fields__select--invalid': stateInvalid,
+          }"
           :value="selectedStateCode"
           name="coverage-state"
           required
           :disabled="loading"
           :aria-describedby="field.describedBy"
-          :aria-invalid="field.invalid"
+          :aria-invalid="stateInvalid"
           @change="changeState"
         >
           <option value="">Selecione</option>
@@ -121,12 +144,18 @@ function toggleNeighborhood(code: string) {
       >
         <select
           :id="field.controlId"
+          :class="{
+            'location-coverage-fields__select--invalid': cityInvalid,
+          }"
           :value="model.cityCode"
           name="coverage-city"
           required
           :disabled="loading || !selectedStateCode"
-          :aria-describedby="field.describedBy"
-          :aria-invalid="field.invalid"
+          :aria-describedby="
+            field.describedBy ||
+            (cityInvalid ? 'coverage-state-error' : undefined)
+          "
+          :aria-invalid="cityInvalid"
           @change="changeCity"
         >
           <option value="">Selecione</option>
@@ -142,7 +171,7 @@ function toggleNeighborhood(code: string) {
     </p>
 
     <div
-      v-if="selectedCity"
+      v-if="selectedCity && !props.citySelectionCoversWholeCity"
       class="location-coverage-fields__area"
       :class="{
         'location-coverage-fields__area--invalid': areaValidationError,
@@ -232,6 +261,16 @@ function toggleNeighborhood(code: string) {
     border-radius: 10px;
     background-color: white;
     color: var(--ink);
+  }
+
+  &__selectors select.location-coverage-fields__select--invalid {
+    border-color: var(--color-danger);
+    background-color: var(--color-danger-tint);
+  }
+
+  &__selectors select.location-coverage-fields__select--invalid:focus-visible {
+    border-color: var(--color-danger);
+    box-shadow: 0 0 0 3px rgb(180 35 24 / 16%);
   }
 
   &__whole-city {
