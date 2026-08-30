@@ -70,7 +70,7 @@ RSpec.describe "Phone OTP challenge requests", type: :request, openapi: true do
     expect(response.parsed_body).to eq(
       "error" => {
         "code" => "invalid_phone",
-        "message" => "Digite um número brasileiro válido.",
+        "message" => "Digite um número de celular válido.",
         "field_errors" => {"phone" => ["não é válido"]},
         "request_id" => "otp-invalid"
       }

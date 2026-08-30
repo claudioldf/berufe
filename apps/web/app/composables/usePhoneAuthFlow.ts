@@ -73,7 +73,7 @@ export function usePhoneAuthFlow(dependencies: PhoneAuthFlowDependencies = {}) {
 
     error.value = "";
     if (!cleanPhone.value) {
-      error.value = "Digite um número brasileiro válido.";
+      error.value = "Digite um número de celular válido.";
       return;
     }
 

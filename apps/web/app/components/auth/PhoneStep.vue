@@ -19,7 +19,7 @@ const { validationAttempted, revealValidation } =
 const localError = computed(() =>
   normalizeBrazilianMobilePhone(phone.value)
     ? ""
-    : "Digite um número brasileiro válido.",
+    : "Digite um número de celular válido.",
 );
 const displayedError = computed(
   () => props.error || (validationAttempted.value ? localError.value : ""),

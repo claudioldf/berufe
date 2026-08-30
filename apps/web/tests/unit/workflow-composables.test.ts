@@ -177,7 +177,7 @@ describe("phone authentication", () => {
 
     workflow.phone.value = "47 3333-1111";
     await workflow.requestCode();
-    expect(workflow.error.value).toBe("Digite um número brasileiro válido.");
+    expect(workflow.error.value).toBe("Digite um número de celular válido.");
     expect(requestOtp).not.toHaveBeenCalled();
 
     workflow.phone.value = "47999991111";
