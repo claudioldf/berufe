@@ -110,16 +110,19 @@ export function validateOnboardingProfile(
 export function validateOnboardingServices(
   draft: ProfessionalProfileDraft,
 ): OnboardingServicesErrors {
-  const hasServices =
-    draft.selectedServices.length > 0 &&
+  const hasServices = draft.selectedServices.length > 0;
+  const hasFeaturedService =
+    draft.selectedServices.length === 1 ||
     draft.selectedServices.includes(draft.primaryService);
   const hasCoverage =
     Boolean(draft.coverageCityCode) &&
     (draft.coversWholeCity || draft.selectedNeighborhoodCodes.length > 0);
   return {
-    services: hasServices
-      ? ""
-      : "Escolha ao menos um serviço e defina o principal.",
+    services: !hasServices
+      ? "Escolha ao menos um serviço."
+      : hasFeaturedService
+        ? ""
+        : "Escolha o serviço que deve aparecer em destaque.",
     coverage: hasCoverage
       ? ""
       : "Selecione uma cidade inteira ou pelo menos um bairro dela.",

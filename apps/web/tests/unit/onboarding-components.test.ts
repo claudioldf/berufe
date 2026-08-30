@@ -290,9 +290,7 @@ describe("onboarding step contracts", () => {
     expect(wrapper.get("#profile-service-selection-error").text()).toContain(
       "serviço",
     );
-    expect(
-      wrapper.get('select[name="primary-service"]').attributes("aria-invalid"),
-    ).toBe("false");
+    expect(wrapper.find('select[name="primary-service"]').exists()).toBe(false);
 
     await wrapper.get('button[aria-pressed="false"]').trigger("click");
     expect(wrapper.get(".service-picker").attributes("aria-invalid")).toBe(
@@ -307,6 +305,69 @@ describe("onboarding step contracts", () => {
     await wrapper.get("form").trigger("submit");
 
     expect(wrapper.emitted("complete")).toHaveLength(1);
+    const payload = wrapper.emitted("complete")?.[0]?.[0] as
+      ProfessionalProfileDraft | undefined;
+    expect(payload?.primaryService).toBe(payload?.selectedServices[0]);
+    expect(wrapper.find('select[name="primary-service"]').exists()).toBe(false);
+  });
+
+  it("asks for a featured service only when multiple services are selected", async () => {
+    const wrapper = mount(ServicesStep, {
+      props: {
+        draft: profileDraft({
+          coverageCityCode: "4209102",
+          coversWholeCity: true,
+        }),
+        services,
+      },
+    });
+    const buttonNamed = (name: string) =>
+      wrapper.findAll("button").find((button) => button.text().includes(name))!;
+
+    await buttonNamed("Eletricista").trigger("click");
+    expect(wrapper.text()).not.toContain("Serviço em destaque");
+
+    await buttonNamed("Diarista").trigger("click");
+    expect(wrapper.text()).toContain("Serviço em destaque");
+    expect(wrapper.text()).toContain("Todos continuam disponíveis nas buscas.");
+
+    const featuredService = wrapper.get<HTMLSelectElement>(
+      'select[name="primary-service"]',
+    );
+    await featuredService.setValue("Diarista");
+    await wrapper.get("form").trigger("submit");
+
+    const payload = wrapper.emitted("complete")?.[0]?.[0] as
+      ProfessionalProfileDraft | undefined;
+    expect(payload?.selectedServices).toEqual(["Eletricista", "Diarista"]);
+    expect(payload?.primaryService).toBe("Diarista");
+  });
+
+  it("features the next service when the current featured service is removed", async () => {
+    const wrapper = mount(ServicesStep, {
+      props: {
+        draft: profileDraft({
+          selectedServices: ["Eletricista", "Diarista"],
+          primaryService: "Eletricista",
+          coverageCityCode: "4209102",
+          coversWholeCity: true,
+        }),
+        services,
+      },
+    });
+    const electrician = wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("Eletricista"))!;
+
+    expect(wrapper.text()).toContain("Serviço em destaque");
+    await electrician.trigger("click");
+    expect(wrapper.text()).not.toContain("Serviço em destaque");
+    await wrapper.get("form").trigger("submit");
+
+    const payload = wrapper.emitted("complete")?.[0]?.[0] as
+      ProfessionalProfileDraft | undefined;
+    expect(payload?.selectedServices).toEqual(["Diarista"]);
+    expect(payload?.primaryService).toBe("Diarista");
   });
 
   it("reveals service and coverage errors on their controls", async () => {

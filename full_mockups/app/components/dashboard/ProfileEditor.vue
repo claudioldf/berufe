@@ -7,6 +7,7 @@ const props = defineProps<{ professional: Professional }>()
 const emit = defineEmits<{ save: [] }>()
 const services = catalogsData.services as Service[]
 const neighborhoods = catalogsData.neighborhoods.filter((item) => item.code !== 'all')
+const selectedServices = [...props.professional.services]
 
 const form = reactive({
   name: props.professional.name,
@@ -14,8 +15,10 @@ const form = reactive({
   bio: props.professional.bio,
   yearsExperience: props.professional.yearsExperience,
   whatsapp: '(47) 99999-1111',
-  selectedServices: [...props.professional.services],
-  primaryService: props.professional.primaryService,
+  selectedServices,
+  primaryService: selectedServices.includes(props.professional.primaryService)
+    ? props.professional.primaryService
+    : selectedServices[0] ?? '',
   allJoinville: props.professional.allJoinville,
   selectedNeighborhoods: [...props.professional.neighborhoods],
 })
@@ -29,6 +32,7 @@ function toggleService(name: string) {
     if (form.primaryService === name) form.primaryService = form.selectedServices[0] ?? ''
   } else {
     form.selectedServices.push(name)
+    if (!form.primaryService) form.primaryService = name
   }
 }
 
@@ -59,7 +63,7 @@ function save() {
     </section>
 
     <section class="editor-section">
-      <header><div><span>02</span><div><h2>Serviços</h2><p>Escolha no catálogo o que você realmente oferece.</p></div></div><em>1 principal</em></header>
+      <header><div><span>02</span><div><h2>Serviços</h2><p>Escolha no catálogo o que você realmente oferece.</p></div></div><em>1 ou mais</em></header>
       <div class="service-picker">
         <button
           v-for="service in services"
@@ -73,7 +77,7 @@ function save() {
           <UIcon :name="form.selectedServices.includes(service.name) ? 'i-lucide-circle-check' : 'i-lucide-circle-plus'" />
         </button>
       </div>
-      <DesignSystemFormField class="primary-service" label="Serviço principal do perfil"><select v-model="form.primaryService"><option v-for="service in form.selectedServices" :key="service">{{ service }}</option></select></DesignSystemFormField>
+      <DesignSystemFormField v-if="form.selectedServices.length > 1" class="primary-service" label="Serviço em destaque" hint="Escolha o serviço que aparece primeiro no seu perfil. Todos continuam disponíveis nas buscas."><select v-model="form.primaryService"><option v-for="service in form.selectedServices" :key="service">{{ service }}</option></select></DesignSystemFormField>
     </section>
 
     <section class="editor-section">

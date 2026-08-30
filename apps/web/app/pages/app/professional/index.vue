@@ -140,7 +140,7 @@ const dashboardStatus = computed(() => {
     const blockerLabels = {
       identity: "nome e data de nascimento",
       photo: "foto profissional",
-      services: "serviço principal",
+      services: "serviços",
       coverage: "área de atendimento",
     } as const;
     const missing = profile.publicationBlockers.map(

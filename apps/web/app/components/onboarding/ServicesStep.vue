@@ -3,6 +3,10 @@ import { computed, ref, useTemplateRef } from "vue";
 import type { ProfessionalProfileDraft, Service } from "~/types";
 import { validateOnboardingServices } from "~/composables/useProfessionalOnboarding";
 import { useInlineFormValidation } from "~/composables/useInlineFormValidation";
+import {
+  normalizePrimaryService,
+  toggleProfessionalService,
+} from "~/utils/services";
 
 const props = defineProps<{
   draft: ProfessionalProfileDraft;
@@ -18,6 +22,10 @@ const emit = defineEmits<{
 const form = ref<ProfessionalProfileDraft>({
   ...props.draft,
   selectedServices: [...props.draft.selectedServices],
+  primaryService: normalizePrimaryService(
+    props.draft.selectedServices,
+    props.draft.primaryService,
+  ),
   serviceNotes: { ...props.draft.serviceNotes },
   selectedNeighborhoodCodes: [...props.draft.selectedNeighborhoodCodes],
 });
@@ -39,18 +47,19 @@ const error = computed(
 );
 
 function toggleService(name: string) {
-  if (form.value.selectedServices.includes(name)) {
-    if (form.value.selectedServices.length === 1) return;
-    form.value.selectedServices = form.value.selectedServices.filter(
-      (service) => service !== name,
-    );
-    if (form.value.primaryService === name) {
-      form.value.primaryService = form.value.selectedServices[0] ?? "";
-    }
-  } else {
-    form.value.selectedServices.push(name);
-    if (!form.value.primaryService) form.value.primaryService = name;
-  }
+  if (
+    form.value.selectedServices.includes(name) &&
+    form.value.selectedServices.length === 1
+  )
+    return;
+
+  const selection = toggleProfessionalService(
+    form.value.selectedServices,
+    form.value.primaryService,
+    name,
+  );
+  form.value.selectedServices = selection.selectedServices;
+  form.value.primaryService = selection.primaryService;
 }
 
 function submit() {

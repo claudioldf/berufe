@@ -12,6 +12,7 @@ import {
   formatBrazilianMobilePhone,
   sanitizeBrazilianMobilePhone,
 } from "~/utils/brazilian-phone";
+import { normalizePrimaryService } from "~/utils/services";
 
 type ContractWorkspace = components["schemas"]["ProfessionalWorkspaceData"];
 
@@ -158,13 +159,17 @@ function supplyBody(draft: ProfessionalProfileDraft, services: Service[]) {
   const catalogServices = new Map(
     services.map((service) => [service.name, service]),
   );
+  const primaryService = normalizePrimaryService(
+    draft.selectedServices,
+    draft.primaryService,
+  );
   return {
     services: draft.selectedServices.map((name) => {
       const service = catalogServices.get(name);
       if (!service) throw new Error("Unknown catalog service selection");
       return {
         service_id: service.id,
-        is_primary: name === draft.primaryService,
+        is_primary: name === primaryService,
         note: draft.serviceNotes[name] || null,
       };
     }),
