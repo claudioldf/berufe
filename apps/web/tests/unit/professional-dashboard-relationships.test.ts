@@ -206,12 +206,10 @@ describe("professional dashboard", () => {
       mountOptions,
     );
 
-    const add = wrapper
-      .get(".actions-card")
-      .findAll("button")
-      .find((button) => button.text().includes("Recomendar um profissional"));
-    expect(add).toBeDefined();
-    await add!.trigger("click");
+    const add = wrapper.get(
+      '.actions-card button[aria-label="Recomendar um profissional"]',
+    );
+    await add.trigger("click");
 
     expect(
       wrapper.getComponent({ name: "RelationshipCreateDialog" }).props("open"),
@@ -284,7 +282,7 @@ describe("professional dashboard", () => {
     expect(relationshipRow!.findAll("button")).toHaveLength(0);
   });
 
-  it("prioritizes status and the bare quote empty state before profile tools", async () => {
+  it("places quick actions before status and operational work", async () => {
     mocks.useWorkspace.mockResolvedValue(workspace());
     const wrapper = await mountSuspended(
       ProfessionalDashboardPage,
@@ -300,13 +298,18 @@ describe("professional dashboard", () => {
     );
     const progressIndex = visibleText.indexOf("100% completo");
 
+    expect(quickActionsIndex).toBeGreaterThanOrEqual(0);
+    expect(statusIndex).toBeGreaterThan(quickActionsIndex);
     expect(statusIndex).toBeGreaterThanOrEqual(0);
     expect(activityIndex).toBeGreaterThan(statusIndex);
     expect(quoteEmptyIndex).toBeGreaterThan(activityIndex);
     expect(visibleText).not.toContain("Ferramentas");
     expect(visibleText).not.toContain("Orçamentos recentes.");
     expect(progressIndex).toBeGreaterThan(quoteEmptyIndex);
-    expect(quickActionsIndex).toBeGreaterThan(progressIndex);
+    expect(wrapper.findAll(".actions-card")).toHaveLength(1);
+    expect(wrapper.find(".dashboard-sidebar .actions-card").exists()).toBe(
+      false,
+    );
   });
 
   it("shows safe loading and failure feedback and hides empty activity sections", async () => {
@@ -496,6 +499,18 @@ describe("professional dashboard", () => {
         "/app/professional/profile?tab=verificacoes",
         "/app/professional/services",
       ],
+    );
+    expect(wrapper.get("h2").text()).toBe("Ações rápidas");
+    expect(
+      wrapper.findAll("a").map((link) => link.attributes("aria-label")),
+    ).toEqual([
+      "Editar perfil",
+      "Adicionar novo trabalho",
+      "Ver verificações",
+      "Acompanhar serviços",
+    ]);
+    expect(wrapper.get("button").attributes("aria-label")).toBe(
+      "Recomendar um profissional",
     );
     expect(wrapper.text()).not.toContain("Fortaleça seu perfil");
 
