@@ -22,6 +22,9 @@ const statusLabels = {
   rejected: "Evidência recusada",
   expired: "Verificação expirada",
 } as const;
+const phoneConfirmation = computed(() =>
+  props.evidence.find((item) => item.label === "Telefone confirmado"),
+);
 const isApproved = computed(() => status.value?.status === "approved");
 const canSubmit = computed(
   () => !status.value || ["rejected", "expired"].includes(status.value.status),
@@ -32,36 +35,51 @@ const canSubmit = computed(
   <div class="verification-panel">
     <DesignSystemSurfaceCard as="section" class="verification-panel__intro"
       ><div>
-        <DesignSystemEyebrow>Evidências específicas</DesignSystemEyebrow>
+        <DesignSystemEyebrow>Verificar conta</DesignSystemEyebrow>
         <h2>Verificações</h2>
         <p>
           Os selos explicam exatamente o que a Berufe conferiu. Eles não são uma
           garantia de serviço.
         </p>
       </div>
-      <UIcon name="i-lucide-shield-check" aria-hidden="true"
-    /></DesignSystemSurfaceCard>
-    <DesignSystemSurfaceCard as="section" class="verification-panel__current"
-      ><h3>Selos do seu perfil</h3>
-      <div>
-        <PublicEvidenceBadge
-          v-for="item in evidence"
-          :key="item.id"
-          :evidence="item"
-        /></div
-    ></DesignSystemSurfaceCard>
+    </DesignSystemSurfaceCard>
+    <DesignSystemSurfaceCard
+      v-if="phoneConfirmation"
+      as="section"
+      class="verification-panel__phone verification-panel__confirmation"
+      aria-labelledby="phone-confirmation-title"
+    >
+      <div
+        class="verification-panel__status verification-panel__status--confirmed"
+      >
+        <span class="verification-panel__status-icon" aria-hidden="true">
+          <UIcon name="i-lucide-smartphone" />
+        </span>
+        <div class="verification-panel__status-copy">
+          <span class="verification-panel__status-eyebrow">
+            Confirmação concluída
+          </span>
+          <h3 id="phone-confirmation-title">{{ phoneConfirmation.label }}</h3>
+          <p>
+            Você confirmou o acesso ao número cadastrado por código SMS. Essa
+            confirmação ajuda a proteger sua conta.
+          </p>
+        </div>
+      </div>
+    </DesignSystemSurfaceCard>
     <DesignSystemSurfaceCard
       as="section"
       class="verification-panel__request"
       :class="{
-        'verification-panel__request--approved': isApproved,
+        'verification-panel__confirmation': isApproved,
       }"
+      :aria-labelledby="status ? 'identity-verification-title' : undefined"
     >
       <div
         v-if="status"
         class="verification-panel__status"
         :class="{
-          'verification-panel__status--approved': isApproved,
+          'verification-panel__status--confirmed': isApproved,
         }"
       >
         <span class="verification-panel__status-icon" aria-hidden="true">
@@ -71,7 +89,9 @@ const canSubmit = computed(
           <span v-if="isApproved" class="verification-panel__status-eyebrow">
             Verificação concluída
           </span>
-          <h3>{{ statusLabels[status.status] }}</h3>
+          <h3 id="identity-verification-title">
+            {{ statusLabels[status.status] }}
+          </h3>
           <p v-if="status.rejectionReason">{{ status.rejectionReason }}</p>
           <p v-else-if="status.status === 'pending_review'">
             A evidência está privada enquanto a equipe Berufe faz a conferência.
@@ -125,19 +145,10 @@ const canSubmit = computed(
     font-size: 3.5rem;
     opacity: 0.25;
   }
-  &__current {
-    padding: 22px;
-  }
   & h3 {
     margin: 0;
     font-family: var(--font-display);
     font-size: 1.25rem;
-  }
-  &__current > div {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 15px;
   }
   &__request {
     position: relative;
@@ -145,7 +156,9 @@ const canSubmit = computed(
     padding: 22px;
   }
 
-  &__request--approved {
+  &__confirmation {
+    position: relative;
+    overflow: hidden;
     padding: 0;
     border-color: var(--color-brand-soft-strong);
     background: linear-gradient(
@@ -156,7 +169,7 @@ const canSubmit = computed(
     box-shadow: 0 16px 38px rgb(30 82 70 / 10%);
   }
 
-  &__request--approved::before {
+  &__confirmation::before {
     position: absolute;
     inset: 0 auto 0 0;
     width: 4px;
@@ -170,7 +183,7 @@ const canSubmit = computed(
     align-items: start;
   }
 
-  &__status--approved {
+  &__status--confirmed {
     align-items: center;
     gap: 18px;
     min-height: 132px;
@@ -188,7 +201,7 @@ const canSubmit = computed(
     color: var(--color-brand);
   }
 
-  &__status--approved &__status-icon {
+  &__status--confirmed &__status-icon {
     width: 58px;
     height: 58px;
     border: 1px solid var(--color-brand-soft-strong);
@@ -207,7 +220,7 @@ const canSubmit = computed(
     font-size: 0.9rem;
   }
 
-  &__status--approved h3 {
+  &__status--confirmed h3 {
     margin-top: 3px;
     font-family: var(--font-display);
     font-size: 1.45rem;
@@ -230,7 +243,7 @@ const canSubmit = computed(
     line-height: 1.5;
   }
 
-  &__status--approved p {
+  &__status--confirmed p {
     max-width: 640px;
     margin-top: 6px;
     font-size: 0.84rem;
@@ -251,7 +264,7 @@ const canSubmit = computed(
 
 @media (width <= 700px) {
   .verification-panel {
-    &__status--approved {
+    &__status--confirmed {
       display: grid;
       grid-template-columns: auto minmax(0, 1fr);
       align-items: start;
@@ -259,7 +272,7 @@ const canSubmit = computed(
       padding: 22px 20px 22px 24px;
     }
 
-    &__status--approved &__status-icon {
+    &__status--confirmed &__status-icon {
       width: 50px;
       height: 50px;
       font-size: 1.35rem;

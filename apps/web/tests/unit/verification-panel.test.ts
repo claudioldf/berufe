@@ -42,11 +42,23 @@ describe("professional verification panel", () => {
     });
 
     expect(wrapper.text()).toContain("Telefone confirmado");
+    expect(wrapper.text()).toContain("Confirmação concluída");
+    expect(wrapper.text()).toContain("confirmou o acesso ao número cadastrado");
     expect(wrapper.text()).toContain("Identidade verificada");
     expect(wrapper.text()).toContain("Verificação concluída");
     expect(wrapper.text()).toContain("documento enviado continua privado");
+    expect(
+      wrapper.get(".verification-panel__phone").attributes(),
+    ).toMatchObject({
+      "aria-labelledby": "phone-confirmation-title",
+    });
+    expect(
+      wrapper
+        .get(".verification-panel__phone .verification-panel__status-icon")
+        .attributes("aria-hidden"),
+    ).toBe("true");
     expect(wrapper.get(".verification-panel__request").classes()).toContain(
-      "verification-panel__request--approved",
+      "verification-panel__confirmation",
     );
     expect(
       wrapper.get(".verification-panel__status-icon").attributes("aria-hidden"),
