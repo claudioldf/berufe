@@ -22,6 +22,7 @@ const statusLabels = {
   rejected: "Evidência recusada",
   expired: "Verificação expirada",
 } as const;
+const isApproved = computed(() => status.value?.status === "approved");
 const canSubmit = computed(
   () => !status.value || ["rejected", "expired"].includes(status.value.status),
 );
@@ -38,7 +39,7 @@ const canSubmit = computed(
           garantia de serviço.
         </p>
       </div>
-      <UIcon name="i-lucide-shield-check"
+      <UIcon name="i-lucide-shield-check" aria-hidden="true"
     /></DesignSystemSurfaceCard>
     <DesignSystemSurfaceCard as="section" class="verification-panel__current"
       ><h3>Selos do seu perfil</h3>
@@ -49,14 +50,35 @@ const canSubmit = computed(
           :evidence="item"
         /></div
     ></DesignSystemSurfaceCard>
-    <DesignSystemSurfaceCard as="section" class="verification-panel__request">
-      <div v-if="status" class="verification-panel__status">
-        <span><UIcon name="i-lucide-shield-check" /></span>
-        <div>
-          <strong>{{ statusLabels[status.status] }}</strong>
+    <DesignSystemSurfaceCard
+      as="section"
+      class="verification-panel__request"
+      :class="{
+        'verification-panel__request--approved': isApproved,
+      }"
+    >
+      <div
+        v-if="status"
+        class="verification-panel__status"
+        :class="{
+          'verification-panel__status--approved': isApproved,
+        }"
+      >
+        <span class="verification-panel__status-icon" aria-hidden="true">
+          <UIcon name="i-lucide-shield-check" />
+        </span>
+        <div class="verification-panel__status-copy">
+          <span v-if="isApproved" class="verification-panel__status-eyebrow">
+            Verificação concluída
+          </span>
+          <h3>{{ statusLabels[status.status] }}</h3>
           <p v-if="status.rejectionReason">{{ status.rejectionReason }}</p>
           <p v-else-if="status.status === 'pending_review'">
             A evidência está privada enquanto a equipe Berufe faz a conferência.
+          </p>
+          <p v-else-if="isApproved">
+            A equipe Berufe conferiu sua identidade. O selo já está visível no
+            seu perfil e o documento enviado continua privado.
           </p>
         </div>
       </div>
@@ -118,15 +140,46 @@ const canSubmit = computed(
     margin-top: 15px;
   }
   &__request {
+    position: relative;
+    overflow: hidden;
     padding: 22px;
   }
+
+  &__request--approved {
+    padding: 0;
+    border-color: var(--color-brand-soft-strong);
+    background: linear-gradient(
+      120deg,
+      var(--color-brand-tint-subtle),
+      rgb(255 255 255 / 88%) 68%
+    );
+    box-shadow: 0 16px 38px rgb(30 82 70 / 10%);
+  }
+
+  &__request--approved::before {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 4px;
+    background: var(--color-brand);
+    content: "";
+  }
+
   &__status {
     display: flex;
     gap: 11px;
     align-items: start;
   }
-  &__status > span {
+
+  &__status--approved {
+    align-items: center;
+    gap: 18px;
+    min-height: 132px;
+    padding: 28px 30px 28px 34px;
+  }
+
+  &__status-icon {
     display: grid;
+    flex: 0 0 auto;
     place-items: center;
     width: 38px;
     height: 38px;
@@ -134,15 +187,55 @@ const canSubmit = computed(
     background: var(--color-brand-tint-subtle);
     color: var(--color-brand);
   }
-  &__status strong {
+
+  &__status--approved &__status-icon {
+    width: 58px;
+    height: 58px;
+    border: 1px solid var(--color-brand-soft-strong);
+    background: rgb(255 255 255 / 78%);
+    box-shadow: 0 8px 20px rgb(18 98 93 / 11%);
+    font-size: 1.55rem;
+  }
+
+  &__status-copy {
+    min-width: 0;
+  }
+
+  &__status h3 {
+    margin: 0;
+    font-family: var(--font-sans);
     font-size: 0.9rem;
   }
+
+  &__status--approved h3 {
+    margin-top: 3px;
+    font-family: var(--font-display);
+    font-size: 1.45rem;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+
+  &__status-eyebrow {
+    color: var(--color-brand);
+    font-size: 0.7rem;
+    font-weight: 850;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+
   &__status p {
     margin: 4px 0 0;
     color: var(--ink-soft);
     font-size: 0.82rem;
     line-height: 1.5;
   }
+
+  &__status--approved p {
+    max-width: 640px;
+    margin-top: 6px;
+    font-size: 0.84rem;
+  }
+
   &__status + .identity-upload-form {
     margin-top: 20px;
     padding-top: 20px;
@@ -153,6 +246,24 @@ const canSubmit = computed(
     color: var(--color-danger);
     font-size: 0.84rem;
     font-weight: 700;
+  }
+}
+
+@media (width <= 700px) {
+  .verification-panel {
+    &__status--approved {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: start;
+      gap: 14px;
+      padding: 22px 20px 22px 24px;
+    }
+
+    &__status--approved &__status-icon {
+      width: 50px;
+      height: 50px;
+      font-size: 1.35rem;
+    }
   }
 }
 </style>

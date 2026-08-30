@@ -43,6 +43,14 @@ describe("professional verification panel", () => {
 
     expect(wrapper.text()).toContain("Telefone confirmado");
     expect(wrapper.text()).toContain("Identidade verificada");
+    expect(wrapper.text()).toContain("Verificação concluída");
+    expect(wrapper.text()).toContain("documento enviado continua privado");
+    expect(wrapper.get(".verification-panel__request").classes()).toContain(
+      "verification-panel__request--approved",
+    );
+    expect(
+      wrapper.get(".verification-panel__status-icon").attributes("aria-hidden"),
+    ).toBe("true");
     expect(wrapper.find('input[type="file"]').exists()).toBe(false);
   });
 
