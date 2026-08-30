@@ -66,7 +66,7 @@ RSpec.describe ProfessionalDataErasureJob do
       notification_type: "quote_approved",
       title: "Orçamento aprovado",
       description: "Um cliente aprovou um orçamento.",
-      route: "/app/professional/quotes",
+      route_params: {quote_id: SecureRandom.uuid},
       idempotency_key: "erasure-notification",
       occurred_at: now - 1.hour
     )

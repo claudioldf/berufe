@@ -31,7 +31,7 @@ class ProfessionalNotificationIndexQuery
     raise Invalid.new(errors) if errors.any?
 
     unread_scope = scope.unread
-    page_scope = unread_scope.newest_first
+    page_scope = unread_scope.includes(recipient_user_account: :professional_profile).newest_first
     if cursor_context
       page_scope = page_scope.where(
         "occurred_at < :occurred_at OR (occurred_at = :occurred_at AND id < :id)",

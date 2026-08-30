@@ -253,7 +253,7 @@ describe("professional dashboard", () => {
     expect(mocks.share).toHaveBeenCalledWith(
       expect.objectContaining({
         title: "Beto Lima na Berufe",
-        url: "http://localhost:3000/profissionais/beto-lima",
+        url: "http://localhost:3000/be/beto-lima",
       }),
     );
   });
@@ -291,7 +291,7 @@ describe("professional dashboard", () => {
 
     const visibleText = wrapper.text();
     const statusIndex = visibleText.indexOf("Seu perfil está publicado");
-    const quickActionsIndex = visibleText.indexOf("Editar perfil");
+    const quickActionsIndex = visibleText.indexOf("Perfil público");
     const activityIndex = visibleText.indexOf("Para resolver.");
     const quoteEmptyIndex = visibleText.indexOf(
       "Transforme pedidos em trabalhos fechados.",
@@ -306,15 +306,15 @@ describe("professional dashboard", () => {
     expect(visibleText).not.toContain("Ferramentas");
     expect(visibleText).not.toContain("Orçamentos recentes.");
     expect(visibleText).not.toContain("Ações rápidas");
+    expect(wrapper.find(".dashboard-welcome__actions").text()).not.toContain(
+      "Novo orçamento",
+    );
     expect(progressIndex).toBeGreaterThan(quoteEmptyIndex);
     expect(wrapper.findAll(".actions-card")).toHaveLength(1);
     expect(wrapper.find(".dashboard-welcome .actions-card").exists()).toBe(
       true,
     );
     expect(wrapper.find(".dashboard-content .actions-card").exists()).toBe(
-      false,
-    );
-    expect(wrapper.find('a[aria-label="Ver verificações"]').exists()).toBe(
       false,
     );
     expect(wrapper.find(".dashboard-sidebar .actions-card").exists()).toBe(
@@ -488,8 +488,11 @@ describe("professional dashboard", () => {
     expect(wrapper.emitted("publish")).toEqual([[]]);
   });
 
-  it("renders compact quick actions and emits the recommendation action", async () => {
+  it("renders the ordered quick actions and emits the recommendation action", async () => {
     const wrapper = mount(DashboardQuickActions, {
+      props: {
+        publicSlug: "beto-lima",
+      },
       global: {
         stubs: {
           DesignSystemSurfaceCard: { template: "<section><slot /></section>" },
@@ -504,55 +507,40 @@ describe("professional dashboard", () => {
 
     expect(wrapper.findAll("a").map((link) => link.attributes("href"))).toEqual(
       [
-        "/app/professional/profile?tab=portfolio",
-        "/app/professional/profile?tab=verificacoes",
+        "/be/beto-lima",
+        "/app/professional/quotes/new",
         "/app/professional/services",
-        "/app/professional/profile",
       ],
     );
     expect(wrapper.get(".actions-card").attributes("aria-label")).toBe(
       "Ações rápidas",
     );
     expect(wrapper.text()).not.toContain("Ações rápidas");
-    expect(
-      wrapper.findAll("a").map((link) => link.attributes("aria-label")),
-    ).toEqual([
-      "Adicionar novo trabalho",
-      "Ver verificações",
-      "Acompanhar serviços",
-      "Editar perfil",
-    ]);
-    expect(
-      wrapper
-        .findAll(".actions-card__list > *")
-        .map((action) => action.attributes("aria-label")),
-    ).toEqual([
-      "Adicionar novo trabalho",
-      "Ver verificações",
-      "Acompanhar serviços",
-      "Recomendar um profissional",
-      "Editar perfil",
-    ]);
-    expect(wrapper.get("button").attributes("aria-label")).toBe(
-      "Recomendar um profissional",
-    );
-    expect(wrapper.text()).not.toContain("Fortaleça seu perfil");
 
-    await wrapper.setProps({ identityVerified: true });
-    expect(wrapper.find('a[aria-label="Ver verificações"]').exists()).toBe(
-      false,
-    );
-    expect(wrapper.findAll(".actions-card__list > *")).toHaveLength(4);
-    expect(
-      wrapper
-        .findAll(".actions-card__list > *")
-        .map((action) => action.attributes("aria-label")),
-    ).toEqual([
-      "Adicionar novo trabalho",
+    const actions = wrapper.findAll(".actions-card__list > *");
+    expect(actions).toHaveLength(4);
+    expect(actions.map((action) => action.attributes("aria-label"))).toEqual([
+      "Ver meu perfil público",
+      "Novo orçamento",
       "Acompanhar serviços",
       "Recomendar um profissional",
-      "Editar perfil",
     ]);
+    expect(
+      wrapper.findAll(".actions-card__label-full").map((label) => label.text()),
+    ).toEqual([
+      "Perfil público",
+      "Novo orçamento",
+      "Acompanhar serviços",
+      "Recomendar profissional",
+    ]);
+    expect(
+      wrapper.get('a[aria-label="Ver meu perfil público"]').attributes(),
+    ).toMatchObject({
+      href: "/be/beto-lima",
+      target: "_blank",
+      rel: "noopener noreferrer",
+    });
+    expect(wrapper.text()).not.toContain("Fortaleça seu perfil");
 
     await wrapper.get("button").trigger("click");
     expect(wrapper.emitted("recommend")).toEqual([[]]);

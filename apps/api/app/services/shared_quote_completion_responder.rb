@@ -66,7 +66,7 @@ class SharedQuoteCompletionResponder
       @notifier.call(
         recipient: job.professional.user_account,
         notification_type: (response == "confirm") ? "service_completion_confirmed" : "service_completion_issue_reported",
-        route: "/app/professional/services/#{job.id}",
+        route_params: {service_job_id: job.id},
         idempotency_key: "service-job:#{job.id}:completion:#{job.completion_requested_at&.iso8601(6)}:#{response}",
         occurred_at: now
       )

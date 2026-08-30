@@ -65,19 +65,11 @@ class ModerationDecision
     "portfolio_item" => "portfolio_item",
     "verification_request" => "verification_request"
   }.freeze
-  NOTIFICATION_ROUTES = {
-    "profile_revision" => "/app/professional/profile",
-    "profile_photo" => "/app/professional/profile",
-    "portfolio_item" => "/app/professional/profile?tab=portfolio",
-    "verification_request" => "/app/professional/profile?tab=verificacoes"
-  }.freeze
-
   def create_notification!(target:, target_type:, action_record:)
     profile = target.professional_profile
     notifier.call(
       recipient: profile.user_account,
       notification_type: "#{NOTIFICATION_PREFIXES.fetch(target_type)}_moderation_#{action_record.action}",
-      route: NOTIFICATION_ROUTES.fetch(target_type),
       idempotency_key: "moderation-action:#{action_record.id}",
       occurred_at: action_record.created_at
     )

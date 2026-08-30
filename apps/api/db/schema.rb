@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_30_090000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_30_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -411,18 +411,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_090000) do
     t.datetime "occurred_at", null: false
     t.datetime "read_at"
     t.uuid "recipient_user_account_id", null: false
-    t.string "route", limit: 500, null: false
+    t.jsonb "route_params", default: {}, null: false
     t.string "status", limit: 16, default: "unread", null: false
     t.string "title", limit: 120, null: false
     t.datetime "updated_at", null: false
     t.index ["idempotency_key"], name: "index_notifications_on_idempotency_key", unique: true
     t.index ["recipient_user_account_id", "status", "occurred_at", "id"], name: "idx_notifications_recipient_status_order", order: { occurred_at: :desc, id: :desc }
     t.index ["recipient_user_account_id"], name: "index_notifications_on_recipient_user_account_id"
+    t.check_constraint "\nCASE\n    WHEN notification_type::text = ANY (ARRAY['quote_change_requested'::character varying, 'quote_approved'::character varying, 'quote_declined'::character varying]::text[]) THEN route_params = jsonb_build_object('quote_id', route_params ->> 'quote_id'::text) AND COALESCE((route_params ->> 'quote_id'::text) ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'::text, false)\n    WHEN notification_type::text = ANY (ARRAY['service_completion_confirmed'::character varying, 'service_completion_issue_reported'::character varying]::text[]) THEN route_params = jsonb_build_object('service_job_id', route_params ->> 'service_job_id'::text) AND COALESCE((route_params ->> 'service_job_id'::text) ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'::text, false)\n    ELSE route_params = '{}'::jsonb\nEND", name: "notifications_route_params_match_type"
     t.check_constraint "char_length(btrim(description::text)) >= 1 AND char_length(btrim(description::text)) <= 240", name: "notifications_description_length"
     t.check_constraint "char_length(btrim(idempotency_key::text)) >= 1 AND char_length(btrim(idempotency_key::text)) <= 255", name: "notifications_idempotency_key_length"
     t.check_constraint "char_length(btrim(title::text)) >= 1 AND char_length(btrim(title::text)) <= 120", name: "notifications_title_length"
+    t.check_constraint "jsonb_typeof(route_params) = 'object'::text", name: "notifications_route_params_object"
     t.check_constraint "notification_type::text = ANY (ARRAY['profile_moderation_approved'::character varying, 'profile_moderation_rejected'::character varying, 'profile_moderation_hidden'::character varying, 'profile_moderation_restored'::character varying, 'profile_photo_moderation_approved'::character varying, 'profile_photo_moderation_rejected'::character varying, 'profile_photo_moderation_hidden'::character varying, 'profile_photo_moderation_restored'::character varying, 'portfolio_item_moderation_approved'::character varying, 'portfolio_item_moderation_rejected'::character varying, 'portfolio_item_moderation_hidden'::character varying, 'portfolio_item_moderation_restored'::character varying, 'verification_request_moderation_approved'::character varying, 'verification_request_moderation_rejected'::character varying, 'relationship_request_received'::character varying, 'relationship_request_accepted'::character varying, 'relationship_request_declined'::character varying, 'quote_change_requested'::character varying, 'quote_approved'::character varying, 'quote_declined'::character varying, 'service_completion_confirmed'::character varying, 'service_completion_issue_reported'::character varying, 'customer_recommendation_published'::character varying]::text[])", name: "notifications_known_type"
-    t.check_constraint "route::text ~ '^/[^[:space:]]*$'::text", name: "notifications_internal_route"
     t.check_constraint "status::text = 'unread'::text AND read_at IS NULL OR status::text = 'read'::text AND read_at IS NOT NULL", name: "notifications_read_state"
     t.check_constraint "status::text = ANY (ARRAY['unread'::character varying, 'read'::character varying]::text[])", name: "notifications_known_status"
   end

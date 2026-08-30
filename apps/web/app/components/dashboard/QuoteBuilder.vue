@@ -408,6 +408,17 @@ function requestShare() {
       display: grid;
       gap: 4px;
     }
+    &__mobile-index,
+    &__label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+      border: 0;
+    }
     &__field--invalid input,
     &__field--invalid select {
       border-color: var(--color-danger);
@@ -422,7 +433,10 @@ function requestShare() {
     & select {
       padding-right: 2.25rem;
     }
-    & strong {
+    &__total {
+      display: grid;
+    }
+    &__total strong {
       margin-top: 9px;
       text-align: right;
       font-size: 0.84rem;
@@ -438,7 +452,9 @@ function requestShare() {
       color: #a45245;
       cursor: pointer;
     }
-    & > button {
+    &__remove {
+      grid-column: 6;
+      grid-row: 1;
       margin-top: 5px;
     }
     & button:disabled {
@@ -662,6 +678,68 @@ function requestShare() {
       }
       &__savebar > div > :last-child {
         grid-column: 1 / -1;
+      }
+    }
+    .quote-items {
+      display: grid;
+      gap: 12px;
+      overflow-x: visible;
+    }
+    .quote-item {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      min-width: 0;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--color-surface);
+      &--head {
+        display: none;
+      }
+      &__mobile-index,
+      &__label {
+        position: static;
+        width: auto;
+        height: auto;
+        padding: 0;
+        overflow: visible;
+        clip-path: none;
+        white-space: normal;
+      }
+      &__mobile-index {
+        align-self: center;
+        color: var(--ink);
+        font-size: 0.82rem;
+        font-weight: 850;
+      }
+      &__label {
+        color: var(--ink-soft);
+        font-size: 0.76rem;
+        font-weight: 800;
+      }
+      &__description {
+        grid-column: 1 / -1;
+      }
+      &__total {
+        align-content: start;
+        gap: 4px;
+      }
+      &__total strong {
+        min-height: 42px;
+        margin: 0;
+        padding: 10px 8px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--color-surface-neutral);
+        text-align: right;
+      }
+      &__remove {
+        grid-column: 2;
+        grid-row: 1;
+        justify-self: end;
+        width: 44px;
+        height: 44px;
+        margin: 0;
       }
     }
     .builder-card {

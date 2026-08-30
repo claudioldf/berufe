@@ -39,22 +39,21 @@ async function signOut() {
   align-items: center;
   justify-content: center;
   gap: 7px;
-  min-height: 38px;
+  min-height: 42px;
   padding: 8px 10px;
   border: 1px solid rgb(255 255 255 / 24%);
   border-radius: 10px;
-  background: transparent;
+  background: rgb(255 255 255 / 8%);
   color: inherit;
   font: inherit;
   font-size: 0.82rem;
   font-weight: 800;
   cursor: pointer;
-  opacity: 0.82;
 }
 
 .session-logout:hover,
 .session-logout:focus-visible {
-  opacity: 1;
+  background: rgb(255 255 255 / 16%);
 }
 
 .session-logout:disabled {

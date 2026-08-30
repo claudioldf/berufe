@@ -26,19 +26,16 @@ const dashboardReady = computed(
     !professionalWorkspace.error.value &&
     Boolean(workspace.value),
 );
-const identityVerified = computed(
-  () => workspace.value?.dashboard.readiness.steps.approvedIdentity ?? false,
-);
 const professionalFirstName = computed(
   () =>
     workspace.value?.profile.identity.name.trim().split(" ")[0] ??
     "profissional",
 );
 const siteUrl = withSiteUrl("/");
-const publicProfileUrl = computed(() =>
-  workspace.value
-    ? `${siteUrl.value.replace(/\/$/, "")}/profissionais/${workspace.value.profile.publicSlug}`
-    : "",
+const publicSlug = computed(() => workspace.value?.profile.publicSlug ?? "");
+const publicProfileUrl = computed(
+  () =>
+    `${siteUrl.value.replace(/\/$/, "")}${buildPublicProfilePath(publicSlug.value)}`,
 );
 const localDateLabel = computed(() => {
   const value = workspace.value?.dashboard.localDate;
@@ -72,7 +69,7 @@ const checklist = computed<OnboardingChecklistItem[]>(() => {
     {
       id: "portfolio",
       label: "Primeiro trabalho",
-      description: "Um trabalho em análise ou aprovado",
+      description: "Mostre resultados antes mesmo da conversa",
       icon: "i-lucide-image-plus",
       done: steps?.reviewablePortfolio ?? false,
       to: "/app/professional/profile?tab=portfolio",
@@ -80,7 +77,7 @@ const checklist = computed<OnboardingChecklistItem[]>(() => {
     {
       id: "verification",
       label: "Identidade verificada",
-      description: "Sua evidência foi aprovada pela equipe",
+      description: "Transmita mais confiança aos clientes",
       icon: "i-lucide-shield-check",
       done: steps?.approvedIdentity ?? false,
       to: "/app/professional/profile?tab=verificacoes",
@@ -287,18 +284,12 @@ async function respondRelationship(
               @click="shareProfile"
               >Compartilhar perfil</UButton
             >
-            <UButton
-              to="/app/professional/quotes/new"
-              color="secondary"
-              icon="i-lucide-plus"
-              >Novo orçamento</UButton
-            >
           </div>
         </div>
         <DashboardQuickActions
           v-if="dashboardReady"
           class="dashboard-welcome__quick-actions"
-          :identity-verified="identityVerified"
+          :public-slug="publicSlug"
           @recommend="relationshipOpen = true"
         />
       </DesignSystemContainer>
@@ -346,7 +337,7 @@ async function respondRelationship(
         <NuxtLink
           v-else-if="dashboardStatus.publicAvailable"
           class="status-banner__action"
-          :to="`/profissionais/${workspace.profile.publicSlug}`"
+          :to="buildPublicProfilePath(workspace.profile.publicSlug)"
           target="_blank"
         >
           Ver perfil público

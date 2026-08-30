@@ -56,7 +56,7 @@ RSpec.describe ModerationDecision do
     expect(Notification.sole).to have_attributes(
       recipient_user_account: account,
       notification_type: "profile_moderation_approved",
-      route: "/app/professional/profile"
+      route_params: {}
     )
   end
 

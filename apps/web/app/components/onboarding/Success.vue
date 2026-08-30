@@ -23,7 +23,7 @@ defineEmits<{ review: [] }>();
         Revisar etapas
       </UButton>
       <UButton
-        :to="`/profissionais/${publicSlug}`"
+        :to="buildPublicProfilePath(publicSlug)"
         target="_blank"
         rel="noopener noreferrer"
         color="neutral"

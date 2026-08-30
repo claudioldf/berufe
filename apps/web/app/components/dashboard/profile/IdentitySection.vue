@@ -50,6 +50,9 @@ const {
   clearPreview,
 } = useImagePreview();
 const photoBusy = computed(() => props.photoUploading || props.photoRemoving);
+const photoInvalid = computed(() =>
+  Boolean(selectionError.value || props.photoError),
+);
 const canRetry = computed(
   () =>
     props.photo?.latestUpload?.state === "failed" &&
@@ -125,7 +128,13 @@ function selectPhoto(event: Event) {
       </div>
       <em>Obrigatório</em>
     </header>
-    <div class="profile-photo-control">
+    <div
+      class="profile-photo-control"
+      :class="{ 'profile-photo-control--invalid': photoInvalid }"
+      :aria-describedby="photoInvalid ? 'profile-photo-status' : undefined"
+      :aria-invalid="photoInvalid"
+      :tabindex="photoInvalid ? -1 : undefined"
+    >
       <div class="profile-photo-control__avatar">
         <img
           v-if="visiblePhotoUrl"
@@ -139,6 +148,7 @@ function selectPhoto(event: Event) {
       <div>
         <strong>Foto profissional <em>Obrigatória</em></strong>
         <p
+          id="profile-photo-status"
           :class="{
             'profile-photo-control__error': selectionError || props.photoError,
           }"
@@ -370,6 +380,16 @@ function selectPhoto(event: Event) {
     background: white;
     color: var(--color-brand);
     font-size: 1.35rem;
+  }
+
+  &--invalid {
+    border-color: var(--color-danger);
+    background: var(--color-danger-tint);
+  }
+
+  &--invalid:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgb(180 35 24 / 16%);
   }
 
   &__avatar img {
