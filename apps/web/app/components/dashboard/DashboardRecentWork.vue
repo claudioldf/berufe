@@ -36,6 +36,46 @@ const serviceStatusLabel = {
 
 <template>
   <div class="recent-work">
+    <section v-if="services.length" class="dashboard-section quotes-section">
+      <div class="dashboard-section__heading">
+        <div>
+          <DesignSystemEyebrow>Execução</DesignSystemEyebrow>
+          <h2>Serviços em andamento.</h2>
+        </div>
+        <UButton
+          to="/app/professional/services"
+          variant="link"
+          trailing-icon="i-lucide-arrow-right"
+          >Ver todos</UButton
+        >
+      </div>
+      <DesignSystemSurfaceCard class="quotes-table">
+        <NuxtLink
+          v-for="service in services"
+          :key="service.id"
+          :to="`/app/professional/services/${service.id}`"
+        >
+          <span>
+            <strong>#{{ service.quote.number }}</strong>
+            <small>{{ service.quote.serviceDescription }}</small>
+          </span>
+          <span>{{ service.quote.customerName }}</span>
+          <span
+            ><strong>{{ formatCurrency(service.quote.total) }}</strong></span
+          >
+          <span>
+            <em :class="service.status">{{
+              serviceStatusLabel[service.status]
+            }}</em>
+          </span>
+          <span class="quotes-table__row-action">
+            {{ formatDateTime(service.updatedAt) }}
+            <UIcon name="i-lucide-chevron-right" />
+          </span>
+        </NuxtLink>
+      </DesignSystemSurfaceCard>
+    </section>
+
     <section class="dashboard-section quotes-section">
       <div v-if="quotes.length" class="dashboard-section__heading">
         <div>
@@ -79,46 +119,6 @@ const serviceStatusLabel = {
           <small class="quotes-table__description">
             {{ quote.serviceDescription }}
           </small>
-        </NuxtLink>
-      </DesignSystemSurfaceCard>
-    </section>
-
-    <section v-if="services.length" class="dashboard-section quotes-section">
-      <div class="dashboard-section__heading">
-        <div>
-          <DesignSystemEyebrow>Execução</DesignSystemEyebrow>
-          <h2>Serviços em andamento.</h2>
-        </div>
-        <UButton
-          to="/app/professional/services"
-          variant="link"
-          trailing-icon="i-lucide-arrow-right"
-          >Ver todos</UButton
-        >
-      </div>
-      <DesignSystemSurfaceCard class="quotes-table">
-        <NuxtLink
-          v-for="service in services"
-          :key="service.id"
-          :to="`/app/professional/services/${service.id}`"
-        >
-          <span>
-            <strong>#{{ service.quote.number }}</strong>
-            <small>{{ service.quote.serviceDescription }}</small>
-          </span>
-          <span>{{ service.quote.customerName }}</span>
-          <span
-            ><strong>{{ formatCurrency(service.quote.total) }}</strong></span
-          >
-          <span>
-            <em :class="service.status">{{
-              serviceStatusLabel[service.status]
-            }}</em>
-          </span>
-          <span class="quotes-table__row-action">
-            {{ formatDateTime(service.updatedAt) }}
-            <UIcon name="i-lucide-chevron-right" />
-          </span>
         </NuxtLink>
       </DesignSystemSurfaceCard>
     </section>
