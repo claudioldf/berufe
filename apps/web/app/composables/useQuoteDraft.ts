@@ -3,20 +3,24 @@ import type { MaybeRefOrGetter } from "vue";
 import type { Quote } from "~/types";
 import {
   cloneQuote,
-  isQuoteValid,
+  hasQuoteValidationErrors,
   quoteSubtotal,
   quoteTotal,
+  validateQuote,
 } from "~/utils/quotes";
 
 export function useQuoteDraft(initialQuote: MaybeRefOrGetter<Quote>) {
   const quote = ref(cloneQuote(toValue(initialQuote)));
   const previewOpen = shallowRef(false);
   const isSaved = shallowRef(Boolean(toValue(initialQuote).id));
-  const isShared = shallowRef(toValue(initialQuote).status !== "draft");
+  const isShared = shallowRef(
+    !["draft", "saved"].includes(toValue(initialQuote).status),
+  );
 
   const subtotal = computed(() => quoteSubtotal(quote.value));
   const total = computed(() => quoteTotal(quote.value));
-  const isValid = computed(() => isQuoteValid(quote.value));
+  const validation = computed(() => validateQuote(quote.value));
+  const isValid = computed(() => !hasQuoteValidationErrors(validation.value));
 
   watch(
     () => [toValue(initialQuote).id, toValue(initialQuote).updatedAt],
@@ -26,7 +30,7 @@ export function useQuoteDraft(initialQuote: MaybeRefOrGetter<Quote>) {
   function reset() {
     quote.value = cloneQuote(toValue(initialQuote));
     isSaved.value = Boolean(toValue(initialQuote).id);
-    isShared.value = toValue(initialQuote).status !== "draft";
+    isShared.value = !["draft", "saved"].includes(toValue(initialQuote).status);
     previewOpen.value = false;
   }
 
@@ -69,6 +73,7 @@ export function useQuoteDraft(initialQuote: MaybeRefOrGetter<Quote>) {
     isShared,
     subtotal,
     total,
+    validation,
     isValid,
     reset,
     markDirty,

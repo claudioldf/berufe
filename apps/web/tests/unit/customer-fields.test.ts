@@ -2,7 +2,7 @@ import { mountSuspended } from "@nuxt/test-utils/runtime";
 import { flushPromises } from "@vue/test-utils";
 import { defineComponent, reactive } from "vue";
 import CustomerFields from "@app/components/dashboard/quote/CustomerFields.vue";
-import type { Quote } from "@app/types";
+import type { Quote, QuoteValidationErrors } from "@app/types";
 
 const mocks = vi.hoisted(() => ({
   client: {},
@@ -20,9 +20,12 @@ const SurfaceCardStub = defineComponent({
   template: "<section><slot /></section>",
 });
 const FieldStub = defineComponent({
-  props: { label: { type: String, default: "" } },
+  props: {
+    label: { type: String, default: "" },
+    error: { type: String, default: "" },
+  },
   template:
-    '<label>{{ label }}<slot :control-id="\'customer-field\'" :described-by="null" /></label>',
+    '<label>{{ label }}<slot :control-id="\'customer-field\'" :described-by="error ? \'customer-field-error\' : null" :invalid="Boolean(error)" /></label>',
 });
 const IconStub = defineComponent({
   props: { name: { type: String, required: true } },
@@ -67,10 +70,10 @@ function quoteFixture(): Quote {
   };
 }
 
-async function mountCustomerFields() {
+async function mountCustomerFields(errors?: QuoteValidationErrors) {
   const quote = reactive(quoteFixture());
   const wrapper = await mountSuspended(CustomerFields, {
-    props: { modelValue: quote },
+    props: { modelValue: quote, errors },
     global: {
       stubs: {
         DesignSystemSurfaceCard: SurfaceCardStub,
@@ -101,6 +104,25 @@ describe("quote customer fields", () => {
     expect(wrapper.find('input[name="serviceDescription"]').exists()).toBe(
       false,
     );
+  });
+
+  it("connects contact errors to their corresponding controls", async () => {
+    const { wrapper } = await mountCustomerFields({
+      customerName: "Informe o nome do cliente.",
+      customerPhone: "Informe o WhatsApp do cliente.",
+      customerEmail: "Informe um e-mail válido.",
+      items: {},
+    });
+
+    expect(
+      wrapper.get('input[name="customerName"]').attributes("aria-invalid"),
+    ).toBe("true");
+    expect(
+      wrapper.get('input[name="customerPhone"]').attributes("aria-invalid"),
+    ).toBe("true");
+    expect(
+      wrapper.get('input[name="customerEmail"]').attributes("aria-invalid"),
+    ).toBe("true");
   });
 
   it("shows loading immediately and searches only after typing pauses", async () => {

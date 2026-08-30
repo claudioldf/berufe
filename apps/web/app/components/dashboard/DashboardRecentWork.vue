@@ -20,6 +20,7 @@ const sortedQuotes = computed(() =>
 
 const quoteStatusLabel = {
   draft: "Rascunho",
+  saved: "Aguardando envio ao cliente",
   shared: "Aguardando resposta",
   change_requested: "Alteração solicitada",
   approved: "Aprovado",

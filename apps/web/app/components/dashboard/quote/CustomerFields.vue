@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Quote } from "~/types";
+import type { Quote, QuoteValidationErrors } from "~/types";
 import { useApiClient } from "~/services/api/client";
 import { ApiRequestError } from "~/services/api/errors";
 import {
@@ -9,6 +9,7 @@ import {
 
 const CUSTOMER_SEARCH_DEBOUNCE_MS = 500;
 
+const props = defineProps<{ errors?: QuoteValidationErrors }>();
 const quote = defineModel<Quote>({ required: true });
 const emit = defineEmits<{ dirty: [] }>();
 const client = useApiClient();
@@ -113,6 +114,7 @@ function markContactDirty() {
         v-slot="field"
         class="builder-fields__full customer-lookup"
         label="Nome do cliente"
+        :error="props.errors?.customerName"
         required
       >
         <div class="customer-lookup__control">
@@ -122,6 +124,7 @@ function markContactDirty() {
             name="customerName"
             autocomplete="off"
             :aria-describedby="field.describedBy"
+            :aria-invalid="field.invalid"
             :aria-busy="searching"
             placeholder="Digite para buscar entre seus clientes"
             required
@@ -180,7 +183,12 @@ function markContactDirty() {
           existente selecionado
         </p>
       </DesignSystemFormField>
-      <DesignSystemFormField v-slot="field" label="WhatsApp" required>
+      <DesignSystemFormField
+        v-slot="field"
+        label="WhatsApp"
+        :error="props.errors?.customerPhone"
+        required
+      >
         <input
           :id="field.controlId"
           v-model="quote.customerPhone"
@@ -189,11 +197,16 @@ function markContactDirty() {
           autocomplete="tel"
           placeholder="(47) 99999-9999"
           :aria-describedby="field.describedBy"
+          :aria-invalid="field.invalid"
           required
           maxlength="20"
         />
       </DesignSystemFormField>
-      <DesignSystemFormField v-slot="field" label="E-mail (opcional)">
+      <DesignSystemFormField
+        v-slot="field"
+        label="E-mail (opcional)"
+        :error="props.errors?.customerEmail"
+      >
         <input
           :id="field.controlId"
           v-model="quote.customerEmail"
@@ -202,6 +215,7 @@ function markContactDirty() {
           autocomplete="email"
           placeholder="cliente@exemplo.com"
           :aria-describedby="field.describedBy"
+          :aria-invalid="field.invalid"
           maxlength="254"
         />
       </DesignSystemFormField>

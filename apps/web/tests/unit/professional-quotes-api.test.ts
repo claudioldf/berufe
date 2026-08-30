@@ -195,6 +195,7 @@ describe("professional quote API", () => {
     expect(client.POST).toHaveBeenCalledWith("/api/v1/professional/quotes", {
       body: {
         quote: {
+          status: "draft",
           customer: {
             id: contractQuote.customer.id,
             name: "Ana Paula",

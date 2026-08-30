@@ -40,7 +40,7 @@ export function mapProfessionalQuote(quote: ContractQuote): Quote {
     revision: quote.revision,
     customerId: quote.customer.id,
     customerName: quote.customer_name,
-    customerPhone: formatBrazilianMobilePhone(quote.customer_phone_e164),
+    customerPhone: formatBrazilianMobilePhone(quote.customer_phone_e164 ?? ""),
     customerEmail: quote.customer_email ?? "",
     serviceDescription: quote.service_description,
     serviceAddress: quote.service_address ?? "",
@@ -137,6 +137,9 @@ function writeBody(quote: QuoteDraft) {
   return {
     quote: {
       ...(quote.id ? { revision: quote.revision } : {}),
+      ...(["draft", "saved"].includes(quote.status)
+        ? { status: quote.status as "draft" | "saved" }
+        : {}),
       customer: {
         id: quote.customerId,
         name: quote.customerName,

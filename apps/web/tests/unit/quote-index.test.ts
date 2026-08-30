@@ -33,7 +33,7 @@ function quoteFixture(overrides: Partial<Quote>): Quote {
 }
 
 const quotes = [
-  quoteFixture({}),
+  quoteFixture({ status: "saved" }),
   quoteFixture({
     id: "29bf2d2a-1448-4805-9f86-ae2522c811cc",
     number: 11,
@@ -149,6 +149,7 @@ describe("professional quote index", () => {
         )
         .text(),
     ).toContain("Pintura externa");
+    expect(wrapper.text()).toContain("Aguardando envio ao cliente");
     expect(wrapper.text()).toContain("1–3 de 3 orçamentos");
 
     const filters = wrapper.get(".quote-filters");

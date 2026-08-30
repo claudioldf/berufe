@@ -1633,7 +1633,7 @@ export interface components {
             };
         };
         /** @enum {string} */
-        QuoteStatus: "draft" | "shared" | "change_requested" | "approved" | "declined";
+        QuoteStatus: "draft" | "saved" | "shared" | "change_requested" | "approved" | "declined";
         /** @enum {string} */
         ServiceJobStatus: "approved" | "completion_requested" | "completion_issue" | "completed" | "cancelled";
         /** @enum {string} */
@@ -1662,6 +1662,8 @@ export interface components {
         ProfessionalQuoteWriteRequest: {
             quote: {
                 revision?: number;
+                /** @enum {string} */
+                status?: "draft" | "saved";
                 customer: components["schemas"]["ProfessionalQuoteCustomerInput"];
                 service_description: string;
                 service_address: string | null;
@@ -1679,7 +1681,6 @@ export interface components {
             id: string | null;
             name: string;
             whatsapp_e164: string;
-            /** Format: email */
             email: string | null;
         };
         ProfessionalQuoteItemInput: {
@@ -1809,8 +1810,7 @@ export interface components {
             revision: number;
             customer: components["schemas"]["ProfessionalQuoteCustomer"];
             customer_name: string;
-            customer_phone_e164: string;
-            /** Format: email */
+            customer_phone_e164: string | null;
             customer_email: string | null;
             service_description: string;
             service_address: string | null;
@@ -1838,10 +1838,9 @@ export interface components {
         };
         ProfessionalQuoteCustomer: {
             /** Format: uuid */
-            id: string;
+            id: string | null;
             name: string;
-            whatsapp_e164: string;
-            /** Format: email */
+            whatsapp_e164: string | null;
             email: string | null;
         };
         ProfessionalQuoteChangeRequest: {
@@ -2974,7 +2973,7 @@ export interface components {
         /** @description Return only quotes associated with this owner-scoped customer. */
         ProfessionalQuoteCustomerId: string;
         /** @description Quote workflow status; defaults to all statuses. */
-        ProfessionalQuoteStatus: "all" | "draft" | "shared" | "change_requested" | "approved" | "declined";
+        ProfessionalQuoteStatus: "all" | "draft" | "saved" | "shared" | "change_requested" | "approved" | "declined";
         /** @description Exact combined service date. */
         ProfessionalQuoteScheduledOn: string;
         /** @description Quote table column used for deterministic ordering. */

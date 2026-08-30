@@ -150,7 +150,7 @@ test("published professional creates, previews, securely shares, and live-edits 
       response.url().endsWith("/api/v1/professional/quotes") &&
       response.request().method() === "POST",
   );
-  await clickQuoteAction(page, "Salvar e compartilhar");
+  await clickQuoteAction(page, "Salvar");
   expect((await createResponse).status()).toBe(201);
   await expect(page).toHaveURL(/\/quotes\/new\?quote=[a-f0-9-]+$/);
   const shareDialog = page.getByRole("dialog", {

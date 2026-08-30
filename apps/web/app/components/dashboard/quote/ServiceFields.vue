@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { Quote } from "~/types";
+import type { Quote, QuoteValidationErrors } from "~/types";
 
+const props = defineProps<{ errors?: QuoteValidationErrors }>();
 const quote = defineModel<Quote>({ required: true });
 const emit = defineEmits<{ dirty: [] }>();
 </script>
@@ -17,7 +18,12 @@ const emit = defineEmits<{ dirty: [] }>();
       </div>
     </header>
     <div class="builder-fields" @input="emit('dirty')">
-      <DesignSystemFormField v-slot="field" label="Válido até">
+      <DesignSystemFormField
+        v-slot="field"
+        label="Válido até"
+        :error="props.errors?.validUntil"
+        required
+      >
         <input
           :id="field.controlId"
           v-model="quote.validUntil"
@@ -25,9 +31,15 @@ const emit = defineEmits<{ dirty: [] }>();
           type="date"
           autocomplete="off"
           :aria-describedby="field.describedBy"
+          :aria-invalid="field.invalid"
+          required
         />
       </DesignSystemFormField>
-      <DesignSystemFormField v-slot="field" label="Data prevista do serviço">
+      <DesignSystemFormField
+        v-slot="field"
+        label="Data prevista do serviço"
+        :error="props.errors?.scheduledOn"
+      >
         <input
           :id="field.controlId"
           v-model="quote.scheduledOn"
@@ -35,12 +47,14 @@ const emit = defineEmits<{ dirty: [] }>();
           type="date"
           autocomplete="off"
           :aria-describedby="field.describedBy"
+          :aria-invalid="field.invalid"
         />
       </DesignSystemFormField>
       <DesignSystemFormField
         v-slot="field"
         class="builder-fields__full"
         label="Descrição do serviço"
+        :error="props.errors?.serviceDescription"
         required
       >
         <input
@@ -49,6 +63,7 @@ const emit = defineEmits<{ dirty: [] }>();
           name="serviceDescription"
           autocomplete="off"
           :aria-describedby="field.describedBy"
+          :aria-invalid="field.invalid"
           required
           maxlength="160"
         />
@@ -57,6 +72,7 @@ const emit = defineEmits<{ dirty: [] }>();
         v-slot="field"
         class="builder-fields__full"
         label="Endereço do serviço (opcional)"
+        :error="props.errors?.serviceAddress"
       >
         <input
           :id="field.controlId"
@@ -64,6 +80,7 @@ const emit = defineEmits<{ dirty: [] }>();
           name="serviceAddress"
           autocomplete="street-address"
           :aria-describedby="field.describedBy"
+          :aria-invalid="field.invalid"
           maxlength="240"
         />
       </DesignSystemFormField>
