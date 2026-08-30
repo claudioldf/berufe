@@ -92,21 +92,21 @@ describe("phone authentication", () => {
     expect(requestOtp).toHaveBeenCalledTimes(1);
 
     workflow.code.value = "12ab56";
-    await workflow.verifyCode();
+    await expect(workflow.verifyCode()).resolves.toBe(false);
     expect(workflow.error.value).toBe("Código inválido ou expirado.");
     expect(verifyOtp).not.toHaveBeenCalled();
 
     workflow.code.value = "123456";
     const firstVerification = workflow.verifyCode();
-    await workflow.verifyCode();
+    await expect(workflow.verifyCode()).resolves.toBe(false);
     expect(verifyOtp).toHaveBeenCalledOnce();
     expect(verifyOtp).toHaveBeenCalledWith({
       challengeToken: "browser-challenge-token",
       code: "123456",
     });
     resolveVerification?.();
-    await firstVerification;
-    expect(workflow.step.value).toBe(3);
+    await expect(firstVerification).resolves.toBe(true);
+    expect(workflow.step.value).toBe(2);
     expect(workflow.challengeToken.value).toBe("");
 
     vi.advanceTimersByTime(30_000);

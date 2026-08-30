@@ -88,7 +88,11 @@ beforeEach(() => {
   };
   mocks.restoreSession.mockResolvedValue(false);
   mocks.refreshSession.mockResolvedValue(true);
+  mocks.verifyCode.mockResolvedValue(false);
   mocks.registerProfessional.mockResolvedValue(true);
+  mocks.resumeRegistration.mockImplementation(() => {
+    mocks.state!.step.value = 3;
+  });
   vi.spyOn(useRouter(), "replace").mockImplementation(async (to) => {
     mocks.replace(to);
   });
@@ -168,9 +172,7 @@ describe("professional login page", () => {
   });
 
   it("refreshes after OTP and registration before entering the workspace", async () => {
-    mocks.verifyCode.mockImplementation(async () => {
-      mocks.state!.step.value = 3;
-    });
+    mocks.verifyCode.mockResolvedValue(true);
     mocks.refreshSession
       .mockImplementationOnce(async () => {
         mocks.state!.account.value = {
@@ -208,5 +210,41 @@ describe("professional login page", () => {
     });
     expect(mocks.setRole).toHaveBeenCalledWith("professional");
     expect(mocks.replace).toHaveBeenCalledWith("/app/professional/onboarding");
+  });
+
+  it("keeps the OTP step visible until a returning account is resolved", async () => {
+    mocks.state!.step.value = 2;
+    mocks.verifyCode.mockResolvedValue(true);
+    let resolveRefresh: (() => void) | undefined;
+    mocks.refreshSession.mockImplementationOnce(
+      () =>
+        new Promise<boolean>((resolve) => {
+          resolveRefresh = () => {
+            mocks.state!.account.value = {
+              role: "professional",
+              registrationCompleted: true,
+              onboardingCompleted: true,
+            };
+            resolve(true);
+          };
+        }),
+    );
+    const wrapper = await mountPage();
+
+    const confirmation = (
+      wrapper.vm as unknown as { confirmCode: () => Promise<void> }
+    ).confirmCode();
+    await flushPromises();
+
+    expect(mocks.refreshSession).toHaveBeenCalledOnce();
+    expect(wrapper.find("auth-code-step-stub").exists()).toBe(true);
+    expect(wrapper.find("auth-registration-step-stub").exists()).toBe(false);
+    expect(mocks.resumeRegistration).not.toHaveBeenCalled();
+
+    resolveRefresh?.();
+    await confirmation;
+
+    expect(mocks.resumeRegistration).not.toHaveBeenCalled();
+    expect(mocks.replace).toHaveBeenCalledWith("/app/professional");
   });
 });

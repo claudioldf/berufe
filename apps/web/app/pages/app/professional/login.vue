@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from "vue";
+import { computed, onMounted, shallowRef } from "vue";
 import { useApplicationSession } from "~/composables/useApplicationSession";
 import { useAppRole } from "~/composables/useAppRole";
 import { usePhoneAuthFlow } from "~/composables/usePhoneAuthFlow";
@@ -39,6 +39,9 @@ const authIntent = computed(() =>
 const phoneStepContent = computed(
   () => professionalPhoneStepContent[authIntent.value],
 );
+const sessionResolving = shallowRef(false);
+const otpVerified = shallowRef(false);
+const authLoading = computed(() => isLoading.value || sessionResolving.value);
 
 useSeoMeta({
   title: () => phoneStepContent.value.pageTitle,
@@ -68,15 +71,32 @@ async function continueAuthenticatedFlow() {
 }
 
 async function confirmCode() {
-  await verifyCode();
-  if (step.value !== 3) return;
+  if (sessionResolving.value) return;
+  sessionResolving.value = true;
 
   try {
-    if (await refreshSession()) await continueAuthenticatedFlow();
+    if (!otpVerified.value) {
+      if (!(await verifyCode())) return;
+      otpVerified.value = true;
+    }
+    if (!(await refreshSession())) {
+      error.value =
+        "Não foi possível confirmar sua sessão agora. Tente novamente em instantes.";
+      return;
+    }
+    await continueAuthenticatedFlow();
   } catch {
     error.value =
       "Não foi possível confirmar sua sessão agora. Tente novamente em instantes.";
+  } finally {
+    sessionResolving.value = false;
   }
+}
+
+function restartPhoneEntry() {
+  if (sessionResolving.value) return;
+  otpVerified.value = false;
+  changePhone();
 }
 
 async function register() {
@@ -166,7 +186,7 @@ onMounted(async () => {
         <AuthPhoneStep
           v-if="step === 1"
           v-model="phone"
-          :loading="isLoading"
+          :loading="authLoading"
           :error="error"
           :content="phoneStepContent"
           @submit="requestCode"
@@ -175,10 +195,10 @@ onMounted(async () => {
           v-else-if="step === 2"
           v-model="code"
           :phone="phone"
-          :loading="isLoading"
+          :loading="authLoading"
           :error="error"
           :cooldown="cooldown"
-          @change-phone="changePhone"
+          @change-phone="restartPhoneEntry"
           @resend="requestCode"
           @submit="confirmCode"
         />
@@ -187,7 +207,7 @@ onMounted(async () => {
           v-model:name="name"
           v-model:accepted="accepted"
           :error="error"
-          :loading="isLoading"
+          :loading="authLoading"
           @submit="register"
         />
       </div>
