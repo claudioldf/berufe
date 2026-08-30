@@ -23,7 +23,7 @@ async function signInExistingProfessional(page: Page, phone: string) {
 }
 
 async function clickQuoteAction(page: Page, name: string) {
-  const action = page.getByRole("button", { name });
+  const action = page.getByRole("button", { name, exact: true });
   if ((page.viewportSize()?.width ?? 0) <= 720) {
     await action.scrollIntoViewIfNeeded();
     await action.focus();
@@ -31,6 +31,19 @@ async function clickQuoteAction(page: Page, name: string) {
     return;
   }
   await action.click();
+}
+
+async function expectViewportMatchesLayout(page: Page) {
+  const widths = await page.evaluate(() => ({
+    layout: document.documentElement.clientWidth,
+    page: document.documentElement.scrollWidth,
+    window: window.innerWidth,
+    visual: window.visualViewport?.width ?? window.innerWidth,
+  }));
+
+  expect(widths.page).toBe(widths.layout);
+  expect(widths.window).toBe(widths.layout);
+  expect(Math.abs(widths.visual - widths.layout)).toBeLessThanOrEqual(1);
 }
 
 async function expectActionAtCardBottom(card: Locator, name: string) {
@@ -139,11 +152,36 @@ test("published professional creates, previews, securely shares, and live-edits 
   await page.goto("/app/professional/quotes/new");
   await waitForNuxtHydration(page);
 
+  await expectViewportMatchesLayout(page);
+  if (testInfo.project.name.startsWith("mobile")) {
+    await page.reload();
+    await waitForNuxtHydration(page);
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Novo orçamento" }),
+    ).toBeVisible();
+    await expectViewportMatchesLayout(page);
+    await expect(page.getByText("Item 1", { exact: true })).toBeVisible();
+    await expect(
+      page.getByText("Descrição do item 1", { exact: true }),
+    ).toBeVisible();
+    const itemListWidths = await page
+      .locator(".quote-items")
+      .evaluate((item) => ({
+        client: item.clientWidth,
+        scroll: item.scrollWidth,
+      }));
+    expect(itemListWidths.scroll).toBeLessThanOrEqual(itemListWidths.client);
+  }
+
   const projectLabel = testInfo.project.name.startsWith("mobile")
     ? "Mobile"
     : "Desktop";
   const customerName = `Cliente E2E ${projectLabel}`;
+  const customerPhone = testInfo.project.name.startsWith("mobile")
+    ? "47999995555"
+    : "47999994444";
   await page.getByLabel("Nome do cliente").fill(customerName);
+  await page.getByLabel("WhatsApp").fill(customerPhone);
   await page
     .getByLabel("Descrição do serviço")
     .fill("Adequação elétrica da cozinha");
