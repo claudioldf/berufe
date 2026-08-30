@@ -388,8 +388,8 @@ async function respondRelationship(
             <div>
               <strong>Seu perfil ainda não aparece no Google.</strong>
               <p>
-                Adicione uma foto de perfil, um trabalho no portfólio ou
-                confirme sua identidade para começar a aparecer em buscas.
+                Adicione uma foto de perfil, um trabalho ou confirme sua
+                identidade para começar a aparecer em buscas.
               </p>
               <NuxtLink to="/app/professional/profile">
                 Completar perfil

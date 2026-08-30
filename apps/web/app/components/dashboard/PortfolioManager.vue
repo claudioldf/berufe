@@ -31,7 +31,7 @@ const emptyStateBenefits = [
 ];
 const emptyStateVisual = {
   icon: "i-lucide-images",
-  title: "Seu portfólio",
+  title: "Meus trabalhos",
   caption: "Resultados que falam por você",
   metaLabel: "Capacidade",
   metaValue: "Até 12 trabalhos",
@@ -54,7 +54,7 @@ function submitUpload(draft: PortfolioItemDraft) {
     >
       <div>
         <DesignSystemEyebrow>Seu trabalho na prática</DesignSystemEyebrow>
-        <h2>Portfólio</h2>
+        <h2>Meus trabalhos</h2>
         <p>
           Adicione até 12 trabalhos. Em um perfil publicado, novos itens
           aparecem imediatamente e continuam na fila de revisão.

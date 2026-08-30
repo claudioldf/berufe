@@ -48,6 +48,7 @@ describe("professional portfolio manager", () => {
     expect(wrapper.text()).toContain(
       "Imagens em destaque no seu perfil público",
     );
+    expect(wrapper.text()).toContain("Meus trabalhos");
     expect(wrapper.text()).not.toContain("Seu trabalho na prática");
     expect(wrapper.find(".portfolio-manager__grid").exists()).toBe(false);
 
@@ -78,6 +79,7 @@ describe("professional portfolio manager", () => {
       approvedItem.image,
     );
     expect(wrapper.text()).toContain("Aprovado");
+    expect(wrapper.get("h2").text()).toBe("Meus trabalhos");
   });
 
   it("shows private owner status and uses the existing card action for soft deletion", async () => {
