@@ -15,6 +15,10 @@ class ProfessionalRelationshipRequester
 
   MAXIMUM_EXTERNAL_SERVICES = 10
 
+  def initialize(notifier: ProfessionalNotificationCreator.new)
+    @notifier = notifier
+  end
+
   def call(initiator:, target:, relationship_type:, context_note:, now: Time.current)
     ProfessionalRelationship.transaction do
       initiator.lock!
@@ -35,6 +39,13 @@ class ProfessionalRelationshipRequester
       ProfessionalDailyActivity.increment!(
         professional_id: initiator.id,
         counter: :relationship_interactions,
+        occurred_at: now
+      )
+      @notifier.call(
+        recipient: recipient.user_account,
+        notification_type: "relationship_request_received",
+        route: "/app/professional/profile?tab=relacoes",
+        idempotency_key: "relationship:#{relationship.id}:requested",
         occurred_at: now
       )
       relationship

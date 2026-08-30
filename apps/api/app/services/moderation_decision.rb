@@ -14,9 +14,14 @@ class ModerationDecision
 
   IDENTITY_LABEL = "Identidade verificada"
 
-  def initialize(context: Current.admin_action_context, publisher: ModerationMediaPublisher.new)
+  def initialize(
+    context: Current.admin_action_context,
+    publisher: ModerationMediaPublisher.new,
+    notifier: ProfessionalNotificationCreator.new
+  )
     @context = context
     @publisher = publisher
+    @notifier = notifier
   end
 
   def call(target_type:, target_id:, action:, reason: nil, note: nil, identity_match_confirmed: nil)
@@ -28,7 +33,7 @@ class ModerationDecision
     ApplicationRecord.transaction do
       target.lock!
       transition!(target:, target_type:, attributes: normalized, public_keys_to_delete:, created_public_keys:)
-      ModerationAction.create!(
+      action_record = ModerationAction.create!(
         admin_user_id: context.admin_user_id,
         target_type:,
         target_id: target.id,
@@ -38,6 +43,7 @@ class ModerationDecision
         request_id: context.request_id,
         created_at: Time.current
       )
+      create_notification!(target:, target_type:, action_record:)
     end
     public_keys_to_delete.each { |public_key| publisher.delete(public_key) }
     target.reload
@@ -51,7 +57,31 @@ class ModerationDecision
 
   private
 
-  attr_reader :context, :publisher
+  attr_reader :context, :notifier, :publisher
+
+  NOTIFICATION_PREFIXES = {
+    "profile_revision" => "profile",
+    "profile_photo" => "profile_photo",
+    "portfolio_item" => "portfolio_item",
+    "verification_request" => "verification_request"
+  }.freeze
+  NOTIFICATION_ROUTES = {
+    "profile_revision" => "/app/professional/profile",
+    "profile_photo" => "/app/professional/profile",
+    "portfolio_item" => "/app/professional/profile?tab=portfolio",
+    "verification_request" => "/app/professional/profile?tab=verificacoes"
+  }.freeze
+
+  def create_notification!(target:, target_type:, action_record:)
+    profile = target.professional_profile
+    notifier.call(
+      recipient: profile.user_account,
+      notification_type: "#{NOTIFICATION_PREFIXES.fetch(target_type)}_moderation_#{action_record.action}",
+      route: NOTIFICATION_ROUTES.fetch(target_type),
+      idempotency_key: "moderation-action:#{action_record.id}",
+      occurred_at: action_record.created_at
+    )
+  end
 
   def normalize(action:, reason:, note:, identity_match_confirmed:)
     normalized_action = action.to_s

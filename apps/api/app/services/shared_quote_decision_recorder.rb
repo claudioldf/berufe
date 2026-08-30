@@ -20,6 +20,10 @@ class SharedQuoteDecisionRecorder
     "decline" => "declined"
   }.freeze
 
+  def initialize(notifier: ProfessionalNotificationCreator.new)
+    @notifier = notifier
+  end
+
   def call(token:, decision:, revision:, terms_accepted:, message:, now: Time.current)
     result = SharedQuoteResolver.new.call(token:)
     quote = result.quote
@@ -58,6 +62,17 @@ class SharedQuoteDecisionRecorder
         terms_accepted_at: (decision.to_s == "approve") ? now : nil
       )
       service_job = ServiceJob.create!(quote:, status: "approved") if target_status == "approved"
+      @notifier.call(
+        recipient: quote.professional.user_account,
+        notification_type: {
+          "change_requested" => "quote_change_requested",
+          "approved" => "quote_approved",
+          "declined" => "quote_declined"
+        }.fetch(target_status),
+        route: "/app/professional/quotes/new?quote=#{quote.id}",
+        idempotency_key: "quote:#{quote.id}:revision:#{revision.to_i}:#{target_status}",
+        occurred_at: now
+      )
     end
 
     SharedQuoteResolver::Result.new(quote: quote.reload, professional: result.professional).then do |resolved|

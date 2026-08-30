@@ -62,6 +62,10 @@ RSpec.describe "Quote service loop", type: :request, openapi: true do
       message: "Trocar uma luminária de lugar."
     )
     expect(quote.service_job).to be_nil
+    expect(Notification.find_by!(notification_type: "quote_change_requested")).to have_attributes(
+      recipient_user_account: account,
+      route: "/app/professional/quotes/new?quote=#{quote.id}"
+    )
     assert_api_conform(status: 200)
 
     old_revision = quote.lock_version
@@ -138,6 +142,10 @@ RSpec.describe "Quote service loop", type: :request, openapi: true do
     service_job = quote.service_job
     expect(service_job).to be_approved
     expect(ServiceJob.where(quote:).count).to eq(1)
+    expect(Notification.find_by!(notification_type: "quote_approved")).to have_attributes(
+      recipient_user_account: account,
+      route: "/app/professional/quotes/new?quote=#{quote.id}"
+    )
     assert_api_conform(status: 200)
 
     get "/api/v1/professional/service-jobs",
@@ -221,6 +229,10 @@ RSpec.describe "Quote service loop", type: :request, openapi: true do
       status: "completion_issue",
       completion_issue_message: "Falta ajustar um interruptor."
     )
+    expect(Notification.find_by!(notification_type: "service_completion_issue_reported")).to have_attributes(
+      recipient_user_account: account,
+      route: "/app/professional/services/#{service_job.id}"
+    )
     assert_api_conform(status: 200)
 
     post "/api/v1/professional/service-jobs/#{service_job.id}/completion-request",
@@ -239,6 +251,10 @@ RSpec.describe "Quote service loop", type: :request, openapi: true do
     expect(service_job.reload).to have_attributes(
       status: "completed",
       completion_confirmed_by: "customer"
+    )
+    expect(Notification.find_by!(notification_type: "service_completion_confirmed")).to have_attributes(
+      recipient_user_account: account,
+      route: "/app/professional/services/#{service_job.id}"
     )
     recommendation_request = service_job.customer_recommendation_request
     expect(recommendation_request).to have_attributes(status: "open", sent_at: nil)
@@ -296,6 +312,10 @@ RSpec.describe "Quote service loop", type: :request, openapi: true do
     expect(CustomerRecommendation.sole).to have_attributes(
       display_name: "Marina",
       privacy_notice_version: LegalDocumentVersions::PRIVACY_NOTICE
+    )
+    expect(Notification.find_by!(notification_type: "customer_recommendation_published")).to have_attributes(
+      recipient_user_account: account,
+      route: "/profissionais/#{profile.public_slug}#customer-recommendations-title"
     )
     assert_api_conform(status: 201)
 

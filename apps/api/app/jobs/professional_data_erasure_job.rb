@@ -78,6 +78,7 @@ class ProfessionalDataErasureJob < ApplicationJob
       ).delete_all
       ProfessionalDailyMetric.where(professional_id: profile.id).delete_all
       ProfessionalDailyActivity.where(professional_id: profile.id).delete_all
+      Notification.where(recipient_user_account_id: account.id).delete_all
 
       VerificationFileAccessEvent.where(verification_file_id: ids.fetch(:verification_file_ids)).delete_all
       VerificationFile.where(id: ids.fetch(:verification_file_ids)).delete_all
