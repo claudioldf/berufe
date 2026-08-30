@@ -300,12 +300,17 @@ async function respondRelationship(
       </p>
     </DesignSystemContainer>
     <DesignSystemContainer v-else class="dashboard-content">
+      <DashboardQuickActions
+        class="dashboard-quick-actions"
+        @recommend="relationshipOpen = true"
+      />
+
       <section
         class="status-banner"
         :class="`status-banner--${dashboardStatus.tone}`"
       >
         <span class="status-banner__icon">
-          <UIcon :name="dashboardStatus.icon" />
+          <UIcon :name="dashboardStatus.icon" aria-hidden="true" />
         </span>
         <div class="status-banner__content">
           <strong>{{ dashboardStatus.title }}</strong>
@@ -329,7 +334,8 @@ async function respondRelationship(
           :to="`/profissionais/${workspace.profile.publicSlug}`"
           target="_blank"
         >
-          Ver perfil público <UIcon name="i-lucide-arrow-up-right" />
+          Ver perfil público
+          <UIcon name="i-lucide-arrow-up-right" aria-hidden="true" />
         </NuxtLink>
       </section>
 
@@ -375,7 +381,6 @@ async function respondRelationship(
               </NuxtLink>
             </div>
           </DesignSystemSurfaceCard>
-          <DashboardQuickActions @recommend="relationshipOpen = true" />
         </aside>
       </div>
     </DesignSystemContainer>
@@ -428,6 +433,9 @@ async function respondRelationship(
 .dashboard-content {
   padding-top: 24px;
   padding-bottom: 80px;
+}
+.dashboard-quick-actions {
+  margin-bottom: 16px;
 }
 .dashboard-state {
   & p {
@@ -564,13 +572,14 @@ async function respondRelationship(
   .dashboard-operational,
   .dashboard-sidebar {
     grid-column: 1;
+    grid-row: auto;
   }
   .dashboard-operational {
     grid-template-columns: minmax(0, 1fr);
     gap: 40px;
   }
   .dashboard-sidebar {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
   }
 }
 
