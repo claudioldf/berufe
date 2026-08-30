@@ -3456,6 +3456,7 @@ components:
         enum:
           - all
           - draft
+          - saved
           - shared
           - change_requested
           - approved
@@ -4540,7 +4541,7 @@ components:
             approved_identity: { type: boolean }
     QuoteStatus:
       type: string
-      enum: [draft, shared, change_requested, approved, declined]
+      enum: [draft, saved, shared, change_requested, approved, declined]
     ServiceJobStatus:
       type: string
       enum: [approved, completion_requested, completion_issue, completed, cancelled]
@@ -4566,8 +4567,8 @@ components:
         id: { type: string, format: uuid }
         quote_number: { type: integer, minimum: 1 }
         revision: { type: integer, minimum: 0 }
-        customer_name: { type: string, minLength: 1, maxLength: 80 }
-        service_description: { type: string, minLength: 1, maxLength: 160 }
+        customer_name: { type: string, maxLength: 80 }
+        service_description: { type: string, maxLength: 160 }
         total_amount: { $ref: "#/components/schemas/MoneyAmount" }
         status: { $ref: "#/components/schemas/QuoteStatus" }
         service_job_status:
@@ -4586,8 +4587,11 @@ components:
           required: [customer, service_description, service_address, scheduled_on, discount_amount, valid_until, notes, items]
           properties:
             revision: { type: integer, minimum: 0 }
+            status:
+              type: string
+              enum: [draft, saved]
             customer: { $ref: "#/components/schemas/ProfessionalQuoteCustomerInput" }
-            service_description: { type: string, minLength: 1, maxLength: 160 }
+            service_description: { type: string, maxLength: 160 }
             service_address:
               type: [string, "null"]
               maxLength: 240
@@ -4599,7 +4603,7 @@ components:
               maxLength: 700
             items:
               type: array
-              minItems: 1
+              minItems: 0
               maxItems: 20
               items: { $ref: "#/components/schemas/ProfessionalQuoteItemInput" }
     ProfessionalQuoteCustomerInput:
@@ -4608,17 +4612,17 @@ components:
       required: [id, name, whatsapp_e164, email]
       properties:
         id: { type: [string, "null"], format: uuid }
-        name: { type: string, minLength: 1, maxLength: 80 }
-        whatsapp_e164: { type: string, pattern: "^\\+55[1-9][0-9]9[0-9]{8}$" }
-        email: { type: [string, "null"], format: email, maxLength: 254 }
+        name: { type: string, maxLength: 80 }
+        whatsapp_e164: { type: string, maxLength: 20 }
+        email: { type: [string, "null"], maxLength: 254 }
     ProfessionalQuoteItemInput:
       type: object
       additionalProperties: false
       required: [description, quantity, unit, unit_price]
       properties:
-        description: { type: string, minLength: 1, maxLength: 160 }
-        quantity: { type: number, exclusiveMinimum: 0 }
-        unit: { type: string, minLength: 1, maxLength: 20 }
+        description: { type: string, maxLength: 160 }
+        quantity: { type: number, minimum: 0 }
+        unit: { type: string, maxLength: 20 }
         unit_price: { type: number, minimum: 0 }
     ProfessionalQuoteListResponse:
       type: object
@@ -4811,10 +4815,10 @@ components:
         quote_number: { type: integer, minimum: 1 }
         revision: { type: integer, minimum: 0 }
         customer: { $ref: "#/components/schemas/ProfessionalQuoteCustomer" }
-        customer_name: { type: string, minLength: 1, maxLength: 80 }
-        customer_phone_e164: { type: string, pattern: "^\\+55[1-9][0-9]9[0-9]{8}$" }
-        customer_email: { type: [string, "null"], format: email, maxLength: 254 }
-        service_description: { type: string, minLength: 1, maxLength: 160 }
+        customer_name: { type: string, maxLength: 80 }
+        customer_phone_e164: { type: [string, "null"], maxLength: 20 }
+        customer_email: { type: [string, "null"], maxLength: 254 }
+        service_description: { type: string, maxLength: 160 }
         service_address: { type: [string, "null"], maxLength: 240 }
         scheduled_on: { type: [string, "null"], format: date }
         valid_until: { type: [string, "null"], format: date }
@@ -4837,7 +4841,7 @@ components:
         updated_at: { type: string, format: date-time }
         items:
           type: array
-          minItems: 1
+          minItems: 0
           maxItems: 20
           items: { $ref: "#/components/schemas/ProfessionalQuoteItem" }
     ProfessionalQuoteCustomer:
@@ -4845,10 +4849,10 @@ components:
       additionalProperties: false
       required: [id, name, whatsapp_e164, email]
       properties:
-        id: { type: string, format: uuid }
-        name: { type: string, minLength: 1, maxLength: 80 }
-        whatsapp_e164: { type: string, pattern: "^\\+55[1-9][0-9]9[0-9]{8}$" }
-        email: { type: [string, "null"], format: email, maxLength: 254 }
+        id: { type: [string, "null"], format: uuid }
+        name: { type: string, maxLength: 80 }
+        whatsapp_e164: { type: [string, "null"], maxLength: 20 }
+        email: { type: [string, "null"], maxLength: 254 }
     ProfessionalQuoteChangeRequest:
       type: object
       additionalProperties: false
@@ -4879,9 +4883,9 @@ components:
       required: [id, description, quantity, unit, unit_price, line_total, sort_order]
       properties:
         id: { type: string, format: uuid }
-        description: { type: string, minLength: 1, maxLength: 160 }
+        description: { type: string, maxLength: 160 }
         quantity: { type: string, pattern: "^[0-9]+(?:\\.[0-9]{1,3})?$" }
-        unit: { type: string, minLength: 1, maxLength: 20 }
+        unit: { type: string, maxLength: 20 }
         unit_price: { $ref: "#/components/schemas/MoneyAmount" }
         line_total: { $ref: "#/components/schemas/MoneyAmount" }
         sort_order: { type: integer, minimum: 0 }

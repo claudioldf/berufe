@@ -146,6 +146,50 @@ RSpec.describe "Professional quotes", type: :request, openapi: true do
     assert_api_conform(status: 200)
   end
 
+  it "saves a completed quote without marking it as shared" do
+    post "/api/v1/professional/quotes",
+      params: quote_body(status: "saved"),
+      headers: session_headers(request_id: "quote-create-saved", origin: true),
+      as: :json
+
+    expect(response).to have_http_status(:created)
+    expect(Quote.sole).to have_attributes(
+      status: "saved",
+      share_token_hash: nil,
+      share_token_ciphertext: nil,
+      shared_at: nil
+    )
+    expect(response.parsed_body.dig("data", "quote")).to include(
+      "status" => "saved",
+      "shared_at" => nil
+    )
+    assert_api_conform(status: 201)
+  end
+
+  it "saves an incomplete draft without creating a partial customer" do
+    post "/api/v1/professional/quotes",
+      params: quote_body(
+        status: "draft",
+        customer: {id: nil, name: "", whatsapp_e164: "", email: nil},
+        service_description: "",
+        valid_until: nil,
+        items: [{description: "", quantity: 0, unit: "serviço", unit_price: 0}]
+      ),
+      headers: session_headers(request_id: "quote-create-partial-draft", origin: true),
+      as: :json
+
+    expect(response).to have_http_status(:created)
+    expect(Quote.sole).to have_attributes(
+      status: "draft",
+      customer: nil,
+      customer_name: "",
+      customer_phone_e164: nil,
+      service_description: ""
+    )
+    expect(Customer.where(professional: profile)).to be_empty
+    assert_api_conform(status: 201)
+  end
+
   it "rejects invalid quote index filters" do
     get "/api/v1/professional/quotes",
       params: {
@@ -261,7 +305,7 @@ RSpec.describe "Professional quotes", type: :request, openapi: true do
 
   it "rejects invalid creates and updates without consuming numbers or content" do
     post "/api/v1/professional/quotes",
-      params: quote_body(discount_amount: 1_000),
+      params: quote_body(status: "saved", discount_amount: 1_000),
       headers: session_headers(request_id: "quote-create-invalid", origin: true),
       as: :json
     expect(response).to have_http_status(:unprocessable_entity)
@@ -273,6 +317,7 @@ RSpec.describe "Professional quotes", type: :request, openapi: true do
     item_ids = quote.quote_items.ids
     patch "/api/v1/professional/quotes/#{quote.id}",
       params: quote_body(
+        status: "saved",
         revision: quote.lock_version,
         discount_amount: 1_000,
         items: [{description: "Substituição", quantity: 1, unit: "hora", unit_price: 20}]
@@ -417,7 +462,7 @@ RSpec.describe "Professional quotes", type: :request, openapi: true do
     customer = attributes[:customer].merge(name: customer_name || attributes.dig(:customer, :name))
     {
       quote: {
-        **attributes.slice(:revision),
+        **attributes.slice(:revision, :status),
         customer:,
         service_description: attributes[:service_description],
         service_address: attributes[:service_address],

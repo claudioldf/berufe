@@ -43,6 +43,7 @@ RSpec.describe ProfessionalQuoteSharer do
           email: nil
         },
         service_description: "Serviço concorrente",
+        valid_until: Date.current + 30.days,
         discount_amount: 0,
         items: [{description: "Item", quantity: 1, unit: "serviço", unit_price: 10}]
       }

@@ -433,6 +433,7 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
           email: nil
         },
         service_description:,
+        valid_until: Date.current + 30.days,
         discount_amount: 0,
         items: [
           {description: "Serviço", quantity: 1, unit: "serviço", unit_price: 100}

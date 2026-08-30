@@ -66,6 +66,12 @@ RSpec.describe "Shared quotes", type: :request, openapi: true do
 
   it "shares once, reproduces the stable token, and resolves only current public content" do
     photo = profile.published_photo
+    quote.update!(status: "saved")
+    expect(quote).to have_attributes(
+      share_token_hash: nil,
+      share_token_ciphertext: nil,
+      shared_at: nil
+    )
     first_shared_at = Time.zone.parse("2026-08-18 12:00:00 UTC")
     travel_to(first_shared_at) do
       share_quote(request_id: "quote-share-first", method: "copy")
@@ -232,11 +238,11 @@ RSpec.describe "Shared quotes", type: :request, openapi: true do
 
     expect(response).to have_http_status(:ok)
     expect(response.parsed_body.dig("data", "quote")).to include(
-      "status" => "draft",
+      "status" => "saved",
       "shared_at" => nil
     )
     expect(quote.reload).to have_attributes(
-      status: "draft",
+      status: "saved",
       share_token_hash: nil,
       share_token_ciphertext: nil,
       shared_at: nil

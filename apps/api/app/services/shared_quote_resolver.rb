@@ -12,7 +12,7 @@ class SharedQuoteResolver
     # the whole authentication. A revoked quote has no digest left to match.
     quote = Quote
       .includes(:quote_items, service_job: :customer_recommendation_request)
-      .where.not(status: "draft")
+      .where.not(status: %w[draft saved])
       .find_by(share_token_hash: QuoteShareToken.digest(token))
     raise NotFound unless quote
 

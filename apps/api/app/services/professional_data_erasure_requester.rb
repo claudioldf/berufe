@@ -91,7 +91,7 @@ class ProfessionalDataErasureRequester
   end
 
   def revoke_shared_links!(profile, now:)
-    profile.quotes.where.not(status: "draft").find_each do |quote|
+    profile.quotes.where.not(status: %w[draft saved]).find_each do |quote|
       replacement = QuoteShareToken.issue
       quote.update_columns(
         share_token_hash: QuoteShareToken.digest(replacement),
