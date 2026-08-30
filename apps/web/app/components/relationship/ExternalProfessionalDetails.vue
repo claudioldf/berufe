@@ -13,10 +13,15 @@ const coverage = defineModel<LocationCoverageDraft>("coverage", {
   required: true,
 });
 
-defineProps<{
-  name: string;
-  services: Service[];
-}>();
+const props = withDefaults(
+  defineProps<{
+    name: string;
+    services: Service[];
+    phoneError?: string;
+    coverageError?: string;
+  }>(),
+  { phoneError: "", coverageError: "" },
+);
 </script>
 
 <template>
@@ -30,12 +35,14 @@ defineProps<{
 
     <DesignSystemFormField
       id="external-professional-phone"
+      v-slot="field"
       label="Celular com DDD"
       hint="O número não será exibido publicamente"
+      :error="props.phoneError"
       required
     >
       <input
-        id="external-professional-phone"
+        :id="field.controlId"
         v-model="phone"
         name="external-phone"
         type="tel"
@@ -43,6 +50,8 @@ defineProps<{
         autocomplete="tel-national"
         placeholder="(47) 99999-9999"
         required
+        :aria-describedby="field.describedBy"
+        :aria-invalid="field.invalid"
       />
     </DesignSystemFormField>
 
@@ -75,6 +84,7 @@ defineProps<{
       <LocationCoverageFields
         v-if="coverageMode === 'informed'"
         v-model="coverage"
+        :validation-error="props.coverageError"
       />
     </fieldset>
   </div>

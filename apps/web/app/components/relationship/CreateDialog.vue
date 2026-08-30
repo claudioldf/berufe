@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, shallowRef, watch } from "vue";
+import { computed, shallowRef, useTemplateRef, watch } from "vue";
+import { useInlineFormValidation } from "~/composables/useInlineFormValidation";
 import { useProfessionalRelationships } from "~/composables/useProfessionalRelationships";
 import { useToast } from "~/composables/useToast";
 import type {
@@ -21,6 +22,9 @@ const props = defineProps<{
 const emit = defineEmits<{
   created: [relationship: ProfessionalRelationship];
 }>();
+const formRoot = useTemplateRef<HTMLFormElement>("formRoot");
+const { validationAttempted, revealValidation, resetValidation } =
+  useInlineFormValidation(formRoot);
 
 const { showToast } = useToast();
 const relationships = useProfessionalRelationships();
@@ -40,7 +44,6 @@ const externalCoverage = shallowRef<LocationCoverageDraft>({
   wholeCity: false,
   neighborhoodCodes: [],
 });
-const validationError = shallowRef("");
 const normalizedName = computed(() => searchQuery.value.trim());
 const noteLength = computed(() => contextNote.value.length);
 const searchSettled = computed(
@@ -73,9 +76,42 @@ const modalDescription = computed(() =>
     ? "Encontre o profissional pelo nome. Se ele ainda não estiver na Berufe, você poderá informar o telefone na próxima etapa."
     : "Revise o profissional e conte como vocês se conhecem.",
 );
-const error = computed(
-  () => validationError.value || relationships.error.value,
+const lookupValidationError = computed(() => {
+  if (canContinue.value) return "";
+  if (normalizedName.value.length < 3)
+    return "Informe o nome profissional para continuar.";
+  if (!searchSettled.value) return "Aguarde a busca terminar para continuar.";
+  return "Selecione um profissional ou a opção para adicionar um novo contato.";
+});
+const phoneValidationError = computed(() =>
+  normalizeBrazilianMobilePhone(externalPhone.value)
+    ? ""
+    : "Informe um celular brasileiro válido com DDD.",
 );
+const coverageValidationError = computed(() => {
+  if (externalCoverageMode.value !== "informed") return "";
+  if (
+    externalCoverage.value.cityCode &&
+    (externalCoverage.value.wholeCity ||
+      externalCoverage.value.neighborhoodCodes.length > 0)
+  ) {
+    return "";
+  }
+  return 'Selecione a cidade inteira, ao menos um bairro ou marque "Não sei".';
+});
+const displayedLookupError = computed(() =>
+  validationAttempted.value ? lookupValidationError.value : "",
+);
+const displayedPhoneError = computed(() =>
+  validationAttempted.value ? phoneValidationError.value : "",
+);
+const displayedCoverageError = computed(() =>
+  validationAttempted.value ? coverageValidationError.value : "",
+);
+const externalDetailsValid = computed(
+  () => !phoneValidationError.value && !coverageValidationError.value,
+);
+const error = computed(() => relationships.error.value);
 let candidateSearchAttempt = 0;
 
 watch([open, searchQuery], ([isOpen, query], _, onCleanup) => {
@@ -84,7 +120,6 @@ watch([open, searchQuery], ([isOpen, query], _, onCleanup) => {
   externalProfessionalSelected.value = false;
   candidateSearchPending.value = false;
   step.value = "lookup";
-  validationError.value = "";
   relationships.clearError();
   relationships.clearCandidates();
 
@@ -113,7 +148,6 @@ watch([open, searchQuery], ([isOpen, query], _, onCleanup) => {
 });
 
 watch([selectedProfessionalId, externalProfessionalSelected], () => {
-  validationError.value = "";
   relationships.clearError();
 });
 
@@ -147,28 +181,22 @@ function reset() {
     wholeCity: false,
     neighborhoodCodes: [],
   };
-  validationError.value = "";
+  resetValidation();
   relationships.clearCandidates();
   relationships.clearError();
 }
 
 function continueToDetails() {
-  validationError.value = "";
   relationships.clearError();
-  if (!canContinue.value) {
-    validationError.value =
-      normalizedName.value.length < 3
-        ? "Informe o nome profissional para continuar."
-        : "Aguarde a busca terminar para continuar.";
-    return;
-  }
+  if (!revealValidation(canContinue.value)) return;
 
   step.value = "details";
+  resetValidation();
 }
 
 function returnToLookup() {
   step.value = "lookup";
-  validationError.value = "";
+  resetValidation();
   relationships.clearError();
 }
 
@@ -181,7 +209,6 @@ async function submit() {
     return;
   }
 
-  validationError.value = "";
   relationships.clearError();
   let target;
   if (selectedProfessionalId.value) {
@@ -191,24 +218,8 @@ async function submit() {
     };
   } else {
     const normalizedPhone = normalizeBrazilianMobilePhone(externalPhone.value);
-    if (normalizedName.value.length < 3) {
-      validationError.value = "Informe o nome profissional.";
+    if (!revealValidation(externalDetailsValid.value) || !normalizedPhone)
       return;
-    }
-    if (!normalizedPhone) {
-      validationError.value = "Informe um celular brasileiro válido com DDD.";
-      return;
-    }
-    if (
-      externalCoverageMode.value === "informed" &&
-      (!externalCoverage.value.cityCode ||
-        (!externalCoverage.value.wholeCity &&
-          externalCoverage.value.neighborhoodCodes.length === 0))
-    ) {
-      validationError.value =
-        'Selecione a cidade inteira, ao menos um bairro ou marque "Não sei".';
-      return;
-    }
     target = {
       type: "phone" as const,
       name: normalizedName.value,
@@ -298,7 +309,13 @@ async function submit() {
           </UButton>
         </div>
       </div>
-      <form v-else class="relationship-create-dialog" @submit.prevent="submit">
+      <form
+        v-else
+        ref="formRoot"
+        class="relationship-create-dialog"
+        novalidate
+        @submit.prevent="submit"
+      >
         <RelationshipProfessionalLookup
           v-if="step === 'lookup'"
           v-model:query="searchQuery"
@@ -308,6 +325,7 @@ async function submit() {
           :searching="candidateSearchLoading"
           :search-settled="searchSettled"
           :search-error="relationships.searchError.value"
+          :validation-error="displayedLookupError"
         />
 
         <template v-else>
@@ -340,6 +358,8 @@ async function submit() {
             v-model:coverage="externalCoverage"
             :name="normalizedName"
             :services="services"
+            :phone-error="displayedPhoneError"
+            :coverage-error="displayedCoverageError"
           />
 
           <div class="relationship-create-dialog__context">
@@ -403,7 +423,7 @@ async function submit() {
       </UButton>
       <UButton
         v-if="eligible && step === 'lookup'"
-        :disabled="!canContinue || candidateSearchLoading"
+        :disabled="candidateSearchLoading"
         @click="continueToDetails"
       >
         Continuar

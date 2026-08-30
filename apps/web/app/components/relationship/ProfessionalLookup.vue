@@ -7,12 +7,16 @@ const selectedId = defineModel<string | null>("selectedId", { required: true });
 const externalSelected = defineModel<boolean>("externalSelected", {
   required: true,
 });
-const props = defineProps<{
-  candidates: readonly ProfessionalRelationshipCandidate[];
-  searching: boolean;
-  searchSettled: boolean;
-  searchError: string;
-}>();
+const props = withDefaults(
+  defineProps<{
+    candidates: readonly ProfessionalRelationshipCandidate[];
+    searching: boolean;
+    searchSettled: boolean;
+    searchError: string;
+    validationError?: string;
+  }>(),
+  { validationError: "" },
+);
 
 const selectedCandidate = computed(() =>
   props.candidates.find((candidate) => candidate.id === selectedId.value),
@@ -38,12 +42,14 @@ function clearSelection() {
   <div class="professional-lookup">
     <DesignSystemFormField
       id="relationship-professional-search"
+      v-slot="field"
       label="Nome do profissional"
+      :error="props.validationError"
       required
     >
       <div class="professional-lookup__input">
         <input
-          id="relationship-professional-search"
+          :id="field.controlId"
           v-model="query"
           name="professional-search"
           type="text"
@@ -53,6 +59,8 @@ function clearSelection() {
           maxlength="70"
           required
           :aria-busy="searching"
+          :aria-describedby="field.describedBy"
+          :aria-invalid="field.invalid"
         />
         <UIcon
           v-if="searching"

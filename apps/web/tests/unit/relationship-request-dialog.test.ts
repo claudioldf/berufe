@@ -38,8 +38,22 @@ const ModalStub = defineComponent({
     '<section v-if="open"><slot name="body" /><footer><slot name="footer" /></footer></section>',
 });
 const FieldStub = defineComponent({
-  props: { label: { type: String, default: "" } },
-  template: "<label>{{ label }}<slot /></label>",
+  props: {
+    id: { type: String, default: "field" },
+    label: { type: String, default: "" },
+    error: { type: String, default: "" },
+  },
+  template: `
+    <label>
+      {{ label }}
+      <slot
+        :control-id="id"
+        :described-by="error ? id + '-error' : undefined"
+        :invalid="Boolean(error)"
+      />
+      <span v-if="error" :id="id + '-error'" role="alert">{{ error }}</span>
+    </label>
+  `,
 });
 const ButtonStub = defineComponent({
   props: {
@@ -52,7 +66,10 @@ const ButtonStub = defineComponent({
     '<button type="button" :disabled="disabled" :data-to="to" @click="$emit(\'click\')"><slot /></button>',
 });
 const LocationCoverageStub = defineComponent({
-  props: { modelValue: { type: Object, required: true } },
+  props: {
+    modelValue: { type: Object, required: true },
+    validationError: { type: String, default: "" },
+  },
   emits: ["update:modelValue"],
   template: `
     <button
@@ -66,6 +83,7 @@ const LocationCoverageStub = defineComponent({
     >
       Selecionar Joinville inteira
     </button>
+    <p v-if="validationError" role="alert">{{ validationError }}</p>
   `,
 });
 
@@ -210,9 +228,18 @@ describe("relationship create dialog", () => {
       .findAll("footer button")
       .find((button) => button.text().includes("Continuar"))!;
 
-    expect(continueButton.attributes("disabled")).toBeDefined();
+    expect(continueButton.attributes("disabled")).toBeUndefined();
     expect(wrapper.text()).toContain("Não encontrei a pessoa na lista");
     expect(wrapper.text()).toContain("Continuar informando o telefone");
+
+    await continueButton.trigger("click");
+    expect(wrapper.text()).toContain("Selecione um profissional");
+    expect(
+      wrapper
+        .get('input[name="professional-search"]')
+        .attributes("aria-invalid"),
+    ).toBe("true");
+    expect(wrapper.find('input[name="external-phone"]').exists()).toBe(false);
 
     await wrapper
       .findAll("button")
@@ -224,6 +251,27 @@ describe("relationship create dialog", () => {
     expect(continueButton.attributes("disabled")).toBeUndefined();
     await continueButton.trigger("click");
     expect(wrapper.find('input[name="external-phone"]').exists()).toBe(true);
+  });
+
+  it("shows the external phone error only after Connect is clicked", async () => {
+    mocks.state.searchedQuery.value = "Beto Lima";
+    const wrapper = await mountDialog();
+    await enterProfessionalNameAndFinishSearch(wrapper, "Beto Lima");
+    await wrapper
+      .findAll("footer button")
+      .find((button) => button.text().includes("Continuar"))!
+      .trigger("click");
+
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false);
+    await wrapper
+      .findAll("footer button")
+      .find((button) => button.text().includes("Conectar"))!
+      .trigger("click");
+
+    const phone = wrapper.get('input[name="external-phone"]');
+    expect(wrapper.text()).toContain("celular brasileiro válido");
+    expect(phone.attributes("aria-invalid")).toBe("true");
+    expect(mocks.requestRelationship).not.toHaveBeenCalled();
   });
 
   it("removes the upfront mode choice and creates an external target on the second step", async () => {
