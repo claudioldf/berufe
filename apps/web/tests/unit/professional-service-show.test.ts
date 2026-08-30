@@ -84,7 +84,7 @@ const ModalStub = defineComponent({
 
 async function mountPage() {
   const wrapper = await mountSuspended(ProfessionalServicePage, {
-    shallow: true,
+    shallow: false,
     route: `/app/professional/services/${serviceId}`,
     global: {
       renderStubDefaultSlot: true,
@@ -108,6 +108,18 @@ beforeEach(() => {
 });
 
 describe("professional service show page", () => {
+  it("links back to the quote that originated the service", async () => {
+    const wrapper = await mountPage();
+
+    const quoteLink = wrapper.get(
+      `a[href="/app/professional/quotes/new?quote=${service.quote.id}"]`,
+    );
+    expect(quoteLink.text()).toContain("Ver orçamento");
+    expect(quoteLink.attributes("aria-label")).toBe(
+      `Abrir orçamento #${service.quote.number}`,
+    );
+  });
+
   it("allows the professional to confirm completion and records the source", async () => {
     mocks.completeService.mockResolvedValue({
       ...service,
