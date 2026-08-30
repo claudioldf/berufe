@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { shallowRef } from "vue";
 import type { VerificationSubmission } from "~/types";
 
 defineProps<{
@@ -20,7 +19,6 @@ function submit(submission: VerificationSubmission) {
 }
 
 const verificationFormId = "onboarding-identity-verification";
-const hasSelectedFile = shallowRef(false);
 </script>
 
 <template>
@@ -52,7 +50,6 @@ const hasSelectedFile = shallowRef(false);
         :show-submit="false"
         :submitting="saving"
         @submitted="$emit('complete', submit($event))"
-        @selection-changed="hasSelectedFile = $event"
       />
     </DesignSystemSurfaceCard>
 
@@ -84,7 +81,7 @@ const hasSelectedFile = shallowRef(false);
             :form="verificationFormId"
             color="primary"
             :loading="saving"
-            :disabled="saving || submitting || !hasSelectedFile"
+            :disabled="saving || submitting"
           >
             Enviar e concluir
           </UButton>

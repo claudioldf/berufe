@@ -1,7 +1,27 @@
 import { mount } from "@vue/test-utils";
+import { nextTick } from "vue";
 import VerificationPanel from "~/components/dashboard/VerificationPanel.vue";
+import IdentityUploadForm from "~/components/dashboard/verification/IdentityUploadForm.vue";
 
 describe("professional verification panel", () => {
+  it("allows submit to reveal and focus a missing identity image", async () => {
+    const wrapper = mount(IdentityUploadForm, { attachTo: document.body });
+    const submit = wrapper.get('button[type="submit"]');
+
+    expect(submit.attributes("disabled")).toBeUndefined();
+    await wrapper.get("form").trigger("submit");
+    await nextTick();
+
+    const file = wrapper.get<HTMLInputElement>(
+      'input[name="identity-document"]',
+    );
+    expect(wrapper.get('[role="alert"]').text()).toContain("Selecione");
+    expect(file.attributes("aria-invalid")).toBe("true");
+    expect(document.activeElement).toBe(file.element);
+    expect(wrapper.emitted("submitted")).toBeUndefined();
+    wrapper.unmount();
+  });
+
   it("keeps phone confirmation separate from the controlled identity label", () => {
     const wrapper = mount(VerificationPanel, {
       props: {

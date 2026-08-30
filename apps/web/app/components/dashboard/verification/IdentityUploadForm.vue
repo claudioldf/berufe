@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { shallowRef } from "vue";
+import { shallowRef, useTemplateRef } from "vue";
 import type { VerificationSubmission } from "~/types";
+import { useInlineFormValidation } from "~/composables/useInlineFormValidation";
 import { validateOnboardingImage } from "~/composables/useProfessionalOnboarding";
 
 const props = withDefaults(
@@ -24,6 +25,8 @@ const emit = defineEmits<{
 
 const file = shallowRef<File | null>(null);
 const error = shallowRef("");
+const formRoot = useTemplateRef<HTMLFormElement>("formRoot");
+const { revealValidation, resetValidation } = useInlineFormValidation(formRoot);
 
 function selectFile(event: Event) {
   file.value = (event.target as HTMLInputElement).files?.[0] ?? null;
@@ -32,12 +35,15 @@ function selectFile(event: Event) {
 }
 
 function submit() {
-  const validation = validateOnboardingImage(file.value);
+  const selectedFile = file.value;
+  const validation = validateOnboardingImage(selectedFile);
   error.value = validation.error;
-  if (!validation.valid || !file.value) return;
-  emit("submitted", { file: file.value, kind: "identity" });
+  if (!revealValidation(Boolean(validation.valid && selectedFile))) return;
+  if (!selectedFile) return;
+  emit("submitted", { file: selectedFile, kind: "identity" });
   file.value = null;
   error.value = "";
+  resetValidation();
   emit("selectionChanged", false);
 }
 </script>
@@ -45,7 +51,9 @@ function submit() {
 <template>
   <form
     :id="props.formId"
+    ref="formRoot"
     class="identity-upload-form"
+    novalidate
     @submit.prevent="submit"
   >
     <header>
@@ -58,7 +66,10 @@ function submit() {
       </div>
       <span><UIcon name="i-lucide-lock-keyhole" /> Arquivo protegido</span>
     </header>
-    <label class="verification-upload">
+    <label
+      class="verification-upload"
+      :class="{ 'verification-upload--invalid': error }"
+    >
       <input
         name="identity-document"
         type="file"
@@ -93,7 +104,7 @@ function submit() {
       type="submit"
       color="primary"
       :loading="props.submitting"
-      :disabled="props.submitting || !file"
+      :disabled="props.submitting"
     >
       {{ submitLabel }}
     </UButton>
@@ -161,6 +172,13 @@ function submit() {
   inset: 0;
   opacity: 0;
   cursor: pointer;
+}
+.verification-upload--invalid {
+  border-color: var(--color-danger);
+  background: var(--color-danger-tint);
+}
+.verification-upload--invalid:focus-within {
+  box-shadow: 0 0 0 3px rgb(180 35 24 / 16%);
 }
 .verification-upload > svg {
   color: var(--color-brand);
