@@ -8,5 +8,5 @@ Rails.application.config.filter_parameters += [
   :otp, :ssn, :cvv, :cvc, :birthdate, :display_name, :customer_name, :name, :headline, :bio, :whatsapp,
   :instagram, :youtube, :address, :description, :message, :notes, :context_note, :recommendation_text,
   :review_note, :cancellation_reason, :request_message, :query, :expression,
-  :input_prompt, :raw_llm_response, :parsed_response
+  :input_prompt, :raw_llm_response, :parsed_response, :title, :notification_title, :notification_description
 ]
