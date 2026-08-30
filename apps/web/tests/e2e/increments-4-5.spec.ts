@@ -74,10 +74,21 @@ test("professional dashboard prioritizes operational work responsively", async (
   ).toHaveCount(0);
   await expect(page.locator(".actions-card")).toHaveCount(1);
   await expect(page.locator(".dashboard-welcome .actions-card")).toHaveCount(1);
+  const quickActionItems = quickActions.locator(".actions-card__list > *");
+  await expect(quickActionItems).toHaveCount(4);
+  expect(
+    await quickActionItems.evaluateAll((actions) =>
+      actions.map((action) => action.getAttribute("aria-label")),
+    ),
+  ).toEqual([
+    "Ver meu perfil público",
+    "Novo orçamento",
+    "Acompanhar serviços",
+    "Recomendar um profissional",
+  ]);
   await expect(
-    quickActions.getByRole("link", { name: "Ver verificações" }),
+    page.locator(".dashboard-welcome__actions").getByText("Novo orçamento"),
   ).toHaveCount(0);
-  await expect(quickActions.locator(".actions-card__list > *")).toHaveCount(4);
   await expect(sidebar.getByText("Ações rápidas")).toHaveCount(0);
 
   const quickActionsBox = await quickActions.boundingBox();
