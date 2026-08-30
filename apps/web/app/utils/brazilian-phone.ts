@@ -89,6 +89,34 @@ export function normalizeBrazilianMobilePhone(
   return `+55${digits}`;
 }
 
-export function formatBrazilianMobilePhone(phoneE164: string): string {
-  return phoneE164.replace(/^\+55(\d{2})(\d{5})(\d{4})$/, "($1) $2-$3");
+export function brazilianMobilePhoneDigits(input: string): string {
+  let digits = input.replace(/\D/g, "");
+  if (digits.length > 11 && digits.startsWith("55")) digits = digits.slice(2);
+  return digits.slice(0, 11);
+}
+
+export function maskBrazilianMobilePhone(input: string): string {
+  const digits = brazilianMobilePhoneDigits(input);
+  if (!digits) return "";
+  if (digits.length <= 2) return `(${digits}`;
+
+  const areaCode = digits.slice(0, 2);
+  const ninthDigit = digits.slice(2, 3);
+  const firstBlock = digits.slice(3, 7);
+  const lastBlock = digits.slice(7, 11);
+  let masked = `(${areaCode}) ${ninthDigit}`;
+  if (firstBlock) masked += ` ${firstBlock}`;
+  if (lastBlock) masked += `-${lastBlock}`;
+  return masked;
+}
+
+export function sanitizeBrazilianMobilePhone(input: string): string {
+  const normalized = normalizeBrazilianMobilePhone(input);
+  return normalized ? normalized.replace(/\D/g, "") : input.replace(/\D/g, "");
+}
+
+export function formatBrazilianMobilePhone(phone: string): string {
+  return normalizeBrazilianMobilePhone(phone)
+    ? maskBrazilianMobilePhone(phone)
+    : phone;
 }

@@ -23,6 +23,7 @@ export interface ProfessionalServiceJob {
   completionIssueAt: string | null;
   completionIssueMessage: string;
   completedAt: string | null;
+  completionConfirmedBy: "customer" | "professional" | null;
   cancelledAt: string | null;
   cancellationReason: string;
   recommendationRequestStatus: "open" | "completed" | "expired" | null;

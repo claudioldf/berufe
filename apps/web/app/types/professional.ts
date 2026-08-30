@@ -344,7 +344,13 @@ export interface ProfessionalWorkspace {
       customerName: string;
       serviceDescription: string;
       total: number;
-      status: "draft" | "shared" | "change_requested" | "approved" | "declined";
+      status:
+        | "draft"
+        | "saved"
+        | "shared"
+        | "change_requested"
+        | "approved"
+        | "declined";
       serviceJobStatus: ProfessionalServiceJob["status"] | null;
       createdAt: string;
     }>;

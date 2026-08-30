@@ -27,6 +27,8 @@ const emit = defineEmits<{
 }>();
 const shareOpen = defineModel<boolean>("shareOpen", { default: false });
 const revokeOpen = shallowRef(false);
+const validationAttempted = shallowRef(false);
+const formRoot = useTemplateRef<HTMLElement>("formRoot");
 const locked = computed(() => props.initialQuote.status === "approved");
 
 function confirmRevoke() {
@@ -39,29 +41,66 @@ const {
   isSaved,
   isShared,
   subtotal,
+  validation,
   isValid,
   markDirty,
   addItem,
   removeItem,
 } = useQuoteDraft(() => props.initialQuote);
+const displayedErrors = computed(() =>
+  validationAttempted.value ? validation.value : undefined,
+);
+const readyToShare = computed(
+  () => isSaved.value && quote.value.status !== "draft",
+);
+const saveBarError = computed(() => {
+  if (props.saveError) return props.saveError;
+  return validationAttempted.value && !isValid.value
+    ? "Revise os campos destacados para continuar."
+    : "";
+});
+
+watch(
+  () => [props.initialQuote.id, props.initialQuote.updatedAt],
+  () => {
+    validationAttempted.value = false;
+  },
+);
+
+function canSubmit() {
+  validationAttempted.value = true;
+  if (isValid.value) return true;
+
+  void nextTick(() => {
+    formRoot.value
+      ?.querySelector<HTMLElement>('[aria-invalid="true"]')
+      ?.focus();
+  });
+  return false;
+}
 
 function save() {
-  emit("save", cloneQuote(quote.value));
+  const draft = cloneQuote(quote.value);
+  if (draft.status === "saved") draft.status = "draft";
+  emit("save", draft);
 }
 
 function requestShare() {
-  if (isSaved.value) {
+  if (!canSubmit()) return;
+  if (readyToShare.value) {
     shareOpen.value = true;
     return;
   }
 
-  emit("prepareShare", cloneQuote(quote.value));
+  const draft = cloneQuote(quote.value);
+  if (draft.status === "draft") draft.status = "saved";
+  emit("prepareShare", draft);
 }
 </script>
 
 <template>
   <div class="quote-builder">
-    <div class="quote-builder__form">
+    <div ref="formRoot" class="quote-builder__form">
       <DesignSystemSurfaceCard v-if="locked" class="quote-builder__locked">
         <UIcon name="i-lucide-lock-keyhole" />
         <div>
@@ -82,22 +121,36 @@ function requestShare() {
         :requests="initialQuote.changeRequests"
       />
       <template v-if="!locked">
-        <DashboardQuoteCustomerFields v-model="quote" @dirty="markDirty" />
-        <DashboardQuoteServiceFields v-model="quote" @dirty="markDirty" />
+        <DashboardQuoteCustomerFields
+          v-model="quote"
+          :errors="displayedErrors"
+          @dirty="markDirty"
+        />
+        <DashboardQuoteServiceFields
+          v-model="quote"
+          :errors="displayedErrors"
+          @dirty="markDirty"
+        />
         <DashboardQuoteLineItemsEditor
           v-model="quote"
           :subtotal="subtotal"
+          :errors="displayedErrors"
           @add="addItem"
           @remove="removeItem"
           @dirty="markDirty"
         />
-        <DashboardQuoteNotesField v-model="quote" @dirty="markDirty" />
+        <DashboardQuoteNotesField
+          v-model="quote"
+          :errors="displayedErrors"
+          @dirty="markDirty"
+        />
         <DashboardQuoteSaveBar
           :saved="isSaved"
           :shared="isShared"
+          :ready-to-share="readyToShare"
           :valid="isValid"
           :saving-intent="savingIntent"
-          :error="saveError"
+          :error="saveBarError"
           :share-enabled="shareEnabled ?? false"
           @preview="previewOpen = true"
           @save="save"
@@ -316,7 +369,7 @@ function requestShare() {
   }
   .quote-builder__form
     .form-field
-    :where(input, select, textarea):focus-visible {
+    :where(input, select, textarea):not([aria-invalid="true"]):focus-visible {
     box-shadow: none;
   }
   .quote-items {
@@ -326,11 +379,12 @@ function requestShare() {
     display: grid;
     grid-template-columns: minmax(150px, 1.4fr) 64px 84px 95px 90px 30px;
     gap: 7px;
-    align-items: center;
+    align-items: start;
     min-width: 660px;
     padding: 8px 0;
     border-top: 1px solid var(--line);
     &--head {
+      align-items: center;
       border: 0;
       color: var(--ink-soft);
       font-size: 0.82rem;
@@ -350,10 +404,26 @@ function requestShare() {
       font-size: 0.84rem;
       transition: border-color var(--motion-fast) ease;
     }
+    & > label {
+      display: grid;
+      gap: 4px;
+    }
+    &__field--invalid input,
+    &__field--invalid select {
+      border-color: var(--color-danger);
+      background-color: var(--color-danger-tint);
+    }
+    &__error {
+      color: var(--color-danger);
+      font-size: 0.72rem;
+      font-weight: 650;
+      line-height: 1.25;
+    }
     & select {
       padding-right: 2.25rem;
     }
     & strong {
+      margin-top: 9px;
       text-align: right;
       font-size: 0.84rem;
     }
@@ -368,6 +438,9 @@ function requestShare() {
       color: #a45245;
       cursor: pointer;
     }
+    & > button {
+      margin-top: 5px;
+    }
     & button:disabled {
       opacity: 0.25;
     }
@@ -375,6 +448,10 @@ function requestShare() {
   .quote-items {
     &__mobile-add {
       display: none;
+    }
+    &__error {
+      color: var(--color-danger) !important;
+      font-weight: 700;
     }
   }
   .builder-total {
@@ -397,7 +474,12 @@ function requestShare() {
     color: var(--ink);
     font-size: 0.86rem;
   }
-  .builder-total label > div {
+  .builder-total__field {
+    display: grid;
+    justify-items: end;
+    gap: 4px;
+  }
+  .builder-total__control {
     display: grid;
     grid-template-columns: auto 80px;
     align-items: center;
@@ -405,8 +487,21 @@ function requestShare() {
     border-radius: 8px;
     transition: border-color var(--motion-fast) ease;
   }
-  .builder-total label > div:focus-within {
+  .builder-total__control:focus-within {
     border-color: var(--color-brand);
+  }
+  .builder-total__control--invalid,
+  .builder-total__control--invalid:focus-within {
+    border-color: var(--color-danger);
+    background-color: var(--color-danger-tint);
+  }
+  .builder-total__error {
+    max-width: 190px;
+    color: var(--color-danger);
+    font-size: 0.72rem;
+    font-weight: 650;
+    line-height: 1.25;
+    text-align: right;
   }
   .builder-total label em {
     padding-left: 8px;

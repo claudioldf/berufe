@@ -44,6 +44,7 @@ Rails.application.routes.draw do
         resources :service_jobs, only: %i[index show], path: "service-jobs" do
           member do
             post :request_completion, path: "completion-request"
+            post :complete
             post :cancel
           end
         end

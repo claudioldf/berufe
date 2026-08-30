@@ -26,7 +26,7 @@ describe("professional workspace tabs", () => {
     ).toContain("Clientes");
     expect(wrapper.findAll("nav > a").map((link) => link.text())).toEqual([
       "Dados do perfil",
-      "Portfólio 4",
+      "Meus trabalhos 4",
       "Clientes",
       "Minha rede 2",
       "Verificações",

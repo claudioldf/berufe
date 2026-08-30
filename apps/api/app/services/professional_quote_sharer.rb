@@ -14,7 +14,11 @@ class ProfessionalQuoteSharer
     quote.with_lock do
       raise Unavailable unless publicly_eligible?(quote.professional_id)
 
-      token = quote.draft? ? issue_first_token!(quote, now) : reactivate_token!(quote, now)
+      token = if quote.draft? || quote.saved?
+        issue_first_token!(quote, now)
+      else
+        reactivate_token!(quote, now)
+      end
       raise Unavailable unless token
 
       ProfessionalDailyMetric.increment_quote_shares!(

@@ -100,6 +100,10 @@ describe("customer directory", () => {
       },
     });
 
+    expect(
+      wrapper.get<HTMLInputElement>('input[name="customerPhone"]').element
+        .value,
+    ).toBe("(47) 9 9999-1111");
     await wrapper.get('input[name="customerName"]').setValue("Ana Atualizada");
     await wrapper.get("form").trigger("submit");
     expect(wrapper.emitted("save")).toEqual([

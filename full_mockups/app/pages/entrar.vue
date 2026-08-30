@@ -28,7 +28,7 @@ function simulateLoading(action: () => void) {
 function requestCode() {
   error.value = ''
   if (cleanPhone.value.length < 10) {
-    error.value = 'Digite um número brasileiro válido.'
+    error.value = 'Digite um número de celular válido.'
     return
   }
   simulateLoading(() => {

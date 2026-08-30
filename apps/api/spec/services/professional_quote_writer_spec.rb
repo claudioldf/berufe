@@ -41,7 +41,7 @@ RSpec.describe ProfessionalQuoteWriter do
     expect do
       described_class.new.call(
         profile:,
-        attributes: valid_attributes.merge(discount_amount: 14)
+        attributes: valid_attributes.merge(status: "saved", discount_amount: 14)
       )
     end.to raise_error(described_class::Invalid) { |error|
       expect(error.field_errors).to include(:discount_amount)
@@ -55,10 +55,55 @@ RSpec.describe ProfessionalQuoteWriter do
       described_class.new.call(
         profile:,
         quote:,
-        attributes: valid_attributes.merge(revision: quote.lock_version, items: [])
+        attributes: valid_attributes.merge(
+          status: "saved",
+          revision: quote.lock_version,
+          items: []
+        )
       )
     end.to raise_error(described_class::Invalid)
     expect(quote.reload.quote_items.ids).to eq(original_item_ids)
+  end
+
+  it "persists an unshared quote as saved without creating share state" do
+    quote = described_class.new.call(
+      profile:,
+      attributes: valid_attributes.merge(status: "saved")
+    )
+
+    expect(quote).to have_attributes(
+      status: "saved",
+      share_token_hash: nil,
+      share_token_ciphertext: nil,
+      shared_at: nil
+    )
+  end
+
+  it "persists partial drafts without creating an invalid customer" do
+    quote = described_class.new.call(
+      profile:,
+      attributes: {
+        status: "draft",
+        customer: {id: nil, name: "", whatsapp_e164: "", email: nil},
+        service_description: "",
+        discount_amount: 0,
+        items: [{description: "", quantity: 0, unit: "serviço", unit_price: 0}]
+      }
+    )
+
+    expect(quote).to have_attributes(
+      status: "draft",
+      customer: nil,
+      customer_name: "",
+      customer_phone_e164: nil,
+      service_description: ""
+    )
+    expect(quote.quote_items.sole).to have_attributes(
+      description: "",
+      quantity: 0,
+      line_total: 0
+    )
+    expect(profile.customers).to be_empty
   end
 
   it "keeps shared lifecycle state and token stable while replacing live content" do

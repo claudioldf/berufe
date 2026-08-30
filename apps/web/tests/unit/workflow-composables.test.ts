@@ -3,7 +3,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import professionalsData from "@data/professionals.json";
 import type { Professional } from "~/types";
 import { usePhoneAuthFlow } from "~/composables/usePhoneAuthFlow";
-import { useProfessionalProfileDraft } from "~/composables/useProfessionalProfileDraft";
+import {
+  useProfessionalProfileDraft,
+  validateProfessionalProfileDraft,
+} from "~/composables/useProfessionalProfileDraft";
 import { PhoneOtpRequestError } from "~/services/api/phone-auth";
 import { ApiRequestError } from "~/services/api/errors";
 
@@ -20,6 +23,31 @@ describe("profile drafts", () => {
 
     expect(draft?.instagram).toBe("https://www.instagram.com/berufe/");
     expect(draft?.selectedServices).not.toBe(professional.services);
+  });
+
+  it("mirrors the complete profile rules before persistence", () => {
+    const professional = (professionalsData as Professional[])[0]!;
+    const workflow = useProfessionalProfileDraft(professional);
+    Object.assign(workflow.form, {
+      name: "A",
+      birthdate: "2030-01-01",
+      whatsapp: "47 3333-1111",
+      yearsExperience: 71,
+      selectedServices: [],
+      primaryService: "",
+      coverageCityCode: "",
+      coversWholeCity: false,
+      selectedNeighborhoodCodes: [],
+    });
+
+    const validation = validateProfessionalProfileDraft(workflow.form);
+
+    expect(validation.identity.name).toContain("3 caracteres");
+    expect(validation.identity.birthdate).toContain("válida");
+    expect(validation.identity.whatsapp).toContain("celular brasileiro");
+    expect(validation.identity.yearsExperience).toContain("0 e 70");
+    expect(validation.services).toContain("serviço");
+    expect(validation.coverage).toContain("cidade inteira");
   });
 });
 
@@ -56,7 +84,7 @@ describe("phone authentication", () => {
     await workflow.requestCode();
 
     expect(requestOtp).toHaveBeenCalledWith("+5547999991111");
-    expect(workflow.phone.value).toBe("(47) 99999-1111");
+    expect(workflow.phone.value).toBe("(47) 9 9999-1111");
     expect(workflow.step.value).toBe(2);
     expect(workflow.cooldown.value).toBe(30);
     expect(workflow.challengeToken.value).toBe("browser-challenge-token");
@@ -64,21 +92,21 @@ describe("phone authentication", () => {
     expect(requestOtp).toHaveBeenCalledTimes(1);
 
     workflow.code.value = "12ab56";
-    await workflow.verifyCode();
+    await expect(workflow.verifyCode()).resolves.toBe(false);
     expect(workflow.error.value).toBe("Código inválido ou expirado.");
     expect(verifyOtp).not.toHaveBeenCalled();
 
     workflow.code.value = "123456";
     const firstVerification = workflow.verifyCode();
-    await workflow.verifyCode();
+    await expect(workflow.verifyCode()).resolves.toBe(false);
     expect(verifyOtp).toHaveBeenCalledOnce();
     expect(verifyOtp).toHaveBeenCalledWith({
       challengeToken: "browser-challenge-token",
       code: "123456",
     });
     resolveVerification?.();
-    await firstVerification;
-    expect(workflow.step.value).toBe(3);
+    await expect(firstVerification).resolves.toBe(true);
+    expect(workflow.step.value).toBe(2);
     expect(workflow.challengeToken.value).toBe("");
 
     vi.advanceTimersByTime(30_000);
@@ -149,7 +177,7 @@ describe("phone authentication", () => {
 
     workflow.phone.value = "47 3333-1111";
     await workflow.requestCode();
-    expect(workflow.error.value).toBe("Digite um número brasileiro válido.");
+    expect(workflow.error.value).toBe("Digite um número de celular válido.");
     expect(requestOtp).not.toHaveBeenCalled();
 
     workflow.phone.value = "47999991111";

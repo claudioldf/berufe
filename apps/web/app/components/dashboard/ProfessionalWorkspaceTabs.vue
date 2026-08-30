@@ -16,7 +16,7 @@ const tabs = [
   },
   {
     id: "portfolio",
-    label: "Portfólio",
+    label: "Meus trabalhos",
     icon: "i-lucide-images",
     to: "/app/professional/profile?tab=portfolio",
   },

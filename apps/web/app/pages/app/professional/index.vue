@@ -20,6 +20,15 @@ const relationshipEligible = computed(
   () => account.value?.relationshipEligible ?? false,
 );
 const workspace = computed(() => professionalWorkspace.data.value);
+const dashboardReady = computed(
+  () =>
+    professionalWorkspace.status.value !== "pending" &&
+    !professionalWorkspace.error.value &&
+    Boolean(workspace.value),
+);
+const identityVerified = computed(
+  () => workspace.value?.dashboard.readiness.steps.approvedIdentity ?? false,
+);
 const professionalFirstName = computed(
   () =>
     workspace.value?.profile.identity.name.trim().split(" ")[0] ??
@@ -259,28 +268,39 @@ async function respondRelationship(
 
 <template>
   <div class="dashboard-page">
-    <section class="dashboard-welcome">
-      <DesignSystemContainer class="dashboard-welcome__inner">
-        <div>
-          <p>{{ localDateLabel || "Painel profissional" }}</p>
-          <h1>Olá, {{ professionalFirstName }}.</h1>
+    <section
+      class="dashboard-welcome"
+      :class="{ 'dashboard-welcome--ready': dashboardReady }"
+    >
+      <DesignSystemContainer class="dashboard-welcome__container">
+        <div class="dashboard-welcome__inner">
+          <div>
+            <p>{{ localDateLabel || "Painel profissional" }}</p>
+            <h1>Olá, {{ professionalFirstName }}.</h1>
+          </div>
+          <div class="dashboard-welcome__actions">
+            <UButton
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-share-2"
+              :disabled="!dashboardStatus.publicAvailable"
+              @click="shareProfile"
+              >Compartilhar perfil</UButton
+            >
+            <UButton
+              to="/app/professional/quotes/new"
+              color="secondary"
+              icon="i-lucide-plus"
+              >Novo orçamento</UButton
+            >
+          </div>
         </div>
-        <div class="dashboard-welcome__actions">
-          <UButton
-            color="neutral"
-            variant="outline"
-            icon="i-lucide-share-2"
-            :disabled="!dashboardStatus.publicAvailable"
-            @click="shareProfile"
-            >Compartilhar perfil</UButton
-          >
-          <UButton
-            to="/app/professional/quotes/new"
-            color="secondary"
-            icon="i-lucide-plus"
-            >Novo orçamento</UButton
-          >
-        </div>
+        <DashboardQuickActions
+          v-if="dashboardReady"
+          class="dashboard-welcome__quick-actions"
+          :identity-verified="identityVerified"
+          @recommend="relationshipOpen = true"
+        />
       </DesignSystemContainer>
     </section>
 
@@ -305,7 +325,7 @@ async function respondRelationship(
         :class="`status-banner--${dashboardStatus.tone}`"
       >
         <span class="status-banner__icon">
-          <UIcon :name="dashboardStatus.icon" />
+          <UIcon :name="dashboardStatus.icon" aria-hidden="true" />
         </span>
         <div class="status-banner__content">
           <strong>{{ dashboardStatus.title }}</strong>
@@ -329,7 +349,8 @@ async function respondRelationship(
           :to="`/profissionais/${workspace.profile.publicSlug}`"
           target="_blank"
         >
-          Ver perfil público <UIcon name="i-lucide-arrow-up-right" />
+          Ver perfil público
+          <UIcon name="i-lucide-arrow-up-right" aria-hidden="true" />
         </NuxtLink>
       </section>
 
@@ -367,15 +388,14 @@ async function respondRelationship(
             <div>
               <strong>Seu perfil ainda não aparece no Google.</strong>
               <p>
-                Adicione uma foto de perfil, um trabalho no portfólio ou
-                confirme sua identidade para começar a aparecer em buscas.
+                Adicione uma foto de perfil, um trabalho ou confirme sua
+                identidade para começar a aparecer em buscas.
               </p>
               <NuxtLink to="/app/professional/profile">
                 Completar perfil
               </NuxtLink>
             </div>
           </DesignSystemSurfaceCard>
-          <DashboardQuickActions @recommend="relationshipOpen = true" />
         </aside>
       </div>
     </DesignSystemContainer>
@@ -396,6 +416,9 @@ async function respondRelationship(
   padding: 40px 0 44px;
   background: var(--color-brand-strong);
   color: white;
+  &--ready {
+    padding-bottom: 0;
+  }
   &__inner {
     display: flex;
     justify-content: space-between;
@@ -423,6 +446,9 @@ async function respondRelationship(
   &__actions {
     display: flex;
     gap: 9px;
+  }
+  &__quick-actions {
+    margin-top: 28px;
   }
 }
 .dashboard-content {
@@ -564,13 +590,14 @@ async function respondRelationship(
   .dashboard-operational,
   .dashboard-sidebar {
     grid-column: 1;
+    grid-row: auto;
   }
   .dashboard-operational {
     grid-template-columns: minmax(0, 1fr);
     gap: 40px;
   }
   .dashboard-sidebar {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
   }
 }
 
@@ -587,6 +614,13 @@ async function respondRelationship(
 }
 
 @media (width <= 700px) {
+  .dashboard-welcome {
+    padding-top: 28px;
+
+    &__quick-actions {
+      margin-top: 22px;
+    }
+  }
   .dashboard-layout,
   .dashboard-operational {
     gap: 28px;

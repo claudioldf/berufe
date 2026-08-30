@@ -34,7 +34,12 @@ RSpec.describe ProfessionalDataErasureRequester do
     session, = ApplicationSession.issue!(user_account: account, now: now - 5.minutes)
     quote = create_shared_quote
     old_share_hash = quote.share_token_hash
-    service_job = ServiceJob.create!(quote:, status: "completed", completed_at: now - 1.day)
+    service_job = ServiceJob.create!(
+      quote:,
+      status: "completed",
+      completed_at: now - 1.day,
+      completion_confirmed_by: "customer"
+    )
     invitation = service_job.create_customer_recommendation_request!(
       token_hash: CustomerRecommendationToken.digest(CustomerRecommendationToken.issue),
       token_ciphertext: CustomerRecommendationToken.encrypt(CustomerRecommendationToken.issue),

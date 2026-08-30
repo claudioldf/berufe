@@ -8,12 +8,12 @@ import { ApiRequestError, normalizeApiError } from "~/services/api/errors";
 import type { components } from "~/services/api/schema";
 import { mapProfessionalRelationship } from "~/services/api/professional-relationships";
 import { mapProfessionalServiceJob } from "~/services/api/professional-service-jobs";
+import {
+  formatBrazilianMobilePhone,
+  sanitizeBrazilianMobilePhone,
+} from "~/utils/brazilian-phone";
 
 type ContractWorkspace = components["schemas"]["ProfessionalWorkspaceData"];
-
-function nationalPhone(value: string) {
-  return value.startsWith("+55") ? value.slice(3) : value;
-}
 
 export function mapProfessionalWorkspace(
   data: ContractWorkspace,
@@ -126,7 +126,7 @@ export function mapProfessionalWorkspace(
         headline: identity.headline,
         bio: identity.bio,
         yearsExperience: identity.years_experience ?? 0,
-        whatsapp: nationalPhone(identity.whatsapp),
+        whatsapp: formatBrazilianMobilePhone(identity.whatsapp),
         instagram: identity.instagram ?? "",
         youtube: identity.youtube ?? "",
       },
@@ -209,7 +209,7 @@ export async function updateProfessionalIdentity(
           headline: draft.headline,
           bio: draft.bio,
           years_experience: draft.yearsExperience,
-          whatsapp: draft.whatsapp,
+          whatsapp: sanitizeBrazilianMobilePhone(draft.whatsapp),
           instagram: draft.instagram || null,
           youtube: draft.youtube || null,
         },
@@ -250,7 +250,7 @@ export async function updateProfessionalProfile(
           headline: draft.headline,
           bio: draft.bio,
           years_experience: draft.yearsExperience,
-          whatsapp: draft.whatsapp,
+          whatsapp: sanitizeBrazilianMobilePhone(draft.whatsapp),
           instagram: draft.instagram || null,
           youtube: draft.youtube || null,
         },

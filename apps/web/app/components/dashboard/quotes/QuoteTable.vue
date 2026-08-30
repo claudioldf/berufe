@@ -15,6 +15,7 @@ const emit = defineEmits<{
 
 const statusLabel = {
   draft: "Rascunho",
+  saved: "Aguardando envio ao cliente",
   shared: "Aguardando resposta",
   change_requested: "Alteração solicitada",
   approved: "Aprovado",
@@ -268,6 +269,7 @@ function sortLabel(column: QuoteSortKey, label: string) {
     font-weight: 800;
   }
 
+  &__status.saved,
   &__status.shared,
   &__status.approved {
     background: var(--mint);

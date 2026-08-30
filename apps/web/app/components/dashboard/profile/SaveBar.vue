@@ -1,7 +1,12 @@
 <script setup lang="ts">
 const props = withDefaults(
-  defineProps<{ saved: boolean; saving?: boolean }>(),
-  { saving: false },
+  defineProps<{
+    saved: boolean;
+    saving?: boolean;
+    valid?: boolean;
+    validationAttempted?: boolean;
+  }>(),
+  { saving: false, valid: true, validationAttempted: false },
 );
 </script>
 
@@ -12,9 +17,11 @@ const props = withDefaults(
       {{
         props.saving
           ? "Salvando alterações…"
-          : saved
-            ? "Alterações salvas"
-            : "Há alterações não salvas"
+          : props.validationAttempted && !props.valid
+            ? "Revise os campos destacados"
+            : saved
+              ? "Alterações salvas"
+              : "Há alterações não salvas"
       }}
     </span>
     <div>
@@ -25,7 +32,7 @@ const props = withDefaults(
         type="submit"
         color="primary"
         :loading="props.saving"
-        :disabled="saved || props.saving"
+        :disabled="props.saving || (saved && props.valid)"
       >
         Salvar alterações
       </UButton>

@@ -1,10 +1,117 @@
-import { reactive, readonly, shallowRef, toValue, watch } from "vue";
+import { computed, reactive, readonly, shallowRef, toValue, watch } from "vue";
 import type { MaybeRefOrGetter } from "vue";
 import type { Professional, ProfessionalProfileDraft } from "~/types";
+import { normalizeBrazilianMobilePhone } from "~/utils/brazilian-phone";
 import {
   normalizeSocialProfile,
   type SocialPlatform,
 } from "~/utils/socialProfiles";
+
+export interface ProfessionalProfileValidation {
+  identity: {
+    name: string;
+    birthdate: string;
+    whatsapp: string;
+    headline: string;
+    bio: string;
+    yearsExperience: string;
+  };
+  social: Record<SocialPlatform, string>;
+  services: string;
+  coverage: string;
+}
+
+function isPlausibleBirthdate(value: string) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return false;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const birthdate = new Date(year, month - 1, day);
+  if (
+    birthdate.getFullYear() !== year ||
+    birthdate.getMonth() !== month - 1 ||
+    birthdate.getDate() !== day
+  ) {
+    return false;
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const oldest = new Date(today);
+  oldest.setFullYear(oldest.getFullYear() - 120);
+  return birthdate >= oldest && birthdate <= today;
+}
+
+export function validateProfessionalProfileDraft(
+  draft: ProfessionalProfileDraft,
+): ProfessionalProfileValidation {
+  const nameLength = draft.name.trim().length;
+  const experience = draft.yearsExperience;
+  const instagram = normalizeSocialProfile(draft.instagram, "instagram");
+  const youtube = normalizeSocialProfile(draft.youtube, "youtube");
+  const hasPrimaryService =
+    draft.selectedServices.length > 0 &&
+    draft.selectedServices.includes(draft.primaryService);
+  const hasValidServiceNotes = draft.selectedServices.every(
+    (service) => (draft.serviceNotes[service] ?? "").trim().length <= 120,
+  );
+  const hasCoverage =
+    Boolean(draft.coverageCityCode) &&
+    (draft.coversWholeCity || draft.selectedNeighborhoodCodes.length > 0);
+
+  return {
+    identity: {
+      name:
+        nameLength < 3
+          ? "Informe um nome com pelo menos 3 caracteres."
+          : nameLength > 70
+            ? "Use no máximo 70 caracteres."
+            : "",
+      birthdate: isPlausibleBirthdate(draft.birthdate)
+        ? ""
+        : "Informe uma data de nascimento válida.",
+      whatsapp:
+        draft.whatsapp.trim() && !normalizeBrazilianMobilePhone(draft.whatsapp)
+          ? "Informe um celular brasileiro válido com DDD."
+          : "",
+      headline:
+        draft.headline.trim().length > 120
+          ? "Use no máximo 120 caracteres."
+          : "",
+      bio:
+        draft.bio.trim().length > 2500 ? "Use no máximo 2.500 caracteres." : "",
+      yearsExperience:
+        experience !== null &&
+        experience !== undefined &&
+        (!Number.isInteger(experience) || experience < 0 || experience > 70)
+          ? "Informe um número inteiro entre 0 e 70."
+          : "",
+    },
+    social: {
+      instagram: instagram.error,
+      youtube: youtube.error,
+    },
+    services: !hasPrimaryService
+      ? "Escolha ao menos um serviço e defina o principal."
+      : !hasValidServiceNotes
+        ? "Use até 120 caracteres nas especializações."
+        : "",
+    coverage: hasCoverage
+      ? ""
+      : "Selecione uma cidade inteira ou pelo menos um bairro dela.",
+  };
+}
+
+function hasValidationErrors(validation: ProfessionalProfileValidation) {
+  return [
+    ...Object.values(validation.identity),
+    ...Object.values(validation.social),
+    validation.services,
+    validation.coverage,
+  ].some(Boolean);
+}
 
 function createDraft(professional: Professional): ProfessionalProfileDraft {
   return {
@@ -41,6 +148,8 @@ export function useProfessionalProfileDraft(
     instagram: "",
     youtube: "",
   });
+  const validation = computed(() => validateProfessionalProfileDraft(form));
+  const isValid = computed(() => !hasValidationErrors(validation.value));
 
   function reset(professional = toValue(source)) {
     Object.assign(form, createDraft(professional));
@@ -111,6 +220,8 @@ export function useProfessionalProfileDraft(
     form,
     saved: readonly(saved),
     socialErrors: readonly(socialErrors),
+    validation: readonly(validation),
+    isValid: readonly(isValid),
     markDirty,
     validateSocialField,
     clearSocialError,

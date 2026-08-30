@@ -30,7 +30,7 @@ describe("phone OTP API", () => {
       resendAvailableIn: 30,
     });
     expect(client.POST).toHaveBeenCalledWith("/api/v1/auth/otp/challenges", {
-      body: { phone: "+5547999991111" },
+      body: { phone: "5547999991111" },
     });
   });
 

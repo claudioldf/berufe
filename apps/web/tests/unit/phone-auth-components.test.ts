@@ -1,4 +1,5 @@
 import { mount } from "@vue/test-utils";
+import { nextTick } from "vue";
 import CodeStep from "~/components/auth/CodeStep.vue";
 import PhoneStep from "~/components/auth/PhoneStep.vue";
 import RegistrationStep from "~/components/auth/RegistrationStep.vue";
@@ -64,6 +65,63 @@ describe("phone authentication components", () => {
     expect(resolveProfessionalAuthIntent("unexpected")).toBe("login");
   });
 
+  it("reveals and focuses invalid login fields without emitting submit", async () => {
+    const wrapper = mount(PhoneStep, {
+      attachTo: document.body,
+      props: {
+        modelValue: "",
+        loading: false,
+        error: "",
+        content: professionalPhoneStepContent.login,
+      },
+      global: {
+        stubs: {
+          DesignSystemEyebrow: { template: "<span><slot /></span>" },
+          NuxtLink: { template: "<a><slot /></a>" },
+          UButton: { template: "<button><slot /></button>" },
+          UIcon: true,
+        },
+      },
+    });
+
+    await wrapper.get("form").trigger("submit");
+    await nextTick();
+
+    const phone = wrapper.get<HTMLInputElement>("#auth-phone");
+    expect(wrapper.get('[role="alert"]').text()).toContain("número");
+    expect(phone.attributes("aria-invalid")).toBe("true");
+    expect(document.activeElement).toBe(phone.element);
+    expect(wrapper.emitted("submit")).toBeUndefined();
+    wrapper.unmount();
+  });
+
+  it("masks the mobile number while it is entered", async () => {
+    const wrapper = mount(PhoneStep, {
+      props: {
+        modelValue: "",
+        loading: false,
+        error: "",
+        content: professionalPhoneStepContent.login,
+      },
+      global: {
+        stubs: {
+          DesignSystemEyebrow: { template: "<span><slot /></span>" },
+          NuxtLink: { template: "<a><slot /></a>" },
+          UButton: { template: "<button><slot /></button>" },
+          UIcon: true,
+        },
+      },
+    });
+    const input = wrapper.get<HTMLInputElement>("#auth-phone");
+
+    await input.setValue("47999991111");
+    const masked = wrapper.emitted("update:modelValue")?.at(-1)?.[0];
+    expect(masked).toBe("(47) 9 9999-1111");
+    await wrapper.setProps({ modelValue: String(masked) });
+    expect(input.element.value).toBe("(47) 9 9999-1111");
+    expect(input.attributes("maxlength")).toBe("16");
+  });
+
   it("keeps short and daily resend timing in the existing control", async () => {
     const wrapper = mount(CodeStep, {
       props: {
@@ -105,6 +163,61 @@ describe("phone authentication components", () => {
     await wrapper.setProps({ error: "Código inválido ou expirado." });
     expect(wrapper.get('[role="alert"]').text()).toContain("Código inválido");
     expect(wrapper.get("#auth-code").attributes("aria-invalid")).toBe("true");
+  });
+
+  it("validates the confirmation code inline before emitting submit", async () => {
+    const wrapper = mount(CodeStep, {
+      props: {
+        modelValue: "12",
+        phone: "(47) 99999-1111",
+        loading: false,
+        error: "",
+        cooldown: 0,
+      },
+      global: {
+        stubs: {
+          DesignSystemEyebrow: { template: "<span><slot /></span>" },
+          UButton: { template: "<button><slot /></button>" },
+          UIcon: true,
+        },
+      },
+    });
+
+    await wrapper.get("form").trigger("submit");
+
+    expect(wrapper.get('[role="alert"]').text()).toContain("6 dígitos");
+    expect(wrapper.get("#auth-code").attributes("aria-invalid")).toBe("true");
+    expect(wrapper.emitted("submit")).toBeUndefined();
+  });
+
+  it("validates registration fields independently before submitting", async () => {
+    const wrapper = mount(RegistrationStep, {
+      props: {
+        name: "",
+        accepted: false,
+        error: "",
+        loading: false,
+      },
+      global: {
+        stubs: {
+          DesignSystemEyebrow: { template: "<span><slot /></span>" },
+          NuxtLink: { template: "<a><slot /></a>" },
+          UButton: { template: "<button><slot /></button>" },
+          UIcon: true,
+        },
+      },
+    });
+
+    await wrapper.get("form").trigger("submit");
+
+    expect(wrapper.findAll('[role="alert"]')).toHaveLength(2);
+    expect(wrapper.get("#professional-name").attributes("aria-invalid")).toBe(
+      "true",
+    );
+    expect(
+      wrapper.get('input[name="accepted-terms"]').attributes("aria-invalid"),
+    ).toBe("true");
+    expect(wrapper.emitted("submit")).toBeUndefined();
   });
 
   it("submits the existing registration fields and reflects pending state", async () => {

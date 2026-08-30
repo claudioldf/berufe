@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_29_110000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_29_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -695,7 +695,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_110000) do
     t.decimal "unit_price", precision: 14, scale: 2, null: false
     t.index ["quote_id", "sort_order"], name: "index_quote_items_on_quote_id_and_sort_order", unique: true
     t.index ["quote_id"], name: "index_quote_items_on_quote_id"
-    t.check_constraint "quantity > 0::numeric", name: "quote_items_positive_quantity"
+    t.check_constraint "quantity >= 0::numeric", name: "quote_items_nonnegative_quantity"
     t.check_constraint "sort_order >= 0", name: "quote_items_nonnegative_sort_order"
     t.check_constraint "unit_price >= 0::numeric AND line_total >= 0::numeric", name: "quote_items_nonnegative_amounts"
   end
@@ -705,9 +705,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_110000) do
     t.datetime "customer_decided_at"
     t.text "customer_decision_message"
     t.string "customer_email", limit: 254
-    t.uuid "customer_id", null: false
+    t.uuid "customer_id"
     t.string "customer_name", limit: 80, null: false
-    t.string "customer_phone_e164", limit: 14, null: false
+    t.string "customer_phone_e164", limit: 20
     t.decimal "discount_amount", precision: 14, scale: 2, default: "0.0", null: false
     t.integer "lock_version", default: 0, null: false
     t.text "notes"
@@ -731,12 +731,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_110000) do
     t.index ["professional_id", "quote_number"], name: "index_quotes_on_professional_id_and_quote_number", unique: true
     t.index ["professional_id"], name: "index_quotes_on_professional_id"
     t.index ["share_token_hash"], name: "index_quotes_on_share_token_hash", unique: true
+    t.check_constraint "(status::text = ANY (ARRAY['draft'::character varying::text, 'saved'::character varying::text])) AND share_token_hash IS NULL AND share_token_ciphertext IS NULL AND shared_at IS NULL OR (status::text <> ALL (ARRAY['draft'::character varying::text, 'saved'::character varying::text])) AND share_token_hash IS NOT NULL AND share_token_ciphertext IS NOT NULL AND shared_at IS NOT NULL", name: "quotes_consistent_share_state"
     t.check_constraint "customer_decision_message IS NULL OR char_length(btrim(customer_decision_message)) >= 1 AND char_length(btrim(customer_decision_message)) <= 700", name: "quotes_customer_decision_message_length"
-    t.check_constraint "customer_phone_e164::text ~ '^\\+55[1-9][0-9]9[0-9]{8}$'::text", name: "quotes_customer_brazilian_mobile"
-    t.check_constraint "discount_amount <= subtotal_amount AND total_amount = (subtotal_amount - discount_amount)", name: "quotes_consistent_totals"
     t.check_constraint "quote_number > 0", name: "quotes_positive_number"
-    t.check_constraint "status::text = 'draft'::text AND share_token_hash IS NULL AND share_token_ciphertext IS NULL AND shared_at IS NULL OR status::text <> 'draft'::text AND share_token_hash IS NOT NULL AND share_token_ciphertext IS NOT NULL AND shared_at IS NOT NULL", name: "quotes_consistent_share_state"
-    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying::text, 'shared'::character varying::text, 'change_requested'::character varying::text, 'approved'::character varying::text, 'declined'::character varying::text])", name: "quotes_known_status"
+    t.check_constraint "status::text = 'draft'::text OR customer_phone_e164::text ~ '^\\+55[1-9][0-9]9[0-9]{8}$'::text", name: "quotes_customer_brazilian_mobile"
+    t.check_constraint "status::text = 'draft'::text OR discount_amount <= subtotal_amount AND total_amount = (subtotal_amount - discount_amount)", name: "quotes_consistent_totals"
+    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying::text, 'saved'::character varying::text, 'shared'::character varying::text, 'change_requested'::character varying::text, 'approved'::character varying::text, 'declined'::character varying::text])", name: "quotes_known_status"
     t.check_constraint "subtotal_amount >= 0::numeric AND discount_amount >= 0::numeric AND total_amount >= 0::numeric", name: "quotes_nonnegative_amounts"
   end
 
@@ -819,6 +819,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_110000) do
     t.text "cancellation_reason"
     t.datetime "cancelled_at"
     t.datetime "completed_at"
+    t.string "completion_confirmed_by", limit: 20
     t.datetime "completion_issue_at"
     t.text "completion_issue_message"
     t.datetime "completion_requested_at"
@@ -830,6 +831,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_110000) do
     t.index ["status", "updated_at"], name: "index_service_jobs_on_status_and_updated_at"
     t.check_constraint "cancellation_reason IS NULL OR char_length(btrim(cancellation_reason)) >= 1 AND char_length(btrim(cancellation_reason)) <= 700", name: "service_jobs_cancellation_reason_length"
     t.check_constraint "completion_issue_message IS NULL OR char_length(btrim(completion_issue_message)) >= 1 AND char_length(btrim(completion_issue_message)) <= 700", name: "service_jobs_completion_issue_message_length"
+    t.check_constraint "status::text = 'completed'::text AND (completion_confirmed_by::text = ANY (ARRAY['customer'::character varying, 'professional'::character varying]::text[])) OR status::text <> 'completed'::text AND completion_confirmed_by IS NULL", name: "service_jobs_consistent_completion_confirmer"
     t.check_constraint "status::text = ANY (ARRAY['approved'::character varying::text, 'completion_requested'::character varying::text, 'completion_issue'::character varying::text, 'completed'::character varying::text, 'cancelled'::character varying::text])", name: "service_jobs_known_status"
   end
 

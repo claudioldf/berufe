@@ -25,6 +25,7 @@ class ProfessionalServiceJobSerializer
       completion_issue_at: service_job.completion_issue_at&.iso8601,
       completion_issue_message: service_job.completion_issue_message,
       completed_at: service_job.completed_at&.iso8601,
+      completion_confirmed_by: service_job.completion_confirmed_by,
       cancelled_at: service_job.cancelled_at&.iso8601,
       cancellation_reason: service_job.cancellation_reason,
       recommendation_request_status: service_job.customer_recommendation_request&.status,

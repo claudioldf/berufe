@@ -133,7 +133,14 @@ describe("onboarding step contracts", () => {
 
     expect(skip).toBeTruthy();
     expect(submit?.attributes("form")).toBe("onboarding-identity-verification");
-    expect(submit?.attributes("disabled")).toBeDefined();
+    expect(submit?.attributes("disabled")).toBeUndefined();
+
+    await wrapper.get("form").trigger("submit");
+    expect(wrapper.get('[role="alert"]').text()).toContain("Selecione");
+    expect(
+      wrapper.get('input[name="identity-document"]').attributes("aria-invalid"),
+    ).toBe("true");
+    expect(wrapper.emitted("complete")).toBeUndefined();
 
     const file = new File(["identity"], "identity.png", {
       type: "image/png",
@@ -142,7 +149,6 @@ describe("onboarding step contracts", () => {
     Object.defineProperty(input.element, "files", { value: [file] });
     await input.trigger("change");
 
-    expect(submit?.attributes("disabled")).toBeUndefined();
     await wrapper.get("form").trigger("submit");
     expect(wrapper.emitted("complete")?.[0]).toEqual([file]);
 

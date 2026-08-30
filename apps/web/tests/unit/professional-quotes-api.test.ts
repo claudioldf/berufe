@@ -89,7 +89,7 @@ describe("professional quote API", () => {
       number: 7,
       revision: 0,
       customerId: contractQuote.customer.id,
-      customerPhone: "(47) 99999-1111",
+      customerPhone: "(47) 9 9999-1111",
       customerEmail: "ana@example.com",
       subtotal: 13.33,
       discount: 1.33,
@@ -195,10 +195,11 @@ describe("professional quote API", () => {
     expect(client.POST).toHaveBeenCalledWith("/api/v1/professional/quotes", {
       body: {
         quote: {
+          status: "draft",
           customer: {
             id: contractQuote.customer.id,
             name: "Ana Paula",
-            whatsapp_e164: "+5547999991111",
+            whatsapp_e164: "5547999991111",
             email: "ana@example.com",
           },
           service_description: "Adequação elétrica",

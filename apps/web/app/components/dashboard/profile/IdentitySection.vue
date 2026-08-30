@@ -4,7 +4,9 @@ import type {
   ProfessionalProfileDraft,
   ProfessionalProfilePhotoState,
 } from "~/types";
+import type { ProfessionalProfileValidation } from "~/composables/useProfessionalProfileDraft";
 import { useImagePreview } from "~/composables/useImagePreview";
+import { useBrazilianMobilePhoneMask } from "~/composables/useBrazilianMobilePhoneMask";
 import { validateOnboardingImage } from "~/composables/useProfessionalOnboarding";
 
 const form = defineModel<ProfessionalProfileDraft>({ required: true });
@@ -15,6 +17,7 @@ const props = withDefaults(
     photoRemoving?: boolean;
     allowPhotoRemoval?: boolean;
     photoError?: string;
+    errors?: ProfessionalProfileValidation["identity"];
   }>(),
   {
     photo: undefined,
@@ -22,6 +25,7 @@ const props = withDefaults(
     photoRemoving: false,
     allowPhotoRemoval: false,
     photoError: "",
+    errors: undefined,
   },
 );
 const emit = defineEmits<{
@@ -30,6 +34,14 @@ const emit = defineEmits<{
   photoRemove: [];
 }>();
 const photoInput = useTemplateRef<HTMLInputElement>("photo-input");
+const maskedWhatsapp = useBrazilianMobilePhoneMask(
+  computed({
+    get: () => form.value.whatsapp,
+    set: (value) => {
+      form.value.whatsapp = value;
+    },
+  }),
+);
 const selectionError = shallowRef("");
 const photoRemovalOpen = shallowRef(false);
 const {
@@ -211,6 +223,7 @@ function selectPhoto(event: Event) {
         id="profile-name"
         v-slot="field"
         label="Nome de exibição"
+        :error="props.errors?.name"
         required
       >
         <input
@@ -221,6 +234,7 @@ function selectPhoto(event: Event) {
           maxlength="70"
           autocomplete="name"
           :aria-describedby="field.describedBy"
+          :aria-invalid="field.invalid"
         />
       </DesignSystemFormField>
       <DesignSystemFormField
@@ -228,6 +242,7 @@ function selectPhoto(event: Event) {
         v-slot="field"
         label="Data de nascimento"
         hint="Dado privado, usado somente para sua conta e conferência de identidade."
+        :error="props.errors?.birthdate"
         required
       >
         <input
@@ -238,6 +253,7 @@ function selectPhoto(event: Event) {
           type="date"
           autocomplete="bday"
           :aria-describedby="field.describedBy"
+          :aria-invalid="field.invalid"
         />
       </DesignSystemFormField>
       <DesignSystemFormField
@@ -245,17 +261,24 @@ function selectPhoto(event: Event) {
         v-slot="field"
         label="WhatsApp profissional (opcional)"
         hint="O número não aparece como texto público, mas possibilita que os clientes entrem em contato com você."
+        :error="props.errors?.whatsapp"
       >
-        <div class="phone-field">
+        <div
+          class="phone-field"
+          :class="{ 'phone-field--invalid': field.invalid }"
+        >
           <em aria-hidden="true">+55</em>
           <input
             :id="field.controlId"
-            v-model="form.whatsapp"
+            v-model="maskedWhatsapp"
             name="whatsapp"
             type="tel"
             inputmode="tel"
             autocomplete="tel"
+            placeholder="(47) 9 9999-9999"
+            maxlength="16"
             :aria-describedby="field.describedBy"
+            :aria-invalid="field.invalid"
           />
         </div>
       </DesignSystemFormField>
@@ -263,6 +286,7 @@ function selectPhoto(event: Event) {
         id="profile-headline"
         class="editor-grid__full"
         label="Frase de apresentação (opcional)"
+        :error="props.errors?.headline"
       >
         <template #label>
           Frase de apresentação (opcional)
@@ -276,6 +300,7 @@ function selectPhoto(event: Event) {
             maxlength="120"
             autocomplete="off"
             :aria-describedby="field.describedBy"
+            :aria-invalid="field.invalid"
           />
         </template>
       </DesignSystemFormField>
@@ -283,6 +308,7 @@ function selectPhoto(event: Event) {
         id="profile-bio"
         class="editor-grid__full"
         label="Conte um pouco sobre seu trabalho (opcional)"
+        :error="props.errors?.bio"
       >
         <template #label>
           Conte um pouco sobre seu trabalho (opcional)
@@ -295,6 +321,7 @@ function selectPhoto(event: Event) {
             name="bio"
             maxlength="2500"
             :aria-describedby="field.describedBy"
+            :aria-invalid="field.invalid"
           />
         </template>
       </DesignSystemFormField>
@@ -303,6 +330,7 @@ function selectPhoto(event: Event) {
         v-slot="field"
         label="Anos de experiência"
         hint="Será mostrado como “experiência declarada”."
+        :error="props.errors?.yearsExperience"
       >
         <input
           :id="field.controlId"
@@ -313,6 +341,7 @@ function selectPhoto(event: Event) {
           min="0"
           max="70"
           :aria-describedby="field.describedBy"
+          :aria-invalid="field.invalid"
         />
       </DesignSystemFormField>
     </div>

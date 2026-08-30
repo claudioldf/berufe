@@ -1,14 +1,18 @@
 <script setup lang="ts">
+import ServiceActionsCard from "~/components/dashboard/service/ServiceActionsCard.vue";
+import ServiceDetailsCard from "~/components/dashboard/service/ServiceDetailsCard.vue";
+import ServiceHero from "~/components/dashboard/service/ServiceHero.vue";
+import ServiceStatusCard from "~/components/dashboard/service/ServiceStatusCard.vue";
 import { useShare } from "~/composables/useShare";
 import { useToast } from "~/composables/useToast";
 import { useApiClient } from "~/services/api/client";
 import { ApiRequestError } from "~/services/api/errors";
 import {
   cancelProfessionalServiceJob,
+  completeProfessionalServiceJob,
   fetchProfessionalServiceJob,
   requestProfessionalServiceCompletion,
 } from "~/services/api/professional-service-jobs";
-import { formatCurrency, formatDate } from "~/utils/formatters";
 
 definePageMeta({ layout: "workspace" });
 useSeoMeta({ title: "Detalhes do serviço", robots: "noindex, nofollow" });
@@ -30,25 +34,55 @@ const acting = shallowRef(false);
 const actionError = shallowRef("");
 const copyFallbackUrl = shallowRef("");
 const cancelOpen = shallowRef(false);
+const completeOpen = shallowRef(false);
 const cancellationReason = shallowRef("");
 
-const statusCopy = computed(() => {
+function invalidateServiceData() {
+  clearNuxtData("professional-service-jobs");
+  clearNuxtData("professional-workspace");
+}
+
+const statusPresentation = computed(() => {
   const status = service.value?.status;
   if (status === "completion_requested")
-    return ["Aguardando confirmação", "O cliente recebeu o link de conclusão."];
+    return {
+      title: "Aguardando confirmação",
+      description: "O cliente recebeu o link de conclusão.",
+      icon: "i-lucide-send",
+      tone: "brand" as const,
+    };
   if (status === "completion_issue")
-    return [
-      "Pendência informada",
-      "Resolva o ponto indicado e solicite novamente.",
-    ];
-  if (status === "completed")
-    return ["Serviço concluído", "A conclusão foi confirmada pelo cliente."];
+    return {
+      title: "Pendência informada",
+      description: "Resolva o ponto indicado e solicite novamente.",
+      icon: "i-lucide-circle-alert",
+      tone: "warning" as const,
+    };
+  if (status === "completed") {
+    const confirmer = service.value?.completionConfirmedBy;
+    return {
+      title: "Serviço concluído",
+      description:
+        confirmer === "professional"
+          ? "A conclusão foi confirmada pelo profissional."
+          : "A conclusão foi confirmada pelo cliente.",
+      icon: "i-lucide-check-circle-2",
+      tone: "success" as const,
+    };
+  }
   if (status === "cancelled")
-    return ["Serviço cancelado", "Este fluxo foi encerrado."];
-  return [
-    "Serviço aprovado",
-    "Quando terminar, peça a confirmação do cliente.",
-  ];
+    return {
+      title: "Serviço cancelado",
+      description: "Este fluxo foi encerrado.",
+      icon: "i-lucide-x",
+      tone: "neutral" as const,
+    };
+  return {
+    title: "Serviço aprovado",
+    description: "Quando terminar, peça a confirmação do cliente.",
+    icon: "i-lucide-clipboard-check",
+    tone: "brand" as const,
+  };
 });
 const canRequestCompletion = computed(
   () =>
@@ -57,7 +91,15 @@ const canRequestCompletion = computed(
 );
 const canCancel = computed(
   () =>
-    service.value && !["completed", "cancelled"].includes(service.value.status),
+    Boolean(service.value) &&
+    !["completed", "cancelled"].includes(service.value?.status ?? "cancelled"),
+);
+const canComplete = computed(
+  () =>
+    Boolean(service.value) &&
+    ["approved", "completion_requested", "completion_issue"].includes(
+      service.value?.status ?? "cancelled",
+    ),
 );
 
 async function requestCompletion() {
@@ -75,6 +117,7 @@ async function requestCompletion() {
       service.value.id,
     );
     service.value = result.serviceJob;
+    invalidateServiceData();
     copyFallbackUrl.value = result.shareUrl;
     if (handoff) handoff.location.replace(result.whatsappUrl);
     else if (import.meta.client) window.location.assign(result.whatsappUrl);
@@ -109,6 +152,7 @@ async function cancelService() {
       cancellationReason.value,
     );
     cancelOpen.value = false;
+    invalidateServiceData();
     showToast({
       title: "Serviço cancelado",
       description: "O fluxo de conclusão foi encerrado.",
@@ -122,101 +166,94 @@ async function cancelService() {
     acting.value = false;
   }
 }
+
+async function completeService() {
+  if (!service.value || acting.value) return;
+  acting.value = true;
+  actionError.value = "";
+  try {
+    service.value = await completeProfessionalServiceJob(
+      client,
+      service.value.id,
+    );
+    completeOpen.value = false;
+    invalidateServiceData();
+    showToast({
+      title: "Serviço concluído",
+      description: "A conclusão foi confirmada por você.",
+    });
+  } catch (error) {
+    actionError.value =
+      error instanceof ApiRequestError
+        ? error.message
+        : "Não foi possível concluir o serviço.";
+  } finally {
+    acting.value = false;
+  }
+}
 </script>
 
 <template>
   <div class="service-page">
-    <DesignSystemContainer as="main" class="service-page__content">
-      <NuxtLink to="/app/professional/services" class="service-page__back">
-        <UIcon name="i-lucide-arrow-left" /> Todos os serviços
-      </NuxtLink>
-      <p v-if="loaded.status.value === 'pending'" aria-live="polite">
-        Carregando serviço…
-      </p>
-      <p v-else-if="loaded.error.value || !service" role="alert">
-        Não foi possível carregar este serviço.
-      </p>
-      <template v-else>
-        <header class="service-page__heading">
-          <div>
-            <DesignSystemEyebrow
-              >Orçamento #{{ service.quote.number }}</DesignSystemEyebrow
-            >
-            <h1>{{ service.quote.serviceDescription }}</h1>
-            <p>
-              {{ service.quote.customerName }} ·
-              {{ service.quote.customerPhone }}
-            </p>
-          </div>
-          <strong>{{ formatCurrency(service.quote.total) }}</strong>
-        </header>
+    <section class="service-page__masthead">
+      <DesignSystemContainer class="service-page__masthead-content">
+        <NuxtLink to="/app/professional/services" class="service-page__back">
+          <UIcon name="i-lucide-arrow-left" /> Todos os serviços
+        </NuxtLink>
 
-        <div class="service-page__grid">
-          <DesignSystemSurfaceCard class="service-page__status">
-            <span><UIcon name="i-lucide-clipboard-check" /></span>
-            <div>
-              <h2>{{ statusCopy[0] }}</h2>
-              <p>{{ statusCopy[1] }}</p>
-              <blockquote v-if="service.completionIssueMessage">
-                “{{ service.completionIssueMessage }}”
-              </blockquote>
-            </div>
-          </DesignSystemSurfaceCard>
-
-          <DesignSystemSurfaceCard class="service-page__details">
-            <h2>Dados combinados</h2>
-            <dl>
-              <div>
-                <dt>Data</dt>
-                <dd>
-                  {{
-                    service.quote.scheduledOn
-                      ? formatDate(service.quote.scheduledOn)
-                      : "Não informada"
-                  }}
-                </dd>
-              </div>
-              <div>
-                <dt>Endereço</dt>
-                <dd>{{ service.quote.serviceAddress || "Não informado" }}</dd>
-              </div>
-              <div>
-                <dt>E-mail</dt>
-                <dd>{{ service.quote.customerEmail || "Não informado" }}</dd>
-              </div>
-            </dl>
-          </DesignSystemSurfaceCard>
-        </div>
-
-        <p v-if="actionError" class="service-page__error" role="alert">
-          {{ actionError }}
+        <p
+          v-if="loaded.status.value === 'pending'"
+          class="service-page__loading"
+          aria-live="polite"
+        >
+          Carregando serviço…
         </p>
-        <div class="service-page__actions">
-          <UButton
-            v-if="copyFallbackUrl"
-            color="neutral"
-            variant="outline"
-            icon="i-lucide-link"
-            @click="copyFallback"
-            >Copiar link como alternativa</UButton
-          >
-          <UButton
-            v-if="canCancel"
-            color="neutral"
-            variant="ghost"
-            @click="cancelOpen = true"
-            >Cancelar serviço</UButton
-          >
-          <UButton
-            v-if="canRequestCompletion"
-            color="primary"
-            icon="i-lucide-message-circle"
-            :loading="acting"
-            @click="requestCompletion"
-            >Pedir confirmação de conclusão</UButton
-          >
-        </div>
-      </template>
+        <p
+          v-else-if="loaded.error.value || !service"
+          class="service-page__loading"
+          role="alert"
+        >
+          Não foi possível carregar este serviço.
+        </p>
+        <ServiceHero
+          v-else
+          :service="service"
+          :status-label="statusPresentation.title"
+          :status-tone="statusPresentation.tone"
+        />
+      </DesignSystemContainer>
+    </section>
+
+    <DesignSystemContainer v-if="service" class="service-page__content">
+      <ServiceStatusCard
+        :service="service"
+        :title="statusPresentation.title"
+        :description="statusPresentation.description"
+        :icon="statusPresentation.icon"
+        :tone="statusPresentation.tone"
+      />
+
+      <div v-if="actionError" class="service-page__error" role="alert">
+        <UIcon name="i-lucide-circle-alert" aria-hidden="true" />
+        <span>{{ actionError }}</span>
+      </div>
+
+      <div class="service-page__grid">
+        <ServiceDetailsCard :quote="service.quote" />
+        <ServiceActionsCard
+          class="service-page__actions"
+          :status="service.status"
+          :can-request-completion="canRequestCompletion"
+          :can-complete="canComplete"
+          :can-cancel="canCancel"
+          :acting="acting"
+          :copy-fallback-url="copyFallbackUrl"
+          @request-completion="requestCompletion"
+          @copy-fallback="copyFallback"
+          @open-cancel="cancelOpen = true"
+          @open-complete="completeOpen = true"
+        />
+      </div>
     </DesignSystemContainer>
 
     <UModal
@@ -239,6 +276,34 @@ async function cancelService() {
         >
       </template>
     </UModal>
+
+    <UModal
+      v-model:open="completeOpen"
+      title="Concluir serviço"
+      description="A conclusão será registrada como confirmada por você."
+    >
+      <template #body>
+        <p>
+          Confirme apenas se o trabalho já terminou. O serviço sairá da seção
+          “Serviços em andamento”.
+        </p>
+        <p v-if="actionError" class="service-page__error" role="alert">
+          {{ actionError }}
+        </p>
+      </template>
+      <template #footer>
+        <UButton color="neutral" variant="ghost" @click="completeOpen = false"
+          >Voltar</UButton
+        >
+        <UButton
+          color="primary"
+          icon="i-lucide-check"
+          :loading="acting"
+          @click="completeService"
+          >Confirmar conclusão</UButton
+        >
+      </template>
+    </UModal>
   </div>
 </template>
 
@@ -246,135 +311,129 @@ async function cancelService() {
 .service-page {
   min-height: 100vh;
   background: var(--color-surface-canvas);
+  background-image: radial-gradient(
+    circle at 88% 72%,
+    rgb(18 98 93 / 5%) 0,
+    transparent 25rem
+  );
 
+  &__masthead {
+    padding: 30px 0 116px;
+    background: var(--color-brand-strong);
+  }
+
+  &__masthead-content,
   &__content {
-    max-width: 940px;
-    padding-top: 34px;
-    padding-bottom: 80px;
+    position: relative;
+    z-index: 1;
+    max-width: 1080px;
   }
 
   &__back {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    margin-bottom: 28px;
-    color: var(--color-brand);
-    font-weight: 800;
+    gap: 7px;
+    margin-bottom: 42px;
+    color: rgb(255 255 255 / 64%);
+    font-size: 0.82rem;
+    font-weight: 750;
     text-decoration: none;
+    transition: color var(--motion-fast) ease;
   }
 
-  &__heading {
-    display: flex;
-    justify-content: space-between;
-    gap: 20px;
-    align-items: end;
-    margin-bottom: 24px;
+  &__back:hover {
+    color: white;
   }
 
-  &__heading h1 {
-    margin: 5px 0;
-    font-family: var(--font-display);
-    font-size: 2.4rem;
-    font-weight: 500;
-  }
-
-  &__heading p {
+  &__loading {
+    min-height: 150px;
     margin: 0;
-    color: var(--ink-soft);
+    color: rgb(255 255 255 / 72%);
   }
 
-  &__heading > strong {
-    font-size: 1.2rem;
+  &__content {
+    margin-top: -72px;
+    padding-bottom: 90px;
   }
 
   &__grid {
     display: grid;
-    grid-template-columns: 1.2fr 0.8fr;
-    gap: 16px;
-  }
-
-  &__status,
-  &__details {
-    padding: 22px;
-  }
-
-  &__status {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 12px;
-  }
-
-  &__status > span {
-    display: grid;
-    place-items: center;
-    width: 42px;
-    height: 42px;
-    border-radius: 12px;
-    background: var(--color-brand-tint-muted);
-    color: var(--color-brand);
-  }
-
-  & h2 {
-    margin: 0;
-    font-family: var(--font-display);
-  }
-
-  &__status p,
-  &__details dt {
-    color: var(--ink-soft);
-  }
-
-  &__status blockquote {
-    margin: 14px 0 0;
-    padding: 12px;
-    border-left: 3px solid var(--coral);
-    background: #fff7f4;
-  }
-
-  &__details dl {
-    display: grid;
-    gap: 12px;
-    margin-bottom: 0;
-  }
-
-  &__details dt,
-  &__details dd {
-    font-size: 0.84rem;
-  }
-
-  &__details dd {
-    margin: 2px 0 0;
+    grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.72fr);
+    gap: 20px;
+    align-items: start;
+    margin-top: 20px;
   }
 
   &__actions {
-    display: flex;
-    justify-content: flex-end;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 18px;
+    position: sticky;
+    top: 92px;
   }
 
   &__error {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-top: 18px;
+    padding: 13px 15px;
+    border: 1px solid rgb(180 35 24 / 16%);
+    border-radius: 12px;
+    background: var(--color-danger-tint);
     color: var(--color-danger);
-    font-weight: 800;
+    font-size: 0.85rem;
+    font-weight: 750;
   }
 
   &__cancel-field {
     display: grid;
     gap: 7px;
+    color: var(--ink);
+    font-size: 0.86rem;
+    font-weight: 750;
   }
 
   &__cancel-field textarea {
-    padding: 10px;
+    min-height: 96px;
+    padding: 12px;
     border: 1px solid var(--line);
-    border-radius: 10px;
+    border-radius: 12px;
+    background: var(--color-surface-control);
     font: inherit;
+    resize: vertical;
   }
 }
 
-@media (width <= 700px) {
-  .service-page__grid {
-    grid-template-columns: 1fr;
+@media (width <= 820px) {
+  .service-page {
+    &__grid {
+      grid-template-columns: 1fr;
+    }
+
+    &__actions {
+      position: static;
+    }
+  }
+}
+
+@media (width <= 560px) {
+  .service-page {
+    &__masthead {
+      padding-top: 23px;
+      padding-bottom: 78px;
+    }
+
+    &__back {
+      margin-bottom: 32px;
+    }
+
+    &__content {
+      margin-top: -42px;
+      padding-bottom: 60px;
+    }
+
+    &__grid {
+      gap: 14px;
+      margin-top: 14px;
+    }
   }
 }
 </style>

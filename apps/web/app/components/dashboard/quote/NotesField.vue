@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { Quote } from "~/types";
+import type { Quote, QuoteValidationErrors } from "~/types";
 
+const props = defineProps<{ errors?: QuoteValidationErrors }>();
 const quote = defineModel<Quote>({ required: true });
 const emit = defineEmits<{ dirty: [] }>();
 </script>
@@ -20,6 +21,7 @@ const emit = defineEmits<{ dirty: [] }>();
       v-slot="field"
       class="builder-notes"
       label="Observações (opcional)"
+      :error="props.errors?.notes"
     >
       <textarea
         :id="field.controlId"
@@ -27,6 +29,7 @@ const emit = defineEmits<{ dirty: [] }>();
         name="notes"
         autocomplete="off"
         :aria-describedby="field.describedBy"
+        :aria-invalid="field.invalid"
         maxlength="700"
         @input="emit('dirty')"
       />

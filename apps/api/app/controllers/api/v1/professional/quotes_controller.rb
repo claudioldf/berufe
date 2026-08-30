@@ -150,6 +150,7 @@ module Api
             :discount_amount,
             :valid_until,
             :notes,
+            :status,
             :revision,
             customer: %i[id name whatsapp_e164 email],
             items: %i[description quantity unit unit_price]

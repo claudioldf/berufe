@@ -22,7 +22,7 @@ module Api
       rescue BrazilianPhoneNumber::Invalid
         render_api_error(
           code: "invalid_phone",
-          message: "Digite um número brasileiro válido.",
+          message: "Digite um número de celular válido.",
           status: :unprocessable_content,
           field_errors: {phone: ["não é válido"]}
         )

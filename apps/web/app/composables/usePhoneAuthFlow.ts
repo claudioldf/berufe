@@ -73,7 +73,7 @@ export function usePhoneAuthFlow(dependencies: PhoneAuthFlowDependencies = {}) {
 
     error.value = "";
     if (!cleanPhone.value) {
-      error.value = "Digite um número brasileiro válido.";
+      error.value = "Digite um número de celular válido.";
       return;
     }
 
@@ -100,13 +100,13 @@ export function usePhoneAuthFlow(dependencies: PhoneAuthFlowDependencies = {}) {
     }
   }
 
-  async function verifyCode() {
-    if (isLoading.value) return;
+  async function verifyCode(): Promise<boolean> {
+    if (isLoading.value) return false;
 
     error.value = "";
     if (!challengeToken.value || !/^\d{6}$/.test(code.value)) {
       error.value = "Código inválido ou expirado.";
-      return;
+      return false;
     }
 
     isLoading.value = true;
@@ -116,12 +116,13 @@ export function usePhoneAuthFlow(dependencies: PhoneAuthFlowDependencies = {}) {
         code: code.value,
       });
       challengeToken.value = "";
-      step.value = 3;
+      return true;
     } catch (verificationError) {
       error.value =
         verificationError instanceof ApiRequestError
           ? verificationError.message
           : "Não foi possível confirmar o código agora. Tente novamente em instantes.";
+      return false;
     } finally {
       isLoading.value = false;
     }

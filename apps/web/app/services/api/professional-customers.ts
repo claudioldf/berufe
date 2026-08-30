@@ -9,7 +9,7 @@ import type {
 } from "~/types";
 import {
   formatBrazilianMobilePhone,
-  normalizeBrazilianMobilePhone,
+  sanitizeBrazilianMobilePhone,
 } from "~/utils/brazilian-phone";
 
 type ContractCustomer = components["schemas"]["ProfessionalCustomer"];
@@ -100,8 +100,7 @@ export async function updateProfessionalCustomer(
       body: {
         customer: {
           name: draft.name,
-          whatsapp_e164:
-            normalizeBrazilianMobilePhone(draft.phone) ?? draft.phone,
+          whatsapp_e164: sanitizeBrazilianMobilePhone(draft.phone),
           email: draft.email.trim() || null,
         },
       },
