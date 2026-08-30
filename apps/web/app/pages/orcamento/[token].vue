@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import LegalInlineNotice from "~/components/legal/LegalInlineNotice.vue";
 import { useApiClient } from "~/services/api/client";
 import { ApiRequestError } from "~/services/api/errors";
 import {
