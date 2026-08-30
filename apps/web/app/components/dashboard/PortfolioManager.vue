@@ -18,12 +18,8 @@ const emit = defineEmits<{
   removed: [id: string];
 }>();
 const uploadOpen = shallowRef(false);
-const statusLabels = {
-  pending_review: "Em análise",
-  approved: "Aprovado",
-  rejected: "Recusado",
-  hidden: "Oculto",
-} as const;
+const expandedRejectionReasonIds = shallowRef(new Set<string>());
+const rejectionReasonPreviewLength = 120;
 const emptyStateBenefits = [
   "Até 12 trabalhos com serviço e descrição",
   "Imagens em destaque no seu perfil público",
@@ -42,6 +38,44 @@ const emptyStateVisual = {
 function submitUpload(draft: PortfolioItemDraft) {
   emit("added", draft);
   uploadOpen.value = false;
+}
+
+function isRejectionReasonLong(reason: string) {
+  return reason.length > rejectionReasonPreviewLength;
+}
+
+function isRejectionReasonExpanded(itemId: string) {
+  return expandedRejectionReasonIds.value.has(itemId);
+}
+
+function rejectionReasonText(item: ProfessionalPortfolioItem) {
+  const reason = item.rejectionReason;
+
+  if (
+    !reason ||
+    !isRejectionReasonLong(reason) ||
+    isRejectionReasonExpanded(item.id)
+  ) {
+    return reason;
+  }
+
+  const preview = reason.slice(0, rejectionReasonPreviewLength);
+  const lastWordBoundary = preview.lastIndexOf(" ");
+  const cutoff = lastWordBoundary >= 80 ? lastWordBoundary : preview.length;
+
+  return `${preview.slice(0, cutoff).trimEnd()}…`;
+}
+
+function toggleRejectionReason(itemId: string) {
+  const nextIds = new Set(expandedRejectionReasonIds.value);
+
+  if (nextIds.has(itemId)) {
+    nextIds.delete(itemId);
+  } else {
+    nextIds.add(itemId);
+  }
+
+  expandedRejectionReasonIds.value = nextIds;
 }
 </script>
 
@@ -96,12 +130,27 @@ function submitUpload(draft: PortfolioItemDraft) {
           <span
             ><strong>{{ item.title }}</strong
             ><small>{{ item.service }}</small></span
-          ><em :class="`status--${item.status}`">{{
-            statusLabels[item.status]
-          }}</em>
+          ><em
+            v-if="item.status === 'rejected'"
+            class="portfolio-manager__status"
+            >Recusado</em
+          >
         </div>
         <p v-if="item.rejectionReason" class="portfolio-manager__reason">
-          {{ item.rejectionReason }}
+          <strong>Motivo:</strong>
+          <span :id="`portfolio-rejection-reason-${item.id}`">{{
+            rejectionReasonText(item)
+          }}</span>
+          <button
+            v-if="isRejectionReasonLong(item.rejectionReason)"
+            type="button"
+            class="portfolio-manager__reason-toggle"
+            :aria-expanded="isRejectionReasonExpanded(item.id)"
+            :aria-controls="`portfolio-rejection-reason-${item.id}`"
+            @click="toggleRejectionReason(item.id)"
+          >
+            {{ isRejectionReasonExpanded(item.id) ? "ver menos" : "ver mais" }}
+          </button>
         </p>
         <button
           type="button"
@@ -207,30 +256,36 @@ function submitUpload(draft: PortfolioItemDraft) {
     color: var(--ink-soft);
     font-size: 0.82rem;
   }
-  &__grid em {
+  &__status {
     align-self: start;
     padding: 4px 6px;
     border-radius: 6px;
-    background: #e5f3ee;
-    color: #2e6f5e;
+    background: var(--color-danger-tint);
+    color: var(--color-danger);
     font-size: 0.82rem;
     font-style: normal;
     font-weight: 900;
-  }
-  &__grid em.status--pending_review {
-    background: var(--color-warning-tint);
-    color: var(--color-warning);
-  }
-  &__grid em.status--rejected,
-  &__grid em.status--hidden {
-    background: var(--color-danger-tint);
-    color: var(--color-danger);
   }
   &__reason {
     margin: -4px 13px 13px;
     color: var(--color-danger);
     font-size: 0.76rem;
     line-height: 1.45;
+  }
+  &__reason strong {
+    display: inline;
+    font-size: inherit;
+  }
+  &__reason-toggle {
+    margin-left: 4px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-weight: 800;
+    text-decoration: underline;
+    cursor: pointer;
   }
   &__grid article > button {
     position: absolute;
