@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import type { LocationCoverageDraft, Service } from "~/types";
+import type { LocationCoverageDraft } from "~/types";
 import LocationCoverageFields from "~/components/location/LocationCoverageFields.vue";
 
 export type ExternalCoverageMode = "not_informed" | "informed";
 
 const phone = defineModel<string>("phone", { required: true });
-const serviceIds = defineModel<string[]>("serviceIds", { required: true });
 const coverageMode = defineModel<ExternalCoverageMode>("coverageMode", {
   required: true,
 });
@@ -15,8 +14,6 @@ const coverage = defineModel<LocationCoverageDraft>("coverage", {
 
 const props = withDefaults(
   defineProps<{
-    name: string;
-    services: Service[];
     phoneError?: string;
     coverageError?: string;
   }>(),
@@ -26,13 +23,6 @@ const props = withDefaults(
 
 <template>
   <div class="external-professional-details">
-    <!-- <p class="external-professional-details__intro">
-      Informe o telefone de <strong>{{ name }}</strong
-      >. Se ainda não houver uma conta com esse número, criaremos um perfil
-      básico para que o profissional possa confirmar a relação e completar os
-      dados depois.
-    </p> -->
-
     <DesignSystemFormField
       id="external-professional-phone"
       v-slot="field"
@@ -54,18 +44,6 @@ const props = withDefaults(
         :aria-invalid="field.invalid"
       />
     </DesignSystemFormField>
-
-    <fieldset class="external-professional-details__fieldset">
-      <legend>
-        Qual o serviço esse profissional oferece? <small>Opcional</small>
-      </legend>
-      <div class="external-professional-details__options">
-        <label v-for="service in services" :key="service.id">
-          <input v-model="serviceIds" type="checkbox" :value="service.id" />
-          <span>{{ service.name }}</span>
-        </label>
-      </div>
-    </fieldset>
 
     <fieldset class="external-professional-details__fieldset">
       <legend>
@@ -95,16 +73,6 @@ const props = withDefaults(
   display: grid;
   gap: 18px;
 
-  &__intro {
-    margin: 0;
-    padding: 12px 14px;
-    border-radius: 10px;
-    background: var(--mint);
-    color: var(--color-brand-strong);
-    font-size: 0.82rem;
-    line-height: 1.5;
-  }
-
   &__fieldset {
     display: grid;
     gap: 10px;
@@ -124,19 +92,6 @@ const props = withDefaults(
     font-weight: 500;
   }
 
-  &__options {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
-    max-height: 180px;
-    overflow: auto;
-  }
-
-  &__options label {
-    padding: 2px 0;
-  }
-
-  &__options label,
   &__radios label {
     display: flex;
     align-items: flex-start;
@@ -155,12 +110,6 @@ const props = withDefaults(
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
-  }
-}
-
-@media (width <= 620px) {
-  .external-professional-details__options {
-    grid-template-columns: 1fr;
   }
 }
 </style>

@@ -41,6 +41,7 @@ const FieldStub = defineComponent({
   props: {
     id: { type: String, default: "field" },
     label: { type: String, default: "" },
+    hint: { type: String, default: "" },
     error: { type: String, default: "" },
   },
   template: `
@@ -52,6 +53,7 @@ const FieldStub = defineComponent({
         :invalid="Boolean(error)"
       />
       <span v-if="error" :id="id + '-error'" role="alert">{{ error }}</span>
+      <small v-else-if="hint">{{ hint }}</small>
     </label>
   `,
 });
@@ -167,6 +169,24 @@ describe("relationship create dialog", () => {
     mocks.state.searchedQuery.value = "";
     mocks.requestRelationship.mockResolvedValue(createdRelationship);
     mocks.searchCandidates.mockResolvedValue([]);
+  });
+
+  it("renders the professional name danger state after an empty Continue", async () => {
+    const wrapper = await mountDialog();
+
+    await wrapper
+      .findAll("footer button")
+      .find((button) => button.text().includes("Continuar"))!
+      .trigger("click");
+
+    const search = wrapper.get('input[name="professional-search"]');
+    expect(wrapper.get('[role="alert"]').text()).toBe(
+      "Informe o nome profissional para continuar.",
+    );
+    expect(search.attributes("aria-invalid")).toBe("true");
+    expect(wrapper.get(".professional-lookup__input").classes()).toContain(
+      "professional-lookup__input--invalid",
+    );
   });
 
   it("waits until typing pauses before requesting professional suggestions", async () => {
@@ -293,6 +313,14 @@ describe("relationship create dialog", () => {
     );
     expect(wrapper.text()).toContain("Qual região esse profissional atende?");
     expect(wrapper.text()).toContain("Não sei");
+    const detailsText = wrapper.get("form").text();
+    expect(detailsText).toContain("Comentário");
+    expect(detailsText).toContain(
+      "Este comentário será exibido publicamente quando o profissional se cadastrar na Berufe.",
+    );
+    expect(detailsText.indexOf("Comentário")).toBeLessThan(
+      detailsText.indexOf("Qual o serviço esse profissional oferece?"),
+    );
     await wrapper
       .get('input[name="external-phone"]')
       .setValue("(47) 99999-1234");

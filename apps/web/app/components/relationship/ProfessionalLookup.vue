@@ -47,7 +47,10 @@ function clearSelection() {
       :error="props.validationError"
       required
     >
-      <div class="professional-lookup__input">
+      <div
+        class="professional-lookup__input"
+        :class="{ 'professional-lookup__input--invalid': field.invalid }"
+      >
         <input
           :id="field.controlId"
           v-model="query"
@@ -212,6 +215,16 @@ function clearSelection() {
   &__input input:focus-visible {
     border-color: var(--color-brand);
     box-shadow: var(--focus-ring);
+  }
+
+  &__input--invalid input {
+    border-color: var(--color-danger);
+    background: var(--color-danger-tint);
+  }
+
+  &__input--invalid input:focus-visible {
+    border-color: var(--color-danger);
+    box-shadow: 0 0 0 3px rgb(180 35 24 / 16%);
   }
 
   &__loader {

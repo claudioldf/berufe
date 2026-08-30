@@ -353,11 +353,8 @@ async function submit() {
           <RelationshipExternalProfessionalDetails
             v-if="externalTarget"
             v-model:phone="externalPhone"
-            v-model:service-ids="externalServiceIds"
             v-model:coverage-mode="externalCoverageMode"
             v-model:coverage="externalCoverage"
-            :name="normalizedName"
-            :services="services"
             :phone-error="displayedPhoneError"
             :coverage-error="displayedCoverageError"
           />
@@ -382,19 +379,31 @@ async function submit() {
             </DesignSystemFormField>
             <DesignSystemFormField
               id="relationship-context"
-              label="Contexto"
-              :hint="`${noteLength}/300 · Opcional`"
+              label="Comentário"
+              hint="Opcional. Este comentário será exibido publicamente quando o profissional se cadastrar na Berufe."
             >
-              <textarea
-                id="relationship-context"
-                v-model="contextNote"
-                name="relationship-context"
-                maxlength="300"
-                autocomplete="off"
-                placeholder="Conte brevemente como vocês se conhecem…"
-              />
+              <template #label>
+                Comentário <em>{{ noteLength }}/300</em>
+              </template>
+              <template #default="field">
+                <textarea
+                  :id="field.controlId"
+                  v-model="contextNote"
+                  name="relationship-context"
+                  maxlength="300"
+                  autocomplete="off"
+                  placeholder="Conte brevemente como vocês se conhecem…"
+                  :aria-describedby="field.describedBy"
+                />
+              </template>
             </DesignSystemFormField>
           </div>
+
+          <RelationshipExternalProfessionalServices
+            v-if="externalTarget"
+            v-model="externalServiceIds"
+            :services="services"
+          />
         </template>
 
         <p v-if="error" class="relationship-create-dialog__error" role="alert">
