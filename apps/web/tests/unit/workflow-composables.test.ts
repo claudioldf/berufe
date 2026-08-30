@@ -3,7 +3,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import professionalsData from "@data/professionals.json";
 import type { Professional } from "~/types";
 import { usePhoneAuthFlow } from "~/composables/usePhoneAuthFlow";
-import { useProfessionalProfileDraft } from "~/composables/useProfessionalProfileDraft";
+import {
+  useProfessionalProfileDraft,
+  validateProfessionalProfileDraft,
+} from "~/composables/useProfessionalProfileDraft";
 import { PhoneOtpRequestError } from "~/services/api/phone-auth";
 import { ApiRequestError } from "~/services/api/errors";
 
@@ -20,6 +23,31 @@ describe("profile drafts", () => {
 
     expect(draft?.instagram).toBe("https://www.instagram.com/berufe/");
     expect(draft?.selectedServices).not.toBe(professional.services);
+  });
+
+  it("mirrors the complete profile rules before persistence", () => {
+    const professional = (professionalsData as Professional[])[0]!;
+    const workflow = useProfessionalProfileDraft(professional);
+    Object.assign(workflow.form, {
+      name: "A",
+      birthdate: "2030-01-01",
+      whatsapp: "47 3333-1111",
+      yearsExperience: 71,
+      selectedServices: [],
+      primaryService: "",
+      coverageCityCode: "",
+      coversWholeCity: false,
+      selectedNeighborhoodCodes: [],
+    });
+
+    const validation = validateProfessionalProfileDraft(workflow.form);
+
+    expect(validation.identity.name).toContain("3 caracteres");
+    expect(validation.identity.birthdate).toContain("válida");
+    expect(validation.identity.whatsapp).toContain("celular brasileiro");
+    expect(validation.identity.yearsExperience).toContain("0 e 70");
+    expect(validation.services).toContain("serviço");
+    expect(validation.coverage).toContain("cidade inteira");
   });
 });
 

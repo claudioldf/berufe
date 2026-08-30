@@ -40,9 +40,21 @@ const ButtonStub = defineComponent({
     '<button type="button" :disabled="disabled" :data-loading="loading" @click="$emit(\'click\')"><slot /></button>',
 });
 const FormFieldStub = defineComponent({
-  props: { id: { type: String, required: true } },
-  template:
-    '<label><slot name="label" /><slot :control-id="id" :described-by="undefined" /></label>',
+  props: {
+    id: { type: String, required: true },
+    error: { type: String, default: "" },
+  },
+  template: `
+    <label>
+      <slot name="label" />
+      <slot
+        :control-id="id"
+        :described-by="error ? id + '-error' : undefined"
+        :invalid="Boolean(error)"
+      />
+      <span v-if="error" :id="id + '-error'" role="alert">{{ error }}</span>
+    </label>
+  `,
 });
 
 const global = {
@@ -140,5 +152,27 @@ describe("professional profile identity photo control", () => {
 
     expect(biography.attributes("maxlength")).toBe("2500");
     expect(wrapper.text()).toContain("2500/2500");
+  });
+
+  it("connects identity errors to their fields", async () => {
+    const wrapper = await mountSuspended(IdentitySection, {
+      props: {
+        modelValue: { ...draft },
+        errors: {
+          name: "Revise o nome.",
+          birthdate: "",
+          whatsapp: "",
+          headline: "",
+          bio: "",
+          yearsExperience: "",
+        },
+      },
+      global,
+    });
+
+    const name = wrapper.get('input[name="name"]');
+    expect(name.attributes("aria-invalid")).toBe("true");
+    expect(name.attributes("aria-describedby")).toBe("profile-name-error");
+    expect(wrapper.get('[role="alert"]').text()).toBe("Revise o nome.");
   });
 });

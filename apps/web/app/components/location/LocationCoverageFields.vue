@@ -4,6 +4,9 @@ import type { LocationCoverageDraft } from "~/types";
 import { useLocations } from "~/composables/useLocations";
 
 const model = defineModel<LocationCoverageDraft>({ required: true });
+const props = withDefaults(defineProps<{ validationError?: string }>(), {
+  validationError: "",
+});
 const emit = defineEmits<{ dirty: [] }>();
 const selectedStateCode = shallowRef("");
 const {
@@ -19,6 +22,18 @@ const {
 
 const selectedCity = computed(() =>
   cities.value.find((city) => city.code === model.value.cityCode),
+);
+const locationValidationError = computed(() =>
+  model.value.cityCode ? "" : props.validationError,
+);
+const stateValidationError = computed(() =>
+  selectedStateCode.value ? "" : locationValidationError.value,
+);
+const cityValidationError = computed(() =>
+  selectedStateCode.value ? locationValidationError.value : "",
+);
+const areaValidationError = computed(() =>
+  model.value.cityCode ? props.validationError : "",
 );
 
 onMounted(async () => {
@@ -74,13 +89,21 @@ function toggleNeighborhood(code: string) {
 <template>
   <div class="location-coverage-fields">
     <div class="location-coverage-fields__selectors">
-      <DesignSystemFormField id="coverage-state" label="Estado" required>
+      <DesignSystemFormField
+        id="coverage-state"
+        v-slot="field"
+        label="Estado"
+        :error="stateValidationError"
+        required
+      >
         <select
-          id="coverage-state"
+          :id="field.controlId"
           :value="selectedStateCode"
           name="coverage-state"
           required
           :disabled="loading"
+          :aria-describedby="field.describedBy"
+          :aria-invalid="field.invalid"
           @change="changeState"
         >
           <option value="">Selecione</option>
@@ -89,13 +112,21 @@ function toggleNeighborhood(code: string) {
           </option>
         </select>
       </DesignSystemFormField>
-      <DesignSystemFormField id="coverage-city" label="Cidade" required>
+      <DesignSystemFormField
+        id="coverage-city"
+        v-slot="field"
+        label="Cidade"
+        :error="cityValidationError"
+        required
+      >
         <select
-          id="coverage-city"
+          :id="field.controlId"
           :value="model.cityCode"
           name="coverage-city"
           required
           :disabled="loading || !selectedStateCode"
+          :aria-describedby="field.describedBy"
+          :aria-invalid="field.invalid"
           @change="changeCity"
         >
           <option value="">Selecione</option>
@@ -110,51 +141,74 @@ function toggleNeighborhood(code: string) {
       {{ error }}
     </p>
 
-    <label v-if="selectedCity" class="location-coverage-fields__whole-city">
-      <input
-        :checked="model.wholeCity"
-        name="whole-city"
-        type="checkbox"
-        @change="changeWholeCity"
-      />
-      <span>
-        <strong>Atendo em toda {{ selectedCity.name }}</strong>
-        <small>Seu perfil poderá aparecer em buscas de qualquer bairro.</small>
-      </span>
-      <UIcon name="i-lucide-map" />
-    </label>
-
-    <p
-      v-if="selectedCity && neighborhoods.length === 0"
-      class="location-coverage-fields__empty"
-    >
-      O IBGE não publicou bairros oficiais para esta cidade. A cobertura será
-      cadastrada para a cidade inteira.
-    </p>
-
     <div
-      v-else-if="selectedCity && !model.wholeCity"
-      class="location-coverage-fields__neighborhoods"
+      v-if="selectedCity"
+      class="location-coverage-fields__area"
+      :class="{
+        'location-coverage-fields__area--invalid': areaValidationError,
+      }"
+      :aria-describedby="
+        areaValidationError ? 'coverage-area-error' : undefined
+      "
+      :aria-invalid="Boolean(areaValidationError)"
+      tabindex="-1"
     >
-      <button
-        v-for="neighborhood in neighborhoods"
-        :key="neighborhood.code"
-        type="button"
-        :class="{
-          selected: model.neighborhoodCodes.includes(neighborhood.code),
-        }"
-        :aria-pressed="model.neighborhoodCodes.includes(neighborhood.code)"
-        @click="toggleNeighborhood(neighborhood.code)"
-      >
-        <UIcon
-          :name="
-            model.neighborhoodCodes.includes(neighborhood.code)
-              ? 'i-lucide-check'
-              : 'i-lucide-plus'
-          "
+      <label class="location-coverage-fields__whole-city">
+        <input
+          :checked="model.wholeCity"
+          name="whole-city"
+          type="checkbox"
+          @change="changeWholeCity"
         />
-        {{ neighborhood.name }}
-      </button>
+        <span>
+          <strong>Atendo em toda {{ selectedCity.name }}</strong>
+          <small
+            >Seu perfil poderá aparecer em buscas de qualquer bairro.</small
+          >
+        </span>
+        <UIcon name="i-lucide-map" />
+      </label>
+
+      <p
+        v-if="neighborhoods.length === 0"
+        class="location-coverage-fields__empty"
+      >
+        O IBGE não publicou bairros oficiais para esta cidade. A cobertura será
+        cadastrada para a cidade inteira.
+      </p>
+
+      <div
+        v-else-if="!model.wholeCity"
+        class="location-coverage-fields__neighborhoods"
+      >
+        <button
+          v-for="neighborhood in neighborhoods"
+          :key="neighborhood.code"
+          type="button"
+          :class="{
+            selected: model.neighborhoodCodes.includes(neighborhood.code),
+          }"
+          :aria-pressed="model.neighborhoodCodes.includes(neighborhood.code)"
+          @click="toggleNeighborhood(neighborhood.code)"
+        >
+          <UIcon
+            :name="
+              model.neighborhoodCodes.includes(neighborhood.code)
+                ? 'i-lucide-check'
+                : 'i-lucide-plus'
+            "
+          />
+          {{ neighborhood.name }}
+        </button>
+      </div>
+      <p
+        v-if="areaValidationError"
+        id="coverage-area-error"
+        class="location-coverage-fields__error"
+        role="alert"
+      >
+        {{ areaValidationError }}
+      </p>
     </div>
   </div>
 </template>
@@ -190,6 +244,22 @@ function toggleNeighborhood(code: string) {
     border-radius: 13px;
     background: #edf7f3;
     cursor: pointer;
+  }
+
+  &__area {
+    display: grid;
+    gap: 14px;
+    border-radius: 13px;
+    outline: none;
+  }
+
+  &__area--invalid .location-coverage-fields__whole-city {
+    border-color: var(--color-danger);
+    background: var(--color-danger-tint);
+  }
+
+  &__area--invalid:focus-visible {
+    box-shadow: 0 0 0 3px rgb(180 35 24 / 16%);
   }
 
   &__whole-city input {
