@@ -40,6 +40,15 @@ module Api
           render_unavailable
         end
 
+        def complete
+          job = owned_service_job!
+          authorize job, :update?
+          job = ProfessionalServiceJobCompleter.new.call(service_job: job)
+          render json: service_job_response(job)
+        rescue ProfessionalServiceJobCompleter::Unavailable
+          render_unavailable
+        end
+
         def cancel
           job = owned_service_job!
           authorize job, :update?

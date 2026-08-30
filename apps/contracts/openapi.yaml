@@ -1934,6 +1934,44 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorResponse" }
+  /api/v1/professional/service-jobs/{id}/complete:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      operationId: completeProfessionalServiceJob
+      summary: Confirm service completion as the professional
+      tags: [Professional services]
+      security:
+        - applicationSession: []
+      responses:
+        "200":
+          description: The completed service with the professional recorded as confirmer.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProfessionalServiceJobResponse" }
+        "401":
+          description: An active session is required.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403":
+          description: The origin or owner is invalid.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: The service does not exist.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "409":
+          description: The service is already completed or cancelled.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
   /api/v1/professional/service-jobs/{id}/cancel:
     parameters:
       - name: id
@@ -4545,6 +4583,9 @@ components:
     ServiceJobStatus:
       type: string
       enum: [approved, completion_requested, completion_issue, completed, cancelled]
+    ServiceJobCompletionConfirmer:
+      type: string
+      enum: [customer, professional]
     RecommendationRequestStatus:
       type: string
       enum: [open, completed, expired]
@@ -4892,7 +4933,7 @@ components:
     ProfessionalServiceJob:
       type: object
       additionalProperties: false
-      required: [id, status, quote, completion_requested_at, completion_issue_at, completion_issue_message, completed_at, cancelled_at, cancellation_reason, recommendation_request_status, created_at, updated_at]
+      required: [id, status, quote, completion_requested_at, completion_issue_at, completion_issue_message, completed_at, completion_confirmed_by, cancelled_at, cancellation_reason, recommendation_request_status, created_at, updated_at]
       properties:
         id: { type: string, format: uuid }
         status: { $ref: "#/components/schemas/ServiceJobStatus" }
@@ -4901,6 +4942,10 @@ components:
         completion_issue_at: { type: [string, "null"], format: date-time }
         completion_issue_message: { type: [string, "null"], maxLength: 700 }
         completed_at: { type: [string, "null"], format: date-time }
+        completion_confirmed_by:
+          oneOf:
+            - $ref: "#/components/schemas/ServiceJobCompletionConfirmer"
+            - type: "null"
         cancelled_at: { type: [string, "null"], format: date-time }
         cancellation_reason: { type: [string, "null"], maxLength: 700 }
         recommendation_request_status:

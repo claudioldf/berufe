@@ -236,7 +236,10 @@ RSpec.describe "Quote service loop", type: :request, openapi: true do
         as: :json
     end.to have_enqueued_job(CustomerRecommendationRequestDeliveryJob)
     expect(response).to have_http_status(:ok)
-    expect(service_job.reload).to be_completed
+    expect(service_job.reload).to have_attributes(
+      status: "completed",
+      completion_confirmed_by: "customer"
+    )
     recommendation_request = service_job.customer_recommendation_request
     expect(recommendation_request).to have_attributes(status: "open", sent_at: nil)
     recommendation_token = CustomerRecommendationToken.decrypt(
@@ -320,6 +323,41 @@ RSpec.describe "Quote service loop", type: :request, openapi: true do
     expect(response.parsed_body.dig("data", "professional", "customer_recommendations")).to be_empty
     expect(response.parsed_body.dig("data", "professional", "evidence_summary", "recommendations")).to eq(0)
     assert_api_conform(status: 200)
+  end
+
+  it "allows the professional to confirm service completion" do
+    share = ProfessionalQuoteSharer.new.call(quote:, method: "copy")
+    token = URI(share.share_url).path.split("/").last
+    service_job = SharedQuoteDecisionRecorder.new.call(
+      token:,
+      decision: "approve",
+      revision: quote.reload.lock_version,
+      terms_accepted: true,
+      message: nil
+    )[:service_job]
+
+    post "/api/v1/professional/service-jobs/#{service_job.id}/complete",
+      headers: session_headers("service-complete"),
+      as: :json
+
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body.dig("data", "service_job")).to include(
+      "status" => "completed",
+      "completion_confirmed_by" => "professional"
+    )
+    expect(service_job.reload).to have_attributes(
+      status: "completed",
+      completion_confirmed_by: "professional"
+    )
+    expect(service_job.completed_at).to be_present
+    expect(service_job.customer_recommendation_request).to be_nil
+    assert_api_conform(status: 200)
+
+    post "/api/v1/professional/service-jobs/#{service_job.id}/complete",
+      headers: session_headers("service-complete-again"),
+      as: :json
+    expect(response).to have_http_status(:conflict)
+    assert_api_conform(status: 409)
   end
 
   it "searches only the current professional's customers" do
@@ -496,6 +534,29 @@ RSpec.describe "Quote service loop", type: :request, openapi: true do
     expect(response).to have_http_status(:not_found)
     assert_api_conform(status: 404)
 
+    post "/api/v1/professional/service-jobs/#{service_job.id}/complete",
+      headers: {
+        "Origin" => ENV.fetch("WEB_ORIGIN"),
+        "X-Request-Id" => "service-complete-anonymous"
+      },
+      as: :json
+    expect(response).to have_http_status(:unauthorized)
+    assert_api_conform(status: 401)
+
+    post "/api/v1/professional/service-jobs/#{service_job.id}/complete",
+      headers: session_headers("service-complete-bad-origin").merge(
+        "Origin" => "https://untrusted.example"
+      ),
+      as: :json
+    expect(response).to have_http_status(:forbidden)
+    assert_api_conform(status: 403)
+
+    post "/api/v1/professional/service-jobs/#{SecureRandom.uuid}/complete",
+      headers: session_headers("service-complete-missing"),
+      as: :json
+    expect(response).to have_http_status(:not_found)
+    assert_api_conform(status: 404)
+
     ProfessionalServiceJobCompletionRequester.new.call(service_job:)
     post "/api/v1/professional/service-jobs/#{service_job.id}/completion-request",
       headers: session_headers("completion-unavailable"),
@@ -615,7 +676,11 @@ RSpec.describe "Quote service loop", type: :request, openapi: true do
       terms_accepted: true,
       message: nil
     )[:service_job]
-    service_job.update!(status: "completed", completed_at: Time.current)
+    service_job.update!(
+      status: "completed",
+      completed_at: Time.current,
+      completion_confirmed_by: "customer"
+    )
     recommendation_token = CustomerRecommendationToken.issue
     request_record = service_job.create_customer_recommendation_request!(
       token_hash: CustomerRecommendationToken.digest(recommendation_token),

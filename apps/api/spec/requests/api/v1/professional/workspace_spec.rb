@@ -92,6 +92,48 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
     end
   end
 
+  it "keeps completed and cancelled services out of the ongoing dashboard section" do
+    ongoing_quote = create_workspace_quote(
+      profile:,
+      customer_name: "Cliente em andamento",
+      customer_phone: "+5547999916210",
+      service_description: "Serviço em andamento"
+    )
+    completed_quote = create_workspace_quote(
+      profile:,
+      customer_name: "Cliente concluída",
+      customer_phone: "+5547999916211",
+      service_description: "Serviço concluído"
+    )
+    cancelled_quote = create_workspace_quote(
+      profile:,
+      customer_name: "Cliente cancelada",
+      customer_phone: "+5547999916212",
+      service_description: "Serviço cancelado"
+    )
+    ongoing = ServiceJob.create!(quote: ongoing_quote, status: "approved")
+    ServiceJob.create!(
+      quote: completed_quote,
+      status: "completed",
+      completed_at: Time.current,
+      completion_confirmed_by: "customer"
+    )
+    ServiceJob.create!(
+      quote: cancelled_quote,
+      status: "cancelled",
+      cancelled_at: Time.current
+    )
+
+    get "/api/v1/professional/workspace",
+      headers: session_headers(request_id: "workspace-ongoing-services")
+
+    expect(response).to have_http_status(:ok)
+    expect(
+      response.parsed_body.dig("data", "dashboard", "recent_service_jobs").pluck("id")
+    ).to eq([ongoing.id])
+    assert_api_conform(status: 200)
+  end
+
   it "returns inbound pending alerts and active relationships in both directions" do
     older_initiator = create_relationship_initiator("+5547999981201", "Beto Antigo")
     newer_initiator = create_relationship_initiator("+5547999981202", "Caio Novo")

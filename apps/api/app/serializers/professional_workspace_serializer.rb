@@ -62,6 +62,7 @@ class ProfessionalWorkspaceSerializer
       recent_service_jobs: ServiceJob
         .joins(:quote)
         .where(quotes: {professional_id: profile.id})
+        .where(status: %w[approved completion_requested completion_issue])
         .includes(:customer_recommendation_request, :quote)
         .order(updated_at: :desc, id: :desc)
         .limit(5)

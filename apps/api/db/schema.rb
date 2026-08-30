@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_29_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_29_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -819,6 +819,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_130000) do
     t.text "cancellation_reason"
     t.datetime "cancelled_at"
     t.datetime "completed_at"
+    t.string "completion_confirmed_by", limit: 20
     t.datetime "completion_issue_at"
     t.text "completion_issue_message"
     t.datetime "completion_requested_at"
@@ -830,6 +831,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_130000) do
     t.index ["status", "updated_at"], name: "index_service_jobs_on_status_and_updated_at"
     t.check_constraint "cancellation_reason IS NULL OR char_length(btrim(cancellation_reason)) >= 1 AND char_length(btrim(cancellation_reason)) <= 700", name: "service_jobs_cancellation_reason_length"
     t.check_constraint "completion_issue_message IS NULL OR char_length(btrim(completion_issue_message)) >= 1 AND char_length(btrim(completion_issue_message)) <= 700", name: "service_jobs_completion_issue_message_length"
+    t.check_constraint "status::text = 'completed'::text AND (completion_confirmed_by::text = ANY (ARRAY['customer'::character varying, 'professional'::character varying]::text[])) OR status::text <> 'completed'::text AND completion_confirmed_by IS NULL", name: "service_jobs_consistent_completion_confirmer"
     t.check_constraint "status::text = ANY (ARRAY['approved'::character varying::text, 'completion_requested'::character varying::text, 'completion_issue'::character varying::text, 'completed'::character varying::text, 'cancelled'::character varying::text])", name: "service_jobs_known_status"
   end
 

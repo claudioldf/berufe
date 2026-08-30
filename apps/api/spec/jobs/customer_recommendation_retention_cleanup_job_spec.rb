@@ -42,7 +42,12 @@ RSpec.describe CustomerRecommendationRetentionCleanupJob do
         items: [{description: "Serviço", quantity: 1, unit: "hora", unit_price: 100}]
       }
     )
-    service_job = ServiceJob.create!(quote:, status: "completed", completed_at: now - 40.days)
+    service_job = ServiceJob.create!(
+      quote:,
+      status: "completed",
+      completed_at: now - 40.days,
+      completion_confirmed_by: "customer"
+    )
     token = CustomerRecommendationToken.issue
     service_job.create_customer_recommendation_request!(
       token_hash: CustomerRecommendationToken.digest(token),
