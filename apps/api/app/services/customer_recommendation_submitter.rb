@@ -12,6 +12,10 @@ class CustomerRecommendationSubmitter
 
   class Unavailable < StandardError; end
 
+  def initialize(notifier: ProfessionalNotificationCreator.new)
+    @notifier = notifier
+  end
+
   def call(token:, attributes:, now: Time.current)
     request = CustomerRecommendationResolver.new.call(token:, now:)
     validate_attributes!(attributes)
@@ -42,6 +46,14 @@ class CustomerRecommendationSubmitter
       if current_fingerprint == snapshot_fingerprint && snapshot_fingerprint == request.email_fingerprint
         customer.update!(email_verified_at: now)
       end
+      professional = request.service_job.professional
+      @notifier.call(
+        recipient: professional.user_account,
+        notification_type: "customer_recommendation_published",
+        route: "/profissionais/#{professional.public_slug}#customer-recommendations-title",
+        idempotency_key: "customer-recommendation:#{recommendation.id}:published",
+        occurred_at: now
+      )
     end
 
     recommendation

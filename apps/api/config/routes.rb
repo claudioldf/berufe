@@ -23,6 +23,14 @@ Rails.application.routes.draw do
       put "professional-registration", to: "professional_registrations#update"
       namespace :professional do
         resource :workspace, only: :show, controller: :workspaces
+        resources :notifications, only: :index do
+          member do
+            patch :read
+          end
+          collection do
+            patch :read_all, path: "read-all"
+          end
+        end
         resource :data_erasure_request, only: :create, path: "data-erasure-request"
         resource :profile, only: :update, controller: :profiles
         post "profile/submission", to: "profiles#submission"

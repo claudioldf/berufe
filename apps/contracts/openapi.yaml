@@ -1488,6 +1488,199 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/professional/notifications:
+    get:
+      operationId: getProfessionalNotifications
+      summary: List the authenticated professional's unread notifications
+      tags:
+        - Professional notifications
+      security:
+        - applicationSession: []
+      parameters:
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 2000
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+      responses:
+        "200":
+          description: One cursor page of unread notifications and the exact unread total.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfessionalNotificationListResponse"
+        "401":
+          description: An active Rails application session is required.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Only an active registered professional may read notifications.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: The cursor or page limit is invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/professional/notifications/read-all:
+    patch:
+      operationId: readAllProfessionalNotifications
+      summary: Mark the professional's currently existing unread notifications as read
+      tags:
+        - Professional notifications
+      security:
+        - applicationSession: []
+      responses:
+        "200":
+          description: Existing unread notifications were marked read without affecting later arrivals.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfessionalNotificationsReadAllResponse"
+        "401":
+          description: An active Rails application session is required.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: The exact browser origin is invalid or the account is not a registered professional.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/professional/notifications/{id}/read:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    patch:
+      operationId: readProfessionalNotification
+      summary: Idempotently mark one owned notification as read
+      tags:
+        - Professional notifications
+      security:
+        - applicationSession: []
+      responses:
+        "200":
+          description: The notification is read and cannot return to unread.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfessionalNotificationReadResponse"
+        "401":
+          description: An active Rails application session is required.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: The exact browser origin is invalid or the account is not a registered professional.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: The notification does not exist or belongs to another professional.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/professional/relationships:
     post:
       operationId: createProfessionalRelationship
@@ -4520,6 +4713,147 @@ components:
       properties:
         data:
           $ref: "#/components/schemas/ProfessionalWorkspaceData"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    ProfessionalNotificationType:
+      type: string
+      enum:
+        - profile_moderation_approved
+        - profile_moderation_rejected
+        - profile_moderation_hidden
+        - profile_moderation_restored
+        - profile_photo_moderation_approved
+        - profile_photo_moderation_rejected
+        - profile_photo_moderation_hidden
+        - profile_photo_moderation_restored
+        - portfolio_item_moderation_approved
+        - portfolio_item_moderation_rejected
+        - portfolio_item_moderation_hidden
+        - portfolio_item_moderation_restored
+        - verification_request_moderation_approved
+        - verification_request_moderation_rejected
+        - relationship_request_received
+        - relationship_request_accepted
+        - relationship_request_declined
+        - quote_change_requested
+        - quote_approved
+        - quote_declined
+        - service_completion_confirmed
+        - service_completion_issue_reported
+        - customer_recommendation_published
+    ProfessionalNotification:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - notification_type
+        - status
+        - title
+        - description
+        - route
+        - occurred_at
+        - read_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        notification_type:
+          $ref: "#/components/schemas/ProfessionalNotificationType"
+        status:
+          type: string
+          enum:
+            - unread
+            - read
+        title:
+          type: string
+          minLength: 1
+          maxLength: 120
+        description:
+          type: string
+          minLength: 1
+          maxLength: 240
+        route:
+          type: string
+          pattern: '^/\S*$'
+          maxLength: 500
+        occurred_at:
+          type: string
+          format: date-time
+        read_at:
+          type:
+            - string
+            - "null"
+          format: date-time
+    ProfessionalNotificationListResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required:
+            - notifications
+            - unread_count
+            - next_cursor
+          properties:
+            notifications:
+              type: array
+              maxItems: 50
+              items:
+                $ref: "#/components/schemas/ProfessionalNotification"
+            unread_count:
+              type: integer
+              minimum: 0
+            next_cursor:
+              type:
+                - string
+                - "null"
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    ProfessionalNotificationReadResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required:
+            - notification
+            - unread_count
+          properties:
+            notification:
+              $ref: "#/components/schemas/ProfessionalNotification"
+            unread_count:
+              type: integer
+              minimum: 0
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+    ProfessionalNotificationsReadAllResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required:
+            - marked_read_count
+            - unread_count
+          properties:
+            marked_read_count:
+              type: integer
+              minimum: 0
+            unread_count:
+              type: integer
+              minimum: 0
         request_id:
           $ref: "#/components/schemas/RequestId"
     ProfessionalWorkspaceData:

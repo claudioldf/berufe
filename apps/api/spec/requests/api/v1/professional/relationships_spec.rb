@@ -64,6 +64,11 @@ RSpec.describe "Professional relationship requests", type: :request, openapi: tr
       professional: initiator,
       relationship_interactions: 1
     )
+    expect(Notification.sole).to have_attributes(
+      recipient_user_account: recipient.user_account,
+      notification_type: "relationship_request_received",
+      route: "/app/professional/profile?tab=relacoes"
+    )
     assert_api_conform(status: 201)
   end
 
@@ -203,6 +208,11 @@ RSpec.describe "Professional relationship requests", type: :request, openapi: tr
     expect(
       ProfessionalDailyActivity.find_by!(professional: recipient).relationship_interactions
     ).to eq(1)
+    expect(Notification.sole).to have_attributes(
+      recipient_user_account: initiator_account,
+      notification_type: "relationship_request_accepted",
+      route: "/app/professional/profile?tab=relacoes"
+    )
     assert_api_conform(status: 200)
 
     travel_to(now) do

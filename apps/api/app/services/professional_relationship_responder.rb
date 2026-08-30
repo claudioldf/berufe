@@ -14,6 +14,10 @@ class ProfessionalRelationshipResponder
 
   class Conflict < StandardError; end
 
+  def initialize(notifier: ProfessionalNotificationCreator.new)
+    @notifier = notifier
+  end
+
   def call(relationship:, recipient:, response:, now: Time.current)
     normalized_response = response.to_s
     unless normalized_response.in?(RESPONSES)
@@ -30,6 +34,13 @@ class ProfessionalRelationshipResponder
       ProfessionalDailyActivity.increment!(
         professional_id: recipient.id,
         counter: :relationship_interactions,
+        occurred_at: now
+      )
+      @notifier.call(
+        recipient: relationship.initiator_professional.user_account,
+        notification_type: "relationship_request_#{normalized_response}",
+        route: "/app/professional/profile?tab=relacoes",
+        idempotency_key: "relationship:#{relationship.id}:#{normalized_response}",
         occurred_at: now
       )
       relationship

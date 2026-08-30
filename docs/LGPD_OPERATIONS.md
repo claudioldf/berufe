@@ -88,7 +88,7 @@ self-service endpoint and this task invoke `ProfessionalDataErasureRequester`; t
 - revokes every application session and replaces quote bearer-token digests;
 - expires open recommendation invitations;
 - queues deletion of public and private R2 objects, profile data, customer records, quotes,
-  service history, relationships, moderation content, metrics, sessions, and the account;
+  service history, relationships, notifications, moderation content, metrics, sessions, and the account;
 - preserves only pseudonymous acceptance, consent, referral-attestation, quote-acceptance,
   and moderation-event facts needed for audit or defense.
 

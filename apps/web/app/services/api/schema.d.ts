@@ -608,6 +608,59 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/professional/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the authenticated professional's unread notifications */
+        get: operations["getProfessionalNotifications"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/professional/notifications/read-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Mark the professional's currently existing unread notifications as read */
+        patch: operations["readAllProfessionalNotifications"];
+        trace?: never;
+    };
+    "/api/v1/professional/notifications/{id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Idempotently mark one owned notification as read */
+        patch: operations["readProfessionalNotification"];
+        trace?: never;
+    };
     "/api/v1/professional/relationships": {
         parameters: {
             query?: never;
@@ -1626,6 +1679,44 @@ export interface components {
         };
         ProfessionalWorkspaceResponse: {
             data: components["schemas"]["ProfessionalWorkspaceData"];
+            request_id: components["schemas"]["RequestId"];
+        };
+        /** @enum {string} */
+        ProfessionalNotificationType: "profile_moderation_approved" | "profile_moderation_rejected" | "profile_moderation_hidden" | "profile_moderation_restored" | "profile_photo_moderation_approved" | "profile_photo_moderation_rejected" | "profile_photo_moderation_hidden" | "profile_photo_moderation_restored" | "portfolio_item_moderation_approved" | "portfolio_item_moderation_rejected" | "portfolio_item_moderation_hidden" | "portfolio_item_moderation_restored" | "verification_request_moderation_approved" | "verification_request_moderation_rejected" | "relationship_request_received" | "relationship_request_accepted" | "relationship_request_declined" | "quote_change_requested" | "quote_approved" | "quote_declined" | "service_completion_confirmed" | "service_completion_issue_reported" | "customer_recommendation_published";
+        ProfessionalNotification: {
+            /** Format: uuid */
+            id: string;
+            notification_type: components["schemas"]["ProfessionalNotificationType"];
+            /** @enum {string} */
+            status: "unread" | "read";
+            title: string;
+            description: string;
+            route: string;
+            /** Format: date-time */
+            occurred_at: string;
+            /** Format: date-time */
+            read_at: string | null;
+        };
+        ProfessionalNotificationListResponse: {
+            data: {
+                notifications: components["schemas"]["ProfessionalNotification"][];
+                unread_count: number;
+                next_cursor: string | null;
+            };
+            request_id: components["schemas"]["RequestId"];
+        };
+        ProfessionalNotificationReadResponse: {
+            data: {
+                notification: components["schemas"]["ProfessionalNotification"];
+                unread_count: number;
+            };
+            request_id: components["schemas"]["RequestId"];
+        };
+        ProfessionalNotificationsReadAllResponse: {
+            data: {
+                marked_read_count: number;
+                unread_count: number;
+            };
             request_id: components["schemas"]["RequestId"];
         };
         ProfessionalWorkspaceData: {
@@ -4403,6 +4494,165 @@ export interface operations {
             404: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getProfessionalNotifications: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One cursor page of unread notifications and the exact unread total. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalNotificationListResponse"];
+                };
+            };
+            /** @description An active Rails application session is required. */
+            401: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Only an active registered professional may read notifications. */
+            403: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The cursor or page limit is invalid. */
+            422: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    readAllProfessionalNotifications: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Existing unread notifications were marked read without affecting later arrivals. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalNotificationsReadAllResponse"];
+                };
+            };
+            /** @description An active Rails application session is required. */
+            401: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The exact browser origin is invalid or the account is not a registered professional. */
+            403: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    readProfessionalNotification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The notification is read and cannot return to unread. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalNotificationReadResponse"];
+                };
+            };
+            /** @description An active Rails application session is required. */
+            401: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The exact browser origin is invalid or the account is not a registered professional. */
+            403: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The notification does not exist or belongs to another professional. */
+            404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Cache-Control"?: "no-store";
                     [name: string]: unknown;
                 };
                 content: {

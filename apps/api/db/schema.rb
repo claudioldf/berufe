@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_29_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_30_090000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -401,6 +401,30 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_140000) do
     t.index ["city_code", "code"], name: "index_neighborhoods_on_city_code_and_code"
     t.check_constraint "btrim(name) <> ''::text", name: "neighborhoods_name_present"
     t.check_constraint "code ~ '^[0-9]{10}$'::text", name: "neighborhoods_ibge_code_format"
+  end
+
+  create_table "notifications", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "description", limit: 240, null: false
+    t.string "idempotency_key", limit: 255, null: false
+    t.string "notification_type", limit: 64, null: false
+    t.datetime "occurred_at", null: false
+    t.datetime "read_at"
+    t.uuid "recipient_user_account_id", null: false
+    t.string "route", limit: 500, null: false
+    t.string "status", limit: 16, default: "unread", null: false
+    t.string "title", limit: 120, null: false
+    t.datetime "updated_at", null: false
+    t.index ["idempotency_key"], name: "index_notifications_on_idempotency_key", unique: true
+    t.index ["recipient_user_account_id", "status", "occurred_at", "id"], name: "idx_notifications_recipient_status_order", order: { occurred_at: :desc, id: :desc }
+    t.index ["recipient_user_account_id"], name: "index_notifications_on_recipient_user_account_id"
+    t.check_constraint "char_length(btrim(description::text)) >= 1 AND char_length(btrim(description::text)) <= 240", name: "notifications_description_length"
+    t.check_constraint "char_length(btrim(idempotency_key::text)) >= 1 AND char_length(btrim(idempotency_key::text)) <= 255", name: "notifications_idempotency_key_length"
+    t.check_constraint "char_length(btrim(title::text)) >= 1 AND char_length(btrim(title::text)) <= 120", name: "notifications_title_length"
+    t.check_constraint "notification_type::text = ANY (ARRAY['profile_moderation_approved'::character varying, 'profile_moderation_rejected'::character varying, 'profile_moderation_hidden'::character varying, 'profile_moderation_restored'::character varying, 'profile_photo_moderation_approved'::character varying, 'profile_photo_moderation_rejected'::character varying, 'profile_photo_moderation_hidden'::character varying, 'profile_photo_moderation_restored'::character varying, 'portfolio_item_moderation_approved'::character varying, 'portfolio_item_moderation_rejected'::character varying, 'portfolio_item_moderation_hidden'::character varying, 'portfolio_item_moderation_restored'::character varying, 'verification_request_moderation_approved'::character varying, 'verification_request_moderation_rejected'::character varying, 'relationship_request_received'::character varying, 'relationship_request_accepted'::character varying, 'relationship_request_declined'::character varying, 'quote_change_requested'::character varying, 'quote_approved'::character varying, 'quote_declined'::character varying, 'service_completion_confirmed'::character varying, 'service_completion_issue_reported'::character varying, 'customer_recommendation_published'::character varying]::text[])", name: "notifications_known_type"
+    t.check_constraint "route::text ~ '^/[^[:space:]]*$'::text", name: "notifications_internal_route"
+    t.check_constraint "status::text = 'unread'::text AND read_at IS NULL OR status::text = 'read'::text AND read_at IS NOT NULL", name: "notifications_read_state"
+    t.check_constraint "status::text = ANY (ARRAY['unread'::character varying, 'read'::character varying]::text[])", name: "notifications_known_status"
   end
 
   create_table "otp_challenges", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -969,6 +993,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_140000) do
   add_foreign_key "moderation_actions", "user_accounts", column: "admin_user_id"
   add_foreign_key "moderation_media_access_events", "user_accounts", column: "admin_user_id"
   add_foreign_key "neighborhoods", "cities", column: "city_code", primary_key: "code"
+  add_foreign_key "notifications", "user_accounts", column: "recipient_user_account_id", on_delete: :cascade
   add_foreign_key "portfolio_items", "media_uploads"
   add_foreign_key "portfolio_items", "professional_profiles"
   add_foreign_key "portfolio_items", "services"
