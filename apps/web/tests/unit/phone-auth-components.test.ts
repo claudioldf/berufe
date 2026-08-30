@@ -65,7 +65,7 @@ describe("phone authentication components", () => {
     expect(resolveProfessionalAuthIntent("unexpected")).toBe("login");
   });
 
-  it("reveals and focuses invalid login fields without emitting submit", async () => {
+  it("reveals, focuses, and scrolls to an invalid login field", async () => {
     const wrapper = mount(PhoneStep, {
       attachTo: document.body,
       props: {
@@ -83,14 +83,20 @@ describe("phone authentication components", () => {
         },
       },
     });
+    const phone = wrapper.get<HTMLInputElement>("#auth-phone");
+    const scrollIntoView = vi.fn();
+    phone.element.scrollIntoView = scrollIntoView;
 
     await wrapper.get("form").trigger("submit");
     await nextTick();
 
-    const phone = wrapper.get<HTMLInputElement>("#auth-phone");
     expect(wrapper.get('[role="alert"]').text()).toContain("número");
     expect(phone.attributes("aria-invalid")).toBe("true");
     expect(document.activeElement).toBe(phone.element);
+    expect(scrollIntoView).toHaveBeenCalledWith({
+      block: "center",
+      inline: "nearest",
+    });
     expect(wrapper.emitted("submit")).toBeUndefined();
     wrapper.unmount();
   });

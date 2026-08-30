@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, shallowRef } from "vue";
+import { computed, ref, useTemplateRef } from "vue";
 import type { ProfessionalProfileDraft, Service } from "~/types";
 import { validateOnboardingServices } from "~/composables/useProfessionalOnboarding";
+import { useInlineFormValidation } from "~/composables/useInlineFormValidation";
 
 const props = defineProps<{
   draft: ProfessionalProfileDraft;
@@ -20,7 +21,22 @@ const form = ref<ProfessionalProfileDraft>({
   serviceNotes: { ...props.draft.serviceNotes },
   selectedNeighborhoodCodes: [...props.draft.selectedNeighborhoodCodes],
 });
-const error = shallowRef("");
+const formRoot = useTemplateRef<HTMLFormElement>("formRoot");
+const validation = computed(() => validateOnboardingServices(form.value));
+const isValid = computed(() =>
+  Object.values(validation.value).every((fieldError) => !fieldError),
+);
+const { validationAttempted, revealValidation } =
+  useInlineFormValidation(formRoot);
+const displayedErrors = computed(() =>
+  validationAttempted.value ? validation.value : undefined,
+);
+const error = computed(
+  () =>
+    (validationAttempted.value
+      ? Object.values(validation.value).find(Boolean)
+      : "") ?? "",
+);
 
 function toggleService(name: string) {
   if (form.value.selectedServices.includes(name)) {
@@ -35,13 +51,10 @@ function toggleService(name: string) {
     form.value.selectedServices.push(name);
     if (!form.value.primaryService) form.value.primaryService = name;
   }
-  error.value = "";
 }
 
 function submit() {
-  const errors = validateOnboardingServices(form.value);
-  error.value = Object.values(errors).find(Boolean) ?? "";
-  if (error.value) return;
+  if (!revealValidation(isValid.value)) return;
   emit("complete", {
     ...form.value,
     selectedServices: [...form.value.selectedServices],
@@ -62,7 +75,12 @@ function submit() {
       </p>
     </header>
 
-    <form class="onboarding-step-form" @submit.prevent="submit">
+    <form
+      ref="formRoot"
+      class="onboarding-step-form"
+      novalidate
+      @submit.prevent="submit"
+    >
       <p
         v-if="error || props.serverError"
         class="onboarding-step-error"
@@ -75,9 +93,13 @@ function submit() {
         <DashboardProfileServicesSection
           v-model="form"
           :services="services"
+          :error="displayedErrors?.services"
           @toggle="toggleService"
         />
-        <DashboardProfileCoverageSection v-model="form" @dirty="error = ''" />
+        <DashboardProfileCoverageSection
+          v-model="form"
+          :error="displayedErrors?.coverage"
+        />
       </DashboardProfileFormLayout>
       <footer class="onboarding-step-actions">
         <UButton

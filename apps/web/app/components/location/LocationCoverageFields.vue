@@ -356,7 +356,7 @@ function toggleNeighborhood(code: string) {
   }
 
   &__error {
-    color: var(--color-error);
+    color: var(--color-danger);
   }
 }
 

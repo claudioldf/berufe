@@ -11,9 +11,16 @@ export function useInlineFormValidation(
     if (isValid) return true;
 
     void nextTick(() => {
-      toValue(formRoot)
-        ?.querySelector<HTMLElement>('[aria-invalid="true"]')
-        ?.focus();
+      const firstInvalidField = toValue(formRoot)?.querySelector<HTMLElement>(
+        '[aria-invalid="true"]',
+      );
+      if (!firstInvalidField) return;
+
+      firstInvalidField.focus({ preventScroll: true });
+      firstInvalidField.scrollIntoView({
+        block: "center",
+        inline: "nearest",
+      });
     });
     return false;
   }

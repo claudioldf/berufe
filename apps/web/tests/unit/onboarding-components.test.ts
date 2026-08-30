@@ -185,6 +185,45 @@ describe("onboarding step contracts", () => {
     await wrapper.get("form").trigger("submit");
 
     expect(wrapper.get('[role="alert"]').text()).toContain("nascimento");
+    expect(
+      wrapper.get('input[name="birthdate"]').attributes("aria-invalid"),
+    ).toBe("true");
+    expect(wrapper.get('label[for="profile-birthdate"]').classes()).toContain(
+      "form-field--invalid",
+    );
+    expect(wrapper.get("#profile-birthdate-error").text()).toContain(
+      "nascimento",
+    );
+    expect(wrapper.emitted("complete")).toBeUndefined();
+  });
+
+  it("reveals every invalid required profile field inline", async () => {
+    const wrapper = mount(ProfileStep, {
+      props: {
+        draft: profileDraft({ name: "", birthdate: "" }),
+      },
+    });
+
+    await wrapper.get("form").trigger("submit");
+
+    expect(wrapper.get("form").attributes()).toHaveProperty("novalidate");
+    expect(wrapper.get('input[name="name"]').attributes("aria-invalid")).toBe(
+      "true",
+    );
+    expect(
+      wrapper.get('input[name="birthdate"]').attributes("aria-invalid"),
+    ).toBe("true");
+    expect(
+      wrapper.get(".profile-photo-control").attributes("aria-invalid"),
+    ).toBe("true");
+    expect(wrapper.get(".profile-photo-control").classes()).toContain(
+      "profile-photo-control--invalid",
+    );
+    expect(wrapper.get("#profile-name-error").text()).toContain("nome");
+    expect(wrapper.get("#profile-birthdate-error").text()).toContain(
+      "nascimento",
+    );
+    expect(wrapper.get("#profile-photo-status").text()).toContain("foto");
     expect(wrapper.emitted("complete")).toBeUndefined();
   });
 
@@ -239,10 +278,60 @@ describe("onboarding step contracts", () => {
 
     await wrapper.get("form").trigger("submit");
     expect(wrapper.get('[role="alert"]').text()).toContain("serviço");
+    expect(wrapper.get(".service-picker").attributes("aria-invalid")).toBe(
+      "true",
+    );
+    expect(wrapper.get(".service-picker").classes()).toContain(
+      "service-picker--invalid",
+    );
+    expect(wrapper.get(".service-picker").attributes("aria-describedby")).toBe(
+      "profile-service-selection-error",
+    );
+    expect(wrapper.get("#profile-service-selection-error").text()).toContain(
+      "serviço",
+    );
+    expect(
+      wrapper.get('select[name="primary-service"]').attributes("aria-invalid"),
+    ).toBe("false");
 
     await wrapper.get('button[aria-pressed="false"]').trigger("click");
+    expect(wrapper.get(".service-picker").attributes("aria-invalid")).toBe(
+      "false",
+    );
+    expect(wrapper.get(".service-picker").classes()).not.toContain(
+      "service-picker--invalid",
+    );
+    expect(wrapper.find("#profile-service-selection-error").exists()).toBe(
+      false,
+    );
     await wrapper.get("form").trigger("submit");
 
     expect(wrapper.emitted("complete")).toHaveLength(1);
+  });
+
+  it("reveals service and coverage errors on their controls", async () => {
+    const wrapper = mount(ServicesStep, {
+      props: {
+        draft: profileDraft(),
+        services,
+      },
+    });
+
+    await wrapper.get("form").trigger("submit");
+
+    expect(wrapper.get("form").attributes()).toHaveProperty("novalidate");
+    expect(wrapper.get("#profile-service-selection-error").text()).toContain(
+      "serviço",
+    );
+    expect(
+      wrapper.get('select[name="coverage-state"]').attributes("aria-invalid"),
+    ).toBe("true");
+    expect(
+      wrapper.get('select[name="coverage-city"]').attributes("aria-invalid"),
+    ).toBe("true");
+    expect(wrapper.get('select[name="coverage-state"]').classes()).toContain(
+      "location-coverage-fields__select--invalid",
+    );
+    expect(wrapper.emitted("complete")).toBeUndefined();
   });
 });
