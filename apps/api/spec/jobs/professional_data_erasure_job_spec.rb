@@ -61,6 +61,15 @@ RSpec.describe ProfessionalDataErasureJob do
       unpublished_at: now,
       retained_until: now + 5.years
     )
+    notification = Notification.create!(
+      recipient_user_account: account,
+      notification_type: "quote_approved",
+      title: "Orçamento aprovado",
+      description: "Um cliente aprovou um orçamento.",
+      route: "/app/professional/quotes",
+      idempotency_key: "erasure-notification",
+      occurred_at: now - 1.hour
+    )
 
     described_class.perform_now(request_record.id, now:, storage:)
 
@@ -68,6 +77,7 @@ RSpec.describe ProfessionalDataErasureJob do
     expect(ProfessionalProfile.exists?(profile.id)).to be(false)
     expect(MediaUpload.exists?(upload.id)).to be(false)
     expect(ProfessionalProfilePhoto.exists?(photo.id)).to be(false)
+    expect(Notification.exists?(notification.id)).to be(false)
     expect(request_record.reload).to have_attributes(status: "completed", completed_at: now)
     expect(request_record.target_user_account_id).to be_nil
     expect(LegalRetentionRecord.sole).to have_attributes(

@@ -51,6 +51,10 @@ async function mountHeader(route: string) {
         AuthSessionLogoutButton: {
           template: '<button class="logout-stub">Sair</button>',
         },
+        DashboardNotificationsHub: {
+          template:
+            '<button class="notification-hub-stub">Notificações</button>',
+        },
       },
     },
   });
@@ -193,6 +197,7 @@ describe("application header", () => {
     expect(wrapper.text()).toContain("Orçamentos");
     expect(wrapper.get('a[href="/app/professional/quotes"]')).toBeDefined();
     expect(wrapper.findAll(".logout-stub")).toHaveLength(1);
+    expect(wrapper.findAll(".notification-hub-stub")).toHaveLength(1);
 
     const menu = wrapper.get(".header__menu");
     expect(menu.attributes("aria-label")).toBe("Abrir menu");
@@ -218,6 +223,7 @@ describe("application header", () => {
     expect(wrapper.text()).toContain("Catálogo");
     expect(wrapper.text()).toContain("Relatórios");
     expect(wrapper.text()).toContain("Auditoria de buscas");
+    expect(wrapper.find(".notification-hub-stub").exists()).toBe(false);
     expect(wrapper.get('a[href="/app/admin/catalog"]').classes()).toContain(
       "header__link--active",
     );

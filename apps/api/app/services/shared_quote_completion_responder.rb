@@ -15,6 +15,10 @@ class SharedQuoteCompletionResponder
   RESPONSES = %w[confirm report_issue].freeze
   Result = Data.define(:resolved, :recommendation_request_created)
 
+  def initialize(notifier: ProfessionalNotificationCreator.new)
+    @notifier = notifier
+  end
+
   def call(token:, response:, message:, now: Time.current)
     resolved = SharedQuoteResolver.new.call(token:)
     response = response.to_s
@@ -59,6 +63,13 @@ class SharedQuoteCompletionResponder
           request_created = true
         end
       end
+      @notifier.call(
+        recipient: job.professional.user_account,
+        notification_type: (response == "confirm") ? "service_completion_confirmed" : "service_completion_issue_reported",
+        route: "/app/professional/services/#{job.id}",
+        idempotency_key: "service-job:#{job.id}:completion:#{job.completion_requested_at&.iso8601(6)}:#{response}",
+        occurred_at: now
+      )
     end
 
     CustomerRecommendationRequestDeliveryJob.perform_later(recommendation_request.id) if request_created

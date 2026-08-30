@@ -25,6 +25,12 @@ const isAuthenticatedProfessional = computed(
   () =>
     status.value === "authenticated" && account.value?.role === "professional",
 );
+const showProfessionalNotifications = computed(
+  () =>
+    isProfessional.value &&
+    isAuthenticatedProfessional.value &&
+    account.value?.registrationCompleted,
+);
 const publicProfessionalEntryPath = computed(() =>
   account.value
     ? resolveProfessionalEntryPath(account.value)
@@ -147,6 +153,7 @@ function isLinkActive(to: string) {
           label="Entrar"
           class="header__mobile-login"
         />
+        <DashboardNotificationsHub v-if="showProfessionalNotifications" />
         <AuthSessionLogoutButton
           v-if="isProfessional || isAdmin"
           class="header__logout"

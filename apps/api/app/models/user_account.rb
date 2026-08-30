@@ -16,6 +16,10 @@ class UserAccount < ApplicationRecord
     inverse_of: :admin_user
   has_many :moderation_media_access_events, foreign_key: :admin_user_id, dependent: :restrict_with_exception,
     inverse_of: :admin_user
+  has_many :notifications,
+    foreign_key: :recipient_user_account_id,
+    dependent: :delete_all,
+    inverse_of: :recipient_user_account
   has_many :verification_file_access_events, foreign_key: :admin_user_id, dependent: :restrict_with_exception,
     inverse_of: :admin_user
   has_one :professional_profile, dependent: :destroy

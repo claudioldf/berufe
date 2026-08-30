@@ -7,6 +7,7 @@ import {
   type RestoredApplicationSession,
 } from "~/services/api/application-session";
 import { useApiClient } from "~/services/api/client";
+import { clearProfessionalNotificationState } from "~/composables/useProfessionalNotificationState";
 
 type SessionStatus = "unknown" | "restoring" | "authenticated" | "anonymous";
 
@@ -43,6 +44,7 @@ export function useApplicationSession(
     dependencies.end ?? (() => endCurrentApplicationSession(useApiClient()));
 
   function resetSession(nextStatus: SessionStatus) {
+    clearProfessionalNotificationState();
     account.value = null;
     session.value = null;
     status.value = nextStatus;
