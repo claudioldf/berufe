@@ -4,6 +4,7 @@ import {
   normalizeApiError,
   type NormalizedApiError,
 } from "~/services/api/errors";
+import { sanitizeBrazilianMobilePhone } from "~/utils/brazilian-phone";
 
 export interface RequestedPhoneOtp {
   challengeToken: string;
@@ -32,7 +33,7 @@ export async function requestPhoneOtp(
 ): Promise<RequestedPhoneOtp> {
   const { data, error, response } = await client.POST(
     "/api/v1/auth/otp/challenges",
-    { body: { phone } },
+    { body: { phone: sanitizeBrazilianMobilePhone(phone) } },
   );
   if (error || !data) {
     throw new PhoneOtpRequestError(

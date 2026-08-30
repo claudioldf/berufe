@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import type { Quote } from "~/types";
+import type { Quote, QuoteValidationErrors } from "~/types";
 import { formatCurrency } from "~/utils/formatters";
 import { quoteItemTotal } from "~/utils/quotes";
 
-defineProps<{ subtotal: number }>();
+const props = defineProps<{
+  subtotal: number;
+  errors?: QuoteValidationErrors;
+}>();
 const quote = defineModel<Quote>({ required: true });
 const emit = defineEmits<{
   add: [];
@@ -43,17 +46,40 @@ const emit = defineEmits<{
         class="quote-item"
         @input="emit('dirty')"
       >
-        <label>
+        <label
+          :class="{
+            'quote-item__field--invalid':
+              props.errors?.items[item.id]?.description,
+          }"
+        >
           <span class="sr-only">Descrição do item {{ index + 1 }}</span>
           <input
             v-model="item.description"
             :name="`item-${item.id}-description`"
             autocomplete="off"
             :placeholder="`Item ${index + 1}…`"
+            :aria-describedby="
+              props.errors?.items[item.id]?.description
+                ? `item-${item.id}-description-error`
+                : undefined
+            "
+            :aria-invalid="Boolean(props.errors?.items[item.id]?.description)"
             maxlength="160"
           />
+          <small
+            v-if="props.errors?.items[item.id]?.description"
+            :id="`item-${item.id}-description-error`"
+            class="quote-item__error"
+          >
+            {{ props.errors.items[item.id]?.description }}
+          </small>
         </label>
-        <label>
+        <label
+          :class="{
+            'quote-item__field--invalid':
+              props.errors?.items[item.id]?.quantity,
+          }"
+        >
           <span class="sr-only">Quantidade do item {{ index + 1 }}</span>
           <input
             v-model.number="item.quantity"
@@ -61,16 +87,39 @@ const emit = defineEmits<{
             type="number"
             inputmode="decimal"
             autocomplete="off"
+            :aria-describedby="
+              props.errors?.items[item.id]?.quantity
+                ? `item-${item.id}-quantity-error`
+                : undefined
+            "
+            :aria-invalid="Boolean(props.errors?.items[item.id]?.quantity)"
             min="0.01"
             step="0.01"
           />
+          <small
+            v-if="props.errors?.items[item.id]?.quantity"
+            :id="`item-${item.id}-quantity-error`"
+            class="quote-item__error"
+          >
+            {{ props.errors.items[item.id]?.quantity }}
+          </small>
         </label>
-        <label>
+        <label
+          :class="{
+            'quote-item__field--invalid': props.errors?.items[item.id]?.unit,
+          }"
+        >
           <span class="sr-only">Unidade do item {{ index + 1 }}</span>
           <select
             v-model="item.unit"
             :name="`item-${item.id}-unit`"
             autocomplete="off"
+            :aria-describedby="
+              props.errors?.items[item.id]?.unit
+                ? `item-${item.id}-unit-error`
+                : undefined
+            "
+            :aria-invalid="Boolean(props.errors?.items[item.id]?.unit)"
           >
             <option>serviço</option>
             <option>hora</option>
@@ -78,8 +127,20 @@ const emit = defineEmits<{
             <option>m²</option>
             <option>unidade</option>
           </select>
+          <small
+            v-if="props.errors?.items[item.id]?.unit"
+            :id="`item-${item.id}-unit-error`"
+            class="quote-item__error"
+          >
+            {{ props.errors.items[item.id]?.unit }}
+          </small>
         </label>
-        <label>
+        <label
+          :class="{
+            'quote-item__field--invalid':
+              props.errors?.items[item.id]?.unitPrice,
+          }"
+        >
           <span class="sr-only">Valor unitário do item {{ index + 1 }}</span>
           <input
             v-model.number="item.unitPrice"
@@ -87,9 +148,22 @@ const emit = defineEmits<{
             type="number"
             inputmode="decimal"
             autocomplete="off"
+            :aria-describedby="
+              props.errors?.items[item.id]?.unitPrice
+                ? `item-${item.id}-unit-price-error`
+                : undefined
+            "
+            :aria-invalid="Boolean(props.errors?.items[item.id]?.unitPrice)"
             min="0"
             step="0.01"
           />
+          <small
+            v-if="props.errors?.items[item.id]?.unitPrice"
+            :id="`item-${item.id}-unit-price-error`"
+            class="quote-item__error"
+          >
+            {{ props.errors.items[item.id]?.unitPrice }}
+          </small>
         </label>
         <strong>{{ formatCurrency(quoteItemTotal(item)) }}</strong>
         <button
@@ -102,6 +176,13 @@ const emit = defineEmits<{
         </button>
       </div>
     </div>
+    <p
+      v-if="props.errors?.itemsMessage"
+      class="quote-items__error"
+      role="alert"
+    >
+      {{ props.errors.itemsMessage }}
+    </p>
     <UButton
       class="quote-items__mobile-add"
       color="neutral"
@@ -118,20 +199,38 @@ const emit = defineEmits<{
       </div>
       <label>
         <span>Desconto</span>
-        <div>
-          <em>R$</em>
-          <input
-            v-model.number="quote.discount"
-            name="discount"
-            type="number"
-            inputmode="decimal"
-            autocomplete="off"
-            min="0"
-            :max="subtotal"
-            step="0.01"
-            @input="emit('dirty')"
-          />
-        </div>
+        <span class="builder-total__field">
+          <span
+            class="builder-total__control"
+            :class="{
+              'builder-total__control--invalid': props.errors?.discount,
+            }"
+          >
+            <em>R$</em>
+            <input
+              v-model.number="quote.discount"
+              name="discount"
+              type="number"
+              inputmode="decimal"
+              autocomplete="off"
+              :aria-describedby="
+                props.errors?.discount ? 'quote-discount-error' : undefined
+              "
+              :aria-invalid="Boolean(props.errors?.discount)"
+              min="0"
+              :max="subtotal"
+              step="0.01"
+              @input="emit('dirty')"
+            />
+          </span>
+          <small
+            v-if="props.errors?.discount"
+            id="quote-discount-error"
+            class="builder-total__error"
+          >
+            {{ props.errors.discount }}
+          </small>
+        </span>
       </label>
       <div>
         <span>Total</span

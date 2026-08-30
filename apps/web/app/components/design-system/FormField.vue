@@ -38,7 +38,11 @@ defineSlots<{
 </script>
 
 <template>
-  <label class="form-field" :for="controlId">
+  <label
+    class="form-field"
+    :class="{ 'form-field--invalid': Boolean(error) }"
+    :for="controlId"
+  >
     <div class="form-field__inner">
       <span class="form-field__label">
         <slot name="label">{{ label }}</slot>
@@ -122,6 +126,20 @@ defineSlots<{
   & :slotted(textarea) {
     min-height: 110px;
     resize: vertical;
+  }
+
+  &--invalid :deep(input),
+  &--invalid :deep(select),
+  &--invalid :deep(textarea) {
+    border-color: var(--color-danger);
+    background-color: var(--color-danger-tint);
+  }
+
+  &--invalid :deep(input:focus-visible),
+  &--invalid :deep(select:focus-visible),
+  &--invalid :deep(textarea:focus-visible) {
+    border-color: var(--color-danger);
+    box-shadow: 0 0 0 3px rgb(180 35 24 / 16%);
   }
 
   &__hint,

@@ -110,6 +110,54 @@ async function expectStatusContentFollowsIcon(status: Locator) {
   expect(contentBox.x - (iconBox.x + iconBox.width)).toBeLessThanOrEqual(16);
 }
 
+async function expectQuickActionsOnOneRow(
+  quickActions: Locator,
+  orientation: "horizontal" | "vertical" = "horizontal",
+) {
+  const boxes = await quickActions
+    .locator(".actions-card__list > *")
+    .evaluateAll((actions) =>
+      actions.map((action) => {
+        const box = action.getBoundingClientRect();
+        const iconBox = action
+          .querySelector(".actions-card__icon")!
+          .getBoundingClientRect();
+        const labelBox = action
+          .querySelector("strong")!
+          .getBoundingClientRect();
+        return {
+          top: Math.round(box.top),
+          height: box.height,
+          width: box.width,
+          iconBottom: iconBox.bottom,
+          iconRight: iconBox.right,
+          iconCenterX: iconBox.left + iconBox.width / 2,
+          iconCenterY: iconBox.top + iconBox.height / 2,
+          labelLeft: labelBox.left,
+          labelTop: labelBox.top,
+          labelCenterX: labelBox.left + labelBox.width / 2,
+          labelCenterY: labelBox.top + labelBox.height / 2,
+        };
+      }),
+    );
+
+  expect(boxes).toHaveLength(5);
+  expect(new Set(boxes.map((box) => box.top)).size).toBe(1);
+  expect(boxes.every((box) => box.width >= 44)).toBe(true);
+  expect(boxes.every((box) => box.height <= 64)).toBe(true);
+  if (orientation === "horizontal") {
+    expect(boxes.every((box) => box.labelLeft >= box.iconRight)).toBe(true);
+    expect(
+      boxes.every((box) => Math.abs(box.iconCenterY - box.labelCenterY) <= 1),
+    ).toBe(true);
+    return;
+  }
+  expect(boxes.every((box) => box.labelTop >= box.iconBottom)).toBe(true);
+  expect(
+    boxes.every((box) => Math.abs(box.iconCenterX - box.labelCenterX) <= 1),
+  ).toBe(true);
+}
+
 async function expectProgressStepsOnOneRow(page: Page) {
   const tops = await page
     .locator(".onboarding-progress nav button")
@@ -212,36 +260,47 @@ test("onboarding and dashboard remain spacious across responsive layouts", async
   const welcomeIntro = page.locator(".dashboard-welcome__inner > div").first();
   const welcomeActions = page.locator(".dashboard-welcome__actions");
 
+  await expectStacked(quickActions, status);
   await expectStacked(status, operational);
   await expectStacked(operational, sidebar);
   await expectStatusContentFollowsIcon(status);
   await expectSameWidth(operational, recentWork);
-  await expectSideBySide(checklist, quickActions);
+  await expectSameWidth(sidebar, checklist);
+  await expectQuickActionsOnOneRow(quickActions);
   await expectNoHorizontalOverflow(page);
 
   await page.setViewportSize({ width: 834, height: 1194 });
   await expectAlignedBelow(welcomeIntro, welcomeActions);
+  await expectStacked(quickActions, status);
   await expectStatusContentFollowsIcon(status);
   await expectSameWidth(operational, recentWork);
-  await expectSideBySide(checklist, quickActions);
+  await expectSameWidth(sidebar, checklist);
+  await expectQuickActionsOnOneRow(quickActions);
   await expectNoHorizontalOverflow(page);
 
   await page.setViewportSize({ width: 1280, height: 900 });
-  await expectSideBySide(status, operational);
+  await expectStacked(quickActions, status);
+  await expectStacked(status, page.locator(".dashboard-layout"));
   const desktopSidebarBox = await boundingBox(sidebar);
-  const desktopStatusBox = await boundingBox(status);
+  const desktopOperationalBox = await boundingBox(operational);
+  expect(desktopOperationalBox.x).toBeGreaterThan(
+    desktopSidebarBox.x + desktopSidebarBox.width,
+  );
   expect(
-    Math.abs(desktopSidebarBox.x - desktopStatusBox.x),
+    Math.abs(desktopSidebarBox.y - desktopOperationalBox.y),
   ).toBeLessThanOrEqual(1);
+  await expectQuickActionsOnOneRow(quickActions);
   await expectNoHorizontalOverflow(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expectAlignedBelow(welcomeIntro, welcomeActions);
+  await expectStacked(quickActions, status);
   await expectStacked(status, operational);
   await expectStacked(operational, sidebar);
   await expectStatusContentFollowsIcon(status);
   await expectSameWidth(operational, recentWork);
-  await expectStacked(checklist, quickActions);
+  await expectSameWidth(sidebar, checklist);
+  await expectQuickActionsOnOneRow(quickActions, "vertical");
   await expect(
     page.locator(".dashboard-operational .feature-empty__visual"),
   ).toBeHidden();

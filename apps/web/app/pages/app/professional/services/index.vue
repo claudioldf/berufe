@@ -27,7 +27,7 @@ const statusLabel = {
           <UIcon name="i-lucide-arrow-left" /> Voltar ao painel
         </NuxtLink>
         <h1>Serviços</h1>
-        <p>Acompanhe os orçamentos aprovados até a conclusão pelo cliente.</p>
+        <p>Acompanhe os orçamentos aprovados até a conclusão do serviço.</p>
       </DesignSystemContainer>
     </section>
     <DesignSystemContainer as="main" class="service-list-page__content">

@@ -8,6 +8,27 @@ export interface QuoteItem {
   sortOrder: number;
 }
 
+export interface QuoteItemValidationErrors {
+  description?: string;
+  quantity?: string;
+  unit?: string;
+  unitPrice?: string;
+}
+
+export interface QuoteValidationErrors {
+  customerName?: string;
+  customerPhone?: string;
+  customerEmail?: string;
+  serviceDescription?: string;
+  serviceAddress?: string;
+  scheduledOn?: string;
+  validUntil?: string;
+  discount?: string;
+  notes?: string;
+  itemsMessage?: string;
+  items: Record<string, QuoteItemValidationErrors>;
+}
+
 export interface QuoteChangeRequest {
   id: string;
   revision: number;
@@ -30,7 +51,8 @@ export interface Quote {
   issuedAt?: string;
   discount: number;
   notes: string;
-  status: "draft" | "shared" | "change_requested" | "approved" | "declined";
+  status:
+    "draft" | "saved" | "shared" | "change_requested" | "approved" | "declined";
   subtotal: number;
   total: number;
   sharedAt: string | null;

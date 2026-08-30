@@ -4,6 +4,7 @@ import type { LocationCoverageDraft, ProfessionalProfileDraft } from "~/types";
 import LocationCoverageFields from "~/components/location/LocationCoverageFields.vue";
 
 const form = defineModel<ProfessionalProfileDraft>({ required: true });
+withDefaults(defineProps<{ error?: string }>(), { error: "" });
 const emit = defineEmits<{ dirty: [] }>();
 const coverage = computed<LocationCoverageDraft>({
   get: () => ({
@@ -30,6 +31,10 @@ const coverage = computed<LocationCoverageDraft>({
         </div>
       </div>
     </header>
-    <LocationCoverageFields v-model="coverage" @dirty="emit('dirty')" />
+    <LocationCoverageFields
+      v-model="coverage"
+      :validation-error="error"
+      @dirty="emit('dirty')"
+    />
   </section>
 </template>

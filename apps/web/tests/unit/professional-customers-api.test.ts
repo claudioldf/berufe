@@ -24,7 +24,7 @@ describe("professional customer API", () => {
     expect(mapProfessionalCustomer(customer)).toEqual({
       id: customer.id,
       name: "Ana Paula",
-      phone: "(47) 99999-1111",
+      phone: "(47) 9 9999-1111",
       email: "ana@example.com",
       emailVerified: true,
       quoteCount: 3,
@@ -90,7 +90,7 @@ describe("professional customer API", () => {
     } as unknown as BerufeApiClient;
     await updateProfessionalCustomer(patchClient, customer.id, {
       name: "Ana Paula",
-      phone: "(47) 99999-1111",
+      phone: "(47) 9 9999-1111",
       email: " ana@example.com ",
     });
 
@@ -101,7 +101,7 @@ describe("professional customer API", () => {
         body: {
           customer: {
             name: "Ana Paula",
-            whatsapp_e164: "+5547999991111",
+            whatsapp_e164: "5547999991111",
             email: "ana@example.com",
           },
         },

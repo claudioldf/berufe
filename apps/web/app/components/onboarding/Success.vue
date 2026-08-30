@@ -10,8 +10,8 @@ defineEmits<{ review: [] }>();
     <h2>Seu perfil já pode ser encontrado.</h2>
     <p>
       As informações essenciais estão no ar. Agora você pode adicionar
-      portfólio, conexões profissionais e verificação para fortalecer a
-      confiança.
+      trabalhos, criar conexões profissionais e confirmar sua identidade para
+      fortalecer a confiança.
     </p>
     <div class="onboarding-success__actions">
       <UButton

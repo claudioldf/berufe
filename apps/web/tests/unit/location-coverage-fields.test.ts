@@ -41,7 +41,20 @@ vi.mock("@app/composables/useLocations", () => {
 });
 
 const FormFieldStub = defineComponent({
-  template: "<label><slot /></label>",
+  props: {
+    id: { type: String, default: "field" },
+    error: { type: String, default: "" },
+  },
+  template: `
+    <label>
+      <slot
+        :control-id="id"
+        :described-by="error ? id + '-error' : undefined"
+        :invalid="Boolean(error)"
+      />
+      <span v-if="error" :id="id + '-error'" role="alert">{{ error }}</span>
+    </label>
+  `,
 });
 
 describe("location coverage fields", () => {
@@ -92,5 +105,77 @@ describe("location coverage fields", () => {
         neighborhoodCodes: ["4209102007"],
       },
     ]);
+  });
+
+  it("places an incomplete coverage error on the first available selector", async () => {
+    const wrapper = await mountSuspended(LocationCoverageFields, {
+      props: {
+        modelValue: {
+          cityCode: "",
+          wholeCity: false,
+          neighborhoodCodes: [],
+        },
+        validationError: "Selecione uma cidade e a área atendida.",
+      },
+      global: {
+        stubs: {
+          DesignSystemFormField: FormFieldStub,
+          UIcon: true,
+        },
+      },
+    });
+
+    expect(
+      wrapper.get('select[name="coverage-state"]').attributes("aria-invalid"),
+    ).toBe("true");
+    expect(
+      wrapper.get('select[name="coverage-city"]').attributes("aria-invalid"),
+    ).toBe("true");
+    expect(wrapper.get('select[name="coverage-state"]').classes()).toContain(
+      "location-coverage-fields__select--invalid",
+    );
+    expect(wrapper.get('select[name="coverage-city"]').classes()).toContain(
+      "location-coverage-fields__select--invalid",
+    );
+    expect(wrapper.get('[role="alert"]').text()).toContain(
+      "Selecione uma cidade",
+    );
+  });
+
+  it("treats a selected city as complete city-wide coverage when requested", async () => {
+    const wrapper = await mountSuspended(LocationCoverageFields, {
+      props: {
+        modelValue: {
+          cityCode: "",
+          wholeCity: false,
+          neighborhoodCodes: [],
+        },
+        citySelectionCoversWholeCity: true,
+      },
+      global: {
+        stubs: {
+          DesignSystemFormField: FormFieldStub,
+          UIcon: true,
+        },
+      },
+    });
+
+    await wrapper.get('select[name="coverage-state"]').setValue("42");
+    await wrapper.setProps({
+      modelValue: wrapper.emitted("update:modelValue")!.at(-1)![0],
+    });
+    await wrapper.get('select[name="coverage-city"]').setValue("4209102");
+
+    expect(wrapper.emitted("update:modelValue")!.at(-1)).toEqual([
+      {
+        cityCode: "4209102",
+        wholeCity: true,
+        neighborhoodCodes: [],
+      },
+    ]);
+    expect(mocks.loadNeighborhoods).not.toHaveBeenCalled();
+    expect(wrapper.find(".location-coverage-fields__area").exists()).toBe(
+      false,
+    );
   });
 });

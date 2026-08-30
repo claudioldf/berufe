@@ -54,9 +54,19 @@ const ButtonStub = defineComponent({
     '<button :disabled="disabled" @click="$emit(\'click\')"><slot /></button>',
 });
 const SaveBarStub = defineComponent({
-  emits: ["share"],
-  template:
-    '<button class="request-share" @click="$emit(\'share\')">Share</button>',
+  props: { error: { type: String, default: "" } },
+  emits: ["save", "share"],
+  template: `
+    <div>
+      <p class="save-bar-error">{{ error }}</p>
+      <button class="save-draft" @click="$emit('save')">Save draft</button>
+      <button class="request-share" @click="$emit('share')">Share</button>
+    </div>
+  `,
+});
+const CustomerFieldsStub = defineComponent({
+  props: { errors: { type: Object, default: undefined } },
+  template: '<p class="customer-name-error">{{ errors?.customerName }}</p>',
 });
 
 describe("quote share controls", () => {
@@ -182,11 +192,12 @@ describe("quote share controls", () => {
     expect(wrapper.emitted("prepareShare")?.[0]?.[0]).toMatchObject({
       id: null,
       customerName: quote.customerName,
+      status: "saved",
     });
     expect(wrapper.emitted("update:shareOpen")).toBeUndefined();
   });
 
-  it("opens share options immediately for an unchanged saved quote", async () => {
+  it("promotes a persisted draft to saved before opening share options", async () => {
     const wrapper = mount(QuoteBuilder, {
       props: {
         initialQuote: quote,
@@ -216,7 +227,136 @@ describe("quote share controls", () => {
 
     await wrapper.get(".request-share").trigger("click");
 
+    expect(wrapper.emitted("prepareShare")?.[0]?.[0]).toMatchObject({
+      id: quote.id,
+      status: "saved",
+    });
+    expect(wrapper.emitted("update:shareOpen")).toBeUndefined();
+  });
+
+  it("opens share options immediately for an unchanged saved quote", async () => {
+    const wrapper = mount(QuoteBuilder, {
+      props: {
+        initialQuote: { ...quote, status: "saved" },
+        professional,
+        shareOpen: false,
+        savingIntent: null,
+        saveError: "",
+        sharingMethod: null,
+        shareError: "",
+        shareEnabled: true,
+      },
+      global: {
+        stubs: {
+          DashboardQuoteCustomerFields: true,
+          DashboardQuoteServiceFields: true,
+          DashboardQuoteChangeRequests: true,
+          DashboardQuoteLineItemsEditor: true,
+          DashboardQuoteNotesField: true,
+          DashboardQuoteSaveBar: SaveBarStub,
+          QuotesQuotePreview: true,
+          UModal: ModalStub,
+          UButton: ButtonStub,
+          UIcon: true,
+        },
+      },
+    });
+
+    await wrapper.get(".request-share").trigger("click");
+
     expect(wrapper.emitted("prepareShare")).toBeUndefined();
     expect(wrapper.emitted("update:shareOpen")).toEqual([[true]]);
+  });
+
+  it("reveals inline errors and blocks invalid submissions", async () => {
+    const wrapper = mount(QuoteBuilder, {
+      props: {
+        initialQuote: {
+          ...quote,
+          id: null,
+          number: null,
+          customerName: "",
+          validUntil: "",
+        },
+        professional,
+        savingIntent: null,
+        saveError: "",
+        sharingMethod: null,
+        shareError: "",
+        shareEnabled: true,
+      },
+      global: {
+        stubs: {
+          DashboardQuoteCustomerFields: CustomerFieldsStub,
+          DashboardQuoteServiceFields: true,
+          DashboardQuoteChangeRequests: true,
+          DashboardQuoteLineItemsEditor: true,
+          DashboardQuoteNotesField: true,
+          DashboardQuoteSaveBar: SaveBarStub,
+          QuotesQuotePreview: true,
+          UModal: ModalStub,
+          UButton: ButtonStub,
+          UIcon: true,
+        },
+      },
+    });
+
+    expect(wrapper.get(".customer-name-error").text()).toBe("");
+    await wrapper.get(".request-share").trigger("click");
+
+    expect(wrapper.emitted("prepareShare")).toBeUndefined();
+    expect(wrapper.emitted("update:shareOpen")).toBeUndefined();
+    expect(wrapper.get(".customer-name-error").text()).toBe(
+      "Informe o nome do cliente.",
+    );
+    expect(wrapper.get(".save-bar-error").text()).toBe(
+      "Revise os campos destacados para continuar.",
+    );
+  });
+
+  it("allows an incomplete quote to be saved as a draft", async () => {
+    const wrapper = mount(QuoteBuilder, {
+      props: {
+        initialQuote: {
+          ...quote,
+          id: null,
+          number: null,
+          customerName: "",
+          customerPhone: "",
+          serviceDescription: "",
+          validUntil: "",
+          items: [{ ...quote.items[0]!, description: "" }],
+        },
+        professional,
+        savingIntent: null,
+        saveError: "",
+        sharingMethod: null,
+        shareError: "",
+        shareEnabled: true,
+      },
+      global: {
+        stubs: {
+          DashboardQuoteCustomerFields: CustomerFieldsStub,
+          DashboardQuoteServiceFields: true,
+          DashboardQuoteChangeRequests: true,
+          DashboardQuoteLineItemsEditor: true,
+          DashboardQuoteNotesField: true,
+          DashboardQuoteSaveBar: SaveBarStub,
+          QuotesQuotePreview: true,
+          UModal: ModalStub,
+          UButton: ButtonStub,
+          UIcon: true,
+        },
+      },
+    });
+
+    await wrapper.get(".save-draft").trigger("click");
+
+    expect(wrapper.emitted("save")?.[0]?.[0]).toMatchObject({
+      status: "draft",
+      customerName: "",
+      serviceDescription: "",
+    });
+    expect(wrapper.get(".customer-name-error").text()).toBe("");
   });
 });

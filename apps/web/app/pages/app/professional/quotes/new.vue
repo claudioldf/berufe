@@ -19,6 +19,7 @@ import {
   updateProfessionalQuote,
 } from "~/services/api/professional-quotes";
 import { fetchProfessionalWorkspace } from "~/services/api/professional-workspace";
+import { quoteDateAfterDays, withDefaultQuoteValidity } from "~/utils/quotes";
 
 definePageMeta({ layout: "workspace" });
 
@@ -53,7 +54,7 @@ const editor = await useAsyncData(
             )
           : Promise.resolve(createEmptyQuote()),
     ]);
-    return { workspace, quote };
+    return { workspace, quote: withDefaultQuoteValidity(quote) };
   },
 );
 const savingIntent = shallowRef<QuoteSaveIntent | null>(null);
@@ -87,6 +88,7 @@ const shareEnabled = computed(() => {
 const quoteStatusLabel = computed(() => {
   const labels = {
     draft: "Rascunho",
+    saved: "Aguardando envio ao cliente",
     shared: "Aguardando resposta",
     change_requested: "Alteração solicitada",
     approved: "Aprovado",
@@ -125,7 +127,7 @@ function createEmptyQuote(
     serviceDescription: "",
     serviceAddress: "",
     scheduledOn: "",
-    validUntil: "",
+    validUntil: quoteDateAfterDays(30),
     discount: 0,
     notes: "",
     status: "draft",
@@ -205,7 +207,7 @@ async function saveQuote(draft: QuoteDraft) {
 async function prepareShare(draft: QuoteDraft) {
   shareError.value = "";
   const saved = await persistQuote(draft, "share");
-  if (saved) shareOpen.value = true;
+  if (saved && shareEnabled.value) shareOpen.value = true;
 }
 
 async function shareQuote(method: QuoteShareMethod) {

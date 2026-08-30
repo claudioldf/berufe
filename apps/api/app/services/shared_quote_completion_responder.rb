@@ -43,7 +43,11 @@ class SharedQuoteCompletionResponder
           completion_issue_message: normalized_message
         )
       else
-        job.update!(status: "completed", completed_at: now)
+        job.update!(
+          status: "completed",
+          completed_at: now,
+          completion_confirmed_by: "customer"
+        )
         if resolved.quote.customer_email.present? && job.customer_recommendation_request.nil?
           token_value = CustomerRecommendationToken.issue
           recommendation_request = job.create_customer_recommendation_request!(

@@ -22,6 +22,21 @@ describe("design-system contracts", () => {
     expect(wrapper.get("small").attributes("id")).toBe("customer-name-hint");
   });
 
+  it("marks the field wrapper as invalid when it receives an error", () => {
+    const wrapper = mount(FormField, {
+      props: {
+        id: "customer-email",
+        label: "E-mail",
+        error: "Informe um e-mail válido.",
+      },
+      slots: { default: '<input id="customer-email">' },
+    });
+
+    expect(wrapper.get("label").classes()).toContain("form-field--invalid");
+    expect(wrapper.get("small").attributes("id")).toBe("customer-email-error");
+    expect(wrapper.get("small").text()).toBe("Informe um e-mail válido.");
+  });
+
   it("renders semantic heading levels independently from visual variants", () => {
     const wrapper = mount(Heading, {
       props: { as: "h1", variant: "workspace" },

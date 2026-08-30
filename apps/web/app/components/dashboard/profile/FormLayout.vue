@@ -91,6 +91,17 @@
   }
   .phone-field input {
     border: 0;
+    background: transparent;
+  }
+  .phone-field--invalid {
+    border-color: var(--color-danger);
+    background: var(--color-danger-tint);
+  }
+  .phone-field--invalid:focus-within {
+    box-shadow: 0 0 0 3px rgb(180 35 24 / 16%);
+  }
+  .phone-field--invalid input:focus-visible {
+    box-shadow: none;
   }
   .service-picker {
     display: grid;

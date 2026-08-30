@@ -4,6 +4,7 @@ import type { QuoteSaveIntent } from "~/types";
 const props = defineProps<{
   saved: boolean;
   shared: boolean;
+  readyToShare: boolean;
   valid: boolean;
   savingIntent: QuoteSaveIntent | null;
   error: string;
@@ -20,15 +21,17 @@ const pending = computed(() => props.savingIntent !== null);
 const statusText = computed(() => {
   if (props.error) return props.error;
   if (props.savingIntent === "share") {
-    return "Salvando antes de compartilhar…";
+    return "Salvando orçamento…";
   }
   if (props.savingIntent === "draft") return "Salvando rascunho…";
+  if (!props.valid) return "Preencha os campos obrigatórios";
   if (!props.saved) return "Alterações não salvas";
-  return props.shared ? "Compartilhado" : "Rascunho salvo";
+  if (props.shared) return "Compartilhado";
+  return props.readyToShare ? "Aguardando envio ao cliente" : "Rascunho salvo";
 });
 const shareLabel = computed(() => {
   if (props.savingIntent === "share") return "Salvando…";
-  return props.saved ? "Compartilhar" : "Salvar e compartilhar";
+  return props.readyToShare ? "Compartilhar" : "Salvar";
 });
 </script>
 
@@ -61,16 +64,16 @@ const shareLabel = computed(() => {
         color="neutral"
         variant="outline"
         :loading="savingIntent === 'draft'"
-        :disabled="!valid || saved || pending"
+        :disabled="saved || pending"
         @click="$emit('save')"
       >
         Salvar rascunho
       </UButton>
       <UButton
         color="primary"
-        icon="i-lucide-send"
+        :icon="readyToShare ? 'i-lucide-send' : 'i-lucide-check'"
         :loading="savingIntent === 'share'"
-        :disabled="!valid || !shareEnabled || pending"
+        :disabled="(readyToShare && !shareEnabled) || pending"
         @click="$emit('share')"
       >
         {{ shareLabel }}

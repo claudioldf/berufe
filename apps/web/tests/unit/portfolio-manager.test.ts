@@ -1,4 +1,5 @@
 import { mount } from "@vue/test-utils";
+import { nextTick } from "vue";
 import PortfolioManager from "~/components/dashboard/PortfolioManager.vue";
 import PortfolioUploadForm from "~/components/dashboard/portfolio/UploadForm.vue";
 import type { ProfessionalPortfolioItem } from "~/types";
@@ -37,6 +38,28 @@ describe("professional portfolio manager", () => {
     expect(wrapper.text()).toContain("cozinha.png");
   });
 
+  it("reveals required errors and focuses the first field after submit", async () => {
+    const wrapper = mount(PortfolioUploadForm, {
+      attachTo: document.body,
+      props: { serviceOptions: [] },
+    });
+    const submit = wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("Adicionar ao perfil"));
+
+    expect(submit?.attributes("disabled")).toBeUndefined();
+    await wrapper.get("form").trigger("submit");
+    await nextTick();
+
+    const file = wrapper.get<HTMLInputElement>('input[name="portfolio-image"]');
+    expect(wrapper.text()).toContain("Selecione uma imagem JPG ou PNG.");
+    expect(wrapper.text()).toContain("Informe o título do trabalho.");
+    expect(file.attributes("aria-invalid")).toBe("true");
+    expect(document.activeElement).toBe(file.element);
+    expect(wrapper.emitted("submitted")).toBeUndefined();
+    wrapper.unmount();
+  });
+
   it("explains the value of a portfolio and opens the first upload", async () => {
     const wrapper = mount(PortfolioManager, {
       props: { items: [], serviceOptions: ["Eletricista"] },
@@ -48,6 +71,7 @@ describe("professional portfolio manager", () => {
     expect(wrapper.text()).toContain(
       "Imagens em destaque no seu perfil público",
     );
+    expect(wrapper.text()).toContain("Meus trabalhos");
     expect(wrapper.text()).not.toContain("Seu trabalho na prática");
     expect(wrapper.find(".portfolio-manager__grid").exists()).toBe(false);
 
@@ -78,6 +102,7 @@ describe("professional portfolio manager", () => {
       approvedItem.image,
     );
     expect(wrapper.text()).toContain("Aprovado");
+    expect(wrapper.get("h2").text()).toBe("Meus trabalhos");
   });
 
   it("shows private owner status and uses the existing card action for soft deletion", async () => {

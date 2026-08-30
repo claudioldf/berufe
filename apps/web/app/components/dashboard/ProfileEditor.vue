@@ -6,6 +6,7 @@ import type {
   Service,
 } from "~/types";
 import { useProfessionalProfileDraft } from "~/composables/useProfessionalProfileDraft";
+import { useInlineFormValidation } from "~/composables/useInlineFormValidation";
 
 const props = defineProps<{
   professional: Professional;
@@ -22,11 +23,14 @@ const emit = defineEmits<{
   photoRetry: [];
   photoRemove: [];
 }>();
+const formRoot = useTemplateRef<HTMLFormElement>("formRoot");
 
 const {
   form,
   saved,
   socialErrors,
+  validation,
+  isValid,
   markDirty,
   validateSocialField,
   clearSocialError,
@@ -34,15 +38,46 @@ const {
   commit,
   confirmSaved,
 } = useProfessionalProfileDraft(() => props.professional);
+const { validationAttempted, revealValidation, resetValidation } =
+  useInlineFormValidation(formRoot);
+const identityErrors = computed(() =>
+  validationAttempted.value ? validation.value.identity : undefined,
+);
+const displayedSocialErrors = computed(() => ({
+  instagram:
+    socialErrors.instagram ||
+    (validationAttempted.value ? validation.value.social.instagram : ""),
+  youtube:
+    socialErrors.youtube ||
+    (validationAttempted.value ? validation.value.social.youtube : ""),
+}));
+const servicesError = computed(() =>
+  validationAttempted.value ? validation.value.services : "",
+);
+const coverageError = computed(() =>
+  validationAttempted.value ? validation.value.coverage : "",
+);
+
+watch(
+  () => props.professional.id,
+  () => resetValidation(),
+);
 
 function save() {
+  if (!revealValidation(isValid.value)) return;
   const draft = commit();
   if (draft) emit("save", draft, confirmSaved);
 }
 </script>
 
 <template>
-  <form class="profile-editor" @input="markDirty" @submit.prevent="save">
+  <form
+    ref="formRoot"
+    class="profile-editor"
+    novalidate
+    @input="markDirty"
+    @submit.prevent="save"
+  >
     <DashboardProfileFormLayout>
       <DashboardProfileIdentitySection
         v-model="form"
@@ -51,24 +86,35 @@ function save() {
         :photo-removing="props.photoRemoving"
         allow-photo-removal
         :photo-error="props.photoError"
+        :errors="identityErrors"
         @photo-select="emit('photoSelect', $event)"
         @photo-retry="emit('photoRetry')"
         @photo-remove="emit('photoRemove')"
       />
       <DashboardProfileSocialSection
         v-model="form"
-        :errors="socialErrors"
+        :errors="displayedSocialErrors"
         @clear="clearSocialError"
         @validate="validateSocialField"
       />
       <DashboardProfileServicesSection
         v-model="form"
         :services="props.services"
+        :error="servicesError"
         @toggle="toggleService"
       />
-      <DashboardProfileCoverageSection v-model="form" @dirty="markDirty" />
+      <DashboardProfileCoverageSection
+        v-model="form"
+        :error="coverageError"
+        @dirty="markDirty"
+      />
     </DashboardProfileFormLayout>
-    <DashboardProfileSaveBar :saved="saved" :saving="props.saving" />
+    <DashboardProfileSaveBar
+      :saved="saved"
+      :saving="props.saving"
+      :valid="isValid"
+      :validation-attempted="validationAttempted"
+    />
   </form>
 </template>
 

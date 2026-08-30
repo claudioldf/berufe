@@ -16,11 +16,16 @@ class ProfessionalQuoteWriter
   QUOTE_FIELDS = %i[
     service_description service_address scheduled_on discount_amount valid_until notes
   ].freeze
+  WRITABLE_STATUSES = %w[draft saved].freeze
   ITEM_FIELDS = %i[description quantity unit unit_price].freeze
 
   def call(profile:, attributes:, quote: nil)
     created = quote.nil?
     expected_version = attributes[:revision]
+    requested_status = attributes[:status].to_s.presence
+    if requested_status && !requested_status.in?(WRITABLE_STATUSES)
+      raise Invalid.new(status: ["não é válido"])
+    end
 
     ApplicationRecord.transaction do
       if created
@@ -36,14 +41,21 @@ class ProfessionalQuoteWriter
         quote.quote_items.destroy_all
       end
 
-      customer = resolve_customer!(profile:, attributes: attributes.fetch(:customer, {}))
+      if created || quote.draft? || quote.saved?
+        quote.status = requested_status if requested_status
+      end
       quote.assign_attributes(attributes.slice(*QUOTE_FIELDS))
-      quote.assign_attributes(
-        customer:,
-        customer_name: customer.name,
-        customer_phone_e164: customer.whatsapp_e164,
-        customer_email: customer.email
-      )
+      if quote.draft? && !complete_customer_attributes?(attributes.fetch(:customer, {}))
+        assign_draft_customer!(quote:, profile:, attributes: attributes.fetch(:customer, {}))
+      else
+        customer = resolve_customer!(profile:, attributes: attributes.fetch(:customer, {}))
+        quote.assign_attributes(
+          customer:,
+          customer_name: customer.name,
+          customer_phone_e164: customer.whatsapp_e164,
+          customer_email: customer.email
+        )
+      end
       Array(attributes[:items]).each_with_index do |item_attributes, sort_order|
         quote.quote_items.build(
           item_attributes.to_h.symbolize_keys.slice(*ITEM_FIELDS).merge(sort_order:)
@@ -85,5 +97,31 @@ class ProfessionalQuoteWriter
     customer.email_verified_at = nil if customer.persisted? && normalized_email != previous_email
     customer.save!
     customer
+  end
+
+  def assign_draft_customer!(quote:, profile:, attributes:)
+    customer_attributes = attributes.to_h.symbolize_keys
+    customer = if customer_attributes[:id].present?
+      profile.customers.find(customer_attributes[:id])
+    end
+    quote.assign_attributes(
+      customer:,
+      customer_name: customer_attributes[:name].to_s,
+      customer_phone_e164: customer_attributes[:whatsapp_e164].to_s,
+      customer_email: customer_attributes[:email].to_s.presence
+    )
+  end
+
+  def complete_customer_attributes?(attributes)
+    customer_attributes = attributes.to_h.symbolize_keys
+    return false if customer_attributes[:name].blank?
+    return false if customer_attributes[:whatsapp_e164].blank?
+    return false unless customer_attributes[:email].blank? ||
+      URI::MailTo::EMAIL_REGEXP.match?(customer_attributes[:email].to_s)
+
+    BrazilianPhoneNumber.normalize(customer_attributes[:whatsapp_e164])
+    true
+  rescue BrazilianPhoneNumber::Invalid
+    false
   end
 end

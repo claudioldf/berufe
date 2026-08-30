@@ -33,6 +33,7 @@ export function mapProfessionalServiceJob(
     completionIssueAt: job.completion_issue_at,
     completionIssueMessage: job.completion_issue_message ?? "",
     completedAt: job.completed_at,
+    completionConfirmedBy: job.completion_confirmed_by,
     cancelledAt: job.cancelled_at,
     cancellationReason: job.cancellation_reason ?? "",
     recommendationRequestStatus: job.recommendation_request_status,
@@ -94,6 +95,18 @@ export async function cancelProfessionalServiceJob(
       params: { path: { id } },
       body: { cancellation: { reason: reason.trim() || null } },
     },
+  );
+  if (error || !data) throw requestError(error, response);
+  return mapProfessionalServiceJob(data.data.service_job);
+}
+
+export async function completeProfessionalServiceJob(
+  client: BerufeApiClient,
+  id: string,
+): Promise<ProfessionalServiceJob> {
+  const { data, error, response } = await client.POST(
+    "/api/v1/professional/service-jobs/{id}/complete",
+    { params: { path: { id } } },
   );
   if (error || !data) throw requestError(error, response);
   return mapProfessionalServiceJob(data.data.service_job);

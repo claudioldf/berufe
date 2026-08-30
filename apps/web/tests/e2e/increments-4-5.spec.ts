@@ -56,6 +56,7 @@ test("professional dashboard prioritizes operational work responsively", async (
   await waitForNuxtHydration(page);
 
   const layout = page.locator(".dashboard-layout");
+  const quickActions = page.locator(".actions-card");
   const status = page.locator(".status-banner");
   const operational = page.locator(".dashboard-operational");
   const sidebar = page.locator(".dashboard-sidebar");
@@ -67,14 +68,33 @@ test("professional dashboard prioritizes operational work responsively", async (
   await expect(
     operational.getByText("Ferramentas", { exact: true }),
   ).toHaveCount(0);
-  await expect(sidebar.getByText("Ações rápidas")).toBeVisible();
+  await expect(quickActions).toHaveAttribute("aria-label", "Ações rápidas");
+  await expect(
+    quickActions.getByRole("heading", { name: "Ações rápidas" }),
+  ).toHaveCount(0);
+  await expect(page.locator(".actions-card")).toHaveCount(1);
+  await expect(page.locator(".dashboard-welcome .actions-card")).toHaveCount(1);
+  await expect(
+    quickActions.getByRole("link", { name: "Ver verificações" }),
+  ).toHaveCount(0);
+  await expect(quickActions.locator(".actions-card__list > *")).toHaveCount(4);
+  await expect(sidebar.getByText("Ações rápidas")).toHaveCount(0);
 
+  const quickActionsBox = await quickActions.boundingBox();
   const statusBox = await status.boundingBox();
   const operationalBox = await operational.boundingBox();
   const sidebarBox = await sidebar.boundingBox();
+  expect(quickActionsBox).not.toBeNull();
   expect(statusBox).not.toBeNull();
   expect(operationalBox).not.toBeNull();
   expect(sidebarBox).not.toBeNull();
+  expect(statusBox!.y).toBeGreaterThan(
+    quickActionsBox!.y + quickActionsBox!.height,
+  );
+  expect(Math.abs(quickActionsBox!.x - statusBox!.x)).toBeLessThanOrEqual(1);
+  expect(
+    Math.abs(quickActionsBox!.width - statusBox!.width),
+  ).toBeLessThanOrEqual(1);
 
   if (testInfo.project.name.startsWith("mobile")) {
     expect(operationalBox!.y).toBeGreaterThan(statusBox!.y + statusBox!.height);
@@ -88,10 +108,11 @@ test("professional dashboard prioritizes operational work responsively", async (
     return;
   }
 
-  expect(operationalBox!.x).toBeGreaterThan(statusBox!.x + statusBox!.width);
-  expect(Math.abs(statusBox!.x - sidebarBox!.x)).toBeLessThanOrEqual(1);
-  expect(operationalBox!.width / statusBox!.width).toBeGreaterThan(1.9);
-  expect(operationalBox!.width / statusBox!.width).toBeLessThan(2.1);
+  expect(operationalBox!.y).toBeGreaterThan(statusBox!.y + statusBox!.height);
+  expect(operationalBox!.x).toBeGreaterThan(sidebarBox!.x + sidebarBox!.width);
+  expect(Math.abs(operationalBox!.y - sidebarBox!.y)).toBeLessThanOrEqual(1);
+  expect(operationalBox!.width / sidebarBox!.width).toBeGreaterThan(1.9);
+  expect(operationalBox!.width / sidebarBox!.width).toBeLessThan(2.1);
 });
 
 test("published professional creates, previews, securely shares, and live-edits a quote", async ({
@@ -129,7 +150,7 @@ test("published professional creates, previews, securely shares, and live-edits 
       response.url().endsWith("/api/v1/professional/quotes") &&
       response.request().method() === "POST",
   );
-  await clickQuoteAction(page, "Salvar e compartilhar");
+  await clickQuoteAction(page, "Salvar");
   expect((await createResponse).status()).toBe(201);
   await expect(page).toHaveURL(/\/quotes\/new\?quote=[a-f0-9-]+$/);
   const shareDialog = page.getByRole("dialog", {

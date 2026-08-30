@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { reactive, watch } from "vue";
+import { reactive, toRef, watch } from "vue";
 import type { ProfessionalCustomer, ProfessionalCustomerDraft } from "~/types";
+import { useBrazilianMobilePhoneMask } from "~/composables/useBrazilianMobilePhoneMask";
 
 const props = withDefaults(
   defineProps<{
@@ -25,6 +26,7 @@ const draft = reactive<ProfessionalCustomerDraft>({
   phone: props.customer.phone,
   email: props.customer.email,
 });
+const maskedPhone = useBrazilianMobilePhoneMask(toRef(draft, "phone"));
 
 watch(
   () => props.customer,
@@ -86,11 +88,13 @@ function submit() {
         <template #default="{ controlId, describedBy, invalid, required }">
           <input
             :id="controlId"
-            v-model="draft.phone"
+            v-model="maskedPhone"
             name="customerPhone"
             type="tel"
             inputmode="tel"
             autocomplete="tel"
+            placeholder="(47) 9 9999-9999"
+            maxlength="16"
             :aria-describedby="describedBy"
             :aria-invalid="invalid"
             :required="required"

@@ -225,7 +225,7 @@ describe("professional relationships API", () => {
             target: {
               type: "phone",
               name: "Beto Lima",
-              phone: "+5547999991234",
+              phone: "5547999991234",
               service_ids: ["cc1e5dfa-36a2-4f13-b37c-d1a3f9d25460"],
               coverage: {
                 city_code: "4209102",

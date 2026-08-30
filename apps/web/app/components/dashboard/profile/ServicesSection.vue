@@ -3,7 +3,10 @@ import { computed } from "vue";
 import type { ProfessionalProfileDraft, Service } from "~/types";
 
 const form = defineModel<ProfessionalProfileDraft>({ required: true });
-const props = defineProps<{ services: Service[] }>();
+const props = withDefaults(
+  defineProps<{ services: Service[]; error?: string }>(),
+  { error: "" },
+);
 defineEmits<{ toggle: [name: string] }>();
 
 const sortedServices = computed(() =>
@@ -50,11 +53,16 @@ const sortedServices = computed(() =>
       v-slot="field"
       class="primary-service"
       label="Serviço principal do perfil"
+      :error="props.error"
+      required
     >
       <select
         :id="field.controlId"
         v-model="form.primaryService"
         name="primary-service"
+        required
+        :aria-describedby="field.describedBy"
+        :aria-invalid="field.invalid"
       >
         <option v-for="service in form.selectedServices" :key="service">
           {{ service }}

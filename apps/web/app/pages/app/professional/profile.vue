@@ -237,7 +237,7 @@ async function handlePortfolioRemove(id: string) {
     await deletePortfolioItem(id);
     showToast({
       title: "Trabalho excluído",
-      description: "Ele foi removido do seu portfólio.",
+      description: "Ele foi removido dos seus trabalhos.",
     });
   } catch (error) {
     showToast({

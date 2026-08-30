@@ -44,9 +44,9 @@ onMounted(() => {
 const links = computed(() => {
   if (isProfessional.value) {
     return [
-      { label: "Visão geral", to: "/app/professional" },
-      { label: "Gerenciar", to: "/app/professional/profile" },
+      { label: "Início", to: "/app/professional" },
       { label: "Orçamentos", to: "/app/professional/quotes" },
+      { label: "Gerenciar Perfil", to: "/app/professional/profile" },
     ];
   }
   if (isAdmin.value) {
@@ -221,7 +221,7 @@ function isLinkActive(to: string) {
   &__nav {
     display: flex;
     align-items: center;
-    gap: 28px;
+    gap: 36px;
   }
   &__link {
     position: relative;

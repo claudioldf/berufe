@@ -3,6 +3,7 @@ import { flushPromises } from "@vue/test-utils";
 import { defineComponent } from "vue";
 import type { Quote } from "@app/types";
 import ProfessionalQuotePage from "@app/pages/app/professional/quotes/new.vue";
+import { quoteDateAfterDays } from "@app/utils/quotes";
 
 const mocks = vi.hoisted(() => ({
   client: {},
@@ -64,7 +65,7 @@ const QuoteBuilderStub = defineComponent({
     shareOpen: Boolean,
     saveError: { type: String, default: "" },
   },
-  emits: ["prepareShare"],
+  emits: ["prepareShare", "update:shareOpen"],
   template: `
     <div>
       <button class="prepare-share" @click="$emit('prepareShare', initialQuote)">
@@ -150,6 +151,7 @@ describe("new quote customer prefill", () => {
       customerName: "Ana Cliente",
       customerPhone: "(47) 99999-2222",
       customerEmail: "cliente@example.com",
+      validUntil: quoteDateAfterDays(30),
     });
   });
 
@@ -173,11 +175,40 @@ describe("new quote customer prefill", () => {
       wrapper
         .getComponent({ name: "DashboardQuoteBuilder" })
         .props("initialQuote"),
-    ).toMatchObject({ id: quoteId, customerName: "Cliente do orçamento" });
+    ).toMatchObject({
+      id: quoteId,
+      customerName: "Cliente do orçamento",
+      validUntil: quoteDateAfterDays(30),
+    });
+  });
+
+  it("preserves the saved validity when editing an existing quote", async () => {
+    mocks.fetchQuote.mockResolvedValue({
+      ...existingQuote,
+      validUntil: "2026-10-15",
+    });
+    const wrapper = await mountSuspended(ProfessionalQuotePage, {
+      shallow: true,
+      route: `/app/professional/quotes/new?quote=${quoteId}`,
+      global: {
+        renderStubDefaultSlot: true,
+        stubs: {
+          DesignSystemContainer: ContainerStub,
+          DashboardQuoteBuilder: QuoteBuilderStub,
+        },
+      },
+    });
+    await flushPromises();
+
+    expect(
+      wrapper
+        .getComponent({ name: "DashboardQuoteBuilder" })
+        .props("initialQuote"),
+    ).toMatchObject({ validUntil: "2026-10-15" });
   });
 
   it("creates a new quote before opening the share dialog", async () => {
-    mocks.createQuote.mockResolvedValue(existingQuote);
+    mocks.createQuote.mockResolvedValue({ ...existingQuote, status: "saved" });
     const wrapper = await mountSuspended(ProfessionalQuotePage, {
       shallow: true,
       route: "/app/professional/quotes/new",
@@ -201,6 +232,13 @@ describe("new quote customer prefill", () => {
         .getComponent({ name: "DashboardQuoteBuilder" })
         .props("shareOpen"),
     ).toBe(true);
+
+    wrapper
+      .getComponent({ name: "DashboardQuoteBuilder" })
+      .vm.$emit("update:shareOpen", false);
+    await nextTick();
+
+    expect(mocks.shareQuote).not.toHaveBeenCalled();
   });
 
   it("updates an edited quote before reopening share options", async () => {

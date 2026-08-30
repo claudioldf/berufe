@@ -4,8 +4,12 @@ import { useQuoteDraft } from "~/composables/useQuoteDraft";
 import {
   cloneQuote,
   isQuoteValid,
+  isValidQuoteInputDate,
+  quoteDateAfterDays,
   quoteSubtotal,
   quoteTotal,
+  validateQuote,
+  withDefaultQuoteValidity,
 } from "~/utils/quotes";
 
 const source: Quote = {
@@ -78,6 +82,57 @@ describe("quote utilities", () => {
     expect(
       isQuoteValid({ ...source, discount: quoteSubtotal(source) + 1 }),
     ).toBe(false);
+  });
+
+  it("returns field-level messages for invalid quote values", () => {
+    const invalid = cloneQuote(source);
+    invalid.customerName = "";
+    invalid.customerPhone = "123";
+    invalid.customerEmail = "email-inválido";
+    invalid.validUntil = "2026-02-30";
+    invalid.scheduledOn = "30/09/2026";
+    invalid.serviceDescription = "";
+    invalid.items[0]!.description = "";
+    invalid.items[0]!.quantity = 0;
+    invalid.items[0]!.unit = "";
+    invalid.items[0]!.unitPrice = -1;
+    invalid.discount = quoteSubtotal(invalid) + 1;
+
+    expect(validateQuote(invalid)).toMatchObject({
+      customerName: "Informe o nome do cliente.",
+      customerPhone: "Informe um celular brasileiro válido com DDD.",
+      customerEmail: "Informe um e-mail válido.",
+      validUntil: "Informe uma data válida.",
+      scheduledOn: "Informe uma data válida.",
+      serviceDescription: "Descreva o serviço.",
+      discount: "O desconto não pode ultrapassar o subtotal.",
+      items: {
+        [source.items[0]!.id]: {
+          description: "Descreva este item.",
+          quantity: "Informe uma quantidade maior que zero.",
+          unit: "Selecione a unidade.",
+          unitPrice: "Informe um valor igual ou maior que zero.",
+        },
+      },
+    });
+  });
+
+  it("requires validity and strictly validates calendar dates", () => {
+    expect(validateQuote({ ...source, validUntil: "" }).validUntil).toBe(
+      "Informe até quando o orçamento é válido.",
+    );
+    expect(isValidQuoteInputDate("2028-02-29")).toBe(true);
+    expect(isValidQuoteInputDate("2027-02-29")).toBe(false);
+    expect(isValidQuoteInputDate("29/02/2028")).toBe(false);
+  });
+
+  it("defaults an empty validity to D+30 without replacing a saved date", () => {
+    const from = new Date(2026, 7, 29, 12);
+    expect(quoteDateAfterDays(30, from)).toBe("2026-09-28");
+    expect(
+      withDefaultQuoteValidity({ ...source, validUntil: "" }, from).validUntil,
+    ).toBe("2026-09-28");
+    expect(withDefaultQuoteValidity(source, from)).toBe(source);
   });
 });
 
