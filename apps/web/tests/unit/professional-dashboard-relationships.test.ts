@@ -504,10 +504,10 @@ describe("professional dashboard", () => {
 
     expect(wrapper.findAll("a").map((link) => link.attributes("href"))).toEqual(
       [
-        "/app/professional/profile",
         "/app/professional/profile?tab=portfolio",
         "/app/professional/profile?tab=verificacoes",
         "/app/professional/services",
+        "/app/professional/profile",
       ],
     );
     expect(wrapper.get(".actions-card").attributes("aria-label")).toBe(
@@ -517,10 +517,21 @@ describe("professional dashboard", () => {
     expect(
       wrapper.findAll("a").map((link) => link.attributes("aria-label")),
     ).toEqual([
-      "Editar perfil",
       "Adicionar novo trabalho",
       "Ver verificações",
       "Acompanhar serviços",
+      "Editar perfil",
+    ]);
+    expect(
+      wrapper
+        .findAll(".actions-card__list > *")
+        .map((action) => action.attributes("aria-label")),
+    ).toEqual([
+      "Adicionar novo trabalho",
+      "Ver verificações",
+      "Acompanhar serviços",
+      "Recomendar um profissional",
+      "Editar perfil",
     ]);
     expect(wrapper.get("button").attributes("aria-label")).toBe(
       "Recomendar um profissional",
@@ -532,6 +543,16 @@ describe("professional dashboard", () => {
       false,
     );
     expect(wrapper.findAll(".actions-card__list > *")).toHaveLength(4);
+    expect(
+      wrapper
+        .findAll(".actions-card__list > *")
+        .map((action) => action.attributes("aria-label")),
+    ).toEqual([
+      "Adicionar novo trabalho",
+      "Acompanhar serviços",
+      "Recomendar um profissional",
+      "Editar perfil",
+    ]);
 
     await wrapper.get("button").trigger("click");
     expect(wrapper.emitted("recommend")).toEqual([[]]);

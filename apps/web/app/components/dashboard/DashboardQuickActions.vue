@@ -24,15 +24,6 @@ defineEmits<{
         'actions-card__list--without-verification': identityVerified,
       }"
     >
-      <NuxtLink to="/app/professional/profile" aria-label="Editar perfil">
-        <span class="actions-card__icon">
-          <UIcon name="i-lucide-pencil" aria-hidden="true" />
-        </span>
-        <strong>
-          <span class="actions-card__label-full">Editar perfil</span>
-          <span class="actions-card__label-compact">Perfil</span>
-        </strong>
-      </NuxtLink>
       <NuxtLink
         to="/app/professional/profile?tab=portfolio"
         aria-label="Adicionar novo trabalho"
@@ -83,6 +74,15 @@ defineEmits<{
           <span class="actions-card__label-compact">Indicar</span>
         </strong>
       </button>
+      <NuxtLink to="/app/professional/profile" aria-label="Editar perfil">
+        <span class="actions-card__icon">
+          <UIcon name="i-lucide-pencil" aria-hidden="true" />
+        </span>
+        <strong>
+          <span class="actions-card__label-full">Editar perfil</span>
+          <span class="actions-card__label-compact">Perfil</span>
+        </strong>
+      </NuxtLink>
     </div>
   </DesignSystemSurfaceCard>
 </template>
