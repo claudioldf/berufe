@@ -69,6 +69,7 @@ describe("dashboard recent work", () => {
             completionIssueAt: null,
             completionIssueMessage: "",
             completedAt: null,
+            completionConfirmedBy: null,
             cancelledAt: null,
             cancellationReason: "",
             recommendationRequestStatus: null,
@@ -80,8 +81,8 @@ describe("dashboard recent work", () => {
     });
 
     const text = wrapper.text();
-    expect(text.indexOf("Orçamentos recentes.")).toBeLessThan(
-      text.indexOf("Serviços em andamento."),
+    expect(text.indexOf("Serviços em andamento.")).toBeLessThan(
+      text.indexOf("Orçamentos recentes."),
     );
     expect(text).toContain("Marina Cliente");
     expect(text).toContain("Aguardando resposta");
@@ -108,9 +109,9 @@ describe("dashboard recent work", () => {
         .findAll(".quotes-table > a")
         .map((link) => link.attributes("href")),
     ).toEqual([
+      "/app/professional/services/service-id",
       "/app/professional/quotes/new?quote=newest-quote-id",
       "/app/professional/quotes/new?quote=quote-id",
-      "/app/professional/services/service-id",
     ]);
   });
 

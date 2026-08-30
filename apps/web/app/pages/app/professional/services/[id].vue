@@ -5,6 +5,7 @@ import { useApiClient } from "~/services/api/client";
 import { ApiRequestError } from "~/services/api/errors";
 import {
   cancelProfessionalServiceJob,
+  completeProfessionalServiceJob,
   fetchProfessionalServiceJob,
   requestProfessionalServiceCompletion,
 } from "~/services/api/professional-service-jobs";
@@ -30,7 +31,13 @@ const acting = shallowRef(false);
 const actionError = shallowRef("");
 const copyFallbackUrl = shallowRef("");
 const cancelOpen = shallowRef(false);
+const completeOpen = shallowRef(false);
 const cancellationReason = shallowRef("");
+
+function invalidateServiceData() {
+  clearNuxtData("professional-service-jobs");
+  clearNuxtData("professional-workspace");
+}
 
 const statusCopy = computed(() => {
   const status = service.value?.status;
@@ -41,8 +48,15 @@ const statusCopy = computed(() => {
       "Pendência informada",
       "Resolva o ponto indicado e solicite novamente.",
     ];
-  if (status === "completed")
-    return ["Serviço concluído", "A conclusão foi confirmada pelo cliente."];
+  if (status === "completed") {
+    const confirmer = service.value?.completionConfirmedBy;
+    return [
+      "Serviço concluído",
+      confirmer === "professional"
+        ? "A conclusão foi confirmada pelo profissional."
+        : "A conclusão foi confirmada pelo cliente.",
+    ];
+  }
   if (status === "cancelled")
     return ["Serviço cancelado", "Este fluxo foi encerrado."];
   return [
@@ -58,6 +72,13 @@ const canRequestCompletion = computed(
 const canCancel = computed(
   () =>
     service.value && !["completed", "cancelled"].includes(service.value.status),
+);
+const canComplete = computed(
+  () =>
+    service.value &&
+    ["approved", "completion_requested", "completion_issue"].includes(
+      service.value.status,
+    ),
 );
 
 async function requestCompletion() {
@@ -75,6 +96,7 @@ async function requestCompletion() {
       service.value.id,
     );
     service.value = result.serviceJob;
+    invalidateServiceData();
     copyFallbackUrl.value = result.shareUrl;
     if (handoff) handoff.location.replace(result.whatsappUrl);
     else if (import.meta.client) window.location.assign(result.whatsappUrl);
@@ -109,6 +131,7 @@ async function cancelService() {
       cancellationReason.value,
     );
     cancelOpen.value = false;
+    invalidateServiceData();
     showToast({
       title: "Serviço cancelado",
       description: "O fluxo de conclusão foi encerrado.",
@@ -118,6 +141,31 @@ async function cancelService() {
       error instanceof ApiRequestError
         ? error.message
         : "Não foi possível cancelar o serviço.";
+  } finally {
+    acting.value = false;
+  }
+}
+
+async function completeService() {
+  if (!service.value || acting.value) return;
+  acting.value = true;
+  actionError.value = "";
+  try {
+    service.value = await completeProfessionalServiceJob(
+      client,
+      service.value.id,
+    );
+    completeOpen.value = false;
+    invalidateServiceData();
+    showToast({
+      title: "Serviço concluído",
+      description: "A conclusão foi confirmada por você.",
+    });
+  } catch (error) {
+    actionError.value =
+      error instanceof ApiRequestError
+        ? error.message
+        : "Não foi possível concluir o serviço.";
   } finally {
     acting.value = false;
   }
@@ -208,6 +256,14 @@ async function cancelService() {
             >Cancelar serviço</UButton
           >
           <UButton
+            v-if="canComplete"
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-circle-check-big"
+            @click="completeOpen = true"
+            >Marcar como concluído</UButton
+          >
+          <UButton
             v-if="canRequestCompletion"
             color="primary"
             icon="i-lucide-message-circle"
@@ -236,6 +292,34 @@ async function cancelService() {
         >
         <UButton color="error" :loading="acting" @click="cancelService"
           >Cancelar serviço</UButton
+        >
+      </template>
+    </UModal>
+
+    <UModal
+      v-model:open="completeOpen"
+      title="Concluir serviço"
+      description="A conclusão será registrada como confirmada por você."
+    >
+      <template #body>
+        <p>
+          Confirme apenas se o trabalho já terminou. O serviço sairá da seção
+          “Serviços em andamento”.
+        </p>
+        <p v-if="actionError" class="service-page__error" role="alert">
+          {{ actionError }}
+        </p>
+      </template>
+      <template #footer>
+        <UButton color="neutral" variant="ghost" @click="completeOpen = false"
+          >Voltar</UButton
+        >
+        <UButton
+          color="primary"
+          icon="i-lucide-check"
+          :loading="acting"
+          @click="completeService"
+          >Confirmar conclusão</UButton
         >
       </template>
     </UModal>

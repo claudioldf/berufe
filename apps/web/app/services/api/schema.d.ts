@@ -794,6 +794,25 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/professional/service-jobs/{id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm service completion as the professional */
+        post: operations["completeProfessionalServiceJob"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/professional/service-jobs/{id}/cancel": {
         parameters: {
             query?: never;
@@ -1637,6 +1656,8 @@ export interface components {
         /** @enum {string} */
         ServiceJobStatus: "approved" | "completion_requested" | "completion_issue" | "completed" | "cancelled";
         /** @enum {string} */
+        ServiceJobCompletionConfirmer: "customer" | "professional";
+        /** @enum {string} */
         RecommendationRequestStatus: "open" | "completed" | "expired";
         ProfessionalDashboardChangeRequestedQuote: {
             /** Format: uuid */
@@ -1886,6 +1907,7 @@ export interface components {
             completion_issue_message: string | null;
             /** Format: date-time */
             completed_at: string | null;
+            completion_confirmed_by: components["schemas"]["ServiceJobCompletionConfirmer"] | null;
             /** Format: date-time */
             cancelled_at: string | null;
             cancellation_reason: string | null;
@@ -4943,6 +4965,64 @@ export interface operations {
                 };
             };
             /** @description Completion cannot be requested in the current state. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    completeProfessionalServiceJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The completed service with the professional recorded as confirmer. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalServiceJobResponse"];
+                };
+            };
+            /** @description An active session is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The origin or owner is invalid. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The service does not exist. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The service is already completed or cancelled. */
             409: {
                 headers: {
                     [name: string]: unknown;
