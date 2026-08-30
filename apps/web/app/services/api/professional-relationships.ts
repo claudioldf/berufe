@@ -4,6 +4,7 @@ import type {
   ProfessionalRelationship,
   ProfessionalRelationshipType,
 } from "~/types";
+import { sanitizeBrazilianMobilePhone } from "~/utils/brazilian-phone";
 
 export type {
   ProfessionalRelationship,
@@ -130,7 +131,7 @@ export async function createProfessionalRelationship(
       : {
           type: "phone" as const,
           name: input.target.name.trim(),
-          phone: input.target.phone,
+          phone: sanitizeBrazilianMobilePhone(input.target.phone),
           service_ids: input.target.serviceIds,
           coverage: {
             city_code: input.target.coverage.cityCode,

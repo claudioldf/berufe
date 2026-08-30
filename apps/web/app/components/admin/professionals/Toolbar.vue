@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { onMounted, shallowRef, watch } from "vue";
 import { useLocations } from "~/composables/useLocations";
+import { useBrazilianMobilePhoneMask } from "~/composables/useBrazilianMobilePhoneMask";
+import { sanitizeBrazilianMobilePhone } from "~/utils/brazilian-phone";
 import type {
   AdminProfessionalSort,
   AdminProfessionalsSummary,
@@ -34,6 +36,7 @@ const { states, cities, loadStates, loadCities } = useLocations();
 
 const nameInput = shallowRef(props.q);
 const phoneInput = shallowRef(props.phone);
+const maskedPhoneInput = useBrazilianMobilePhoneMask(phoneInput);
 
 watch(
   () => props.q,
@@ -86,7 +89,7 @@ function changeSort(event: Event) {
 
 function submit() {
   emit("search", nameInput.value.trim());
-  emit("phone", phoneInput.value.trim());
+  emit("phone", sanitizeBrazilianMobilePhone(phoneInput.value));
 }
 </script>
 
@@ -157,12 +160,13 @@ function submit() {
         <span>Telefone</span>
         <input
           id="professionals-phone"
-          v-model="phoneInput"
+          v-model="maskedPhoneInput"
           name="phone"
-          type="search"
+          type="tel"
+          inputmode="tel"
           autocomplete="off"
-          maxlength="20"
-          placeholder="Somente números…"
+          maxlength="16"
+          placeholder="(47) 9 9999-9999"
         />
       </label>
       <UButton type="submit" color="primary" label="Pesquisar" />

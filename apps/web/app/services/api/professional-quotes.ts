@@ -10,7 +10,7 @@ import type {
 } from "~/types";
 import {
   formatBrazilianMobilePhone,
-  normalizeBrazilianMobilePhone,
+  sanitizeBrazilianMobilePhone,
 } from "~/utils/brazilian-phone";
 
 type ContractQuote = components["schemas"]["ProfessionalQuote"];
@@ -143,9 +143,7 @@ function writeBody(quote: QuoteDraft) {
       customer: {
         id: quote.customerId,
         name: quote.customerName,
-        whatsapp_e164:
-          normalizeBrazilianMobilePhone(quote.customerPhone) ??
-          quote.customerPhone,
+        whatsapp_e164: sanitizeBrazilianMobilePhone(quote.customerPhone),
         email: quote.customerEmail.trim() || null,
       },
       service_description: quote.serviceDescription,

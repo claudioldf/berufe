@@ -90,9 +90,12 @@ describe("administrator professionals toolbar", () => {
 
     await wrapper.get("#professionals-q").setValue("ana");
     await wrapper.get("#professionals-phone").setValue("47999996003");
+    expect(
+      wrapper.get<HTMLInputElement>("#professionals-phone").element.value,
+    ).toBe("(47) 9 9999-6003");
     await wrapper.get("form").trigger("submit");
     expect(wrapper.emitted("search")).toEqual([["ana"]]);
-    expect(wrapper.emitted("phone")).toEqual([["47999996003"]]);
+    expect(wrapper.emitted("phone")).toEqual([["5547999996003"]]);
 
     await wrapper.get("#professionals-identity").setValue("yes");
     expect(wrapper.emitted("identityVerified")).toEqual([["yes"]]);

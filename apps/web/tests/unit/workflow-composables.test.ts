@@ -84,7 +84,7 @@ describe("phone authentication", () => {
     await workflow.requestCode();
 
     expect(requestOtp).toHaveBeenCalledWith("+5547999991111");
-    expect(workflow.phone.value).toBe("(47) 99999-1111");
+    expect(workflow.phone.value).toBe("(47) 9 9999-1111");
     expect(workflow.step.value).toBe(2);
     expect(workflow.cooldown.value).toBe(30);
     expect(workflow.challengeToken.value).toBe("browser-challenge-token");

@@ -321,9 +321,7 @@ describe("relationship create dialog", () => {
     expect(detailsText.indexOf("Comentário")).toBeLessThan(
       detailsText.indexOf("Qual o serviço esse profissional oferece?"),
     );
-    await wrapper
-      .get('input[name="external-phone"]')
-      .setValue("(47) 99999-1234");
+    await wrapper.get('input[name="external-phone"]').setValue("47999991234");
     await wrapper
       .findAll("footer button")
       .find((button) => button.text().includes("Voltar"))!
@@ -336,7 +334,7 @@ describe("relationship create dialog", () => {
     expect(
       wrapper.get<HTMLInputElement>('input[name="external-phone"]').element
         .value,
-    ).toBe("(47) 99999-1234");
+    ).toBe("(47) 9 9999-1234");
     await wrapper
       .get(`input[value="cc1e5dfa-36a2-4f13-b37c-d1a3f9d25460"]`)
       .setValue(true);

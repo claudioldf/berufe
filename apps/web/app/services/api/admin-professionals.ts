@@ -1,6 +1,7 @@
 import type { AdminProfessionalFilters, AdminProfessionalPage } from "~/types";
 import type { BerufeApiClient } from "~/services/api/client";
 import { ApiRequestError, normalizeApiError } from "~/services/api/errors";
+import { sanitizeBrazilianMobilePhone } from "~/utils/brazilian-phone";
 import type { components } from "~/services/api/schema";
 
 type AdminProfessionalsData = components["schemas"]["AdminProfessionalsData"];
@@ -72,7 +73,7 @@ function query(filters: AdminProfessionalFilters) {
     page: filters.page,
     per_page: 20,
     q: filters.q || undefined,
-    phone: filters.phone || undefined,
+    phone: sanitizeBrazilianMobilePhone(filters.phone) || undefined,
     city: filters.city || undefined,
     state: filters.state || undefined,
     identity_verified:

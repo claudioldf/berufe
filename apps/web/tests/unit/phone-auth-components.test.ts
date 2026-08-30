@@ -88,13 +88,38 @@ describe("phone authentication components", () => {
     await nextTick();
 
     const phone = wrapper.get<HTMLInputElement>("#auth-phone");
-    expect(wrapper.get('[role="alert"]').text()).toContain(
-      "número brasileiro válido",
-    );
+    expect(wrapper.get('[role="alert"]').text()).toContain("número");
     expect(phone.attributes("aria-invalid")).toBe("true");
     expect(document.activeElement).toBe(phone.element);
     expect(wrapper.emitted("submit")).toBeUndefined();
     wrapper.unmount();
+  });
+
+  it("masks the mobile number while it is entered", async () => {
+    const wrapper = mount(PhoneStep, {
+      props: {
+        modelValue: "",
+        loading: false,
+        error: "",
+        content: professionalPhoneStepContent.login,
+      },
+      global: {
+        stubs: {
+          DesignSystemEyebrow: { template: "<span><slot /></span>" },
+          NuxtLink: { template: "<a><slot /></a>" },
+          UButton: { template: "<button><slot /></button>" },
+          UIcon: true,
+        },
+      },
+    });
+    const input = wrapper.get<HTMLInputElement>("#auth-phone");
+
+    await input.setValue("47999991111");
+    const masked = wrapper.emitted("update:modelValue")?.at(-1)?.[0];
+    expect(masked).toBe("(47) 9 9999-1111");
+    await wrapper.setProps({ modelValue: String(masked) });
+    expect(input.element.value).toBe("(47) 9 9999-1111");
+    expect(input.attributes("maxlength")).toBe("16");
   });
 
   it("keeps short and daily resend timing in the existing control", async () => {

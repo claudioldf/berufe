@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import type { LocationCoverageDraft } from "~/types";
 import LocationCoverageFields from "~/components/location/LocationCoverageFields.vue";
+import { useBrazilianMobilePhoneMask } from "~/composables/useBrazilianMobilePhoneMask";
 
 export type ExternalCoverageMode = "not_informed" | "informed";
 
 const phone = defineModel<string>("phone", { required: true });
+const maskedPhone = useBrazilianMobilePhoneMask(phone);
 const coverageMode = defineModel<ExternalCoverageMode>("coverageMode", {
   required: true,
 });
@@ -33,12 +35,13 @@ const props = withDefaults(
     >
       <input
         :id="field.controlId"
-        v-model="phone"
+        v-model="maskedPhone"
         name="external-phone"
         type="tel"
         inputmode="tel"
         autocomplete="tel-national"
-        placeholder="(47) 99999-9999"
+        placeholder="(47) 9 9999-9999"
+        maxlength="16"
         required
         :aria-describedby="field.describedBy"
         :aria-invalid="field.invalid"

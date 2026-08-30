@@ -175,4 +175,30 @@ describe("professional profile identity photo control", () => {
     expect(name.attributes("aria-describedby")).toBe("profile-name-error");
     expect(wrapper.get('[role="alert"]').text()).toBe("Revise o nome.");
   });
+
+  it("masks WhatsApp and applies the invalid style to the complete control", async () => {
+    const wrapper = await mountSuspended(IdentitySection, {
+      props: {
+        modelValue: { ...draft },
+        errors: {
+          name: "",
+          birthdate: "",
+          whatsapp: "Revise o WhatsApp.",
+          headline: "",
+          bio: "",
+          yearsExperience: "",
+        },
+      },
+      global,
+    });
+    const input = wrapper.get<HTMLInputElement>('input[name="whatsapp"]');
+
+    expect(input.element.value).toBe("(47) 9 9999-1111");
+    expect(input.attributes("aria-invalid")).toBe("true");
+    expect(wrapper.get(".phone-field").classes()).toContain(
+      "phone-field--invalid",
+    );
+    await input.setValue("47988882222");
+    expect(wrapper.props("modelValue").whatsapp).toBe("(47) 9 8888-2222");
+  });
 });

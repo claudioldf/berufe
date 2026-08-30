@@ -125,6 +125,17 @@ describe("quote customer fields", () => {
     ).toBe("true");
   });
 
+  it("masks the customer's WhatsApp as it is entered", async () => {
+    const { quote, wrapper } = await mountCustomerFields();
+    const phone = wrapper.get<HTMLInputElement>('input[name="customerPhone"]');
+
+    await phone.setValue("47999991111");
+
+    expect(phone.element.value).toBe("(47) 9 9999-1111");
+    expect(quote.customerPhone).toBe("(47) 9 9999-1111");
+    expect(phone.attributes("maxlength")).toBe("16");
+  });
+
   it("shows loading immediately and searches only after typing pauses", async () => {
     const { wrapper } = await mountCustomerFields();
     vi.useFakeTimers();

@@ -109,7 +109,7 @@ describe("administrator professional directory API", () => {
       {
         page: 2,
         q: "ana",
-        phone: "47999996003",
+        phone: "(47) 9 9999-6003",
         city: "4209102",
         state: "SC",
         identityVerified: "yes",
@@ -125,7 +125,7 @@ describe("administrator professional directory API", () => {
           page: 2,
           per_page: 20,
           q: "ana",
-          phone: "47999996003",
+          phone: "5547999996003",
           city: "4209102",
           state: "SC",
           identity_verified: "yes",

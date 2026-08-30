@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, useTemplateRef } from "vue";
+import { useBrazilianMobilePhoneMask } from "~/composables/useBrazilianMobilePhoneMask";
 import { useInlineFormValidation } from "~/composables/useInlineFormValidation";
 import type { ProfessionalPhoneStepContent } from "~/utils/professional-auth";
 import { normalizeBrazilianMobilePhone } from "~/utils/brazilian-phone";
@@ -11,6 +12,7 @@ const props = defineProps<{
   content: ProfessionalPhoneStepContent;
 }>();
 const emit = defineEmits<{ submit: [] }>();
+const maskedPhone = useBrazilianMobilePhoneMask(phone);
 const formRoot = useTemplateRef<HTMLFormElement>("formRoot");
 const { validationAttempted, revealValidation } =
   useInlineFormValidation(formRoot);
@@ -45,11 +47,13 @@ function submit() {
           <span aria-hidden="true">🇧🇷 +55</span>
           <input
             id="auth-phone"
-            v-model="phone"
+            v-model="maskedPhone"
             name="phone"
             type="tel"
             inputmode="tel"
             autocomplete="tel"
+            placeholder="(47) 9 9999-9999"
+            maxlength="16"
             required
             :aria-describedby="displayedError ? 'phone-step-error' : undefined"
             :aria-invalid="displayedError ? 'true' : undefined"

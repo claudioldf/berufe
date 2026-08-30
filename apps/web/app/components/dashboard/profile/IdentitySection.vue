@@ -6,6 +6,7 @@ import type {
 } from "~/types";
 import type { ProfessionalProfileValidation } from "~/composables/useProfessionalProfileDraft";
 import { useImagePreview } from "~/composables/useImagePreview";
+import { useBrazilianMobilePhoneMask } from "~/composables/useBrazilianMobilePhoneMask";
 import { validateOnboardingImage } from "~/composables/useProfessionalOnboarding";
 
 const form = defineModel<ProfessionalProfileDraft>({ required: true });
@@ -33,6 +34,14 @@ const emit = defineEmits<{
   photoRemove: [];
 }>();
 const photoInput = useTemplateRef<HTMLInputElement>("photo-input");
+const maskedWhatsapp = useBrazilianMobilePhoneMask(
+  computed({
+    get: () => form.value.whatsapp,
+    set: (value) => {
+      form.value.whatsapp = value;
+    },
+  }),
+);
 const selectionError = shallowRef("");
 const photoRemovalOpen = shallowRef(false);
 const {
@@ -254,15 +263,20 @@ function selectPhoto(event: Event) {
         hint="O número não aparece como texto público, mas possibilita que os clientes entrem em contato com você."
         :error="props.errors?.whatsapp"
       >
-        <div class="phone-field">
+        <div
+          class="phone-field"
+          :class="{ 'phone-field--invalid': field.invalid }"
+        >
           <em aria-hidden="true">+55</em>
           <input
             :id="field.controlId"
-            v-model="form.whatsapp"
+            v-model="maskedWhatsapp"
             name="whatsapp"
             type="tel"
             inputmode="tel"
             autocomplete="tel"
+            placeholder="(47) 9 9999-9999"
+            maxlength="16"
             :aria-describedby="field.describedBy"
             :aria-invalid="field.invalid"
           />

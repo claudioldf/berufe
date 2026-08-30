@@ -6,6 +6,7 @@ import {
   searchProfessionalCustomerCandidates,
   type ProfessionalCustomerCandidate,
 } from "~/services/api/professional-customers";
+import { useBrazilianMobilePhoneMask } from "~/composables/useBrazilianMobilePhoneMask";
 
 const CUSTOMER_SEARCH_DEBOUNCE_MS = 500;
 
@@ -13,6 +14,14 @@ const props = defineProps<{ errors?: QuoteValidationErrors }>();
 const quote = defineModel<Quote>({ required: true });
 const emit = defineEmits<{ dirty: [] }>();
 const client = useApiClient();
+const maskedCustomerPhone = useBrazilianMobilePhoneMask(
+  computed({
+    get: () => quote.value.customerPhone,
+    set: (value) => {
+      quote.value.customerPhone = value;
+    },
+  }),
+);
 const candidates = shallowRef<ProfessionalCustomerCandidate[]>([]);
 const candidateSearchPending = shallowRef(false);
 const candidateSearchActive = shallowRef(false);
@@ -191,15 +200,16 @@ function markContactDirty() {
       >
         <input
           :id="field.controlId"
-          v-model="quote.customerPhone"
+          v-model="maskedCustomerPhone"
           name="customerPhone"
           type="tel"
+          inputmode="tel"
           autocomplete="tel"
-          placeholder="(47) 99999-9999"
+          placeholder="(47) 9 9999-9999"
           :aria-describedby="field.describedBy"
           :aria-invalid="field.invalid"
           required
-          maxlength="20"
+          maxlength="16"
         />
       </DesignSystemFormField>
       <DesignSystemFormField
