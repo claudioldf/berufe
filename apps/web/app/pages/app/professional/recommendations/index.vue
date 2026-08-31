@@ -24,7 +24,7 @@ const actionError = shallowRef("");
 const hideOpenId = shallowRef<string | null>(null);
 const hideReason = shallowRef("");
 const actingReason = computed(() =>
-  acting.value ? "Aguarde a ação em andamento terminar" : null,
+  acting.value ? "Aguarde a atualização da recomendação terminar." : null,
 );
 
 const hideModalOpen = computed({
