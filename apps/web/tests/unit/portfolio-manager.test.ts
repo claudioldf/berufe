@@ -1,5 +1,5 @@
 import { mount } from "@vue/test-utils";
-import { nextTick } from "vue";
+import { defineComponent, nextTick } from "vue";
 import PortfolioManager from "~/components/dashboard/PortfolioManager.vue";
 import PortfolioUploadForm from "~/components/dashboard/portfolio/UploadForm.vue";
 import type { ProfessionalPortfolioItem } from "~/types";
@@ -12,6 +12,10 @@ const portfolioItem: ProfessionalPortfolioItem = {
   image: null,
   submittedAt: "2026-08-17T12:00:00Z",
 };
+const TooltipStub = defineComponent({
+  props: { reason: { type: String, default: null } },
+  template: `<div :data-tooltip-reason="reason ?? ''"><slot /></div>`,
+});
 
 describe("professional portfolio manager", () => {
   afterEach(() => {
@@ -92,6 +96,28 @@ describe("professional portfolio manager", () => {
         description: "Instalação completa.",
       },
     ]);
+  });
+
+  it("explains disabled portfolio actions while a work item is saved", () => {
+    const wrapper = mount(PortfolioUploadForm, {
+      props: {
+        serviceOptions: ["Eletricista"],
+        showCancel: true,
+        submitting: true,
+      },
+      global: {
+        stubs: { DesignSystemDisabledTooltip: TooltipStub },
+      },
+    });
+
+    for (const button of wrapper.findAll("button")) {
+      expect(button.attributes("disabled")).toBeDefined();
+      expect(
+        button.element
+          .closest("[data-tooltip-reason]")
+          ?.getAttribute("data-tooltip-reason"),
+      ).toBe("Aguarde o salvamento do trabalho terminar.");
+    }
   });
 
   it("explains the value of a portfolio and opens the first upload", async () => {
