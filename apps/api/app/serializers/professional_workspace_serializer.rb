@@ -18,9 +18,8 @@ class ProfessionalWorkspaceSerializer
         is_public: profile.publicly_available?,
         is_search_eligible: profile.search_eligible?,
         is_indexable: indexable?,
+        suspension_reason: profile.suspension_reason,
         publication_blockers: profile.publication_blockers,
-        revision_status: profile.working_revision.status,
-        revision_rejection_reason: profile.working_revision.rejection_reason,
         has_published_revision: profile.has_self_service_publication?,
         photo: serialized_photo,
         portfolio_items: serialized_portfolio_items,
@@ -55,14 +54,21 @@ class ProfessionalWorkspaceSerializer
     {
       local_date: Time.current.in_time_zone(ProfessionalDailyActivity::PRODUCT_TIME_ZONE).to_date.iso8601,
       readiness: ProfessionalDashboardReadiness.new(profile).as_json,
-      change_requested_quotes: serialized_change_requested_quotes,
+      action_items: ProfessionalActionInboxQuery.new.call(profile:).map do |item|
+        {
+          id: item.id,
+          kind: item.kind,
+          title: item.title,
+          subtitle: item.subtitle,
+          sort_at: item.sort_at.iso8601
+        }
+      end,
       recent_quotes: profile.quotes.newest_first.limit(5).map do |quote|
         ProfessionalQuoteSummarySerializer.new(quote).as_json
       end,
       recent_service_jobs: ServiceJob
         .joins(:quote)
-        .where(quotes: {professional_id: profile.id})
-        .where(status: %w[approved completion_requested completion_issue])
+        .where(quotes: {professional_id: profile.id}, status: "approved")
         .includes(:customer_recommendation_request, :quote)
         .order(updated_at: :desc, id: :desc)
         .limit(5)
@@ -72,37 +78,13 @@ class ProfessionalWorkspaceSerializer
     }
   end
 
-  def serialized_change_requested_quotes
-    profile.quotes
-      .where(status: "change_requested")
-      .includes(:quote_change_requests)
-      .order(customer_decided_at: :desc, id: :desc)
-      .filter_map do |quote|
-        latest_request = quote.quote_change_requests.first
-        next unless latest_request
-
-        {
-          id: quote.id,
-          quote_number: quote.quote_number,
-          customer_name: quote.customer_name,
-          service_description: quote.service_description,
-          latest_change_request: {
-            id: latest_request.id,
-            revision: latest_request.requested_revision,
-            message: latest_request.message,
-            requested_at: latest_request.requested_at.iso8601
-          }
-        }
-      end
-  end
-
   def serialized_pending_relationships
     profile.received_relationships
       .active
       .where(status: "pending")
       .includes(
-        initiator_professional: %i[user_account working_revision published_revision published_photo],
-        recipient_professional: %i[user_account working_revision published_revision published_photo]
+        initiator_professional: %i[user_account working_revision published_revision profile_photo],
+        recipient_professional: %i[user_account working_revision published_revision profile_photo]
       )
       .order(created_at: :asc, id: :asc)
       .map { |relationship| ProfessionalRelationshipSerializer.new(relationship).as_json }
@@ -116,8 +98,8 @@ class ProfessionalWorkspaceSerializer
         id: profile.id
       )
       .includes(
-        initiator_professional: %i[user_account working_revision published_revision published_photo],
-        recipient_professional: %i[user_account working_revision published_revision published_photo]
+        initiator_professional: %i[user_account working_revision published_revision profile_photo],
+        recipient_professional: %i[user_account working_revision published_revision profile_photo]
       )
       .order(created_at: :desc, id: :desc)
       .map { |relationship| ProfessionalRelationshipSerializer.new(relationship).as_json }
@@ -135,18 +117,16 @@ class ProfessionalWorkspaceSerializer
   end
 
   def serialized_photo
-    current = profile.working_photo
+    current = profile.profile_photo
     latest_upload = profile.media_uploads.where(purpose: "profile_photo").order(created_at: :desc, id: :desc).first
     latest_upload = nil if latest_upload&.attached?
     {
       current: current && {
         id: current.id,
-        status: current.status,
-        rejection_reason: current.rejection_reason,
         submitted_at: current.submitted_at.iso8601
       },
-      has_published_photo: profile.published_photo.present?,
-      published_image_url: profile.published_photo && PublicProfilePhotoImageUrl.call(profile.published_photo),
+      has_photo: current.present?,
+      image_url: current && ProfessionalProfilePhotoImageUrl.call(current),
       latest_upload: latest_upload && MediaUploadSerializer.new(latest_upload).as_json
     }
   end
@@ -158,12 +138,8 @@ class ProfessionalWorkspaceSerializer
         title: item.title,
         description: item.description,
         service: {id: item.service_id, name: item.service.name},
-        status: item.status,
-        rejection_reason: item.rejection_reason,
         submitted_at: item.submitted_at.iso8601,
-        image_url: if profile.publicly_available? && item.status.in?(%w[pending_review approved])
-                     PublicPortfolioImageUrl.call(item)
-                   end
+        image_url: ProfessionalPortfolioImageUrl.call(item)
       }
     end
   end

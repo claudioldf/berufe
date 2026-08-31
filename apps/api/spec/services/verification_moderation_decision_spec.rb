@@ -88,7 +88,7 @@ RSpec.describe "Identity-verification moderation" do
   it "rejects unsupported hide/restore transitions without changing the request" do
     expect do
       decide(request_record, "hidden", reason: "A ocultação não se aplica a uma verificação.")
-    end.to raise_error(ModerationDecision::Conflict)
+    end.to raise_error(ModerationDecision::Invalid)
 
     expect(request_record.reload.status).to eq("pending_review")
     expect(ModerationAction.count).to eq(0)
@@ -139,15 +139,11 @@ RSpec.describe "Identity-verification moderation" do
     )
     revision.professional_profile_services.create!(service:, is_primary: true)
     revision.update!(coverage_city: joinville_city, covers_whole_city: true)
-    revision.update!(status: "approved", reviewed_at: Time.current)
-    photo = create_approved_photo
+    photo = create_profile_photo
     profile.update!(
       profile_status: "published",
       published_revision: revision,
-      approved_revision: revision,
-      published_photo: photo,
-      approved_photo: photo,
-      working_photo: photo
+      profile_photo: photo
     )
   end
 
@@ -189,7 +185,7 @@ RSpec.describe "Identity-verification moderation" do
     record
   end
 
-  def create_approved_photo
+  def create_profile_photo
     upload = MediaUpload.create!(
       professional_profile: profile,
       purpose: "profile_photo",
@@ -211,15 +207,12 @@ RSpec.describe "Identity-verification moderation" do
     )
     profile.profile_photos.create!(
       media_upload: upload,
-      status: "approved",
       private_key: upload.sanitized_key,
-      public_key: "moderation/profile_photo/#{SecureRandom.uuid}.jpg",
       content_type: "image/jpeg",
       byte_size: 100,
       width: 640,
       height: 960,
-      submitted_at: Time.current,
-      reviewed_at: Time.current
+      submitted_at: Time.current
     )
   end
 end

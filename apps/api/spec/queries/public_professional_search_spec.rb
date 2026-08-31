@@ -280,7 +280,7 @@ RSpec.describe PublicProfessionalSearch do
       all_city: true,
       reviewed_at: 10.days.ago
     )
-    create_portfolio_item(portfolio, status: "approved")
+    create_portfolio_item(portfolio)
     relationship = create_published_profile(
       "+5547999997413",
       "Relação aprovada",
@@ -307,7 +307,7 @@ RSpec.describe PublicProfessionalSearch do
       status: "pending_review",
       submitted_at: Time.current
     )
-    create_portfolio_item(recent, status: "hidden")
+    create_portfolio_item(recent, deleted: true)
     create_unreviewed_relationship(recent, partner)
     tied_reviewed_at = 40.days.ago
     tied = [
@@ -379,7 +379,7 @@ RSpec.describe PublicProfessionalSearch do
     make_profile_publicly_eligible(profile, revision:, reviewed_at:)
   end
 
-  def create_portfolio_item(profile, status:)
+  def create_portfolio_item(profile, deleted: false)
     upload = MediaUpload.create!(
       professional_profile: profile,
       purpose: "portfolio_image",
@@ -402,15 +402,14 @@ RSpec.describe PublicProfessionalSearch do
     profile.portfolio_items.create!(
       media_upload: upload,
       service: electrician,
-      title: "Evidência #{status}",
-      status:,
+      title: "Evidência profissional",
       private_key: upload.sanitized_key,
-      public_key: ("public/#{SecureRandom.uuid}.png" if status == "approved"),
       content_type: "image/png",
       byte_size: 100,
       width: 640,
       height: 380,
-      submitted_at: Time.current
+      submitted_at: Time.current,
+      deleted_at: deleted ? Time.current : nil
     )
   end
 

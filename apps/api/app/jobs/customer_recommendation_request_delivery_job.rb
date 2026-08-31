@@ -17,6 +17,7 @@ class CustomerRecommendationRequestDeliveryJob < ApplicationJob
     return unless request_record
 
     request_record.with_lock do
+      return unless request_record.email_channel?
       return unless request_record.open_at?
       return if request_record.sent_at.present?
 

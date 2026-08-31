@@ -67,7 +67,7 @@ module Admin
           .where(professional_profile_id: ids, status: "approved")
           .where("identity_match_confirmed_at IS NOT NULL OR claimed_birthdate IS NULL")
           .distinct.pluck(:professional_profile_id).to_set
-        portfolios = PortfolioItem.active.where(professional_profile_id: ids, status: "approved")
+        portfolios = PortfolioItem.active.where(professional_profile_id: ids)
           .group(:professional_profile_id).having("COUNT(*) >= 3").count.keys.to_set
         relationships = ids.select { |id| public_relationship_counts[id] >= 2 }.to_set
         all = identities & portfolios & relationships
@@ -378,11 +378,20 @@ module Admin
 
       def moderation
         pending = ModerationQueueSummaryQuery.new.call(now: generated_at)
-        actions = ModerationAction.where(created_at: period.start_at...period.end_at)
+        actions = ModerationAction.where(
+          target_type: "verification_request",
+          created_at: period.start_at...period.end_at
+        )
+        profile_actions = ModerationAction.where(
+          target_type: "professional_profile",
+          created_at: period.start_at...period.end_at
+        )
         reviewed = actions.where(action: %w[approved rejected]).count
         rejected = actions.where(action: "rejected").count
         durations = moderation_durations(actions.where(action: %w[approved rejected]))
-        target_counts = actions.group(:target_type).count
+        target_counts = ModerationAction.where(
+          created_at: period.start_at...period.end_at
+        ).group(:target_type).count
         reporting = Rails.configuration.x.berufe.reporting
         {
           pending: pending[:pending_count],
@@ -393,20 +402,19 @@ module Admin
           rejected:,
           reviewed:,
           approval_rate: ratio(reviewed - rejected, reviewed),
-          hidden: actions.where(action: "hidden").count,
+          hidden: profile_actions.where(action: "hidden").count,
+          restored: profile_actions.where(action: "restored").count,
           by_target_type: ModerationAction::TARGET_TYPES.index_with { |type| target_counts.fetch(type, 0) }
         }
       end
 
       def moderation_durations(actions)
-        submitted = {
-          "profile_revision" => ProfessionalProfileRevision.where(id: actions.where(target_type: "profile_revision").select(:target_id)).pluck(:id, :submitted_at).to_h,
-          "profile_photo" => ProfessionalProfilePhoto.where(id: actions.where(target_type: "profile_photo").select(:target_id)).pluck(:id, :submitted_at).to_h,
-          "portfolio_item" => PortfolioItem.where(id: actions.where(target_type: "portfolio_item").select(:target_id)).pluck(:id, :submitted_at).to_h,
-          "verification_request" => VerificationRequest.where(id: actions.where(target_type: "verification_request").select(:target_id)).pluck(:id, :submitted_at).to_h
-        }
+        submitted = VerificationRequest
+          .where(id: actions.select(:target_id))
+          .pluck(:id, :submitted_at)
+          .to_h
         actions.filter_map do |action|
-          start = submitted.dig(action.target_type, action.target_id)
+          start = submitted[action.target_id]
           ((action.created_at - start) / 1.hour) if start
         end.sort
       end

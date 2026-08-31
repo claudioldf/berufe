@@ -33,7 +33,8 @@ class ProfessionalDashboardReadiness
     phone = revision.whatsapp_e164 || profile.user_account.phone_e164
     !!(revision.display_name.present? &&
       profile.birthdate.present? &&
-      profile.working_photo&.status&.in?(%w[pending_review approved]) &&
+      profile.profile_photo.present? &&
+      profile.profile_photo.deleted_at.nil? &&
       phone.match?(UserAccount::BRAZILIAN_MOBILE_PATTERN))
   end
 
@@ -54,7 +55,7 @@ class ProfessionalDashboardReadiness
   end
 
   def reviewable_portfolio?
-    profile.portfolio_items.active.exists?(status: %w[pending_review approved])
+    profile.portfolio_items.active.exists?
   end
 
   def approved_identity?

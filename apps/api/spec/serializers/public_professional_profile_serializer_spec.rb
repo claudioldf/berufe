@@ -25,8 +25,8 @@ RSpec.describe PublicProfessionalProfileSerializer do
     expect(described_class.new(profile).as_json).to be_nil
   end
 
-  it "publishes a material edit immediately while retaining its approved fallback" do
-    approved = profile.working_revision
+  it "publishes a material edit immediately without moderation state" do
+    revision = profile.working_revision
     category = ServiceCategory.create!(
       name: "Instalações Revision",
       slug: "instalacoes-revision",
@@ -44,18 +44,14 @@ RSpec.describe PublicProfessionalProfileSerializer do
       is_active: true,
       sort_order: 0
     )
-    approved.professional_profile_services.create!(service:, is_primary: true, note: "Quadros")
-    approved.update!(coverage_city: joinville_city, covers_whole_city: true)
-    approved.update!(status: "approved", reviewed_at: Time.current)
-    photo = create_approved_photo(profile)
+    revision.professional_profile_services.create!(service:, is_primary: true, note: "Quadros")
+    revision.update!(coverage_city: joinville_city, covers_whole_city: true)
+    photo = create_profile_photo(profile)
     profile.update!(
       birthdate: Date.new(1990, 4, 12),
       profile_status: "published",
-      published_revision: approved,
-      approved_revision: approved,
-      working_photo: photo,
-      published_photo: photo,
-      approved_photo: photo
+      published_revision: revision,
+      profile_photo: photo
     )
 
     before_edit = described_class.new(profile.reload).as_json
@@ -73,10 +69,8 @@ RSpec.describe PublicProfessionalProfileSerializer do
     )
 
     profile.reload
-    expect(profile.working_revision).not_to eq(approved)
-    expect(profile.working_revision.status).to eq("pending_review")
-    expect(profile.published_revision).to eq(profile.working_revision)
-    expect(profile.approved_revision).to eq(approved)
+    expect(profile.working_revision).to eq(revision)
+    expect(profile.published_revision).to eq(revision)
     expect(profile.working_revision.professional_profile_services.sole.service).to eq(service)
     expect(profile.working_revision).to have_attributes(
       coverage_city_code: joinville_city.code,
@@ -154,20 +148,16 @@ RSpec.describe PublicProfessionalProfileSerializer do
     )
     revision.professional_profile_services.create!(service:, is_primary: true)
     revision.update!(coverage_city: joinville_city, covers_whole_city: true)
-    revision.update!(status: "approved", reviewed_at: Time.current)
-    photo = create_approved_photo(public_profile)
+    photo = create_profile_photo(public_profile)
     public_profile.update!(
       birthdate: Date.new(1990, 4, 12),
       profile_status: "published",
       published_revision: revision,
-      approved_revision: revision,
-      working_photo: photo,
-      published_photo: photo,
-      approved_photo: photo
+      profile_photo: photo
     )
   end
 
-  def create_approved_photo(public_profile)
+  def create_profile_photo(public_profile)
     upload = MediaUpload.create!(
       professional_profile: public_profile,
       purpose: "profile_photo",
@@ -189,15 +179,12 @@ RSpec.describe PublicProfessionalProfileSerializer do
     )
     public_profile.profile_photos.create!(
       media_upload: upload,
-      status: "approved",
       private_key: upload.sanitized_key,
-      public_key: "moderation/profile_photo/#{SecureRandom.uuid}.jpg",
       content_type: "image/jpeg",
       byte_size: 100,
       width: 640,
       height: 960,
-      submitted_at: Time.current,
-      reviewed_at: Time.current
+      submitted_at: Time.current
     )
   end
 end

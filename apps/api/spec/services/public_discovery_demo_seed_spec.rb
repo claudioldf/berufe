@@ -35,13 +35,11 @@ RSpec.describe PublicDiscoveryDemoSeed do
     marcos = ProfessionalProfile.find_by!(public_slug: "marcos-alves")
     expect(marcos).to have_attributes(profile_status: "published")
     expect(marcos.published_revision).to have_attributes(
-      status: "approved",
       display_name: "Marcos Alves",
       whatsapp_e164: "+5547999991111"
     )
-    expect(marcos.published_photo).to have_attributes(status: "approved")
-    expect(marcos.published_photo.public_key).to be_present
-    expect(marcos.portfolio_items.pluck(:status).uniq).to eq(["approved"])
+    expect(marcos.profile_photo).to be_present
+    expect(marcos.portfolio_items.active.count).to be_positive
     expect(marcos.verification_requests.identity.where(status: "approved").sole.public_label).to eq(
       "Identidade verificada"
     )

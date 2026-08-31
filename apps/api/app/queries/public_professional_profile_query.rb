@@ -5,7 +5,7 @@ class PublicProfessionalProfileQuery
     ProfessionalProfile
       .publicly_viewable
       .includes(
-        :published_photo,
+        :profile_photo,
         :verification_requests,
         portfolio_items: :service,
         published_revision: {

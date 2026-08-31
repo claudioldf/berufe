@@ -97,7 +97,6 @@ RSpec.describe "Application sessions", type: :request, openapi: true do
       privacy_notice_version: LegalDocumentVersions::PRIVACY_NOTICE
     )
     revision = profile.working_revision
-    revision.update!(status: "pending_review", submitted_at: Time.current)
     profile.update!(
       profile_status: "published",
       published_revision: revision,

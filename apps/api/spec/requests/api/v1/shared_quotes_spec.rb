@@ -65,7 +65,7 @@ RSpec.describe "Shared quotes", type: :request, openapi: true do
   before { publish_profile! }
 
   it "shares once, reproduces the stable token, and resolves only current public content" do
-    photo = profile.published_photo
+    photo = profile.profile_photo
     quote.update!(status: "saved")
     expect(quote).to have_attributes(
       share_token_hash: nil,
@@ -365,40 +365,6 @@ RSpec.describe "Shared quotes", type: :request, openapi: true do
       submitted_at: 2.days.ago,
       reviewed_at: 1.day.ago,
       verified_at: 1.day.ago
-    )
-  end
-
-  def create_approved_photo!
-    upload = MediaUpload.create!(
-      professional_profile: profile,
-      purpose: "profile_photo",
-      state: "attached",
-      declared_content_type: "image/jpeg",
-      declared_byte_size: 120,
-      actual_content_type: "image/jpeg",
-      sanitized_content_type: "image/jpeg",
-      actual_byte_size: 120,
-      sanitized_byte_size: 100,
-      width: 640,
-      height: 960,
-      quarantine_key: "quarantine/#{profile.id}/#{SecureRandom.uuid}",
-      sanitized_key: "sanitized/#{profile.id}/#{SecureRandom.uuid}.jpg",
-      authorization_expires_at: 5.minutes.from_now,
-      uploaded_at: 2.days.ago,
-      processed_at: 2.days.ago,
-      attached_at: 2.days.ago
-    )
-    profile.profile_photos.create!(
-      media_upload: upload,
-      status: "approved",
-      private_key: upload.sanitized_key,
-      public_key: "moderation/profile_photo/#{SecureRandom.uuid}.jpg",
-      content_type: "image/jpeg",
-      byte_size: 100,
-      width: 640,
-      height: 960,
-      submitted_at: 2.days.ago,
-      reviewed_at: 1.day.ago
     )
   end
 

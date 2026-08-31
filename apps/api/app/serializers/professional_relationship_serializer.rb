@@ -31,8 +31,8 @@ class ProfessionalRelationshipSerializer
       public_slug: profile.public_slug,
       display_name: display_revision.display_name,
       profile_type: display_revision.profile_type,
-      photo_url: if profile_available && profile.published_photo
-                   PublicProfilePhotoImageUrl.call(profile.published_photo)
+      photo_url: if profile_available && profile.profile_photo
+                   PublicProfilePhotoImageUrl.call(profile.profile_photo)
                  end,
       profile_available:
     }

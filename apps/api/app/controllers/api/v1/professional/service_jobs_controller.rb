@@ -24,10 +24,10 @@ module Api
           render json: service_job_response(job)
         end
 
-        def request_completion
+        def request_recommendation
           job = owned_service_job!
           authorize job, :update?
-          result = ProfessionalServiceJobCompletionRequester.new.call(service_job: job)
+          result = ProfessionalServiceJobRecommendationRequester.new.call(service_job: job)
           render json: {
             data: {
               service_job: ProfessionalServiceJobSerializer.new(result.service_job),
@@ -36,7 +36,7 @@ module Api
             },
             request_id: Current.request_id
           }
-        rescue ProfessionalServiceJobCompletionRequester::Unavailable
+        rescue ProfessionalServiceJobRecommendationRequester::Unavailable
           render_unavailable
         end
 

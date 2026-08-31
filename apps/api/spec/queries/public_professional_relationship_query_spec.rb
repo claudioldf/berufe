@@ -76,21 +76,17 @@ RSpec.describe PublicProfessionalRelationshipQuery do
     )
     revision.professional_profile_services.create!(service:, is_primary: true)
     revision.update!(coverage_city: joinville_city, covers_whole_city: true)
-    revision.update!(status: "approved", reviewed_at: Time.current)
-    photo = create_approved_photo(profile)
+    photo = create_profile_photo(profile)
     profile.update!(
       birthdate: Date.new(1990, 4, 12),
       profile_status: "published",
       published_revision: revision,
-      approved_revision: revision,
-      working_photo: photo,
-      published_photo: photo,
-      approved_photo: photo
+      profile_photo: photo
     )
     profile
   end
 
-  def create_approved_photo(profile)
+  def create_profile_photo(profile)
     upload = MediaUpload.create!(
       professional_profile: profile,
       purpose: "profile_photo",
@@ -112,15 +108,12 @@ RSpec.describe PublicProfessionalRelationshipQuery do
     )
     profile.profile_photos.create!(
       media_upload: upload,
-      status: "approved",
       private_key: upload.sanitized_key,
-      public_key: "moderation/profile_photo/#{SecureRandom.uuid}.jpg",
       content_type: "image/jpeg",
       byte_size: 100,
       width: 640,
       height: 960,
-      submitted_at: Time.current,
-      reviewed_at: Time.current
+      submitted_at: Time.current
     )
   end
 

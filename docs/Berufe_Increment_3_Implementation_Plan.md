@@ -6,6 +6,8 @@
 
 **Scope:** S032–S037 — public discovery and direct contact
 
+> Historical implementation record. References to approved profile photos, portfolio items, or profile snapshots are superseded by `Berufe_Post_Publication_Moderation_Decision.md`.
+
 ## 1. Source-of-truth order
 
 This document records the approved implementation detail for Increment 3. It is read together with, in priority order:

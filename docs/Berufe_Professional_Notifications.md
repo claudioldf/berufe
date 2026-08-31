@@ -6,7 +6,7 @@ Professional notifications are a private, persisted activity inbox for active re
 
 The inbox covers these server events:
 
-- profile, profile-photo, and portfolio moderation approval, rejection, hiding, and restoration;
+- whole-profile hiding and restoration by an administrator;
 - identity-verification approval and rejection;
 - professional relationship request, acceptance, and decline;
 - quote change request, approval, and decline;

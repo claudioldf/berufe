@@ -63,7 +63,6 @@ RSpec.describe ExternalProfessionalImporter do
     revision = profile.working_revision
     expect(revision).to have_attributes(
       profile_type: "external",
-      status: "draft",
       display_name: "Adriano Silva",
       headline: "Marido de aluguel",
       bio: "Faço reparos em geral.",

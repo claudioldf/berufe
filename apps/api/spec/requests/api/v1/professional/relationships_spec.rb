@@ -387,10 +387,8 @@ RSpec.describe "Professional relationship requests", type: :request, openapi: tr
     )
     expect(revision).to have_attributes(
       profile_type: "external",
-      status: "pending_review",
       display_name: "Carla Pinturas",
-      whatsapp_e164: "+5547999981203",
-      submitted_at: now
+      whatsapp_e164: "+5547999981203"
     )
     expect(revision.professional_profile_services.sole).to have_attributes(
       service:,

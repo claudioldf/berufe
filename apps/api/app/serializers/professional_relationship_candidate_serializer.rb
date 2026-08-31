@@ -12,7 +12,7 @@ class ProfessionalRelationshipCandidateSerializer
       public_slug: profile.public_slug,
       display_name: revision.display_name,
       profile_type: revision.profile_type,
-      photo_url: profile.published_photo && PublicProfilePhotoImageUrl.call(profile.published_photo)
+      photo_url: profile.profile_photo && PublicProfilePhotoImageUrl.call(profile.profile_photo)
     }
   end
 

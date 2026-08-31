@@ -9,7 +9,7 @@ class PublicProfessionalProfileSerializer
     return nil unless profile.publicly_available?
 
     revision = profile.published_revision
-    return nil unless revision&.status&.in?(%w[pending_review approved])
+    return nil unless revision
 
     selections = revision.professional_profile_services.sort_by do |selection|
       [selection.is_primary? ? 0 : 1, selection.service.name, selection.id]
@@ -46,7 +46,7 @@ class PublicProfessionalProfileSerializer
         instagram: revision.instagram_url,
         youtube: revision.youtube_url
       },
-      public_snapshot_updated_at: (revision.submitted_at || revision.created_at).iso8601
+      public_snapshot_updated_at: revision.updated_at.iso8601
     }
     payload[:indexable] = PublicIndexability.profile_indexable?(payload)
     payload
@@ -70,8 +70,8 @@ class PublicProfessionalProfileSerializer
   end
 
   def public_photo_url
-    photo = profile.published_photo
-    return unless photo&.status&.in?(%w[pending_review approved])
+    photo = profile.profile_photo
+    return unless photo && photo.deleted_at.nil?
 
     PublicProfilePhotoImageUrl.call(photo)
   end
@@ -80,7 +80,7 @@ class PublicProfessionalProfileSerializer
     return [] if profile.external_presentation?
 
     profile.portfolio_items
-      .select { |item| item.status.in?(%w[pending_review approved]) && item.deleted_at.nil? }
+      .select { |item| item.deleted_at.nil? }
       .sort_by { |item| [-item.submitted_at.to_f, item.id] }
       .map do |item|
         {
@@ -101,8 +101,8 @@ class PublicProfessionalProfileSerializer
     PublicProfessionalRelationshipQuery
       .for_professional(profile.id)
       .includes(
-        initiator_professional: %i[published_photo published_revision],
-        recipient_professional: %i[published_photo published_revision]
+        initiator_professional: %i[profile_photo published_revision],
+        recipient_professional: %i[profile_photo published_revision]
       )
       .order(responded_at: :desc, id: :desc)
       .map { |relationship| serialize_relationship(relationship) }
@@ -110,8 +110,9 @@ class PublicProfessionalProfileSerializer
 
   def public_evidence_summary
     {
-      completed_services: completed_service_jobs.count,
+      registered_services: registered_service_jobs.count,
       recommendations: public_recommendation_records.count,
+      hidden_recommendations: hidden_recommendation_records.count,
       worked_together_professionals: accepted_worked_together_professional_ids.count
     }
   end
@@ -123,21 +124,29 @@ class PublicProfessionalProfileSerializer
         display_name: recommendation.display_name,
         recommendation_text: recommendation.recommendation_text,
         submitted_at: recommendation.submitted_at.iso8601,
-        verification_label: "Link enviado por e-mail"
+        verification_label: RecommendationVerificationLabel.call(recommendation)
       }
     end
   end
 
-  def completed_service_jobs
+  # Professional-declared completion, not customer-verified — the completion
+  # step no longer requires the customer to confirm. See Increment 9 Decision 4.
+  def registered_service_jobs
     ServiceJob.joins(:quote).where(status: "completed", quotes: {professional_id: profile.id})
   end
 
   def public_recommendation_records
+    recommendation_scope.publicly_visible.order(submitted_at: :desc, id: :desc)
+  end
+
+  def hidden_recommendation_records
+    recommendation_scope.publication_authorized.hidden_by_professional
+  end
+
+  def recommendation_scope
     CustomerRecommendation
-      .publication_authorized
       .joins(service_job: :quote)
       .where(quotes: {professional_id: profile.id})
-      .order(submitted_at: :desc, id: :desc)
   end
 
   def accepted_worked_together_professional_ids
@@ -160,7 +169,7 @@ class PublicProfessionalProfileSerializer
       relationship.initiator_professional
     end
     other_revision = other.published_revision
-    other_photo = other.published_photo
+    other_photo = other.profile_photo
 
     {
       id: relationship.id,
@@ -177,7 +186,7 @@ class PublicProfessionalProfileSerializer
   end
 
   def public_relationship_photo_url(photo)
-    return unless photo&.status&.in?(%w[pending_review approved])
+    return unless photo && photo.deleted_at.nil?
 
     PublicProfilePhotoImageUrl.call(photo)
   end

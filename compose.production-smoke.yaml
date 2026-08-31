@@ -26,7 +26,6 @@ x-api-environment: &api-environment
   R2_ENDPOINT: https://smoke-only.r2.cloudflarestorage.com
   R2_ACCESS_KEY_ID: smoke-only
   R2_SECRET_ACCESS_KEY: smoke-only
-  R2_PUBLIC_BUCKET: berufe-production-public
   R2_PRIVATE_BUCKET: berufe-production-private
   SMTP_ADDRESS: smtp.resend.com
   SMTP_PORT: "587"

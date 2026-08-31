@@ -21,15 +21,8 @@ class ProfessionalProfileSubmitter
       validate_checklist!(profile, revision)
 
       submitted_at = Time.current
-      revision.update!(
-        status: "pending_review",
-        submitted_at:,
-        reviewed_at: nil,
-        rejection_reason: nil
-      )
       profile.update!(
         published_revision: revision,
-        published_photo: profile.working_photo,
         profile_status: "published",
         published_at: profile.published_at || submitted_at
       )
@@ -46,8 +39,7 @@ class ProfessionalProfileSubmitter
   end
 
   def validate_state!(profile, revision)
-    return if profile.profile_status != "suspended" && revision.self_service? &&
-      revision.status.in?(%w[draft pending_review])
+    return if profile.profile_status != "suspended" && revision.self_service?
 
     raise Invalid.new(base: ["o perfil não está disponível para envio"])
   end
@@ -68,7 +60,7 @@ class ProfessionalProfileSubmitter
   end
 
   def photo_complete?(profile)
-    profile.working_photo&.status&.in?(%w[pending_review approved])
+    profile.profile_photo.present? && profile.profile_photo.deleted_at.nil?
   end
 
   def services_complete?(revision)

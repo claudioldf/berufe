@@ -161,10 +161,10 @@ This is the base of both trust and discovery. Without structured services and co
 2. They select services from Berufe’s approved residential renovation catalog.
 3. They select Joinville and the neighborhoods they serve. “All Joinville” is a derived selector represented by the all-city service-area record, not a managed neighborhood.
 4. They add a short introduction and declared years of experience.
-5. They add one required profile photo. JPEG and PNG uploads are processed privately into a metadata-free JPEG fitted inside 1024 × 1536 pixels. Once the profile is published, a replacement becomes public immediately and enters post-publication review; rejection restores the last approved photo or makes the profile unavailable when no fallback exists.
+5. They add one required profile photo. JPEG and PNG uploads are processed privately into a metadata-free JPEG fitted inside 1024 × 1536 pixels. Once processing succeeds, a replacement becomes the profile's current photo immediately; it does not enter moderation.
 6. They may add Instagram and YouTube profile identifiers or profile URLs. Berufe validates the platform and profile shape, then stores canonical HTTPS URLs.
 7. The editor shows an inline representation of the public fields. Each onboarding step persists immediately. The final step publishes after optional identity evidence is submitted or explicitly skipped, once name, processed photo, private birthdate, confirmed-phone contact, active service selection with exactly one primary, and Joinville coverage are valid.
-8. Material profile edits become public immediately and enter post-publication review. Approval marks the current revision reviewed; rejection restores the last approved revision or makes the profile unavailable when no fallback exists. Public pages never expose review state.
+8. Profile edits are saved immediately. For a published self-service profile, the working and public revision point to the updated content; profile information does not enter moderation.
 
 Use structured service selections rather than free-form specialties. Allow a short free-text description for context, but do not use it as the only search source. Generate a stable, shareable public slug. Instagram accepts a bare or `@` handle and a direct `instagram.com/<handle>` profile URL. YouTube accepts a bare or `@` handle and a direct `youtube.com/@<handle>` channel URL; video, playlist, post/reel, off-platform, and legacy YouTube channel-path URLs are rejected. Both fields are independently optional, and copied query strings or fragments are removed during normalization.
 
@@ -172,42 +172,35 @@ Use structured service selections rather than free-form specialties. Allow a sho
 
 **`professional_profile`**
 
-| Field                   | Type      | Rules                                               |
-| ----------------------- | --------- | --------------------------------------------------- |
-| `id`                    | UUID      | Primary key                                         |
-| `owner_user_id`         | UUID      | Foreign reference to account; unique                |
-| `public_slug`           | text      | Unique, stable, human-readable                      |
-| `working_revision_id`   | UUID      | Required private working revision pointer           |
-| `published_revision_id` | UUID      | Nullable current public snapshot pointer            |
-| `approved_revision_id`  | UUID      | Nullable last-reviewed rollback snapshot pointer    |
-| `working_photo_id`      | UUID      | Nullable private photo-review pointer               |
-| `published_photo_id`    | UUID      | Nullable current public-photo pointer               |
-| `approved_photo_id`     | UUID      | Nullable last-reviewed rollback photo pointer       |
-| `birthdate`             | date      | Required for publication; private and never public  |
-| `profile_status`        | enum      | `draft`, `pending_review`, `published`, `suspended` |
-| `created_at`            | timestamp | Required                                            |
-| `updated_at`            | timestamp | Required                                            |
+| Field                   | Type      | Rules                                              |
+| ----------------------- | --------- | -------------------------------------------------- |
+| `id`                    | UUID      | Primary key                                        |
+| `owner_user_id`         | UUID      | Foreign reference to account; unique               |
+| `public_slug`           | text      | Unique, stable, human-readable                     |
+| `working_revision_id`   | UUID      | Required private working revision pointer          |
+| `published_revision_id` | UUID      | Nullable current public snapshot pointer           |
+| `profile_photo_id`      | UUID      | Nullable current profile-photo pointer             |
+| `birthdate`             | date      | Required for publication; private and never public |
+| `profile_status`        | enum      | `draft`, `published`, `suspended`                  |
+| `created_at`            | timestamp | Required                                           |
+| `updated_at`            | timestamp | Required                                           |
 
 **`professional_profile_revision`**
 
-| Field                       | Type      | Rules                                                               |
-| --------------------------- | --------- | ------------------------------------------------------------------- |
-| `id`                        | UUID      | Primary key                                                         |
-| `professional_profile_id`   | UUID      | Owner profile                                                       |
-| `version`                   | integer   | Positive and unique per profile                                     |
-| `status`                    | enum      | `draft`, `pending_review`, `approved`, `rejected`, or `superseded`  |
-| `display_name`              | text      | Required                                                            |
-| `headline`                  | text      | Short public description                                            |
-| `bio`                       | text      | Optional; 1–2,500 characters when present                           |
-| `years_experience_declared` | smallint  | Nullable; explicitly labeled “declared”                             |
-| `whatsapp_phone_e164`       | text      | Required for submission; defaults to confirmed account phone        |
-| `instagram_url`             | text      | Nullable; canonical Instagram HTTPS profile URL                     |
-| `youtube_url`               | text      | Nullable; canonical YouTube `@handle` HTTPS URL                     |
-| `submitted_at`              | timestamp | Nullable until submitted; retained on an idempotent repeated submit |
-| `reviewed_at`               | timestamp | Nullable                                                            |
-| `rejection_reason`          | text      | Private; nullable                                                   |
-| `created_at`                | timestamp | Required                                                            |
-| `updated_at`                | timestamp | Required                                                            |
+| Field                       | Type      | Rules                                                        |
+| --------------------------- | --------- | ------------------------------------------------------------ |
+| `id`                        | UUID      | Primary key                                                  |
+| `professional_profile_id`   | UUID      | Owner profile                                                |
+| `version`                   | integer   | Positive and unique per profile                              |
+| `display_name`              | text      | Required                                                     |
+| `headline`                  | text      | Short public description                                     |
+| `bio`                       | text      | Optional; 1–2,500 characters when present                    |
+| `years_experience_declared` | smallint  | Nullable; explicitly labeled “declared”                      |
+| `whatsapp_phone_e164`       | text      | Required for submission; defaults to confirmed account phone |
+| `instagram_url`             | text      | Nullable; canonical Instagram HTTPS profile URL              |
+| `youtube_url`               | text      | Nullable; canonical YouTube `@handle` HTTPS URL              |
+| `created_at`                | timestamp | Required                                                     |
+| `updated_at`                | timestamp | Required                                                     |
 
 **`professional_profile_photo`**
 
@@ -216,16 +209,13 @@ Use structured service selections rather than free-form specialties. Allow a sho
 | `id`                      | UUID      | Primary key                                                          |
 | `professional_profile_id` | UUID      | Owner profile                                                        |
 | `media_upload_id`         | UUID      | Unique processed upload                                              |
-| `status`                  | enum      | `pending_review`, `approved`, `rejected`, `hidden`, or `superseded`  |
 | `private_key`             | text      | Required sanitized JPEG; never returned as an owner-facing media URL |
-| `public_key`              | text      | Nullable until approval                                              |
 | `content_type`            | text      | Always `image/jpeg`                                                  |
 | `byte_size`               | bigint    | Positive                                                             |
 | `width`                   | integer   | 1–1024                                                               |
 | `height`                  | integer   | 1–1536                                                               |
 | `submitted_at`            | timestamp | Required                                                             |
-| `reviewed_at`             | timestamp | Nullable                                                             |
-| `rejection_reason`        | text      | Private; nullable                                                    |
+| `deleted_at`              | timestamp | Nullable soft-deletion/replacement marker                            |
 
 **`professional_service`**
 
@@ -275,13 +265,13 @@ For renovation services, customers need visual evidence of relevant experience. 
 
 1. The professional uploads an image, selects the related service, adds a title, and optionally adds a short description.
 2. The application compresses the image and removes unnecessary image metadata.
-3. For a published profile, the item appears publicly immediately and enters post-publication moderation.
-4. Pending and approved items appear newest first with deterministic tie-breaking; rejection or hiding removes an item immediately.
-5. Limit the MVP to 12 items per professional to keep storage and moderation manageable.
+3. For a published profile, the item appears publicly immediately without moderation.
+4. Active items appear newest first with deterministic tie-breaking; deletion removes an item immediately.
+5. Limit the MVP to 12 active items per professional to control storage and keep the editor focused.
 
-Use direct-to-object-storage uploads with private objects before approval and public optimized versions after approval. Public clients always use an eligibility-checking Rails media endpoint so takedown is immediate and storage keys never leak.
+Use direct-to-object-storage uploads with private sanitized objects. Public clients always use an eligibility-checking Rails media endpoint so deletion or whole-profile suspension is immediate and storage keys never leak.
 
-For profile identity, services, and coverage, each saved material edit becomes the complete public snapshot immediately. A separate last-approved pointer provides deterministic rollback on rejection and prevents serializers from mixing revision fields.
+For profile identity, services, and coverage, each saved edit updates the complete public snapshot immediately when the self-service profile is published.
 
 #### 4. Suggested feature-scoped data schema
 
@@ -294,10 +284,8 @@ For profile identity, services, and coverage, each saved material edit becomes t
 | `media_upload_id`         | UUID      | Unique processed `portfolio_image` upload               |
 | `service_id`              | UUID      | Active service selected on the working profile revision |
 | `private_key`             | text      | Required sanitized private JPEG or PNG                  |
-| `public_key`              | text      | Nullable until approval                                 |
 | `title`                   | text      | Required; 1–80 characters                               |
 | `description`             | text      | Nullable; at most 300 characters                        |
-| `status`                  | enum      | `pending_review`, `approved`, `rejected`, or `hidden`   |
 | `submitted_at`            | timestamp | Required                                                |
 | `deleted_at`              | timestamp | Nullable soft-deletion marker                           |
 | `created_at`              | timestamp | Required                                                |
@@ -408,7 +396,7 @@ The dashboard contains:
 - Pending professional relationship confirmations.
 - Primary actions: edit profile, add a portfolio item, request identity verification, manage existing-member relationships, and create a quote.
 
-Profile readiness is calculated as four equally weighted rows: complete identity/contact data, valid service/coverage data, at least one reviewable pending-or-approved portfolio item, and approved identity verification. Rejected, hidden, or deleted work does not complete the portfolio row.
+Profile readiness is calculated as four equally weighted rows: complete identity/contact data, valid service/coverage data, at least one active portfolio item, and approved identity verification. Deleted work does not complete the portfolio row.
 
 The share action opens the device share sheet when available and falls back to copying the stable URL. Berufe still records the minimal privacy-friendly search/profile/contact aggregates required to evaluate the MVP, but professional-facing activity reporting is deferred.
 
@@ -515,7 +503,7 @@ MVP ordering is simple and explainable:
 1. Exact service match.
 2. Serves the selected neighborhood.
 3. Identity verified.
-4. Has approved portfolio evidence.
+4. Has active portfolio evidence.
 5. Has approved professional recommendations or confirmed collaborations.
 6. Most recently updated profile as a final tie-breaker.
 
@@ -735,25 +723,25 @@ and are explicitly labeled as quote values rather than payments received.
 
 ## E. Berufe Admin
 
-### Feature E1 — Verification and moderation queue
+### Feature E1 — Identity verification queue and profile publication audit
 
 #### 1. Summary
 
-Gives a small Berufe operations team one place to approve identity-verification requests and moderate profiles and portfolios.
+Gives a small Berufe operations team one place to approve or reject identity-verification requests. It also reuses the immutable audit structure when an administrator unpublishes or restores an entire professional profile from the professional directory.
 
 #### 2. Why we need it
 
-The public promise depends on accurate evidence and controlled content. With only 30–50 founding professionals, manual review is simpler and safer than building premature automated fraud systems.
+The public identity label depends on accurate evidence. With only 30–50 founding professionals, manual document review is simpler and safer than building premature automated fraud systems. Other profile content is self-managed and does not enter this queue.
 
 #### 3. How it works and implementation overview
 
 1. Admins sign in with an admin role and stronger authentication controls.
-2. The queue groups pending items by type and oldest submission.
-3. The reviewer sees only the information required for that review. The existing content-preview block retrieves regenerated profile-photo and portfolio images through authenticated, no-store Rails responses and records the administrator, target, request, and access time without returning a storage key or permanent private URL.
-4. They approve, reject with a private reason, or hide previously approved content.
-5. Every admin decision is recorded in an audit trail.
-6. Pending profile content, profile photos, and portfolio items are public without a moderation badge. Rejected or hidden content is removed immediately. Verification evidence remains private and its label appears only after approval. Professional relationships are outside this queue and become public through recipient acceptance.
-7. Approving a portfolio item only marks it reviewed and removes it from the pending queue; its public URL does not change. Rejecting it makes that URL unavailable immediately.
+2. The queue lists identity requests oldest first and supports status and safe-text search filters.
+3. The reviewer sees the claimed birthdate and opens only the regenerated private identity document through the dedicated audited verification-file endpoint.
+4. They explicitly confirm the identity match before approval or reject with a user-visible reason. An optional internal note remains private.
+5. Every identity decision is recorded in the immutable moderation audit trail.
+6. Profile information, profile photos, and portfolio items save immediately and never enter the queue.
+7. From the professional directory, an administrator may unpublish an entire published profile with a required 10–500 character reason. The profile becomes `suspended`, the reason appears in the professional dashboard/profile banner and a notification is created. Restoring it appends a corresponding audit action and notification.
 
 Public pages expose a visible Berufe support/report contact. The founding-cohort operations team records and handles reports through the documented manual support process; an in-product reporting workflow is deferred.
 
@@ -761,26 +749,16 @@ Public pages expose a visible Berufe support/report contact. The founding-cohort
 
 **`moderation_action`**
 
-| Field           | Type      | Rules                                                                         |
-| --------------- | --------- | ----------------------------------------------------------------------------- |
-| `id`            | UUID      | Primary key                                                                   |
-| `target_type`   | enum      | `profile_revision`, `profile_photo`, `portfolio_item`, `verification_request` |
-| `target_id`     | UUID      | ID in target feature                                                          |
-| `action`        | enum      | `approved`, `rejected`, `hidden`, `restored`                                  |
-| `reason`        | text      | Private; required for rejection/hide                                          |
-| `admin_user_id` | UUID      | Foreign reference to admin account                                            |
-| `created_at`    | timestamp | Required                                                                      |
-
-**`moderation_media_access_event`**
-
-| Field           | Type      | Rules                                                             |
-| --------------- | --------- | ----------------------------------------------------------------- |
-| `id`            | UUID      | Primary key                                                       |
-| `target_type`   | enum      | `profile_photo` or `portfolio_item`                               |
-| `target_id`     | UUID      | Required media-bearing moderation target                          |
-| `admin_user_id` | UUID      | Required administrator account                                    |
-| `request_id`    | text      | Required request correlation ID                                   |
-| `created_at`    | timestamp | Required; append-only and retained with moderation audit metadata |
+| Field           | Type      | Rules                                                         |
+| --------------- | --------- | ------------------------------------------------------------- |
+| `id`            | UUID      | Primary key                                                   |
+| `target_type`   | enum      | `verification_request` or `professional_profile`              |
+| `target_id`     | UUID      | ID in target feature                                          |
+| `action`        | enum      | Identity: `approved`/`rejected`; profile: `hidden`/`restored` |
+| `reason`        | text      | User-visible and required for identity rejection/profile hide |
+| `note`          | text      | Optional private administrator note for identity decisions    |
+| `admin_user_id` | UUID      | Foreign reference to admin account                            |
+| `created_at`    | timestamp | Required                                                      |
 
 #### 5. Explicitly not in MVP
 

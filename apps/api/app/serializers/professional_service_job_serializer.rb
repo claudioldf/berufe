@@ -21,14 +21,11 @@ class ProfessionalServiceJobSerializer
         scheduled_on: quote.scheduled_on&.iso8601,
         total_amount: format("%.2f", quote.total_amount)
       },
-      completion_requested_at: service_job.completion_requested_at&.iso8601,
-      completion_issue_at: service_job.completion_issue_at&.iso8601,
-      completion_issue_message: service_job.completion_issue_message,
+      customer_feedback_message: service_job.customer_feedback_message,
       completed_at: service_job.completed_at&.iso8601,
-      completion_confirmed_by: service_job.completion_confirmed_by,
       cancelled_at: service_job.cancelled_at&.iso8601,
       cancellation_reason: service_job.cancellation_reason,
-      recommendation_request_status: service_job.customer_recommendation_request&.status,
+      recommendation: serialized_recommendation,
       created_at: service_job.created_at.iso8601,
       updated_at: service_job.updated_at.iso8601
     }
@@ -37,4 +34,15 @@ class ProfessionalServiceJobSerializer
   private
 
   attr_reader :service_job
+
+  def serialized_recommendation
+    request = service_job.customer_recommendation_request
+    return unless request
+
+    {
+      status: request.status,
+      delivery_channel: request.delivery_channel,
+      sent_at: request.sent_at&.iso8601
+    }
+  end
 end

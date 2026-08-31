@@ -27,11 +27,9 @@ class PublicProfessionalCardSerializer
       matching_service: serialize_service(matching_service || primary_service&.service),
       coverage: ProfessionalCoverageSerializer.new(revision).as_json,
       verification_labels: verification_labels(verification),
-      portfolio_count: profile.portfolio_items.count do |item|
-        item.status.in?(%w[pending_review approved]) && item.deleted_at.nil?
-      end,
+      portfolio_count: profile.portfolio_items.count { |item| item.deleted_at.nil? },
       relationship_count: PublicProfessionalRelationshipQuery.for_professional(profile.id).count,
-      public_snapshot_updated_at: (revision.submitted_at || revision.created_at).iso8601
+      public_snapshot_updated_at: revision.updated_at.iso8601
     }
   end
 
@@ -59,8 +57,8 @@ class PublicProfessionalCardSerializer
   end
 
   def public_photo_url
-    photo = profile.published_photo
-    return unless photo&.status&.in?(%w[pending_review approved])
+    photo = profile.profile_photo
+    return unless photo && photo.deleted_at.nil?
 
     PublicProfilePhotoImageUrl.call(photo)
   end

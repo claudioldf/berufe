@@ -67,34 +67,6 @@ module Api
         render_transition_unavailable
       end
 
-      def complete
-        completion = params.require(:completion).permit(:kind, :message)
-        result = SharedQuoteCompletionResponder.new.call(
-          token: params[:token],
-          response: completion[:kind],
-          message: completion[:message]
-        )
-        resolved = result.resolved
-        render json: {
-          data: SharedQuoteSerializer.new(
-            quote: resolved.quote,
-            professional: resolved.professional
-          ),
-          request_id: Current.request_id
-        }
-      rescue SharedQuoteResolver::NotFound
-        render_shared_quote_not_found
-      rescue SharedQuoteCompletionResponder::Invalid => error
-        render_api_error(
-          code: "validation_failed",
-          message: "Revise sua resposta.",
-          status: :unprocessable_entity,
-          field_errors: error.field_errors
-        )
-      rescue SharedQuoteCompletionResponder::Unavailable
-        render_transition_unavailable
-      end
-
       private
 
       def protect_bearer_response

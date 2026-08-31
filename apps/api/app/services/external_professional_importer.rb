@@ -9,9 +9,9 @@ require "csv"
 #
 # Deliberately does not verify the phone, register the account, or publish
 # the profile: those steps require the professional to claim the account
-# via OTP (ProfessionalRegistration), or an admin to review and publish
-# through the normal moderation flow (see ProfessionalProfile#externally_eligible
-# for what publication additionally requires). This importer only stages data.
+# via OTP (ProfessionalRegistration) before publication (see
+# ProfessionalProfile#externally_eligible for the additional requirements).
+# This importer only stages data.
 #
 # Safe to re-run: any phone number that already has a UserAccount (from a
 # prior import run, a self-service signup, or anything else) is skipped

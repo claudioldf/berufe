@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class ProfessionalProfile < ApplicationRecord
-  STATUSES = %w[draft pending_review published suspended].freeze
+  STATUSES = %w[draft published suspended].freeze
   CREATION_SOURCES = %w[self_service external].freeze
   INITIAL_REVISION_FIELDS = %i[
     display_name headline bio years_experience whatsapp_e164 instagram_url youtube_url
@@ -10,7 +10,6 @@ class ProfessionalProfile < ApplicationRecord
   belongs_to :user_account
   belongs_to :working_revision, class_name: "ProfessionalProfileRevision", optional: true
   belongs_to :published_revision, class_name: "ProfessionalProfileRevision", optional: true
-  belongs_to :approved_revision, class_name: "ProfessionalProfileRevision", optional: true
   has_many :revisions,
     class_name: "ProfessionalProfileRevision",
     inverse_of: :professional_profile,
@@ -20,6 +19,7 @@ class ProfessionalProfile < ApplicationRecord
   has_many :profile_photos,
     class_name: "ProfessionalProfilePhoto",
     dependent: :destroy
+  belongs_to :profile_photo, class_name: "ProfessionalProfilePhoto", optional: true
   has_many :media_uploads, dependent: :destroy
   has_many :daily_metrics,
     class_name: "ProfessionalDailyMetric",
@@ -50,10 +50,6 @@ class ProfessionalProfile < ApplicationRecord
     foreign_key: :recipient_professional_id,
     inverse_of: :recipient_professional,
     dependent: :restrict_with_exception
-  belongs_to :working_photo, class_name: "ProfessionalProfilePhoto", optional: true
-  belongs_to :published_photo, class_name: "ProfessionalProfilePhoto", optional: true
-  belongs_to :approved_photo, class_name: "ProfessionalProfilePhoto", optional: true
-
   attr_writer(*INITIAL_REVISION_FIELDS)
 
   validates :display_name, length: {in: 3..70}, on: :create
@@ -76,12 +72,11 @@ class ProfessionalProfile < ApplicationRecord
   after_create :create_initial_revision!
 
   scope :publicly_eligible, -> {
-    joins(:user_account, :published_revision, :published_photo)
+    joins(:user_account, :published_revision, :profile_photo)
       .where(profile_status: "published", user_accounts: {status: "active"})
       .where(professional_profile_revisions: {profile_type: "self_service"})
       .where.not(birthdate: nil)
-      .where(professional_profile_revisions: {status: %w[pending_review approved]})
-      .where(professional_profile_photos: {status: %w[pending_review approved]})
+      .where(professional_profile_photos: {deleted_at: nil})
       .where(<<~SQL.squish)
         EXISTS (
           SELECT 1
@@ -118,10 +113,7 @@ class ProfessionalProfile < ApplicationRecord
         profile_status: "published",
         creation_source: "external",
         user_accounts: {status: "active"},
-        professional_profile_revisions: {
-          profile_type: "external",
-          status: %w[pending_review approved]
-        }
+        professional_profile_revisions: {profile_type: "external"}
       )
       .where.not(external_published_at: nil)
       .where(<<~SQL.squish)
@@ -163,10 +155,10 @@ class ProfessionalProfile < ApplicationRecord
 
   def publication_blockers
     revision = working_revision
-    photo = working_photo
+    photo = profile_photo
     blockers = []
     blockers << "identity" unless revision&.display_name.present? && birthdate.present? && user_account.phone_e164.present?
-    blockers << "photo" unless photo&.status&.in?(%w[pending_review approved])
+    blockers << "photo" unless photo && photo.deleted_at.nil?
     blockers << "services" unless revision_services_complete?(revision)
     blockers << "coverage" unless revision_coverage_complete?(revision)
     blockers
@@ -180,8 +172,8 @@ class ProfessionalProfile < ApplicationRecord
     profile_status == "published" &&
       user_account.active? &&
       published_revision&.self_service? &&
-      published_revision&.status&.in?(%w[pending_review approved]) &&
-      published_photo&.status&.in?(%w[pending_review approved]) &&
+      profile_photo.present? &&
+      profile_photo.deleted_at.nil? &&
       self_service_publication_blockers.empty?
   end
 
@@ -196,7 +188,7 @@ class ProfessionalProfile < ApplicationRecord
   def externally_available?
     return false unless profile_status == "published" && creation_source == "external"
     return false unless user_account.active? && external_published_at.present?
-    return false unless published_revision&.external? && published_revision.status.in?(%w[pending_review approved])
+    return false unless published_revision&.external?
     return true if user_account.registered?
 
     received_relationships.active
@@ -206,8 +198,16 @@ class ProfessionalProfile < ApplicationRecord
   end
 
   def has_self_service_publication?
-    published_revision&.self_service? == true &&
-      published_revision.status.in?(%w[pending_review approved])
+    published_revision&.self_service? == true
+  end
+
+  def suspension_reason
+    return unless profile_status == "suspended"
+
+    ModerationAction
+      .where(target_type: "professional_profile", target_id: id, action: "hidden")
+      .order(created_at: :desc, id: :desc)
+      .pick(:reason)
   end
 
   INITIAL_REVISION_FIELDS.each do |field|
@@ -238,7 +238,6 @@ class ProfessionalProfile < ApplicationRecord
   def create_initial_revision!
     revision = revisions.create!(
       version: 1,
-      status: "draft",
       profile_type: "self_service",
       **INITIAL_REVISION_FIELDS.index_with { |field| instance_variable_get("@#{field}") }
     )
@@ -252,15 +251,15 @@ class ProfessionalProfile < ApplicationRecord
   end
 
   def revision_pointers_belong_to_profile
-    [working_revision, published_revision, approved_revision].compact.each do |revision|
+    [working_revision, published_revision].compact.each do |revision|
       errors.add(:base, :invalid) unless revision.professional_profile_id == id
     end
   end
 
   def photo_pointers_belong_to_profile
-    [working_photo, published_photo, approved_photo].compact.each do |photo|
-      errors.add(:base, :invalid) unless photo.professional_profile_id == id
-    end
+    return unless profile_photo
+
+    errors.add(:base, :invalid) unless profile_photo.professional_profile_id == id
   end
 
   def published_at_is_immutable
@@ -293,10 +292,10 @@ class ProfessionalProfile < ApplicationRecord
 
   def self_service_publication_blockers
     revision = published_revision
-    photo = published_photo
+    photo = profile_photo
     blockers = []
     blockers << "identity" unless revision&.display_name.present? && birthdate.present? && user_account.phone_e164.present?
-    blockers << "photo" unless photo&.status&.in?(%w[pending_review approved])
+    blockers << "photo" unless photo && photo.deleted_at.nil?
     blockers << "services" unless revision_services_complete?(revision)
     blockers << "coverage" unless revision_coverage_complete?(revision)
     blockers

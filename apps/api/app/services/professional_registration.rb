@@ -55,7 +55,6 @@ class ProfessionalRegistration
 
     revision = profile.revisions.create!(
       version: profile.revisions.maximum(:version).to_i + 1,
-      status: "draft",
       profile_type: "self_service",
       coverage_city_code: source.coverage_city_code,
       covers_whole_city: source.covers_whole_city,

@@ -14,13 +14,19 @@ class ProfessionalProfilePhotoAttacher
     profile.with_lock do
       upload = profile.media_uploads.lock.find(media_upload_id)
       existing = profile.profile_photos.find_by(media_upload_id: upload.id)
-      return existing if existing
+      if existing
+        if existing.deleted_at?
+          raise Invalid.new(media_upload_id: ["já foi usado"])
+        end
+
+        profile.update!(profile_photo: existing)
+        return existing
+      end
 
       validate_upload!(upload)
-      supersede_pending_photo!(profile.working_photo, now:)
+      previous = profile.profile_photo
       photo = profile.profile_photos.create!(
         media_upload: upload,
-        status: "pending_review",
         private_key: upload.sanitized_key,
         content_type: upload.sanitized_content_type,
         byte_size: upload.sanitized_byte_size,
@@ -29,9 +35,8 @@ class ProfessionalProfilePhotoAttacher
         submitted_at: now
       )
       upload.update!(state: "attached", attached_at: now)
-      pointers = {working_photo: photo}
-      pointers[:published_photo] = photo if profile.profile_status == "published"
-      profile.update!(pointers)
+      profile.update!(profile_photo: photo)
+      previous.update!(deleted_at: now) if previous && previous != photo && previous.deleted_at.nil?
       photo
     end
   rescue ActiveRecord::RecordInvalid => error
@@ -51,11 +56,5 @@ class ProfessionalProfilePhotoAttacher
 
   def valid_dimensions?(upload)
     upload.width.to_i.between?(1, 1024) && upload.height.to_i.between?(1, 1536)
-  end
-
-  def supersede_pending_photo!(photo, now:)
-    return unless photo&.pending_review?
-
-    photo.update!(status: "superseded", reviewed_at: now)
   end
 end

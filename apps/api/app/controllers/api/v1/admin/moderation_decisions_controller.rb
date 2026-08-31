@@ -11,7 +11,6 @@ module Api
             **decision_params.to_h.symbolize_keys
           )
           result = ModerationQueueQuery.new.call(
-            type: params[:type],
             status: params[:status],
             search: params[:search],
             page: params[:page],

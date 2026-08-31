@@ -11,7 +11,7 @@ class CustomerRecommendationSerializer
       display_name: recommendation.display_name,
       recommendation_text: recommendation.recommendation_text,
       submitted_at: recommendation.submitted_at.iso8601,
-      verification_label: "Link enviado por e-mail"
+      verification_label: RecommendationVerificationLabel.call(recommendation)
     }
   end
 

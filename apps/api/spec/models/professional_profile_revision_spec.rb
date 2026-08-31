@@ -18,7 +18,6 @@ RSpec.describe ProfessionalProfileRevision, type: :model do
     expect(second.public_slug).to match(/\Ajoao-reparos-[a-f0-9]{6}\z/)
     expect(first.working_revision).to have_attributes(
       version: 1,
-      status: "draft",
       display_name: "João Reparos"
     )
 
@@ -37,12 +36,12 @@ RSpec.describe ProfessionalProfileRevision, type: :model do
     expect(first.reload.public_slug).to eq("joao-reparos")
   end
 
-  it "allows at most one draft or pending revision per profile" do
+  it "keeps revision versions unique per profile" do
     profile = ProfessionalProfile.create!(user_account: first_account, display_name: "Ana Souza")
 
     expect do
-      profile.revisions.create!(version: 2, status: "pending_review", display_name: "Ana Souza")
-    end.to raise_error(ActiveRecord::RecordNotUnique)
+      profile.revisions.create!(version: 1, profile_type: "self_service", display_name: "Ana Souza")
+    end.to raise_error(ActiveRecord::RecordInvalid)
   end
 
   it "accepts a 2,500-character biography and rejects longer content" do
