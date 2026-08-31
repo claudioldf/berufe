@@ -241,8 +241,25 @@ RSpec.describe "Quote service loop", type: :request, openapi: true do
     ActionMailer::Base.deliveries.clear
     CustomerRecommendationRequestDeliveryJob.perform_now(recommendation_request.id)
     expect(ActionMailer::Base.deliveries.one?).to be(true)
-    expect(ActionMailer::Base.deliveries.first.to).to eq(["marina@example.com"])
-    expect(ActionMailer::Base.deliveries.first.text_part.body.decoded).to include(recommendation_token)
+    delivered_email = ActionMailer::Base.deliveries.first
+    expect(delivered_email.to).to eq(["marina@example.com"])
+    expect(delivered_email.subject).to eq("Como foi o serviço de #{profile.display_name}?")
+    expect(delivered_email).to be_multipart
+    expect(delivered_email.text_part.body.decoded).to include(
+      "Como foi o serviço?",
+      "Instalação revisada de luminárias",
+      "avisar #{profile.display_name} em particular",
+      recommendation_token
+    )
+    expect(delivered_email.text_part.body.decoded).not_to include("Você confirmou a conclusão")
+    expect(delivered_email.html_part.body.decoded).to include(
+      "berufe<span style=\"color: #f8755d;\">.</span>",
+      "Como foi o serviço?",
+      "Contar como foi",
+      "background-color: #12625d",
+      recommendation_token
+    )
+    expect(delivered_email.html_part.body.decoded).not_to include("Você confirmou a conclusão")
     expect(recommendation_request.reload).to have_attributes(
       token_ciphertext: nil
     )
