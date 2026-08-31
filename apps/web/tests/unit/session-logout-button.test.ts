@@ -1,6 +1,15 @@
 import { mount } from "@vue/test-utils";
 import { mockNuxtImport } from "@nuxt/test-utils/runtime";
+import { defineComponent } from "vue";
 import SessionLogoutButton from "~/components/auth/SessionLogoutButton.vue";
+
+const TooltipStub = defineComponent({
+  props: { reason: { type: String, default: null } },
+  template: `<div :data-tooltip-reason="reason ?? ''"><slot /></div>`,
+});
+const global = {
+  stubs: { DesignSystemDisabledTooltip: TooltipStub, UIcon: true },
+};
 
 const mocks = vi.hoisted(() => ({
   isEnding: { __v_isRef: true, value: false },
@@ -33,9 +42,7 @@ describe("session logout control", () => {
   it("revokes the session, resets the preview role, and returns to login", async () => {
     mocks.logout.mockResolvedValue(undefined);
     mocks.navigateTo.mockResolvedValue(undefined);
-    const wrapper = mount(SessionLogoutButton, {
-      global: { stubs: { UIcon: true } },
-    });
+    const wrapper = mount(SessionLogoutButton, { global });
 
     await wrapper.get("button").trigger("click");
 
@@ -49,9 +56,7 @@ describe("session logout control", () => {
 
   it("uses the existing toast surface when logout cannot be completed", async () => {
     mocks.logout.mockRejectedValue(new Error("private failure"));
-    const wrapper = mount(SessionLogoutButton, {
-      global: { stubs: { UIcon: true } },
-    });
+    const wrapper = mount(SessionLogoutButton, { global });
 
     await wrapper.get("button").trigger("click");
 
@@ -65,11 +70,15 @@ describe("session logout control", () => {
 
   it("renders its pending state as disabled", () => {
     mocks.isEnding.value = true;
-    const wrapper = mount(SessionLogoutButton, {
-      global: { stubs: { UIcon: true } },
-    });
+    const wrapper = mount(SessionLogoutButton, { global });
 
     expect(wrapper.get("button").attributes("disabled")).toBeDefined();
     expect(wrapper.text()).toContain("Saindo…");
+    expect(
+      wrapper
+        .get("button")
+        .element.closest("[data-tooltip-reason]")
+        ?.getAttribute("data-tooltip-reason"),
+    ).toBe("Aguarde o encerramento da sessão terminar.");
   });
 });

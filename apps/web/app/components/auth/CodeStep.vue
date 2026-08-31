@@ -25,6 +25,15 @@ const resendLabel = computed(() => {
   if (props.cooldown > 0) return `Reenviar código em ${props.cooldown}s`;
   return "Reenviar código";
 });
+const resendBlockedReason = computed(() => {
+  if (props.cooldown >= 3600) {
+    return "O limite de reenvios foi atingido. Tente novamente amanhã.";
+  }
+  if (props.cooldown > 0) {
+    return `Aguarde ${props.cooldown}s para solicitar outro código.`;
+  }
+  return null;
+});
 
 function submit() {
   if (props.loading || !revealValidation(!localError.value)) return;
@@ -87,14 +96,16 @@ function submit() {
       >
         Confirmar e continuar
       </UButton>
-      <button
-        class="resend"
-        type="button"
-        :disabled="cooldown > 0"
-        @click="$emit('resend')"
-      >
-        {{ resendLabel }}
-      </button>
+      <DesignSystemDisabledTooltip :reason="resendBlockedReason">
+        <button
+          class="resend"
+          type="button"
+          :disabled="cooldown > 0"
+          @click="$emit('resend')"
+        >
+          {{ resendLabel }}
+        </button>
+      </DesignSystemDisabledTooltip>
     </form>
   </section>
 </template>

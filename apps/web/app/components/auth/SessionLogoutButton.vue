@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import { useApplicationSession } from "~/composables/useApplicationSession";
 import { useAppRole } from "~/composables/useAppRole";
 import { useToast } from "~/composables/useToast";
@@ -6,6 +7,9 @@ import { useToast } from "~/composables/useToast";
 const { isEnding, logout } = useApplicationSession();
 const { setRole } = useAppRole();
 const { showToast } = useToast();
+const logoutBlockedReason = computed(() =>
+  isEnding.value ? "Aguarde o encerramento da sessão terminar." : null,
+);
 
 async function signOut() {
   try {
@@ -22,15 +26,17 @@ async function signOut() {
 </script>
 
 <template>
-  <button
-    class="session-logout"
-    type="button"
-    :disabled="isEnding"
-    @click="signOut"
-  >
-    <UIcon name="i-lucide-log-out" />
-    <span>{{ isEnding ? "Saindo…" : "Sair" }}</span>
-  </button>
+  <DesignSystemDisabledTooltip :reason="logoutBlockedReason">
+    <button
+      class="session-logout"
+      type="button"
+      :disabled="isEnding"
+      @click="signOut"
+    >
+      <UIcon name="i-lucide-log-out" />
+      <span>{{ isEnding ? "Saindo…" : "Sair" }}</span>
+    </button>
+  </DesignSystemDisabledTooltip>
 </template>
 
 <style scoped lang="scss">
