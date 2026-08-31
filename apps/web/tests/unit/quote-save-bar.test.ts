@@ -78,6 +78,13 @@ describe("quote save bar", () => {
       "Aguardando envio ao cliente",
     );
     expect(save?.attributes("disabled")).toBeDefined();
+    expect(
+      save?.element
+        .closest("[data-tooltip-reason]")
+        ?.getAttribute("data-tooltip-reason"),
+    ).toBe(
+      "O rascunho já está salvo. Faça uma alteração para salvar novamente.",
+    );
   });
 
   it("uses a check for saving and a send icon only for sharing", () => {
@@ -101,6 +108,9 @@ describe("quote save bar", () => {
   it("announces and loads only the save-before-share action", () => {
     const wrapper = mountSaveBar({ savingIntent: "share" });
     const buttons = wrapper.findAll("button");
+    const preview = buttons.find(
+      (button) => button.text() === "Pré-visualizar",
+    );
     const save = buttons.find((button) =>
       button.text().includes("Salvar rascunho"),
     );
@@ -110,8 +120,25 @@ describe("quote save bar", () => {
       "Salvando orçamento…",
     );
     expect(save?.attributes("data-loading")).toBe("false");
+    expect(save?.attributes("disabled")).toBeDefined();
+    expect(
+      save?.element
+        .closest("[data-tooltip-reason]")
+        ?.getAttribute("data-tooltip-reason"),
+    ).toBe("Aguarde o salvamento necessário para compartilhar.");
+    expect(preview?.attributes("disabled")).toBeDefined();
+    expect(
+      preview?.element
+        .closest("[data-tooltip-reason]")
+        ?.getAttribute("data-tooltip-reason"),
+    ).toBe("Aguarde o salvamento necessário para compartilhar.");
     expect(share?.attributes("data-loading")).toBe("true");
     expect(share?.attributes("disabled")).toBeDefined();
+    expect(
+      share?.element
+        .closest("[data-tooltip-reason]")
+        ?.getAttribute("data-tooltip-reason"),
+    ).toBe("Aguarde o salvamento necessário para compartilhar.");
   });
 
   it("announces persistence errors and keeps sharing unavailable when ineligible", () => {
@@ -129,6 +156,13 @@ describe("quote save bar", () => {
       "Não foi possível salvar. Tente novamente.",
     );
     expect(share?.attributes("disabled")).toBeDefined();
+    expect(
+      share?.element
+        .closest("[data-tooltip-reason]")
+        ?.getAttribute("data-tooltip-reason"),
+    ).toBe(
+      "Seu perfil precisa estar disponível para compartilhar o orçamento.",
+    );
   });
 
   it("explains why sharing is unavailable instead of a silent disabled button", () => {

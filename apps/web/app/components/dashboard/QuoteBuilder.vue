@@ -60,6 +60,15 @@ const saveBarError = computed(() => {
     ? "Revise os campos destacados para continuar."
     : "";
 });
+const sharingBlockedReason = computed(() => {
+  if (props.sharingMethod === "copy") {
+    return "Aguarde a cópia do link do orçamento terminar.";
+  }
+  if (props.sharingMethod === "whatsapp") {
+    return "Aguarde a preparação do compartilhamento pelo WhatsApp.";
+  }
+  return null;
+});
 
 watch(
   () => [props.initialQuote.id, props.initialQuote.updatedAt],
@@ -223,22 +232,27 @@ function requestShare() {
       <template #footer
         ><UButton color="neutral" variant="ghost" @click="shareOpen = false"
           >Cancelar</UButton
-        ><UButton
-          color="neutral"
-          variant="outline"
-          icon="i-lucide-link"
-          :loading="sharingMethod === 'copy'"
-          :disabled="Boolean(sharingMethod)"
-          @click="emit('share', 'copy')"
-          >Copiar link</UButton
-        ><UButton
-          color="primary"
-          icon="i-lucide-message-circle"
-          :loading="sharingMethod === 'whatsapp'"
-          :disabled="Boolean(sharingMethod)"
-          @click="emit('share', 'whatsapp')"
-          >Abrir WhatsApp</UButton
-        ></template
+        ><DesignSystemDisabledTooltip :reason="sharingBlockedReason">
+          <UButton
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-link"
+            :loading="sharingMethod === 'copy'"
+            :disabled="Boolean(sharingMethod)"
+            @click="emit('share', 'copy')"
+            >Copiar link</UButton
+          >
+        </DesignSystemDisabledTooltip>
+        <DesignSystemDisabledTooltip :reason="sharingBlockedReason">
+          <UButton
+            color="primary"
+            icon="i-lucide-message-circle"
+            :loading="sharingMethod === 'whatsapp'"
+            :disabled="Boolean(sharingMethod)"
+            @click="emit('share', 'whatsapp')"
+            >Abrir WhatsApp</UButton
+          >
+        </DesignSystemDisabledTooltip></template
       >
     </UModal>
 

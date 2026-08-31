@@ -19,6 +19,45 @@ defineEmits<{
 }>();
 
 const pending = computed(() => props.savingIntent !== null);
+const saveBlockedReason = computed(() => {
+  if (props.savingIntent === "draft") {
+    return "O rascunho está sendo salvo.";
+  }
+
+  if (props.savingIntent === "share") {
+    return "Aguarde o salvamento necessário para compartilhar.";
+  }
+
+  if (props.saved) {
+    return "O rascunho já está salvo. Faça uma alteração para salvar novamente.";
+  }
+
+  return null;
+});
+const previewBlockedReason = computed(() => {
+  if (props.savingIntent === "draft") {
+    return "Aguarde o salvamento do rascunho terminar.";
+  }
+  if (props.savingIntent === "share") {
+    return "Aguarde o salvamento necessário para compartilhar.";
+  }
+  return null;
+});
+const shareActionBlockedReason = computed(() => {
+  if (props.savingIntent === "draft") {
+    return "Aguarde o salvamento do rascunho terminar.";
+  }
+  if (props.savingIntent === "share") {
+    return "Aguarde o salvamento necessário para compartilhar.";
+  }
+  if (props.readyToShare && !props.shareEnabled) {
+    return (
+      props.shareBlockedReason?.trim() ||
+      "Seu perfil precisa estar disponível para compartilhar o orçamento."
+    );
+  }
+  return null;
+});
 const statusText = computed(() => {
   if (props.error) return props.error;
   if (props.savingIntent === "share") {
@@ -52,27 +91,29 @@ const shareLabel = computed(() => {
       {{ statusText }}
     </span>
     <div>
-      <UButton
-        color="neutral"
-        variant="outline"
-        icon="i-lucide-eye"
-        :disabled="pending"
-        @click="$emit('preview')"
-      >
-        Pré-visualizar
-      </UButton>
-      <UButton
-        color="neutral"
-        variant="outline"
-        :loading="savingIntent === 'draft'"
-        :disabled="saved || pending"
-        @click="$emit('save')"
-      >
-        Salvar rascunho
-      </UButton>
-      <DesignSystemDisabledTooltip
-        :reason="readyToShare && !shareEnabled ? shareBlockedReason : null"
-      >
+      <DesignSystemDisabledTooltip :reason="previewBlockedReason">
+        <UButton
+          color="neutral"
+          variant="outline"
+          icon="i-lucide-eye"
+          :disabled="pending"
+          @click="$emit('preview')"
+        >
+          Pré-visualizar
+        </UButton>
+      </DesignSystemDisabledTooltip>
+      <DesignSystemDisabledTooltip :reason="saveBlockedReason">
+        <UButton
+          color="neutral"
+          variant="outline"
+          :loading="savingIntent === 'draft'"
+          :disabled="saved || pending"
+          @click="$emit('save')"
+        >
+          Salvar rascunho
+        </UButton>
+      </DesignSystemDisabledTooltip>
+      <DesignSystemDisabledTooltip :reason="shareActionBlockedReason">
         <UButton
           color="primary"
           :icon="readyToShare ? 'i-lucide-send' : 'i-lucide-check'"

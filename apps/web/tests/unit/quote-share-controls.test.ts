@@ -53,6 +53,10 @@ const ButtonStub = defineComponent({
   template:
     '<button :disabled="disabled" @click="$emit(\'click\')"><slot /></button>',
 });
+const TooltipStub = defineComponent({
+  props: { reason: { type: String, default: null } },
+  template: `<div :data-tooltip-reason="reason ?? ''"><slot /></div>`,
+});
 const SaveBarStub = defineComponent({
   props: { error: { type: String, default: "" } },
   emits: ["save", "share"],
@@ -92,6 +96,7 @@ describe("quote share controls", () => {
           QuotesQuotePreview: true,
           UModal: ModalStub,
           UButton: ButtonStub,
+          DesignSystemDisabledTooltip: TooltipStub,
           UIcon: true,
         },
       },
@@ -107,6 +112,20 @@ describe("quote share controls", () => {
 
     expect(wrapper.emitted("share")).toEqual([["copy"], ["whatsapp"]]);
     expect(wrapper.find(".quote-builder__revoke").exists()).toBe(false);
+
+    await wrapper.setProps({ sharingMethod: "copy" });
+    expect(copy?.attributes("disabled")).toBeDefined();
+    expect(whatsapp?.attributes("disabled")).toBeDefined();
+    expect(
+      copy?.element
+        .closest("[data-tooltip-reason]")
+        ?.getAttribute("data-tooltip-reason"),
+    ).toBe("Aguarde a cópia do link do orçamento terminar.");
+    expect(
+      whatsapp?.element
+        .closest("[data-tooltip-reason]")
+        ?.getAttribute("data-tooltip-reason"),
+    ).toBe("Aguarde a cópia do link do orçamento terminar.");
   });
 
   it("asks for confirmation before revoking a shared link", async () => {
