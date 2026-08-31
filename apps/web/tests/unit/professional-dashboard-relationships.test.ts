@@ -40,6 +40,10 @@ const ButtonStub = defineComponent({
   template:
     '<button type="button" :disabled="disabled" :data-loading="loading" @click="$emit(\'click\')"><slot /></button>',
 });
+const TooltipStub = defineComponent({
+  props: { reason: { type: String, default: null } },
+  template: `<div :data-tooltip-reason="reason ?? ''"><slot /></div>`,
+});
 
 const mountOptions = {
   shallow: true,
@@ -47,6 +51,7 @@ const mountOptions = {
     renderStubDefaultSlot: true,
     stubs: {
       UButton: ButtonStub,
+      DesignSystemDisabledTooltip: TooltipStub,
       DashboardActivitySections: false,
       DashboardChecklist: false,
       DashboardQuickActions: false,
@@ -441,6 +446,30 @@ describe("professional dashboard", () => {
     );
   });
 
+  it("explains the disabled status-banner action while publishing", async () => {
+    const currentWorkspace = workspace();
+    currentWorkspace.data.value.profile.status = "draft";
+    currentWorkspace.data.value.profile.isPublic = false;
+    currentWorkspace.data.value.profile.hasPublishedRevision = false;
+    currentWorkspace.submissionSaving.value = true;
+    mocks.useWorkspace.mockResolvedValue(currentWorkspace);
+
+    const wrapper = await mountSuspended(
+      ProfessionalDashboardPage,
+      mountOptions,
+    );
+    const publish = wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("Publicar perfil"))!;
+
+    expect(publish.attributes("disabled")).toBeDefined();
+    expect(
+      publish.element
+        .closest("[data-tooltip-reason]")
+        ?.getAttribute("data-tooltip-reason"),
+    ).toBe("Aguarde a publicação do perfil terminar.");
+  });
+
   it("hides completed checklist items and emits the publish action", async () => {
     const wrapper = mount(DashboardChecklist, {
       props: {
@@ -469,6 +498,7 @@ describe("professional dashboard", () => {
       global: {
         stubs: {
           DesignSystemSurfaceCard: { template: "<section><slot /></section>" },
+          DesignSystemDisabledTooltip: TooltipStub,
           NuxtLink: { template: "<a><slot /></a>" },
           UButton: ButtonStub,
           UIcon: true,
@@ -483,6 +513,14 @@ describe("professional dashboard", () => {
     expect(publishButton.text()).toContain("Publicar perfil");
     await publishButton.trigger("click");
     expect(wrapper.emitted("publish")).toEqual([[]]);
+
+    await wrapper.setProps({ publishing: true });
+    expect(publishButton.attributes("disabled")).toBeDefined();
+    expect(
+      publishButton.element
+        .closest("[data-tooltip-reason]")
+        ?.getAttribute("data-tooltip-reason"),
+    ).toBe("Aguarde a publicação do perfil terminar.");
   });
 
   it("renders the ordered quick actions and emits the recommendation action", async () => {

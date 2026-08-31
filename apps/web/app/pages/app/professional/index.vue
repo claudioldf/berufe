@@ -181,6 +181,11 @@ const shareProfileBlockedReason = computed(() =>
     ? null
     : dashboardStatus.value.description,
 );
+const publishProfileBlockedReason = computed(() =>
+  professionalWorkspace.submissionSaving.value
+    ? "Aguarde a publicação do perfil terminar."
+    : null,
+);
 const recentQuotes = computed(
   () => workspace.value?.dashboard.recentQuotes ?? [],
 );
@@ -307,18 +312,22 @@ async function respondRelationship(
           <strong>{{ dashboardStatus.title }}</strong>
           <p>{{ dashboardStatus.description }}</p>
         </div>
-        <UButton
+        <DesignSystemDisabledTooltip
           v-if="canPublish"
-          class="status-banner__action"
-          type="button"
-          color="primary"
-          icon="i-lucide-megaphone"
-          :loading="professionalWorkspace.submissionSaving.value"
-          :disabled="professionalWorkspace.submissionSaving.value"
-          @click="publishProfile"
+          :reason="publishProfileBlockedReason"
         >
-          Publicar perfil
-        </UButton>
+          <UButton
+            class="status-banner__action"
+            type="button"
+            color="primary"
+            icon="i-lucide-megaphone"
+            :loading="professionalWorkspace.submissionSaving.value"
+            :disabled="professionalWorkspace.submissionSaving.value"
+            @click="publishProfile"
+          >
+            Publicar perfil
+          </UButton>
+        </DesignSystemDisabledTooltip>
         <NuxtLink
           v-else-if="dashboardStatus.publicAvailable"
           class="status-banner__action"

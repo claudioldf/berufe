@@ -193,18 +193,20 @@ function activityIcon(type: ActivityItemType) {
   }[type];
 }
 
-const BUSY_ELSEWHERE_REASON = "Aguarde a ação em andamento terminar";
+const BUSY_ELSEWHERE_REASON = "Aguarde a outra ação do painel terminar.";
 
 function actBlockedReason(itemId: string) {
-  return props.actingId && props.actingId !== itemId
-    ? BUSY_ELSEWHERE_REASON
-    : null;
+  if (!props.actingId) return null;
+  return props.actingId === itemId
+    ? "Aguarde esta ação do painel terminar."
+    : BUSY_ELSEWHERE_REASON;
 }
 
 function respondBlockedReason(itemId: string) {
-  return props.respondingId && props.respondingId !== itemId
-    ? BUSY_ELSEWHERE_REASON
-    : null;
+  if (!props.respondingId) return null;
+  return props.respondingId === itemId
+    ? "Aguarde o envio da resposta à conexão terminar."
+    : BUSY_ELSEWHERE_REASON;
 }
 </script>
 

@@ -123,11 +123,16 @@ const ButtonStub = defineComponent({
   template:
     '<a v-if="to" :href="to"><slot /></a><button v-else type="button" :disabled="disabled" :data-loading="loading" @click="$emit(\'click\')"><slot /></button>',
 });
+const TooltipStub = defineComponent({
+  props: { reason: { type: String, default: null } },
+  template: `<div :data-tooltip-reason="reason ?? ''"><slot /></div>`,
+});
 
 const mountOptions = {
   global: {
     stubs: {
       UButton: ButtonStub,
+      DesignSystemDisabledTooltip: TooltipStub,
       UIcon: true,
       DesignSystemEyebrow: defineComponent({
         template: '<span class="eyebrow"><slot /></span>',
@@ -322,6 +327,14 @@ describe("dashboard activity sections", () => {
     expect(actButton).toBeTruthy();
     await actButton!.trigger("click");
     expect(wrapper.emitted("act")?.[0]).toEqual(["service-id", "service_open"]);
+
+    await wrapper.setProps({ actingId: "service-id" });
+    expect(actButton?.attributes("disabled")).toBeDefined();
+    expect(
+      actButton?.element
+        .closest("[data-tooltip-reason]")
+        ?.getAttribute("data-tooltip-reason"),
+    ).toBe("Aguarde esta ação do painel terminar.");
   });
 
   it("uses one stacked container for a single group and hides it when empty", async () => {
