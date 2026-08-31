@@ -88,6 +88,10 @@ const LocationCoverageStub = defineComponent({
     <p v-if="validationError" role="alert">{{ validationError }}</p>
   `,
 });
+const TooltipStub = defineComponent({
+  props: { reason: { type: String, default: null } },
+  template: `<div :data-tooltip-reason="reason ?? ''"><slot /></div>`,
+});
 
 const createdRelationship = {
   id: "d25c64fa-3e6a-4e56-adc9-85bdac0045cb",
@@ -139,6 +143,7 @@ async function mountDialog(eligible = true) {
         UButton: ButtonStub,
         UIcon: true,
         DesignSystemFormField: FieldStub,
+        DesignSystemDisabledTooltip: TooltipStub,
         LocationCoverageFields: LocationCoverageStub,
       },
     },
@@ -229,6 +234,15 @@ describe("relationship create dialog", () => {
     expect(wrapper.get(".professional-lookup__status").text()).toBe(
       "Buscando profissionais",
     );
+    const continueButton = wrapper
+      .findAll("footer button")
+      .find((button) => button.text().includes("Continuar"))!;
+    expect(continueButton.attributes("disabled")).toBeDefined();
+    expect(
+      continueButton.element
+        .closest("[data-tooltip-reason]")
+        ?.getAttribute("data-tooltip-reason"),
+    ).toBe("Aguarde a busca de profissionais terminar.");
   });
 
   it("requires a choice when the candidate search returns suggestions", async () => {

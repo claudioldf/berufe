@@ -32,7 +32,9 @@ const mutationInProgress = computed(
   () => Boolean(props.respondingId) || Boolean(props.removingId),
 );
 const mutationBlockedReason = computed(() =>
-  mutationInProgress.value ? "Aguarde a ação em andamento terminar" : null,
+  mutationInProgress.value
+    ? "Aguarde a atualização da conexão terminar."
+    : null,
 );
 const selectedOtherProfessional = computed(() => {
   const relationship = selectedRelationship.value;

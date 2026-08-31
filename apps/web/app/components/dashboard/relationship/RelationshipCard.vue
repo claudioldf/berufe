@@ -41,13 +41,14 @@ const removalLabel = computed(() =>
     ? "Cancelar solicitação de conexão"
     : "Remover conexão",
 );
-// Only show the reason on cards that are blocked by *another* card's
-// mutation — the busy card itself already shows its own loading spinner.
-const blockedReason = computed(() =>
-  props.disabled && !props.responding && !props.removing
-    ? (props.disabledReason ?? null)
-    : null,
-);
+const blockedReason = computed(() => {
+  if (!props.disabled) return null;
+  if (props.responding) return "Aguarde o envio da resposta terminar.";
+  if (props.removing) return "Aguarde a remoção da conexão terminar.";
+  return (
+    props.disabledReason?.trim() || "Aguarde a atualização da conexão terminar."
+  );
+});
 </script>
 
 <template>

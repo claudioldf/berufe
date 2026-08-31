@@ -62,12 +62,17 @@ const AvatarStub = defineComponent({
   props: { name: { type: String, required: true }, src: { type: String } },
   template: '<span class="avatar" :data-src="src">{{ name }}</span>',
 });
+const TooltipStub = defineComponent({
+  props: { reason: { type: String, default: null } },
+  template: `<div :data-tooltip-reason="reason ?? ''"><slot /></div>`,
+});
 
 const global = {
   stubs: {
     UModal: ModalStub,
     UButton: ButtonStub,
     DesignSystemAvatar: AvatarStub,
+    DesignSystemDisabledTooltip: TooltipStub,
     DesignSystemSurfaceCard: defineComponent({
       template: "<section><slot /></section>",
     }),
@@ -147,6 +152,29 @@ describe("professional relationship manager", () => {
       .trigger("click");
 
     expect(wrapper.emitted("remove")?.[0]).toEqual([outbound.id]);
+  });
+
+  it("explains the disabled response buttons while the response is sent", async () => {
+    const incoming = relationship();
+    const wrapper = await mountSuspended(RelationshipManager, {
+      props: {
+        relationships: [incoming],
+        ownerId,
+        respondingId: incoming.id,
+      },
+      global,
+    });
+    const connect = wrapper
+      .get("article")
+      .findAll("button")
+      .find((button) => button.text().includes("Conectar"))!;
+
+    expect(connect.attributes("disabled")).toBeDefined();
+    expect(
+      connect.element
+        .closest("[data-tooltip-reason]")
+        ?.getAttribute("data-tooltip-reason"),
+    ).toBe("Aguarde o envio da resposta terminar.");
   });
 
   it("shows safe error and empty feedback", async () => {
