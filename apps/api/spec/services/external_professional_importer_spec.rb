@@ -27,8 +27,8 @@ RSpec.describe ExternalProfessionalImporter do
   end
 
   def csv_with(rows)
-    header = %w[display_name whatsapp_e164 email headline description services_mapped services_raw city city_code
-      source_url source_csv_lines needs_review]
+    header = %w[display_name whatsapp_e164 email instagram_url headline description services_mapped services_raw
+      city city_code source_url source_csv_lines needs_review]
     file = Tempfile.new(["leads", ".csv"])
     CSV.open(file.path, "w") do |csv|
       csv << header
@@ -45,6 +45,7 @@ RSpec.describe ExternalProfessionalImporter do
       "whatsapp_e164" => "+5547988887777",
       "headline" => "Marido de aluguel",
       "description" => "Faço reparos em geral.",
+      "instagram_url" => "https://www.instagram.com/adrianosilva/",
       "services_mapped" => "pedreiro;pintor",
       "city_code" => "4209102"
     }])
@@ -67,6 +68,7 @@ RSpec.describe ExternalProfessionalImporter do
       headline: "Marido de aluguel",
       bio: "Faço reparos em geral.",
       whatsapp_e164: "+5547988887777",
+      instagram_url: "https://www.instagram.com/adrianosilva/",
       coverage_city_code: "4209102",
       covers_whole_city: true
     )

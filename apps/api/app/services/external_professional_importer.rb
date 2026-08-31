@@ -82,13 +82,15 @@ class ExternalProfessionalImporter
     headline = row["headline"].to_s.squish.presence
     bio = row["description"].to_s.squish.presence
     city_code = row["city_code"].to_s.strip.presence
+    instagram_url = row["instagram_url"].to_s.strip.presence
 
     profile = account.build_professional_profile(
       creation_source: "external",
       display_name:,
       headline:,
       bio:,
-      whatsapp_e164: phone_e164
+      whatsapp_e164: phone_e164,
+      instagram_url:
     )
     profile.save!
 
@@ -102,7 +104,8 @@ class ExternalProfessionalImporter
     revision.update!(
       profile_type: "external",
       coverage_city_code: city_code,
-      covers_whole_city: city_code.present?
+      covers_whole_city: city_code.present?,
+      instagram_url:
     )
 
     attach_services!(revision:, row:)
