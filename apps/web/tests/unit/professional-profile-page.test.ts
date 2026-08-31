@@ -124,6 +124,7 @@ function workspace() {
     removePhoto: vi.fn(),
     portfolioSaving: shallowRef(false),
     createPortfolioItem: vi.fn(),
+    updatePortfolioItem: vi.fn(),
     deletePortfolioItem: vi.fn(),
     verificationSaving: shallowRef(false),
     verificationError: shallowRef(""),
@@ -251,6 +252,57 @@ describe("professional profile editor page", () => {
     expect(mocks.showToast).toHaveBeenCalledWith(
       expect.objectContaining({ title: "Conexão removida" }),
     );
+  });
+
+  it("opens a requested portfolio correction and delegates the same-item update", async () => {
+    const currentWorkspace = workspace();
+    currentWorkspace.data.value.profile.portfolioItems = [
+      {
+        id: "portfolio-1",
+        title: "Cozinha iluminada",
+        service: "Eletricista do painel",
+        description: "Instalação completa.",
+        image: null,
+        status: "rejected",
+        rejectionReason: "Atualize a descrição.",
+        submittedAt: "2026-08-18T12:00:00Z",
+      },
+    ];
+    currentWorkspace.updatePortfolioItem.mockResolvedValue(
+      currentWorkspace.data.value,
+    );
+    mocks.useWorkspace.mockResolvedValue(currentWorkspace);
+
+    const wrapper = await mountSuspended(ProfessionalProfilePage, {
+      shallow: true,
+      global: { renderStubDefaultSlot: true },
+    });
+
+    await useRouter().replace("/?tab=portfolio&edit=portfolio-1");
+    await flushPromises();
+
+    const manager = wrapper.getComponent({
+      name: "DashboardPortfolioManager",
+    });
+    expect(manager.props("initialEditItemId")).toBe("portfolio-1");
+
+    const draft = {
+      file: null,
+      title: "Cozinha revisada",
+      service: "Eletricista do painel",
+      description: "Descrição atualizada.",
+    };
+    manager.vm.$emit("updated", "portfolio-1", draft);
+    await flushPromises();
+
+    expect(currentWorkspace.updatePortfolioItem).toHaveBeenCalledWith(
+      "portfolio-1",
+      draft,
+    );
+    expect(mocks.showToast).toHaveBeenCalledWith({
+      title: "Trabalho reenviado",
+      description: "As correções foram salvas e seguirão para nova análise.",
+    });
   });
 
   it("delegates confirmed profile-photo removal and reports success", async () => {

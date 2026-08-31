@@ -123,47 +123,4 @@ function save() {
   display: grid;
   gap: 18px;
 }
-
-:deep() {
-  .editor-savebar {
-    position: sticky;
-    z-index: 20;
-    bottom: 14px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 15px;
-    padding: 12px 14px;
-    border: 1px solid var(--line);
-    border-radius: 15px;
-    background: rgb(255 255 255 / 95%);
-    box-shadow: var(--shadow-lg);
-    backdrop-filter: blur(14px);
-  }
-  .editor-savebar > span {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--ink-soft);
-    font-size: 0.86rem;
-    font-weight: 700;
-  }
-  .editor-savebar > div {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  @media (width <= 750px) {
-    .editor-savebar {
-      display: grid;
-    }
-    .editor-savebar > div {
-      justify-content: stretch;
-    }
-    .editor-savebar > div > * {
-      flex: 1;
-      justify-content: center;
-    }
-  }
-}
 </style>

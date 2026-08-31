@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest";
 import catalogsData from "@data/catalogs.json";
 import type { Service } from "~/types";
 import { buildWhatsAppUrl } from "~/utils/contact";
-import { findService } from "~/utils/services";
+import {
+  findService,
+  normalizePrimaryService,
+  toggleProfessionalService,
+} from "~/utils/services";
 
 const services = catalogsData.services as Service[];
 
@@ -20,6 +24,39 @@ describe("service discovery", () => {
     );
     expect(findService(services, "desentupidor")?.name).toBe("Desentupimento");
     expect(findService(services, "petsitter")?.name).toBe("Cuidados para pets");
+  });
+});
+
+describe("professional service selection", () => {
+  it("uses the first selection when the featured service is missing", () => {
+    expect(normalizePrimaryService(["Eletricista", "Diarista"], "")).toBe(
+      "Eletricista",
+    );
+    expect(
+      normalizePrimaryService(
+        ["Eletricista", "Diarista"],
+        "Serviço indisponível",
+      ),
+    ).toBe("Eletricista");
+  });
+
+  it("reassigns a removed featured service and keeps the final selection", () => {
+    expect(
+      toggleProfessionalService(
+        ["Eletricista", "Diarista"],
+        "Eletricista",
+        "Eletricista",
+      ),
+    ).toEqual({
+      selectedServices: ["Diarista"],
+      primaryService: "Diarista",
+    });
+    expect(
+      toggleProfessionalService(["Diarista"], "Diarista", "Diarista"),
+    ).toEqual({
+      selectedServices: ["Diarista"],
+      primaryService: "Diarista",
+    });
   });
 });
 

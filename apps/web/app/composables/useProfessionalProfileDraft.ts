@@ -6,6 +6,10 @@ import {
   normalizeSocialProfile,
   type SocialPlatform,
 } from "~/utils/socialProfiles";
+import {
+  normalizePrimaryService,
+  toggleProfessionalService,
+} from "~/utils/services";
 
 export interface ProfessionalProfileValidation {
   identity: {
@@ -51,8 +55,9 @@ export function validateProfessionalProfileDraft(
   const experience = draft.yearsExperience;
   const instagram = normalizeSocialProfile(draft.instagram, "instagram");
   const youtube = normalizeSocialProfile(draft.youtube, "youtube");
-  const hasPrimaryService =
-    draft.selectedServices.length > 0 &&
+  const hasServices = draft.selectedServices.length > 0;
+  const hasFeaturedService =
+    draft.selectedServices.length === 1 ||
     draft.selectedServices.includes(draft.primaryService);
   const hasValidServiceNotes = draft.selectedServices.every(
     (service) => (draft.serviceNotes[service] ?? "").trim().length <= 120,
@@ -93,11 +98,13 @@ export function validateProfessionalProfileDraft(
       instagram: instagram.error,
       youtube: youtube.error,
     },
-    services: !hasPrimaryService
-      ? "Escolha ao menos um serviço e defina o principal."
-      : !hasValidServiceNotes
-        ? "Use até 120 caracteres nas especializações."
-        : "",
+    services: !hasServices
+      ? "Escolha ao menos um serviço."
+      : !hasFeaturedService
+        ? "Escolha o serviço que deve aparecer em destaque."
+        : !hasValidServiceNotes
+          ? "Use até 120 caracteres nas especializações."
+          : "",
     coverage: hasCoverage
       ? ""
       : "Selecione uma cidade inteira ou pelo menos um bairro dela.",
@@ -114,6 +121,8 @@ function hasValidationErrors(validation: ProfessionalProfileValidation) {
 }
 
 function createDraft(professional: Professional): ProfessionalProfileDraft {
+  const selectedServices = [...professional.services];
+
   return {
     name: professional.name,
     birthdate: professional.birthdate,
@@ -123,14 +132,17 @@ function createDraft(professional: Professional): ProfessionalProfileDraft {
     whatsapp: professional.whatsapp,
     instagram: professional.instagram ?? "",
     youtube: professional.youtube ?? "",
-    selectedServices: [...professional.services],
+    selectedServices,
     serviceNotes: Object.fromEntries(
       professional.services.map((service, index) => [
         service,
         professional.serviceNotes[index] ?? "",
       ]),
     ),
-    primaryService: professional.primaryService,
+    primaryService: normalizePrimaryService(
+      selectedServices,
+      professional.primaryService,
+    ),
     coverageCityCode: professional.coverage.city?.code ?? "",
     coversWholeCity: professional.coverage.wholeCity,
     selectedNeighborhoodCodes: professional.coverage.neighborhoods.map(
@@ -178,23 +190,27 @@ export function useProfessionalProfileDraft(
   }
 
   function toggleService(name: string) {
+    if (
+      form.selectedServices.includes(name) &&
+      form.selectedServices.length === 1
+    )
+      return;
+
     if (form.selectedServices.includes(name)) {
-      if (form.selectedServices.length === 1) return;
-      form.selectedServices = form.selectedServices.filter(
-        (item) => item !== name,
-      );
       form.serviceNotes = Object.fromEntries(
         Object.entries(form.serviceNotes).filter(
           ([service]) => service !== name,
         ),
       );
-      if (form.primaryService === name) {
-        form.primaryService = form.selectedServices[0] ?? "";
-      }
-    } else {
-      form.selectedServices.push(name);
-      if (!form.primaryService) form.primaryService = name;
     }
+
+    const selection = toggleProfessionalService(
+      form.selectedServices,
+      form.primaryService,
+      name,
+    );
+    form.selectedServices = selection.selectedServices;
+    form.primaryService = selection.primaryService;
     markDirty();
   }
 
@@ -205,6 +221,10 @@ export function useProfessionalProfileDraft(
 
     form.instagram = instagram.url;
     form.youtube = youtube.url;
+    form.primaryService = normalizePrimaryService(
+      form.selectedServices,
+      form.primaryService,
+    );
     return {
       ...form,
       selectedServices: [...form.selectedServices],

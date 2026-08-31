@@ -1116,7 +1116,8 @@ export interface paths {
         delete: operations["deleteProfessionalPortfolioItem"];
         options?: never;
         head?: never;
-        patch?: never;
+        /** Update and resubmit one rejected or hidden owned portfolio item */
+        patch: operations["updateProfessionalPortfolioItem"];
         trace?: never;
     };
     "/api/v1/professional/verification-requests": {
@@ -2268,6 +2269,16 @@ export interface components {
             portfolio_item: {
                 /** Format: uuid */
                 media_upload_id: string;
+                /** Format: uuid */
+                service_id: string;
+                title: string;
+                description: string | null;
+            };
+        };
+        ProfessionalPortfolioItemUpdateRequest: {
+            portfolio_item: {
+                /** Format: uuid */
+                media_upload_id?: string;
                 /** Format: uuid */
                 service_id: string;
                 title: string;
@@ -6384,6 +6395,84 @@ export interface operations {
             };
             /** @description Professional registration or the active owned item was not found. */
             404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    updateProfessionalPortfolioItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Opaque server-generated portfolio item identifier. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfessionalPortfolioItemUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description The same portfolio item was updated and returned to pending review. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalWorkspaceResponse"];
+                };
+            };
+            /** @description An active Rails application session is required. */
+            401: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The exact browser origin or profile owner is invalid. */
+            403: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Professional registration, active owned item, or replacement upload was not found. */
+            404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The portfolio item is no longer rejected or hidden. */
+            409: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The replacement image, selected service, or item fields are invalid. */
+            422: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;

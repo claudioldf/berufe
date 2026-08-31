@@ -12,6 +12,7 @@ import {
   formatBrazilianMobilePhone,
   sanitizeBrazilianMobilePhone,
 } from "~/utils/brazilian-phone";
+import { normalizePrimaryService } from "~/utils/services";
 
 type ContractWorkspace = components["schemas"]["ProfessionalWorkspaceData"];
 
@@ -158,13 +159,17 @@ function supplyBody(draft: ProfessionalProfileDraft, services: Service[]) {
   const catalogServices = new Map(
     services.map((service) => [service.name, service]),
   );
+  const primaryService = normalizePrimaryService(
+    draft.selectedServices,
+    draft.primaryService,
+  );
   return {
     services: draft.selectedServices.map((name) => {
       const service = catalogServices.get(name);
       if (!service) throw new Error("Unknown catalog service selection");
       return {
         service_id: service.id,
-        is_primary: name === draft.primaryService,
+        is_primary: name === primaryService,
         note: draft.serviceNotes[name] || null,
       };
     }),
@@ -313,6 +318,37 @@ export async function attachProfessionalPortfolioItem(
       body: {
         portfolio_item: {
           media_upload_id: input.mediaUploadId,
+          service_id: input.serviceId,
+          title: input.title,
+          description: input.description || null,
+        },
+      },
+    },
+  );
+  if (error || !data) throw requestError(error, response);
+
+  return mapProfessionalWorkspace(data.data);
+}
+
+export async function updateProfessionalPortfolioItem(
+  client: BerufeApiClient,
+  id: string,
+  input: {
+    mediaUploadId?: string;
+    serviceId: string;
+    title: string;
+    description: string;
+  },
+): Promise<ProfessionalWorkspace> {
+  const { data, error, response } = await client.PATCH(
+    "/api/v1/professional/portfolio-items/{id}",
+    {
+      params: { path: { id } },
+      body: {
+        portfolio_item: {
+          ...(input.mediaUploadId
+            ? { media_upload_id: input.mediaUploadId }
+            : {}),
           service_id: input.serviceId,
           title: input.title,
           description: input.description || null,

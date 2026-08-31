@@ -4,6 +4,7 @@ import {
   attachProfessionalProfilePhoto,
   deleteProfessionalProfilePhoto,
   attachProfessionalPortfolioItem,
+  updateProfessionalPortfolioItem,
   deleteProfessionalPortfolioItem,
   deleteProfessionalRelationship,
   attachProfessionalVerificationRequest,
@@ -309,7 +310,7 @@ describe("professional workspace API", () => {
     );
   });
 
-  it("creates and soft-deletes portfolio items through stable identifiers", async () => {
+  it("creates, resubmits, and soft-deletes portfolio items through stable identifiers", async () => {
     const createClient = apiClientReturning("POST", {
       data: { data: workspaceData, request_id: "portfolio-create" },
       error: undefined,
@@ -320,6 +321,11 @@ describe("professional workspace API", () => {
       error: undefined,
       response: new Response(null),
     });
+    const updateClient = apiClientReturning("PATCH", {
+      data: { data: workspaceData, request_id: "portfolio-update" },
+      error: undefined,
+      response: new Response(null),
+    });
 
     await attachProfessionalPortfolioItem(createClient, {
       mediaUploadId: "12d12a91-582e-4f1b-aa6b-49b5fd7ce1eb",
@@ -327,6 +333,25 @@ describe("professional workspace API", () => {
       title: "Cozinha iluminada",
       description: "Instalação completa.",
     });
+    await updateProfessionalPortfolioItem(
+      updateClient,
+      "22d12a91-582e-4f1b-aa6b-49b5fd7ce1eb",
+      {
+        serviceId: "de83e041-286f-4b50-91fa-61a0ee8c1801",
+        title: "Cozinha revisada",
+        description: "Descrição atualizada.",
+      },
+    );
+    await updateProfessionalPortfolioItem(
+      updateClient,
+      "22d12a91-582e-4f1b-aa6b-49b5fd7ce1eb",
+      {
+        mediaUploadId: "32d12a91-582e-4f1b-aa6b-49b5fd7ce1eb",
+        serviceId: "de83e041-286f-4b50-91fa-61a0ee8c1801",
+        title: "Cozinha com nova foto",
+        description: "Descrição atualizada.",
+      },
+    );
     await deleteProfessionalPortfolioItem(
       deleteClient,
       "22d12a91-582e-4f1b-aa6b-49b5fd7ce1eb",
@@ -341,6 +366,39 @@ describe("professional workspace API", () => {
             service_id: "de83e041-286f-4b50-91fa-61a0ee8c1801",
             title: "Cozinha iluminada",
             description: "Instalação completa.",
+          },
+        },
+      },
+    );
+    expect(updateClient.PATCH).toHaveBeenNthCalledWith(
+      1,
+      "/api/v1/professional/portfolio-items/{id}",
+      {
+        params: {
+          path: { id: "22d12a91-582e-4f1b-aa6b-49b5fd7ce1eb" },
+        },
+        body: {
+          portfolio_item: {
+            service_id: "de83e041-286f-4b50-91fa-61a0ee8c1801",
+            title: "Cozinha revisada",
+            description: "Descrição atualizada.",
+          },
+        },
+      },
+    );
+    expect(updateClient.PATCH).toHaveBeenNthCalledWith(
+      2,
+      "/api/v1/professional/portfolio-items/{id}",
+      {
+        params: {
+          path: { id: "22d12a91-582e-4f1b-aa6b-49b5fd7ce1eb" },
+        },
+        body: {
+          portfolio_item: {
+            media_upload_id: "32d12a91-582e-4f1b-aa6b-49b5fd7ce1eb",
+            service_id: "de83e041-286f-4b50-91fa-61a0ee8c1801",
+            title: "Cozinha com nova foto",
+            description: "Descrição atualizada.",
           },
         },
       },
@@ -459,9 +517,12 @@ describe("professional workspace API", () => {
     });
     const draft: ProfessionalProfileDraft = {
       ...mapProfessionalWorkspace(workspaceData).profile.identity,
-      selectedServices: ["Eletricista"],
-      serviceNotes: { Eletricista: "Quadros e circuitos" },
-      primaryService: "Eletricista",
+      selectedServices: ["Eletricista", "Diarista"],
+      serviceNotes: {
+        Eletricista: "Quadros e circuitos",
+        Diarista: "Limpeza residencial",
+      },
+      primaryService: "Diarista",
       coverageCityCode: "4209102",
       coversWholeCity: false,
       selectedNeighborhoodCodes: ["4209102001"],
@@ -477,6 +538,15 @@ describe("professional workspace API", () => {
         description: "Instalações elétricas.",
         aliases: [],
       },
+      {
+        id: "681ae703-7f31-473e-a419-8deee7c10f20",
+        name: "Diarista",
+        slug: "diarista",
+        category: "servicos-domesticos",
+        icon: "i-lucide-spray-can",
+        description: "Limpeza residencial.",
+        aliases: [],
+      },
     ]);
 
     expect(client.PATCH).toHaveBeenCalledWith("/api/v1/professional/profile", {
@@ -484,8 +554,13 @@ describe("professional workspace API", () => {
         services: [
           {
             service_id: "de83e041-286f-4b50-91fa-61a0ee8c1801",
-            is_primary: true,
+            is_primary: false,
             note: "Quadros e circuitos",
+          },
+          {
+            service_id: "681ae703-7f31-473e-a419-8deee7c10f20",
+            is_primary: true,
+            note: "Limpeza residencial",
           },
         ],
         coverage: {

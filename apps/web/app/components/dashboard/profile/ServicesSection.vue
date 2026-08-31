@@ -17,8 +17,23 @@ const sortedServices = computed(() =>
 const serviceSelectionInvalid = computed(
   () => Boolean(props.error) && form.value.selectedServices.length === 0,
 );
+const hasMultipleServices = computed(
+  () => form.value.selectedServices.length > 1,
+);
+const featuredServiceInvalid = computed(
+  () =>
+    hasMultipleServices.value &&
+    !form.value.selectedServices.includes(form.value.primaryService),
+);
 const primaryServiceError = computed(() =>
-  serviceSelectionInvalid.value ? "" : props.error,
+  Boolean(props.error) && featuredServiceInvalid.value ? props.error : "",
+);
+const serviceDetailsError = computed(() =>
+  Boolean(props.error) &&
+  !serviceSelectionInvalid.value &&
+  !featuredServiceInvalid.value
+    ? props.error
+    : "",
 );
 </script>
 
@@ -32,7 +47,7 @@ const primaryServiceError = computed(() =>
           <p>Escolha no catálogo o que você realmente oferece.</p>
         </div>
       </div>
-      <em>1 principal</em>
+      <em>1 ou mais</em>
     </header>
     <div
       class="service-picker"
@@ -73,10 +88,12 @@ const primaryServiceError = computed(() =>
       {{ props.error }}
     </small>
     <DesignSystemFormField
+      v-if="hasMultipleServices"
       id="profile-primary-service"
       v-slot="field"
       class="primary-service"
-      label="Serviço principal do perfil"
+      label="Serviço em destaque"
+      hint="Escolha o serviço que aparece primeiro no seu perfil. Todos continuam disponíveis nas buscas."
       :error="primaryServiceError"
       required
     >
@@ -113,6 +130,13 @@ const primaryServiceError = computed(() =>
         </template>
       </DesignSystemFormField>
     </div>
+    <small
+      v-if="serviceDetailsError"
+      class="service-details-error"
+      aria-live="polite"
+    >
+      {{ serviceDetailsError }}
+    </small>
   </section>
 </template>
 
@@ -140,6 +164,15 @@ const primaryServiceError = computed(() =>
     font-weight: 500;
     line-height: 1.45;
   }
+}
+
+.service-details-error {
+  display: block;
+  margin-top: 7px;
+  color: var(--color-danger);
+  font-size: 0.84rem;
+  font-weight: 500;
+  line-height: 1.45;
 }
 
 .service-notes {

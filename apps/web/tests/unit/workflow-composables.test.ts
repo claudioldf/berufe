@@ -49,6 +49,26 @@ describe("profile drafts", () => {
     expect(validation.services).toContain("serviço");
     expect(validation.coverage).toContain("cidade inteira");
   });
+
+  it("normalizes and reassigns the featured service in profile drafts", () => {
+    const source = (professionalsData as Professional[])[0]!;
+    const professional: Professional = {
+      ...source,
+      services: ["Eletricista", "Diarista"],
+      serviceNotes: ["Quadros", "Limpeza residencial"],
+      primaryService: "",
+    };
+    const workflow = useProfessionalProfileDraft(professional);
+
+    expect(workflow.form.primaryService).toBe("Eletricista");
+
+    workflow.toggleService("Eletricista");
+    expect(workflow.form.selectedServices).toEqual(["Diarista"]);
+    expect(workflow.form.primaryService).toBe("Diarista");
+
+    workflow.form.primaryService = "";
+    expect(workflow.commit()?.primaryService).toBe("Diarista");
+  });
 });
 
 describe("phone authentication", () => {

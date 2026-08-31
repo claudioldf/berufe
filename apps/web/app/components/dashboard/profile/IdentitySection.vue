@@ -129,6 +129,7 @@ function selectPhoto(event: Event) {
       <em>Obrigatório</em>
     </header>
     <div
+      id="profile-photo"
       class="profile-photo-control"
       :class="{ 'profile-photo-control--invalid': photoInvalid }"
       :aria-describedby="photoInvalid ? 'profile-photo-status' : undefined"
@@ -364,6 +365,7 @@ function selectPhoto(event: Event) {
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
+  scroll-margin-top: 20px;
   margin-bottom: 18px;
   padding: 14px;
   border: 1px solid var(--line);

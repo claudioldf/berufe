@@ -1,29 +1,38 @@
 <script setup lang="ts">
-import { shallowRef } from "vue";
-import type { ProfessionalPortfolioItem, PortfolioItemDraft } from "~/types";
+import { computed, shallowRef, watch } from "vue";
+import type {
+  ProfessionalPortfolioItem,
+  PortfolioItemDraft,
+  PortfolioItemUpdateDraft,
+} from "~/types";
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     items: ProfessionalPortfolioItem[];
     serviceOptions?: string[];
     submitting?: boolean;
+    initialEditItemId?: string | null;
   }>(),
   {
     serviceOptions: () => ["Eletricista", "Marido de aluguel"],
     submitting: false,
+    initialEditItemId: null,
   },
 );
 const emit = defineEmits<{
   added: [draft: PortfolioItemDraft];
+  updated: [id: string, draft: PortfolioItemUpdateDraft];
   removed: [id: string];
+  editClosed: [];
 }>();
 const uploadOpen = shallowRef(false);
-const statusLabels = {
-  pending_review: "Em análise",
-  approved: "Aprovado",
-  rejected: "Recusado",
-  hidden: "Oculto",
-} as const;
+const editOpen = shallowRef(false);
+const editingItemId = shallowRef<string | null>(null);
+const editingItem = computed(() =>
+  props.items.find((item) => item.id === editingItemId.value),
+);
+const expandedRejectionReasonIds = shallowRef(new Set<string>());
+const rejectionReasonPreviewLength = 120;
 const emptyStateBenefits = [
   "Até 12 trabalhos com serviço e descrição",
   "Imagens em destaque no seu perfil público",
@@ -39,9 +48,95 @@ const emptyStateVisual = {
   badgeIcon: "i-lucide-badge-check",
 };
 
-function submitUpload(draft: PortfolioItemDraft) {
-  emit("added", draft);
+watch(
+  [() => props.initialEditItemId, () => props.items],
+  ([itemId, items]) => {
+    if (!itemId || editOpen.value) return;
+    const item = items.find(
+      (candidate) =>
+        candidate.id === itemId && isEditableStatus(candidate.status),
+    );
+    if (item) openEdit(item);
+  },
+  { immediate: true },
+);
+
+watch(editingItem, (item) => {
+  if (editOpen.value && (!item || !isEditableStatus(item.status))) closeEdit();
+});
+
+function isEditableStatus(status: ProfessionalPortfolioItem["status"]) {
+  return status === "rejected" || status === "hidden";
+}
+
+function submitUpload(draft: PortfolioItemUpdateDraft) {
+  if (!draft.file) return;
+  emit("added", { ...draft, file: draft.file });
   uploadOpen.value = false;
+}
+
+function openEdit(item: ProfessionalPortfolioItem) {
+  if (!isEditableStatus(item.status)) return;
+  editingItemId.value = item.id;
+  editOpen.value = true;
+}
+
+function closeEdit() {
+  editOpen.value = false;
+  editingItemId.value = null;
+  emit("editClosed");
+}
+
+function handleEditOpen(open: boolean) {
+  if (open) {
+    editOpen.value = true;
+  } else if (editOpen.value) {
+    closeEdit();
+  }
+}
+
+function submitEdit(draft: PortfolioItemUpdateDraft) {
+  const item = editingItem.value;
+  if (!item) return;
+  emit("updated", item.id, draft);
+}
+
+function isRejectionReasonLong(reason: string) {
+  return reason.length > rejectionReasonPreviewLength;
+}
+
+function isRejectionReasonExpanded(itemId: string) {
+  return expandedRejectionReasonIds.value.has(itemId);
+}
+
+function rejectionReasonText(item: ProfessionalPortfolioItem) {
+  const reason = item.rejectionReason;
+
+  if (
+    !reason ||
+    !isRejectionReasonLong(reason) ||
+    isRejectionReasonExpanded(item.id)
+  ) {
+    return reason;
+  }
+
+  const preview = reason.slice(0, rejectionReasonPreviewLength);
+  const lastWordBoundary = preview.lastIndexOf(" ");
+  const cutoff = lastWordBoundary >= 80 ? lastWordBoundary : preview.length;
+
+  return `${preview.slice(0, cutoff).trimEnd()}…`;
+}
+
+function toggleRejectionReason(itemId: string) {
+  const nextIds = new Set(expandedRejectionReasonIds.value);
+
+  if (nextIds.has(itemId)) {
+    nextIds.delete(itemId);
+  } else {
+    nextIds.add(itemId);
+  }
+
+  expandedRejectionReasonIds.value = nextIds;
 }
 </script>
 
@@ -92,17 +187,47 @@ function submitUpload(draft: PortfolioItemDraft) {
         <div v-else class="portfolio-manager__placeholder" aria-hidden="true">
           <UIcon name="i-lucide-image" />
         </div>
-        <div>
+        <div class="portfolio-manager__details">
           <span
             ><strong>{{ item.title }}</strong
             ><small>{{ item.service }}</small></span
-          ><em :class="`status--${item.status}`">{{
-            statusLabels[item.status]
-          }}</em>
+          ><em
+            v-if="item.status === 'rejected'"
+            class="portfolio-manager__status"
+            >Recusado</em
+          >
         </div>
         <p v-if="item.rejectionReason" class="portfolio-manager__reason">
-          {{ item.rejectionReason }}
+          <strong>Motivo:</strong>
+          <span :id="`portfolio-rejection-reason-${item.id}`">{{
+            rejectionReasonText(item)
+          }}</span>
+          <button
+            v-if="isRejectionReasonLong(item.rejectionReason)"
+            type="button"
+            class="portfolio-manager__reason-toggle"
+            :aria-expanded="isRejectionReasonExpanded(item.id)"
+            :aria-controls="`portfolio-rejection-reason-${item.id}`"
+            @click="toggleRejectionReason(item.id)"
+          >
+            {{ isRejectionReasonExpanded(item.id) ? "ver menos" : "ver mais" }}
+          </button>
         </p>
+        <div
+          v-if="isEditableStatus(item.status)"
+          class="portfolio-manager__card-actions"
+        >
+          <UButton
+            type="button"
+            size="sm"
+            color="primary"
+            variant="soft"
+            icon="i-lucide-pencil"
+            @click="openEdit(item)"
+          >
+            Editar e reenviar
+          </UButton>
+        </div>
         <button
           type="button"
           :aria-label="`Excluir ${item.title}`"
@@ -133,6 +258,27 @@ function submitUpload(draft: PortfolioItemDraft) {
           :submitting="submitting"
           @cancel="uploadOpen = false"
           @submitted="submitUpload"
+        />
+      </template>
+    </UModal>
+    <UModal
+      :open="editOpen"
+      title="Corrigir trabalho"
+      description="Atualize as informações indicadas e envie o mesmo trabalho para uma nova análise."
+      @update:open="handleEditOpen"
+    >
+      <template v-if="editingItem" #body>
+        <DashboardPortfolioUploadForm
+          :key="editingItem.id"
+          :service-options="serviceOptions"
+          :initial-values="editingItem"
+          :image-required="false"
+          :reset-on-submit="false"
+          submit-label="Salvar e reenviar"
+          show-cancel
+          :submitting="submitting"
+          @cancel="closeEdit"
+          @submitted="submitEdit"
         />
       </template>
     </UModal>
@@ -189,7 +335,7 @@ function submitUpload(draft: PortfolioItemDraft) {
     color: var(--ink-soft);
     font-size: 2rem;
   }
-  &__grid article > div {
+  &__details {
     display: flex;
     justify-content: space-between;
     gap: 8px;
@@ -207,30 +353,41 @@ function submitUpload(draft: PortfolioItemDraft) {
     color: var(--ink-soft);
     font-size: 0.82rem;
   }
-  &__grid em {
+  &__status {
     align-self: start;
     padding: 4px 6px;
     border-radius: 6px;
-    background: #e5f3ee;
-    color: #2e6f5e;
+    background: var(--color-danger-tint);
+    color: var(--color-danger);
     font-size: 0.82rem;
     font-style: normal;
     font-weight: 900;
-  }
-  &__grid em.status--pending_review {
-    background: var(--color-warning-tint);
-    color: var(--color-warning);
-  }
-  &__grid em.status--rejected,
-  &__grid em.status--hidden {
-    background: var(--color-danger-tint);
-    color: var(--color-danger);
   }
   &__reason {
     margin: -4px 13px 13px;
     color: var(--color-danger);
     font-size: 0.76rem;
     line-height: 1.45;
+  }
+  &__reason strong {
+    display: inline;
+    font-size: inherit;
+  }
+  &__reason-toggle {
+    margin-left: 4px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-weight: 800;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+  &__card-actions {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0 13px 13px;
   }
   &__grid article > button {
     position: absolute;
