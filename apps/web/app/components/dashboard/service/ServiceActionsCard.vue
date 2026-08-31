@@ -54,11 +54,8 @@ const hasPrimaryActions = computed(
   () => props.canComplete || props.canRequestRecommendation,
 );
 
-// Neither button below has its own :loading — only the recommendation
-// button does — so while acting is true they'd otherwise go dead with no
-// visible cause.
 const actingReason = computed(() =>
-  props.acting ? "Aguarde a ação em andamento terminar" : null,
+  props.acting ? "Aguarde a atualização do serviço terminar." : null,
 );
 </script>
 
