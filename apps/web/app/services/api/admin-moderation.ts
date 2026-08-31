@@ -10,15 +10,7 @@ import type { components } from "~/services/api/schema";
 import { formatDateTime } from "~/utils/formatters";
 
 type AdminModerationData = components["schemas"]["AdminModerationData"];
-type ModerationMediaTargetType = Extract<
-  ModerationTargetType,
-  "profile_photo" | "portfolio_item"
->;
-
 const typeLabels: Record<ModerationTargetType, string> = {
-  profile_revision: "Perfil",
-  profile_photo: "Foto",
-  portfolio_item: "Portfólio",
   verification_request: "Verificação",
 };
 
@@ -59,11 +51,7 @@ export function mapAdminModeration(
       age: formatModerationAge(item.submitted_at, now),
       details: item.details,
       preview: item.preview,
-      currentlyPublic: item.currently_public,
-      fallbackAvailable: item.fallback_available,
-      changes: item.changes,
       claimedBirthdate: item.claimed_birthdate,
-      hasMedia: item.has_media,
       verificationFileId: item.verification_file_id,
     })),
     meta: {
@@ -101,7 +89,6 @@ function requireModerationQueue(
 
 function query(filters: ModerationFilters) {
   return {
-    type: filters.type,
     status: filters.status,
     search: filters.search || undefined,
     page: filters.page,
@@ -152,30 +139,6 @@ export async function createAdminModerationDecision(
       },
     ),
   );
-}
-
-export async function fetchAdminModerationMedia(
-  client: BerufeApiClient,
-  targetType: ModerationMediaTargetType,
-  targetId: string,
-): Promise<Blob> {
-  const result = await client.GET(
-    "/api/v1/admin/moderation/{target_type}/{target_id}/media",
-    {
-      params: { path: { target_type: targetType, target_id: targetId } },
-      parseAs: "blob",
-    },
-  );
-  if (result.error || !result.data) {
-    throw new ApiRequestError(
-      normalizeApiError(
-        result.error,
-        result.response.headers.get("X-Request-Id") ?? "client",
-      ),
-    );
-  }
-
-  return result.data;
 }
 
 export async function fetchAdminVerificationFile(

@@ -2,7 +2,6 @@ import type { BerufeApiClient } from "@app/services/api/client";
 import {
   createAdminModerationDecision,
   fetchAdminModeration,
-  fetchAdminModerationMedia,
   fetchAdminVerificationFile,
   formatModerationAge,
   mapAdminModeration,
@@ -15,20 +14,16 @@ type AdminModerationData = components["schemas"]["AdminModerationData"];
 const data: AdminModerationData = {
   items: [
     {
-      target_type: "profile_photo",
+      target_type: "verification_request",
       target_id: "de83e041-286f-4b50-91fa-61a0ee8c1801",
       status: "pending_review",
-      title: "Foto de perfil · Ana Souza",
+      title: "Verificação de identidade · Ana Souza",
       subtitle: "Eletricista · Toda Joinville",
       submitted_at: "2026-08-17T12:00:00Z",
-      details: "Foto enviada para conferência manual.",
-      preview: "Imagem privada",
-      currently_public: true,
-      fallback_available: true,
-      changes: [],
-      claimed_birthdate: null,
-      has_media: true,
-      verification_file_id: null,
+      details: "Documento enviado para conferência manual.",
+      preview: "Documento privado",
+      claimed_birthdate: "1990-04-12",
+      verification_file_id: "43a94f5e-1429-4ec7-bbc4-a6f805d5182d",
     },
   ],
   meta: { page: 1, per_page: 20, total_count: 1, total_pages: 1 },
@@ -40,7 +35,6 @@ const data: AdminModerationData = {
 };
 
 const filters: ModerationFilters = {
-  type: "all",
   status: "pending_review",
   search: "Ana",
   page: 1,
@@ -66,10 +60,9 @@ describe("administrator moderation API", () => {
 
     expect(mapped.items[0]).toMatchObject({
       id: "de83e041-286f-4b50-91fa-61a0ee8c1801",
-      targetType: "profile_photo",
-      type: "Foto",
+      targetType: "verification_request",
+      type: "Verificação",
       age: "há 3h",
-      hasMedia: true,
     });
     expect(mapped.summary).toMatchObject({
       pendingCount: 1,
@@ -91,7 +84,7 @@ describe("administrator moderation API", () => {
     await fetchAdminModeration(client, filters);
     await createAdminModerationDecision(
       client,
-      "profile_photo",
+      "verification_request",
       "de83e041-286f-4b50-91fa-61a0ee8c1801",
       "rejected",
       filters,
@@ -101,7 +94,6 @@ describe("administrator moderation API", () => {
     expect(client.GET).toHaveBeenCalledWith("/api/v1/admin/moderation", {
       params: {
         query: {
-          type: "all",
           status: "pending_review",
           search: "Ana",
           page: 1,
@@ -114,11 +106,10 @@ describe("administrator moderation API", () => {
       {
         params: {
           path: {
-            target_type: "profile_photo",
+            target_type: "verification_request",
             target_id: "de83e041-286f-4b50-91fa-61a0ee8c1801",
           },
           query: {
-            type: "all",
             status: "pending_review",
             search: "Ana",
             page: 1,
@@ -133,35 +124,6 @@ describe("administrator moderation API", () => {
             identity_match_confirmed: false,
           },
         },
-      },
-    );
-  });
-
-  it("requests private media as a Blob and never constructs a storage URL", async () => {
-    const blob = new Blob(["image"], { type: "image/jpeg" });
-    const client = clientReturning({
-      data: blob,
-      error: undefined,
-      response: new Response(null),
-    });
-
-    await expect(
-      fetchAdminModerationMedia(
-        client,
-        "profile_photo",
-        "de83e041-286f-4b50-91fa-61a0ee8c1801",
-      ),
-    ).resolves.toBe(blob);
-    expect(client.GET).toHaveBeenCalledWith(
-      "/api/v1/admin/moderation/{target_type}/{target_id}/media",
-      {
-        params: {
-          path: {
-            target_type: "profile_photo",
-            target_id: "de83e041-286f-4b50-91fa-61a0ee8c1801",
-          },
-        },
-        parseAs: "blob",
       },
     );
   });

@@ -175,8 +175,8 @@ describe("onboarding step contracts", () => {
         draft: profileDraft({ birthdate: "" }),
         photo: {
           current: null,
-          hasPublishedPhoto: true,
-          publishedImageUrl: null,
+          hasPhoto: true,
+          imageUrl: null,
           latestUpload: null,
         },
       },
@@ -234,8 +234,8 @@ describe("onboarding step contracts", () => {
         draft,
         photo: {
           current: null,
-          hasPublishedPhoto: true,
-          publishedImageUrl: null,
+          hasPhoto: true,
+          imageUrl: null,
           latestUpload: null,
         },
       },

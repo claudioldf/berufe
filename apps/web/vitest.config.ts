@@ -6,6 +6,7 @@ export default defineVitestConfig({
     globals: true,
     hookTimeout: 30_000,
     include: ["tests/unit/**/*.test.ts"],
+    setupFiles: ["tests/unit/setup.ts"],
     maxWorkers: 1,
     coverage: {
       provider: "v8",
@@ -13,7 +14,7 @@ export default defineVitestConfig({
       include: [
         "app/components/**/*.vue",
         "app/composables/**/*.ts",
-        "app/services/api/{admin-catalog,admin-moderation,admin-professionals,admin-reports,admin-session,application-session,catalog,client,errors,locations,media-upload,phone-auth,professional-data-erasure,professional-notifications,professional-registration,public-discovery}.ts",
+        "app/services/api/{admin-catalog,admin-moderation,admin-professionals,admin-reports,admin-session,application-session,catalog,client,errors,locations,media-upload,phone-auth,professional-data-erasure,professional-notifications,professional-recommendations,professional-registration,public-discovery}.ts",
         "app/middleware/**/*.ts",
         "app/utils/**/*.ts",
       ],

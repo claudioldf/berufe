@@ -61,3 +61,15 @@ export async function createCustomerRecommendation(
   );
   if (error || !data) throw requestError(error, response);
 }
+
+export async function createCustomerFeedbackIssue(
+  client: BerufeApiClient,
+  token: string,
+  message: string,
+): Promise<void> {
+  const { data, error, response } = await client.POST(
+    "/api/v1/customer-recommendations/issues",
+    { body: { token, message } },
+  );
+  if (error || !data) throw requestError(error, response);
+}

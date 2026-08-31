@@ -31,30 +31,38 @@ defineEmits<{ select: [stepId: OnboardingStepId] }>();
       <span :style="{ width: `${progress}%` }" />
     </div>
     <nav aria-label="Etapas do onboarding">
-      <button
+      <DesignSystemDisabledTooltip
         v-for="(step, index) in steps"
         :key="step.id"
-        type="button"
-        :class="{
-          active: activeStep === step.id,
-          done: completion[step.id],
-        }"
-        :disabled="!availableSteps.includes(step.id)"
-        :aria-current="activeStep === step.id ? 'step' : undefined"
-        @click="$emit('select', step.id)"
+        :reason="
+          availableSteps.includes(step.id)
+            ? null
+            : 'Conclua as etapas anteriores para liberar'
+        "
       >
-        <span>
-          <UIcon
-            :name="completion[step.id] ? 'i-lucide-check' : step.icon"
-            aria-hidden="true"
-          />
-        </span>
-        <span>
-          <small>Etapa {{ index + 1 }}</small>
-          <strong>{{ step.label }}</strong>
-          <em>{{ step.description }}</em>
-        </span>
-      </button>
+        <button
+          type="button"
+          :class="{
+            active: activeStep === step.id,
+            done: completion[step.id],
+          }"
+          :disabled="!availableSteps.includes(step.id)"
+          :aria-current="activeStep === step.id ? 'step' : undefined"
+          @click="$emit('select', step.id)"
+        >
+          <span>
+            <UIcon
+              :name="completion[step.id] ? 'i-lucide-check' : step.icon"
+              aria-hidden="true"
+            />
+          </span>
+          <span>
+            <small>Etapa {{ index + 1 }}</small>
+            <strong>{{ step.label }}</strong>
+            <em>{{ step.description }}</em>
+          </span>
+        </button>
+      </DesignSystemDisabledTooltip>
     </nav>
   </DesignSystemSurfaceCard>
 </template>

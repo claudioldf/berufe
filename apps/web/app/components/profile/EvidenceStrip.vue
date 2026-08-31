@@ -30,8 +30,8 @@ defineProps<{
       </div>
       <dl class="evidence-strip__outcomes">
         <div>
-          <dt>{{ summary.completedServices }}</dt>
-          <dd>serviços concluídos</dd>
+          <dt>{{ summary.registeredServices }}</dt>
+          <dd>serviços registrados</dd>
         </div>
         <div>
           <dt>{{ summary.recommendations }}</dt>
@@ -42,6 +42,19 @@ defineProps<{
           <dd>profissionais parceiros</dd>
         </div>
       </dl>
+    </DesignSystemContainer>
+    <DesignSystemContainer
+      v-if="summary.hiddenRecommendations > 0"
+      class="evidence-strip__hidden-note"
+    >
+      <UIcon name="i-lucide-eye-off" aria-hidden="true" />
+      {{ summary.hiddenRecommendations }}
+      {{
+        summary.hiddenRecommendations === 1
+          ? "recomendação ocultada"
+          : "recomendações ocultadas"
+      }}
+      pelo profissional.
     </DesignSystemContainer>
   </section>
 </template>
@@ -69,6 +82,15 @@ defineProps<{
   margin: 1px 0 0;
   color: var(--ink-soft);
   font-size: 0.72rem;
+}
+
+.evidence-strip__hidden-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0 0;
+  color: var(--ink-soft);
+  font-size: 0.76rem;
 }
 
 @media (width <= 850px) {

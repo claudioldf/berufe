@@ -126,7 +126,7 @@ const oldestPendingExceedsTarget = computed(
           </span>
           <AdminReportsMetricHelp
             title="Saúde da moderação"
-            meaning="Monitora tamanho e idade da fila, mediana, P90 de análise, aprovação e conteúdo ocultado."
+            meaning="Monitora a fila de documentos de identidade e as despublicações e restaurações de perfis."
             :goal="`Evitar itens acima de ${operations.oldestPendingTargetHours} horas e reduzir tempos sem enfraquecer a revisão.`"
             reading="P90 revela casos lentos. Rejeição não é uma falha a zerar; pode ser uma proteção necessária."
           />
@@ -163,7 +163,10 @@ const oldestPendingExceedsTarget = computed(
       </div>
       <footer>
         <UIcon name="i-lucide-shield-alert" />
-        <span>{{ operations.hidden }} conteúdo(s) ocultado(s) no período.</span>
+        <span>
+          {{ operations.hidden }} perfil(is) despublicado(s) e
+          {{ operations.restored }} restaurado(s) no período.
+        </span>
       </footer>
     </DesignSystemSurfaceCard>
   </section>

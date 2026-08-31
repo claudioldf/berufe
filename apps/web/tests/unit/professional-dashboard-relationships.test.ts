@@ -108,7 +108,7 @@ function workspace(options: { pending?: boolean; failed?: boolean } = {}) {
             approvedIdentity: true,
           },
         },
-        changeRequestedQuotes: [],
+        actionItems: [],
         recentQuotes: [],
         recentServiceJobs: [],
       },
@@ -122,14 +122,13 @@ function workspace(options: { pending?: boolean; failed?: boolean } = {}) {
         isPublic: true,
         isSearchEligible: true,
         isIndexable: true,
+        suspensionReason: null,
         publicationBlockers: [],
-        revisionStatus: "approved",
-        revisionRejectionReason: null,
         hasPublishedRevision: true,
         photo: {
           current: null,
-          hasPublishedPhoto: false,
-          publishedImageUrl: null,
+          hasPhoto: false,
+          imageUrl: null,
           latestUpload: null,
         },
         portfolioItems: [],
@@ -350,15 +349,14 @@ describe("professional dashboard", () => {
     );
   });
 
-  it("shows real rejected work and the server-calculated readiness", async () => {
+  it("shows the profile suspension reason, identity rejection, and server-calculated readiness", async () => {
     const currentWorkspace = workspace();
     currentWorkspace.data.value.dashboard.readiness.percentage = 25;
     currentWorkspace.data.value.pendingRelationships = [];
-    currentWorkspace.data.value.profile.status = "draft";
+    currentWorkspace.data.value.profile.status = "suspended";
     currentWorkspace.data.value.profile.isPublic = false;
-    currentWorkspace.data.value.profile.revisionStatus = "rejected";
-    currentWorkspace.data.value.profile.revisionRejectionReason =
-      "A apresentação precisa de mais detalhes.";
+    currentWorkspace.data.value.profile.suspensionReason =
+      "O perfil foi despublicado após uma denúncia confirmada.";
     currentWorkspace.data.value.profile.verification.current!.status =
       "rejected";
     currentWorkspace.data.value.profile.verification.current!.rejectionReason =
@@ -370,9 +368,9 @@ describe("professional dashboard", () => {
       mountOptions,
     );
 
-    expect(wrapper.text()).toContain("Seu perfil precisa de ajustes");
+    expect(wrapper.text()).toContain("Seu perfil está temporariamente oculto");
     expect(wrapper.text()).toContain(
-      "A apresentação precisa de mais detalhes.",
+      "O perfil foi despublicado após uma denúncia confirmada.",
     );
     expect(wrapper.text()).toContain("A imagem não está legível.");
     expect(wrapper.findComponent(DashboardChecklist).props("readiness")).toBe(
@@ -416,7 +414,6 @@ describe("professional dashboard", () => {
     currentWorkspace.data.value.profile.status = "draft";
     currentWorkspace.data.value.profile.isPublic = false;
     currentWorkspace.data.value.profile.isSearchEligible = false;
-    currentWorkspace.data.value.profile.revisionStatus = "draft";
     currentWorkspace.data.value.profile.hasPublishedRevision = false;
     mocks.useWorkspace.mockResolvedValue(currentWorkspace);
 

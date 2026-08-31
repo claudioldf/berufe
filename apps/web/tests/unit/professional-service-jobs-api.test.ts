@@ -21,25 +21,30 @@ const contractServiceJob: ContractServiceJob = {
     scheduled_on: "2026-08-22",
     total_amount: "120.00",
   },
-  completion_requested_at: null,
-  completion_issue_at: null,
-  completion_issue_message: null,
+  customer_feedback_message: null,
   completed_at: "2026-08-29T15:00:00Z",
-  completion_confirmed_by: "professional",
   cancelled_at: null,
   cancellation_reason: null,
-  recommendation_request_status: null,
+  recommendation: {
+    status: "open",
+    delivery_channel: "email",
+    sent_at: "2026-08-29T15:00:05Z",
+  },
   created_at: "2026-08-29T12:00:00Z",
   updated_at: "2026-08-29T15:00:00Z",
 };
 
 describe("professional service jobs API", () => {
-  it("maps who confirmed a completed service", () => {
+  it("maps a completed service and its recommendation delivery", () => {
     expect(mapProfessionalServiceJob(contractServiceJob)).toMatchObject({
       id: contractServiceJob.id,
       status: "completed",
-      completionConfirmedBy: "professional",
       completedAt: "2026-08-29T15:00:00Z",
+      recommendation: {
+        status: "open",
+        deliveryChannel: "email",
+        sentAt: "2026-08-29T15:00:05Z",
+      },
     });
   });
 
@@ -59,7 +64,6 @@ describe("professional service jobs API", () => {
       completeProfessionalServiceJob(client, contractServiceJob.id),
     ).resolves.toMatchObject({
       status: "completed",
-      completionConfirmedBy: "professional",
     });
     expect(client.POST).toHaveBeenCalledWith(
       "/api/v1/professional/service-jobs/{id}/complete",

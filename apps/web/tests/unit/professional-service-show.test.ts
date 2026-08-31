@@ -8,10 +8,9 @@ const mocks = vi.hoisted(() => ({
   client: {},
   fetchService: vi.fn(),
   completeService: vi.fn(),
-  requestCompletion: vi.fn(),
+  requestRecommendation: vi.fn(),
   cancelService: vi.fn(),
   showToast: vi.fn(),
-  copyText: vi.fn(),
 }));
 
 vi.mock("@app/services/api/client", () => ({
@@ -20,14 +19,11 @@ vi.mock("@app/services/api/client", () => ({
 vi.mock("@app/services/api/professional-service-jobs", () => ({
   fetchProfessionalServiceJob: mocks.fetchService,
   completeProfessionalServiceJob: mocks.completeService,
-  requestProfessionalServiceCompletion: mocks.requestCompletion,
+  requestProfessionalServiceRecommendation: mocks.requestRecommendation,
   cancelProfessionalServiceJob: mocks.cancelService,
 }));
 vi.mock("@app/composables/useToast", () => ({
   useToast: () => ({ showToast: mocks.showToast }),
-}));
-vi.mock("@app/composables/useShare", () => ({
-  useShare: () => ({ copyText: mocks.copyText }),
 }));
 vi.mock("~/composables/useApplicationSession", async () => {
   const { ref } = await import("vue");
@@ -54,14 +50,11 @@ const service: ProfessionalServiceJob = {
     scheduledOn: "2026-08-22",
     total: 120,
   },
-  completionRequestedAt: null,
-  completionIssueAt: null,
-  completionIssueMessage: "",
+  customerFeedbackMessage: "",
   completedAt: null,
-  completionConfirmedBy: null,
   cancelledAt: null,
   cancellationReason: "",
-  recommendationRequestStatus: null,
+  recommendation: null,
   createdAt: "2026-08-29T12:00:00Z",
   updatedAt: "2026-08-29T12:00:00Z",
 };
@@ -120,18 +113,25 @@ describe("professional service show page", () => {
     );
   });
 
-  it("allows the professional to confirm completion and records the source", async () => {
+  it("lets the professional complete the service in one action, with no customer confirmation step", async () => {
     mocks.completeService.mockResolvedValue({
       ...service,
       status: "completed",
       completedAt: "2026-08-29T15:00:00Z",
-      completionConfirmedBy: "professional",
+      recommendation: {
+        status: "open",
+        deliveryChannel: "email",
+        sentAt: null,
+      },
     });
     const wrapper = await mountPage();
 
+    expect(
+      wrapper.findAll("button").some((button) => button.text() === "Concluído"),
+    ).toBe(true);
     await wrapper
       .findAll("button")
-      .find((button) => button.text() === "Marcar como concluído")
+      .find((button) => button.text() === "Concluído")
       ?.trigger("click");
     await nextTick();
     await wrapper
@@ -141,23 +141,51 @@ describe("professional service show page", () => {
     await flushPromises();
 
     expect(mocks.completeService).toHaveBeenCalledWith(mocks.client, serviceId);
-    expect(wrapper.text()).toContain(
-      "A conclusão foi confirmada pelo profissional.",
-    );
-    expect(wrapper.text()).not.toContain("Marcar como concluído");
+    expect(wrapper.text()).toContain("Serviço concluído");
+    expect(
+      wrapper.findAll("button").some((button) => button.text() === "Concluído"),
+    ).toBe(false);
   });
 
-  it("keeps customer-confirmed completion copy for the customer flow", async () => {
+  it("offers a WhatsApp recommendation handoff only when the request has no email to deliver to", async () => {
     mocks.fetchService.mockResolvedValue({
       ...service,
       status: "completed",
       completedAt: "2026-08-29T15:00:00Z",
-      completionConfirmedBy: "customer",
+      recommendation: {
+        status: "open",
+        deliveryChannel: "whatsapp",
+        sentAt: null,
+      },
     });
     const wrapper = await mountPage();
 
-    expect(wrapper.text()).toContain(
-      "A conclusão foi confirmada pelo cliente.",
-    );
+    expect(
+      wrapper
+        .findAll("button")
+        .some((button) =>
+          button.text().includes("Pedir a recomendação pelo WhatsApp"),
+        ),
+    ).toBe(true);
+  });
+
+  it("does not offer a WhatsApp handoff once the automatic email invite is scheduled", async () => {
+    mocks.fetchService.mockResolvedValue({
+      ...service,
+      status: "completed",
+      completedAt: "2026-08-29T15:00:00Z",
+      recommendation: {
+        status: "open",
+        deliveryChannel: "email",
+        sentAt: null,
+      },
+    });
+    const wrapper = await mountPage();
+
+    expect(
+      wrapper
+        .findAll("button")
+        .some((button) => button.text().includes("recomendação")),
+    ).toBe(false);
   });
 });

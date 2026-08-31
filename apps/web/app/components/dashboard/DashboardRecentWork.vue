@@ -28,8 +28,6 @@ const quoteStatusLabel = {
 } as const;
 const serviceStatusLabel = {
   approved: "Aprovado",
-  completion_requested: "Aguardando confirmação",
-  completion_issue: "Pendência",
   completed: "Concluído",
   cancelled: "Cancelado",
 } as const;

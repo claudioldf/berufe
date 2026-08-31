@@ -76,8 +76,9 @@ function professional(
       },
     ],
     evidenceSummary: {
-      completedServices: 3,
+      registeredServices: 3,
       recommendations: 1,
+      hiddenRecommendations: 0,
       workedTogetherProfessionals: 2,
     },
     customerRecommendations: [],
@@ -237,7 +238,30 @@ describe("public profile components", () => {
     expect(details.text()).toContain("não garante a execução");
     expect(evidence.text()).toContain("Telefone confirmado");
     expect(evidence.text()).toContain("Identidade verificada");
-    expect(evidence.text()).toContain("3serviços concluídos");
+    expect(evidence.text()).toContain("3serviços registrados");
+  });
+
+  it("discloses hidden recommendations without revealing which ones", async () => {
+    const profile = professional();
+    const hidden = await mountSuspended(EvidenceStrip, {
+      props: {
+        evidence: profile.evidence,
+        summary: { ...profile.evidenceSummary, hiddenRecommendations: 2 },
+      },
+      global: { stubs: globalStubs },
+    });
+    expect(hidden.text()).toContain(
+      "2 recomendações ocultadas pelo profissional.",
+    );
+
+    const none = await mountSuspended(EvidenceStrip, {
+      props: {
+        evidence: profile.evidence,
+        summary: { ...profile.evidenceSummary, hiddenRecommendations: 0 },
+      },
+      global: { stubs: globalStubs },
+    });
+    expect(none.text()).not.toContain("ocultad");
   });
 
   it("hides empty portfolio and professional-relationship sections", async () => {

@@ -28,6 +28,7 @@ describe("professional workspace tabs", () => {
       "Dados do perfil",
       "Meus trabalhos 4",
       "Clientes",
+      "Recomendações",
       "Minha rede 2",
       "Verificações",
     ]);
@@ -47,6 +48,18 @@ describe("professional workspace tabs", () => {
     expect(
       wrapper
         .get('[href="/app/professional/customers"]')
+        .attributes("aria-current"),
+    ).toBe("page");
+  });
+
+  it("marks recommendations active on its own dedicated route", async () => {
+    const wrapper = await mountSuspended(ProfessionalWorkspaceTabs, {
+      route: "/app/professional/recommendations",
+    });
+
+    expect(
+      wrapper
+        .get('[href="/app/professional/recommendations"]')
         .attributes("aria-current"),
     ).toBe("page");
   });

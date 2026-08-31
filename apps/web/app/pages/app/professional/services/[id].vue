@@ -3,7 +3,6 @@ import ServiceActionsCard from "~/components/dashboard/service/ServiceActionsCar
 import ServiceDetailsCard from "~/components/dashboard/service/ServiceDetailsCard.vue";
 import ServiceHero from "~/components/dashboard/service/ServiceHero.vue";
 import ServiceStatusCard from "~/components/dashboard/service/ServiceStatusCard.vue";
-import { useShare } from "~/composables/useShare";
 import { useToast } from "~/composables/useToast";
 import { useApiClient } from "~/services/api/client";
 import { ApiRequestError } from "~/services/api/errors";
@@ -11,7 +10,7 @@ import {
   cancelProfessionalServiceJob,
   completeProfessionalServiceJob,
   fetchProfessionalServiceJob,
-  requestProfessionalServiceCompletion,
+  requestProfessionalServiceRecommendation,
 } from "~/services/api/professional-service-jobs";
 
 definePageMeta({ layout: "workspace" });
@@ -19,7 +18,6 @@ useSeoMeta({ title: "Detalhes do serviço", robots: "noindex, nofollow" });
 
 const route = useRoute();
 const client = useApiClient();
-const { copyText } = useShare();
 const { showToast } = useToast();
 const id = computed(() =>
   Array.isArray(route.params.id)
@@ -32,7 +30,6 @@ const loaded = await useAsyncData(`professional-service-job-${id.value}`, () =>
 const service = shallowRef(loaded.data.value ?? null);
 const acting = shallowRef(false);
 const actionError = shallowRef("");
-const copyFallbackUrl = shallowRef("");
 const cancelOpen = shallowRef(false);
 const completeOpen = shallowRef(false);
 const cancellationReason = shallowRef("");
@@ -44,28 +41,11 @@ function invalidateServiceData() {
 
 const statusPresentation = computed(() => {
   const status = service.value?.status;
-  if (status === "completion_requested")
-    return {
-      title: "Aguardando confirmação",
-      description: "O cliente recebeu o link de conclusão.",
-      icon: "i-lucide-send",
-      tone: "brand" as const,
-    };
-  if (status === "completion_issue")
-    return {
-      title: "Pendência informada",
-      description: "Resolva o ponto indicado e solicite novamente.",
-      icon: "i-lucide-circle-alert",
-      tone: "warning" as const,
-    };
   if (status === "completed") {
-    const confirmer = service.value?.completionConfirmedBy;
     return {
       title: "Serviço concluído",
       description:
-        confirmer === "professional"
-          ? "A conclusão foi confirmada pelo profissional."
-          : "A conclusão foi confirmada pelo cliente.",
+        "Registrado por você. Confira ao lado o pedido de recomendação.",
       icon: "i-lucide-check-circle-2",
       tone: "success" as const,
     };
@@ -79,30 +59,27 @@ const statusPresentation = computed(() => {
     };
   return {
     title: "Serviço aprovado",
-    description: "Quando terminar, peça a confirmação do cliente.",
+    description: "Quando terminar, marque como concluído.",
     icon: "i-lucide-clipboard-check",
     tone: "brand" as const,
   };
 });
-const canRequestCompletion = computed(
-  () =>
-    service.value?.status === "approved" ||
-    service.value?.status === "completion_issue",
-);
 const canCancel = computed(
   () =>
     Boolean(service.value) &&
     !["completed", "cancelled"].includes(service.value?.status ?? "cancelled"),
 );
-const canComplete = computed(
+const canComplete = computed(() => service.value?.status === "approved");
+const canRequestRecommendation = computed(
   () =>
-    Boolean(service.value) &&
-    ["approved", "completion_requested", "completion_issue"].includes(
-      service.value?.status ?? "cancelled",
-    ),
+    service.value?.status === "completed" &&
+    service.value.recommendation?.deliveryChannel === "whatsapp",
+);
+const recommendationSentAt = computed(
+  () => service.value?.recommendation?.sentAt ?? null,
 );
 
-async function requestCompletion() {
+async function requestRecommendation() {
   if (!service.value || acting.value) return;
   const handoff = import.meta.client
     ? window.open("about:blank", "_blank")
@@ -110,35 +87,28 @@ async function requestCompletion() {
   if (handoff) handoff.opener = null;
   acting.value = true;
   actionError.value = "";
-  copyFallbackUrl.value = "";
   try {
-    const result = await requestProfessionalServiceCompletion(
+    const result = await requestProfessionalServiceRecommendation(
       client,
       service.value.id,
     );
     service.value = result.serviceJob;
     invalidateServiceData();
-    copyFallbackUrl.value = result.shareUrl;
     if (handoff) handoff.location.replace(result.whatsappUrl);
     else if (import.meta.client) window.location.assign(result.whatsappUrl);
     showToast({
       title: "Abrindo o WhatsApp",
-      description: "A mensagem já aponta para o telefone deste cliente.",
+      description: "Peça a recomendação por lá.",
     });
   } catch (error) {
     handoff?.close();
     actionError.value =
       error instanceof ApiRequestError
         ? error.message
-        : "Não foi possível solicitar a confirmação.";
+        : "Não foi possível pedir a recomendação.";
   } finally {
     acting.value = false;
   }
-}
-
-async function copyFallback() {
-  if (!copyFallbackUrl.value) return;
-  await copyText(copyFallbackUrl.value, "Link de conclusão copiado");
 }
 
 async function cancelService() {
@@ -243,13 +213,12 @@ async function completeService() {
         <ServiceActionsCard
           class="service-page__actions"
           :status="service.status"
-          :can-request-completion="canRequestCompletion"
           :can-complete="canComplete"
           :can-cancel="canCancel"
+          :can-request-recommendation="canRequestRecommendation"
+          :recommendation-sent-at="recommendationSentAt"
           :acting="acting"
-          :copy-fallback-url="copyFallbackUrl"
-          @request-completion="requestCompletion"
-          @copy-fallback="copyFallback"
+          @request-recommendation="requestRecommendation"
           @open-cancel="cancelOpen = true"
           @open-complete="completeOpen = true"
         />
@@ -280,12 +249,12 @@ async function completeService() {
     <UModal
       v-model:open="completeOpen"
       title="Concluir serviço"
-      description="A conclusão será registrada como confirmada por você."
+      description="A conclusão será registrada por você."
     >
       <template #body>
         <p>
-          Confirme apenas se o trabalho já terminou. O serviço sairá da seção
-          “Serviços em andamento”.
+          Confirme apenas se o trabalho já terminou. Vamos pedir a recomendação
+          ao cliente automaticamente.
         </p>
         <p v-if="actionError" class="service-page__error" role="alert">
           {{ actionError }}

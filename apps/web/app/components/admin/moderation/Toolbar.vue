@@ -1,40 +1,18 @@
 <script setup lang="ts">
-import type { ModerationStatusFilter, ModerationTypeFilter } from "~/types";
+import type { ModerationStatusFilter } from "~/types";
 
 defineProps<{
-  typeFilter: ModerationTypeFilter;
   statusFilter: ModerationStatusFilter;
   search: string;
 }>();
 defineEmits<{
-  type: [value: ModerationTypeFilter];
   status: [value: ModerationStatusFilter];
   search: [value: string];
 }>();
-
-const types: { value: ModerationTypeFilter; label: string }[] = [
-  { value: "all", label: "Todos" },
-  { value: "profile_revision", label: "Perfil" },
-  { value: "profile_photo", label: "Foto" },
-  { value: "portfolio_item", label: "Portfólio" },
-  { value: "verification_request", label: "Verificação" },
-];
 </script>
 
 <template>
   <div class="moderation__toolbar">
-    <div class="moderation__filters" aria-label="Filtrar fila">
-      <button
-        v-for="type in types"
-        :key="type.value"
-        type="button"
-        :class="{ active: typeFilter === type.value }"
-        :aria-pressed="typeFilter === type.value"
-        @click="$emit('type', type.value)"
-      >
-        {{ type.label }}
-      </button>
-    </div>
     <label class="moderation__status" for="moderation-status">
       <span class="sr-only">Filtrar por status</span>
       <select
@@ -52,7 +30,6 @@ const types: { value: ModerationTypeFilter; label: string }[] = [
         <option value="pending_review">Aguardando análise</option>
         <option value="approved">Aprovados</option>
         <option value="rejected">Rejeitados</option>
-        <option value="hidden">Ocultos</option>
         <option value="all">Todos os status</option>
       </select>
     </label>

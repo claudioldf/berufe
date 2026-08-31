@@ -148,6 +148,7 @@ export function mapAdminGrowthReport(data: ApiReport): ReportPeriodData {
       reviewed: data.moderation.reviewed,
       approvalRate: data.moderation.approval_rate,
       hidden: data.moderation.hidden,
+      restored: data.moderation.restored,
     },
   };
 }

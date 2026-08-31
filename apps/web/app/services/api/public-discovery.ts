@@ -232,8 +232,9 @@ export function mapPublicProfessionalProfile(
       ...mapVerificationLabel(label),
     })),
     evidenceSummary: {
-      completedServices: profile.evidence_summary.completed_services,
+      registeredServices: profile.evidence_summary.registered_services,
       recommendations: profile.evidence_summary.recommendations,
+      hiddenRecommendations: profile.evidence_summary.hidden_recommendations,
       workedTogetherProfessionals:
         profile.evidence_summary.worked_together_professionals,
     },

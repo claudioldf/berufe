@@ -1,23 +1,20 @@
 <script setup lang="ts">
 const open = defineModel<boolean>("open", { required: true });
 const reason = defineModel<string>("reason", { required: true });
-defineProps<{ action: "rejected" | "hidden" }>();
 defineEmits<{ confirm: [] }>();
 </script>
 
 <template>
   <UModal
     v-model:open="open"
-    :title="action === 'hidden' ? 'Ocultar conteúdo' : 'Rejeitar conteúdo'"
-    description="A justificativa será privada e ficará visível ao profissional quando aplicável."
+    title="Rejeitar verificação de identidade"
+    description="A justificativa ficará visível ao profissional para orientar um novo envio."
   >
     <template #body>
       <DesignSystemFormField
         id="rejection-reason"
         class="rejection-form"
-        :label="
-          action === 'hidden' ? 'Motivo da ocultação' : 'Motivo da rejeição'
-        "
+        label="Motivo da rejeição"
         :hint="`${reason.length}/500`"
         required
       >
@@ -37,13 +34,21 @@ defineEmits<{ confirm: [] }>();
       <UButton color="neutral" variant="ghost" @click="open = false">
         Cancelar
       </UButton>
-      <UButton
-        color="error"
-        :disabled="reason.length < 10"
-        @click="$emit('confirm')"
+      <DesignSystemDisabledTooltip
+        :reason="
+          reason.trim().length < 10
+            ? 'Escreva ao menos 10 caracteres explicando o motivo'
+            : null
+        "
       >
-        {{ action === "hidden" ? "Confirmar ocultação" : "Confirmar rejeição" }}
-      </UButton>
+        <UButton
+          color="error"
+          :disabled="reason.trim().length < 10"
+          @click="$emit('confirm')"
+        >
+          Confirmar rejeição
+        </UButton>
+      </DesignSystemDisabledTooltip>
     </template>
   </UModal>
 </template>

@@ -21,6 +21,11 @@ const ButtonStub = defineComponent({
   `,
 });
 
+const TooltipStub = defineComponent({
+  props: { reason: { type: String, default: null } },
+  template: `<div :data-tooltip-reason="reason ?? ''"><slot /></div>`,
+});
+
 function mountSaveBar(
   props: Partial<InstanceType<typeof SaveBar>["$props"]> = {},
 ) {
@@ -39,6 +44,7 @@ function mountSaveBar(
       stubs: {
         UButton: ButtonStub,
         UIcon: true,
+        DesignSystemDisabledTooltip: TooltipStub,
       },
     },
   });
@@ -123,6 +129,40 @@ describe("quote save bar", () => {
       "Não foi possível salvar. Tente novamente.",
     );
     expect(share?.attributes("disabled")).toBeDefined();
+  });
+
+  it("explains why sharing is unavailable instead of a silent disabled button", () => {
+    const blocked = mountSaveBar({
+      saved: true,
+      readyToShare: true,
+      shareEnabled: false,
+      shareBlockedReason: "Conta suspensa: regularize para continuar.",
+    });
+    const share = blocked
+      .findAll("button")
+      .find((button) => button.text() === "Compartilhar");
+
+    expect(share?.attributes("disabled")).toBeDefined();
+    expect(
+      share?.element
+        .closest("[data-tooltip-reason]")
+        ?.getAttribute("data-tooltip-reason"),
+    ).toBe("Conta suspensa: regularize para continuar.");
+
+    const available = mountSaveBar({
+      saved: true,
+      readyToShare: true,
+      shareEnabled: true,
+      shareBlockedReason: null,
+    });
+    const availableShare = available
+      .findAll("button")
+      .find((button) => button.text() === "Compartilhar");
+    expect(
+      availableShare?.element
+        .closest("[data-tooltip-reason]")
+        ?.getAttribute("data-tooltip-reason"),
+    ).toBe("");
   });
 
   it("keeps submission available so the builder can reveal invalid fields", () => {

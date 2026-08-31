@@ -52,6 +52,7 @@ const links = computed(() => {
     return [
       { label: "Início", to: "/app/professional" },
       { label: "Orçamentos", to: "/app/professional/quotes" },
+      { label: "Serviços", to: "/app/professional/services" },
       { label: "Gerenciar Perfil", to: "/app/professional/profile" },
     ];
   }

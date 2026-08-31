@@ -208,16 +208,19 @@ useSeoMeta({
     <section id="recomendacoes" class="legal-section">
       <h2>9. Recomendações de clientes</h2>
       <p>
-        Depois da conclusão, um cliente com e-mail informado pode receber um
-        convite pessoal válido por 14 dias. A recomendação só é publicada quando
-        o cliente confirma o serviço e autoriza expressamente a exibição do nome
-        e do texto.
+        Depois da conclusão, o cliente recebe um convite pessoal válido por 14
+        dias, por e-mail ou WhatsApp conforme o contato informado no orçamento.
+        A recomendação só é publicada quando o cliente confirma o serviço e
+        autoriza expressamente a exibição do nome e do texto.
       </p>
       <p>
         Não há nota por estrelas nem revisão prévia. O autor responde pela
         veracidade e pelos direitos sobre o texto. A autorização de publicação
         pode ser retirada por
-        <a href="mailto:suporte@berufe.com.br">suporte@berufe.com.br</a>.
+        <a href="mailto:suporte@berufe.com.br">suporte@berufe.com.br</a>. O
+        profissional também pode ocultar uma recomendação específica do seu
+        perfil público; o perfil informa quantas recomendações foram ocultadas
+        dessa forma.
       </p>
     </section>
 

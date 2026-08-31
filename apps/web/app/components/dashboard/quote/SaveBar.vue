@@ -9,6 +9,7 @@ const props = defineProps<{
   savingIntent: QuoteSaveIntent | null;
   error: string;
   shareEnabled: boolean;
+  shareBlockedReason?: string | null;
 }>();
 
 defineEmits<{
@@ -69,15 +70,19 @@ const shareLabel = computed(() => {
       >
         Salvar rascunho
       </UButton>
-      <UButton
-        color="primary"
-        :icon="readyToShare ? 'i-lucide-send' : 'i-lucide-check'"
-        :loading="savingIntent === 'share'"
-        :disabled="(readyToShare && !shareEnabled) || pending"
-        @click="$emit('share')"
+      <DesignSystemDisabledTooltip
+        :reason="readyToShare && !shareEnabled ? shareBlockedReason : null"
       >
-        {{ shareLabel }}
-      </UButton>
+        <UButton
+          color="primary"
+          :icon="readyToShare ? 'i-lucide-send' : 'i-lucide-check'"
+          :loading="savingIntent === 'share'"
+          :disabled="(readyToShare && !shareEnabled) || pending"
+          @click="$emit('share')"
+        >
+          {{ shareLabel }}
+        </UButton>
+      </DesignSystemDisabledTooltip>
     </div>
   </div>
 </template>

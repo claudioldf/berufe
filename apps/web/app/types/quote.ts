@@ -66,17 +66,9 @@ export interface Quote {
 
 export interface QuoteServiceJob {
   id: string | null;
-  status:
-    | "approved"
-    | "completion_requested"
-    | "completion_issue"
-    | "completed"
-    | "cancelled";
-  completionRequestedAt: string | null;
-  completionIssueMessage: string;
+  status: "approved" | "completed" | "cancelled";
   completedAt: string | null;
   cancelledAt: string | null;
-  recommendationAvailable: boolean;
 }
 
 export interface QuoteProfessional {

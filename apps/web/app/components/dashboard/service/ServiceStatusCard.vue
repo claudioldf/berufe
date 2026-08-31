@@ -14,21 +14,8 @@ const props = defineProps<{
 }>();
 
 const currentStep = computed(() => {
-  if (props.service.status === "completed") return 2;
-  if (
-    props.service.status === "completion_requested" ||
-    props.service.status === "completion_issue"
-  )
-    return 1;
+  if (props.service.status === "completed") return 1;
   return 0;
-});
-
-const secondStepDescription = computed(() => {
-  if (props.service.status === "completion_requested")
-    return "Aguardando o cliente";
-  if (props.service.status === "completion_issue") return "Revisão necessária";
-  if (props.service.status === "completed") return "Confirmação recebida";
-  return "Próxima etapa";
 });
 
 const progressSteps = computed<
@@ -36,12 +23,11 @@ const progressSteps = computed<
 >(() => {
   const steps = [
     { label: "Aprovado", description: "Aceito pelo cliente" },
-    { label: "Confirmação", description: secondStepDescription.value },
     {
       label: "Concluído",
       description:
         props.service.status === "completed"
-          ? "Fluxo finalizado"
+          ? "Registrado por você"
           : "Etapa final",
     },
   ];
@@ -77,11 +63,11 @@ const progressSteps = computed<
       </div>
     </div>
 
-    <blockquote v-if="service.completionIssueMessage">
+    <blockquote v-if="service.customerFeedbackMessage">
       <UIcon name="i-lucide-message-circle" aria-hidden="true" />
       <div>
         <span>Mensagem do cliente</span>
-        <p>“{{ service.completionIssueMessage }}”</p>
+        <p>“{{ service.customerFeedbackMessage }}”</p>
       </div>
     </blockquote>
 
@@ -204,7 +190,7 @@ const progressSteps = computed<
 
   &__progress {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     align-self: center;
     margin: 0;
     padding: 4px 0 0;

@@ -7,19 +7,19 @@ vi.mock("@app/services/api/client", () => ({
   useApiClient: () => ({}),
 }));
 
-const item = (id = "photo-id"): ModerationQueueItem => ({
+const item = (id = "verification-id"): ModerationQueueItem => ({
   id,
-  targetType: "profile_photo",
+  targetType: "verification_request",
   status: "pending_review",
-  type: "Foto",
-  title: "Foto de perfil · Ana Souza",
+  type: "Verificação",
+  title: "Verificação de identidade · Ana Souza",
   subtitle: "Eletricista · Toda Joinville",
   submittedAt: "17 de ago., 09:00",
   age: "há 3h",
-  details: "Foto enviada para análise.",
-  preview: "Imagem privada",
-  hasMedia: true,
-  verificationFileId: null,
+  details: "Documento enviado para análise.",
+  preview: "Documento privado",
+  claimedBirthdate: "1990-04-12",
+  verificationFileId: `${id}-file`,
 });
 
 const queue = (items = [item()]): ModerationQueue => ({
@@ -46,25 +46,18 @@ describe("administrator moderation composable", () => {
   it("loads server-owned filters, selects queue work, and commits a decision", async () => {
     const load = vi.fn().mockResolvedValue(queue());
     const decide = vi.fn().mockResolvedValue(queue([]));
-    const loadMedia = vi
-      .fn()
-      .mockResolvedValue(new Blob(["image"], { type: "image/jpeg" }));
     const scope = effectScope();
     const workflow = scope.run(() =>
       useModerationQueue({
         load,
         decide,
-        loadMedia,
-        createObjectUrl: () => "blob:moderation-preview",
-        revokeObjectUrl: vi.fn(),
       }),
     )!;
 
     await workflow.load();
     await nextTick();
-    expect(workflow.selected.value?.id).toBe("photo-id");
+    expect(workflow.selected.value?.id).toBe("verification-id");
     expect(load).toHaveBeenCalledWith({
-      type: "all",
       status: "pending_review",
       search: "",
       page: 1,
@@ -76,40 +69,33 @@ describe("administrator moderation composable", () => {
       reason: "  A imagem precisa ser substituída.  ",
     });
 
-    expect(decided?.id).toBe("photo-id");
+    expect(decided?.id).toBe("verification-id");
     expect(decide).toHaveBeenCalledWith(
-      expect.objectContaining({ id: "photo-id" }),
+      expect.objectContaining({ id: "verification-id" }),
       "rejected",
       expect.objectContaining({ status: "pending_review" }),
       {
         reason: "A imagem precisa ser substituída.",
         note: "Conferida.",
+        identityMatchConfirmed: undefined,
       },
     );
     expect(workflow.queue.value.items).toEqual([]);
     scope.stop();
   });
 
-  it("debounces search filters and releases Blob URLs after sixty seconds", async () => {
+  it("debounces identity queue searches", async () => {
     vi.useFakeTimers();
     const load = vi.fn().mockResolvedValue(queue());
-    const revokeObjectUrl = vi.fn();
     const scope = effectScope();
     const workflow = scope.run(() =>
       useModerationQueue({
         load,
-        loadMedia: vi
-          .fn()
-          .mockResolvedValue(new Blob(["image"], { type: "image/jpeg" })),
-        createObjectUrl: () => "blob:moderation-preview",
-        revokeObjectUrl,
       }),
     )!;
 
     await workflow.load();
     await nextTick();
-    await vi.runAllTicks();
-    expect(workflow.mediaUrl.value).toBe("blob:moderation-preview");
 
     workflow.setSearchQuery("Ana");
     await nextTick();
@@ -119,38 +105,25 @@ describe("administrator moderation composable", () => {
       expect.objectContaining({ search: "Ana", page: 1 }),
     );
 
-    await vi.advanceTimersByTimeAsync(60_000);
-    expect(revokeObjectUrl).toHaveBeenCalledWith("blob:moderation-preview");
-    expect(workflow.mediaUrl.value).toBe("");
     scope.stop();
   });
 
-  it("revokes the previous preview when selection changes and contains failures", async () => {
-    const second = { ...item("portfolio-id"), targetType: "portfolio_item" };
+  it("changes selection within identity requests and contains load failures", async () => {
+    const second = item("second-verification-id");
     const load = vi.fn().mockResolvedValue(queue([item(), second]));
-    const revokeObjectUrl = vi.fn();
-    const loadMedia = vi
-      .fn()
-      .mockResolvedValueOnce(new Blob(["one"]))
-      .mockRejectedValueOnce(new Error("Imagem indisponível."));
     const scope = effectScope();
-    const workflow = scope.run(() =>
-      useModerationQueue({
-        load,
-        loadMedia,
-        createObjectUrl: () => "blob:first",
-        revokeObjectUrl,
-      }),
-    )!;
+    const workflow = scope.run(() => useModerationQueue({ load }))!;
 
     await workflow.load();
+    workflow.setNote("Nota do primeiro item");
+    workflow.select("second-verification-id");
     await nextTick();
-    workflow.select("portfolio-id");
-    await nextTick();
-    await Promise.resolve();
+    expect(workflow.selected.value?.id).toBe("second-verification-id");
+    expect(workflow.note.value).toBe("");
 
-    expect(revokeObjectUrl).toHaveBeenCalledWith("blob:first");
-    expect(workflow.mediaError.value).toBe("Imagem indisponível.");
+    load.mockRejectedValueOnce(new Error("Fila indisponível."));
+    await expect(workflow.load()).rejects.toThrow("Fila indisponível.");
+    expect(workflow.loadError.value).toBe("Fila indisponível.");
     scope.stop();
   });
 
@@ -160,7 +133,6 @@ describe("administrator moderation composable", () => {
       ...item("verification-id"),
       targetType: "verification_request",
       type: "Verificação",
-      hasMedia: false,
       verificationFileId: "verification-file-id",
     };
     const revokeObjectUrl = vi.fn();
@@ -198,7 +170,6 @@ describe("administrator moderation composable", () => {
       ...item("verification-id"),
       targetType: "verification_request",
       type: "Verificação",
-      hasMedia: false,
       verificationFileId: "verification-file-id",
     };
     const close = vi.fn();
@@ -218,6 +189,30 @@ describe("administrator moderation composable", () => {
       "Documento indisponível.",
     );
     expect(close).toHaveBeenCalledOnce();
+    scope.stop();
+  });
+
+  it("reports reviewed work whose retained evidence is no longer available", async () => {
+    const reviewed = {
+      ...item("reviewed-verification-id"),
+      status: "approved" as const,
+      verificationFileId: null,
+    };
+    const scope = effectScope();
+    const workflow = scope.run(() =>
+      useModerationQueue({
+        load: vi.fn().mockResolvedValue(queue([reviewed])),
+        openEvidenceTarget: vi.fn(),
+      }),
+    )!;
+
+    await workflow.load();
+    await expect(workflow.openEvidence()).rejects.toThrow(
+      "Este item não possui evidência disponível.",
+    );
+    expect(workflow.evidenceError.value).toBe(
+      "Este item não possui evidência disponível.",
+    );
     scope.stop();
   });
 });

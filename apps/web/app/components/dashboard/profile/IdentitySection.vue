@@ -59,10 +59,10 @@ const canRetry = computed(
     props.photo.latestUpload.retryable,
 );
 const hasPhoto = computed(() =>
-  Boolean(props.photo?.current || props.photo?.hasPublishedPhoto),
+  Boolean(props.photo?.current || props.photo?.hasPhoto),
 );
 const visiblePhotoUrl = computed(
-  () => selectedPhotoPreview.value || props.photo?.publishedImageUrl || "",
+  () => selectedPhotoPreview.value || props.photo?.imageUrl || "",
 );
 const photoStatus = computed(() => {
   if (props.photoUploading) return "Enviando e processando foto…";
@@ -82,13 +82,7 @@ const photoStatus = computed(() => {
 
   const current = props.photo?.current;
   if (!current) return "JPEG ou PNG, até 10 MB.";
-  if (current.status === "pending_review")
-    return "Foto salva e aguardando revisão.";
-  if (current.status === "approved") return "Foto revisada.";
-  if (current.status === "rejected")
-    return current.rejectionReason || "Foto recusada. Selecione outra imagem.";
-  if (current.status === "hidden") return "Foto oculta pela moderação.";
-  return "Selecione outra foto.";
+  return "Foto salva no perfil.";
 });
 
 function openPhotoPicker() {

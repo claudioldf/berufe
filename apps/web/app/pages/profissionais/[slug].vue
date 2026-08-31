@@ -8,6 +8,7 @@ import {
   fetchPublicProfessionalProfile,
   recordPublicProfessionalProfileView,
 } from "~/services/api/public-discovery";
+import { hydrationOnlyCachedData } from "~/utils/asyncDataCache";
 import { buildPublicProfileWhatsAppUrl } from "~/utils/publicProfiles";
 
 interface SocialLink {
@@ -44,6 +45,11 @@ const { data: profileResult, error: profileError } = await useAsyncData(
       requestedSlug.value,
       incomingInteractionToken.value || undefined,
     ),
+  {
+    // Keep the server payload during hydration, then revalidate every client
+    // navigation so an administrator suspension cannot reuse an older profile.
+    getCachedData: hydrationOnlyCachedData,
+  },
 );
 if (profileError.value || !profileResult.value) {
   const failure = profileError.value;

@@ -70,14 +70,14 @@ function workspace() {
         presentationType: "self_service" as const,
         isPublic: true,
         isSearchEligible: true,
+        isIndexable: true,
+        suspensionReason: null,
         publicationBlockers: [],
-        revisionStatus: "approved" as const,
-        revisionRejectionReason: null,
         hasPublishedRevision: true,
         photo: {
           current: null,
-          hasPublishedPhoto: false,
-          publishedImageUrl: null,
+          hasPhoto: false,
+          imageUrl: null,
           latestUpload: null,
         },
         portfolioItems: [],
@@ -181,6 +181,34 @@ describe("professional profile editor page", () => {
     expect(wrapper.html()).not.toContain(fixture.name as string);
   });
 
+  it("keeps a suspended profile editable without duplicating the dashboard banner", async () => {
+    const currentWorkspace = workspace();
+    Object.assign(
+      currentWorkspace.data.value.profile as {
+        status: string;
+        isPublic: boolean;
+        suspensionReason: string | null;
+      },
+      {
+        status: "suspended",
+        isPublic: false,
+        suspensionReason: "Motivo visível somente no painel.",
+      },
+    );
+    mocks.useWorkspace.mockResolvedValue(currentWorkspace);
+
+    const wrapper = await mountSuspended(ProfessionalProfilePage, {
+      shallow: true,
+      global: { renderStubDefaultSlot: true },
+    });
+
+    expect(
+      wrapper.getComponent({ name: "DashboardProfileEditor" }).exists(),
+    ).toBe(true);
+    expect(wrapper.text()).not.toContain("Seu perfil está oculto");
+    expect(wrapper.text()).not.toContain("Motivo visível somente no painel.");
+  });
+
   it("opens the URL-backed relationships tab and delegates relationship mutations", async () => {
     const currentWorkspace = workspace();
     currentWorkspace.data.value.relationships = [
@@ -263,8 +291,6 @@ describe("professional profile editor page", () => {
         service: "Eletricista do painel",
         description: "Instalação completa.",
         image: null,
-        status: "rejected",
-        rejectionReason: "Atualize a descrição.",
         submittedAt: "2026-08-18T12:00:00Z",
       },
     ];
@@ -300,8 +326,8 @@ describe("professional profile editor page", () => {
       draft,
     );
     expect(mocks.showToast).toHaveBeenCalledWith({
-      title: "Trabalho reenviado",
-      description: "As correções foram salvas e seguirão para nova análise.",
+      title: "Trabalho atualizado",
+      description: "As alterações já estão no perfil.",
     });
   });
 
@@ -310,12 +336,10 @@ describe("professional profile editor page", () => {
     currentWorkspace.data.value.profile.photo = {
       current: {
         id: "d25c64fa-3e6a-4e56-adc9-85bdac0045cb",
-        status: "approved",
-        rejectionReason: null,
         submittedAt: "2026-08-23T12:00:00Z",
       },
-      hasPublishedPhoto: true,
-      publishedImageUrl: "https://api.example.test/profile-photo.jpg",
+      hasPhoto: true,
+      imageUrl: "https://api.example.test/profile-photo.jpg",
       latestUpload: null,
     };
     currentWorkspace.removePhoto.mockResolvedValue(currentWorkspace.data.value);

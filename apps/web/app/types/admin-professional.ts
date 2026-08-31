@@ -1,5 +1,5 @@
 export type AdminProfessionalProfileStatus =
-  "draft" | "pending_review" | "published" | "suspended";
+  "draft" | "published" | "suspended";
 
 export type AdminProfessionalTriState = "all" | "yes" | "no";
 

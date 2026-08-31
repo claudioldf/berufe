@@ -4,14 +4,12 @@ import PortfolioManager from "~/components/dashboard/PortfolioManager.vue";
 import PortfolioUploadForm from "~/components/dashboard/portfolio/UploadForm.vue";
 import type { ProfessionalPortfolioItem } from "~/types";
 
-const rejectedItem: ProfessionalPortfolioItem = {
+const portfolioItem: ProfessionalPortfolioItem = {
   id: "portfolio-1",
   title: "Cozinha iluminada",
   service: "Eletricista",
   description: "Instalação completa.",
   image: null,
-  status: "rejected",
-  rejectionReason: "A imagem está desfocada.",
   submittedAt: "2026-08-17T12:00:00Z",
 };
 
@@ -65,8 +63,8 @@ describe("professional portfolio manager", () => {
       props: {
         serviceOptions: ["Eletricista", "Pintor"],
         imageRequired: false,
-        initialValues: rejectedItem,
-        submitLabel: "Salvar e reenviar",
+        initialValues: portfolioItem,
+        submitLabel: "Salvar alterações",
       },
     });
 
@@ -121,77 +119,52 @@ describe("professional portfolio manager", () => {
     expect(wrapper.getComponent({ name: "UModal" }).props("open")).toBe(true);
   });
 
-  it("renders the approved Rails public-image URL in the existing card", () => {
-    const approvedItem: ProfessionalPortfolioItem = {
-      ...rejectedItem,
-      id: "portfolio-approved",
+  it("renders the Rails public-image URL in the existing card", () => {
+    const publishedItem: ProfessionalPortfolioItem = {
+      ...portfolioItem,
+      id: "portfolio-published",
       image:
-        "http://localhost:3001/api/v1/public/portfolio-items/portfolio-approved/image",
-      status: "approved",
-      rejectionReason: null,
+        "http://localhost:3001/api/v1/public/portfolio-items/portfolio-published/image",
     };
     const wrapper = mount(PortfolioManager, {
-      props: { items: [approvedItem], serviceOptions: ["Eletricista"] },
+      props: { items: [publishedItem], serviceOptions: ["Eletricista"] },
     });
 
     expect(wrapper.get("article img").attributes("src")).toBe(
-      approvedItem.image,
+      publishedItem.image,
     );
     expect(wrapper.text()).not.toContain("Aprovado");
     expect(wrapper.get("h2").text()).toBe("Meus trabalhos");
   });
 
-  it("hides status labels unless the portfolio item was rejected", () => {
+  it("renders portfolio items without moderation states", () => {
     const items: ProfessionalPortfolioItem[] = [
       {
-        ...rejectedItem,
-        id: "portfolio-pending",
-        title: "Trabalho pendente",
-        status: "pending_review",
-        rejectionReason: null,
+        ...portfolioItem,
+        id: "portfolio-one",
+        title: "Primeiro trabalho",
       },
       {
-        ...rejectedItem,
-        id: "portfolio-approved",
-        title: "Trabalho aprovado",
-        status: "approved",
-        rejectionReason: null,
+        ...portfolioItem,
+        id: "portfolio-two",
+        title: "Segundo trabalho",
       },
-      {
-        ...rejectedItem,
-        id: "portfolio-hidden",
-        title: "Trabalho oculto",
-        status: "hidden",
-        rejectionReason: null,
-      },
-      rejectedItem,
     ];
     const wrapper = mount(PortfolioManager, {
       props: { items, serviceOptions: ["Eletricista"] },
     });
 
-    expect(wrapper.text()).not.toContain("Em análise");
-    expect(wrapper.text()).not.toContain("Aprovado");
-    expect(wrapper.text()).not.toContain("Oculto");
-    expect(wrapper.findAll(".portfolio-manager__status")).toHaveLength(1);
-    expect(wrapper.get(".portfolio-manager__status").text()).toBe("Recusado");
+    expect(wrapper.text()).toContain("Primeiro trabalho");
+    expect(wrapper.text()).toContain("Segundo trabalho");
+    expect(wrapper.text()).not.toMatch(/Em análise|Aprovado|Recusado|Oculto/);
+    expect(wrapper.find(".portfolio-manager__status").exists()).toBe(false);
   });
 
-  it("shows private owner status and uses the existing card action for soft deletion", async () => {
+  it("uses the existing card action for soft deletion", async () => {
     const wrapper = mount(PortfolioManager, {
-      props: { items: [rejectedItem], serviceOptions: ["Eletricista"] },
+      props: { items: [portfolioItem], serviceOptions: ["Eletricista"] },
     });
 
-    expect(wrapper.text()).toContain("Recusado");
-    expect(wrapper.get(".portfolio-manager__reason strong").text()).toBe(
-      "Motivo:",
-    );
-    expect(wrapper.get(".portfolio-manager__reason").text()).toContain(
-      "A imagem está desfocada.",
-    );
-    expect(wrapper.find(".portfolio-manager__reason-toggle").exists()).toBe(
-      false,
-    );
     expect(wrapper.find("article img").exists()).toBe(false);
 
     await wrapper
@@ -200,26 +173,26 @@ describe("professional portfolio manager", () => {
     expect(wrapper.emitted("removed")?.[0]).toEqual(["portfolio-1"]);
   });
 
-  it("edits and resubmits the existing rejected item", async () => {
+  it("edits the existing item in place", async () => {
     const wrapper = mount(PortfolioManager, {
       props: {
-        items: [rejectedItem],
+        items: [portfolioItem],
         serviceOptions: ["Eletricista"],
       },
     });
     const editButton = wrapper
       .findAll("button")
-      .find((button) => button.text().includes("Editar e reenviar"));
+      .find((button) => button.text().includes("Editar"));
 
     expect(editButton).toBeDefined();
     await editButton!.trigger("click");
 
     const editModal = wrapper
       .findAllComponents({ name: "UModal" })
-      .find((modal) => modal.props("title") === "Corrigir trabalho");
+      .find((modal) => modal.props("title") === "Editar trabalho");
     const editForm = wrapper
       .findAllComponents(PortfolioUploadForm)
-      .find((form) => form.props("submitLabel") === "Salvar e reenviar");
+      .find((form) => form.props("submitLabel") === "Salvar alterações");
     expect(editModal?.props("open")).toBe(true);
     expect(editForm?.props("initialValues")).toMatchObject({
       title: "Cozinha iluminada",
@@ -245,61 +218,34 @@ describe("professional portfolio manager", () => {
     expect(editModal?.props("open")).toBe(true);
     expect(description.element.value).toBe("Descrição corrigida.");
 
-    await wrapper.setProps({
-      items: [
-        {
-          ...rejectedItem,
-          status: "pending_review",
-          rejectionReason: null,
-        },
-      ],
-    });
-
-    expect(editModal?.props("open")).toBe(false);
+    editModal?.vm.$emit("update:open", false);
+    await nextTick();
     expect(wrapper.emitted("editClosed")).toHaveLength(1);
   });
 
-  it("opens a rejected item from the dashboard deep link", () => {
+  it("opens an item from the dashboard deep link", () => {
     const wrapper = mount(PortfolioManager, {
       props: {
-        items: [rejectedItem],
+        items: [portfolioItem],
         serviceOptions: ["Eletricista"],
-        initialEditItemId: rejectedItem.id,
+        initialEditItemId: portfolioItem.id,
       },
     });
     const editModal = wrapper
       .findAllComponents({ name: "UModal" })
-      .find((modal) => modal.props("title") === "Corrigir trabalho");
+      .find((modal) => modal.props("title") === "Editar trabalho");
 
     expect(editModal?.props("open")).toBe(true);
   });
 
-  it("expands and collapses a long rejection reason", async () => {
-    const longReason =
-      "A imagem está desfocada e não permite avaliar com clareza a qualidade do acabamento, os detalhes da instalação e o resultado final apresentado. Envie uma nova foto com boa iluminação.";
+  it("explains that new items and edits are immediate", () => {
     const wrapper = mount(PortfolioManager, {
       props: {
-        items: [{ ...rejectedItem, rejectionReason: longReason }],
+        items: [portfolioItem],
         serviceOptions: ["Eletricista"],
       },
     });
-    const reason = wrapper.get(".portfolio-manager__reason");
-    const toggle = wrapper.get(".portfolio-manager__reason-toggle");
 
-    expect(reason.get("strong").text()).toBe("Motivo:");
-    expect(reason.text()).not.toContain("Envie uma nova foto");
-    expect(toggle.text()).toBe("ver mais");
-    expect(toggle.attributes("aria-expanded")).toBe("false");
-
-    await toggle.trigger("click");
-
-    expect(reason.text()).toContain(longReason);
-    expect(toggle.text()).toBe("ver menos");
-    expect(toggle.attributes("aria-expanded")).toBe("true");
-
-    await toggle.trigger("click");
-
-    expect(reason.text()).not.toContain("Envie uma nova foto");
-    expect(toggle.text()).toBe("ver mais");
+    expect(wrapper.text()).toContain("alterações aparecem imediatamente");
   });
 });

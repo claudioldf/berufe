@@ -39,10 +39,7 @@ const form = ref<ProfessionalProfileDraft>({
 });
 const formRoot = useTemplateRef<HTMLFormElement>("formRoot");
 const validation = computed(() => {
-  const photoReady = Boolean(
-    props.photo?.hasPublishedPhoto ||
-    ["pending_review", "approved"].includes(props.photo?.current?.status ?? ""),
-  );
+  const photoReady = Boolean(props.photo?.hasPhoto || props.photo?.current);
   return validateOnboardingProfile(form.value, photoReady);
 });
 const isValid = computed(() =>

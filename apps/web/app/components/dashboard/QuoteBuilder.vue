@@ -17,6 +17,7 @@ const props = defineProps<{
   sharingMethod: QuoteShareMethod | null;
   shareError: string;
   shareEnabled?: boolean;
+  shareBlockedReason?: string | null;
   revoking?: boolean;
 }>();
 const emit = defineEmits<{
@@ -152,6 +153,7 @@ function requestShare() {
           :saving-intent="savingIntent"
           :error="saveBarError"
           :share-enabled="shareEnabled ?? false"
+          :share-blocked-reason="shareBlockedReason"
           @preview="previewOpen = true"
           @save="save"
           @share="requestShare"

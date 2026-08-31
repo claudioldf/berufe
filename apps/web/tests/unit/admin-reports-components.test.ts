@@ -133,6 +133,7 @@ describe("administrator report widgets", () => {
       reviewed: 0,
       approvalRate: { numerator: 0, denominator: 0, rate: null },
       hidden: 0,
+      restored: 0,
     };
     const wrapper = mount(TrustOperations, {
       props: { trust, quotes, operations },
@@ -163,6 +164,7 @@ describe("administrator report widgets", () => {
       reviewed: 0,
       approvalRate: { numerator: 0, denominator: 0, rate: null },
       hidden: 0,
+      restored: 0,
     };
     const wrapper = mount(TrustOperations, {
       props: { trust, quotes, operations },

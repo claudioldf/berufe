@@ -99,12 +99,10 @@ describe("professional profile identity photo control", () => {
         photo: {
           current: {
             id: "d25c64fa-3e6a-4e56-adc9-85bdac0045cb",
-            status: "approved",
-            rejectionReason: null,
             submittedAt: "2026-08-23T12:00:00Z",
           },
-          hasPublishedPhoto: true,
-          publishedImageUrl: "https://api.example.test/profile-photo.jpg",
+          hasPhoto: true,
+          imageUrl: "https://api.example.test/profile-photo.jpg",
           latestUpload: null,
         },
       },

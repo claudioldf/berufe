@@ -4,7 +4,6 @@ import { ApiRequestError } from "~/services/api/errors";
 import {
   decideSharedQuote,
   resolveSharedQuote,
-  respondToSharedQuoteCompletion,
 } from "~/services/api/shared-quotes";
 
 definePageMeta({ layout: false });
@@ -48,7 +47,6 @@ const quote = computed(() => current.value.quote);
 const professional = computed(() => current.value.professional);
 const decisionMessage = shallowRef("");
 const termsAccepted = shallowRef(false);
-const completionIssueMessage = shallowRef("");
 const submitting = shallowRef(false);
 const actionError = shallowRef("");
 
@@ -71,25 +69,6 @@ async function submitDecision(kind: "approve" | "request_change" | "decline") {
       revision: quote.value.revision,
       termsAccepted: kind === "approve" && termsAccepted.value,
       message: decisionMessage.value,
-    });
-  } catch (error) {
-    actionError.value =
-      error instanceof ApiRequestError
-        ? error.message
-        : "Não foi possível registrar sua resposta. Tente novamente.";
-  } finally {
-    submitting.value = false;
-  }
-}
-
-async function submitCompletion(kind: "confirm" | "report_issue") {
-  if (submitting.value) return;
-  submitting.value = true;
-  actionError.value = "";
-  try {
-    current.value = await respondToSharedQuoteCompletion(client, token.value, {
-      kind,
-      message: completionIssueMessage.value,
     });
   } catch (error) {
     actionError.value =
@@ -219,82 +198,32 @@ async function submitCompletion(kind: "confirm" | "report_issue") {
         </div>
       </section>
 
-      <section
-        v-else-if="quote.serviceJob?.status === 'completion_requested'"
-        class="shared-quote-page__action-card"
-        aria-labelledby="completion-title"
-      >
-        <div>
-          <DesignSystemEyebrow>Conclusão do serviço</DesignSystemEyebrow>
-          <h2 id="completion-title">O serviço foi concluído?</h2>
-          <p>
-            Confirme apenas se o trabalho combinado foi finalizado. Se ainda
-            houver algo a resolver, explique abaixo.
-          </p>
-        </div>
-        <label>
-          O que ainda precisa ser resolvido?
-          <textarea v-model="completionIssueMessage" maxlength="700" rows="3" />
-        </label>
-        <p v-if="actionError" role="alert" class="shared-quote-page__error">
-          {{ actionError }}
-        </p>
-        <div class="shared-quote-page__actions">
-          <UButton
-            color="neutral"
-            variant="outline"
-            :disabled="submitting || !completionIssueMessage.trim()"
-            @click="submitCompletion('report_issue')"
-            >Ainda há algo pendente</UButton
-          >
-          <UButton
-            color="primary"
-            icon="i-lucide-badge-check"
-            :loading="submitting"
-            @click="submitCompletion('confirm')"
-            >Confirmar conclusão</UButton
-          >
-        </div>
-      </section>
-
       <section v-else class="shared-quote-page__state-card">
         <UIcon
           :name="
             quote.serviceJob?.status === 'completed'
               ? 'i-lucide-badge-check'
-              : quote.serviceJob?.status === 'completion_issue'
-                ? 'i-lucide-message-circle-warning'
-                : quote.serviceJob?.status === 'cancelled'
-                  ? 'i-lucide-ban'
-                  : 'i-lucide-clock-3'
+              : quote.serviceJob?.status === 'cancelled'
+                ? 'i-lucide-ban'
+                : 'i-lucide-clock-3'
           "
         />
         <div>
           <h2 v-if="quote.serviceJob?.status === 'completed'">
-            Conclusão confirmada
-          </h2>
-          <h2 v-else-if="quote.serviceJob?.status === 'completion_issue'">
-            Pendência registrada
+            Serviço concluído
           </h2>
           <h2 v-else-if="quote.serviceJob?.status === 'cancelled'">
             Serviço cancelado
           </h2>
           <h2 v-else>Orçamento aprovado</h2>
           <p v-if="quote.serviceJob?.status === 'completed'">
-            Obrigado! Se você informou um e-mail, enviaremos um convite para
-            recomendar o profissional.
-          </p>
-          <p v-else-if="quote.serviceJob?.status === 'completion_issue'">
-            Após resolver a pendência, o profissional poderá solicitar uma nova
-            confirmação neste mesmo link.
+            Obrigado! Em breve você recebe um convite para contar como foi o
+            serviço e, se quiser, recomendar o profissional.
           </p>
           <p v-else-if="quote.serviceJob?.status === 'cancelled'">
-            Este serviço foi encerrado sem confirmação de conclusão.
+            Este serviço foi encerrado.
           </p>
-          <p v-else>
-            O profissional dará andamento ao serviço e usará este mesmo link
-            para pedir a confirmação de conclusão.
-          </p>
+          <p v-else>O profissional dará andamento ao serviço combinado.</p>
         </div>
       </section>
       <p class="shared-quote-page__notice">

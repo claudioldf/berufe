@@ -109,7 +109,7 @@ beforeEach(async () => {
       isPublic: true,
       services: [{ name: "Eletricista", isPrimary: true }],
       identity: { name: "Ana Profissional" },
-      photo: { publishedImageUrl: null },
+      photo: { imageUrl: null },
     },
     dashboard: { readiness: { steps: { approvedIdentity: true } } },
   });

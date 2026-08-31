@@ -33,20 +33,13 @@ export function mapProfessionalWorkspace(
           approvedIdentity: data.dashboard.readiness.steps.approved_identity,
         },
       },
-      changeRequestedQuotes: data.dashboard.change_requested_quotes.map(
-        (quote) => ({
-          id: quote.id,
-          number: quote.quote_number,
-          customerName: quote.customer_name,
-          serviceDescription: quote.service_description,
-          latestChangeRequest: {
-            id: quote.latest_change_request.id,
-            revision: quote.latest_change_request.revision,
-            message: quote.latest_change_request.message,
-            requestedAt: quote.latest_change_request.requested_at,
-          },
-        }),
-      ),
+      actionItems: data.dashboard.action_items.map((item) => ({
+        id: item.id,
+        kind: item.kind,
+        title: item.title,
+        subtitle: item.subtitle,
+        sortAt: item.sort_at,
+      })),
       recentQuotes: data.dashboard.recent_quotes.map((quote) => ({
         id: quote.id,
         number: quote.quote_number,
@@ -74,21 +67,18 @@ export function mapProfessionalWorkspace(
       isPublic: data.profile.is_public,
       isSearchEligible: data.profile.is_search_eligible,
       isIndexable: data.profile.is_indexable,
+      suspensionReason: data.profile.suspension_reason,
       publicationBlockers: data.profile.publication_blockers,
-      revisionStatus: data.profile.revision_status,
-      revisionRejectionReason: data.profile.revision_rejection_reason,
       hasPublishedRevision: data.profile.has_published_revision,
       photo: {
         current: data.profile.photo.current
           ? {
               id: data.profile.photo.current.id,
-              status: data.profile.photo.current.status,
-              rejectionReason: data.profile.photo.current.rejection_reason,
               submittedAt: data.profile.photo.current.submitted_at,
             }
           : null,
-        hasPublishedPhoto: data.profile.photo.has_published_photo,
-        publishedImageUrl: data.profile.photo.published_image_url,
+        hasPhoto: data.profile.photo.has_photo,
+        imageUrl: data.profile.photo.image_url,
         latestUpload: data.profile.photo.latest_upload
           ? {
               id: data.profile.photo.latest_upload.id,
@@ -104,8 +94,6 @@ export function mapProfessionalWorkspace(
         service: item.service.name,
         description: item.description ?? "",
         image: item.image_url,
-        status: item.status,
-        rejectionReason: item.rejection_reason,
         submittedAt: item.submitted_at,
       })),
       verification: {

@@ -1,9 +1,12 @@
-export type ServiceJobStatus =
-  | "approved"
-  | "completion_requested"
-  | "completion_issue"
-  | "completed"
-  | "cancelled";
+export type ServiceJobStatus = "approved" | "completed" | "cancelled";
+
+export type RecommendationDeliveryChannel = "email" | "whatsapp";
+
+export interface ProfessionalServiceJobRecommendation {
+  status: "open" | "completed" | "expired";
+  deliveryChannel: RecommendationDeliveryChannel;
+  sentAt: string | null;
+}
 
 export interface ProfessionalServiceJob {
   id: string;
@@ -19,14 +22,11 @@ export interface ProfessionalServiceJob {
     scheduledOn: string;
     total: number;
   };
-  completionRequestedAt: string | null;
-  completionIssueAt: string | null;
-  completionIssueMessage: string;
+  customerFeedbackMessage: string;
   completedAt: string | null;
-  completionConfirmedBy: "customer" | "professional" | null;
   cancelledAt: string | null;
   cancellationReason: string;
-  recommendationRequestStatus: "open" | "completed" | "expired" | null;
+  recommendation: ProfessionalServiceJobRecommendation | null;
   createdAt: string;
   updatedAt: string;
 }
