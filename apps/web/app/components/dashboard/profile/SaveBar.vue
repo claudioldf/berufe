@@ -8,6 +8,9 @@ const props = withDefaults(
   }>(),
   { saving: false, valid: true, validationAttempted: false },
 );
+const savingReason = computed(() =>
+  props.saving ? "Aguarde o salvamento do perfil terminar." : null,
+);
 </script>
 
 <template>
@@ -25,14 +28,16 @@ const props = withDefaults(
       }}
     </span>
     <div class="editor-savebar__actions">
-      <UButton
-        type="submit"
-        color="primary"
-        :loading="props.saving"
-        :disabled="props.saving"
-      >
-        Salvar
-      </UButton>
+      <DesignSystemDisabledTooltip :reason="savingReason">
+        <UButton
+          type="submit"
+          color="primary"
+          :loading="props.saving"
+          :disabled="props.saving"
+        >
+          Salvar
+        </UButton>
+      </DesignSystemDisabledTooltip>
     </div>
   </div>
 </template>

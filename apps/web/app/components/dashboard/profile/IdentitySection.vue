@@ -50,6 +50,11 @@ const {
   clearPreview,
 } = useImagePreview();
 const photoBusy = computed(() => props.photoUploading || props.photoRemoving);
+const photoBusyReason = computed(() => {
+  if (props.photoUploading) return "Aguarde o envio da foto terminar.";
+  if (props.photoRemoving) return "Aguarde a remoção da foto terminar.";
+  return null;
+});
 const photoInvalid = computed(() =>
   Boolean(selectionError.value || props.photoError),
 );
@@ -162,38 +167,45 @@ function selectPhoto(event: Event) {
         @change="selectPhoto"
       />
       <div class="profile-photo-control__actions">
-        <UButton
-          type="button"
-          color="neutral"
-          variant="outline"
-          :loading="props.photoUploading"
-          :disabled="photoBusy"
-          @click="openPhotoPicker"
-        >
-          {{ hasPhoto ? "Trocar foto" : "Adicionar foto" }}
-        </UButton>
-        <UButton
-          v-if="canRetry"
-          type="button"
-          color="neutral"
-          variant="ghost"
-          :disabled="photoBusy"
-          @click="emit('photoRetry')"
-        >
-          Tentar novamente
-        </UButton>
-        <UButton
+        <DesignSystemDisabledTooltip :reason="photoBusyReason">
+          <UButton
+            type="button"
+            color="neutral"
+            variant="outline"
+            :loading="props.photoUploading"
+            :disabled="photoBusy"
+            @click="openPhotoPicker"
+          >
+            {{ hasPhoto ? "Trocar foto" : "Adicionar foto" }}
+          </UButton>
+        </DesignSystemDisabledTooltip>
+        <DesignSystemDisabledTooltip v-if="canRetry" :reason="photoBusyReason">
+          <UButton
+            type="button"
+            color="neutral"
+            variant="ghost"
+            :disabled="photoBusy"
+            @click="emit('photoRetry')"
+          >
+            Tentar novamente
+          </UButton>
+        </DesignSystemDisabledTooltip>
+        <DesignSystemDisabledTooltip
           v-if="props.allowPhotoRemoval && hasPhoto"
-          type="button"
-          color="error"
-          variant="ghost"
-          icon="i-lucide-trash-2"
-          :loading="props.photoRemoving"
-          :disabled="photoBusy"
-          @click="photoRemovalOpen = true"
+          :reason="photoBusyReason"
         >
-          Remover foto
-        </UButton>
+          <UButton
+            type="button"
+            color="error"
+            variant="ghost"
+            icon="i-lucide-trash-2"
+            :loading="props.photoRemoving"
+            :disabled="photoBusy"
+            @click="photoRemovalOpen = true"
+          >
+            Remover foto
+          </UButton>
+        </DesignSystemDisabledTooltip>
       </div>
     </div>
     <UModal
@@ -202,25 +214,29 @@ function selectPhoto(event: Event) {
       description="A foto deixará de aparecer no seu perfil. Se ele estiver publicado, ficará indisponível até você adicionar outra foto."
     >
       <template #footer>
-        <UButton
-          type="button"
-          color="neutral"
-          variant="ghost"
-          :disabled="photoBusy"
-          @click="photoRemovalOpen = false"
-        >
-          Manter foto
-        </UButton>
-        <UButton
-          type="button"
-          color="error"
-          icon="i-lucide-trash-2"
-          :loading="props.photoRemoving"
-          :disabled="photoBusy"
-          @click="confirmPhotoRemoval"
-        >
-          Remover foto
-        </UButton>
+        <DesignSystemDisabledTooltip :reason="photoBusyReason">
+          <UButton
+            type="button"
+            color="neutral"
+            variant="ghost"
+            :disabled="photoBusy"
+            @click="photoRemovalOpen = false"
+          >
+            Manter foto
+          </UButton>
+        </DesignSystemDisabledTooltip>
+        <DesignSystemDisabledTooltip :reason="photoBusyReason">
+          <UButton
+            type="button"
+            color="error"
+            icon="i-lucide-trash-2"
+            :loading="props.photoRemoving"
+            :disabled="photoBusy"
+            @click="confirmPhotoRemoval"
+          >
+            Remover foto
+          </UButton>
+        </DesignSystemDisabledTooltip>
       </template>
     </UModal>
     <div class="editor-grid">
