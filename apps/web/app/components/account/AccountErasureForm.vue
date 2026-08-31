@@ -12,6 +12,13 @@ const emit = defineEmits<{
 
 const understood = shallowRef(false);
 const canSubmit = computed(() => understood.value && !props.submitting);
+const submitBlockedReason = computed(() => {
+  if (props.submitting) return "Aguarde a solicitação de exclusão terminar.";
+  if (!understood.value) {
+    return "Confirme que entende que a exclusão da conta é irreversível.";
+  }
+  return null;
+});
 
 function submit() {
   if (!canSubmit.value) return;
@@ -82,15 +89,17 @@ function submit() {
         <UButton to="/app/professional/profile" color="neutral" variant="ghost">
           Cancelar
         </UButton>
-        <UButton
-          type="submit"
-          color="error"
-          icon="i-lucide-trash-2"
-          :loading="submitting"
-          :disabled="!canSubmit"
-        >
-          Excluir conta irreversivelmente
-        </UButton>
+        <DesignSystemDisabledTooltip :reason="submitBlockedReason">
+          <UButton
+            type="submit"
+            color="error"
+            icon="i-lucide-trash-2"
+            :loading="submitting"
+            :disabled="!canSubmit"
+          >
+            Excluir conta irreversivelmente
+          </UButton>
+        </DesignSystemDisabledTooltip>
       </div>
     </form>
   </DesignSystemSurfaceCard>
