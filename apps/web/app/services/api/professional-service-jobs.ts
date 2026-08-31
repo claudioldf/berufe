@@ -106,11 +106,23 @@ export async function cancelProfessionalServiceJob(
 export async function completeProfessionalServiceJob(
   client: BerufeApiClient,
   id: string,
-): Promise<ProfessionalServiceJob> {
+  requestRecommendation: boolean,
+): Promise<{
+  serviceJob: ProfessionalServiceJob;
+  shareUrl: string | null;
+  whatsappUrl: string | null;
+}> {
   const { data, error, response } = await client.POST(
     "/api/v1/professional/service-jobs/{id}/complete",
-    { params: { path: { id } } },
+    {
+      params: { path: { id } },
+      body: { completion: { request_recommendation: requestRecommendation } },
+    },
   );
   if (error || !data) throw requestError(error, response);
-  return mapProfessionalServiceJob(data.data.service_job);
+  return {
+    serviceJob: mapProfessionalServiceJob(data.data.service_job),
+    shareUrl: data.data.share_url,
+    whatsappUrl: data.data.whatsapp_url,
+  };
 }

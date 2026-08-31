@@ -1,5 +1,9 @@
 import { shallowRef } from "vue";
-import type { ProfessionalActionKind } from "~/types";
+import type {
+  ProfessionalActionKind,
+  ProfessionalServiceJob,
+  RecommendationDeliveryChannel,
+} from "~/types";
 import { useToast } from "~/composables/useToast";
 import { useApiClient } from "~/services/api/client";
 import { ApiRequestError } from "~/services/api/errors";
@@ -16,6 +20,7 @@ export function useProfessionalActionInbox() {
   const client = useApiClient();
   const { showToast } = useToast();
   const actingId = shallowRef<string | null>(null);
+  const completionIntent = shallowRef<boolean | null>(null);
   const actionError = shallowRef("");
 
   function openWhatsapp<T>(action: () => Promise<T & { whatsappUrl: string }>) {
@@ -49,11 +54,7 @@ export function useProfessionalActionInbox() {
           description: "A mensagem já aponta para o telefone deste cliente.",
         });
       } else if (kind === "service_open") {
-        await completeProfessionalServiceJob(client, id);
-        showToast({
-          title: "Serviço concluído",
-          description: "Vamos pedir a recomendação ao cliente.",
-        });
+        return;
       } else if (kind === "recommendation_unsent") {
         await openWhatsapp(() =>
           requestProfessionalServiceRecommendation(client, id),
@@ -74,5 +75,69 @@ export function useProfessionalActionInbox() {
     }
   }
 
-  return { actingId, actionError, act };
+  async function completeService(
+    id: string,
+    requestRecommendation: boolean,
+    deliveryChannel: RecommendationDeliveryChannel,
+  ): Promise<ProfessionalServiceJob | null> {
+    if (actingId.value) return null;
+    const handoff =
+      requestRecommendation &&
+      deliveryChannel === "whatsapp" &&
+      import.meta.client
+        ? window.open("about:blank", "_blank")
+        : null;
+    if (handoff) handoff.opener = null;
+
+    actingId.value = id;
+    completionIntent.value = requestRecommendation;
+    actionError.value = "";
+    try {
+      const result = await completeProfessionalServiceJob(
+        client,
+        id,
+        requestRecommendation,
+      );
+      if (result.whatsappUrl) {
+        if (handoff) handoff.location.replace(result.whatsappUrl);
+        else if (import.meta.client) window.location.assign(result.whatsappUrl);
+      } else {
+        handoff?.close();
+      }
+
+      showToast({
+        title: "Serviço concluído",
+        description: !requestRecommendation
+          ? "Nenhum pedido de avaliação foi enviado."
+          : deliveryChannel === "email"
+            ? "O pedido de avaliação foi enfileirado para envio por e-mail."
+            : "O pedido de avaliação está pronto no WhatsApp.",
+      });
+      clearNuxtData("professional-workspace");
+      return result.serviceJob;
+    } catch (error) {
+      handoff?.close();
+      actionError.value =
+        error instanceof ApiRequestError
+          ? error.message
+          : "Não foi possível concluir o serviço.";
+      return null;
+    } finally {
+      actingId.value = null;
+      completionIntent.value = null;
+    }
+  }
+
+  function clearActionError() {
+    actionError.value = "";
+  }
+
+  return {
+    actingId,
+    completionIntent,
+    actionError,
+    act,
+    completeService,
+    clearActionError,
+  };
 }

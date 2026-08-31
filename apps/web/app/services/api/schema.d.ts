@@ -1822,6 +1822,7 @@ export interface components {
             subtitle: string;
             /** Format: date-time */
             sort_at: string;
+            recommendation_delivery_channel: components["schemas"]["RecommendationDeliveryChannel"] | null;
         };
         ProfessionalDashboardReadiness: {
             percentage: number;
@@ -2092,6 +2093,16 @@ export interface components {
         ProfessionalServiceJobResponse: {
             data: {
                 service_job: components["schemas"]["ProfessionalServiceJob"];
+            };
+            request_id: components["schemas"]["RequestId"];
+        };
+        ProfessionalServiceCompletionResponse: {
+            data: {
+                service_job: components["schemas"]["ProfessionalServiceJob"];
+                /** Format: uri */
+                share_url: string | null;
+                /** Format: uri */
+                whatsapp_url: string | null;
             };
             request_id: components["schemas"]["RequestId"];
         };
@@ -5289,15 +5300,23 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": {
+                    completion: {
+                        request_recommendation: boolean;
+                    };
+                };
+            };
+        };
         responses: {
-            /** @description The completed service with the professional recorded as confirmer. */
+            /** @description The completed service and any immediate recommendation handoff. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProfessionalServiceJobResponse"];
+                    "application/json": components["schemas"]["ProfessionalServiceCompletionResponse"];
                 };
             };
             /** @description An active session is required. */
@@ -5329,6 +5348,15 @@ export interface operations {
             };
             /** @description The service is already completed or cancelled. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The recommendation choice is missing or invalid. */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

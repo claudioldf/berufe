@@ -267,7 +267,8 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
       "kind" => "quote_change_requested",
       "title" => "Orçamento ##{newer.quote_number} · Cliente Recente",
       "subtitle" => "Trocar dois pontos de tomada.",
-      "sort_at" => latest_newer_request_at.iso8601
+      "sort_at" => latest_newer_request_at.iso8601,
+      "recommendation_delivery_channel" => nil
     )
     assert_api_conform(status: 200)
 

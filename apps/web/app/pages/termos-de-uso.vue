@@ -208,10 +208,11 @@ useSeoMeta({
     <section id="recomendacoes" class="legal-section">
       <h2>9. Recomendações de clientes</h2>
       <p>
-        Depois da conclusão, o cliente recebe um convite pessoal válido por 14
-        dias, por e-mail ou WhatsApp conforme o contato informado no orçamento.
-        A recomendação só é publicada quando o cliente confirma o serviço e
-        autoriza expressamente a exibição do nome e do texto.
+        Ao concluir o serviço, o profissional escolhe se deseja solicitar uma
+        avaliação. Quando solicita, o cliente recebe um convite pessoal válido
+        por 14 dias, por e-mail ou WhatsApp conforme o contato informado no
+        orçamento. A recomendação só é publicada quando o cliente confirma o
+        serviço e autoriza expressamente a exibição do nome e do texto.
       </p>
       <p>
         Não há nota por estrelas nem revisão prévia. O autor responde pela

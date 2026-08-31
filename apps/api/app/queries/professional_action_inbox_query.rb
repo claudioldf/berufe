@@ -7,7 +7,7 @@
 class ProfessionalActionInboxQuery
   AWAITING_RESPONSE_THRESHOLD = 3.days
 
-  Item = Data.define(:id, :kind, :title, :subtitle, :sort_at)
+  Item = Data.define(:id, :kind, :title, :subtitle, :sort_at, :recommendation_delivery_channel)
 
   def call(profile:, now: Time.current)
     items = [
@@ -29,7 +29,8 @@ class ProfessionalActionInboxQuery
         kind: "quote_unshared",
         title: quote_title(quote),
         subtitle: "Ainda não foi enviado ao cliente",
-        sort_at: quote.updated_at
+        sort_at: quote.updated_at,
+        recommendation_delivery_channel: nil
       )
     end
   end
@@ -43,7 +44,8 @@ class ProfessionalActionInboxQuery
           kind: "quote_awaiting_response",
           title: quote_title(quote),
           subtitle: "Sem resposta desde #{quote.shared_at.to_date.strftime("%d/%m")}",
-          sort_at: quote.shared_at
+          sort_at: quote.shared_at,
+          recommendation_delivery_channel: nil
         )
       end
   end
@@ -61,7 +63,8 @@ class ProfessionalActionInboxQuery
           kind: "quote_change_requested",
           title: quote_title(quote),
           subtitle: latest_request.message.truncate(140),
-          sort_at: latest_request.requested_at
+          sort_at: latest_request.requested_at,
+          recommendation_delivery_channel: nil
         )
       end
   end
@@ -77,7 +80,8 @@ class ProfessionalActionInboxQuery
           kind: "service_open",
           title: service_title(job),
           subtitle: "Aprovado, aguardando você concluir",
-          sort_at: job.updated_at
+          sort_at: job.updated_at,
+          recommendation_delivery_channel: job.quote.customer_email.present? ? "email" : "whatsapp"
         )
       end
   end
@@ -94,7 +98,8 @@ class ProfessionalActionInboxQuery
           kind: "recommendation_unsent",
           title: service_title(job),
           subtitle: "Peça a recomendação pelo WhatsApp",
-          sort_at: job.completed_at
+          sort_at: job.completed_at,
+          recommendation_delivery_channel: "whatsapp"
         )
       end
   end

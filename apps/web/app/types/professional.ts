@@ -1,4 +1,7 @@
-import type { ProfessionalServiceJob } from "./service-job";
+import type {
+  ProfessionalServiceJob,
+  RecommendationDeliveryChannel,
+} from "./service-job";
 import type { LocationCoverage } from "./location";
 import type { SearchLocation } from "./ui";
 
@@ -326,6 +329,7 @@ export interface ProfessionalActionItem {
   title: string;
   subtitle: string;
   sortAt: string;
+  recommendationDeliveryChannel: RecommendationDeliveryChannel | null;
 }
 
 export interface ProfessionalWorkspace {

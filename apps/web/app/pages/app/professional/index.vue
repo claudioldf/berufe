@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import type { OnboardingChecklistItem } from "~/types";
+import ServiceCompletionDialog from "~/components/dashboard/service/CompletionDialog.vue";
+import type {
+  OnboardingChecklistItem,
+  ProfessionalActionItem,
+  ProfessionalActionKind,
+} from "~/types";
 import { useProfessionalActionInbox } from "~/composables/useProfessionalActionInbox";
 import { useProfessionalWorkspace } from "~/composables/useProfessionalWorkspace";
 import { useApplicationSession } from "~/composables/useApplicationSession";
@@ -15,6 +20,8 @@ const actionInbox = useProfessionalActionInbox();
 const { data: relationshipCatalog } = await useCatalogs();
 const professionalWorkspace = await useProfessionalWorkspace();
 const relationshipOpen = shallowRef(false);
+const completionOpen = shallowRef(false);
+const completionItem = shallowRef<ProfessionalActionItem | null>(null);
 const relationshipServices = computed(
   () => relationshipCatalog.value?.services ?? [],
 );
@@ -249,6 +256,42 @@ async function respondRelationship(
     // The actionable activity section keeps the normalized API error visible.
   }
 }
+
+function handleDashboardAction(id: string, kind: ProfessionalActionKind) {
+  if (kind !== "service_open") {
+    void actionInbox.act(id, kind);
+    return;
+  }
+
+  const item = workspace.value?.dashboard.actionItems.find(
+    (candidate) => candidate.id === id && candidate.kind === kind,
+  );
+  if (!item?.recommendationDeliveryChannel) return;
+
+  actionInbox.clearActionError();
+  completionItem.value = item;
+  completionOpen.value = true;
+}
+
+async function completeDashboardService(requestRecommendation: boolean) {
+  const item = completionItem.value;
+  if (!item?.recommendationDeliveryChannel) return;
+
+  const completed = await actionInbox.completeService(
+    item.id,
+    requestRecommendation,
+    item.recommendationDeliveryChannel,
+  );
+  if (!completed) return;
+
+  completionOpen.value = false;
+  completionItem.value = null;
+}
+
+function updateCompletionOpen(open: boolean) {
+  completionOpen.value = open;
+  if (!open && !actionInbox.actingId.value) completionItem.value = null;
+}
 </script>
 
 <template>
@@ -350,7 +393,7 @@ async function respondRelationship(
             :acting-id="actionInbox.actingId.value"
             :action-error="actionInbox.actionError.value"
             @respond="respondRelationship"
-            @act="actionInbox.act"
+            @act="handleDashboardAction"
           />
           <DashboardRecentWork
             :quotes="recentQuotes"
@@ -391,6 +434,18 @@ async function respondRelationship(
       v-model:open="relationshipOpen"
       :services="relationshipServices"
       :eligible="relationshipEligible"
+    />
+    <ServiceCompletionDialog
+      :open="completionOpen"
+      customer-name="o cliente"
+      :delivery-channel="
+        completionItem?.recommendationDeliveryChannel ?? 'email'
+      "
+      :busy="actionInbox.actingId.value === completionItem?.id"
+      :pending-choice="actionInbox.completionIntent.value"
+      :error="actionInbox.actionError.value"
+      @update:open="updateCompletionOpen"
+      @confirm="completeDashboardService"
     />
   </div>
 </template>

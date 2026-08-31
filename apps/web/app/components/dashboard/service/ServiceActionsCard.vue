@@ -39,7 +39,7 @@ const actionCopy = computed(() => {
     label: "Próximo passo",
     title: "Finalize com confiança",
     description:
-      "Quando o trabalho terminar, marque como concluído. Vamos pedir a recomendação ao cliente automaticamente.",
+      "Quando o trabalho terminar, confirme a conclusão e escolha se deseja solicitar uma avaliação ao cliente.",
     icon: "i-lucide-clipboard-check",
   };
 });

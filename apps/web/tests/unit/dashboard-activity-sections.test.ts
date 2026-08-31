@@ -252,6 +252,7 @@ describe("dashboard activity sections", () => {
         subtitle:
           "Trocar duas luminárias e revisar a posição dos interruptores.",
         sortAt: "2026-08-19T14:00:00Z",
+        recommendationDeliveryChannel: null,
       },
       {
         id: "older-quote-id",
@@ -259,6 +260,7 @@ describe("dashboard activity sections", () => {
         title: "Orçamento #19 · Paulo Cliente",
         subtitle: "Usar tinta lavável.",
         sortAt: "2026-08-18T14:00:00Z",
+        recommendationDeliveryChannel: null,
       },
     ];
     currentWorkspace.relationships = [
@@ -309,6 +311,7 @@ describe("dashboard activity sections", () => {
         title: "Adequação elétrica · Ana Paula",
         subtitle: "Aprovado, aguardando você concluir",
         sortAt: "2026-08-19T14:00:00Z",
+        recommendationDeliveryChannel: "email",
       },
     ];
 

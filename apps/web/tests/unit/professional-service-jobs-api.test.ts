@@ -52,7 +52,11 @@ describe("professional service jobs API", () => {
     const client = {
       POST: vi.fn().mockResolvedValue({
         data: {
-          data: { service_job: contractServiceJob },
+          data: {
+            service_job: contractServiceJob,
+            share_url: null,
+            whatsapp_url: null,
+          },
           request_id: "service-complete",
         },
         error: undefined,
@@ -61,13 +65,18 @@ describe("professional service jobs API", () => {
     } as unknown as BerufeApiClient;
 
     await expect(
-      completeProfessionalServiceJob(client, contractServiceJob.id),
+      completeProfessionalServiceJob(client, contractServiceJob.id, true),
     ).resolves.toMatchObject({
-      status: "completed",
+      serviceJob: { status: "completed" },
+      shareUrl: null,
+      whatsappUrl: null,
     });
     expect(client.POST).toHaveBeenCalledWith(
       "/api/v1/professional/service-jobs/{id}/complete",
-      { params: { path: { id: contractServiceJob.id } } },
+      {
+        params: { path: { id: contractServiceJob.id } },
+        body: { completion: { request_recommendation: true } },
+      },
     );
   });
 });

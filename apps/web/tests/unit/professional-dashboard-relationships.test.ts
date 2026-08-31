@@ -1,5 +1,5 @@
 import { mockNuxtImport, mountSuspended } from "@nuxt/test-utils/runtime";
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
 import { defineComponent, ref, shallowRef } from "vue";
 import DashboardChecklist from "@app/components/dashboard/DashboardChecklist.vue";
 import DashboardQuickActions from "@app/components/dashboard/DashboardQuickActions.vue";
@@ -11,6 +11,8 @@ const mocks = vi.hoisted(() => ({
   useCatalogs: vi.fn(),
   showToast: vi.fn(),
   share: vi.fn(),
+  completeService: vi.fn(),
+  client: {},
 }));
 
 vi.mock("@app/composables/useProfessionalWorkspace", () => ({
@@ -24,6 +26,13 @@ vi.mock("@app/composables/useToast", () => ({
 }));
 vi.mock("@app/composables/useShare", () => ({
   useShare: () => ({ share: mocks.share }),
+}));
+vi.mock("@app/services/api/client", () => ({
+  useApiClient: () => mocks.client,
+}));
+vi.mock("@app/services/api/professional-service-jobs", () => ({
+  completeProfessionalServiceJob: mocks.completeService,
+  requestProfessionalServiceRecommendation: vi.fn(),
 }));
 // withSiteUrl resolves relatively (no request host) outside a real SSR
 // request context; pin it to an absolute origin to match production.
@@ -44,6 +53,16 @@ const TooltipStub = defineComponent({
   props: { reason: { type: String, default: null } },
   template: `<div :data-tooltip-reason="reason ?? ''"><slot /></div>`,
 });
+const ModalStub = defineComponent({
+  props: { open: Boolean },
+  emits: ["update:open"],
+  template: `
+    <div v-if="open" class="modal">
+      <slot name="body" />
+      <slot name="footer" />
+    </div>
+  `,
+});
 
 const mountOptions = {
   shallow: true,
@@ -52,12 +71,14 @@ const mountOptions = {
     stubs: {
       UButton: ButtonStub,
       DesignSystemDisabledTooltip: TooltipStub,
+      UModal: ModalStub,
       DashboardActivitySections: false,
       DashboardChecklist: false,
       DashboardQuickActions: false,
       DashboardQuoteEmptyState: false,
       DashboardRecentWork: false,
       DesignSystemFeatureEmptyState: false,
+      ServiceCompletionDialog: false,
     },
   },
 } as const;
@@ -260,6 +281,107 @@ describe("professional dashboard", () => {
         url: "http://localhost:3000/be/beto-lima",
       }),
     );
+  });
+
+  it("opens the completion choice before completing a dashboard service", async () => {
+    const currentWorkspace = workspace();
+    currentWorkspace.data.value.dashboard.actionItems = [
+      {
+        id: "service-id",
+        kind: "service_open",
+        title: "Adequação elétrica · Ana Paula",
+        subtitle: "Aprovado, aguardando você concluir",
+        sortAt: "2026-08-19T14:00:00Z",
+        recommendationDeliveryChannel: "email",
+      },
+    ];
+    mocks.useWorkspace.mockResolvedValue(currentWorkspace);
+    mocks.completeService.mockResolvedValue({
+      serviceJob: { id: "service-id", status: "completed" },
+      shareUrl: null,
+      whatsappUrl: null,
+    });
+    const wrapper = await mountSuspended(
+      ProfessionalDashboardPage,
+      mountOptions,
+    );
+
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text() === "Concluído")!
+      .trigger("click");
+    expect(mocks.completeService).not.toHaveBeenCalled();
+    expect(wrapper.text()).toContain("Concluir e solicitar avaliação");
+
+    await wrapper
+      .findAll("button")
+      .find((button) =>
+        button.text().includes("Concluir e solicitar avaliação"),
+      )!
+      .trigger("click");
+    await flushPromises();
+
+    expect(mocks.completeService).toHaveBeenCalledWith(
+      mocks.client,
+      "service-id",
+      true,
+    );
+  });
+
+  it("opens the prepared WhatsApp evaluation from the dashboard", async () => {
+    const currentWorkspace = workspace();
+    currentWorkspace.data.value.dashboard.actionItems = [
+      {
+        id: "whatsapp-service-id",
+        kind: "service_open",
+        title: "Reparo hidráulico · Cliente Whatsapp",
+        subtitle: "Aprovado, aguardando você concluir",
+        sortAt: "2026-08-19T14:00:00Z",
+        recommendationDeliveryChannel: "whatsapp",
+      },
+    ];
+    mocks.useWorkspace.mockResolvedValue(currentWorkspace);
+    mocks.completeService.mockResolvedValue({
+      serviceJob: { id: "whatsapp-service-id", status: "completed" },
+      shareUrl: "http://localhost:3000/recomendacao/token",
+      whatsappUrl: "https://wa.me/5547999912699?text=avaliacao",
+    });
+    const replace = vi.fn();
+    const close = vi.fn();
+    const handoff = {
+      opener: window,
+      location: { replace },
+      close,
+    } as unknown as Window;
+    const open = vi.spyOn(window, "open").mockReturnValue(handoff);
+    const wrapper = await mountSuspended(
+      ProfessionalDashboardPage,
+      mountOptions,
+    );
+
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text() === "Concluído")!
+      .trigger("click");
+    await wrapper
+      .findAll("button")
+      .find((button) =>
+        button.text().includes("Concluir e solicitar avaliação"),
+      )!
+      .trigger("click");
+    await flushPromises();
+
+    expect(open).toHaveBeenCalledWith("about:blank", "_blank");
+    expect(mocks.completeService).toHaveBeenCalledWith(
+      mocks.client,
+      "whatsapp-service-id",
+      true,
+    );
+    expect(replace).toHaveBeenCalledWith(
+      "https://wa.me/5547999912699?text=avaliacao",
+    );
+    expect(close).not.toHaveBeenCalled();
+    open.mockRestore();
   });
 
   it("shows outbound pending connections without recipient response actions", async () => {

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import ServiceActionsCard from "~/components/dashboard/service/ServiceActionsCard.vue";
+import ServiceCompletionDialog from "~/components/dashboard/service/CompletionDialog.vue";
 import ServiceDetailsCard from "~/components/dashboard/service/ServiceDetailsCard.vue";
 import ServiceHero from "~/components/dashboard/service/ServiceHero.vue";
 import ServiceStatusCard from "~/components/dashboard/service/ServiceStatusCard.vue";
@@ -32,6 +33,7 @@ const acting = shallowRef(false);
 const actionError = shallowRef("");
 const cancelOpen = shallowRef(false);
 const completeOpen = shallowRef(false);
+const completionIntent = shallowRef<boolean | null>(null);
 const cancellationReason = shallowRef("");
 
 function invalidateServiceData() {
@@ -42,10 +44,14 @@ function invalidateServiceData() {
 const statusPresentation = computed(() => {
   const status = service.value?.status;
   if (status === "completed") {
+    const recommendation = service.value?.recommendation;
     return {
       title: "Serviço concluído",
-      description:
-        "Registrado por você. Confira ao lado o pedido de recomendação.",
+      description: !recommendation
+        ? "Registrado por você sem solicitar uma avaliação ao cliente."
+        : recommendation.deliveryChannel === "email"
+          ? "Registrado por você. O pedido de avaliação foi encaminhado por e-mail."
+          : "Registrado por você. O pedido de avaliação foi aberto no WhatsApp.",
       icon: "i-lucide-check-circle-2",
       tone: "success" as const,
     };
@@ -78,6 +84,14 @@ const canRequestRecommendation = computed(
 const recommendationSentAt = computed(
   () => service.value?.recommendation?.sentAt ?? null,
 );
+const completionDeliveryChannel = computed(() =>
+  service.value?.quote.customerEmail ? "email" : "whatsapp",
+);
+
+function openCompleteDialog() {
+  actionError.value = "";
+  completeOpen.value = true;
+}
 
 async function requestRecommendation() {
   if (!service.value || acting.value) return;
@@ -137,28 +151,53 @@ async function cancelService() {
   }
 }
 
-async function completeService() {
+async function completeService(requestRecommendation: boolean) {
   if (!service.value || acting.value) return;
+  const deliveryChannel = completionDeliveryChannel.value;
+  const handoff =
+    requestRecommendation &&
+    deliveryChannel === "whatsapp" &&
+    import.meta.client
+      ? window.open("about:blank", "_blank")
+      : null;
+  if (handoff) handoff.opener = null;
+  completionIntent.value = requestRecommendation;
   acting.value = true;
   actionError.value = "";
   try {
-    service.value = await completeProfessionalServiceJob(
+    const result = await completeProfessionalServiceJob(
       client,
       service.value.id,
+      requestRecommendation,
     );
+    service.value = result.serviceJob;
     completeOpen.value = false;
     invalidateServiceData();
+
+    if (result.whatsappUrl) {
+      if (handoff) handoff.location.replace(result.whatsappUrl);
+      else if (import.meta.client) window.location.assign(result.whatsappUrl);
+    } else {
+      handoff?.close();
+    }
+
     showToast({
       title: "Serviço concluído",
-      description: "A conclusão foi confirmada por você.",
+      description: !requestRecommendation
+        ? "Nenhum pedido de avaliação foi enviado."
+        : deliveryChannel === "email"
+          ? "O pedido de avaliação foi enfileirado para envio por e-mail."
+          : "O pedido de avaliação está pronto no WhatsApp.",
     });
   } catch (error) {
+    handoff?.close();
     actionError.value =
       error instanceof ApiRequestError
         ? error.message
         : "Não foi possível concluir o serviço.";
   } finally {
     acting.value = false;
+    completionIntent.value = null;
   }
 }
 </script>
@@ -220,7 +259,7 @@ async function completeService() {
           :acting="acting"
           @request-recommendation="requestRecommendation"
           @open-cancel="cancelOpen = true"
-          @open-complete="completeOpen = true"
+          @open-complete="openCompleteDialog"
         />
       </div>
     </DesignSystemContainer>
@@ -246,33 +285,15 @@ async function completeService() {
       </template>
     </UModal>
 
-    <UModal
+    <ServiceCompletionDialog
       v-model:open="completeOpen"
-      title="Concluir serviço"
-      description="A conclusão será registrada por você."
-    >
-      <template #body>
-        <p>
-          Confirme apenas se o trabalho já terminou. Vamos pedir a recomendação
-          ao cliente automaticamente.
-        </p>
-        <p v-if="actionError" class="service-page__error" role="alert">
-          {{ actionError }}
-        </p>
-      </template>
-      <template #footer>
-        <UButton color="neutral" variant="ghost" @click="completeOpen = false"
-          >Voltar</UButton
-        >
-        <UButton
-          color="primary"
-          icon="i-lucide-check"
-          :loading="acting"
-          @click="completeService"
-          >Confirmar conclusão</UButton
-        >
-      </template>
-    </UModal>
+      :customer-name="service?.quote.customerName ?? 'o cliente'"
+      :delivery-channel="completionDeliveryChannel"
+      :busy="acting"
+      :pending-choice="completionIntent"
+      :error="actionError"
+      @confirm="completeService"
+    />
   </div>
 </template>
 

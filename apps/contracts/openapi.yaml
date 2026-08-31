@@ -2116,13 +2116,30 @@ paths:
       tags: [Professional services]
       security:
         - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [completion]
+              properties:
+                completion:
+                  type: object
+                  additionalProperties: false
+                  required: [request_recommendation]
+                  properties:
+                    request_recommendation: { type: boolean }
       responses:
         "200":
-          description: The completed service with the professional recorded as confirmer.
+          description: The completed service and any immediate recommendation handoff.
           content:
             application/json:
               schema:
-                { $ref: "#/components/schemas/ProfessionalServiceJobResponse" }
+                {
+                  $ref: "#/components/schemas/ProfessionalServiceCompletionResponse",
+                }
         "401":
           description: An active session is required.
           content:
@@ -2140,6 +2157,11 @@ paths:
               schema: { $ref: "#/components/schemas/ErrorResponse" }
         "409":
           description: The service is already completed or cancelled.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "422":
+          description: The recommendation choice is missing or invalid.
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorResponse" }
@@ -5249,7 +5271,8 @@ components:
     ProfessionalActionItem:
       type: object
       additionalProperties: false
-      required: [id, kind, title, subtitle, sort_at]
+      required:
+        [id, kind, title, subtitle, sort_at, recommendation_delivery_channel]
       properties:
         id:
           type: string
@@ -5261,6 +5284,10 @@ components:
         title: { type: string, minLength: 1, maxLength: 160 }
         subtitle: { type: string, minLength: 1, maxLength: 200 }
         sort_at: { type: string, format: date-time }
+        recommendation_delivery_channel:
+          oneOf:
+            - $ref: "#/components/schemas/RecommendationDeliveryChannel"
+            - type: "null"
     ProfessionalDashboardReadiness:
       type: object
       additionalProperties: false
@@ -5760,6 +5787,20 @@ components:
           required: [service_job]
           properties:
             service_job: { $ref: "#/components/schemas/ProfessionalServiceJob" }
+        request_id: { $ref: "#/components/schemas/RequestId" }
+    ProfessionalServiceCompletionResponse:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [service_job, share_url, whatsapp_url]
+          properties:
+            service_job: { $ref: "#/components/schemas/ProfessionalServiceJob" }
+            share_url: { type: [string, "null"], format: uri }
+            whatsapp_url: { type: [string, "null"], format: uri }
         request_id: { $ref: "#/components/schemas/RequestId" }
     ProfessionalServiceJobListResponse:
       type: object

@@ -12,7 +12,7 @@
 
 ## Product decisions
 
-The professional-facing quote and service surfaces split one mental unit — "a job for a customer" — across four records and five screens, with no cross-links between them. Reaching the dashboard's action items required opening a detail page in every case, and the post-approval flow required the professional to manually chase two separate WhatsApp round-trips (a completion-confirmation ask, then — only if that landed — a recommendation invite). The second touch reliably didn't happen, so customer recommendations under-represented actual completed work.
+The professional-facing quote and service surfaces split one mental unit — "a job for a customer" — across four records and five screens, with no cross-links between them. Reaching the dashboard's action items required opening a detail page in every case, and the post-approval flow required the professional to manually chase two separate WhatsApp round-trips (a completion-confirmation ask, then — only if that landed — a recommendation invite). The second touch reliably didn't happen, so completion now presents one explicit choice to finish with or without requesting a customer evaluation.
 
 This increment makes four decisions that diverge from previously recorded scope:
 
@@ -38,26 +38,28 @@ This increment makes four decisions that diverge from previously recorded scope:
 **Depends on:** S047, S049–S051.
 **Covers:** the delivered service loop, back-filled per this document's source-precedence note.
 
-### S066 — Let the professional close a job in one tap
+### S066 — Let the professional close a job with explicit confirmation
 
-**Story:** As a professional, I want to mark a job done with a single action so that finishing work doesn't require chasing a customer's confirmation first.
+**Story:** As a professional, I want to confirm that a job is done and choose whether to request a customer evaluation, so that completion is deliberate without requiring a customer-confirmation round trip.
 
 **Acceptance criteria:**
 
 - A service job's lifecycle is `approved → completed`, with `cancelled` reachable only from `approved`, matching today's cancellation guard — `completed` stays terminal. The customer-confirmation round trip (`completion_requested`, `completion_issue` as a _service-job_ status, and the professional's separate "ask for confirmation" action) is removed.
+- Both professional completion entry points open the same confirmation dialog. Cancelling or dismissing it changes no state; confirming without an evaluation request completes the service permanently without creating a recommendation request.
 - The professional's completion action is the only completion action; there is no second, customer-triggered completion path on `/orcamento/:token`.
 - The public profile's completed-services figure is presented as professional-declared, not customer-verified, consistent with Decision 4.
 
 **Depends on:** S049–S051.
 
-### S067 — Ask every completed job's customer for feedback, automatically
+### S067 — Let the professional request feedback while completing a job
 
-**Story:** As a professional, I want the customer to be asked for feedback as soon as I mark a job done, without me having to remember or manually request it, so that recommendations reflect the work I actually complete.
+**Story:** As a professional, I want to choose whether the customer is asked for feedback while I confirm completion, so that no invitation is sent without my explicit intent.
 
 **Acceptance criteria:**
 
-- Completing a service job creates one recommendation request for that job, regardless of whether the quote's customer snapshot has an email — the bearer token now serves both the email and WhatsApp delivery channels.
-- When the quote has a customer email, delivery is automatic and scheduled with a short delay after completion, giving the professional a window to correct an accidental tap before the customer is contacted.
+- Completion requires an explicit recommendation choice. Opting out completes the service without creating a recommendation request and does not surface another request action later.
+- Opting in creates one recommendation request for that job, regardless of whether the quote's customer snapshot has an email — the bearer token serves both the email and WhatsApp delivery channels.
+- When the quote has a customer email, the invitation job is enqueued immediately after the completion transaction commits. There is no artificial delivery delay because the confirmation dialog is the safeguard against an accidental completion.
 - The customer's link leads to a neutral question — "Como foi o serviço?" — with two branches: submit a public recommendation (unchanged from the existing flow: display name, text, confirmation the service occurred, publication consent, publishes immediately), or report privately that something is still outstanding. The private branch writes a message the professional can see and fires the existing service-completion-issue notification; it does not change the service job's status — `completed` stays terminal, so there is no new transition to model — and leaves no public trace.
 - The private branch exists specifically so an unhappy customer is not limited to a public recommendation as their only outlet — this is what keeps immediate, unmoderated publication (Decision 2) acceptable.
 
@@ -69,8 +71,8 @@ This increment makes four decisions that diverge from previously recorded scope:
 
 **Acceptance criteria:**
 
-- A completed job whose recommendation request has no email to deliver to, and hasn't yet been sent, surfaces in the S065 action inbox with a "pedir recomendação pelo WhatsApp" action.
-- That action opens an explicit WhatsApp deep link to the quote's customer phone snapshot containing the same bearer link used for email delivery, with a copy-link fallback — the same pattern as S051, not an automated send.
+- When the professional opts in and the customer has no email, completion immediately opens an explicit WhatsApp deep link to the quote's customer phone snapshot containing the same bearer link used for email delivery, with a copy-link fallback — the same pattern as S051, not an automated send.
+- A completed job whose WhatsApp handoff was not reached still surfaces in the S065 action inbox with a "pedir recomendação pelo WhatsApp" recovery action.
 - The professional can reopen and resend the WhatsApp link more than once, unlike the email channel where the token is no longer needed once delivered.
 - The public recommendation card discloses which channel delivered the invitation ("Link enviado por e-mail" vs. its WhatsApp equivalent) rather than defaulting to an email claim for a recommendation that was never emailed.
 
@@ -99,7 +101,7 @@ This increment makes four decisions that diverge from previously recorded scope:
 ## Delivery order
 
 1. `ServiceJob` lifecycle collapse (S066): migration, model, service-object and endpoint removal, contract update, customer-page simplification.
-2. Automatic and WhatsApp recommendation delivery (S067–S068): schema additions, completion-time request creation, scheduled delivery, WhatsApp handoff endpoint, the two-branch feedback page.
+2. Optional email and WhatsApp recommendation delivery (S067–S068): explicit completion choice, completion-time request creation, immediate email enqueue, WhatsApp handoff, and the two-branch feedback page.
 3. Recommendation hiding and its public disclosure (S069): schema, owner-scoped endpoints, workspace tab, public serializer and component changes.
 4. The action inbox (S065): query object, contract, serializer, notification-routing fix, frontend inbox and composable, header navigation entry.
 5. Backend, contract, and frontend validation through Docker Compose (`bin/check`, `pnpm check`), plus the end-to-end walk described in the increment's verification plan.
