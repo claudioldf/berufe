@@ -3086,6 +3086,74 @@ paths:
         schema:
           type: string
           format: uuid
+    patch:
+      operationId: updateProfessionalPortfolioItem
+      summary: Update and resubmit one rejected or hidden owned portfolio item
+      tags:
+        - Professional supply
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfessionalPortfolioItemUpdateRequest"
+      responses:
+        "200":
+          description: The same portfolio item was updated and returned to pending review.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfessionalWorkspaceResponse"
+        "401":
+          description: An active Rails application session is required.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: The exact browser origin or profile owner is invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Professional registration, active owned item, or replacement upload was not found.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: The portfolio item is no longer rejected or hidden.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: The replacement image, selected service, or item fields are invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
     delete:
       operationId: deleteProfessionalPortfolioItem
       summary: Soft-delete one owned portfolio item
@@ -5920,6 +5988,35 @@ components:
           additionalProperties: false
           required:
             - media_upload_id
+            - service_id
+            - title
+            - description
+          properties:
+            media_upload_id:
+              type: string
+              format: uuid
+            service_id:
+              type: string
+              format: uuid
+            title:
+              type: string
+              minLength: 1
+              maxLength: 80
+            description:
+              type:
+                - string
+                - "null"
+              maxLength: 300
+    ProfessionalPortfolioItemUpdateRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - portfolio_item
+      properties:
+        portfolio_item:
+          type: object
+          additionalProperties: false
+          required:
             - service_id
             - title
             - description

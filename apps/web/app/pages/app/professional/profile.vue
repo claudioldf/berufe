@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type {
+  PortfolioItemUpdateDraft,
   Professional,
   ProfessionalProfileDraft,
   VerificationSubmission,
@@ -13,6 +14,7 @@ import type { ProfessionalRelationshipResponse } from "~/services/api/profession
 import { professionalAccountExclusionPath } from "~/utils/professional-auth";
 
 const route = useRoute();
+const router = useRouter();
 const { showToast } = useToast();
 const { account } = useApplicationSession();
 const { data: catalog, error: catalogError } = await useCatalogs();
@@ -35,6 +37,7 @@ const {
   removePhoto,
   portfolioSaving,
   createPortfolioItem,
+  updatePortfolioItem,
   deletePortfolioItem,
   verificationSaving,
   verificationError,
@@ -122,6 +125,12 @@ const activeTab = computed(() =>
     ? String(route.query.tab)
     : "dados",
 );
+const requestedPortfolioEditId = computed(() => {
+  const requested = Array.isArray(route.query.edit)
+    ? route.query.edit[0]
+    : route.query.edit;
+  return typeof requested === "string" && requested ? requested : null;
+});
 
 definePageMeta({ layout: "workspace" });
 
@@ -230,6 +239,34 @@ async function handlePortfolioAdd(
           : "Tente novamente em instantes.",
     });
   }
+}
+
+async function handlePortfolioUpdate(
+  id: string,
+  draft: PortfolioItemUpdateDraft,
+) {
+  try {
+    await updatePortfolioItem(id, draft);
+    showToast({
+      title: "Trabalho reenviado",
+      description: "As correções foram salvas e seguirão para nova análise.",
+    });
+  } catch (error) {
+    showToast({
+      title: "Não foi possível reenviar o trabalho",
+      description:
+        error instanceof ApiRequestError
+          ? error.message
+          : "Tente novamente em instantes.",
+    });
+  }
+}
+
+async function clearPortfolioEditIntent() {
+  if (!route.query.edit) return;
+  const query = { ...route.query };
+  delete query.edit;
+  await router.replace({ path: route.path, query });
 }
 
 async function handlePortfolioRemove(id: string) {
@@ -362,8 +399,11 @@ async function handleRelationshipRemove(id: string) {
           :items="workspace?.profile.portfolioItems ?? []"
           :service-options="professional.services"
           :submitting="portfolioSaving"
+          :initial-edit-item-id="requestedPortfolioEditId"
           @added="handlePortfolioAdd"
+          @updated="handlePortfolioUpdate"
           @removed="handlePortfolioRemove"
+          @edit-closed="clearPortfolioEditIntent"
         />
         <DashboardRelationshipManager
           v-else-if="activeTab === 'relacoes'"

@@ -60,6 +60,42 @@ describe("professional portfolio manager", () => {
     wrapper.unmount();
   });
 
+  it("prefills edit fields and submits without requiring a replacement image", async () => {
+    const wrapper = mount(PortfolioUploadForm, {
+      props: {
+        serviceOptions: ["Eletricista", "Pintor"],
+        imageRequired: false,
+        initialValues: rejectedItem,
+        submitLabel: "Salvar e reenviar",
+      },
+    });
+
+    expect(
+      wrapper.get<HTMLInputElement>('input[name="portfolio-title"]').element
+        .value,
+    ).toBe("Cozinha iluminada");
+    expect(
+      wrapper.get<HTMLSelectElement>('select[name="portfolio-service"]').element
+        .value,
+    ).toBe("Eletricista");
+    expect(
+      wrapper.get<HTMLTextAreaElement>('textarea[name="portfolio-description"]')
+        .element.value,
+    ).toBe("Instalação completa.");
+    expect(wrapper.text()).toContain("mantenha a foto atual");
+
+    await wrapper.get("form").trigger("submit");
+
+    expect(wrapper.emitted("submitted")?.[0]).toEqual([
+      {
+        file: null,
+        title: "Cozinha iluminada",
+        service: "Eletricista",
+        description: "Instalação completa.",
+      },
+    ]);
+  });
+
   it("explains the value of a portfolio and opens the first upload", async () => {
     const wrapper = mount(PortfolioManager, {
       props: { items: [], serviceOptions: ["Eletricista"] },
@@ -162,6 +198,80 @@ describe("professional portfolio manager", () => {
       .get('button[aria-label="Excluir Cozinha iluminada"]')
       .trigger("click");
     expect(wrapper.emitted("removed")?.[0]).toEqual(["portfolio-1"]);
+  });
+
+  it("edits and resubmits the existing rejected item", async () => {
+    const wrapper = mount(PortfolioManager, {
+      props: {
+        items: [rejectedItem],
+        serviceOptions: ["Eletricista"],
+      },
+    });
+    const editButton = wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("Editar e reenviar"));
+
+    expect(editButton).toBeDefined();
+    await editButton!.trigger("click");
+
+    const editModal = wrapper
+      .findAllComponents({ name: "UModal" })
+      .find((modal) => modal.props("title") === "Corrigir trabalho");
+    const editForm = wrapper
+      .findAllComponents(PortfolioUploadForm)
+      .find((form) => form.props("submitLabel") === "Salvar e reenviar");
+    expect(editModal?.props("open")).toBe(true);
+    expect(editForm?.props("initialValues")).toMatchObject({
+      title: "Cozinha iluminada",
+      service: "Eletricista",
+      description: "Instalação completa.",
+    });
+
+    const description = editForm!.get<HTMLTextAreaElement>(
+      'textarea[name="portfolio-description"]',
+    );
+    await description.setValue("Descrição corrigida.");
+    await editForm!.get("form").trigger("submit");
+
+    expect(wrapper.emitted("updated")?.[0]).toEqual([
+      "portfolio-1",
+      {
+        file: null,
+        title: "Cozinha iluminada",
+        service: "Eletricista",
+        description: "Descrição corrigida.",
+      },
+    ]);
+    expect(editModal?.props("open")).toBe(true);
+    expect(description.element.value).toBe("Descrição corrigida.");
+
+    await wrapper.setProps({
+      items: [
+        {
+          ...rejectedItem,
+          status: "pending_review",
+          rejectionReason: null,
+        },
+      ],
+    });
+
+    expect(editModal?.props("open")).toBe(false);
+    expect(wrapper.emitted("editClosed")).toHaveLength(1);
+  });
+
+  it("opens a rejected item from the dashboard deep link", () => {
+    const wrapper = mount(PortfolioManager, {
+      props: {
+        items: [rejectedItem],
+        serviceOptions: ["Eletricista"],
+        initialEditItemId: rejectedItem.id,
+      },
+    });
+    const editModal = wrapper
+      .findAllComponents({ name: "UModal" })
+      .find((modal) => modal.props("title") === "Corrigir trabalho");
+
+    expect(editModal?.props("open")).toBe(true);
   });
 
   it("expands and collapses a long rejection reason", async () => {

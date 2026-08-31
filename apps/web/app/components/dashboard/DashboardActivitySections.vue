@@ -15,7 +15,10 @@ interface ActivityItem {
   detail: string;
   sortAt: string;
   responseRequired?: boolean;
-  to?: string;
+  action?: {
+    label: string;
+    to: string;
+  };
 }
 
 interface ActivitySection {
@@ -54,7 +57,10 @@ const sections = computed<ActivitySection[]>(() => {
       status: "Alteração solicitada",
       detail: `“${request.message}” · Solicitado em ${formatDateTime(request.requestedAt)}`,
       sortAt: request.requestedAt,
-      to: `/app/professional/quotes/new?quote=${quote.id}`,
+      action: {
+        label: "Revisar orçamento",
+        to: `/app/professional/quotes/new?quote=${quote.id}`,
+      },
     });
   }
 
@@ -77,6 +83,10 @@ const sections = computed<ActivitySection[]>(() => {
       status: "Precisa de ajustes",
       detail: `${profile.revisionRejectionReason ?? "Revise os dados informados."} Edite e envie novamente.`,
       sortAt: "",
+      action: {
+        label: "Corrigir perfil",
+        to: "/app/professional/profile",
+      },
     });
   }
 
@@ -98,6 +108,10 @@ const sections = computed<ActivitySection[]>(() => {
       status: photo.status === "hidden" ? "Oculta" : "Precisa de ajustes",
       detail: `${photo.rejectionReason ?? "A foto não pode ser exibida."} Envie uma nova foto.`,
       sortAt: photo.submittedAt,
+      action: {
+        label: "Trocar foto",
+        to: "/app/professional/profile#profile-photo",
+      },
     });
   }
 
@@ -117,8 +131,12 @@ const sections = computed<ActivitySection[]>(() => {
         type: "portfolio",
         title: item.title,
         status: item.status === "hidden" ? "Oculto" : "Precisa de ajustes",
-        detail: `${item.rejectionReason ?? "O trabalho não pode ser exibido."} Adicione um novo trabalho.`,
+        detail: `${item.rejectionReason ?? "O trabalho não pode ser exibido."} Atualize e envie novamente.`,
         sortAt: item.submittedAt,
+        action: {
+          label: "Editar trabalho",
+          to: `/app/professional/profile?tab=portfolio&edit=${item.id}`,
+        },
       });
     }
   }
@@ -145,6 +163,10 @@ const sections = computed<ActivitySection[]>(() => {
         verification.status === "expired" ? "Expirada" : "Precisa de ajustes",
       detail: `${verification.rejectionReason ?? "A evidência precisa ser substituída."} Envie uma nova evidência.`,
       sortAt: verification.submittedAt,
+      action: {
+        label: "Enviar evidência",
+        to: "/app/professional/profile?tab=verificacoes",
+      },
     });
   }
 
@@ -240,7 +262,7 @@ function activityIcon(type: ActivityItemType) {
         <article
           v-for="item in section.items"
           :key="`${item.type}-${item.id}`"
-          :class="{ 'activity-list__item--link': item.to }"
+          :class="{ 'activity-list__item--action': item.action }"
         >
           <span class="activity-list__icon">
             <UIcon :name="activityIcon(item.type)" aria-hidden="true" />
@@ -253,19 +275,19 @@ function activityIcon(type: ActivityItemType) {
             {{ item.status }}
           </span>
           <div
-            v-if="item.responseRequired || item.to"
+            v-if="item.responseRequired || item.action"
             class="activity-list__actions"
-            :class="{ 'activity-list__actions--link': item.to }"
+            :class="{ 'activity-list__actions--link': item.action }"
           >
             <UButton
-              v-if="item.to"
-              :to="item.to"
+              v-if="item.action"
+              :to="item.action.to"
               size="sm"
               color="primary"
               variant="soft"
               trailing-icon="i-lucide-arrow-right"
             >
-              Revisar orçamento
+              {{ item.action.label }}
             </UButton>
             <UButton
               v-if="item.responseRequired"
@@ -436,7 +458,7 @@ function activityIcon(type: ActivityItemType) {
       justify-self: start;
     }
 
-    &__item--link {
+    &__item--action {
       grid-template-columns: auto minmax(0, 1fr) auto;
     }
 

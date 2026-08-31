@@ -43,6 +43,13 @@ export interface PortfolioItemDraft {
   description: string;
 }
 
+export interface PortfolioItemUpdateDraft {
+  file: File | null;
+  title: string;
+  service: string;
+  description: string;
+}
+
 export interface VerificationSubmission {
   file: File;
   kind: "identity";

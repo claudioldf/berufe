@@ -1,23 +1,36 @@
 <script setup lang="ts">
-import { shallowRef } from "vue";
-import type { ProfessionalPortfolioItem, PortfolioItemDraft } from "~/types";
+import { computed, shallowRef, watch } from "vue";
+import type {
+  ProfessionalPortfolioItem,
+  PortfolioItemDraft,
+  PortfolioItemUpdateDraft,
+} from "~/types";
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     items: ProfessionalPortfolioItem[];
     serviceOptions?: string[];
     submitting?: boolean;
+    initialEditItemId?: string | null;
   }>(),
   {
     serviceOptions: () => ["Eletricista", "Marido de aluguel"],
     submitting: false,
+    initialEditItemId: null,
   },
 );
 const emit = defineEmits<{
   added: [draft: PortfolioItemDraft];
+  updated: [id: string, draft: PortfolioItemUpdateDraft];
   removed: [id: string];
+  editClosed: [];
 }>();
 const uploadOpen = shallowRef(false);
+const editOpen = shallowRef(false);
+const editingItemId = shallowRef<string | null>(null);
+const editingItem = computed(() =>
+  props.items.find((item) => item.id === editingItemId.value),
+);
 const expandedRejectionReasonIds = shallowRef(new Set<string>());
 const rejectionReasonPreviewLength = 120;
 const emptyStateBenefits = [
@@ -35,9 +48,57 @@ const emptyStateVisual = {
   badgeIcon: "i-lucide-badge-check",
 };
 
-function submitUpload(draft: PortfolioItemDraft) {
-  emit("added", draft);
+watch(
+  [() => props.initialEditItemId, () => props.items],
+  ([itemId, items]) => {
+    if (!itemId || editOpen.value) return;
+    const item = items.find(
+      (candidate) =>
+        candidate.id === itemId && isEditableStatus(candidate.status),
+    );
+    if (item) openEdit(item);
+  },
+  { immediate: true },
+);
+
+watch(editingItem, (item) => {
+  if (editOpen.value && (!item || !isEditableStatus(item.status))) closeEdit();
+});
+
+function isEditableStatus(status: ProfessionalPortfolioItem["status"]) {
+  return status === "rejected" || status === "hidden";
+}
+
+function submitUpload(draft: PortfolioItemUpdateDraft) {
+  if (!draft.file) return;
+  emit("added", { ...draft, file: draft.file });
   uploadOpen.value = false;
+}
+
+function openEdit(item: ProfessionalPortfolioItem) {
+  if (!isEditableStatus(item.status)) return;
+  editingItemId.value = item.id;
+  editOpen.value = true;
+}
+
+function closeEdit() {
+  editOpen.value = false;
+  editingItemId.value = null;
+  emit("editClosed");
+}
+
+function handleEditOpen(open: boolean) {
+  if (open) {
+    editOpen.value = true;
+  } else if (editOpen.value) {
+    closeEdit();
+  }
+}
+
+function submitEdit(draft: PortfolioItemUpdateDraft) {
+  const item = editingItem.value;
+  if (!item) return;
+  emit("updated", item.id, draft);
 }
 
 function isRejectionReasonLong(reason: string) {
@@ -126,7 +187,7 @@ function toggleRejectionReason(itemId: string) {
         <div v-else class="portfolio-manager__placeholder" aria-hidden="true">
           <UIcon name="i-lucide-image" />
         </div>
-        <div>
+        <div class="portfolio-manager__details">
           <span
             ><strong>{{ item.title }}</strong
             ><small>{{ item.service }}</small></span
@@ -152,6 +213,21 @@ function toggleRejectionReason(itemId: string) {
             {{ isRejectionReasonExpanded(item.id) ? "ver menos" : "ver mais" }}
           </button>
         </p>
+        <div
+          v-if="isEditableStatus(item.status)"
+          class="portfolio-manager__card-actions"
+        >
+          <UButton
+            type="button"
+            size="sm"
+            color="primary"
+            variant="soft"
+            icon="i-lucide-pencil"
+            @click="openEdit(item)"
+          >
+            Editar e reenviar
+          </UButton>
+        </div>
         <button
           type="button"
           :aria-label="`Excluir ${item.title}`"
@@ -182,6 +258,27 @@ function toggleRejectionReason(itemId: string) {
           :submitting="submitting"
           @cancel="uploadOpen = false"
           @submitted="submitUpload"
+        />
+      </template>
+    </UModal>
+    <UModal
+      :open="editOpen"
+      title="Corrigir trabalho"
+      description="Atualize as informações indicadas e envie o mesmo trabalho para uma nova análise."
+      @update:open="handleEditOpen"
+    >
+      <template v-if="editingItem" #body>
+        <DashboardPortfolioUploadForm
+          :key="editingItem.id"
+          :service-options="serviceOptions"
+          :initial-values="editingItem"
+          :image-required="false"
+          :reset-on-submit="false"
+          submit-label="Salvar e reenviar"
+          show-cancel
+          :submitting="submitting"
+          @cancel="closeEdit"
+          @submitted="submitEdit"
         />
       </template>
     </UModal>
@@ -238,7 +335,7 @@ function toggleRejectionReason(itemId: string) {
     color: var(--ink-soft);
     font-size: 2rem;
   }
-  &__grid article > div {
+  &__details {
     display: flex;
     justify-content: space-between;
     gap: 8px;
@@ -286,6 +383,11 @@ function toggleRejectionReason(itemId: string) {
     font-weight: 800;
     text-decoration: underline;
     cursor: pointer;
+  }
+  &__card-actions {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0 13px 13px;
   }
   &__grid article > button {
     position: absolute;

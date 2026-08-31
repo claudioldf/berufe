@@ -330,6 +330,37 @@ export async function attachProfessionalPortfolioItem(
   return mapProfessionalWorkspace(data.data);
 }
 
+export async function updateProfessionalPortfolioItem(
+  client: BerufeApiClient,
+  id: string,
+  input: {
+    mediaUploadId?: string;
+    serviceId: string;
+    title: string;
+    description: string;
+  },
+): Promise<ProfessionalWorkspace> {
+  const { data, error, response } = await client.PATCH(
+    "/api/v1/professional/portfolio-items/{id}",
+    {
+      params: { path: { id } },
+      body: {
+        portfolio_item: {
+          ...(input.mediaUploadId
+            ? { media_upload_id: input.mediaUploadId }
+            : {}),
+          service_id: input.serviceId,
+          title: input.title,
+          description: input.description || null,
+        },
+      },
+    },
+  );
+  if (error || !data) throw requestError(error, response);
+
+  return mapProfessionalWorkspace(data.data);
+}
+
 export async function deleteProfessionalPortfolioItem(
   client: BerufeApiClient,
   id: string,

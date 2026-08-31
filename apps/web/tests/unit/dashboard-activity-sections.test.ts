@@ -241,6 +241,57 @@ describe("dashboard activity sections", () => {
     expect(ongoing.text()).not.toContain("Instalação rejeitada");
   });
 
+  it("links every corrective activity to the screen that resolves it", async () => {
+    const currentWorkspace = workspace();
+    currentWorkspace.profile.revisionStatus = "rejected";
+    currentWorkspace.profile.revisionRejectionReason =
+      "Revise a apresentação profissional.";
+    currentWorkspace.profile.photo.current = {
+      id: "photo-id",
+      status: "rejected",
+      rejectionReason: "Envie uma foto mais nítida.",
+      submittedAt: "2026-08-19T10:00:00Z",
+    };
+    currentWorkspace.profile.portfolioItems = [
+      {
+        id: "portfolio-id",
+        title: "Instalação oculta",
+        service: "Eletricista",
+        description: "",
+        image: null,
+        status: "hidden",
+        rejectionReason: "Atualize a apresentação do trabalho.",
+        submittedAt: "2026-08-18T10:00:00Z",
+      },
+    ];
+    currentWorkspace.profile.verification.current = {
+      id: "verification-id",
+      verificationType: "identity",
+      status: "expired",
+      rejectionReason: null,
+      submittedAt: "2026-08-17T10:00:00Z",
+    };
+
+    const wrapper = await mountSuspended(DashboardActivitySections, {
+      ...mountOptions,
+      props: { workspace: currentWorkspace },
+    });
+    const links = Object.fromEntries(
+      wrapper
+        .get(".activity-section--attention")
+        .findAll("a")
+        .map((link) => [link.text(), link.attributes("href")]),
+    );
+
+    expect(links).toEqual({
+      "Trocar foto": "/app/professional/profile#profile-photo",
+      "Editar trabalho":
+        "/app/professional/profile?tab=portfolio&edit=portfolio-id",
+      "Enviar evidência": "/app/professional/profile?tab=verificacoes",
+      "Corrigir perfil": "/app/professional/profile",
+    });
+  });
+
   it("shows every requested quote change with its latest message and review link", async () => {
     const currentWorkspace = workspace();
     currentWorkspace.dashboard.changeRequestedQuotes = [

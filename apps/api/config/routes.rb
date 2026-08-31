@@ -36,7 +36,7 @@ Rails.application.routes.draw do
         post "profile/submission", to: "profiles#submission"
         put "profile/photo", to: "profile_photos#update"
         delete "profile/photo", to: "profile_photos#destroy"
-        resources :portfolio_items, only: %i[create destroy], path: "portfolio-items"
+        resources :portfolio_items, only: %i[create update destroy], path: "portfolio-items"
         resources :verification_requests, only: :create, path: "verification-requests"
         resources :relationship_candidates, only: :index, path: "relationship-candidates"
         resources :customer_candidates, only: :index, path: "customer-candidates"
