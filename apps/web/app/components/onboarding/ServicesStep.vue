@@ -45,6 +45,9 @@ const error = computed(
       ? Object.values(validation.value).find(Boolean)
       : "") ?? "",
 );
+const savingReason = computed(() =>
+  props.saving ? "Aguarde o salvamento desta etapa terminar." : null,
+);
 
 function toggleService(name: string) {
   if (
@@ -120,15 +123,17 @@ function submit() {
         >
           Voltar
         </UButton>
-        <UButton
-          type="submit"
-          color="primary"
-          trailing-icon="i-lucide-arrow-right"
-          :loading="props.saving"
-          :disabled="props.saving"
-        >
-          Salvar e continuar
-        </UButton>
+        <DesignSystemDisabledTooltip :reason="savingReason">
+          <UButton
+            type="submit"
+            color="primary"
+            trailing-icon="i-lucide-arrow-right"
+            :loading="props.saving"
+            :disabled="props.saving"
+          >
+            Salvar e continuar
+          </UButton>
+        </DesignSystemDisabledTooltip>
       </footer>
     </form>
   </section>

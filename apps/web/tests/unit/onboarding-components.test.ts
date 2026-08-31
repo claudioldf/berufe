@@ -74,6 +74,10 @@ const ButtonStub = defineComponent({
     </component>
   `,
 });
+const TooltipStub = defineComponent({
+  props: { reason: { type: String, default: null } },
+  template: `<div :data-tooltip-reason="reason ?? ''"><slot /></div>`,
+});
 
 describe("onboarding step contracts", () => {
   it("offers review, public profile, and dashboard actions after publishing", async () => {
@@ -83,6 +87,7 @@ describe("onboarding step contracts", () => {
         stubs: {
           DesignSystemSurfaceCard: { template: "<section><slot /></section>" },
           DesignSystemEyebrow: { template: "<span><slot /></span>" },
+          DesignSystemDisabledTooltip: TooltipStub,
           UButton: ButtonStub,
           UIcon: true,
         },
@@ -111,6 +116,7 @@ describe("onboarding step contracts", () => {
         stubs: {
           DesignSystemSurfaceCard: { template: "<section><slot /></section>" },
           DesignSystemEyebrow: { template: "<span><slot /></span>" },
+          DesignSystemDisabledTooltip: TooltipStub,
           UButton: ButtonStub,
           UIcon: true,
         },
@@ -154,6 +160,53 @@ describe("onboarding step contracts", () => {
 
     await skip!.trigger("click");
     expect(wrapper.emitted("skip")).toHaveLength(1);
+
+    await wrapper.setProps({ saving: true });
+    for (const button of actions.findAll("button")) {
+      expect(button.attributes("disabled")).toBeDefined();
+      expect(
+        button.element
+          .closest("[data-tooltip-reason]")
+          ?.getAttribute("data-tooltip-reason"),
+      ).toBe("Aguarde o envio da verificação terminar.");
+    }
+  });
+
+  it("explains save-in-progress states throughout onboarding", () => {
+    const shared = {
+      stubs: { DesignSystemDisabledTooltip: TooltipStub },
+    };
+    const profile = mount(ProfileStep, {
+      props: { draft: profileDraft(), saving: true },
+      global: shared,
+    });
+    const servicesStep = mount(ServicesStep, {
+      props: { draft: profileDraft(), services, saving: true },
+      global: shared,
+    });
+    const verification = mount(IdentityUploadForm, {
+      props: { submitting: true },
+      global: shared,
+    });
+
+    expect(
+      profile
+        .get('button[type="submit"]')
+        .element.closest("[data-tooltip-reason]")
+        ?.getAttribute("data-tooltip-reason"),
+    ).toBe("Aguarde o salvamento desta etapa terminar.");
+    expect(
+      servicesStep
+        .get('button[type="submit"]')
+        .element.closest("[data-tooltip-reason]")
+        ?.getAttribute("data-tooltip-reason"),
+    ).toBe("Aguarde o salvamento desta etapa terminar.");
+    expect(
+      verification
+        .get('button[type="submit"]')
+        .element.closest("[data-tooltip-reason]")
+        ?.getAttribute("data-tooltip-reason"),
+    ).toBe("Aguarde o envio do documento terminar.");
   });
 
   it("lists services alphabetically", () => {
