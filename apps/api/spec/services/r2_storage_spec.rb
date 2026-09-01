@@ -8,7 +8,6 @@ RSpec.describe R2Storage do
       endpoint: "https://account.r2.cloudflarestorage.com",
       access_key_id: "access-key",
       secret_access_key: "secret-key",
-      public_bucket: "public-media",
       private_bucket: "private-media",
       client:,
       presigner:
@@ -34,12 +33,11 @@ RSpec.describe R2Storage do
       endpoint: "https://account.r2.cloudflarestorage.com",
       access_key_id: "access-key",
       secret_access_key: "secret-key",
-      public_bucket: "public-media",
       private_bucket: "private-media"
     )
   end
 
-  it "keeps public and private objects in their configured buckets" do
+  it "keeps media objects in the configured private bucket" do
     expect(client).to receive(:put_object).with(
       bucket: "private-media",
       key: "quarantine/image.jpg",

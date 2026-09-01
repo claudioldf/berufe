@@ -57,6 +57,11 @@ const FormFieldStub = defineComponent({
   `,
 });
 
+const TooltipStub = defineComponent({
+  props: { reason: { type: String, default: null } },
+  template: `<div :data-tooltip-reason="reason ?? ''"><slot /></div>`,
+});
+
 describe("location coverage fields", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -177,5 +182,44 @@ describe("location coverage fields", () => {
     expect(wrapper.find(".location-coverage-fields__area").exists()).toBe(
       false,
     );
+  });
+
+  it("explains why the city selector is disabled until a state is chosen", async () => {
+    const wrapper = await mountSuspended(LocationCoverageFields, {
+      props: {
+        modelValue: {
+          cityCode: "",
+          wholeCity: false,
+          neighborhoodCodes: [],
+        },
+      },
+      global: {
+        stubs: {
+          DesignSystemFormField: FormFieldStub,
+          DesignSystemDisabledTooltip: TooltipStub,
+          UIcon: true,
+        },
+      },
+    });
+
+    const citySelect = wrapper.get('select[name="coverage-city"]');
+    expect(citySelect.attributes("disabled")).toBeDefined();
+    expect(
+      citySelect.element
+        .closest("[data-tooltip-reason]")
+        ?.getAttribute("data-tooltip-reason"),
+    ).toBe("Selecione um estado primeiro");
+
+    await wrapper.get('select[name="coverage-state"]').setValue("42");
+    await wrapper.setProps({
+      modelValue: wrapper.emitted("update:modelValue")!.at(-1)![0],
+    });
+
+    expect(citySelect.attributes("disabled")).toBeUndefined();
+    expect(
+      citySelect.element
+        .closest("[data-tooltip-reason]")
+        ?.getAttribute("data-tooltip-reason"),
+    ).toBe("");
   });
 });

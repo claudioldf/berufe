@@ -1,5 +1,11 @@
 <script setup lang="ts">
-import type { OnboardingChecklistItem } from "~/types";
+import ServiceCompletionDialog from "~/components/dashboard/service/CompletionDialog.vue";
+import type {
+  OnboardingChecklistItem,
+  ProfessionalActionItem,
+  ProfessionalActionKind,
+} from "~/types";
+import { useProfessionalActionInbox } from "~/composables/useProfessionalActionInbox";
 import { useProfessionalWorkspace } from "~/composables/useProfessionalWorkspace";
 import { useApplicationSession } from "~/composables/useApplicationSession";
 import { useCatalogs } from "~/composables/useCatalogs";
@@ -10,9 +16,12 @@ import type { ProfessionalRelationshipResponse } from "~/services/api/profession
 const { share } = useShare();
 const { showToast } = useToast();
 const { account } = useApplicationSession();
+const actionInbox = useProfessionalActionInbox();
 const { data: relationshipCatalog } = await useCatalogs();
 const professionalWorkspace = await useProfessionalWorkspace();
 const relationshipOpen = shallowRef(false);
+const completionOpen = shallowRef(false);
+const completionItem = shallowRef<ProfessionalActionItem | null>(null);
 const relationshipServices = computed(
   () => relationshipCatalog.value?.services ?? [],
 );
@@ -26,19 +35,16 @@ const dashboardReady = computed(
     !professionalWorkspace.error.value &&
     Boolean(workspace.value),
 );
-const identityVerified = computed(
-  () => workspace.value?.dashboard.readiness.steps.approvedIdentity ?? false,
-);
 const professionalFirstName = computed(
   () =>
     workspace.value?.profile.identity.name.trim().split(" ")[0] ??
     "profissional",
 );
 const siteUrl = withSiteUrl("/");
-const publicProfileUrl = computed(() =>
-  workspace.value
-    ? `${siteUrl.value.replace(/\/$/, "")}/profissionais/${workspace.value.profile.publicSlug}`
-    : "",
+const publicSlug = computed(() => workspace.value?.profile.publicSlug ?? "");
+const publicProfileUrl = computed(
+  () =>
+    `${siteUrl.value.replace(/\/$/, "")}${buildPublicProfilePath(publicSlug.value)}`,
 );
 const localDateLabel = computed(() => {
   const value = workspace.value?.dashboard.localDate;
@@ -72,7 +78,7 @@ const checklist = computed<OnboardingChecklistItem[]>(() => {
     {
       id: "portfolio",
       label: "Primeiro trabalho",
-      description: "Um trabalho em análise ou aprovado",
+      description: "Mostre resultados antes mesmo da conversa",
       icon: "i-lucide-image-plus",
       done: steps?.reviewablePortfolio ?? false,
       to: "/app/professional/profile?tab=portfolio",
@@ -80,7 +86,7 @@ const checklist = computed<OnboardingChecklistItem[]>(() => {
     {
       id: "verification",
       label: "Identidade verificada",
-      description: "Sua evidência foi aprovada pela equipe",
+      description: "Transmita mais confiança aos clientes",
       icon: "i-lucide-shield-check",
       done: steps?.approvedIdentity ?? false,
       to: "/app/professional/profile?tab=verificacoes",
@@ -95,9 +101,7 @@ const canPublish = computed(() => {
   if (!profile) return false;
 
   return (
-    !profile.hasPublishedRevision &&
-    profile.revisionStatus === "draft" &&
-    profile.publicationBlockers.length === 0
+    !profile.hasPublishedRevision && profile.publicationBlockers.length === 0
   );
 });
 const dashboardStatus = computed(() => {
@@ -133,7 +137,9 @@ const dashboardStatus = computed(() => {
   if (profile.status === "suspended") {
     return {
       title: "Seu perfil está temporariamente oculto",
-      description: "Revise as pendências antes de voltar a divulgá-lo.",
+      description:
+        profile.suspensionReason ??
+        "Seu perfil foi ocultado pela equipe. Entre em contato com o suporte para mais informações.",
       icon: "i-lucide-circle-alert",
       tone: "attention",
       publicAvailable: false,
@@ -143,7 +149,7 @@ const dashboardStatus = computed(() => {
     const blockerLabels = {
       identity: "nome e data de nascimento",
       photo: "foto profissional",
-      services: "serviço principal",
+      services: "serviços",
       coverage: "área de atendimento",
     } as const;
     const missing = profile.publicationBlockers.map(
@@ -169,30 +175,6 @@ const dashboardStatus = computed(() => {
       publicAvailable: false,
     };
   }
-  if (profile.revisionStatus === "rejected") {
-    return {
-      title: "Seu perfil precisa de ajustes",
-      description:
-        profile.revisionRejectionReason ??
-        "Edite os dados indicados e envie o perfil novamente.",
-      icon: "i-lucide-circle-alert",
-      tone: "attention",
-      publicAvailable: false,
-    };
-  }
-  if (
-    profile.status === "pending_review" ||
-    profile.revisionStatus === "pending_review"
-  ) {
-    return {
-      title: "Seu perfil está em análise",
-      description:
-        "A equipe está conferindo os dados; conteúdo válido já fica público.",
-      icon: "i-lucide-clock-3",
-      tone: "pending",
-      publicAvailable: false,
-    };
-  }
   return {
     title: "Seu perfil ainda não está publicado",
     description: "Complete nome, foto, serviço e cobertura para publicar.",
@@ -201,6 +183,16 @@ const dashboardStatus = computed(() => {
     publicAvailable: false,
   };
 });
+const shareProfileBlockedReason = computed(() =>
+  dashboardStatus.value.publicAvailable
+    ? null
+    : dashboardStatus.value.description,
+);
+const publishProfileBlockedReason = computed(() =>
+  professionalWorkspace.submissionSaving.value
+    ? "Aguarde a publicação do perfil terminar."
+    : null,
+);
 const recentQuotes = computed(
   () => workspace.value?.dashboard.recentQuotes ?? [],
 );
@@ -264,6 +256,42 @@ async function respondRelationship(
     // The actionable activity section keeps the normalized API error visible.
   }
 }
+
+function handleDashboardAction(id: string, kind: ProfessionalActionKind) {
+  if (kind !== "service_open") {
+    void actionInbox.act(id, kind);
+    return;
+  }
+
+  const item = workspace.value?.dashboard.actionItems.find(
+    (candidate) => candidate.id === id && candidate.kind === kind,
+  );
+  if (!item?.recommendationDeliveryChannel) return;
+
+  actionInbox.clearActionError();
+  completionItem.value = item;
+  completionOpen.value = true;
+}
+
+async function completeDashboardService(requestRecommendation: boolean) {
+  const item = completionItem.value;
+  if (!item?.recommendationDeliveryChannel) return;
+
+  const completed = await actionInbox.completeService(
+    item.id,
+    requestRecommendation,
+    item.recommendationDeliveryChannel,
+  );
+  if (!completed) return;
+
+  completionOpen.value = false;
+  completionItem.value = null;
+}
+
+function updateCompletionOpen(open: boolean) {
+  completionOpen.value = open;
+  if (!open && !actionInbox.actingId.value) completionItem.value = null;
+}
 </script>
 
 <template>
@@ -279,26 +307,22 @@ async function respondRelationship(
             <h1>Olá, {{ professionalFirstName }}.</h1>
           </div>
           <div class="dashboard-welcome__actions">
-            <UButton
-              color="neutral"
-              variant="outline"
-              icon="i-lucide-share-2"
-              :disabled="!dashboardStatus.publicAvailable"
-              @click="shareProfile"
-              >Compartilhar perfil</UButton
-            >
-            <UButton
-              to="/app/professional/quotes/new"
-              color="secondary"
-              icon="i-lucide-plus"
-              >Novo orçamento</UButton
-            >
+            <DesignSystemDisabledTooltip :reason="shareProfileBlockedReason">
+              <UButton
+                color="neutral"
+                variant="outline"
+                icon="i-lucide-share-2"
+                :disabled="!dashboardStatus.publicAvailable"
+                @click="shareProfile"
+                >Compartilhar perfil</UButton
+              >
+            </DesignSystemDisabledTooltip>
           </div>
         </div>
         <DashboardQuickActions
           v-if="dashboardReady"
           class="dashboard-welcome__quick-actions"
-          :identity-verified="identityVerified"
+          :public-slug="publicSlug"
           @recommend="relationshipOpen = true"
         />
       </DesignSystemContainer>
@@ -331,22 +355,26 @@ async function respondRelationship(
           <strong>{{ dashboardStatus.title }}</strong>
           <p>{{ dashboardStatus.description }}</p>
         </div>
-        <UButton
+        <DesignSystemDisabledTooltip
           v-if="canPublish"
-          class="status-banner__action"
-          type="button"
-          color="primary"
-          icon="i-lucide-megaphone"
-          :loading="professionalWorkspace.submissionSaving.value"
-          :disabled="professionalWorkspace.submissionSaving.value"
-          @click="publishProfile"
+          :reason="publishProfileBlockedReason"
         >
-          Publicar perfil
-        </UButton>
+          <UButton
+            class="status-banner__action"
+            type="button"
+            color="primary"
+            icon="i-lucide-megaphone"
+            :loading="professionalWorkspace.submissionSaving.value"
+            :disabled="professionalWorkspace.submissionSaving.value"
+            @click="publishProfile"
+          >
+            Publicar perfil
+          </UButton>
+        </DesignSystemDisabledTooltip>
         <NuxtLink
           v-else-if="dashboardStatus.publicAvailable"
           class="status-banner__action"
-          :to="`/profissionais/${workspace.profile.publicSlug}`"
+          :to="buildPublicProfilePath(workspace.profile.publicSlug)"
           target="_blank"
         >
           Ver perfil público
@@ -362,7 +390,10 @@ async function respondRelationship(
               professionalWorkspace.relationshipRespondingId.value
             "
             :relationship-error="professionalWorkspace.relationshipError.value"
+            :acting-id="actionInbox.actingId.value"
+            :action-error="actionInbox.actionError.value"
             @respond="respondRelationship"
+            @act="handleDashboardAction"
           />
           <DashboardRecentWork
             :quotes="recentQuotes"
@@ -403,6 +434,18 @@ async function respondRelationship(
       v-model:open="relationshipOpen"
       :services="relationshipServices"
       :eligible="relationshipEligible"
+    />
+    <ServiceCompletionDialog
+      :open="completionOpen"
+      customer-name="o cliente"
+      :delivery-channel="
+        completionItem?.recommendationDeliveryChannel ?? 'email'
+      "
+      :busy="actionInbox.actingId.value === completionItem?.id"
+      :pending-choice="actionInbox.completionIntent.value"
+      :error="actionInbox.actionError.value"
+      @update:open="updateCompletionOpen"
+      @confirm="completeDashboardService"
     />
   </div>
 </template>

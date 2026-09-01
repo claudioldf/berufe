@@ -70,14 +70,14 @@ function workspace() {
         presentationType: "self_service" as const,
         isPublic: true,
         isSearchEligible: true,
+        isIndexable: true,
+        suspensionReason: null,
         publicationBlockers: [],
-        revisionStatus: "approved" as const,
-        revisionRejectionReason: null,
         hasPublishedRevision: true,
         photo: {
           current: null,
-          hasPublishedPhoto: false,
-          publishedImageUrl: null,
+          hasPhoto: false,
+          imageUrl: null,
           latestUpload: null,
         },
         portfolioItems: [],
@@ -124,6 +124,7 @@ function workspace() {
     removePhoto: vi.fn(),
     portfolioSaving: shallowRef(false),
     createPortfolioItem: vi.fn(),
+    updatePortfolioItem: vi.fn(),
     deletePortfolioItem: vi.fn(),
     verificationSaving: shallowRef(false),
     verificationError: shallowRef(""),
@@ -178,6 +179,34 @@ describe("professional profile editor page", () => {
     }
     expect(JSON.stringify(professional)).not.toContain(fixture.name as string);
     expect(wrapper.html()).not.toContain(fixture.name as string);
+  });
+
+  it("keeps a suspended profile editable without duplicating the dashboard banner", async () => {
+    const currentWorkspace = workspace();
+    Object.assign(
+      currentWorkspace.data.value.profile as {
+        status: string;
+        isPublic: boolean;
+        suspensionReason: string | null;
+      },
+      {
+        status: "suspended",
+        isPublic: false,
+        suspensionReason: "Motivo visível somente no painel.",
+      },
+    );
+    mocks.useWorkspace.mockResolvedValue(currentWorkspace);
+
+    const wrapper = await mountSuspended(ProfessionalProfilePage, {
+      shallow: true,
+      global: { renderStubDefaultSlot: true },
+    });
+
+    expect(
+      wrapper.getComponent({ name: "DashboardProfileEditor" }).exists(),
+    ).toBe(true);
+    expect(wrapper.text()).not.toContain("Seu perfil está oculto");
+    expect(wrapper.text()).not.toContain("Motivo visível somente no painel.");
   });
 
   it("opens the URL-backed relationships tab and delegates relationship mutations", async () => {
@@ -253,17 +282,64 @@ describe("professional profile editor page", () => {
     );
   });
 
+  it("opens a requested portfolio correction and delegates the same-item update", async () => {
+    const currentWorkspace = workspace();
+    currentWorkspace.data.value.profile.portfolioItems = [
+      {
+        id: "portfolio-1",
+        title: "Cozinha iluminada",
+        service: "Eletricista do painel",
+        description: "Instalação completa.",
+        image: null,
+        submittedAt: "2026-08-18T12:00:00Z",
+      },
+    ];
+    currentWorkspace.updatePortfolioItem.mockResolvedValue(
+      currentWorkspace.data.value,
+    );
+    mocks.useWorkspace.mockResolvedValue(currentWorkspace);
+
+    const wrapper = await mountSuspended(ProfessionalProfilePage, {
+      shallow: true,
+      global: { renderStubDefaultSlot: true },
+    });
+
+    await useRouter().replace("/?tab=portfolio&edit=portfolio-1");
+    await flushPromises();
+
+    const manager = wrapper.getComponent({
+      name: "DashboardPortfolioManager",
+    });
+    expect(manager.props("initialEditItemId")).toBe("portfolio-1");
+
+    const draft = {
+      file: null,
+      title: "Cozinha revisada",
+      service: "Eletricista do painel",
+      description: "Descrição atualizada.",
+    };
+    manager.vm.$emit("updated", "portfolio-1", draft);
+    await flushPromises();
+
+    expect(currentWorkspace.updatePortfolioItem).toHaveBeenCalledWith(
+      "portfolio-1",
+      draft,
+    );
+    expect(mocks.showToast).toHaveBeenCalledWith({
+      title: "Trabalho atualizado",
+      description: "As alterações já estão no perfil.",
+    });
+  });
+
   it("delegates confirmed profile-photo removal and reports success", async () => {
     const currentWorkspace = workspace();
     currentWorkspace.data.value.profile.photo = {
       current: {
         id: "d25c64fa-3e6a-4e56-adc9-85bdac0045cb",
-        status: "approved",
-        rejectionReason: null,
         submittedAt: "2026-08-23T12:00:00Z",
       },
-      hasPublishedPhoto: true,
-      publishedImageUrl: "https://api.example.test/profile-photo.jpg",
+      hasPhoto: true,
+      imageUrl: "https://api.example.test/profile-photo.jpg",
       latestUpload: null,
     };
     currentWorkspace.removePhoto.mockResolvedValue(currentWorkspace.data.value);

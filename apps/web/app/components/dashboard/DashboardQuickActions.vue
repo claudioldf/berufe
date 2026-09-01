@@ -1,11 +1,9 @@
 <script setup lang="ts">
 interface Props {
-  identityVerified?: boolean;
+  publicSlug: string;
 }
 
-withDefaults(defineProps<Props>(), {
-  identityVerified: false,
-});
+defineProps<Props>();
 
 defineEmits<{
   recommend: [];
@@ -18,35 +16,28 @@ defineEmits<{
     class="actions-card"
     aria-label="Ações rápidas"
   >
-    <div
-      class="actions-card__list"
-      :class="{
-        'actions-card__list--without-verification': identityVerified,
-      }"
-    >
+    <div class="actions-card__list">
       <NuxtLink
-        to="/app/professional/profile?tab=portfolio"
-        aria-label="Adicionar novo trabalho"
+        :to="buildPublicProfilePath(publicSlug)"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Ver meu perfil público"
       >
         <span class="actions-card__icon">
-          <UIcon name="i-lucide-image-plus" aria-hidden="true" />
+          <UIcon name="i-lucide-eye" aria-hidden="true" />
         </span>
         <strong>
-          <span class="actions-card__label-full">Novo trabalho</span>
-          <span class="actions-card__label-compact">Trabalho</span>
+          <span class="actions-card__label-full">Perfil público</span>
+          <span class="actions-card__label-compact">Perfil</span>
         </strong>
       </NuxtLink>
-      <NuxtLink
-        v-if="!identityVerified"
-        to="/app/professional/profile?tab=verificacoes"
-        aria-label="Ver verificações"
-      >
+      <NuxtLink to="/app/professional/quotes/new" aria-label="Novo orçamento">
         <span class="actions-card__icon">
-          <UIcon name="i-lucide-id-card" aria-hidden="true" />
+          <UIcon name="i-lucide-file-text" aria-hidden="true" />
         </span>
         <strong>
-          <span class="actions-card__label-full">Ver verificações</span>
-          <span class="actions-card__label-compact">Verificar</span>
+          <span class="actions-card__label-full">Novo orçamento</span>
+          <span class="actions-card__label-compact">Orçamento</span>
         </strong>
       </NuxtLink>
       <NuxtLink
@@ -74,15 +65,6 @@ defineEmits<{
           <span class="actions-card__label-compact">Indicar</span>
         </strong>
       </button>
-      <NuxtLink to="/app/professional/profile" aria-label="Editar perfil">
-        <span class="actions-card__icon">
-          <UIcon name="i-lucide-pencil" aria-hidden="true" />
-        </span>
-        <strong>
-          <span class="actions-card__label-full">Editar perfil</span>
-          <span class="actions-card__label-compact">Perfil</span>
-        </strong>
-      </NuxtLink>
     </div>
   </DesignSystemSurfaceCard>
 </template>
@@ -98,12 +80,8 @@ defineEmits<{
 
   &__list {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    min-width: 0;
-  }
-
-  &__list--without-verification {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+    min-width: 0;
   }
 
   &__list a,

@@ -64,7 +64,7 @@ RSpec.describe "Quote service loop", type: :request, openapi: true do
     expect(quote.service_job).to be_nil
     expect(Notification.find_by!(notification_type: "quote_change_requested")).to have_attributes(
       recipient_user_account: account,
-      route: "/app/professional/quotes/new?quote=#{quote.id}"
+      route_params: {"quote_id" => quote.id}
     )
     assert_api_conform(status: 200)
 
@@ -144,7 +144,7 @@ RSpec.describe "Quote service loop", type: :request, openapi: true do
     expect(ServiceJob.where(quote:).count).to eq(1)
     expect(Notification.find_by!(notification_type: "quote_approved")).to have_attributes(
       recipient_user_account: account,
-      route: "/app/professional/quotes/new?quote=#{quote.id}"
+      route_params: {"quote_id" => quote.id}
     )
     assert_api_conform(status: 200)
 
@@ -200,69 +200,37 @@ RSpec.describe "Quote service loop", type: :request, openapi: true do
     expect(quote.reload.customer_name).to eq("Marina Cliente")
     assert_api_conform(status: 409)
 
-    post "/api/v1/professional/service-jobs/#{service_job.id}/completion-request",
-      headers: session_headers("completion-request"),
-      as: :json
-    expect(response).to have_http_status(:ok)
-    expect(response.parsed_body.dig("data", "whatsapp_url")).to start_with(
-      "https://wa.me/5547999912611?"
-    )
-    completion_message = URI.decode_www_form(
-      URI(response.parsed_body.dig("data", "whatsapp_url")).query
-    ).to_h.fetch("text")
-    expect(completion_message).to eq(
-      "Olá, Marina Cliente! O trabalho combinado no orçamento #1 foi concluído. " \
-      "Confirme a conclusão por aqui: #{share.share_url}"
-    )
-    expect(service_job.reload).to be_completion_requested
-    assert_api_conform(status: 200)
+    completion_item = ProfessionalActionInboxQuery.new.call(profile:).find do |item|
+      item.id == service_job.id && item.kind == "service_open"
+    end
+    expect(completion_item.recommendation_delivery_channel).to eq("email")
 
-    post "/api/v1/shared-quotes/completions",
-      params: {
-        token:,
-        completion: {kind: "report_issue", message: "Falta ajustar um interruptor."}
-      },
-      headers: public_headers("completion-issue"),
-      as: :json
-    expect(response).to have_http_status(:ok)
-    expect(service_job.reload).to have_attributes(
-      status: "completion_issue",
-      completion_issue_message: "Falta ajustar um interruptor."
-    )
-    expect(Notification.find_by!(notification_type: "service_completion_issue_reported")).to have_attributes(
-      recipient_user_account: account,
-      route: "/app/professional/services/#{service_job.id}"
-    )
-    assert_api_conform(status: 200)
-
-    post "/api/v1/professional/service-jobs/#{service_job.id}/completion-request",
-      headers: session_headers("completion-request-again"),
-      as: :json
-    expect(response).to have_http_status(:ok)
-    expect(service_job.reload).to be_completion_requested
-
+    # The professional closes the job themselves — there is no customer-
+    # confirmation round trip. Their explicit evaluation choice creates and
+    # immediately enqueues the email request after completion commits.
     expect do
-      post "/api/v1/shared-quotes/completions",
-        params: {token:, completion: {kind: "confirm", message: nil}},
-        headers: public_headers("completion-confirm"),
+      post "/api/v1/professional/service-jobs/#{service_job.id}/complete",
+        params: {completion: {request_recommendation: true}},
+        headers: session_headers("service-complete"),
         as: :json
-    end.to have_enqueued_job(CustomerRecommendationRequestDeliveryJob)
+    end.to have_enqueued_job(CustomerRecommendationRequestDeliveryJob).at(:no_wait)
     expect(response).to have_http_status(:ok)
-    expect(service_job.reload).to have_attributes(
-      status: "completed",
-      completion_confirmed_by: "customer"
-    )
-    expect(Notification.find_by!(notification_type: "service_completion_confirmed")).to have_attributes(
-      recipient_user_account: account,
-      route: "/app/professional/services/#{service_job.id}"
-    )
+    expect(response.parsed_body.dig("data", "service_job")).to include("status" => "completed")
+    expect(service_job.reload).to have_attributes(status: "completed")
+    expect(quote.reload).to be_completed
+    expect(service_job.completed_at).to be_present
+    assert_api_conform(status: 200)
+
     recommendation_request = service_job.customer_recommendation_request
-    expect(recommendation_request).to have_attributes(status: "open", sent_at: nil)
+    expect(recommendation_request).to have_attributes(
+      status: "open",
+      delivery_channel: "email",
+      sent_at: nil
+    )
     recommendation_token = CustomerRecommendationToken.decrypt(
       recommendation_request.token_ciphertext
     )
     expect(recommendation_token).to start_with("br_")
-    assert_api_conform(status: 200)
 
     post "/api/v1/customer-recommendations/resolve",
       params: {token: recommendation_token},
@@ -274,8 +242,25 @@ RSpec.describe "Quote service loop", type: :request, openapi: true do
     ActionMailer::Base.deliveries.clear
     CustomerRecommendationRequestDeliveryJob.perform_now(recommendation_request.id)
     expect(ActionMailer::Base.deliveries.one?).to be(true)
-    expect(ActionMailer::Base.deliveries.first.to).to eq(["marina@example.com"])
-    expect(ActionMailer::Base.deliveries.first.text_part.body.decoded).to include(recommendation_token)
+    delivered_email = ActionMailer::Base.deliveries.first
+    expect(delivered_email.to).to eq(["marina@example.com"])
+    expect(delivered_email.subject).to eq("Como foi o serviço de #{profile.display_name}?")
+    expect(delivered_email).to be_multipart
+    expect(delivered_email.text_part.body.decoded).to include(
+      "Como foi o serviço?",
+      "Instalação revisada de luminárias",
+      "avisar #{profile.display_name} em particular",
+      recommendation_token
+    )
+    expect(delivered_email.text_part.body.decoded).not_to include("Você confirmou a conclusão")
+    expect(delivered_email.html_part.body.decoded).to include(
+      "berufe<span style=\"color: #f8755d;\">.</span>",
+      "Como foi o serviço?",
+      "Contar como foi",
+      "background-color: #12625d",
+      recommendation_token
+    )
+    expect(delivered_email.html_part.body.decoded).not_to include("Você confirmou a conclusão")
     expect(recommendation_request.reload).to have_attributes(
       token_ciphertext: nil
     )
@@ -315,7 +300,7 @@ RSpec.describe "Quote service loop", type: :request, openapi: true do
     )
     expect(Notification.find_by!(notification_type: "customer_recommendation_published")).to have_attributes(
       recipient_user_account: account,
-      route: "/profissionais/#{profile.public_slug}#customer-recommendations-title"
+      route_params: {}
     )
     assert_api_conform(status: 201)
 
@@ -324,13 +309,92 @@ RSpec.describe "Quote service loop", type: :request, openapi: true do
     expect(response).to have_http_status(:ok)
     professional = response.parsed_body.dig("data", "professional")
     expect(professional.fetch("evidence_summary")).to include(
-      "completed_services" => 1,
-      "recommendations" => 1
+      "registered_services" => 1,
+      "recommendations" => 1,
+      "hidden_recommendations" => 0
     )
     expect(professional.fetch("customer_recommendations").sole).to include(
       "display_name" => "Marina",
       "verification_label" => "Link enviado por e-mail"
     )
+    assert_api_conform(status: 200)
+
+    # Self-serve hiding (S069): unmoderated, but the public profile discloses
+    # the count so a reader can always tell hiding occurred.
+    get "/api/v1/professional/recommendations",
+      headers: {"X-Request-Id" => "recommendations-list-anonymous"}
+    expect(response).to have_http_status(:unauthorized)
+    assert_api_conform(status: 401)
+
+    get "/api/v1/professional/recommendations",
+      headers: session_read_headers("recommendations-list")
+    expect(response).to have_http_status(:ok)
+    listed_recommendation = response.parsed_body.dig("data", "recommendations").sole
+    expect(listed_recommendation).to include("display_name" => "Marina", "hidden_at" => nil)
+    assert_api_conform(status: 200)
+
+    post "/api/v1/professional/recommendations/#{listed_recommendation.fetch("id")}/hide",
+      params: {hide: {reason: nil}},
+      headers: {"Origin" => ENV.fetch("WEB_ORIGIN"), "X-Request-Id" => "recommendation-hide-anonymous"},
+      as: :json
+    expect(response).to have_http_status(:unauthorized)
+    assert_api_conform(status: 401)
+
+    post "/api/v1/professional/recommendations/#{listed_recommendation.fetch("id")}/hide",
+      params: {hide: {reason: nil}},
+      headers: session_headers("recommendation-hide-bad-origin").merge("Origin" => "https://untrusted.example"),
+      as: :json
+    expect(response).to have_http_status(:forbidden)
+    assert_api_conform(status: 403)
+
+    post "/api/v1/professional/recommendations/#{SecureRandom.uuid}/hide",
+      params: {hide: {reason: nil}},
+      headers: session_headers("recommendation-hide-missing"),
+      as: :json
+    expect(response).to have_http_status(:not_found)
+    assert_api_conform(status: 404)
+
+    post "/api/v1/professional/recommendations/#{listed_recommendation.fetch("id")}/hide",
+      params: {hide: {reason: "Cliente pediu para não publicar."}},
+      headers: session_headers("recommendation-hide"),
+      as: :json
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body.dig("data", "recommendation", "hidden_at")).to be_present
+    assert_api_conform(status: 200)
+
+    get "/api/v1/public/professionals/#{profile.public_slug}",
+      headers: {"X-Request-Id" => "recommendation-hidden-public-profile"}
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body.dig("data", "professional", "customer_recommendations")).to be_empty
+    expect(response.parsed_body.dig("data", "professional", "evidence_summary")).to include(
+      "recommendations" => 0,
+      "hidden_recommendations" => 1
+    )
+    assert_api_conform(status: 200)
+
+    post "/api/v1/professional/recommendations/#{listed_recommendation.fetch("id")}/unhide",
+      headers: {"Origin" => ENV.fetch("WEB_ORIGIN"), "X-Request-Id" => "recommendation-unhide-anonymous"},
+      as: :json
+    expect(response).to have_http_status(:unauthorized)
+    assert_api_conform(status: 401)
+
+    post "/api/v1/professional/recommendations/#{listed_recommendation.fetch("id")}/unhide",
+      headers: session_headers("recommendation-unhide-bad-origin").merge("Origin" => "https://untrusted.example"),
+      as: :json
+    expect(response).to have_http_status(:forbidden)
+    assert_api_conform(status: 403)
+
+    post "/api/v1/professional/recommendations/#{SecureRandom.uuid}/unhide",
+      headers: session_headers("recommendation-unhide-missing"),
+      as: :json
+    expect(response).to have_http_status(:not_found)
+    assert_api_conform(status: 404)
+
+    post "/api/v1/professional/recommendations/#{listed_recommendation.fetch("id")}/unhide",
+      headers: session_headers("recommendation-unhide"),
+      as: :json
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body.dig("data", "recommendation", "hidden_at")).to be_nil
     assert_api_conform(status: 200)
 
     CustomerRecommendationPublicationWithdrawer.new.call(
@@ -345,7 +409,7 @@ RSpec.describe "Quote service loop", type: :request, openapi: true do
     assert_api_conform(status: 200)
   end
 
-  it "allows the professional to confirm service completion" do
+  it "lets the professional complete a service without requesting an evaluation" do
     share = ProfessionalQuoteSharer.new.call(quote:, method: "copy")
     token = URI(share.share_url).path.split("/").last
     service_job = SharedQuoteDecisionRecorder.new.call(
@@ -356,24 +420,27 @@ RSpec.describe "Quote service loop", type: :request, openapi: true do
       message: nil
     )[:service_job]
 
-    post "/api/v1/professional/service-jobs/#{service_job.id}/complete",
-      headers: session_headers("service-complete"),
-      as: :json
+    expect do
+      post "/api/v1/professional/service-jobs/#{service_job.id}/complete",
+        params: {completion: {request_recommendation: false}},
+        headers: session_headers("service-complete"),
+        as: :json
+    end.not_to have_enqueued_job(CustomerRecommendationRequestDeliveryJob)
 
     expect(response).to have_http_status(:ok)
-    expect(response.parsed_body.dig("data", "service_job")).to include(
-      "status" => "completed",
-      "completion_confirmed_by" => "professional"
-    )
-    expect(service_job.reload).to have_attributes(
-      status: "completed",
-      completion_confirmed_by: "professional"
-    )
+    expect(response.parsed_body.dig("data", "service_job")).to include("status" => "completed")
+    expect(response.parsed_body.dig("data", "service_job")).not_to have_key("completion_confirmed_by")
+    expect(service_job.reload).to have_attributes(status: "completed")
+    expect(quote.reload).to be_completed
     expect(service_job.completed_at).to be_present
     expect(service_job.customer_recommendation_request).to be_nil
+    expect(response.parsed_body.dig("data", "service_job", "recommendation")).to be_nil
+    expect(response.parsed_body.dig("data", "share_url")).to be_nil
+    expect(response.parsed_body.dig("data", "whatsapp_url")).to be_nil
     assert_api_conform(status: 200)
 
     post "/api/v1/professional/service-jobs/#{service_job.id}/complete",
+      params: {completion: {request_recommendation: true}},
       headers: session_headers("service-complete-again"),
       as: :json
     expect(response).to have_http_status(:conflict)
@@ -536,25 +603,33 @@ RSpec.describe "Quote service loop", type: :request, openapi: true do
     expect(response).to have_http_status(:not_found)
     assert_api_conform(status: 404)
 
-    post "/api/v1/professional/service-jobs/#{service_job.id}/completion-request",
-      headers: {"Origin" => ENV.fetch("WEB_ORIGIN"), "X-Request-Id" => "completion-anonymous"},
+    post "/api/v1/professional/service-jobs/#{service_job.id}/recommendation-request",
+      headers: {"Origin" => ENV.fetch("WEB_ORIGIN"), "X-Request-Id" => "recommendation-request-anonymous"},
       as: :json
     expect(response).to have_http_status(:unauthorized)
     assert_api_conform(status: 401)
 
-    post "/api/v1/professional/service-jobs/#{service_job.id}/completion-request",
-      headers: session_headers("completion-bad-origin").merge("Origin" => "https://untrusted.example"),
+    post "/api/v1/professional/service-jobs/#{service_job.id}/recommendation-request",
+      headers: session_headers("recommendation-request-bad-origin").merge("Origin" => "https://untrusted.example"),
       as: :json
     expect(response).to have_http_status(:forbidden)
     assert_api_conform(status: 403)
 
-    post "/api/v1/professional/service-jobs/#{SecureRandom.uuid}/completion-request",
-      headers: session_headers("completion-missing"),
+    post "/api/v1/professional/service-jobs/#{SecureRandom.uuid}/recommendation-request",
+      headers: session_headers("recommendation-request-missing"),
       as: :json
     expect(response).to have_http_status(:not_found)
     assert_api_conform(status: 404)
 
+    # Not completed yet, so the WhatsApp handoff has nothing to reuse.
+    post "/api/v1/professional/service-jobs/#{service_job.id}/recommendation-request",
+      headers: session_headers("recommendation-request-not-completed"),
+      as: :json
+    expect(response).to have_http_status(:conflict)
+    assert_api_conform(status: 409)
+
     post "/api/v1/professional/service-jobs/#{service_job.id}/complete",
+      params: {completion: {request_recommendation: true}},
       headers: {
         "Origin" => ENV.fetch("WEB_ORIGIN"),
         "X-Request-Id" => "service-complete-anonymous"
@@ -564,6 +639,7 @@ RSpec.describe "Quote service loop", type: :request, openapi: true do
     assert_api_conform(status: 401)
 
     post "/api/v1/professional/service-jobs/#{service_job.id}/complete",
+      params: {completion: {request_recommendation: true}},
       headers: session_headers("service-complete-bad-origin").merge(
         "Origin" => "https://untrusted.example"
       ),
@@ -572,58 +648,37 @@ RSpec.describe "Quote service loop", type: :request, openapi: true do
     assert_api_conform(status: 403)
 
     post "/api/v1/professional/service-jobs/#{SecureRandom.uuid}/complete",
+      params: {completion: {request_recommendation: true}},
       headers: session_headers("service-complete-missing"),
       as: :json
     expect(response).to have_http_status(:not_found)
     assert_api_conform(status: 404)
 
-    ProfessionalServiceJobCompletionRequester.new.call(service_job:)
-    post "/api/v1/professional/service-jobs/#{service_job.id}/completion-request",
-      headers: session_headers("completion-unavailable"),
-      as: :json
-    expect(response).to have_http_status(:conflict)
-    assert_api_conform(status: 409)
-
-    post "/api/v1/shared-quotes/completions",
-      params: {token:, completion: {kind: "report_issue", message: nil}},
-      headers: public_headers("completion-response-invalid"),
+    post "/api/v1/professional/service-jobs/#{service_job.id}/complete",
+      params: {completion: {}},
+      headers: session_headers("service-complete-missing-choice"),
       as: :json
     expect(response).to have_http_status(:unprocessable_entity)
-    assert_api_conform(status: 422)
-
-    post "/api/v1/shared-quotes/completions",
-      params: {token:, completion: {kind: "confirm", message: nil}},
-      headers: {"Origin" => "https://untrusted.example", "X-Request-Id" => "completion-response-origin"},
-      as: :json
-    expect(response).to have_http_status(:forbidden)
-    assert_api_conform(status: 403)
-
-    post "/api/v1/shared-quotes/completions",
-      params: {token: "invalid", completion: {kind: "confirm", message: nil}},
-      headers: public_headers("completion-response-missing"),
-      as: :json
-    expect(response).to have_http_status(:not_found)
-    assert_api_conform(status: 404)
-
-    service_job.update!(status: "completion_issue", completion_issue_message: "Teste")
-    post "/api/v1/shared-quotes/completions",
-      params: {token:, completion: {kind: "confirm", message: nil}},
-      headers: public_headers("completion-response-unavailable"),
-      as: :json
-    expect(response).to have_http_status(:conflict)
-    expect(response.parsed_body.dig("error", "message")).to eq(
-      "Esta ação não está mais disponível. " \
-      "Atualize a página para ver o estado atual do orçamento."
+    expect(response.parsed_body.dig("error", "field_errors")).to include(
+      "completion" => ["é obrigatório"]
     )
-    assert_api_conform(status: 409)
 
-    service_job.update!(status: "approved", completion_issue_message: nil)
+    post "/api/v1/professional/service-jobs/#{service_job.id}/complete",
+      params: {completion: {request_recommendation: "yes"}},
+      headers: session_headers("service-complete-invalid-choice"),
+      as: :json
+    expect(response).to have_http_status(:unprocessable_entity)
+    expect(response.parsed_body.dig("error", "field_errors")).to include(
+      "request_recommendation" => ["deve ser verdadeiro ou falso"]
+    )
+
     post "/api/v1/professional/service-jobs/#{service_job.id}/cancel",
       params: {cancellation: {reason: "Cliente adiou o serviço."}},
       headers: session_headers("service-cancel"),
       as: :json
     expect(response).to have_http_status(:ok)
     expect(service_job.reload).to be_cancelled
+    expect(quote.reload).to be_cancelled
     assert_api_conform(status: 200)
 
     post "/api/v1/professional/service-jobs/#{service_job.id}/cancel",
@@ -696,15 +751,12 @@ RSpec.describe "Quote service loop", type: :request, openapi: true do
       terms_accepted: true,
       message: nil
     )[:service_job]
-    service_job.update!(
-      status: "completed",
-      completed_at: Time.current,
-      completion_confirmed_by: "customer"
-    )
+    service_job.update!(status: "completed", completed_at: Time.current)
     recommendation_token = CustomerRecommendationToken.issue
     request_record = service_job.create_customer_recommendation_request!(
       token_hash: CustomerRecommendationToken.digest(recommendation_token),
       token_ciphertext: CustomerRecommendationToken.encrypt(recommendation_token),
+      delivery_channel: "email",
       email_fingerprint: CustomerEmailFingerprint.call(quote.customer_email),
       expires_at: 14.days.from_now,
       sent_at: Time.current
@@ -787,6 +839,165 @@ RSpec.describe "Quote service loop", type: :request, openapi: true do
     expect(quote.customer.reload.email).to eq("novo-email@example.com")
     expect(quote.customer.email_verified_at).to be_nil
     assert_api_conform(status: 201)
+  end
+
+  it "asks for a recommendation over WhatsApp when the quote has no customer email" do
+    whatsapp_quote = ProfessionalQuoteWriter.new.call(
+      profile:,
+      attributes: {
+        customer: {id: nil, name: "Cliente Whatsapp", whatsapp_e164: "+5547999912699", email: nil},
+        service_description: "Reparo hidráulico",
+        discount_amount: 0,
+        valid_until: Date.current + 7.days,
+        items: [{description: "Reparo", quantity: 1, unit: "serviço", unit_price: 200}]
+      }
+    )
+    whatsapp_share = ProfessionalQuoteSharer.new.call(quote: whatsapp_quote, method: "copy")
+    whatsapp_token = URI(whatsapp_share.share_url).path.split("/").last
+    service_job = SharedQuoteDecisionRecorder.new.call(
+      token: whatsapp_token,
+      decision: "approve",
+      revision: whatsapp_quote.reload.lock_version,
+      terms_accepted: true,
+      message: nil
+    )[:service_job]
+
+    completion_item = ProfessionalActionInboxQuery.new.call(profile:).find do |item|
+      item.id == service_job.id && item.kind == "service_open"
+    end
+    expect(completion_item.recommendation_delivery_channel).to eq("whatsapp")
+
+    expect do
+      post "/api/v1/professional/service-jobs/#{service_job.id}/complete",
+        params: {completion: {request_recommendation: true}},
+        headers: session_headers("whatsapp-complete"),
+        as: :json
+    end.not_to have_enqueued_job(CustomerRecommendationRequestDeliveryJob)
+    expect(response).to have_http_status(:ok)
+    request_record = service_job.reload.customer_recommendation_request
+    expect(request_record).to have_attributes(
+      delivery_channel: "whatsapp",
+      email_fingerprint: nil,
+      sent_at: be_present
+    )
+    first_share_url = response.parsed_body.dig("data", "share_url")
+    expect(response.parsed_body.dig("data", "whatsapp_url")).to start_with(
+      "https://wa.me/5547999912699?"
+    )
+    handoff_message = URI.decode_www_form(
+      URI(response.parsed_body.dig("data", "whatsapp_url")).query
+    ).to_h.fetch("text")
+    expect(handoff_message).to eq(
+      "Olá, Cliente Whatsapp! Poderia contar como foi o serviço reparo hidráulico? #{first_share_url}"
+    )
+    assert_api_conform(status: 200)
+
+    # Reusable: a second tap reopens the same link rather than invalidating it,
+    # unlike the one-shot email channel.
+    post "/api/v1/professional/service-jobs/#{service_job.id}/recommendation-request",
+      headers: session_headers("whatsapp-handoff"),
+      as: :json
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body.dig("data", "share_url")).to eq(first_share_url)
+    expect(request_record.reload.sent_at).to be_present
+    assert_api_conform(status: 200)
+
+    post "/api/v1/professional/service-jobs/#{service_job.id}/recommendation-request",
+      headers: session_headers("whatsapp-handoff-again"),
+      as: :json
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body.dig("data", "share_url")).to eq(first_share_url)
+
+    recommendation_token = first_share_url.split("/").last
+    post "/api/v1/customer-recommendations",
+      params: {
+        token: recommendation_token,
+        recommendation: {
+          display_name: "Cliente Whatsapp",
+          recommendation_text: "Serviço rápido e bem explicado.",
+          service_confirmed: true,
+          publication_consent: true
+        }
+      },
+      headers: public_headers("whatsapp-recommendation-create"),
+      as: :json
+    expect(response).to have_http_status(:created)
+    published = CustomerRecommendation.sole
+    expect(published).to have_attributes(
+      delivery_channel: "whatsapp",
+      email_fingerprint: nil,
+      email_verified_at: nil
+    )
+    assert_api_conform(status: 201)
+
+    get "/api/v1/public/professionals/#{profile.public_slug}",
+      headers: {"X-Request-Id" => "whatsapp-recommendation-public-profile"}
+    expect(response.parsed_body.dig("data", "professional", "customer_recommendations").sole).to include(
+      "verification_label" => "Link enviado por WhatsApp"
+    )
+    assert_api_conform(status: 200)
+  end
+
+  it "lets a customer privately report an outstanding issue instead of recommending" do
+    share = ProfessionalQuoteSharer.new.call(quote:, method: "copy")
+    token = URI(share.share_url).path.split("/").last
+    service_job = SharedQuoteDecisionRecorder.new.call(
+      token:,
+      decision: "approve",
+      revision: quote.reload.lock_version,
+      terms_accepted: true,
+      message: nil
+    )[:service_job]
+    post "/api/v1/professional/service-jobs/#{service_job.id}/complete",
+      params: {completion: {request_recommendation: true}},
+      headers: session_headers("issue-complete"),
+      as: :json
+    expect(response).to have_http_status(:ok)
+    request_record = service_job.reload.customer_recommendation_request
+    recommendation_token = CustomerRecommendationToken.decrypt(request_record.token_ciphertext)
+    # Simulate the asynchronous email worker completing delivery.
+    request_record.update!(sent_at: Time.current)
+
+    post "/api/v1/customer-recommendations/issues",
+      params: {token: recommendation_token, message: "Faltou revisar o encaixe da luminária."},
+      headers: public_headers("feedback-issue"),
+      as: :json
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body.dig("data", "recommendation_request")).to include(
+      "customer_name" => "Marina Cliente"
+    )
+    assert_api_conform(status: 200)
+
+    expect(service_job.reload).to have_attributes(
+      status: "completed",
+      customer_feedback_message: "Faltou revisar o encaixe da luminária."
+    )
+    expect(Notification.find_by!(notification_type: "service_completion_issue_reported")).to have_attributes(
+      recipient_user_account: account,
+      route_params: {"service_job_id" => service_job.id}
+    )
+    expect(CustomerRecommendation.count).to eq(0)
+
+    post "/api/v1/customer-recommendations/issues",
+      params: {token: recommendation_token, message: "   "},
+      headers: public_headers("feedback-issue-invalid"),
+      as: :json
+    expect(response).to have_http_status(:unprocessable_entity)
+    assert_api_conform(status: 422)
+
+    post "/api/v1/customer-recommendations/issues",
+      params: {token: "invalid", message: "x"},
+      headers: public_headers("feedback-issue-missing"),
+      as: :json
+    expect(response).to have_http_status(:not_found)
+    assert_api_conform(status: 404)
+
+    post "/api/v1/customer-recommendations/issues",
+      params: {token: recommendation_token, message: "x"},
+      headers: {"Origin" => "https://untrusted.example", "X-Request-Id" => "feedback-issue-origin"},
+      as: :json
+    expect(response).to have_http_status(:forbidden)
+    assert_api_conform(status: 403)
   end
 
   private

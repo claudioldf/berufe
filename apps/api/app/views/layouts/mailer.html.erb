@@ -1,6 +1,50 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-  <body style="font-family: sans-serif; color: #1f2937; line-height: 1.5;">
-    <%= yield %>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="x-apple-disable-message-reformatting">
+    <title><%= message.subject %></title>
+    <style>
+      @media only screen and (max-width: 620px) {
+        .email-shell { padding: 24px 12px !important; }
+        .email-card { padding: 32px 22px !important; }
+        .email-title { font-size: 30px !important; line-height: 1.12 !important; }
+        .email-button { display: block !important; text-align: center !important; }
+      }
+    </style>
+  </head>
+  <body style="margin: 0; padding: 0; background-color: #f7f5ef; color: #17352f; font-family: Arial, Helvetica, sans-serif; line-height: 1.6; -webkit-text-size-adjust: 100%;">
+    <div style="display: none; max-height: 0; overflow: hidden; opacity: 0; color: transparent; line-height: 1px; mso-hide: all;">
+      <%= @preheader || "Uma mensagem da Berufe." %>
+      &#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;
+    </div>
+
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#f7f5ef" style="width: 100%; background-color: #f7f5ef;">
+      <tr>
+        <td class="email-shell" align="center" style="padding: 40px 16px;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width: 100%; max-width: 600px;">
+            <tr>
+              <td align="left" style="padding: 0 8px 18px;">
+                <a href="<%= @web_origin %>" style="color: #17352f; font-size: 25px; font-weight: 800; letter-spacing: -1px; text-decoration: none;">
+                  berufe<span style="color: #f8755d;">.</span>
+                </a>
+              </td>
+            </tr>
+            <tr>
+              <td class="email-card" bgcolor="#ffffff" style="padding: 48px; background-color: #ffffff; border: 1px solid #e5e1d7; border-radius: 24px; box-shadow: 0 16px 40px rgba(23, 53, 47, 0.08);">
+                <%= yield %>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding: 24px 24px 0; color: #82928d; font-size: 12px; line-height: 1.6;">
+                <p style="margin: 0 0 4px;">Berufe · profissionais de confiança, perto de você.</p>
+                <p style="margin: 0;">Este é um e-mail automático. Por favor, não responda.</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
   </body>
 </html>

@@ -27,7 +27,6 @@ RSpec.describe PortfolioItemCreator do
     expect(item).to have_attributes(
       title: "Cozinha iluminada",
       description: "Instalação completa.",
-      status: "pending_review",
       service:,
       private_key: upload.sanitized_key
     )
@@ -74,17 +73,17 @@ RSpec.describe PortfolioItemCreator do
     end.to change { profile.portfolio_items.active.count }.from(11).to(12)
   end
 
-  it "orders pending and approved active items newest first with ID as tie-breaker" do
+  it "orders active items newest first with ID as tie-breaker" do
     service
     submitted_at = Time.zone.parse("2026-08-17 12:00:00")
     lower_id = "00000000-0000-4000-8000-000000000001"
     higher_id = "00000000-0000-4000-8000-000000000002"
-    create_item(index: 1, id: lower_id, status: "approved", submitted_at:)
-    create_item(index: 2, id: higher_id, status: "approved", submitted_at:)
-    pending_id = create_item(index: 3, status: "pending_review", submitted_at: 1.day.from_now).id
-    create_item(index: 4, status: "approved", submitted_at: 1.day.ago, deleted_at: Time.current)
+    create_item(index: 1, id: lower_id, submitted_at:)
+    create_item(index: 2, id: higher_id, submitted_at:)
+    newest_id = create_item(index: 3, submitted_at: 1.day.from_now).id
+    create_item(index: 4, submitted_at: 1.day.ago, deleted_at: Time.current)
 
-    expect(PortfolioItem.publicly_visible.newest_first.pluck(:id)).to eq([pending_id, higher_id, lower_id])
+    expect(PortfolioItem.publicly_visible.newest_first.pluck(:id)).to eq([newest_id, higher_id, lower_id])
   end
 
   private
@@ -148,12 +147,11 @@ RSpec.describe PortfolioItemCreator do
     )
   end
 
-  def create_item(index:, id: nil, status: "pending_review", submitted_at: index.minutes.ago, deleted_at: nil)
+  def create_item(index:, id: nil, submitted_at: index.minutes.ago, deleted_at: nil)
     attributes = {
       media_upload: processed_upload,
       service:,
       title: "Trabalho #{index}",
-      status:,
       private_key: "sanitized/#{profile.id}/item-#{index}-#{SecureRandom.uuid}.png",
       content_type: "image/png",
       byte_size: 100,

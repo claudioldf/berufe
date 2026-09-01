@@ -32,8 +32,9 @@ class CustomerRecommendationSubmitter
         customer:,
         display_name: attributes[:display_name],
         recommendation_text: attributes[:recommendation_text],
+        delivery_channel: request.delivery_channel,
         email_fingerprint: request.email_fingerprint,
-        email_verified_at: now,
+        email_verified_at: (now if request.email_channel?),
         service_confirmed_at: now,
         publication_authorized_at: now,
         privacy_notice_version: LegalDocumentVersions::PRIVACY_NOTICE,
@@ -41,16 +42,17 @@ class CustomerRecommendationSubmitter
       )
       request.update!(status: "completed", completed_at: now, token_ciphertext: nil)
 
-      current_fingerprint = CustomerEmailFingerprint.call(customer.email) if customer.email.present?
-      snapshot_fingerprint = CustomerEmailFingerprint.call(quote.customer_email)
-      if current_fingerprint == snapshot_fingerprint && snapshot_fingerprint == request.email_fingerprint
-        customer.update!(email_verified_at: now)
+      if request.email_channel?
+        current_fingerprint = CustomerEmailFingerprint.call(customer.email) if customer.email.present?
+        snapshot_fingerprint = CustomerEmailFingerprint.call(quote.customer_email)
+        if current_fingerprint == snapshot_fingerprint && snapshot_fingerprint == request.email_fingerprint
+          customer.update!(email_verified_at: now)
+        end
       end
       professional = request.service_job.professional
       @notifier.call(
         recipient: professional.user_account,
         notification_type: "customer_recommendation_published",
-        route: "/profissionais/#{professional.public_slug}#customer-recommendations-title",
         idempotency_key: "customer-recommendation:#{recommendation.id}:published",
         occurred_at: now
       )

@@ -66,7 +66,6 @@ module Berufe
       R2_ENDPOINT
       R2_ACCESS_KEY_ID
       R2_SECRET_ACCESS_KEY
-      R2_PUBLIC_BUCKET
       R2_PRIVATE_BUCKET
     ].freeze
     OPENAI_REQUIRED = %w[OPENAI_API_KEY].freeze

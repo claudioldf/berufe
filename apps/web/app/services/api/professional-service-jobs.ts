@@ -29,14 +29,17 @@ export function mapProfessionalServiceJob(
       scheduledOn: job.quote.scheduled_on ?? "",
       total: Number(job.quote.total_amount),
     },
-    completionRequestedAt: job.completion_requested_at,
-    completionIssueAt: job.completion_issue_at,
-    completionIssueMessage: job.completion_issue_message ?? "",
+    customerFeedbackMessage: job.customer_feedback_message ?? "",
     completedAt: job.completed_at,
-    completionConfirmedBy: job.completion_confirmed_by,
     cancelledAt: job.cancelled_at,
     cancellationReason: job.cancellation_reason ?? "",
-    recommendationRequestStatus: job.recommendation_request_status,
+    recommendation: job.recommendation
+      ? {
+          status: job.recommendation.status,
+          deliveryChannel: job.recommendation.delivery_channel,
+          sentAt: job.recommendation.sent_at,
+        }
+      : null,
     createdAt: job.created_at,
     updatedAt: job.updated_at,
   };
@@ -64,7 +67,7 @@ export async function fetchProfessionalServiceJob(
   return mapProfessionalServiceJob(data.data.service_job);
 }
 
-export async function requestProfessionalServiceCompletion(
+export async function requestProfessionalServiceRecommendation(
   client: BerufeApiClient,
   id: string,
 ): Promise<{
@@ -73,7 +76,7 @@ export async function requestProfessionalServiceCompletion(
   whatsappUrl: string;
 }> {
   const { data, error, response } = await client.POST(
-    "/api/v1/professional/service-jobs/{id}/completion-request",
+    "/api/v1/professional/service-jobs/{id}/recommendation-request",
     { params: { path: { id } } },
   );
   if (error || !data) throw requestError(error, response);
@@ -103,11 +106,23 @@ export async function cancelProfessionalServiceJob(
 export async function completeProfessionalServiceJob(
   client: BerufeApiClient,
   id: string,
-): Promise<ProfessionalServiceJob> {
+  requestRecommendation: boolean,
+): Promise<{
+  serviceJob: ProfessionalServiceJob;
+  shareUrl: string | null;
+  whatsappUrl: string | null;
+}> {
   const { data, error, response } = await client.POST(
     "/api/v1/professional/service-jobs/{id}/complete",
-    { params: { path: { id } } },
+    {
+      params: { path: { id } },
+      body: { completion: { request_recommendation: requestRecommendation } },
+    },
   );
   if (error || !data) throw requestError(error, response);
-  return mapProfessionalServiceJob(data.data.service_job);
+  return {
+    serviceJob: mapProfessionalServiceJob(data.data.service_job),
+    shareUrl: data.data.share_url,
+    whatsappUrl: data.data.whatsapp_url,
+  };
 }

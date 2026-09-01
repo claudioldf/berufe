@@ -51,7 +51,6 @@ RSpec.describe Berufe::Environment do
         "R2_ENDPOINT" => "https://account.r2.cloudflarestorage.com",
         "R2_ACCESS_KEY_ID" => "r2-access-key",
         "R2_SECRET_ACCESS_KEY" => "r2-secret",
-        "R2_PUBLIC_BUCKET" => "public-media",
         "R2_PRIVATE_BUCKET" => "private-media"
       )
     end

@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ref, shallowRef } from "vue";
+import { computed, ref, useTemplateRef } from "vue";
 import type {
   ProfessionalProfileDraft,
   ProfessionalProfilePhotoState,
 } from "~/types";
+import type { ProfessionalProfileValidation } from "~/composables/useProfessionalProfileDraft";
 import { validateOnboardingProfile } from "~/composables/useProfessionalOnboarding";
+import { useInlineFormValidation } from "~/composables/useInlineFormValidation";
 
 const props = withDefaults(
   defineProps<{
@@ -35,16 +37,47 @@ const form = ref<ProfessionalProfileDraft>({
   serviceNotes: { ...props.draft.serviceNotes },
   selectedNeighborhoodCodes: [...props.draft.selectedNeighborhoodCodes],
 });
-const error = shallowRef("");
+const formRoot = useTemplateRef<HTMLFormElement>("formRoot");
+const validation = computed(() => {
+  const photoReady = Boolean(props.photo?.hasPhoto || props.photo?.current);
+  return validateOnboardingProfile(form.value, photoReady);
+});
+const isValid = computed(() =>
+  Object.values(validation.value).every((fieldError) => !fieldError),
+);
+const { validationAttempted, revealValidation } =
+  useInlineFormValidation(formRoot);
+const displayedErrors = computed(() =>
+  validationAttempted.value ? validation.value : undefined,
+);
+const identityErrors = computed<
+  ProfessionalProfileValidation["identity"] | undefined
+>(() => {
+  if (!displayedErrors.value) return undefined;
+  return {
+    name: displayedErrors.value.name,
+    birthdate: displayedErrors.value.birthdate,
+    whatsapp: "",
+    headline: "",
+    bio: "",
+    yearsExperience: "",
+  };
+});
+const error = computed(
+  () =>
+    (validationAttempted.value
+      ? Object.values(validation.value).find(Boolean)
+      : "") ?? "",
+);
+const photoError = computed(
+  () => props.photoError || displayedErrors.value?.photo || "",
+);
+const savingReason = computed(() =>
+  props.saving ? "Aguarde o salvamento desta etapa terminar." : null,
+);
 
 function submit() {
-  const photoReady = Boolean(
-    props.photo?.hasPublishedPhoto ||
-    ["pending_review", "approved"].includes(props.photo?.current?.status ?? ""),
-  );
-  const errors = validateOnboardingProfile(form.value, photoReady);
-  error.value = Object.values(errors).find(Boolean) ?? "";
-  if (error.value) return;
+  if (!revealValidation(isValid.value)) return;
   emit("complete", {
     ...form.value,
     selectedServices: [...form.value.selectedServices],
@@ -65,7 +98,12 @@ function submit() {
       </p>
     </header>
 
-    <form class="onboarding-step-form" @submit.prevent="submit">
+    <form
+      ref="formRoot"
+      class="onboarding-step-form"
+      novalidate
+      @submit.prevent="submit"
+    >
       <p
         v-if="error || props.serverError"
         class="onboarding-step-error"
@@ -78,21 +116,24 @@ function submit() {
           v-model="form"
           :photo="props.photo"
           :photo-uploading="props.photoUploading"
-          :photo-error="props.photoError"
+          :photo-error="photoError"
+          :errors="identityErrors"
           @photo-select="emit('photoSelect', $event)"
           @photo-retry="emit('photoRetry')"
         />
       </DashboardProfileFormLayout>
       <footer class="onboarding-step-actions onboarding-step-actions--end">
-        <UButton
-          type="submit"
-          color="primary"
-          trailing-icon="i-lucide-arrow-right"
-          :loading="props.saving"
-          :disabled="props.saving"
-        >
-          Salvar e continuar
-        </UButton>
+        <DesignSystemDisabledTooltip :reason="savingReason">
+          <UButton
+            type="submit"
+            color="primary"
+            trailing-icon="i-lucide-arrow-right"
+            :loading="props.saving"
+            :disabled="props.saving"
+          >
+            Salvar e continuar
+          </UButton>
+        </DesignSystemDisabledTooltip>
       </footer>
     </form>
   </section>

@@ -17,6 +17,7 @@ const props = defineProps<{
   sharingMethod: QuoteShareMethod | null;
   shareError: string;
   shareEnabled?: boolean;
+  shareBlockedReason?: string | null;
   revoking?: boolean;
 }>();
 const emit = defineEmits<{
@@ -29,7 +30,30 @@ const shareOpen = defineModel<boolean>("shareOpen", { default: false });
 const revokeOpen = shallowRef(false);
 const validationAttempted = shallowRef(false);
 const formRoot = useTemplateRef<HTMLElement>("formRoot");
-const locked = computed(() => props.initialQuote.status === "approved");
+const locked = computed(() =>
+  ["approved", "completed", "cancelled"].includes(props.initialQuote.status),
+);
+const lockedPresentation = computed(() => {
+  if (props.initialQuote.status === "completed") {
+    return {
+      title: "Orçamento concluído",
+      description:
+        "O serviço foi concluído e este orçamento não pode mais ser alterado.",
+    };
+  }
+  if (props.initialQuote.status === "cancelled") {
+    return {
+      title: "Orçamento cancelado",
+      description:
+        "O serviço foi cancelado e este orçamento não pode mais ser alterado.",
+    };
+  }
+  return {
+    title: "Orçamento aprovado",
+    description:
+      "Este orçamento foi aprovado e não pode mais ser alterado. Acompanhe o andamento na área de serviços.",
+  };
+});
 
 function confirmRevoke() {
   revokeOpen.value = false;
@@ -58,6 +82,15 @@ const saveBarError = computed(() => {
   return validationAttempted.value && !isValid.value
     ? "Revise os campos destacados para continuar."
     : "";
+});
+const sharingBlockedReason = computed(() => {
+  if (props.sharingMethod === "copy") {
+    return "Aguarde a cópia do link do orçamento terminar.";
+  }
+  if (props.sharingMethod === "whatsapp") {
+    return "Aguarde a preparação do compartilhamento pelo WhatsApp.";
+  }
+  return null;
 });
 
 watch(
@@ -104,11 +137,8 @@ function requestShare() {
       <DesignSystemSurfaceCard v-if="locked" class="quote-builder__locked">
         <UIcon name="i-lucide-lock-keyhole" />
         <div>
-          <strong>Orçamento aprovado</strong>
-          <p>
-            Este orçamento foi aprovado e não pode mais ser alterado. Acompanhe
-            o andamento na área de serviços.
-          </p>
+          <strong>{{ lockedPresentation.title }}</strong>
+          <p>{{ lockedPresentation.description }}</p>
         </div>
         <UButton
           v-if="initialQuote.serviceJob?.id"
@@ -149,9 +179,11 @@ function requestShare() {
           :shared="isShared"
           :ready-to-share="readyToShare"
           :valid="isValid"
+          :editing="Boolean(initialQuote.id)"
           :saving-intent="savingIntent"
           :error="saveBarError"
           :share-enabled="shareEnabled ?? false"
+          :share-blocked-reason="shareBlockedReason"
           @preview="previewOpen = true"
           @save="save"
           @share="requestShare"
@@ -221,22 +253,27 @@ function requestShare() {
       <template #footer
         ><UButton color="neutral" variant="ghost" @click="shareOpen = false"
           >Cancelar</UButton
-        ><UButton
-          color="neutral"
-          variant="outline"
-          icon="i-lucide-link"
-          :loading="sharingMethod === 'copy'"
-          :disabled="Boolean(sharingMethod)"
-          @click="emit('share', 'copy')"
-          >Copiar link</UButton
-        ><UButton
-          color="primary"
-          icon="i-lucide-message-circle"
-          :loading="sharingMethod === 'whatsapp'"
-          :disabled="Boolean(sharingMethod)"
-          @click="emit('share', 'whatsapp')"
-          >Abrir WhatsApp</UButton
-        ></template
+        ><DesignSystemDisabledTooltip :reason="sharingBlockedReason">
+          <UButton
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-link"
+            :loading="sharingMethod === 'copy'"
+            :disabled="Boolean(sharingMethod)"
+            @click="emit('share', 'copy')"
+            >Copiar link</UButton
+          >
+        </DesignSystemDisabledTooltip>
+        <DesignSystemDisabledTooltip :reason="sharingBlockedReason">
+          <UButton
+            color="primary"
+            icon="i-lucide-message-circle"
+            :loading="sharingMethod === 'whatsapp'"
+            :disabled="Boolean(sharingMethod)"
+            @click="emit('share', 'whatsapp')"
+            >Abrir WhatsApp</UButton
+          >
+        </DesignSystemDisabledTooltip></template
       >
     </UModal>
 
@@ -408,6 +445,17 @@ function requestShare() {
       display: grid;
       gap: 4px;
     }
+    &__mobile-index,
+    &__label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+      border: 0;
+    }
     &__field--invalid input,
     &__field--invalid select {
       border-color: var(--color-danger);
@@ -422,7 +470,10 @@ function requestShare() {
     & select {
       padding-right: 2.25rem;
     }
-    & strong {
+    &__total {
+      display: grid;
+    }
+    &__total strong {
       margin-top: 9px;
       text-align: right;
       font-size: 0.84rem;
@@ -438,7 +489,9 @@ function requestShare() {
       color: #a45245;
       cursor: pointer;
     }
-    & > button {
+    &__remove {
+      grid-column: 6;
+      grid-row: 1;
       margin-top: 5px;
     }
     & button:disabled {
@@ -662,6 +715,68 @@ function requestShare() {
       }
       &__savebar > div > :last-child {
         grid-column: 1 / -1;
+      }
+    }
+    .quote-items {
+      display: grid;
+      gap: 12px;
+      overflow-x: visible;
+    }
+    .quote-item {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      min-width: 0;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--color-surface);
+      &--head {
+        display: none;
+      }
+      &__mobile-index,
+      &__label {
+        position: static;
+        width: auto;
+        height: auto;
+        padding: 0;
+        overflow: visible;
+        clip-path: none;
+        white-space: normal;
+      }
+      &__mobile-index {
+        align-self: center;
+        color: var(--ink);
+        font-size: 0.82rem;
+        font-weight: 850;
+      }
+      &__label {
+        color: var(--ink-soft);
+        font-size: 0.76rem;
+        font-weight: 800;
+      }
+      &__description {
+        grid-column: 1 / -1;
+      }
+      &__total {
+        align-content: start;
+        gap: 4px;
+      }
+      &__total strong {
+        min-height: 42px;
+        margin: 0;
+        padding: 10px 8px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--color-surface-neutral);
+        text-align: right;
+      }
+      &__remove {
+        grid-column: 2;
+        grid-row: 1;
+        justify-self: end;
+        width: 44px;
+        height: 44px;
+        margin: 0;
       }
     }
     .builder-card {

@@ -12,8 +12,6 @@ const services = await useAsyncData("professional-service-jobs", () =>
 );
 const statusLabel = {
   approved: "Aprovado",
-  completion_requested: "Aguardando confirmação",
-  completion_issue: "Pendência informada",
   completed: "Concluído",
   cancelled: "Cancelado",
 } as const;
@@ -133,6 +131,11 @@ const statusLabel = {
   font-size: 0.78rem;
   font-style: normal;
   font-weight: 800;
+}
+
+.service-list em.cancelled {
+  background: var(--color-danger-tint);
+  color: var(--color-danger);
 }
 
 @media (width <= 720px) {

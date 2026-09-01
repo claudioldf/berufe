@@ -3,6 +3,7 @@ import {
   attachProfessionalProfilePhoto,
   deleteProfessionalProfilePhoto,
   attachProfessionalPortfolioItem,
+  updateProfessionalPortfolioItem,
   deleteProfessionalPortfolioItem,
   deleteProfessionalRelationship,
   attachProfessionalVerificationRequest,
@@ -19,6 +20,7 @@ import {
 } from "~/services/api/media-upload";
 import type {
   PortfolioItemDraft,
+  PortfolioItemUpdateDraft,
   ProfessionalProfileDraft,
   ProfessionalRelationship,
   Service,
@@ -201,6 +203,51 @@ export async function useProfessionalWorkspace() {
     }
   }
 
+  async function updatePortfolioItem(
+    id: string,
+    draft: PortfolioItemUpdateDraft,
+  ) {
+    if (portfolioSaving.value) return workspace.data.value;
+    const service = workspace.data.value?.profile.services.find(
+      (selection) => selection.name === draft.service,
+    );
+    if (!service) {
+      throw new ApiRequestError({
+        code: "service_not_selected",
+        message: "Selecione um serviço ativo do seu perfil.",
+        fieldErrors: {},
+        requestId: "portfolio-item",
+      });
+    }
+
+    portfolioSaving.value = true;
+    portfolioError.value = "";
+    try {
+      const upload = draft.file
+        ? await uploadMedia(client, draft.file, "portfolio_image")
+        : null;
+      const processed = upload
+        ? await processedMedia(upload, "a imagem")
+        : null;
+      const updated = await updateProfessionalPortfolioItem(client, id, {
+        ...(processed ? { mediaUploadId: processed.id } : {}),
+        serviceId: service.id,
+        title: draft.title,
+        description: draft.description,
+      });
+      workspace.data.value = updated;
+      return updated;
+    } catch (error) {
+      portfolioError.value =
+        error instanceof ApiRequestError
+          ? error.message
+          : "Não foi possível reenviar o trabalho. Tente novamente.";
+      throw error;
+    } finally {
+      portfolioSaving.value = false;
+    }
+  }
+
   async function deletePortfolioItem(id: string) {
     portfolioError.value = "";
     try {
@@ -372,6 +419,7 @@ export async function useProfessionalWorkspace() {
     portfolioSaving,
     portfolioError,
     createPortfolioItem,
+    updatePortfolioItem,
     deletePortfolioItem,
     verificationSaving,
     verificationError,

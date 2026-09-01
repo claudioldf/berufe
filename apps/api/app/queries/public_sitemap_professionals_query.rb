@@ -14,7 +14,7 @@ class PublicSitemapProfessionalsQuery
     ProfessionalProfile
       .publicly_eligible
       .joins(:published_revision)
-      .pluck(:public_slug, "professional_profile_revisions.submitted_at", "professional_profile_revisions.created_at")
-      .map { |slug, submitted_at, created_at| Entry.new(slug:, updated_at: submitted_at || created_at) }
+      .pluck(:public_slug, "professional_profile_revisions.updated_at")
+      .map { |slug, updated_at| Entry.new(slug:, updated_at:) }
   end
 end

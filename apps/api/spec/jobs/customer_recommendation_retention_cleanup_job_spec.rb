@@ -45,13 +45,13 @@ RSpec.describe CustomerRecommendationRetentionCleanupJob do
     service_job = ServiceJob.create!(
       quote:,
       status: "completed",
-      completed_at: now - 40.days,
-      completion_confirmed_by: "customer"
+      completed_at: now - 40.days
     )
     token = CustomerRecommendationToken.issue
     service_job.create_customer_recommendation_request!(
       token_hash: CustomerRecommendationToken.digest(token),
       token_ciphertext: CustomerRecommendationToken.encrypt(token),
+      delivery_channel: "email",
       email_fingerprint: CustomerEmailFingerprint.call(quote.customer_email),
       status:,
       expires_at:,

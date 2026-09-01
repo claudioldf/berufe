@@ -5,6 +5,8 @@
 **Updated:** August 17, 2026  
 **Scope:** S019–S031 — credible professional supply
 
+> Historical implementation record. Its profile, photo, and portfolio moderation behavior is superseded by `Berufe_Post_Publication_Moderation_Decision.md`.
+
 ## 1. Source-of-truth order
 
 This document records the approved implementation detail for Increment 2. It is read together with, in priority order:

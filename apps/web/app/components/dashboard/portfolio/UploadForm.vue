@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { reactive, shallowRef, useTemplateRef, watch } from "vue";
-import type { PortfolioItemDraft } from "~/types";
+import { computed, reactive, shallowRef, useTemplateRef, watch } from "vue";
+import type {
+  PortfolioItemUpdateDraft,
+  ProfessionalPortfolioItem,
+} from "~/types";
 import { useImagePreview } from "~/composables/useImagePreview";
 import { useInlineFormValidation } from "~/composables/useInlineFormValidation";
 import { validateOnboardingImage } from "~/composables/useProfessionalOnboarding";
@@ -11,16 +14,25 @@ const props = withDefaults(
     submitLabel?: string;
     showCancel?: boolean;
     submitting?: boolean;
+    imageRequired?: boolean;
+    resetOnSubmit?: boolean;
+    initialValues?: Pick<
+      ProfessionalPortfolioItem,
+      "title" | "service" | "description"
+    >;
   }>(),
   {
     submitLabel: "Adicionar ao perfil",
     showCancel: false,
     submitting: false,
+    imageRequired: true,
+    resetOnSubmit: true,
+    initialValues: undefined,
   },
 );
 const emit = defineEmits<{
   cancel: [];
-  submitted: [draft: PortfolioItemDraft];
+  submitted: [draft: PortfolioItemUpdateDraft];
 }>();
 
 const file = shallowRef<File | null>(null);
@@ -31,11 +43,19 @@ const errors = reactive({ file: "", title: "", service: "" });
 const formRoot = useTemplateRef<HTMLFormElement>("formRoot");
 const { revealValidation, resetValidation } = useInlineFormValidation(formRoot);
 const { previewUrl, setPreviewFile, clearPreview } = useImagePreview();
+const submittingReason = computed(() =>
+  props.submitting ? "Aguarde o salvamento do trabalho terminar." : null,
+);
 
 watch(
-  () => props.serviceOptions,
-  (options) => {
-    if (!options.includes(service.value)) service.value = options[0] ?? "";
+  [() => props.initialValues, () => props.serviceOptions],
+  ([initialValues, options]) => {
+    title.value = initialValues?.title ?? "";
+    description.value = initialValues?.description ?? "";
+    service.value =
+      initialValues && options.includes(initialValues.service)
+        ? initialValues.service
+        : (options[0] ?? "");
   },
   { immediate: true },
 );
@@ -50,9 +70,13 @@ function selectFile(event: Event) {
 function reset() {
   clearPreview();
   file.value = null;
-  title.value = "";
-  service.value = props.serviceOptions[0] ?? "";
-  description.value = "";
+  title.value = props.initialValues?.title ?? "";
+  service.value =
+    props.initialValues &&
+    props.serviceOptions.includes(props.initialValues.service)
+      ? props.initialValues.service
+      : (props.serviceOptions[0] ?? "");
+  description.value = props.initialValues?.description ?? "";
   errors.file = "";
   errors.title = "";
   errors.service = "";
@@ -66,14 +90,19 @@ function cancel() {
 
 function submit() {
   const selectedFile = file.value;
-  const fileValidation = validateOnboardingImage(selectedFile);
+  const fileValidation = selectedFile
+    ? validateOnboardingImage(selectedFile)
+    : {
+        valid: !props.imageRequired,
+        error: props.imageRequired ? "Selecione uma imagem JPG ou PNG." : "",
+      };
   errors.file = fileValidation.error;
   errors.title = title.value.trim() ? "" : "Informe o título do trabalho.";
   errors.service = service.value ? "" : "Selecione o serviço realizado.";
   const valid = Boolean(
-    fileValidation.valid && !errors.title && !errors.service && selectedFile,
+    fileValidation.valid && !errors.title && !errors.service,
   );
-  if (!revealValidation(valid) || !selectedFile) return;
+  if (!revealValidation(valid)) return;
 
   emit("submitted", {
     file: selectedFile,
@@ -81,7 +110,7 @@ function submit() {
     service: service.value,
     description: description.value.trim(),
   });
-  reset();
+  if (props.resetOnSubmit) reset();
 }
 </script>
 
@@ -106,15 +135,24 @@ function submit() {
         v-else
         :name="file ? 'i-lucide-file-check-2' : 'i-lucide-cloud-upload'"
       />
-      <strong>{{ file ? file.name : "Selecione uma foto do trabalho" }}</strong>
-      <small>JPG ou PNG · até 10 MB</small>
+      <strong>{{
+        file
+          ? file.name
+          : props.imageRequired
+            ? "Selecione uma foto do trabalho"
+            : "Adicionar uma nova foto (opcional)"
+      }}</strong>
+      <small v-if="props.imageRequired">JPG ou PNG · até 10 MB</small>
+      <small v-else>
+        Selecione JPG ou PNG até 10 MB, ou mantenha a foto atual.
+      </small>
       <input
         name="portfolio-image"
         type="file"
         accept="image/jpeg,image/png"
         :aria-describedby="errors.file ? 'portfolio-image-error' : undefined"
         :aria-invalid="Boolean(errors.file)"
-        required
+        :required="props.imageRequired"
         @change="selectFile"
       />
     </label>
@@ -183,24 +221,27 @@ function submit() {
       />
     </DesignSystemFormField>
     <footer class="portfolio-upload__actions">
-      <UButton
-        v-if="showCancel"
-        type="button"
-        color="neutral"
-        variant="ghost"
-        :disabled="props.submitting"
-        @click="cancel"
-      >
-        Cancelar
-      </UButton>
-      <UButton
-        type="submit"
-        color="primary"
-        :loading="props.submitting"
-        :disabled="props.submitting"
-      >
-        {{ submitLabel }}
-      </UButton>
+      <DesignSystemDisabledTooltip v-if="showCancel" :reason="submittingReason">
+        <UButton
+          type="button"
+          color="neutral"
+          variant="ghost"
+          :disabled="props.submitting"
+          @click="cancel"
+        >
+          Cancelar
+        </UButton>
+      </DesignSystemDisabledTooltip>
+      <DesignSystemDisabledTooltip :reason="submittingReason">
+        <UButton
+          type="submit"
+          color="primary"
+          :loading="props.submitting"
+          :disabled="props.submitting"
+        >
+          {{ submitLabel }}
+        </UButton>
+      </DesignSystemDisabledTooltip>
     </footer>
   </form>
 </template>

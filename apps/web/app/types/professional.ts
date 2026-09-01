@@ -1,4 +1,7 @@
-import type { ProfessionalServiceJob } from "./service-job";
+import type {
+  ProfessionalServiceJob,
+  RecommendationDeliveryChannel,
+} from "./service-job";
 import type { LocationCoverage } from "./location";
 import type { SearchLocation } from "./ui";
 
@@ -31,13 +34,18 @@ export interface ProfessionalPortfolioItem {
   service: string;
   description: string;
   image: string | null;
-  status: "pending_review" | "approved" | "rejected" | "hidden";
-  rejectionReason: string | null;
   submittedAt: string;
 }
 
 export interface PortfolioItemDraft {
   file: File;
+  title: string;
+  service: string;
+  description: string;
+}
+
+export interface PortfolioItemUpdateDraft {
+  file: File | null;
   title: string;
   service: string;
   description: string;
@@ -193,8 +201,9 @@ export interface PublicProfessionalProfile {
     }
   >;
   evidenceSummary: {
-    completedServices: number;
+    registeredServices: number;
     recommendations: number;
+    hiddenRecommendations: number;
     workedTogetherProfessionals: number;
   };
   customerRecommendations: Array<{
@@ -202,7 +211,7 @@ export interface PublicProfessionalProfile {
     displayName: string;
     text: string;
     submittedAt: string;
-    verificationLabel: "Link enviado por e-mail";
+    verificationLabel: "Link enviado por e-mail" | "Link enviado por WhatsApp";
   }>;
   portfolio: Array<{
     id: string;
@@ -271,11 +280,7 @@ export interface ProfessionalProfileDraft {
   youtube: string;
 }
 
-export type ProfessionalProfileStatus =
-  "draft" | "pending_review" | "published" | "suspended";
-
-export type ProfessionalProfilePhotoStatus =
-  "pending_review" | "approved" | "rejected" | "hidden" | "superseded";
+export type ProfessionalProfileStatus = "draft" | "published" | "suspended";
 
 export interface ProfessionalMediaUploadState {
   id: string;
@@ -294,12 +299,10 @@ export interface ProfessionalMediaUploadState {
 export interface ProfessionalProfilePhotoState {
   current: {
     id: string;
-    status: ProfessionalProfilePhotoStatus;
-    rejectionReason: string | null;
     submittedAt: string;
   } | null;
-  hasPublishedPhoto: boolean;
-  publishedImageUrl: string | null;
+  hasPhoto: boolean;
+  imageUrl: string | null;
   latestUpload: ProfessionalMediaUploadState | null;
 }
 
@@ -311,6 +314,22 @@ export interface ProfessionalVerificationState {
     rejectionReason: string | null;
     submittedAt: string;
   } | null;
+}
+
+export type ProfessionalActionKind =
+  | "quote_unshared"
+  | "quote_awaiting_response"
+  | "quote_change_requested"
+  | "service_open"
+  | "recommendation_unsent";
+
+export interface ProfessionalActionItem {
+  id: string;
+  kind: ProfessionalActionKind;
+  title: string;
+  subtitle: string;
+  sortAt: string;
+  recommendationDeliveryChannel: RecommendationDeliveryChannel | null;
 }
 
 export interface ProfessionalWorkspace {
@@ -325,18 +344,7 @@ export interface ProfessionalWorkspace {
         approvedIdentity: boolean;
       };
     };
-    changeRequestedQuotes: Array<{
-      id: string;
-      number: number;
-      customerName: string;
-      serviceDescription: string;
-      latestChangeRequest: {
-        id: string;
-        revision: number;
-        message: string;
-        requestedAt: string;
-      };
-    }>;
+    actionItems: ProfessionalActionItem[];
     recentQuotes: Array<{
       id: string;
       number: number;
@@ -350,7 +358,9 @@ export interface ProfessionalWorkspace {
         | "shared"
         | "change_requested"
         | "approved"
-        | "declined";
+        | "declined"
+        | "completed"
+        | "cancelled";
       serviceJobStatus: ProfessionalServiceJob["status"] | null;
       createdAt: string;
     }>;
@@ -366,10 +376,8 @@ export interface ProfessionalWorkspace {
     isPublic: boolean;
     isSearchEligible: boolean;
     isIndexable: boolean;
+    suspensionReason: string | null;
     publicationBlockers: Array<"identity" | "photo" | "services" | "coverage">;
-    revisionStatus:
-      "draft" | "pending_review" | "approved" | "rejected" | "superseded";
-    revisionRejectionReason: string | null;
     hasPublishedRevision: boolean;
     photo: ProfessionalProfilePhotoState;
     portfolioItems: ProfessionalPortfolioItem[];

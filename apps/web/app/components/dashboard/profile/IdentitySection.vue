@@ -50,16 +50,24 @@ const {
   clearPreview,
 } = useImagePreview();
 const photoBusy = computed(() => props.photoUploading || props.photoRemoving);
+const photoBusyReason = computed(() => {
+  if (props.photoUploading) return "Aguarde o envio da foto terminar.";
+  if (props.photoRemoving) return "Aguarde a remoção da foto terminar.";
+  return null;
+});
+const photoInvalid = computed(() =>
+  Boolean(selectionError.value || props.photoError),
+);
 const canRetry = computed(
   () =>
     props.photo?.latestUpload?.state === "failed" &&
     props.photo.latestUpload.retryable,
 );
 const hasPhoto = computed(() =>
-  Boolean(props.photo?.current || props.photo?.hasPublishedPhoto),
+  Boolean(props.photo?.current || props.photo?.hasPhoto),
 );
 const visiblePhotoUrl = computed(
-  () => selectedPhotoPreview.value || props.photo?.publishedImageUrl || "",
+  () => selectedPhotoPreview.value || props.photo?.imageUrl || "",
 );
 const photoStatus = computed(() => {
   if (props.photoUploading) return "Enviando e processando foto…";
@@ -79,13 +87,7 @@ const photoStatus = computed(() => {
 
   const current = props.photo?.current;
   if (!current) return "JPEG ou PNG, até 10 MB.";
-  if (current.status === "pending_review")
-    return "Foto salva e aguardando revisão.";
-  if (current.status === "approved") return "Foto revisada.";
-  if (current.status === "rejected")
-    return current.rejectionReason || "Foto recusada. Selecione outra imagem.";
-  if (current.status === "hidden") return "Foto oculta pela moderação.";
-  return "Selecione outra foto.";
+  return "Foto salva no perfil.";
 });
 
 function openPhotoPicker() {
@@ -125,7 +127,14 @@ function selectPhoto(event: Event) {
       </div>
       <em>Obrigatório</em>
     </header>
-    <div class="profile-photo-control">
+    <div
+      id="profile-photo"
+      class="profile-photo-control"
+      :class="{ 'profile-photo-control--invalid': photoInvalid }"
+      :aria-describedby="photoInvalid ? 'profile-photo-status' : undefined"
+      :aria-invalid="photoInvalid"
+      :tabindex="photoInvalid ? -1 : undefined"
+    >
       <div class="profile-photo-control__avatar">
         <img
           v-if="visiblePhotoUrl"
@@ -139,6 +148,7 @@ function selectPhoto(event: Event) {
       <div>
         <strong>Foto profissional <em>Obrigatória</em></strong>
         <p
+          id="profile-photo-status"
           :class="{
             'profile-photo-control__error': selectionError || props.photoError,
           }"
@@ -157,38 +167,45 @@ function selectPhoto(event: Event) {
         @change="selectPhoto"
       />
       <div class="profile-photo-control__actions">
-        <UButton
-          type="button"
-          color="neutral"
-          variant="outline"
-          :loading="props.photoUploading"
-          :disabled="photoBusy"
-          @click="openPhotoPicker"
-        >
-          {{ hasPhoto ? "Trocar foto" : "Adicionar foto" }}
-        </UButton>
-        <UButton
-          v-if="canRetry"
-          type="button"
-          color="neutral"
-          variant="ghost"
-          :disabled="photoBusy"
-          @click="emit('photoRetry')"
-        >
-          Tentar novamente
-        </UButton>
-        <UButton
+        <DesignSystemDisabledTooltip :reason="photoBusyReason">
+          <UButton
+            type="button"
+            color="neutral"
+            variant="outline"
+            :loading="props.photoUploading"
+            :disabled="photoBusy"
+            @click="openPhotoPicker"
+          >
+            {{ hasPhoto ? "Trocar foto" : "Adicionar foto" }}
+          </UButton>
+        </DesignSystemDisabledTooltip>
+        <DesignSystemDisabledTooltip v-if="canRetry" :reason="photoBusyReason">
+          <UButton
+            type="button"
+            color="neutral"
+            variant="ghost"
+            :disabled="photoBusy"
+            @click="emit('photoRetry')"
+          >
+            Tentar novamente
+          </UButton>
+        </DesignSystemDisabledTooltip>
+        <DesignSystemDisabledTooltip
           v-if="props.allowPhotoRemoval && hasPhoto"
-          type="button"
-          color="error"
-          variant="ghost"
-          icon="i-lucide-trash-2"
-          :loading="props.photoRemoving"
-          :disabled="photoBusy"
-          @click="photoRemovalOpen = true"
+          :reason="photoBusyReason"
         >
-          Remover foto
-        </UButton>
+          <UButton
+            type="button"
+            color="error"
+            variant="ghost"
+            icon="i-lucide-trash-2"
+            :loading="props.photoRemoving"
+            :disabled="photoBusy"
+            @click="photoRemovalOpen = true"
+          >
+            Remover foto
+          </UButton>
+        </DesignSystemDisabledTooltip>
       </div>
     </div>
     <UModal
@@ -197,25 +214,29 @@ function selectPhoto(event: Event) {
       description="A foto deixará de aparecer no seu perfil. Se ele estiver publicado, ficará indisponível até você adicionar outra foto."
     >
       <template #footer>
-        <UButton
-          type="button"
-          color="neutral"
-          variant="ghost"
-          :disabled="photoBusy"
-          @click="photoRemovalOpen = false"
-        >
-          Manter foto
-        </UButton>
-        <UButton
-          type="button"
-          color="error"
-          icon="i-lucide-trash-2"
-          :loading="props.photoRemoving"
-          :disabled="photoBusy"
-          @click="confirmPhotoRemoval"
-        >
-          Remover foto
-        </UButton>
+        <DesignSystemDisabledTooltip :reason="photoBusyReason">
+          <UButton
+            type="button"
+            color="neutral"
+            variant="ghost"
+            :disabled="photoBusy"
+            @click="photoRemovalOpen = false"
+          >
+            Manter foto
+          </UButton>
+        </DesignSystemDisabledTooltip>
+        <DesignSystemDisabledTooltip :reason="photoBusyReason">
+          <UButton
+            type="button"
+            color="error"
+            icon="i-lucide-trash-2"
+            :loading="props.photoRemoving"
+            :disabled="photoBusy"
+            @click="confirmPhotoRemoval"
+          >
+            Remover foto
+          </UButton>
+        </DesignSystemDisabledTooltip>
       </template>
     </UModal>
     <div class="editor-grid">
@@ -354,6 +375,7 @@ function selectPhoto(event: Event) {
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
+  scroll-margin-top: 20px;
   margin-bottom: 18px;
   padding: 14px;
   border: 1px solid var(--line);
@@ -370,6 +392,16 @@ function selectPhoto(event: Event) {
     background: white;
     color: var(--color-brand);
     font-size: 1.35rem;
+  }
+
+  &--invalid {
+    border-color: var(--color-danger);
+    background: var(--color-danger-tint);
+  }
+
+  &--invalid:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgb(180 35 24 / 16%);
   }
 
   &__avatar img {

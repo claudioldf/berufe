@@ -89,8 +89,9 @@ const contractProfile: ContractProfessionalProfile = {
   coverage: contractCard.coverage,
   verification_labels: contractCard.verification_labels,
   evidence_summary: {
-    completed_services: 3,
+    registered_services: 3,
     recommendations: 1,
+    hidden_recommendations: 0,
     worked_together_professionals: 2,
   },
   customer_recommendations: [
@@ -454,8 +455,9 @@ describe("public discovery API", () => {
         verifiedAt: label.verified_at,
       })),
       evidenceSummary: {
-        completedServices: 3,
+        registeredServices: 3,
         recommendations: 1,
+        hiddenRecommendations: 0,
         workedTogetherProfessionals: 2,
       },
       customerRecommendations: [

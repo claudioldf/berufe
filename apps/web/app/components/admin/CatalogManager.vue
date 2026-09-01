@@ -21,6 +21,9 @@ const editingEntry = shallowRef<CatalogEntry | null>(null);
 const categories = computed(() => catalog.value.categories);
 const services = computed(() => catalog.value.services);
 const formKey = computed(() => editingEntry.value?.id ?? "new");
+const mutatingReason = computed(() =>
+  isMutating.value ? "Aguarde a atualização do catálogo" : null,
+);
 
 function openCreate() {
   editingEntry.value = null;
@@ -174,13 +177,15 @@ onMounted(() => void initialize());
           cidades e bairros são mantidos pela importação do IBGE.
         </p>
       </div>
-      <UButton
-        color="primary"
-        icon="i-lucide-plus"
-        label="Adicionar serviço"
-        :disabled="isLoading || isMutating"
-        @click="openCreate"
-      />
+      <DesignSystemDisabledTooltip :reason="isLoading ? null : mutatingReason">
+        <UButton
+          color="primary"
+          icon="i-lucide-plus"
+          label="Adicionar serviço"
+          :disabled="isLoading || isMutating"
+          @click="openCreate"
+        />
+      </DesignSystemDisabledTooltip>
     </header>
 
     <p v-if="isLoading" class="catalog__state" role="status">
@@ -199,6 +204,7 @@ onMounted(() => void initialize());
       v-else
       :entries="services"
       :disabled="isMutating"
+      :disabled-reason="mutatingReason"
       @edit="openEdit"
       @toggle="toggleEntry"
       @move="moveEntry"

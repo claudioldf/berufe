@@ -3,12 +3,13 @@ import LegalInlineNotice from "~/components/legal/LegalInlineNotice.vue";
 import { useApiClient } from "~/services/api/client";
 import { ApiRequestError } from "~/services/api/errors";
 import {
+  createCustomerFeedbackIssue,
   createCustomerRecommendation,
   resolveCustomerRecommendation,
 } from "~/services/api/customer-recommendations";
 
 definePageMeta({ layout: false });
-useSeoMeta({ title: "Recomendar profissional", robots: "noindex, nofollow" });
+useSeoMeta({ title: "Como foi o serviço?", robots: "noindex, nofollow" });
 
 const route = useRoute();
 const client = useApiClient();
@@ -21,23 +22,36 @@ const resolved = await useAsyncData(`recommendation-${token.value}`, () =>
   resolveCustomerRecommendation(client, token.value),
 );
 const context = computed(() => resolved.data.value);
+
+// The landing question is neutral on purpose: asking directly for a public
+// recommendation leaves an unhappy customer no outlet but a bad public one.
+type Step = "choice" | "recommend" | "issue";
+const step = shallowRef<Step>("choice");
 const displayName = shallowRef(context.value?.customerName ?? "");
 const recommendationText = shallowRef("");
 const serviceConfirmed = shallowRef(false);
 const publicationConsent = shallowRef(false);
+const issueMessage = shallowRef("");
 const submitting = shallowRef(false);
-const submitted = shallowRef(false);
+const recommendationSubmitted = shallowRef(false);
+const issueSubmitted = shallowRef(false);
 const submitError = shallowRef("");
-const canSubmit = computed(
+const canSubmitRecommendation = computed(
   () =>
     displayName.value.trim().length > 0 &&
     recommendationText.value.trim().length > 0 &&
     serviceConfirmed.value &&
     publicationConsent.value,
 );
+const canSubmitIssue = computed(() => issueMessage.value.trim().length > 0);
+const recommendationBlockedReason = computed(() =>
+  canSubmitRecommendation.value
+    ? null
+    : "Preencha os campos e marque as duas confirmações",
+);
 
-async function submit() {
-  if (!canSubmit.value || submitting.value) return;
+async function submitRecommendation() {
+  if (!canSubmitRecommendation.value || submitting.value) return;
   submitting.value = true;
   submitError.value = "";
   try {
@@ -47,12 +61,29 @@ async function submit() {
       serviceConfirmed: serviceConfirmed.value,
       publicationConsent: publicationConsent.value,
     });
-    submitted.value = true;
+    recommendationSubmitted.value = true;
   } catch (error) {
     submitError.value =
       error instanceof ApiRequestError
         ? error.message
         : "Não foi possível publicar sua recomendação. Tente novamente.";
+  } finally {
+    submitting.value = false;
+  }
+}
+
+async function submitIssue() {
+  if (!canSubmitIssue.value || submitting.value) return;
+  submitting.value = true;
+  submitError.value = "";
+  try {
+    await createCustomerFeedbackIssue(client, token.value, issueMessage.value);
+    issueSubmitted.value = true;
+  } catch (error) {
+    submitError.value =
+      error instanceof ApiRequestError
+        ? error.message
+        : "Não foi possível enviar sua mensagem. Tente novamente.";
   } finally {
     submitting.value = false;
   }
@@ -63,7 +94,7 @@ async function submit() {
   <div class="recommendation-page">
     <DesignSystemContainer as="header" class="recommendation-page__header">
       <DesignSystemBrand size="sm" />
-      <span><UIcon name="i-lucide-mail-check" /> Link enviado por e-mail</span>
+      <span><UIcon name="i-lucide-lock-keyhole" /> Link pessoal e privado</span>
     </DesignSystemContainer>
     <DesignSystemContainer as="main" class="recommendation-page__content">
       <p v-if="resolved.status.value === 'pending'" aria-live="polite">
@@ -78,7 +109,7 @@ async function submit() {
         <p>O link pode ter expirado ou já ter sido usado.</p>
       </DesignSystemSurfaceCard>
       <DesignSystemSurfaceCard
-        v-else-if="submitted"
+        v-else-if="recommendationSubmitted"
         class="recommendation-page__card"
       >
         <UIcon name="i-lucide-badge-check" />
@@ -87,11 +118,62 @@ async function submit() {
           Obrigado por compartilhar sua experiência. Ela já pode aparecer no
           perfil público de {{ context.professional.name }}.
         </p>
-        <UButton :to="`/profissionais/${context.professional.slug}`">
+        <UButton :to="buildPublicProfilePath(context.professional.slug)">
           Ver perfil profissional
         </UButton>
       </DesignSystemSurfaceCard>
-      <form v-else class="recommendation-page__form" @submit.prevent="submit">
+      <DesignSystemSurfaceCard
+        v-else-if="issueSubmitted"
+        class="recommendation-page__card"
+      >
+        <UIcon name="i-lucide-message-circle-warning" />
+        <h1>Mensagem enviada</h1>
+        <p>
+          Avisamos {{ context.professional.name }} sobre o que você descreveu.
+          Isto não fica público.
+        </p>
+      </DesignSystemSurfaceCard>
+
+      <div v-else-if="step === 'choice'" class="recommendation-page__form">
+        <DesignSystemEyebrow>Serviço confirmado</DesignSystemEyebrow>
+        <h1>Como foi o serviço de {{ context.professional.name }}?</h1>
+        <p>
+          Sobre “{{ context.serviceDescription }}”. Escolha a opção que descreve
+          melhor o que aconteceu.
+        </p>
+        <div class="recommendation-page__choice">
+          <UButton
+            size="lg"
+            color="primary"
+            icon="i-lucide-thumbs-up"
+            @click="step = 'recommend'"
+          >
+            Correu bem, quero recomendar
+          </UButton>
+          <UButton
+            size="lg"
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-circle-alert"
+            @click="step = 'issue'"
+          >
+            Algo ainda ficou pendente
+          </UButton>
+        </div>
+      </div>
+
+      <form
+        v-else-if="step === 'recommend'"
+        class="recommendation-page__form"
+        @submit.prevent="submitRecommendation"
+      >
+        <button
+          type="button"
+          class="recommendation-page__back"
+          @click="step = 'choice'"
+        >
+          <UIcon name="i-lucide-arrow-left" aria-hidden="true" /> Voltar
+        </button>
         <DesignSystemEyebrow>Serviço confirmado</DesignSystemEyebrow>
         <h1>Como foi trabalhar com {{ context.professional.name }}?</h1>
         <p>
@@ -125,8 +207,9 @@ async function submit() {
           />
         </DesignSystemFormField>
         <LegalInlineNotice title="Publicação com sua autorização">
-          Seu nome e seu texto ficarão públicos no perfil. O e-mail é usado para
-          validar este convite. Você pode retirar a autorização pelo suporte.
+          Seu nome e seu texto ficarão públicos no perfil. Este link pessoal é
+          usado para validar o convite. Você pode retirar a autorização pelo
+          suporte.
         </LegalInlineNotice>
         <label class="recommendation-page__check">
           <input v-model="serviceConfirmed" type="checkbox" required />
@@ -140,19 +223,64 @@ async function submit() {
         <p v-if="submitError" class="recommendation-page__error" role="alert">
           {{ submitError }}
         </p>
+        <DesignSystemDisabledTooltip
+          :reason="submitting ? null : recommendationBlockedReason"
+        >
+          <UButton
+            type="submit"
+            color="primary"
+            block
+            :loading="submitting"
+            :disabled="!canSubmitRecommendation"
+            >Publicar recomendação</UButton
+          >
+        </DesignSystemDisabledTooltip>
+        <small>
+          Este convite pessoal é válido por 14 dias e só pode ser usado uma vez.
+          Não há nota por estrelas nem revisão prévia da Berufe.
+        </small>
+      </form>
+
+      <form
+        v-else
+        class="recommendation-page__form"
+        @submit.prevent="submitIssue"
+      >
+        <button
+          type="button"
+          class="recommendation-page__back"
+          @click="step = 'choice'"
+        >
+          <UIcon name="i-lucide-arrow-left" aria-hidden="true" /> Voltar
+        </button>
+        <DesignSystemEyebrow>Mensagem privada</DesignSystemEyebrow>
+        <h1>O que ainda precisa ser resolvido?</h1>
+        <p>
+          Isto vai direto para {{ context.professional.name }} e não aparece em
+          nenhum lugar público.
+        </p>
+        <DesignSystemFormField v-slot="field" label="Sua mensagem" required>
+          <textarea
+            :id="field.controlId"
+            v-model="issueMessage"
+            name="issueMessage"
+            rows="5"
+            maxlength="700"
+            placeholder="Descreva o que ficou pendente"
+            required
+          />
+        </DesignSystemFormField>
+        <p v-if="submitError" class="recommendation-page__error" role="alert">
+          {{ submitError }}
+        </p>
         <UButton
           type="submit"
           color="primary"
           block
           :loading="submitting"
-          :disabled="!canSubmit"
-          >Publicar recomendação</UButton
+          :disabled="!canSubmitIssue"
+          >Enviar mensagem</UButton
         >
-        <small>
-          Este convite pessoal foi enviado por e-mail após a sua confirmação de
-          conclusão, é válido por 14 dias e só pode ser usado uma vez. Não há
-          nota por estrelas nem revisão prévia da Berufe.
-        </small>
       </form>
     </DesignSystemContainer>
   </div>
@@ -223,6 +351,26 @@ async function submit() {
     border-radius: 10px;
     resize: vertical;
     font: inherit;
+  }
+
+  &__choice {
+    display: grid;
+    gap: 10px;
+    margin-top: 6px;
+  }
+
+  &__back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    justify-self: start;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--ink-soft);
+    font-size: 0.82rem;
+    font-weight: 750;
+    cursor: pointer;
   }
 
   &__check {

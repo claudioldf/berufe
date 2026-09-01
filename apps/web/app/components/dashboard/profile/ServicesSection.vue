@@ -14,6 +14,27 @@ const sortedServices = computed(() =>
     left.name.localeCompare(right.name, "pt-BR", { sensitivity: "base" }),
   ),
 );
+const serviceSelectionInvalid = computed(
+  () => Boolean(props.error) && form.value.selectedServices.length === 0,
+);
+const hasMultipleServices = computed(
+  () => form.value.selectedServices.length > 1,
+);
+const featuredServiceInvalid = computed(
+  () =>
+    hasMultipleServices.value &&
+    !form.value.selectedServices.includes(form.value.primaryService),
+);
+const primaryServiceError = computed(() =>
+  Boolean(props.error) && featuredServiceInvalid.value ? props.error : "",
+);
+const serviceDetailsError = computed(() =>
+  Boolean(props.error) &&
+  !serviceSelectionInvalid.value &&
+  !featuredServiceInvalid.value
+    ? props.error
+    : "",
+);
 </script>
 
 <template>
@@ -26,9 +47,19 @@ const sortedServices = computed(() =>
           <p>Escolha no catálogo o que você realmente oferece.</p>
         </div>
       </div>
-      <em>1 principal</em>
+      <em>1 ou mais</em>
     </header>
-    <div class="service-picker">
+    <div
+      class="service-picker"
+      :class="{ 'service-picker--invalid': serviceSelectionInvalid }"
+      role="group"
+      aria-label="Seleção de serviços"
+      :aria-describedby="
+        serviceSelectionInvalid ? 'profile-service-selection-error' : undefined
+      "
+      :aria-invalid="serviceSelectionInvalid"
+      :tabindex="serviceSelectionInvalid ? -1 : undefined"
+    >
       <button
         v-for="service in sortedServices"
         :key="service.id"
@@ -48,12 +79,22 @@ const sortedServices = computed(() =>
         />
       </button>
     </div>
+    <small
+      v-if="serviceSelectionInvalid"
+      id="profile-service-selection-error"
+      class="service-picker__error"
+      aria-live="polite"
+    >
+      {{ props.error }}
+    </small>
     <DesignSystemFormField
+      v-if="hasMultipleServices"
       id="profile-primary-service"
       v-slot="field"
       class="primary-service"
-      label="Serviço principal do perfil"
-      :error="props.error"
+      label="Serviço em destaque"
+      hint="Escolha o serviço que aparece primeiro no seu perfil. Todos continuam disponíveis nas buscas."
+      :error="primaryServiceError"
       required
     >
       <select
@@ -89,10 +130,51 @@ const sortedServices = computed(() =>
         </template>
       </DesignSystemFormField>
     </div>
+    <small
+      v-if="serviceDetailsError"
+      class="service-details-error"
+      aria-live="polite"
+    >
+      {{ serviceDetailsError }}
+    </small>
   </section>
 </template>
 
 <style scoped lang="scss">
+.service-picker {
+  border-radius: 12px;
+  outline: none;
+
+  &--invalid {
+    background: var(--color-danger-tint);
+    box-shadow: 0 0 0 1px var(--color-danger);
+  }
+
+  &--invalid:focus-visible {
+    box-shadow:
+      0 0 0 1px var(--color-danger),
+      0 0 0 4px rgb(180 35 24 / 16%);
+  }
+
+  &__error {
+    display: block;
+    margin-top: 7px;
+    color: var(--color-danger);
+    font-size: 0.84rem;
+    font-weight: 500;
+    line-height: 1.45;
+  }
+}
+
+.service-details-error {
+  display: block;
+  margin-top: 7px;
+  color: var(--color-danger);
+  font-size: 0.84rem;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
 .service-notes {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

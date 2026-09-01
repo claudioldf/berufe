@@ -3,6 +3,7 @@ import { defineComponent } from "vue";
 import ProfessionalCard from "@app/components/public/ProfessionalCard.vue";
 import type { PublicProfessionalCard } from "@app/types";
 import {
+  buildPublicProfilePath,
   buildPublicProfileWhatsAppUrl,
   buildPublicProfileResultUrl,
   buildSearchResultWhatsAppUrl,
@@ -117,6 +118,8 @@ describe("public professional result card", () => {
       "Eu preciso trocar a fiação da cozinha.",
     );
     const parsedProfileUrl = new URL(profileUrl, "https://berufe.test");
+    expect(buildPublicProfilePath("ana-souza")).toBe("/be/ana-souza");
+    expect(parsedProfileUrl.pathname).toBe("/be/ana-souza");
     expect(parsedProfileUrl.searchParams.get("pedido")).toBe(
       "Eu preciso trocar a fiação da cozinha.",
     );
@@ -172,7 +175,7 @@ describe("public professional result card", () => {
           ],
           publicSnapshotUpdatedAt: "2026-04-01T12:00:00Z",
         }),
-        profileUrl: "/profissionais/ana-souza",
+        profileUrl: "/be/ana-souza",
         contactUrl: "https://api.berufe.test/whatsapp",
       },
       global: {
@@ -222,7 +225,7 @@ describe("public professional result card", () => {
           verificationLabels: [],
           portfolioCount: 0,
         }),
-        profileUrl: "/profissionais/ana-souza",
+        profileUrl: "/be/ana-souza",
         contactUrl: "https://api.berufe.test/whatsapp",
       },
       global: {

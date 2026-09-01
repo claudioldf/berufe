@@ -18,7 +18,7 @@ class ProfessionalProfileIdentityUpdater
       editor = ProfessionalProfileRevisionEditor.new
       revision = editor.call(profile:)
       revision.update!(normalized)
-      editor.synchronize_review_state!(profile:)
+      editor.synchronize_public_revision!(profile:)
     end
     profile.reload
   rescue BrazilianPhoneNumber::Invalid

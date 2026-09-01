@@ -33,7 +33,6 @@ RSpec.describe PublicWhatsappInteractionResolver do
     )
     revision = record.working_revision
     revision.professional_profile_services.create!(service:, is_primary: true)
-    revision.update!(status: "approved", reviewed_at: Time.current)
     record.update!(profile_status: "published", published_revision: revision)
     record
   end

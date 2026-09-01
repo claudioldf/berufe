@@ -29,16 +29,19 @@ Any unresolved or unsupported city becomes the disclosed Joinville launch-market
 
 ## Recommendation email prerequisite
 
-When a client confirms completion, the worker sends a personal recommendation
-link to the email snapshot stored on the approved quote. Staging, integration,
-and production refuse to boot without `SMTP_ADDRESS`, `SMTP_PORT`,
-`SMTP_DOMAIN`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_AUTHENTICATION`,
-`SMTP_STARTTLS`, and `MAIL_FROM`.
+When a professional marks a service completed, the worker schedules a
+personal recommendation link to the email snapshot stored on the approved
+quote (a WhatsApp handoff covers quotes with no email instead). Staging,
+integration, and production refuse to boot without `SMTP_ADDRESS`,
+`SMTP_PORT`, `SMTP_DOMAIN`, `SMTP_USERNAME`, `SMTP_PASSWORD`,
+`SMTP_AUTHENTICATION`, `SMTP_STARTTLS`, and `MAIL_FROM`.
 
 The `default` GoodJob queue must be running. Delivery is retry-safe, the job
 argument contains only the recommendation-request UUID, and the bearer link is
-unavailable until SMTP delivery succeeds. Local development writes messages to
-`apps/api/tmp/mails`; automated tests use Action Mailer's test adapter.
+unavailable until SMTP delivery succeeds. Local/development mail always goes
+through MailCatcher (the `mailcatcher` Compose service) — view it at
+<http://localhost:1080>; nothing reaches a real inbox. Automated tests use
+Action Mailer's test adapter instead.
 
 ## Infobip production prerequisite
 

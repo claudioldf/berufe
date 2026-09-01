@@ -230,6 +230,7 @@ function retrySearch() {
           :location="activeLocation"
           :cities="catalogResult.data.value?.cities ?? []"
           location-source="manual"
+          :loading="isSearching"
           @submit="submitSearch"
           @location-change="changeLocation"
         />

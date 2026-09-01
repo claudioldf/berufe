@@ -16,7 +16,7 @@ RSpec.describe Admin::ProfessionalPublicationDecision do
   let(:account) { UserAccount.create!(phone_e164: "+5547999995001", role: "professional", status: "active") }
   let(:profile) { ProfessionalProfile.create!(user_account: account, display_name: "Ana Souza") }
 
-  it "unpublishes a live profile with a private reason and an immutable audit row" do
+  it "unpublishes a live profile with a user-visible reason and an immutable audit row" do
     make_profile_publicly_eligible(profile)
 
     described_class.new(context:).call(
@@ -28,8 +28,8 @@ RSpec.describe Admin::ProfessionalPublicationDecision do
     expect(profile.reload.profile_status).to eq("suspended")
     expect(ModerationAction.sole).to have_attributes(
       admin_user: admin,
-      target_type: "profile_revision",
-      target_id: profile.published_revision_id,
+      target_type: "professional_profile",
+      target_id: profile.id,
       action: "hidden",
       reason: "Denúncia de identidade falsa confirmada pela equipe.",
       request_id: "professional-publication"
@@ -45,8 +45,8 @@ RSpec.describe Admin::ProfessionalPublicationDecision do
     expect(profile.reload.profile_status).to eq("published")
     expect(ModerationAction.sole).to have_attributes(
       admin_user: admin,
-      target_type: "profile_revision",
-      target_id: profile.published_revision_id,
+      target_type: "professional_profile",
+      target_id: profile.id,
       action: "restored",
       reason: nil,
       request_id: "professional-publication"

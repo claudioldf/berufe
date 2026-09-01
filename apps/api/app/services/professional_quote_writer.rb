@@ -35,7 +35,7 @@ class ProfessionalQuoteWriter
         raise ActiveRecord::RecordNotFound unless quote.professional_id == profile.id
 
         quote.lock!
-        raise Locked if quote.approved?
+        raise Locked if quote.locked_for_editing?
         raise Stale if expected_version.nil? || expected_version.to_i != quote.lock_version
 
         quote.quote_items.destroy_all

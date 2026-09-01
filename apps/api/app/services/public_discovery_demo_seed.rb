@@ -80,15 +80,14 @@ class PublicDiscoveryDemoSeed
     profile.update!(public_slug: attributes.fetch("slug"))
     update_identity(profile, attributes)
     update_supply(profile, attributes)
-    photo = attach_profile_photo(profile, attributes.fetch("avatar"))
-    portfolio = attach_portfolio(profile, attributes.fetch("portfolio"))
+    attach_profile_photo(profile, attributes.fetch("avatar"))
+    attach_portfolio(profile, attributes.fetch("portfolio"))
     verification = attach_identity_verification(profile, attributes.fetch("avatar"))
     ProfessionalProfileSubmitter.new.call(profile:)
-    approve_professional(profile:, photo:, portfolio:, verification:)
+    approve_identity(verification)
     profile.reload
     profile.published_revision.update_columns(
-      submitted_at: Time.zone.parse("#{attributes.fetch("updatedAt")} 12:00:00"),
-      reviewed_at: Time.zone.parse("#{attributes.fetch("updatedAt")} 12:00:00")
+      updated_at: Time.zone.parse("#{attributes.fetch("updatedAt")} 12:00:00")
     )
     profile.reload
   end
@@ -191,13 +190,8 @@ class PublicDiscoveryDemoSeed
     resolved_image_root.join(filename).binread
   end
 
-  def approve_professional(profile:, photo:, portfolio:, verification:)
+  def approve_identity(verification)
     decision = ModerationDecision.new(context: admin_context)
-    decision.call(target_type: "profile_revision", target_id: profile.working_revision_id, action: "approved")
-    decision.call(target_type: "profile_photo", target_id: photo.id, action: "approved")
-    portfolio.each do |item|
-      decision.call(target_type: "portfolio_item", target_id: item.id, action: "approved")
-    end
     decision.call(
       target_type: "verification_request",
       target_id: verification.id,
@@ -264,11 +258,6 @@ class PublicDiscoveryDemoSeed
             context_note: "Perfil sintético para desenvolvimento local."
           )
           profile = relationship.recipient_professional
-          ModerationDecision.new(context: admin_context).call(
-            target_type: "profile_revision",
-            target_id: profile.published_revision_id,
-            action: "approved"
-          )
           generated << profile.reload
         end
       end

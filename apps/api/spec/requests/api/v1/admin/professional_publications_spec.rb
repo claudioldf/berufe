@@ -13,10 +13,18 @@ RSpec.describe "Administrator professional publication decisions", type: :reques
     )
   end
   let(:admin_token) { ApplicationSession.issue!(user_account: admin).last }
-  let(:account) { UserAccount.create!(phone_e164: "+5547999993001", role: "professional", status: "active") }
+  let(:account) do
+    UserAccount.create!(
+      phone_e164: "+5547999993001",
+      role: "professional",
+      status: "active",
+      phone_verified_at: Time.current,
+      registered_at: Time.current
+    )
+  end
   let(:profile) { ProfessionalProfile.create!(user_account: account, display_name: "Ana Souza") }
 
-  it "unpublishes a live profile with a private reason and an immutable audit row" do
+  it "unpublishes a live profile with a user-visible reason and an immutable audit row" do
     make_profile_publicly_eligible(profile)
 
     post "/api/v1/admin/professionals/#{profile.id}/publication",
@@ -28,14 +36,27 @@ RSpec.describe "Administrator professional publication decisions", type: :reques
     expect(profile.reload.profile_status).to eq("suspended")
     expect(ModerationAction.sole).to have_attributes(
       admin_user: admin,
-      target_type: "profile_revision",
+      target_type: "professional_profile",
+      target_id: profile.id,
       action: "hidden",
       reason: "Denúncia de identidade falsa confirmada.",
       request_id: "professional-publication-hide"
     )
+    expect(Notification.sole).to have_attributes(
+      recipient_user_account: account,
+      notification_type: "profile_moderation_hidden"
+    )
+    expect(ProfessionalWorkspaceSerializer.new(profile).as_json.dig(:profile, :suspension_reason)).to eq(
+      "Denúncia de identidade falsa confirmada."
+    )
     ids = response.parsed_body.dig("data", "items").pluck("id")
     expect(ids).to include(account.id)
     assert_api_conform(status: 200)
+
+    get "/api/v1/public/professionals/#{profile.public_slug}",
+      headers: {"X-Request-Id" => "professional-publication-hidden-public-read"}
+    expect(response).to have_http_status(:not_found)
+    assert_api_conform(status: 404)
   end
 
   it "republishes a suspended profile" do
@@ -50,6 +71,10 @@ RSpec.describe "Administrator professional publication decisions", type: :reques
     expect(response).to have_http_status(:ok)
     expect(profile.reload.profile_status).to eq("published")
     expect(ModerationAction.sole).to have_attributes(action: "restored", reason: nil)
+    expect(Notification.sole).to have_attributes(
+      recipient_user_account: account,
+      notification_type: "profile_moderation_restored"
+    )
     assert_api_conform(status: 200)
   end
 
@@ -63,7 +88,7 @@ RSpec.describe "Administrator professional publication decisions", type: :reques
 
     make_profile_publicly_eligible(profile)
     post "/api/v1/admin/professionals/#{profile.id}/publication",
-      params: {publication: {published: false, reason: "curto"}},
+      params: {publication: {published: false}},
       headers: session_headers(admin_token, "professional-publication-invalid", origin: true),
       as: :json
     expect(response).to have_http_status(:unprocessable_entity)

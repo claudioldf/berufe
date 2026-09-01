@@ -35,12 +35,12 @@ describe("profile sharing", () => {
       share({
         title: "Ana Souza na Berufe",
         text: "Conheça meu trabalho na Berufe.",
-        url: "https://berufe.com.br/profissionais/ana-souza",
+        url: "https://berufe.com.br/be/ana-souza",
       }),
     ).resolves.toBe(true);
 
     expect(writeText).toHaveBeenCalledWith(
-      "https://berufe.com.br/profissionais/ana-souza",
+      "https://berufe.com.br/be/ana-souza",
     );
     expect(mocks.showToast).toHaveBeenCalledWith(
       expect.objectContaining({ title: "Link copiado" }),
@@ -53,7 +53,7 @@ describe("profile sharing", () => {
     const options = {
       title: "Ana Souza na Berufe",
       text: "Conheça meu trabalho na Berufe.",
-      url: "https://berufe.com.br/profissionais/ana-souza",
+      url: "https://berufe.com.br/be/ana-souza",
     };
 
     await expect(useShare().share(options)).resolves.toBe(true);

@@ -67,7 +67,7 @@ RSpec.describe "Professional relationship requests", type: :request, openapi: tr
     expect(Notification.sole).to have_attributes(
       recipient_user_account: recipient.user_account,
       notification_type: "relationship_request_received",
-      route: "/app/professional/profile?tab=relacoes"
+      route_params: {}
     )
     assert_api_conform(status: 201)
   end
@@ -211,7 +211,7 @@ RSpec.describe "Professional relationship requests", type: :request, openapi: tr
     expect(Notification.sole).to have_attributes(
       recipient_user_account: initiator_account,
       notification_type: "relationship_request_accepted",
-      route: "/app/professional/profile?tab=relacoes"
+      route_params: {}
     )
     assert_api_conform(status: 200)
 
@@ -387,10 +387,8 @@ RSpec.describe "Professional relationship requests", type: :request, openapi: tr
     )
     expect(revision).to have_attributes(
       profile_type: "external",
-      status: "pending_review",
       display_name: "Carla Pinturas",
-      whatsapp_e164: "+5547999981203",
-      submitted_at: now
+      whatsapp_e164: "+5547999981203"
     )
     expect(revision.professional_profile_services.sole).to have_attributes(
       service:,
@@ -410,8 +408,8 @@ RSpec.describe "Professional relationship requests", type: :request, openapi: tr
       claimed: false,
       display_name: "Carla Pinturas",
       photo_url: nil,
-      headline: nil,
-      bio: nil,
+      headline: "#{service.name} em Joinville",
+      bio: "Oferece serviços como #{service.name.downcase} em Joinville, com atendimento no bairro América.",
       portfolio: [],
       relationships: []
     )

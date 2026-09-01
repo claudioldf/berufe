@@ -6,6 +6,8 @@
 
 **Scope:** S042, S043, S046, S047, and S049–S051 — existing-member trust, professional dashboard, profile sharing, and quote utility
 
+> Historical implementation record. Portfolio and profile moderation rules are superseded by `Berufe_Post_Publication_Moderation_Decision.md`.
+
 ## 1. Source-of-truth order
 
 This document records the approved implementation detail for Increments 4 and 5. It is read together with, in priority order:

@@ -1,17 +1,24 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import { useApplicationSession } from "~/composables/useApplicationSession";
 import { useAppRole } from "~/composables/useAppRole";
 import { useToast } from "~/composables/useToast";
 
-const { isEnding, logout } = useApplicationSession();
+const { isEnding, logout, clearSession } = useApplicationSession();
 const { setRole } = useAppRole();
 const { showToast } = useToast();
+const logoutBlockedReason = computed(() =>
+  isEnding.value ? "Aguarde o encerramento da sessão terminar." : null,
+);
 
 async function signOut() {
+  const logoutRequest = logout();
+  clearSession();
+  setRole("visitor");
+
   try {
-    await logout();
-    setRole("visitor");
     await navigateTo("/app/professional/login", { replace: true });
+    await logoutRequest;
   } catch {
     showToast({
       title: "Não foi possível sair",
@@ -22,15 +29,17 @@ async function signOut() {
 </script>
 
 <template>
-  <button
-    class="session-logout"
-    type="button"
-    :disabled="isEnding"
-    @click="signOut"
-  >
-    <UIcon name="i-lucide-log-out" />
-    <span>{{ isEnding ? "Saindo…" : "Sair" }}</span>
-  </button>
+  <DesignSystemDisabledTooltip :reason="logoutBlockedReason">
+    <button
+      class="session-logout"
+      type="button"
+      :disabled="isEnding"
+      @click="signOut"
+    >
+      <UIcon name="i-lucide-log-out" />
+      <span>{{ isEnding ? "Saindo…" : "Sair" }}</span>
+    </button>
+  </DesignSystemDisabledTooltip>
 </template>
 
 <style scoped lang="scss">
@@ -39,22 +48,21 @@ async function signOut() {
   align-items: center;
   justify-content: center;
   gap: 7px;
-  min-height: 38px;
+  min-height: 42px;
   padding: 8px 10px;
   border: 1px solid rgb(255 255 255 / 24%);
   border-radius: 10px;
-  background: transparent;
+  background: rgb(255 255 255 / 8%);
   color: inherit;
   font: inherit;
   font-size: 0.82rem;
   font-weight: 800;
   cursor: pointer;
-  opacity: 0.82;
 }
 
 .session-logout:hover,
 .session-logout:focus-visible {
-  opacity: 1;
+  background: rgb(255 255 255 / 16%);
 }
 
 .session-logout:disabled {

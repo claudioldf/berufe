@@ -61,7 +61,7 @@ function workspace(): ProfessionalWorkspace {
           approvedIdentity: true,
         },
       },
-      changeRequestedQuotes: [],
+      actionItems: [],
       recentQuotes: [],
       recentServiceJobs: [],
     },
@@ -74,14 +74,14 @@ function workspace(): ProfessionalWorkspace {
       presentationType: "self_service",
       isPublic: true,
       isSearchEligible: true,
+      isIndexable: true,
+      suspensionReason: null,
       publicationBlockers: [],
-      revisionStatus: "approved",
-      revisionRejectionReason: null,
       hasPublishedRevision: true,
       photo: {
         current: null,
-        hasPublishedPhoto: true,
-        publishedImageUrl: null,
+        hasPhoto: true,
+        imageUrl: null,
         latestUpload: null,
       },
       portfolioItems: [],
@@ -123,11 +123,16 @@ const ButtonStub = defineComponent({
   template:
     '<a v-if="to" :href="to"><slot /></a><button v-else type="button" :disabled="disabled" :data-loading="loading" @click="$emit(\'click\')"><slot /></button>',
 });
+const TooltipStub = defineComponent({
+  props: { reason: { type: String, default: null } },
+  template: `<div :data-tooltip-reason="reason ?? ''"><slot /></div>`,
+});
 
 const mountOptions = {
   global: {
     stubs: {
       UButton: ButtonStub,
+      DesignSystemDisabledTooltip: TooltipStub,
       UIcon: true,
       DesignSystemEyebrow: defineComponent({
         template: '<span class="eyebrow"><slot /></span>',
@@ -181,39 +186,38 @@ describe("dashboard activity sections", () => {
     ]);
   });
 
-  it("groups review states as notices and rejected states as actionable", async () => {
+  it("groups pending identity review as a notice and rejected identity as actionable", async () => {
     const currentWorkspace = workspace();
-    currentWorkspace.profile.revisionStatus = "rejected";
-    currentWorkspace.profile.revisionRejectionReason =
-      "A apresentação precisa de mais detalhes.";
-    currentWorkspace.profile.photo.current = {
-      id: "photo-id",
+    currentWorkspace.profile.verification.current = {
+      id: "verification-id",
+      verificationType: "identity",
       status: "pending_review",
       rejectionReason: null,
-      submittedAt: "2026-08-18T10:00:00Z",
+      submittedAt: "2026-08-17T10:00:00Z",
     };
-    currentWorkspace.profile.portfolioItems = [
-      {
-        id: "pending-work",
-        title: "Instalação em análise",
-        service: "Eletricista",
-        description: "",
-        image: null,
-        status: "pending_review",
-        rejectionReason: null,
-        submittedAt: "2026-08-18T11:00:00Z",
-      },
-      {
-        id: "rejected-work",
-        title: "Instalação rejeitada",
-        service: "Eletricista",
-        description: "",
-        image: null,
-        status: "rejected",
-        rejectionReason: "Envie uma foto mais nítida.",
-        submittedAt: "2026-08-18T09:00:00Z",
-      },
-    ];
+
+    const wrapper = await mountSuspended(DashboardActivitySections, {
+      ...mountOptions,
+      props: { workspace: currentWorkspace },
+    });
+
+    const ongoing = wrapper.get(".activity-section--ongoing");
+    expect(ongoing.text()).toContain("Verificação de identidade");
+    expect(ongoing.text()).toContain("Em análise");
+    expect(wrapper.find(".activity-section--attention").exists()).toBe(false);
+
+    currentWorkspace.profile.verification.current.status = "rejected";
+    currentWorkspace.profile.verification.current.rejectionReason =
+      "O documento está desfocado.";
+    await wrapper.setProps({ workspace: currentWorkspace });
+
+    const attention = wrapper.get(".activity-section--attention");
+    expect(attention.text()).toContain("O documento está desfocado.");
+    expect(attention.text()).toContain("Enviar evidência");
+  });
+
+  it("links the identity correction to the verification screen", async () => {
+    const currentWorkspace = workspace();
     currentWorkspace.profile.verification.current = {
       id: "verification-id",
       verificationType: "identity",
@@ -226,48 +230,37 @@ describe("dashboard activity sections", () => {
       ...mountOptions,
       props: { workspace: currentWorkspace },
     });
-
-    const attention = wrapper.get(".activity-section--attention");
-    const ongoing = wrapper.get(".activity-section--ongoing");
-    expect(attention.text()).toContain(
-      "A apresentação precisa de mais detalhes.",
+    const links = Object.fromEntries(
+      wrapper
+        .get(".activity-section--attention")
+        .findAll("a")
+        .map((link) => [link.text(), link.attributes("href")]),
     );
-    expect(attention.text()).toContain("Instalação rejeitada");
-    expect(attention.text()).toContain("Verificação de identidade");
-    expect(attention.text()).not.toContain("Expirada");
-    expect(attention.text()).not.toContain("Instalação em análise");
-    expect(ongoing.text()).toContain("Foto do perfil");
-    expect(ongoing.text()).toContain("Instalação em análise");
-    expect(ongoing.text()).not.toContain("Instalação rejeitada");
+
+    expect(links).toEqual({
+      "Enviar evidência": "/app/professional/profile?tab=verificacoes",
+    });
   });
 
   it("shows every requested quote change with its latest message and review link", async () => {
     const currentWorkspace = workspace();
-    currentWorkspace.dashboard.changeRequestedQuotes = [
+    currentWorkspace.dashboard.actionItems = [
       {
         id: "newer-quote-id",
-        number: 23,
-        customerName: "Marina Cliente",
-        serviceDescription: "Instalação de luminárias",
-        latestChangeRequest: {
-          id: "newer-request-id",
-          revision: 4,
-          message:
-            "Trocar duas luminárias e revisar a posição dos interruptores.",
-          requestedAt: "2026-08-19T14:00:00Z",
-        },
+        kind: "quote_change_requested",
+        title: "Orçamento #23 · Marina Cliente",
+        subtitle:
+          "Trocar duas luminárias e revisar a posição dos interruptores.",
+        sortAt: "2026-08-19T14:00:00Z",
+        recommendationDeliveryChannel: null,
       },
       {
         id: "older-quote-id",
-        number: 19,
-        customerName: "Paulo Cliente",
-        serviceDescription: "Pintura interna",
-        latestChangeRequest: {
-          id: "older-request-id",
-          revision: 2,
-          message: "Usar tinta lavável.",
-          requestedAt: "2026-08-18T14:00:00Z",
-        },
+        kind: "quote_change_requested",
+        title: "Orçamento #19 · Paulo Cliente",
+        subtitle: "Usar tinta lavável.",
+        sortAt: "2026-08-18T14:00:00Z",
+        recommendationDeliveryChannel: null,
       },
     ];
     currentWorkspace.relationships = [
@@ -307,6 +300,44 @@ describe("dashboard activity sections", () => {
         .findAll("a")
         .every((link) => link.text() === "Revisar orçamento"),
     ).toBe(true);
+  });
+
+  it("dispatches an inline action instead of navigating for act-kind items", async () => {
+    const currentWorkspace = workspace();
+    currentWorkspace.dashboard.actionItems = [
+      {
+        id: "service-id",
+        kind: "service_open",
+        title: "Adequação elétrica · Ana Paula",
+        subtitle: "Aprovado, aguardando você concluir",
+        sortAt: "2026-08-19T14:00:00Z",
+        recommendationDeliveryChannel: "email",
+      },
+    ];
+
+    const wrapper = await mountSuspended(DashboardActivitySections, {
+      ...mountOptions,
+      props: { workspace: currentWorkspace, actingId: null },
+    });
+
+    const attention = wrapper.get(".activity-section--attention");
+    expect(
+      attention.findAll("a").some((link) => link.text() === "Concluído"),
+    ).toBe(false);
+    const actButton = attention
+      .findAll("button")
+      .find((button) => button.text() === "Concluído");
+    expect(actButton).toBeTruthy();
+    await actButton!.trigger("click");
+    expect(wrapper.emitted("act")?.[0]).toEqual(["service-id", "service_open"]);
+
+    await wrapper.setProps({ actingId: "service-id" });
+    expect(actButton?.attributes("disabled")).toBeDefined();
+    expect(
+      actButton?.element
+        .closest("[data-tooltip-reason]")
+        ?.getAttribute("data-tooltip-reason"),
+    ).toBe("Aguarde esta ação do painel terminar.");
   });
 
   it("uses one stacked container for a single group and hides it when empty", async () => {

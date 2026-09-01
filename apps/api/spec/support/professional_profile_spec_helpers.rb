@@ -7,22 +7,15 @@ module ProfessionalProfileSpecHelpers
       registered_at: profile.user_account.registered_at || reviewed_at
     )
     ensure_public_supply(revision)
-    revision.update!(
-      status: "approved",
-      submitted_at: revision.submitted_at || reviewed_at,
-      reviewed_at:
-    )
-    photo = profile.published_photo || create_public_profile_photo(profile, reviewed_at:)
+    revision.update!(updated_at: reviewed_at)
+    photo = profile.profile_photo || create_public_profile_photo(profile, reviewed_at:)
     profile.update!(
       birthdate: profile.birthdate || Date.new(1990, 1, 1),
       profile_status: "published",
       published_at: profile.published_at || reviewed_at,
       working_revision: revision,
       published_revision: revision,
-      approved_revision: revision,
-      working_photo: photo,
-      published_photo: photo,
-      approved_photo: photo
+      profile_photo: photo
     )
     profile.reload
   end
@@ -76,15 +69,12 @@ module ProfessionalProfileSpecHelpers
     )
     profile.profile_photos.create!(
       media_upload: upload,
-      status: "approved",
       private_key: upload.sanitized_key,
-      public_key: "moderation/profile_photo/#{profile.id}/#{SecureRandom.uuid}.jpg",
       content_type: "image/jpeg",
       byte_size: 100,
       width: 640,
       height: 960,
-      submitted_at: reviewed_at,
-      reviewed_at:
+      submitted_at: reviewed_at
     )
   end
 end

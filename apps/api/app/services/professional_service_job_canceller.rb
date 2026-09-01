@@ -21,11 +21,16 @@ class ProfessionalServiceJobCanceller
     service_job.with_lock do
       raise Unavailable if service_job.completed? || service_job.cancelled?
 
+      quote = service_job.quote
+      quote.lock!
+      raise Unavailable unless quote.approved?
+
       service_job.update!(
         status: "cancelled",
         cancellation_reason: normalized_reason,
         cancelled_at: now
       )
+      quote.update!(status: "cancelled")
     end
     service_job.reload
   end

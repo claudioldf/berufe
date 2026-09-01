@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import type { OnboardingPortfolioItem, PortfolioItemDraft } from "~/types";
+import type {
+  OnboardingPortfolioItem,
+  PortfolioItemDraft,
+  PortfolioItemUpdateDraft,
+} from "~/types";
 
 defineProps<{
   portfolio: OnboardingPortfolioItem | null;
@@ -7,11 +11,16 @@ defineProps<{
   saving?: boolean;
   serverError?: string;
 }>();
-defineEmits<{
+const emit = defineEmits<{
   back: [];
   complete: [draft: PortfolioItemDraft];
   continue: [];
 }>();
+
+function complete(draft: PortfolioItemUpdateDraft) {
+  if (!draft.file) return;
+  emit("complete", { ...draft, file: draft.file });
+}
 </script>
 
 <template>
@@ -41,7 +50,7 @@ defineEmits<{
         :service-options="serviceOptions"
         submit-label="Salvar e continuar"
         :submitting="saving"
-        @submitted="$emit('complete', $event)"
+        @submitted="complete"
       />
     </DesignSystemSurfaceCard>
 

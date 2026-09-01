@@ -11,7 +11,8 @@ class CustomerRecommendationMailer < ApplicationMailer
     @customer_name = quote.customer_name
     @professional_name = revision.display_name
     @service_description = quote.service_description
-    @recommendation_url = "#{ENV.fetch("WEB_ORIGIN").delete_suffix("/")}/recomendacao/#{token}"
+    @recommendation_url = "#{@web_origin}/recomendacao/#{token}"
+    @preheader = "Conte como foi o serviço de #{@professional_name}. Sua resposta leva poucos minutos."
 
     mail(
       to: quote.customer_email,

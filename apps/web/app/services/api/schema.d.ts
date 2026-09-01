@@ -132,7 +132,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Read the shared professional-supply moderation queue */
+        /** Read the identity-verification moderation queue */
         get: operations["getAdminModerationQueue"];
         put?: never;
         post?: never;
@@ -196,26 +196,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/moderation/{target_type}/{target_id}/media": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                target_type: components["parameters"]["ModerationMediaTargetType"];
-                target_id: components["parameters"]["ModerationTargetId"];
-            };
-            cookie?: never;
-        };
-        /** Read a regenerated private image for in-place moderation preview */
-        get: operations["getAdminModerationMedia"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/admin/verification-files/{id}/content": {
         parameters: {
             query?: never;
@@ -264,7 +244,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Publish or unpublish a professional profile and refresh the directory */
+        /** Restore or unpublish a professional profile and refresh the directory */
         post: operations["setAdminProfessionalPublication"];
         delete?: never;
         options?: never;
@@ -351,7 +331,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Read the most recently approved publicly eligible professionals */
+        /** Read the most recently updated publicly eligible professionals */
         get: operations["getFeaturedPublicProfessionals"];
         put?: never;
         post?: never;
@@ -483,7 +463,7 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** Read one complete approved public professional profile */
+        /** Read one complete published professional profile */
         get: operations["getPublicProfessionalProfile"];
         put?: never;
         post?: never;
@@ -545,7 +525,7 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** Read a currently published pending or approved profile photo */
+        /** Read the current public profile photo */
         get: operations["getPublicProfilePhotoImage"];
         put?: never;
         post?: never;
@@ -564,7 +544,7 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** Read a public pending or approved regenerated portfolio image */
+        /** Read an active public portfolio image */
         get: operations["getPublicPortfolioItemImage"];
         put?: never;
         post?: never;
@@ -828,7 +808,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/professional/service-jobs/{id}/completion-request": {
+    "/api/v1/professional/service-jobs/{id}/recommendation-request": {
         parameters: {
             query?: never;
             header?: never;
@@ -839,8 +819,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Ask the customer to confirm completion */
-        post: operations["requestProfessionalServiceCompletion"];
+        /** Open a WhatsApp handoff to the recommendation link for a customer with no email on file */
+        post: operations["requestProfessionalServiceRecommendation"];
         delete?: never;
         options?: never;
         head?: never;
@@ -879,6 +859,61 @@ export interface paths {
         put?: never;
         /** Cancel one unfinished service */
         post: operations["cancelProfessionalServiceJob"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/professional/recommendations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List every recommendation received, including hidden ones */
+        get: operations["listProfessionalRecommendations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/professional/recommendations/{id}/hide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Remove one recommendation from the public profile immediately */
+        post: operations["hideProfessionalRecommendation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/professional/recommendations/{id}/unhide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore one hidden recommendation to the public profile */
+        post: operations["unhideProfessionalRecommendation"];
         delete?: never;
         options?: never;
         head?: never;
@@ -979,23 +1014,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/shared-quotes/completions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Confirm completion or report an issue through the quote bearer */
-        post: operations["completeSharedQuoteService"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/customer-recommendations/resolve": {
         parameters: {
             query?: never;
@@ -1022,8 +1040,25 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Publish one recommendation from an emailed bearer */
+        /** Publish one recommendation from an emailed or WhatsApp-delivered bearer */
         post: operations["createCustomerRecommendation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/customer-recommendations/issues": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Privately report an outstanding problem instead of recommending */
+        post: operations["createCustomerFeedbackIssue"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1056,7 +1091,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Publish the persisted professional profile and enqueue post-publication review */
+        /** Publish the complete persisted professional profile immediately */
         post: operations["submitProfessionalProfile"];
         delete?: never;
         options?: never;
@@ -1072,11 +1107,30 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Attach a processed profile photo and enqueue post-publication review */
+        /** Attach a processed profile photo for immediate use */
         put: operations["updateProfessionalProfilePhoto"];
         post?: never;
         /** Remove the professional's active profile photo */
         delete: operations["deleteProfessionalProfilePhoto"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/professional/profile-photos/{id}/image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** Read the authenticated professional's current profile photo */
+        get: operations["getProfessionalProfilePhotoImage"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1091,7 +1145,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Attach one processed image and submit a portfolio item for review */
+        /** Attach one processed image as an immediately active portfolio item */
         post: operations["createProfessionalPortfolioItem"];
         delete?: never;
         options?: never;
@@ -1114,6 +1168,26 @@ export interface paths {
         post?: never;
         /** Soft-delete one owned portfolio item */
         delete: operations["deleteProfessionalPortfolioItem"];
+        options?: never;
+        head?: never;
+        /** Update one active owned portfolio item immediately */
+        patch: operations["updateProfessionalPortfolioItem"];
+        trace?: never;
+    };
+    "/api/v1/professional/portfolio-items/{id}/image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** Read an authenticated professional's active portfolio image */
+        get: operations["getProfessionalPortfolioItemImage"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1385,7 +1459,7 @@ export interface components {
             public_slug: string | null;
             display_name: string | null;
             /** @enum {string|null} */
-            profile_status: "draft" | "pending_review" | "published" | "suspended" | null;
+            profile_status: "draft" | "published" | "suspended" | null;
             city: string | null;
             state: string | null;
             phone_verified: boolean;
@@ -1410,6 +1484,7 @@ export interface components {
         };
         AdminProfessionalPublicationInput: {
             published: boolean;
+            /** @description User-visible reason required when unpublishing; omit when restoring. */
             reason?: string | null;
         };
         /** @enum {string} */
@@ -1574,6 +1649,7 @@ export interface components {
             reviewed: number;
             approval_rate: components["schemas"]["AdminGrowthReportRate"];
             hidden: number;
+            restored: number;
             by_target_type: {
                 [key: string]: number;
             };
@@ -1682,7 +1758,7 @@ export interface components {
             request_id: components["schemas"]["RequestId"];
         };
         /** @enum {string} */
-        ProfessionalNotificationType: "profile_moderation_approved" | "profile_moderation_rejected" | "profile_moderation_hidden" | "profile_moderation_restored" | "profile_photo_moderation_approved" | "profile_photo_moderation_rejected" | "profile_photo_moderation_hidden" | "profile_photo_moderation_restored" | "portfolio_item_moderation_approved" | "portfolio_item_moderation_rejected" | "portfolio_item_moderation_hidden" | "portfolio_item_moderation_restored" | "verification_request_moderation_approved" | "verification_request_moderation_rejected" | "relationship_request_received" | "relationship_request_accepted" | "relationship_request_declined" | "quote_change_requested" | "quote_approved" | "quote_declined" | "service_completion_confirmed" | "service_completion_issue_reported" | "customer_recommendation_published";
+        ProfessionalNotificationType: "profile_moderation_hidden" | "profile_moderation_restored" | "verification_request_moderation_approved" | "verification_request_moderation_rejected" | "relationship_request_received" | "relationship_request_accepted" | "relationship_request_declined" | "quote_change_requested" | "quote_approved" | "quote_declined" | "service_completion_issue_reported" | "customer_recommendation_published";
         ProfessionalNotification: {
             /** Format: uuid */
             id: string;
@@ -1729,9 +1805,24 @@ export interface components {
             /** Format: date */
             local_date: string;
             readiness: components["schemas"]["ProfessionalDashboardReadiness"];
-            change_requested_quotes: components["schemas"]["ProfessionalDashboardChangeRequestedQuote"][];
+            action_items: components["schemas"]["ProfessionalActionItem"][];
             recent_quotes: components["schemas"]["ProfessionalQuoteSummary"][];
             recent_service_jobs: components["schemas"]["ProfessionalServiceJob"][];
+        };
+        /** @enum {string} */
+        ProfessionalActionKind: "quote_unshared" | "quote_awaiting_response" | "quote_change_requested" | "service_open" | "recommendation_unsent";
+        ProfessionalActionItem: {
+            /**
+             * Format: uuid
+             * @description The quote id for quote_* kinds, the service job id for service_open and recommendation_unsent.
+             */
+            id: string;
+            kind: components["schemas"]["ProfessionalActionKind"];
+            title: string;
+            subtitle: string;
+            /** Format: date-time */
+            sort_at: string;
+            recommendation_delivery_channel: components["schemas"]["RecommendationDeliveryChannel"] | null;
         };
         ProfessionalDashboardReadiness: {
             percentage: number;
@@ -1743,21 +1834,13 @@ export interface components {
             };
         };
         /** @enum {string} */
-        QuoteStatus: "draft" | "saved" | "shared" | "change_requested" | "approved" | "declined";
+        QuoteStatus: "draft" | "saved" | "shared" | "change_requested" | "approved" | "declined" | "completed" | "cancelled";
         /** @enum {string} */
-        ServiceJobStatus: "approved" | "completion_requested" | "completion_issue" | "completed" | "cancelled";
-        /** @enum {string} */
-        ServiceJobCompletionConfirmer: "customer" | "professional";
+        ServiceJobStatus: "approved" | "completed" | "cancelled";
         /** @enum {string} */
         RecommendationRequestStatus: "open" | "completed" | "expired";
-        ProfessionalDashboardChangeRequestedQuote: {
-            /** Format: uuid */
-            id: string;
-            quote_number: number;
-            customer_name: string;
-            service_description: string;
-            latest_change_request: components["schemas"]["ProfessionalQuoteChangeRequest"];
-        };
+        /** @enum {string} */
+        RecommendationDeliveryChannel: "email" | "whatsapp";
         ProfessionalQuoteSummary: {
             /** Format: uuid */
             id: string;
@@ -1857,14 +1940,6 @@ export interface components {
                 message: string | null;
             };
         };
-        SharedQuoteCompletionRequest: {
-            token: string;
-            completion: {
-                /** @enum {string} */
-                kind: "confirm" | "report_issue";
-                message: string | null;
-            };
-        };
         SharedQuoteResponse: {
             data: {
                 quote: components["schemas"]["SharedQuote"];
@@ -1894,11 +1969,7 @@ export interface components {
         SharedQuoteServiceJob: {
             status: components["schemas"]["ServiceJobStatus"];
             /** Format: date-time */
-            completion_requested_at: string | null;
-            completion_issue_message: string | null;
-            /** Format: date-time */
             completed_at: string | null;
-            recommendation_available: boolean;
         };
         SharedQuoteItem: {
             description: string;
@@ -1968,13 +2039,9 @@ export interface components {
             id: string;
             status: components["schemas"]["ServiceJobStatus"];
             /** Format: date-time */
-            completion_requested_at: string | null;
-            completion_issue_message: string | null;
-            /** Format: date-time */
             completed_at: string | null;
             /** Format: date-time */
             cancelled_at: string | null;
-            recommendation_request_status: components["schemas"]["RecommendationRequestStatus"] | null;
         };
         ProfessionalQuoteItem: {
             /** Format: uuid */
@@ -1991,22 +2058,23 @@ export interface components {
             id: string;
             status: components["schemas"]["ServiceJobStatus"];
             quote: components["schemas"]["ProfessionalServiceJobQuote"];
-            /** Format: date-time */
-            completion_requested_at: string | null;
-            /** Format: date-time */
-            completion_issue_at: string | null;
-            completion_issue_message: string | null;
+            customer_feedback_message: string | null;
             /** Format: date-time */
             completed_at: string | null;
-            completion_confirmed_by: components["schemas"]["ServiceJobCompletionConfirmer"] | null;
             /** Format: date-time */
             cancelled_at: string | null;
             cancellation_reason: string | null;
-            recommendation_request_status: components["schemas"]["RecommendationRequestStatus"] | null;
+            recommendation: components["schemas"]["ProfessionalServiceJobRecommendation"] | null;
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
             updated_at: string;
+        };
+        ProfessionalServiceJobRecommendation: {
+            status: components["schemas"]["RecommendationRequestStatus"];
+            delivery_channel: components["schemas"]["RecommendationDeliveryChannel"];
+            /** Format: date-time */
+            sent_at: string | null;
         };
         ProfessionalServiceJobQuote: {
             /** Format: uuid */
@@ -2028,19 +2096,55 @@ export interface components {
             };
             request_id: components["schemas"]["RequestId"];
         };
+        ProfessionalServiceCompletionResponse: {
+            data: {
+                service_job: components["schemas"]["ProfessionalServiceJob"];
+                /** Format: uri */
+                share_url: string | null;
+                /** Format: uri */
+                whatsapp_url: string | null;
+            };
+            request_id: components["schemas"]["RequestId"];
+        };
         ProfessionalServiceJobListResponse: {
             data: {
                 service_jobs: components["schemas"]["ProfessionalServiceJob"][];
             };
             request_id: components["schemas"]["RequestId"];
         };
-        ProfessionalCompletionRequestResponse: {
+        ProfessionalRecommendationRequestResponse: {
             data: {
                 service_job: components["schemas"]["ProfessionalServiceJob"];
                 /** Format: uri */
                 share_url: string;
                 /** Format: uri */
                 whatsapp_url: string;
+            };
+            request_id: components["schemas"]["RequestId"];
+        };
+        ProfessionalRecommendation: {
+            /** Format: uuid */
+            id: string;
+            display_name: string;
+            recommendation_text: string;
+            delivery_channel: components["schemas"]["RecommendationDeliveryChannel"];
+            /** Format: date-time */
+            submitted_at: string;
+            customer_name: string;
+            service_description: string;
+            /** Format: date-time */
+            hidden_at: string | null;
+            hidden_reason: string | null;
+        };
+        ProfessionalRecommendationResponse: {
+            data: {
+                recommendation: components["schemas"]["ProfessionalRecommendation"];
+            };
+            request_id: components["schemas"]["RequestId"];
+        };
+        ProfessionalRecommendationListResponse: {
+            data: {
+                recommendations: components["schemas"]["ProfessionalRecommendation"][];
             };
             request_id: components["schemas"]["RequestId"];
         };
@@ -2104,6 +2208,10 @@ export interface components {
                 publication_consent: boolean;
             };
         };
+        CustomerFeedbackIssueRequest: {
+            token: string;
+            message: string;
+        };
         CustomerRecommendationRequest: {
             customer_name: string;
             service_description: string;
@@ -2127,8 +2235,8 @@ export interface components {
             recommendation_text: string;
             /** Format: date-time */
             submitted_at: string;
-            /** @constant */
-            verification_label: "Link enviado por e-mail";
+            /** @enum {string} */
+            verification_label: "Link enviado por e-mail" | "Link enviado por WhatsApp";
         };
         CustomerRecommendationResponse: {
             data: {
@@ -2142,17 +2250,15 @@ export interface components {
             id: string;
             public_slug: string;
             /** @enum {string} */
-            profile_status: "draft" | "pending_review" | "published" | "suspended";
+            profile_status: "draft" | "published" | "suspended";
             /** @enum {string} */
             presentation_type: "self_service" | "external";
             is_public: boolean;
             is_search_eligible: boolean;
             /** @description Whether this profile currently meets the bar to be indexed by search engines (see PublicIndexability on the API side). */
             is_indexable: boolean;
+            suspension_reason: string | null;
             publication_blockers: ("identity" | "photo" | "services" | "coverage")[];
-            /** @enum {string} */
-            revision_status: "draft" | "pending_review" | "approved" | "rejected" | "superseded";
-            revision_rejection_reason: string | null;
             has_published_revision: boolean;
             photo: components["schemas"]["ProfessionalWorkspacePhoto"];
             portfolio_items: components["schemas"]["ProfessionalPortfolioItem"][];
@@ -2246,17 +2352,14 @@ export interface components {
         };
         ProfessionalWorkspacePhoto: {
             current: components["schemas"]["ProfessionalProfilePhotoSummary"] | null;
-            has_published_photo: boolean;
+            has_photo: boolean;
             /** Format: uri */
-            published_image_url: string | null;
+            image_url: string | null;
             latest_upload: components["schemas"]["MediaUpload"] | null;
         };
         ProfessionalProfilePhotoSummary: {
             /** Format: uuid */
             id: string;
-            /** @enum {string} */
-            status: "pending_review" | "approved" | "rejected" | "hidden" | "superseded";
-            rejection_reason: string | null;
             /** Format: date-time */
             submitted_at: string;
         };
@@ -2274,6 +2377,16 @@ export interface components {
                 description: string | null;
             };
         };
+        ProfessionalPortfolioItemUpdateRequest: {
+            portfolio_item: {
+                /** Format: uuid */
+                media_upload_id?: string;
+                /** Format: uuid */
+                service_id: string;
+                title: string;
+                description: string | null;
+            };
+        };
         ProfessionalPortfolioItem: {
             /** Format: uuid */
             id: string;
@@ -2284,9 +2397,6 @@ export interface components {
                 id: string;
                 name: string;
             };
-            /** @enum {string} */
-            status: "pending_review" | "approved" | "rejected" | "hidden";
-            rejection_reason: string | null;
             /** Format: date-time */
             submitted_at: string;
             image_url: string | null;
@@ -2532,19 +2642,10 @@ export interface components {
             submitted_at: string;
             details: string;
             preview: string;
-            currently_public: boolean;
-            fallback_available: boolean;
-            changes: components["schemas"]["AdminModerationChange"][];
             /** Format: date */
             claimed_birthdate: string | null;
-            has_media: boolean;
             /** Format: uuid */
             verification_file_id: string | null;
-        };
-        AdminModerationChange: {
-            field: string;
-            before: unknown;
-            after: unknown;
         };
         AdminModerationSummary: {
             pending_count: number;
@@ -2557,15 +2658,17 @@ export interface components {
         };
         ModerationDecisionInput: {
             /** @enum {string} */
-            action: "approved" | "rejected" | "hidden" | "restored";
+            action: "approved" | "rejected";
+            /** @description User-visible rejection reason; required when action is rejected. */
             reason?: string | null;
+            /** @description Optional private administrator note. */
             note?: string | null;
             identity_match_confirmed?: boolean;
         };
+        /** @constant */
+        ModerationTargetType: "verification_request";
         /** @enum {string} */
-        ModerationTargetType: "profile_revision" | "profile_photo" | "portfolio_item" | "verification_request";
-        /** @enum {string} */
-        ModerationStatus: "pending_review" | "approved" | "rejected" | "hidden";
+        ModerationStatus: "pending_review" | "approved" | "rejected";
         CatalogData: {
             categories: components["schemas"]["PublicServiceCategory"][];
             services: components["schemas"]["PublicService"][];
@@ -2801,8 +2904,9 @@ export interface components {
             indexable: boolean;
         };
         PublicProfessionalEvidenceSummary: {
-            completed_services: number;
+            registered_services: number;
             recommendations: number;
+            hidden_recommendations: number;
             worked_together_professionals: number;
         };
         PublicCustomerRecommendation: {
@@ -2812,8 +2916,8 @@ export interface components {
             recommendation_text: string;
             /** Format: date-time */
             submitted_at: string;
-            /** @constant */
-            verification_label: "Link enviado por e-mail";
+            /** @enum {string} */
+            verification_label: "Link enviado por e-mail" | "Link enviado por WhatsApp";
         };
         PublicProfessionalProfileService: {
             /** Format: uuid */
@@ -3031,7 +3135,7 @@ export interface components {
                 "application/json": components["schemas"]["ErrorResponse"];
             };
         };
-        /** @description The moderation target or regenerated private image does not exist. */
+        /** @description The identity request or retained private document does not exist. */
         AdminModerationNotFound: {
             headers: {
                 "X-Request-Id": components["headers"]["RequestId"];
@@ -3071,10 +3175,8 @@ export interface components {
         Order: string;
         /** @description Opaque server-generated media upload identifier. */
         MediaUploadId: string;
-        /** @description Moderation target family shown by the existing type control. */
-        ModerationType: "all" | "profile_revision" | "profile_photo" | "portfolio_item" | "verification_request";
         /** @description Moderation workflow state. */
-        ModerationStatus: "pending_review" | "approved" | "rejected" | "hidden" | "all";
+        ModerationStatus: "pending_review" | "approved" | "rejected" | "all";
         /** @description Accent-insensitive search across the safe queue presentation. */
         ModerationSearch: string;
         /** @description Moderation result count per page. */
@@ -3086,7 +3188,7 @@ export interface components {
         /** @description Return only quotes associated with this owner-scoped customer. */
         ProfessionalQuoteCustomerId: string;
         /** @description Quote workflow status; defaults to all statuses. */
-        ProfessionalQuoteStatus: "all" | "draft" | "saved" | "shared" | "change_requested" | "approved" | "declined";
+        ProfessionalQuoteStatus: "all" | "draft" | "saved" | "shared" | "change_requested" | "approved" | "declined" | "completed" | "cancelled";
         /** @description Exact combined service date. */
         ProfessionalQuoteScheduledOn: string;
         /** @description Quote table column used for deterministic ordering. */
@@ -3094,7 +3196,6 @@ export interface components {
         /** @description Sort direction for the selected column. */
         SortDirection: "asc" | "desc";
         ModerationTargetType: components["schemas"]["ModerationTargetType"];
-        ModerationMediaTargetType: "profile_photo" | "portfolio_item";
         ModerationTargetId: string;
         /** @description Case-insensitive, accent-insensitive professional name search. */
         AdminProfessionalQuery: string;
@@ -3431,8 +3532,6 @@ export interface operations {
     getAdminModerationQueue: {
         parameters: {
             query?: {
-                /** @description Moderation target family shown by the existing type control. */
-                type?: components["parameters"]["ModerationType"];
                 /** @description Moderation workflow state. */
                 status?: components["parameters"]["ModerationStatus"];
                 /** @description Accent-insensitive search across the safe queue presentation. */
@@ -3459,7 +3558,6 @@ export interface operations {
                 };
             };
             401: components["responses"]["AdminModerationUnauthorized"];
-            422: components["responses"]["AdminModerationInvalid"];
         };
     };
     getAdminGrowthReport: {
@@ -3524,8 +3622,6 @@ export interface operations {
     createAdminModerationDecision: {
         parameters: {
             query?: {
-                /** @description Moderation target family shown by the existing type control. */
-                type?: components["parameters"]["ModerationType"];
                 /** @description Moderation workflow state. */
                 status?: components["parameters"]["ModerationStatus"];
                 /** @description Accent-insensitive search across the safe queue presentation. */
@@ -3563,36 +3659,6 @@ export interface operations {
             404: components["responses"]["AdminModerationNotFound"];
             409: components["responses"]["AdminModerationConflict"];
             422: components["responses"]["AdminModerationInvalid"];
-        };
-    };
-    getAdminModerationMedia: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                target_type: components["parameters"]["ModerationMediaTargetType"];
-                target_id: components["parameters"]["ModerationTargetId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The regenerated private image; access is recorded immutably. */
-            200: {
-                headers: {
-                    "X-Request-Id": components["headers"]["RequestId"];
-                    "Cache-Control"?: "no-store";
-                    "Content-Disposition"?: string;
-                    "X-Content-Type-Options"?: "nosniff";
-                    [name: string]: unknown;
-                };
-                content: {
-                    "image/jpeg": string;
-                    "image/png": string;
-                };
-            };
-            401: components["responses"]["AdminModerationUnauthorized"];
-            404: components["responses"]["AdminModerationNotFound"];
         };
     };
     getAdminVerificationFileContent: {
@@ -3710,7 +3776,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description The publication decision and its immutable audit record were committed together. */
+            /** @description The restoration or unpublication and its immutable audit record were committed together. */
             200: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
@@ -4165,7 +4231,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The approved public snapshot and a short-lived profile interaction. */
+            /** @description The current published profile and a short-lived profile interaction. */
             200: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
@@ -4291,7 +4357,7 @@ export interface operations {
                     "text/html": string;
                 };
             };
-            /** @description The professional is not currently public or has no approved contact. */
+            /** @description The professional is not currently public or has no public contact. */
             404: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
@@ -4334,7 +4400,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description A pending or approved JPEG profile photo whose parent remains publicly eligible. */
+            /** @description The current JPEG profile photo whose parent remains publicly eligible. */
             200: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
@@ -4347,7 +4413,7 @@ export interface operations {
                     "image/jpeg": string;
                 };
             };
-            /** @description The photo is absent, rejected/hidden, has an ineligible parent, or its object is unavailable. */
+            /** @description The photo is absent or deleted, its parent is ineligible, or its object is unavailable. */
             404: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
@@ -4370,7 +4436,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description A pending or approved portfolio image that remains eligible for public display. */
+            /** @description An active portfolio image whose parent remains publicly eligible. */
             200: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
@@ -4384,7 +4450,7 @@ export interface operations {
                     "image/png": string;
                 };
             };
-            /** @description The portfolio item was rejected/hidden/deleted, its parent is unavailable, or its object is unavailable. */
+            /** @description The portfolio item was deleted, its parent is unavailable, or its object is unavailable. */
             404: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
@@ -5167,7 +5233,7 @@ export interface operations {
             };
         };
     };
-    requestProfessionalServiceCompletion: {
+    requestProfessionalServiceRecommendation: {
         parameters: {
             query?: never;
             header?: never;
@@ -5178,13 +5244,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The direct WhatsApp completion handoff. */
+            /** @description The direct WhatsApp recommendation handoff. Reusable on repeat calls. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProfessionalCompletionRequestResponse"];
+                    "application/json": components["schemas"]["ProfessionalRecommendationRequestResponse"];
                 };
             };
             /** @description An active session is required. */
@@ -5214,7 +5280,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Completion cannot be requested in the current state. */
+            /** @description The service job is not completed, or already has an email-delivered request. */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -5234,15 +5300,23 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": {
+                    completion: {
+                        request_recommendation: boolean;
+                    };
+                };
+            };
+        };
         responses: {
-            /** @description The completed service with the professional recorded as confirmer. */
+            /** @description The completed service and any immediate recommendation handoff. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProfessionalServiceJobResponse"];
+                    "application/json": components["schemas"]["ProfessionalServiceCompletionResponse"];
                 };
             };
             /** @description An active session is required. */
@@ -5274,6 +5348,15 @@ export interface operations {
             };
             /** @description The service is already completed or cancelled. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The recommendation choice is missing or invalid. */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5349,6 +5432,141 @@ export interface operations {
             };
             /** @description The cancellation reason is invalid. */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    listProfessionalRecommendations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Recommendations ordered by most recent first. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalRecommendationListResponse"];
+                };
+            };
+            /** @description An active session is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    hideProfessionalRecommendation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    hide: {
+                        reason: string | null;
+                    };
+                };
+            };
+        };
+        responses: {
+            /** @description The recommendation is hidden and excluded from public counts. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalRecommendationResponse"];
+                };
+            };
+            /** @description An active session is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The origin or owner is invalid. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The recommendation does not exist. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    unhideProfessionalRecommendation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The recommendation is public again. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalRecommendationResponse"];
+                };
+            };
+            /** @description An active session is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The origin or owner is invalid. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The recommendation does not exist. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5879,66 +6097,6 @@ export interface operations {
             };
         };
     };
-    completeSharedQuoteService: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SharedQuoteCompletionRequest"];
-            };
-        };
-        responses: {
-            /** @description The completion response was recorded. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SharedQuoteResponse"];
-                };
-            };
-            /** @description The exact configured Nuxt origin is required. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description The bearer is not available. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description The service cannot receive this transition. */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description The issue response is invalid. */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
     resolveCustomerRecommendation: {
         parameters: {
             query?: never;
@@ -6022,6 +6180,57 @@ export interface operations {
                 };
             };
             /** @description The recommendation or consent fields are invalid. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    createCustomerFeedbackIssue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustomerFeedbackIssueRequest"];
+            };
+        };
+        responses: {
+            /** @description The professional was notified privately; nothing is published or changes the underlying service job's status. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerRecommendationResolveResponse"];
+                };
+            };
+            /** @description The exact configured Nuxt origin is required. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Generic response for invalid, used, or expired links. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The feedback message is invalid. */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -6274,6 +6483,52 @@ export interface operations {
             };
         };
     };
+    getProfessionalProfilePhotoImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The current owned JPEG profile photo, including while the profile is draft or suspended. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Cache-Control"?: "no-store";
+                    "Content-Disposition"?: string;
+                    "X-Content-Type-Options"?: "nosniff";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                };
+            };
+            /** @description An active Rails application session is required. */
+            401: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The profile, current owned photo, or stored object was not found. */
+            404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     createProfessionalPortfolioItem: {
         parameters: {
             query?: never;
@@ -6287,7 +6542,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description The portfolio item was persisted privately for review. */
+            /** @description The portfolio item was persisted and is immediately visible when its profile is public. */
             201: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
@@ -6383,6 +6638,121 @@ export interface operations {
                 };
             };
             /** @description Professional registration or the active owned item was not found. */
+            404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    updateProfessionalPortfolioItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Opaque server-generated portfolio item identifier. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfessionalPortfolioItemUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description The same portfolio item was updated and is immediately visible when its profile is public. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalWorkspaceResponse"];
+                };
+            };
+            /** @description An active Rails application session is required. */
+            401: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The exact browser origin or profile owner is invalid. */
+            403: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Professional registration, active owned item, or replacement upload was not found. */
+            404: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The replacement image, selected service, or item fields are invalid. */
+            422: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getProfessionalPortfolioItemImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description An active owned portfolio image, including while the profile is draft or suspended. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Cache-Control"?: "no-store";
+                    "Content-Disposition"?: string;
+                    "X-Content-Type-Options"?: "nosniff";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                    "image/png": string;
+                };
+            };
+            /** @description An active Rails application session is required. */
+            401: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The profile, active owned item, or stored object was not found. */
             404: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];

@@ -46,13 +46,26 @@ const emit = defineEmits<{
         class="quote-item"
         @input="emit('dirty')"
       >
+        <span class="quote-item__mobile-index">Item {{ index + 1 }}</span>
+        <button
+          v-if="quote.items.length > 1"
+          class="quote-item__remove"
+          type="button"
+          :aria-label="`Remover item ${index + 1}`"
+          @click="emit('remove', item.id)"
+        >
+          <UIcon name="i-lucide-trash-2" aria-hidden="true" />
+        </button>
         <label
+          class="quote-item__description"
           :class="{
             'quote-item__field--invalid':
               props.errors?.items[item.id]?.description,
           }"
         >
-          <span class="sr-only">Descrição do item {{ index + 1 }}</span>
+          <span class="quote-item__label"
+            >Descrição do item {{ index + 1 }}</span
+          >
           <input
             v-model="item.description"
             :name="`item-${item.id}-description`"
@@ -80,7 +93,9 @@ const emit = defineEmits<{
               props.errors?.items[item.id]?.quantity,
           }"
         >
-          <span class="sr-only">Quantidade do item {{ index + 1 }}</span>
+          <span class="quote-item__label"
+            >Quantidade do item {{ index + 1 }}</span
+          >
           <input
             v-model.number="item.quantity"
             :name="`item-${item.id}-quantity`"
@@ -109,7 +124,7 @@ const emit = defineEmits<{
             'quote-item__field--invalid': props.errors?.items[item.id]?.unit,
           }"
         >
-          <span class="sr-only">Unidade do item {{ index + 1 }}</span>
+          <span class="quote-item__label">Unidade do item {{ index + 1 }}</span>
           <select
             v-model="item.unit"
             :name="`item-${item.id}-unit`"
@@ -141,7 +156,9 @@ const emit = defineEmits<{
               props.errors?.items[item.id]?.unitPrice,
           }"
         >
-          <span class="sr-only">Valor unitário do item {{ index + 1 }}</span>
+          <span class="quote-item__label"
+            >Valor unitário do item {{ index + 1 }}</span
+          >
           <input
             v-model.number="item.unitPrice"
             :name="`item-${item.id}-unit-price`"
@@ -165,15 +182,10 @@ const emit = defineEmits<{
             {{ props.errors.items[item.id]?.unitPrice }}
           </small>
         </label>
-        <strong>{{ formatCurrency(quoteItemTotal(item)) }}</strong>
-        <button
-          type="button"
-          :aria-label="`Remover item ${index + 1}`"
-          :disabled="quote.items.length === 1"
-          @click="emit('remove', item.id)"
-        >
-          <UIcon name="i-lucide-trash-2" aria-hidden="true" />
-        </button>
+        <span class="quote-item__total">
+          <span class="quote-item__label">Total do item {{ index + 1 }}</span>
+          <strong>{{ formatCurrency(quoteItemTotal(item)) }}</strong>
+        </span>
       </div>
     </div>
     <p

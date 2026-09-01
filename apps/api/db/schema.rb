@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_30_090000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_31_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -100,7 +100,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_090000) do
   create_table "customer_recommendation_requests", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.datetime "completed_at"
     t.datetime "created_at", null: false
-    t.string "email_fingerprint", limit: 64, null: false
+    t.string "delivery_channel", limit: 16, default: "email", null: false
+    t.string "email_fingerprint", limit: 64
     t.datetime "expires_at", null: false
     t.datetime "sent_at"
     t.uuid "service_job_id", null: false
@@ -111,15 +112,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_090000) do
     t.index ["service_job_id"], name: "idx_recommendation_requests_unique_job", unique: true
     t.index ["status", "expires_at"], name: "idx_recommendation_requests_status_expiry"
     t.index ["token_hash"], name: "idx_recommendation_requests_unique_token", unique: true
+    t.check_constraint "delivery_channel::text = 'email'::text AND email_fingerprint IS NOT NULL OR delivery_channel::text = 'whatsapp'::text AND email_fingerprint IS NULL", name: "customer_recommendation_requests_consistent_channel"
+    t.check_constraint "delivery_channel::text = ANY (ARRAY['email'::character varying, 'whatsapp'::character varying]::text[])", name: "customer_recommendation_requests_known_delivery_channel"
     t.check_constraint "status::text = ANY (ARRAY['open'::character varying::text, 'completed'::character varying::text, 'expired'::character varying::text])", name: "customer_recommendation_requests_known_status"
   end
 
   create_table "customer_recommendations", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.datetime "created_at", null: false
     t.uuid "customer_id", null: false
+    t.string "delivery_channel", limit: 16, default: "email", null: false
     t.string "display_name", limit: 80, null: false
-    t.string "email_fingerprint", limit: 64, null: false
-    t.datetime "email_verified_at", null: false
+    t.string "email_fingerprint", limit: 64
+    t.datetime "email_verified_at"
+    t.datetime "hidden_by_professional_at"
+    t.text "hidden_reason"
     t.text "privacy_notice_version", null: false
     t.datetime "publication_authorized_at", null: false
     t.datetime "publication_withdrawn_at", precision: nil
@@ -129,11 +135,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_090000) do
     t.datetime "submitted_at", null: false
     t.datetime "updated_at", null: false
     t.index ["customer_id"], name: "index_customer_recommendations_on_customer_id"
+    t.index ["hidden_by_professional_at"], name: "index_customer_recommendations_on_hidden_by_professional_at"
     t.index ["publication_withdrawn_at"], name: "index_customer_recommendations_on_publication_withdrawn_at"
     t.index ["service_job_id"], name: "idx_customer_recommendations_unique_job", unique: true
     t.check_constraint "btrim(privacy_notice_version) <> ''::text", name: "customer_recommendations_privacy_version_present"
     t.check_constraint "char_length(btrim(display_name::text)) >= 1 AND char_length(btrim(display_name::text)) <= 80", name: "customer_recommendations_display_name_length"
     t.check_constraint "char_length(btrim(recommendation_text)) >= 1 AND char_length(btrim(recommendation_text)) <= 700", name: "customer_recommendations_text_length"
+    t.check_constraint "delivery_channel::text = 'email'::text AND email_fingerprint IS NOT NULL AND email_verified_at IS NOT NULL OR delivery_channel::text = 'whatsapp'::text AND email_fingerprint IS NULL AND email_verified_at IS NULL", name: "customer_recommendations_consistent_channel"
+    t.check_constraint "delivery_channel::text = ANY (ARRAY['email'::character varying, 'whatsapp'::character varying]::text[])", name: "customer_recommendations_known_delivery_channel"
+    t.check_constraint "hidden_by_professional_at IS NOT NULL OR hidden_reason IS NULL", name: "customer_recommendations_hidden_reason_requires_hidden"
+    t.check_constraint "hidden_reason IS NULL OR char_length(btrim(hidden_reason)) >= 1 AND char_length(btrim(hidden_reason)) <= 700", name: "customer_recommendations_hidden_reason_length"
   end
 
   create_table "customers", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -372,24 +383,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_090000) do
     t.index ["admin_user_id"], name: "index_moderation_actions_on_admin_user_id"
     t.index ["target_type", "target_id", "created_at"], name: "idx_moderation_actions_target_created"
     t.check_constraint "(action <> ALL (ARRAY['rejected'::text, 'hidden'::text])) OR reason IS NOT NULL AND char_length(btrim(reason)) >= 10 AND char_length(btrim(reason)) <= 500", name: "moderation_actions_required_reason"
+    t.check_constraint "(action = ANY (ARRAY['rejected'::text, 'hidden'::text])) AND reason IS NOT NULL AND char_length(btrim(reason)) >= 10 AND char_length(btrim(reason)) <= 500 OR (action = ANY (ARRAY['approved'::text, 'restored'::text])) AND reason IS NULL", name: "moderation_actions_reason_matches_action"
     t.check_constraint "action = ANY (ARRAY['approved'::text, 'rejected'::text, 'hidden'::text, 'restored'::text])", name: "moderation_actions_known_action"
     t.check_constraint "note IS NULL OR char_length(btrim(note)) >= 1 AND char_length(btrim(note)) <= 500", name: "moderation_actions_note_length"
     t.check_constraint "reason IS NULL OR char_length(btrim(reason)) >= 1 AND char_length(btrim(reason)) <= 500", name: "moderation_actions_reason_length"
     t.check_constraint "request_id ~ '^[A-Za-z0-9._-]{1,100}$'::text", name: "moderation_actions_request_id_format"
-    t.check_constraint "target_type = ANY (ARRAY['profile_revision'::text, 'profile_photo'::text, 'portfolio_item'::text, 'verification_request'::text])", name: "moderation_actions_known_target"
-  end
-
-  create_table "moderation_media_access_events", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.uuid "admin_user_id", null: false
-    t.datetime "created_at", null: false
-    t.text "request_id", null: false
-    t.uuid "target_id", null: false
-    t.text "target_type", null: false
-    t.index ["admin_user_id", "created_at"], name: "idx_moderation_media_access_admin_created"
-    t.index ["admin_user_id"], name: "index_moderation_media_access_events_on_admin_user_id"
-    t.index ["target_type", "target_id", "created_at"], name: "idx_moderation_media_access_target_created"
-    t.check_constraint "request_id ~ '^[A-Za-z0-9._-]{1,100}$'::text", name: "moderation_media_access_request_id_format"
-    t.check_constraint "target_type = ANY (ARRAY['profile_photo'::text, 'portfolio_item'::text])", name: "moderation_media_access_known_target"
+    t.check_constraint "target_type = 'verification_request'::text AND (action = ANY (ARRAY['approved'::text, 'rejected'::text])) OR target_type = 'professional_profile'::text AND (action = ANY (ARRAY['hidden'::text, 'restored'::text]))", name: "moderation_actions_target_matches_action"
+    t.check_constraint "target_type = ANY (ARRAY['verification_request'::text, 'professional_profile'::text])", name: "moderation_actions_known_target"
   end
 
   create_table "neighborhoods", primary_key: "code", id: :text, force: :cascade do |t|
@@ -411,20 +411,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_090000) do
     t.datetime "occurred_at", null: false
     t.datetime "read_at"
     t.uuid "recipient_user_account_id", null: false
-    t.string "route", limit: 500, null: false
+    t.jsonb "route_params", default: {}, null: false
     t.string "status", limit: 16, default: "unread", null: false
     t.string "title", limit: 120, null: false
     t.datetime "updated_at", null: false
     t.index ["idempotency_key"], name: "index_notifications_on_idempotency_key", unique: true
     t.index ["recipient_user_account_id", "status", "occurred_at", "id"], name: "idx_notifications_recipient_status_order", order: { occurred_at: :desc, id: :desc }
     t.index ["recipient_user_account_id"], name: "index_notifications_on_recipient_user_account_id"
+    t.check_constraint "\nCASE\n    WHEN notification_type::text = ANY (ARRAY['quote_change_requested'::character varying, 'quote_approved'::character varying, 'quote_declined'::character varying]::text[]) THEN route_params = jsonb_build_object('quote_id', route_params ->> 'quote_id'::text) AND COALESCE((route_params ->> 'quote_id'::text) ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'::text, false)\n    WHEN notification_type::text = 'service_completion_issue_reported'::text THEN route_params = jsonb_build_object('service_job_id', route_params ->> 'service_job_id'::text) AND COALESCE((route_params ->> 'service_job_id'::text) ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'::text, false)\n    ELSE route_params = '{}'::jsonb\nEND", name: "notifications_route_params_match_type"
     t.check_constraint "char_length(btrim(description::text)) >= 1 AND char_length(btrim(description::text)) <= 240", name: "notifications_description_length"
     t.check_constraint "char_length(btrim(idempotency_key::text)) >= 1 AND char_length(btrim(idempotency_key::text)) <= 255", name: "notifications_idempotency_key_length"
     t.check_constraint "char_length(btrim(title::text)) >= 1 AND char_length(btrim(title::text)) <= 120", name: "notifications_title_length"
-    t.check_constraint "notification_type::text = ANY (ARRAY['profile_moderation_approved'::character varying, 'profile_moderation_rejected'::character varying, 'profile_moderation_hidden'::character varying, 'profile_moderation_restored'::character varying, 'profile_photo_moderation_approved'::character varying, 'profile_photo_moderation_rejected'::character varying, 'profile_photo_moderation_hidden'::character varying, 'profile_photo_moderation_restored'::character varying, 'portfolio_item_moderation_approved'::character varying, 'portfolio_item_moderation_rejected'::character varying, 'portfolio_item_moderation_hidden'::character varying, 'portfolio_item_moderation_restored'::character varying, 'verification_request_moderation_approved'::character varying, 'verification_request_moderation_rejected'::character varying, 'relationship_request_received'::character varying, 'relationship_request_accepted'::character varying, 'relationship_request_declined'::character varying, 'quote_change_requested'::character varying, 'quote_approved'::character varying, 'quote_declined'::character varying, 'service_completion_confirmed'::character varying, 'service_completion_issue_reported'::character varying, 'customer_recommendation_published'::character varying]::text[])", name: "notifications_known_type"
-    t.check_constraint "route::text ~ '^/[^[:space:]]*$'::text", name: "notifications_internal_route"
+    t.check_constraint "jsonb_typeof(route_params) = 'object'::text", name: "notifications_route_params_object"
+    t.check_constraint "notification_type::text = ANY (ARRAY['profile_moderation_hidden'::character varying, 'profile_moderation_restored'::character varying, 'verification_request_moderation_approved'::character varying, 'verification_request_moderation_rejected'::character varying, 'relationship_request_received'::character varying, 'relationship_request_accepted'::character varying, 'relationship_request_declined'::character varying, 'quote_change_requested'::character varying, 'quote_approved'::character varying, 'quote_declined'::character varying, 'service_completion_issue_reported'::character varying, 'customer_recommendation_published'::character varying]::text[])", name: "notifications_known_type"
     t.check_constraint "status::text = 'unread'::text AND read_at IS NULL OR status::text = 'read'::text AND read_at IS NOT NULL", name: "notifications_read_state"
-    t.check_constraint "status::text = ANY (ARRAY['unread'::character varying, 'read'::character varying]::text[])", name: "notifications_known_status"
+    t.check_constraint "status::text = ANY (ARRAY['unread'::character varying::text, 'read'::character varying::text])", name: "notifications_known_status"
   end
 
   create_table "otp_challenges", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -469,15 +470,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_090000) do
     t.datetime "deleted_at"
     t.text "description"
     t.integer "height", null: false
-    t.datetime "hidden_at"
     t.uuid "media_upload_id", null: false
     t.text "private_key", null: false
     t.uuid "professional_profile_id", null: false
-    t.text "public_key"
-    t.text "rejection_reason"
-    t.datetime "reviewed_at"
     t.uuid "service_id", null: false
-    t.text "status", default: "pending_review", null: false
     t.datetime "submitted_at", null: false
     t.text "title", null: false
     t.datetime "updated_at", null: false
@@ -486,11 +482,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_090000) do
     t.index ["private_key"], name: "index_portfolio_items_on_private_key", unique: true
     t.index ["professional_profile_id", "submitted_at", "id"], name: "idx_portfolio_items_owner_newest", order: { submitted_at: :desc, id: :desc }, where: "(deleted_at IS NULL)"
     t.index ["professional_profile_id"], name: "index_portfolio_items_on_professional_profile_id"
-    t.index ["public_key"], name: "index_portfolio_items_on_public_key", unique: true, where: "(public_key IS NOT NULL)"
     t.index ["service_id"], name: "index_portfolio_items_on_service_id"
     t.check_constraint "byte_size > 0 AND width > 0 AND height > 0", name: "portfolio_items_valid_image"
     t.check_constraint "content_type = ANY (ARRAY['image/jpeg'::text, 'image/png'::text])", name: "portfolio_items_supported_content_type"
-    t.check_constraint "status = ANY (ARRAY['pending_review'::text, 'approved'::text, 'rejected'::text, 'hidden'::text])", name: "portfolio_items_known_status"
   end
 
   create_table "professional_daily_activities", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -528,27 +522,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_090000) do
     t.bigint "byte_size", null: false
     t.text "content_type", default: "image/jpeg", null: false
     t.datetime "created_at", null: false
+    t.datetime "deleted_at"
     t.integer "height", null: false
-    t.datetime "hidden_at"
     t.uuid "media_upload_id", null: false
     t.text "private_key", null: false
     t.uuid "professional_profile_id", null: false
-    t.text "public_key"
-    t.text "rejection_reason"
-    t.datetime "reviewed_at"
-    t.text "status", default: "pending_review", null: false
     t.datetime "submitted_at", null: false
     t.datetime "updated_at", null: false
     t.integer "width", null: false
+    t.index ["deleted_at"], name: "index_professional_profile_photos_on_deleted_at"
     t.index ["media_upload_id"], name: "index_professional_profile_photos_on_media_upload_id", unique: true
     t.index ["private_key"], name: "index_professional_profile_photos_on_private_key", unique: true
-    t.index ["professional_profile_id"], name: "idx_profile_photos_one_approved", unique: true, where: "(status = 'approved'::text)"
-    t.index ["professional_profile_id"], name: "idx_profile_photos_one_pending", unique: true, where: "(status = 'pending_review'::text)"
     t.index ["professional_profile_id"], name: "index_professional_profile_photos_on_professional_profile_id"
-    t.index ["public_key"], name: "index_professional_profile_photos_on_public_key", unique: true, where: "(public_key IS NOT NULL)"
     t.check_constraint "byte_size > 0 AND width >= 1 AND width <= 1024 AND height >= 1 AND height <= 1536", name: "professional_profile_photos_valid_variant"
     t.check_constraint "content_type = 'image/jpeg'::text", name: "professional_profile_photos_jpeg_only"
-    t.check_constraint "status = ANY (ARRAY['pending_review'::text, 'approved'::text, 'rejected'::text, 'hidden'::text, 'superseded'::text])", name: "professional_profile_photos_known_status"
   end
 
   create_table "professional_profile_revisions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -561,24 +548,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_090000) do
     t.text "instagram_url"
     t.uuid "professional_profile_id", null: false
     t.text "profile_type", default: "self_service", null: false
-    t.text "rejection_reason"
-    t.datetime "reviewed_at"
-    t.text "status", default: "draft", null: false
-    t.datetime "submitted_at"
     t.datetime "updated_at", null: false
     t.integer "version", null: false
     t.text "whatsapp_e164"
     t.integer "years_experience"
     t.text "youtube_url"
     t.index ["coverage_city_code"], name: "index_professional_profile_revisions_on_coverage_city_code"
-    t.index ["professional_profile_id", "profile_type"], name: "idx_profile_revisions_one_working_per_type", unique: true, where: "(status = ANY (ARRAY['draft'::text, 'pending_review'::text]))"
     t.index ["professional_profile_id", "version"], name: "idx_profile_revisions_unique_version", unique: true
     t.index ["professional_profile_id"], name: "idx_on_professional_profile_id_7926e53c9d"
     t.check_constraint "bio IS NULL OR char_length(btrim(bio)) >= 1 AND char_length(btrim(bio)) <= 2500", name: "professional_profile_revisions_bio_length"
     t.check_constraint "char_length(btrim(display_name)) >= 3 AND char_length(btrim(display_name)) <= 70", name: "professional_profile_revisions_display_name_length"
     t.check_constraint "headline IS NULL OR char_length(btrim(headline)) >= 1 AND char_length(btrim(headline)) <= 120", name: "professional_profile_revisions_headline_length"
     t.check_constraint "profile_type = ANY (ARRAY['self_service'::text, 'external'::text])", name: "professional_profile_revisions_known_profile_type"
-    t.check_constraint "status = ANY (ARRAY['draft'::text, 'pending_review'::text, 'approved'::text, 'rejected'::text, 'superseded'::text])", name: "professional_profile_revisions_known_status"
     t.check_constraint "whatsapp_e164 IS NULL OR whatsapp_e164 ~ '^\\+55[1-9][1-9]9[0-9]{8}$'::text", name: "professional_profile_revisions_whatsapp_format"
     t.check_constraint "years_experience IS NULL OR years_experience >= 0 AND years_experience <= 70", name: "professional_profile_revisions_experience_range"
   end
@@ -608,36 +589,30 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_090000) do
   end
 
   create_table "professional_profiles", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.uuid "approved_photo_id"
-    t.uuid "approved_revision_id"
     t.date "birthdate"
     t.datetime "created_at", null: false
     t.text "creation_source", default: "self_service", null: false
     t.datetime "external_published_at"
+    t.uuid "profile_photo_id"
     t.text "profile_status", default: "draft", null: false
     t.text "public_slug", null: false
     t.datetime "published_at"
-    t.uuid "published_photo_id"
     t.uuid "published_revision_id"
     t.datetime "updated_at", null: false
     t.uuid "user_account_id", null: false
-    t.uuid "working_photo_id"
     t.uuid "working_revision_id"
-    t.index ["approved_photo_id"], name: "index_professional_profiles_on_approved_photo_id", unique: true
-    t.index ["approved_revision_id"], name: "index_professional_profiles_on_approved_revision_id", unique: true
     t.index ["creation_source"], name: "index_professional_profiles_on_creation_source"
     t.index ["external_published_at"], name: "index_professional_profiles_on_external_published_at"
+    t.index ["profile_photo_id"], name: "index_professional_profiles_on_profile_photo_id", unique: true
     t.index ["profile_status"], name: "index_professional_profiles_on_profile_status"
     t.index ["public_slug"], name: "index_professional_profiles_on_public_slug", unique: true
     t.index ["published_at"], name: "index_professional_profiles_on_published_at"
-    t.index ["published_photo_id"], name: "index_professional_profiles_on_published_photo_id", unique: true
     t.index ["published_revision_id"], name: "index_professional_profiles_on_published_revision_id", unique: true
     t.index ["user_account_id"], name: "index_professional_profiles_on_user_account_id", unique: true
-    t.index ["working_photo_id"], name: "index_professional_profiles_on_working_photo_id", unique: true
     t.index ["working_revision_id"], name: "index_professional_profiles_on_working_revision_id", unique: true
     t.check_constraint "creation_source = 'external'::text OR external_published_at IS NULL", name: "professional_profiles_external_publication_source"
     t.check_constraint "creation_source = ANY (ARRAY['self_service'::text, 'external'::text])", name: "professional_profiles_known_creation_source"
-    t.check_constraint "profile_status = ANY (ARRAY['draft'::text, 'pending_review'::text, 'published'::text, 'suspended'::text])", name: "professional_profiles_known_status"
+    t.check_constraint "profile_status = ANY (ARRAY['draft'::text, 'published'::text, 'suspended'::text])", name: "professional_profiles_known_status"
     t.check_constraint "public_slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'::text", name: "professional_profiles_public_slug_format"
   end
 
@@ -760,7 +735,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_090000) do
     t.check_constraint "quote_number > 0", name: "quotes_positive_number"
     t.check_constraint "status::text = 'draft'::text OR customer_phone_e164::text ~ '^\\+55[1-9][0-9]9[0-9]{8}$'::text", name: "quotes_customer_brazilian_mobile"
     t.check_constraint "status::text = 'draft'::text OR discount_amount <= subtotal_amount AND total_amount = (subtotal_amount - discount_amount)", name: "quotes_consistent_totals"
-    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying::text, 'saved'::character varying::text, 'shared'::character varying::text, 'change_requested'::character varying::text, 'approved'::character varying::text, 'declined'::character varying::text])", name: "quotes_known_status"
+    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying, 'saved'::character varying, 'shared'::character varying, 'change_requested'::character varying, 'approved'::character varying, 'declined'::character varying, 'completed'::character varying, 'cancelled'::character varying]::text[])", name: "quotes_known_status"
     t.check_constraint "subtotal_amount >= 0::numeric AND discount_amount >= 0::numeric AND total_amount >= 0::numeric", name: "quotes_nonnegative_amounts"
   end
 
@@ -843,20 +818,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_090000) do
     t.text "cancellation_reason"
     t.datetime "cancelled_at"
     t.datetime "completed_at"
-    t.string "completion_confirmed_by", limit: 20
-    t.datetime "completion_issue_at"
-    t.text "completion_issue_message"
-    t.datetime "completion_requested_at"
     t.datetime "created_at", null: false
+    t.text "customer_feedback_message"
     t.uuid "quote_id", null: false
     t.string "status", limit: 24, default: "approved", null: false
     t.datetime "updated_at", null: false
     t.index ["quote_id"], name: "index_service_jobs_on_quote_id", unique: true
     t.index ["status", "updated_at"], name: "index_service_jobs_on_status_and_updated_at"
     t.check_constraint "cancellation_reason IS NULL OR char_length(btrim(cancellation_reason)) >= 1 AND char_length(btrim(cancellation_reason)) <= 700", name: "service_jobs_cancellation_reason_length"
-    t.check_constraint "completion_issue_message IS NULL OR char_length(btrim(completion_issue_message)) >= 1 AND char_length(btrim(completion_issue_message)) <= 700", name: "service_jobs_completion_issue_message_length"
-    t.check_constraint "status::text = 'completed'::text AND (completion_confirmed_by::text = ANY (ARRAY['customer'::character varying, 'professional'::character varying]::text[])) OR status::text <> 'completed'::text AND completion_confirmed_by IS NULL", name: "service_jobs_consistent_completion_confirmer"
-    t.check_constraint "status::text = ANY (ARRAY['approved'::character varying::text, 'completion_requested'::character varying::text, 'completion_issue'::character varying::text, 'completed'::character varying::text, 'cancelled'::character varying::text])", name: "service_jobs_known_status"
+    t.check_constraint "customer_feedback_message IS NULL OR char_length(btrim(customer_feedback_message)) >= 1 AND char_length(btrim(customer_feedback_message)) <= 700", name: "service_jobs_customer_feedback_message_length"
+    t.check_constraint "status::text = ANY (ARRAY['approved'::character varying, 'completed'::character varying, 'cancelled'::character varying]::text[])", name: "service_jobs_known_status"
   end
 
   create_table "services", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -991,7 +962,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_090000) do
   add_foreign_key "customers", "professional_profiles", column: "professional_id"
   add_foreign_key "media_uploads", "professional_profiles"
   add_foreign_key "moderation_actions", "user_accounts", column: "admin_user_id"
-  add_foreign_key "moderation_media_access_events", "user_accounts", column: "admin_user_id"
   add_foreign_key "neighborhoods", "cities", column: "city_code", primary_key: "code"
   add_foreign_key "notifications", "user_accounts", column: "recipient_user_account_id", on_delete: :cascade
   add_foreign_key "portfolio_items", "media_uploads"
@@ -1007,10 +977,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_090000) do
   add_foreign_key "professional_profile_service_areas", "professional_profile_revisions"
   add_foreign_key "professional_profile_services", "professional_profile_revisions"
   add_foreign_key "professional_profile_services", "services"
-  add_foreign_key "professional_profiles", "professional_profile_photos", column: "approved_photo_id"
-  add_foreign_key "professional_profiles", "professional_profile_photos", column: "published_photo_id"
-  add_foreign_key "professional_profiles", "professional_profile_photos", column: "working_photo_id"
-  add_foreign_key "professional_profiles", "professional_profile_revisions", column: "approved_revision_id"
+  add_foreign_key "professional_profiles", "professional_profile_photos", column: "profile_photo_id"
   add_foreign_key "professional_profiles", "professional_profile_revisions", column: "published_revision_id"
   add_foreign_key "professional_profiles", "professional_profile_revisions", column: "working_revision_id"
   add_foreign_key "professional_profiles", "user_accounts"

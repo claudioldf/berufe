@@ -39,7 +39,6 @@ class ProfessionalRelationshipResponder
       @notifier.call(
         recipient: relationship.initiator_professional.user_account,
         notification_type: "relationship_request_#{normalized_response}",
-        route: "/app/professional/profile?tab=relacoes",
         idempotency_key: "relationship:#{relationship.id}:#{normalized_response}",
         occurred_at: now
       )

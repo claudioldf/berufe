@@ -1,5 +1,5 @@
 <script setup lang="ts">
-defineProps<{
+const props = defineProps<{
   page: number;
   totalPages: number;
   loading?: boolean;
@@ -8,6 +8,17 @@ defineProps<{
 defineEmits<{
   page: [value: number];
 }>();
+
+const previousBlockedReason = computed(() => {
+  if (props.loading) return "Aguarde o carregamento dos clientes terminar.";
+  if (props.page <= 1) return "Você já está na primeira página.";
+  return null;
+});
+const nextBlockedReason = computed(() => {
+  if (props.loading) return "Aguarde o carregamento dos clientes terminar.";
+  if (props.page >= props.totalPages) return "Você já está na última página.";
+  return null;
+});
 </script>
 
 <template>
@@ -16,23 +27,27 @@ defineEmits<{
     class="customer-pagination"
     aria-label="Paginação dos clientes"
   >
-    <button
-      type="button"
-      :disabled="page <= 1 || loading"
-      aria-label="Página anterior"
-      @click="$emit('page', page - 1)"
-    >
-      <UIcon name="i-lucide-chevron-left" aria-hidden="true" />
-    </button>
+    <DesignSystemDisabledTooltip :reason="previousBlockedReason">
+      <button
+        type="button"
+        :disabled="page <= 1 || loading"
+        aria-label="Página anterior"
+        @click="$emit('page', page - 1)"
+      >
+        <UIcon name="i-lucide-chevron-left" aria-hidden="true" />
+      </button>
+    </DesignSystemDisabledTooltip>
     <span>Página {{ page }} de {{ totalPages }}</span>
-    <button
-      type="button"
-      :disabled="page >= totalPages || loading"
-      aria-label="Próxima página"
-      @click="$emit('page', page + 1)"
-    >
-      <UIcon name="i-lucide-chevron-right" aria-hidden="true" />
-    </button>
+    <DesignSystemDisabledTooltip :reason="nextBlockedReason">
+      <button
+        type="button"
+        :disabled="page >= totalPages || loading"
+        aria-label="Próxima página"
+        @click="$emit('page', page + 1)"
+      >
+        <UIcon name="i-lucide-chevron-right" aria-hidden="true" />
+      </button>
+    </DesignSystemDisabledTooltip>
   </nav>
 </template>
 

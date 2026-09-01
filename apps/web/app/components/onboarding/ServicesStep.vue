@@ -1,7 +1,12 @@
 <script setup lang="ts">
-import { ref, shallowRef } from "vue";
+import { computed, ref, useTemplateRef } from "vue";
 import type { ProfessionalProfileDraft, Service } from "~/types";
 import { validateOnboardingServices } from "~/composables/useProfessionalOnboarding";
+import { useInlineFormValidation } from "~/composables/useInlineFormValidation";
+import {
+  normalizePrimaryService,
+  toggleProfessionalService,
+} from "~/utils/services";
 
 const props = defineProps<{
   draft: ProfessionalProfileDraft;
@@ -17,31 +22,51 @@ const emit = defineEmits<{
 const form = ref<ProfessionalProfileDraft>({
   ...props.draft,
   selectedServices: [...props.draft.selectedServices],
+  primaryService: normalizePrimaryService(
+    props.draft.selectedServices,
+    props.draft.primaryService,
+  ),
   serviceNotes: { ...props.draft.serviceNotes },
   selectedNeighborhoodCodes: [...props.draft.selectedNeighborhoodCodes],
 });
-const error = shallowRef("");
+const formRoot = useTemplateRef<HTMLFormElement>("formRoot");
+const validation = computed(() => validateOnboardingServices(form.value));
+const isValid = computed(() =>
+  Object.values(validation.value).every((fieldError) => !fieldError),
+);
+const { validationAttempted, revealValidation } =
+  useInlineFormValidation(formRoot);
+const displayedErrors = computed(() =>
+  validationAttempted.value ? validation.value : undefined,
+);
+const error = computed(
+  () =>
+    (validationAttempted.value
+      ? Object.values(validation.value).find(Boolean)
+      : "") ?? "",
+);
+const savingReason = computed(() =>
+  props.saving ? "Aguarde o salvamento desta etapa terminar." : null,
+);
 
 function toggleService(name: string) {
-  if (form.value.selectedServices.includes(name)) {
-    if (form.value.selectedServices.length === 1) return;
-    form.value.selectedServices = form.value.selectedServices.filter(
-      (service) => service !== name,
-    );
-    if (form.value.primaryService === name) {
-      form.value.primaryService = form.value.selectedServices[0] ?? "";
-    }
-  } else {
-    form.value.selectedServices.push(name);
-    if (!form.value.primaryService) form.value.primaryService = name;
-  }
-  error.value = "";
+  if (
+    form.value.selectedServices.includes(name) &&
+    form.value.selectedServices.length === 1
+  )
+    return;
+
+  const selection = toggleProfessionalService(
+    form.value.selectedServices,
+    form.value.primaryService,
+    name,
+  );
+  form.value.selectedServices = selection.selectedServices;
+  form.value.primaryService = selection.primaryService;
 }
 
 function submit() {
-  const errors = validateOnboardingServices(form.value);
-  error.value = Object.values(errors).find(Boolean) ?? "";
-  if (error.value) return;
+  if (!revealValidation(isValid.value)) return;
   emit("complete", {
     ...form.value,
     selectedServices: [...form.value.selectedServices],
@@ -62,7 +87,12 @@ function submit() {
       </p>
     </header>
 
-    <form class="onboarding-step-form" @submit.prevent="submit">
+    <form
+      ref="formRoot"
+      class="onboarding-step-form"
+      novalidate
+      @submit.prevent="submit"
+    >
       <p
         v-if="error || props.serverError"
         class="onboarding-step-error"
@@ -75,9 +105,13 @@ function submit() {
         <DashboardProfileServicesSection
           v-model="form"
           :services="services"
+          :error="displayedErrors?.services"
           @toggle="toggleService"
         />
-        <DashboardProfileCoverageSection v-model="form" @dirty="error = ''" />
+        <DashboardProfileCoverageSection
+          v-model="form"
+          :error="displayedErrors?.coverage"
+        />
       </DashboardProfileFormLayout>
       <footer class="onboarding-step-actions">
         <UButton
@@ -89,15 +123,17 @@ function submit() {
         >
           Voltar
         </UButton>
-        <UButton
-          type="submit"
-          color="primary"
-          trailing-icon="i-lucide-arrow-right"
-          :loading="props.saving"
-          :disabled="props.saving"
-        >
-          Salvar e continuar
-        </UButton>
+        <DesignSystemDisabledTooltip :reason="savingReason">
+          <UButton
+            type="submit"
+            color="primary"
+            trailing-icon="i-lucide-arrow-right"
+            :loading="props.saving"
+            :disabled="props.saving"
+          >
+            Salvar e continuar
+          </UButton>
+        </DesignSystemDisabledTooltip>
       </footer>
     </form>
   </section>

@@ -33,6 +33,10 @@ const FieldStub = defineComponent({
   template:
     '<label>{{ label }}<slot :control-id="label" :described-by="undefined" :invalid="false" :required="false" /></label>',
 });
+const TooltipStub = defineComponent({
+  props: { reason: { type: String, default: null } },
+  template: `<div :data-tooltip-reason="reason ?? ''"><slot /></div>`,
+});
 
 afterEach(() => vi.useRealTimers());
 
@@ -95,6 +99,7 @@ describe("customer directory", () => {
           DesignSystemSurfaceCard: SurfaceCardStub,
           DesignSystemFormField: FieldStub,
           DesignSystemEyebrow: true,
+          DesignSystemDisabledTooltip: TooltipStub,
           UIcon: true,
         },
       },
@@ -118,5 +123,14 @@ describe("customer directory", () => {
     expect(wrapper.text()).toContain(
       "orçamentos anteriores continuam como estavam",
     );
+
+    await wrapper.setProps({ saving: true });
+    const save = wrapper.get('button[type="submit"]');
+    expect(save.attributes("disabled")).toBeDefined();
+    expect(
+      save.element
+        .closest("[data-tooltip-reason]")
+        ?.getAttribute("data-tooltip-reason"),
+    ).toBe("Aguarde o salvamento dos dados do cliente terminar.");
   });
 });

@@ -1,5 +1,5 @@
 import { mount } from "@vue/test-utils";
-import { nextTick } from "vue";
+import { defineComponent, nextTick } from "vue";
 import CodeStep from "~/components/auth/CodeStep.vue";
 import PhoneStep from "~/components/auth/PhoneStep.vue";
 import RegistrationStep from "~/components/auth/RegistrationStep.vue";
@@ -8,6 +8,11 @@ import {
   resolveProfessionalEntryPath,
   resolveProfessionalAuthIntent,
 } from "~/utils/professional-auth";
+
+const TooltipStub = defineComponent({
+  props: { reason: { type: String, default: null } },
+  template: `<div :data-tooltip-reason="reason ?? ''"><slot /></div>`,
+});
 
 describe("phone authentication components", () => {
   it.each([
@@ -65,7 +70,7 @@ describe("phone authentication components", () => {
     expect(resolveProfessionalAuthIntent("unexpected")).toBe("login");
   });
 
-  it("reveals and focuses invalid login fields without emitting submit", async () => {
+  it("reveals, focuses, and scrolls to an invalid login field", async () => {
     const wrapper = mount(PhoneStep, {
       attachTo: document.body,
       props: {
@@ -83,14 +88,20 @@ describe("phone authentication components", () => {
         },
       },
     });
+    const phone = wrapper.get<HTMLInputElement>("#auth-phone");
+    const scrollIntoView = vi.fn();
+    phone.element.scrollIntoView = scrollIntoView;
 
     await wrapper.get("form").trigger("submit");
     await nextTick();
 
-    const phone = wrapper.get<HTMLInputElement>("#auth-phone");
     expect(wrapper.get('[role="alert"]').text()).toContain("número");
     expect(phone.attributes("aria-invalid")).toBe("true");
     expect(document.activeElement).toBe(phone.element);
+    expect(scrollIntoView).toHaveBeenCalledWith({
+      block: "center",
+      inline: "nearest",
+    });
     expect(wrapper.emitted("submit")).toBeUndefined();
     wrapper.unmount();
   });
@@ -134,6 +145,7 @@ describe("phone authentication components", () => {
       global: {
         stubs: {
           DesignSystemEyebrow: { template: "<span><slot /></span>" },
+          DesignSystemDisabledTooltip: TooltipStub,
           UButton: { template: "<button><slot /></button>" },
           UIcon: true,
         },
@@ -156,9 +168,19 @@ describe("phone authentication components", () => {
     await wrapper.setProps({ cooldown: 30 });
     expect(resend.text()).toBe("Reenviar código em 30s");
     expect(resend.attributes()).toHaveProperty("disabled");
+    expect(
+      resend.element
+        .closest("[data-tooltip-reason]")
+        ?.getAttribute("data-tooltip-reason"),
+    ).toBe("Aguarde 30s para solicitar outro código.");
 
     await wrapper.setProps({ cooldown: 3600 });
     expect(resend.text()).toBe("Reenviar código amanhã");
+    expect(
+      resend.element
+        .closest("[data-tooltip-reason]")
+        ?.getAttribute("data-tooltip-reason"),
+    ).toBe("O limite de reenvios foi atingido. Tente novamente amanhã.");
 
     await wrapper.setProps({ error: "Código inválido ou expirado." });
     expect(wrapper.get('[role="alert"]').text()).toContain("Código inválido");
@@ -177,6 +199,7 @@ describe("phone authentication components", () => {
       global: {
         stubs: {
           DesignSystemEyebrow: { template: "<span><slot /></span>" },
+          DesignSystemDisabledTooltip: TooltipStub,
           UButton: { template: "<button><slot /></button>" },
           UIcon: true,
         },
@@ -201,6 +224,7 @@ describe("phone authentication components", () => {
       global: {
         stubs: {
           DesignSystemEyebrow: { template: "<span><slot /></span>" },
+          DesignSystemDisabledTooltip: TooltipStub,
           NuxtLink: { template: "<a><slot /></a>" },
           UButton: { template: "<button><slot /></button>" },
           UIcon: true,
@@ -231,6 +255,7 @@ describe("phone authentication components", () => {
       global: {
         stubs: {
           DesignSystemEyebrow: { template: "<span><slot /></span>" },
+          DesignSystemDisabledTooltip: TooltipStub,
           NuxtLink: { template: "<a><slot /></a>" },
           UButton: {
             props: ["disabled", "loading"],
@@ -253,6 +278,12 @@ describe("phone authentication components", () => {
     await wrapper.setProps({ loading: true, error: "Revise os campos." });
     expect(wrapper.get("button").attributes("disabled")).toBeDefined();
     expect(wrapper.get("button").attributes("data-loading")).toBe("true");
+    expect(
+      wrapper
+        .get("button")
+        .element.closest("[data-tooltip-reason]")
+        ?.getAttribute("data-tooltip-reason"),
+    ).toBe("Aguarde a criação do perfil terminar.");
     expect(wrapper.get('[role="alert"]').text()).toContain("Revise os campos.");
   });
 });

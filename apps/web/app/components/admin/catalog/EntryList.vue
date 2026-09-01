@@ -4,6 +4,7 @@ import type { CatalogEntry } from "~/types/catalog";
 const props = defineProps<{
   entries: readonly CatalogEntry[];
   disabled?: boolean;
+  disabledReason?: string | null;
 }>();
 
 const emit = defineEmits<{
@@ -25,22 +26,32 @@ const emit = defineEmits<{
       class="catalog-table__row"
     >
       <span class="catalog-table__order">
-        <button
-          type="button"
-          :aria-label="`Mover ${entry.name} para cima`"
-          :disabled="props.disabled || index === 0"
-          @click="emit('move', entry.id, -1)"
+        <DesignSystemDisabledTooltip
+          :reason="index === 0 ? null : props.disabledReason"
         >
-          <UIcon name="i-lucide-chevron-up" />
-        </button>
-        <button
-          type="button"
-          :aria-label="`Mover ${entry.name} para baixo`"
-          :disabled="props.disabled || index === props.entries.length - 1"
-          @click="emit('move', entry.id, 1)"
+          <button
+            type="button"
+            :aria-label="`Mover ${entry.name} para cima`"
+            :disabled="props.disabled || index === 0"
+            @click="emit('move', entry.id, -1)"
+          >
+            <UIcon name="i-lucide-chevron-up" />
+          </button>
+        </DesignSystemDisabledTooltip>
+        <DesignSystemDisabledTooltip
+          :reason="
+            index === props.entries.length - 1 ? null : props.disabledReason
+          "
         >
-          <UIcon name="i-lucide-chevron-down" />
-        </button>
+          <button
+            type="button"
+            :aria-label="`Mover ${entry.name} para baixo`"
+            :disabled="props.disabled || index === props.entries.length - 1"
+            @click="emit('move', entry.id, 1)"
+          >
+            <UIcon name="i-lucide-chevron-down" />
+          </button>
+        </DesignSystemDisabledTooltip>
         <small>{{ index + 1 }}</small>
       </span>
       <span class="catalog-table__name">
@@ -48,23 +59,27 @@ const emit = defineEmits<{
         <small v-if="entry.description">{{ entry.description }}</small>
       </span>
       <code class="catalog-table__identifier">{{ entry.identifier }}</code>
-      <button
-        type="button"
-        class="catalog-table__status"
-        :class="{ 'catalog-table__status--inactive': !entry.active }"
-        :disabled="props.disabled"
-        @click="emit('toggle', entry.id)"
-      >
-        <i />{{ entry.active ? "Ativo" : "Inativo" }}
-      </button>
-      <button
-        type="button"
-        class="catalog-table__edit"
-        :disabled="props.disabled"
-        @click="emit('edit', entry)"
-      >
-        <UIcon name="i-lucide-pencil" /> Editar
-      </button>
+      <DesignSystemDisabledTooltip :reason="props.disabledReason">
+        <button
+          type="button"
+          class="catalog-table__status"
+          :class="{ 'catalog-table__status--inactive': !entry.active }"
+          :disabled="props.disabled"
+          @click="emit('toggle', entry.id)"
+        >
+          <i />{{ entry.active ? "Ativo" : "Inativo" }}
+        </button>
+      </DesignSystemDisabledTooltip>
+      <DesignSystemDisabledTooltip :reason="props.disabledReason">
+        <button
+          type="button"
+          class="catalog-table__edit"
+          :disabled="props.disabled"
+          @click="emit('edit', entry)"
+        >
+          <UIcon name="i-lucide-pencil" /> Editar
+        </button>
+      </DesignSystemDisabledTooltip>
     </div>
     <div v-if="props.entries.length === 0" class="catalog-table__empty">
       <UIcon name="i-lucide-search-x" />

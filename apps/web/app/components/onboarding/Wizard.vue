@@ -204,10 +204,7 @@ watch(
         ),
       },
       Boolean(
-        workspace.profile.photo.hasPublishedPhoto ||
-        ["pending_review", "approved"].includes(
-          workspace.profile.photo.current?.status ?? "",
-        ),
+        workspace.profile.photo.hasPhoto || workspace.profile.photo.current,
       ),
       workspace.profile.verification.current?.submittedAt ?? null,
     );

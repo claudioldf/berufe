@@ -24,6 +24,24 @@ module Api
           )
         end
 
+        def update
+          profile = owned_profile!
+          item = profile.portfolio_items.active.find(params[:id])
+          PortfolioItemUpdater.new.call(
+            profile:,
+            item:,
+            attributes: portfolio_item_params.to_h.symbolize_keys
+          )
+          render json: workspace_response(profile)
+        rescue PortfolioItemUpdater::Invalid => error
+          render_api_error(
+            code: "validation_failed",
+            message: "Revise os dados do trabalho.",
+            status: :unprocessable_entity,
+            field_errors: error.field_errors
+          )
+        end
+
         def destroy
           profile = owned_profile!
           item = profile.portfolio_items.active.find(params[:id])

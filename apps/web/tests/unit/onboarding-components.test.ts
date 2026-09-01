@@ -74,6 +74,10 @@ const ButtonStub = defineComponent({
     </component>
   `,
 });
+const TooltipStub = defineComponent({
+  props: { reason: { type: String, default: null } },
+  template: `<div :data-tooltip-reason="reason ?? ''"><slot /></div>`,
+});
 
 describe("onboarding step contracts", () => {
   it("offers review, public profile, and dashboard actions after publishing", async () => {
@@ -83,13 +87,14 @@ describe("onboarding step contracts", () => {
         stubs: {
           DesignSystemSurfaceCard: { template: "<section><slot /></section>" },
           DesignSystemEyebrow: { template: "<span><slot /></span>" },
+          DesignSystemDisabledTooltip: TooltipStub,
           UButton: ButtonStub,
           UIcon: true,
         },
       },
     });
 
-    const publicProfile = wrapper.get('a[href="/profissionais/ana-souza"]');
+    const publicProfile = wrapper.get('a[href="/be/ana-souza"]');
     expect(publicProfile.text()).toContain("Ver perfil público");
     expect(publicProfile.attributes("target")).toBe("_blank");
     expect(publicProfile.attributes("rel")).toBe("noopener noreferrer");
@@ -111,6 +116,7 @@ describe("onboarding step contracts", () => {
         stubs: {
           DesignSystemSurfaceCard: { template: "<section><slot /></section>" },
           DesignSystemEyebrow: { template: "<span><slot /></span>" },
+          DesignSystemDisabledTooltip: TooltipStub,
           UButton: ButtonStub,
           UIcon: true,
         },
@@ -154,6 +160,53 @@ describe("onboarding step contracts", () => {
 
     await skip!.trigger("click");
     expect(wrapper.emitted("skip")).toHaveLength(1);
+
+    await wrapper.setProps({ saving: true });
+    for (const button of actions.findAll("button")) {
+      expect(button.attributes("disabled")).toBeDefined();
+      expect(
+        button.element
+          .closest("[data-tooltip-reason]")
+          ?.getAttribute("data-tooltip-reason"),
+      ).toBe("Aguarde o envio da verificação terminar.");
+    }
+  });
+
+  it("explains save-in-progress states throughout onboarding", () => {
+    const shared = {
+      stubs: { DesignSystemDisabledTooltip: TooltipStub },
+    };
+    const profile = mount(ProfileStep, {
+      props: { draft: profileDraft(), saving: true },
+      global: shared,
+    });
+    const servicesStep = mount(ServicesStep, {
+      props: { draft: profileDraft(), services, saving: true },
+      global: shared,
+    });
+    const verification = mount(IdentityUploadForm, {
+      props: { submitting: true },
+      global: shared,
+    });
+
+    expect(
+      profile
+        .get('button[type="submit"]')
+        .element.closest("[data-tooltip-reason]")
+        ?.getAttribute("data-tooltip-reason"),
+    ).toBe("Aguarde o salvamento desta etapa terminar.");
+    expect(
+      servicesStep
+        .get('button[type="submit"]')
+        .element.closest("[data-tooltip-reason]")
+        ?.getAttribute("data-tooltip-reason"),
+    ).toBe("Aguarde o salvamento desta etapa terminar.");
+    expect(
+      verification
+        .get('button[type="submit"]')
+        .element.closest("[data-tooltip-reason]")
+        ?.getAttribute("data-tooltip-reason"),
+    ).toBe("Aguarde o envio do documento terminar.");
   });
 
   it("lists services alphabetically", () => {
@@ -175,8 +228,8 @@ describe("onboarding step contracts", () => {
         draft: profileDraft({ birthdate: "" }),
         photo: {
           current: null,
-          hasPublishedPhoto: true,
-          publishedImageUrl: null,
+          hasPhoto: true,
+          imageUrl: null,
           latestUpload: null,
         },
       },
@@ -185,6 +238,45 @@ describe("onboarding step contracts", () => {
     await wrapper.get("form").trigger("submit");
 
     expect(wrapper.get('[role="alert"]').text()).toContain("nascimento");
+    expect(
+      wrapper.get('input[name="birthdate"]').attributes("aria-invalid"),
+    ).toBe("true");
+    expect(wrapper.get('label[for="profile-birthdate"]').classes()).toContain(
+      "form-field--invalid",
+    );
+    expect(wrapper.get("#profile-birthdate-error").text()).toContain(
+      "nascimento",
+    );
+    expect(wrapper.emitted("complete")).toBeUndefined();
+  });
+
+  it("reveals every invalid required profile field inline", async () => {
+    const wrapper = mount(ProfileStep, {
+      props: {
+        draft: profileDraft({ name: "", birthdate: "" }),
+      },
+    });
+
+    await wrapper.get("form").trigger("submit");
+
+    expect(wrapper.get("form").attributes()).toHaveProperty("novalidate");
+    expect(wrapper.get('input[name="name"]').attributes("aria-invalid")).toBe(
+      "true",
+    );
+    expect(
+      wrapper.get('input[name="birthdate"]').attributes("aria-invalid"),
+    ).toBe("true");
+    expect(
+      wrapper.get(".profile-photo-control").attributes("aria-invalid"),
+    ).toBe("true");
+    expect(wrapper.get(".profile-photo-control").classes()).toContain(
+      "profile-photo-control--invalid",
+    );
+    expect(wrapper.get("#profile-name-error").text()).toContain("nome");
+    expect(wrapper.get("#profile-birthdate-error").text()).toContain(
+      "nascimento",
+    );
+    expect(wrapper.get("#profile-photo-status").text()).toContain("foto");
     expect(wrapper.emitted("complete")).toBeUndefined();
   });
 
@@ -195,8 +287,8 @@ describe("onboarding step contracts", () => {
         draft,
         photo: {
           current: null,
-          hasPublishedPhoto: true,
-          publishedImageUrl: null,
+          hasPhoto: true,
+          imageUrl: null,
           latestUpload: null,
         },
       },
@@ -239,10 +331,121 @@ describe("onboarding step contracts", () => {
 
     await wrapper.get("form").trigger("submit");
     expect(wrapper.get('[role="alert"]').text()).toContain("serviço");
+    expect(wrapper.get(".service-picker").attributes("aria-invalid")).toBe(
+      "true",
+    );
+    expect(wrapper.get(".service-picker").classes()).toContain(
+      "service-picker--invalid",
+    );
+    expect(wrapper.get(".service-picker").attributes("aria-describedby")).toBe(
+      "profile-service-selection-error",
+    );
+    expect(wrapper.get("#profile-service-selection-error").text()).toContain(
+      "serviço",
+    );
+    expect(wrapper.find('select[name="primary-service"]').exists()).toBe(false);
 
     await wrapper.get('button[aria-pressed="false"]').trigger("click");
+    expect(wrapper.get(".service-picker").attributes("aria-invalid")).toBe(
+      "false",
+    );
+    expect(wrapper.get(".service-picker").classes()).not.toContain(
+      "service-picker--invalid",
+    );
+    expect(wrapper.find("#profile-service-selection-error").exists()).toBe(
+      false,
+    );
     await wrapper.get("form").trigger("submit");
 
     expect(wrapper.emitted("complete")).toHaveLength(1);
+    const payload = wrapper.emitted("complete")?.[0]?.[0] as
+      ProfessionalProfileDraft | undefined;
+    expect(payload?.primaryService).toBe(payload?.selectedServices[0]);
+    expect(wrapper.find('select[name="primary-service"]').exists()).toBe(false);
+  });
+
+  it("asks for a featured service only when multiple services are selected", async () => {
+    const wrapper = mount(ServicesStep, {
+      props: {
+        draft: profileDraft({
+          coverageCityCode: "4209102",
+          coversWholeCity: true,
+        }),
+        services,
+      },
+    });
+    const buttonNamed = (name: string) =>
+      wrapper.findAll("button").find((button) => button.text().includes(name))!;
+
+    await buttonNamed("Eletricista").trigger("click");
+    expect(wrapper.text()).not.toContain("Serviço em destaque");
+
+    await buttonNamed("Diarista").trigger("click");
+    expect(wrapper.text()).toContain("Serviço em destaque");
+    expect(wrapper.text()).toContain("Todos continuam disponíveis nas buscas.");
+
+    const featuredService = wrapper.get<HTMLSelectElement>(
+      'select[name="primary-service"]',
+    );
+    await featuredService.setValue("Diarista");
+    await wrapper.get("form").trigger("submit");
+
+    const payload = wrapper.emitted("complete")?.[0]?.[0] as
+      ProfessionalProfileDraft | undefined;
+    expect(payload?.selectedServices).toEqual(["Eletricista", "Diarista"]);
+    expect(payload?.primaryService).toBe("Diarista");
+  });
+
+  it("features the next service when the current featured service is removed", async () => {
+    const wrapper = mount(ServicesStep, {
+      props: {
+        draft: profileDraft({
+          selectedServices: ["Eletricista", "Diarista"],
+          primaryService: "Eletricista",
+          coverageCityCode: "4209102",
+          coversWholeCity: true,
+        }),
+        services,
+      },
+    });
+    const electrician = wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("Eletricista"))!;
+
+    expect(wrapper.text()).toContain("Serviço em destaque");
+    await electrician.trigger("click");
+    expect(wrapper.text()).not.toContain("Serviço em destaque");
+    await wrapper.get("form").trigger("submit");
+
+    const payload = wrapper.emitted("complete")?.[0]?.[0] as
+      ProfessionalProfileDraft | undefined;
+    expect(payload?.selectedServices).toEqual(["Diarista"]);
+    expect(payload?.primaryService).toBe("Diarista");
+  });
+
+  it("reveals service and coverage errors on their controls", async () => {
+    const wrapper = mount(ServicesStep, {
+      props: {
+        draft: profileDraft(),
+        services,
+      },
+    });
+
+    await wrapper.get("form").trigger("submit");
+
+    expect(wrapper.get("form").attributes()).toHaveProperty("novalidate");
+    expect(wrapper.get("#profile-service-selection-error").text()).toContain(
+      "serviço",
+    );
+    expect(
+      wrapper.get('select[name="coverage-state"]').attributes("aria-invalid"),
+    ).toBe("true");
+    expect(
+      wrapper.get('select[name="coverage-city"]').attributes("aria-invalid"),
+    ).toBe("true");
+    expect(wrapper.get('select[name="coverage-state"]').classes()).toContain(
+      "location-coverage-fields__select--invalid",
+    );
+    expect(wrapper.emitted("complete")).toBeUndefined();
   });
 });

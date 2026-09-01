@@ -5,15 +5,29 @@ require "rails_helper"
 RSpec.describe Notification, type: :model do
   let(:account) { create_registered_account("+5547999973001") }
 
-  it "accepts only server-known types, internal routes, and a consistent read state" do
+  it "accepts only server-known types, matching route parameters, and a consistent read state" do
     notification = build_notification(account:)
     expect(notification).to be_valid
 
     notification.notification_type = "customer_authored_copy"
-    notification.route = "https://untrusted.example/activity"
+    notification.route_params = {"unexpected" => "value"}
     notification.status = "read"
     expect(notification).not_to be_valid
-    expect(notification.errors).to include(:notification_type, :route, :read_at)
+    expect(notification.errors).to include(:notification_type, :route_params, :read_at)
+  end
+
+  it "requires exact UUID parameters only for parameterized destinations" do
+    notification = build_notification(account:)
+
+    notification.route_params = {}
+    expect(notification).not_to be_valid
+
+    notification.route_params = {"quote_id" => SecureRandom.uuid, "extra" => SecureRandom.uuid}
+    expect(notification).not_to be_valid
+
+    notification.notification_type = "relationship_request_received"
+    notification.route_params = {}
+    expect(notification).to be_valid
   end
 
   it "keeps read status irreversible" do
@@ -52,8 +66,8 @@ RSpec.describe Notification, type: :model do
       notification_type: "quote_approved",
       title: "Orçamento aprovado",
       description: "Um cliente aprovou um orçamento.",
-      route: "/app/professional/quotes/new?quote=quote-id",
-      idempotency_key: "quote:quote-id:revision:1:approved",
+      route_params: {"quote_id" => "9b1fc90e-7a48-4c06-83de-88f22837435b"},
+      idempotency_key: "quote:9b1fc90e-7a48-4c06-83de-88f22837435b:revision:1:approved",
       occurred_at: Time.current
     )
   end

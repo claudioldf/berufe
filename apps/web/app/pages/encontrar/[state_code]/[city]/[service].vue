@@ -72,7 +72,7 @@ useSchemaOrg([
   defineItemList({
     itemListElement: listing.value.professionals.map((professional) => ({
       name: professional.name,
-      url: `/profissionais/${professional.slug}`,
+      url: buildPublicProfilePath(professional.slug),
     })),
   }),
 ]);
@@ -115,7 +115,7 @@ useSchemaOrg([
           <NuxtLink
             v-for="professional in listing.professionals"
             :key="professional.id"
-            :to="`/profissionais/${professional.slug}`"
+            :to="buildPublicProfilePath(professional.slug)"
             class="listing-card"
           >
             <DesignSystemAvatar

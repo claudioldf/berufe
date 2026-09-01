@@ -16,15 +16,14 @@ class MediaRetentionCleanupJob < ApplicationJob
 
   def cleanup_portfolio_items(cutoff:, storage:)
     PortfolioItem
-      .where("deleted_at <= :cutoff OR (status = 'rejected' AND reviewed_at <= :cutoff)", cutoff:)
+      .where(deleted_at: ..cutoff)
       .find_each do |item|
         item.with_lock do
           item.reload
           eligible_deleted_item = item.deleted_at.present? && item.deleted_at <= cutoff
-          eligible_rejected_item = item.rejected? && item.reviewed_at.present? && item.reviewed_at <= cutoff
-          next unless eligible_deleted_item || eligible_rejected_item
+          next unless eligible_deleted_item
 
-          delete_media_keys(storage:, private_key: item.private_key, public_key: item.public_key)
+          delete_media_key(storage:, private_key: item.private_key)
           upload_id = item.media_upload_id
           item.delete
           delete_upload_if_unattached(upload_id, storage:)
@@ -35,14 +34,13 @@ class MediaRetentionCleanupJob < ApplicationJob
   end
 
   def cleanup_profile_photos(cutoff:, storage:)
-    ProfessionalProfilePhoto.where(status: %w[rejected superseded], reviewed_at: ..cutoff).find_each do |photo|
+    ProfessionalProfilePhoto.where(deleted_at: ..cutoff).find_each do |photo|
       photo.with_lock do
         photo.reload
-        next unless photo.status.in?(%w[rejected superseded])
-        next unless photo.reviewed_at.present? && photo.reviewed_at <= cutoff
+        next unless photo.deleted_at.present? && photo.deleted_at <= cutoff
         next if photo_is_referenced?(photo)
 
-        delete_media_keys(storage:, private_key: photo.private_key, public_key: photo.public_key)
+        delete_media_key(storage:, private_key: photo.private_key)
         upload_id = photo.media_upload_id
         photo.delete
         delete_upload_if_unattached(upload_id, storage:)
@@ -73,14 +71,10 @@ class MediaRetentionCleanupJob < ApplicationJob
   end
 
   def photo_is_referenced?(photo)
-    ProfessionalProfile.where(
-      "working_photo_id = :id OR published_photo_id = :id OR approved_photo_id = :id",
-      id: photo.id
-    ).exists?
+    ProfessionalProfile.where(profile_photo_id: photo.id).exists?
   end
 
-  def delete_media_keys(storage:, private_key:, public_key:)
+  def delete_media_key(storage:, private_key:)
     storage.delete(scope: :private, key: private_key)
-    storage.delete(scope: :public, key: public_key) if public_key.present?
   end
 end

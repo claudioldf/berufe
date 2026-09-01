@@ -18,6 +18,8 @@ x-api-service: &api-service
   depends_on:
     db:
       condition: service_healthy
+    mailcatcher:
+      condition: service_started
 
 services:
   web:
@@ -55,6 +57,8 @@ services:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
+      mailcatcher:
+        condition: service_started
 
   migrate:
     <<: *api-service
@@ -81,6 +85,8 @@ services:
         condition: service_healthy
       api:
         condition: service_healthy
+      mailcatcher:
+        condition: service_started
 
   db:
     image: postgres:18.4-bookworm
@@ -94,6 +100,12 @@ services:
       timeout: 3s
       retries: 12
       start_period: 10s
+
+  mailcatcher:
+    image: dockage/mailcatcher:0.9.0
+    ports:
+      - "1080:1080" # web UI: http://localhost:1080
+      - "1025:1025" # SMTP, also reachable from the host for non-Compose `bin/rails server`
 
 volumes:
   api_bundle:

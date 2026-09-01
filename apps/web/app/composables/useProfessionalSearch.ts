@@ -63,6 +63,7 @@ export async function useProfessionalSearch(options: {
   const loadedPage = shallowRef(1);
   const loadingMore = shallowRef(false);
   const structuredResponse = shallowRef<SearchResponse | null>(null);
+  const isSubmittingSearch = shallowRef(false);
   const isStructuredSearching = shallowRef(false);
   const suppressedRouteState = shallowRef("");
 
@@ -182,6 +183,7 @@ export async function useProfessionalSearch(options: {
   const interaction = computed(() => currentResult.value?.interaction ?? null);
   const isSearching = computed(
     () =>
+      isSubmittingSearch.value ||
       isStructuredSearching.value ||
       (hasSearchTerm.value &&
         currentResponse.value === null &&
@@ -243,12 +245,17 @@ export async function useProfessionalSearch(options: {
 
   async function submitSearch(payload: ExpressionSearchPayload) {
     const expression = payload.expression.trim();
-    if (!expression) return;
+    if (!expression || isSubmittingSearch.value) return;
 
-    await router.push({
-      path: searchLocationPath(toValue(options.location)),
-      query: { expressao: encodeSearchExpression(expression) },
-    });
+    isSubmittingSearch.value = true;
+    try {
+      await router.push({
+        path: searchLocationPath(toValue(options.location)),
+        query: { expressao: encodeSearchExpression(expression) },
+      });
+    } finally {
+      isSubmittingSearch.value = false;
+    }
   }
 
   async function submitStructuredSearch(payload: StructuredSearchPayload) {

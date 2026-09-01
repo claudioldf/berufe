@@ -8,6 +8,7 @@ import {
   fetchPublicProfessionalProfile,
   recordPublicProfessionalProfileView,
 } from "~/services/api/public-discovery";
+import { hydrationOnlyCachedData } from "~/utils/asyncDataCache";
 import { buildPublicProfileWhatsAppUrl } from "~/utils/publicProfiles";
 
 interface SocialLink {
@@ -22,6 +23,7 @@ const client = useApiClient();
 const runtimeConfig = useRuntimeConfig();
 const { share } = useShare();
 const { showToast } = useToast();
+definePageMeta({ alias: "/be/:slug" });
 const requestedSlug = computed(() =>
   String(
     Array.isArray(route.params.slug) ? route.params.slug[0] : route.params.slug,
@@ -35,14 +37,20 @@ const incomingRequestMessage = computed(() => {
   const value = route.query.pedido;
   return Array.isArray(value) ? value[0] : value;
 });
+const loadProfile = () =>
+  fetchPublicProfessionalProfile(
+    client,
+    requestedSlug.value,
+    incomingInteractionToken.value || undefined,
+  );
 const { data: profileResult, error: profileError } = await useAsyncData(
   `public-professional-profile-${requestedSlug.value}`,
-  () =>
-    fetchPublicProfessionalProfile(
-      client,
-      requestedSlug.value,
-      incomingInteractionToken.value || undefined,
-    ),
+  loadProfile,
+  {
+    // Keep the server payload during hydration. A client refresh after mount
+    // replaces stale SWR HTML and keeps profile edits and suspensions current.
+    getCachedData: hydrationOnlyCachedData,
+  },
 );
 if (profileError.value || !profileResult.value) {
   const failure = profileError.value;
@@ -111,7 +119,7 @@ const socialLinks = computed<SocialLink[]>(() => {
 const siteUrlRef = withSiteUrl("/");
 const canonicalUrl = computed(
   () =>
-    `${siteUrlRef.value.replace(/\/$/, "")}/profissionais/${professional.value.slug}`,
+    `${siteUrlRef.value.replace(/\/$/, "")}${buildPublicProfilePath(professional.value.slug)}`,
 );
 const professionalCity = computed(
   () => professional.value.coverage.city?.name ?? "sua cidade",
@@ -193,6 +201,11 @@ defineOgImageSafely("BerufeProfessional", {
 });
 
 onMounted(() => {
+  void loadProfile()
+    .then((currentProfile) => {
+      profileResult.value = currentProfile;
+    })
+    .catch(() => undefined);
   void recordPublicProfessionalProfileView(
     client,
     professional.value.id,
@@ -413,48 +426,6 @@ async function shareProfile() {
       font-size: 0.84rem;
     }
   }
-  .evidence-strip {
-    border-bottom: 1px solid var(--line);
-    background: white;
-    &__inner {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 22px;
-      min-height: 100px;
-    }
-    &__inner > div {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    &__icon {
-      display: grid;
-      place-items: center;
-      width: 42px;
-      height: 42px;
-      border-radius: 12px;
-      background: var(--mint);
-      color: var(--color-brand);
-      font-size: 1.25rem;
-    }
-    & strong,
-    & small {
-      display: block;
-    }
-    & strong {
-      font-size: 0.86rem;
-    }
-    & small {
-      margin-top: 3px;
-      color: var(--ink-soft);
-      font-size: 0.86rem;
-    }
-    &__badges {
-      justify-content: flex-end;
-      flex-wrap: wrap;
-    }
-  }
   .profile-content {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 280px;
@@ -528,19 +499,6 @@ async function shareProfile() {
       font-weight: 900;
       text-transform: uppercase;
     }
-  }
-  .declaration-note {
-    display: flex;
-    align-items: flex-start;
-    gap: 7px;
-    margin-top: 14px;
-    color: var(--ink-soft);
-    font-size: 0.86rem;
-    line-height: 1.5;
-  }
-  .declaration-note svg {
-    flex: 0 0 auto;
-    margin-top: 2px;
   }
   .profile-section {
     &__heading {
@@ -824,15 +782,6 @@ async function shareProfile() {
       &__meta {
         display: grid;
         gap: 6px;
-      }
-    }
-    .evidence-strip {
-      &__inner {
-        display: grid;
-        padding-block: 18px;
-      }
-      &__badges {
-        justify-content: flex-start;
       }
     }
     .profile-content {

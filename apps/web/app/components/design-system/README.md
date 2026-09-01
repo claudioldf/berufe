@@ -7,6 +7,7 @@ These components contain presentation rules that are shared by more than one pag
 | `Avatar`            | Render a person's image or initials, with optional verification state.      |
 | `Brand`             | Render the Berufe home link and wordmark.                                   |
 | `Container`         | Constrain page width and responsive horizontal gutters.                     |
+| `DisabledTooltip`   | Explain, on hover, focus, or tap, why a wrapped control is disabled.        |
 | `Eyebrow`           | Render the accent-line eyebrow typography role.                             |
 | `FeatureEmptyState` | Explain a first-use feature with benefits, illustration, and a next action. |
 | `FormField`         | Connect a label, direct form control, hint, error, and accessibility IDs.   |
@@ -47,3 +48,15 @@ Use the `FormField` scoped-slot values on direct controls whenever a field has a
 ```
 
 Feature components own validation and draft state; `FormField` only owns presentation and accessible relationships.
+
+## Disabled-reason contract
+
+Wrap a disabled `UButton` (or other control) in `DisabledTooltip` only when the reason it's disabled isn't already visible nearby (a loading spinner, an inline validation error, a status line right next to it). Compute the reason as a plain string and pass `null`/omit it when the control is enabled — `DisabledTooltip` stays fully inert with no reason, so it's safe to always wrap:
+
+```vue
+<DesignSystemDisabledTooltip :reason="canShare ? null : shareBlockedReason">
+  <UButton :disabled="!canShare" @click="share">Compartilhar</UButton>
+</DesignSystemDisabledTooltip>
+```
+
+This does not replace `UButton`'s own disabled styling — the button itself still carries `:disabled`. `DisabledTooltip` only adds the explanation, via a focusable/tappable wrapper so the reason reaches keyboard and touch users, not just a mouse hovering a control that can't otherwise receive focus.

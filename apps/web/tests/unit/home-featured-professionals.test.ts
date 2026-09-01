@@ -100,7 +100,7 @@ describe("home featured professionals", () => {
       },
     });
 
-    expect(wrapper.get('a[href="/profissionais/ana-souza"]').text()).toContain(
+    expect(wrapper.get('a[href="/be/ana-souza"]').text()).toContain(
       "Ana Souza",
     );
     expect(wrapper.text()).toContain("Eletricista");

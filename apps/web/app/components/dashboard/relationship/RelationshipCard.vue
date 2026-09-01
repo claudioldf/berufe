@@ -11,6 +11,7 @@ const props = defineProps<{
   responding?: boolean;
   removing?: boolean;
   disabled?: boolean;
+  disabledReason?: string | null;
 }>();
 const emit = defineEmits<{
   respond: [id: string, response: ProfessionalRelationshipResponse];
@@ -40,6 +41,14 @@ const removalLabel = computed(() =>
     ? "Cancelar solicitação de conexão"
     : "Remover conexão",
 );
+const blockedReason = computed(() => {
+  if (!props.disabled) return null;
+  if (props.responding) return "Aguarde o envio da resposta terminar.";
+  if (props.removing) return "Aguarde a remoção da conexão terminar.";
+  return (
+    props.disabledReason?.trim() || "Aguarde a atualização da conexão terminar."
+  );
+});
 </script>
 
 <template>
@@ -55,7 +64,7 @@ const removalLabel = computed(() =>
         <div>
           <NuxtLink
             v-if="otherProfessional.profileAvailable"
-            :to="`/profissionais/${otherProfessional.publicSlug}`"
+            :to="buildPublicProfilePath(otherProfessional.publicSlug)"
           >
             {{ otherProfessional.displayName }}
             <UIcon name="i-lucide-arrow-up-right" aria-hidden="true" />
@@ -90,36 +99,41 @@ const removalLabel = computed(() =>
       </p>
       <div class="relationship-card__actions">
         <template v-if="relationship.status === 'pending' && !outgoing">
-          <UButton
-            size="sm"
-            color="neutral"
-            variant="ghost"
-            :loading="responding"
-            :disabled="disabled"
-            @click="emit('respond', relationship.id, 'declined')"
-            >Recusar</UButton
-          >
-          <UButton
-            size="sm"
-            color="primary"
-            :loading="responding"
-            :disabled="disabled"
-            @click="emit('respond', relationship.id, 'accepted')"
-            >Conectar</UButton
-          >
+          <DesignSystemDisabledTooltip :reason="blockedReason">
+            <UButton
+              size="sm"
+              color="neutral"
+              variant="ghost"
+              :loading="responding"
+              :disabled="disabled"
+              @click="emit('respond', relationship.id, 'declined')"
+              >Recusar</UButton
+            >
+          </DesignSystemDisabledTooltip>
+          <DesignSystemDisabledTooltip :reason="blockedReason">
+            <UButton
+              size="sm"
+              color="primary"
+              :loading="responding"
+              :disabled="disabled"
+              @click="emit('respond', relationship.id, 'accepted')"
+              >Conectar</UButton
+            >
+          </DesignSystemDisabledTooltip>
         </template>
-        <UButton
-          v-else
-          size="sm"
-          color="error"
-          variant="ghost"
-          icon="i-lucide-trash-2"
-          :loading="removing"
-          :disabled="disabled"
-          @click="emit('requestRemoval', relationship)"
-        >
-          {{ removalLabel }}
-        </UButton>
+        <DesignSystemDisabledTooltip v-else :reason="blockedReason">
+          <UButton
+            size="sm"
+            color="error"
+            variant="ghost"
+            icon="i-lucide-trash-2"
+            :loading="removing"
+            :disabled="disabled"
+            @click="emit('requestRemoval', relationship)"
+          >
+            {{ removalLabel }}
+          </UButton>
+        </DesignSystemDisabledTooltip>
       </div>
     </div>
   </article>

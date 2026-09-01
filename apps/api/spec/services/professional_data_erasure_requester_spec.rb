@@ -37,12 +37,12 @@ RSpec.describe ProfessionalDataErasureRequester do
     service_job = ServiceJob.create!(
       quote:,
       status: "completed",
-      completed_at: now - 1.day,
-      completion_confirmed_by: "customer"
+      completed_at: now - 1.day
     )
     invitation = service_job.create_customer_recommendation_request!(
       token_hash: CustomerRecommendationToken.digest(CustomerRecommendationToken.issue),
       token_ciphertext: CustomerRecommendationToken.encrypt(CustomerRecommendationToken.issue),
+      delivery_channel: "email",
       email_fingerprint: CustomerEmailFingerprint.call(quote.customer_email),
       expires_at: now + 14.days,
       sent_at: now - 1.day

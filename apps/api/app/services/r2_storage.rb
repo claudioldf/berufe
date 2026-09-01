@@ -7,12 +7,11 @@ class R2Storage
     endpoint:,
     access_key_id:,
     secret_access_key:,
-    public_bucket:,
     private_bucket:,
     client: nil,
     presigner: nil
   )
-    @buckets = {"public" => public_bucket, "private" => private_bucket}.freeze
+    @private_bucket = private_bucket
     @client = client || Aws::S3::Client.new(
       endpoint:,
       access_key_id:,
@@ -58,6 +57,8 @@ class R2Storage
   private
 
   def bucket_for(scope)
-    @buckets.fetch(scope.to_s) { raise ArgumentError, "invalid storage scope" }
+    raise ArgumentError, "invalid storage scope" unless scope.to_s == "private"
+
+    @private_bucket
   end
 end

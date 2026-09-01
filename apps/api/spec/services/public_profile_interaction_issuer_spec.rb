@@ -20,7 +20,6 @@ RSpec.describe PublicProfileInteractionIssuer do
     revision = record.working_revision
     revision.professional_profile_services.create!(service: primary_service, is_primary: true)
     revision.professional_profile_services.create!(service: matching_service, is_primary: false)
-    revision.update!(status: "approved", reviewed_at: Time.current)
     record.update!(profile_status: "published", published_revision: revision)
     record
   end

@@ -52,7 +52,8 @@ const links = computed(() => {
     return [
       { label: "Início", to: "/app/professional" },
       { label: "Orçamentos", to: "/app/professional/quotes" },
-      { label: "Gerenciar Perfil", to: "/app/professional/profile" },
+      { label: "Serviços", to: "/app/professional/services" },
+      { label: "Configurações", to: "/app/professional/profile" },
     ];
   }
   if (isAdmin.value) {

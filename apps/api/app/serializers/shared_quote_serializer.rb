@@ -53,8 +53,8 @@ class SharedQuoteSerializer
   end
 
   def public_photo_url
-    photo = professional.published_photo
-    return unless photo&.approved? && photo.public_key.present?
+    photo = professional.profile_photo
+    return unless photo && photo.deleted_at.nil?
 
     PublicProfilePhotoImageUrl.call(photo)
   end
@@ -73,10 +73,7 @@ class SharedQuoteSerializer
 
     {
       status: job.status,
-      completion_requested_at: job.completion_requested_at&.iso8601,
-      completion_issue_message: job.completion_issue_message,
-      completed_at: job.completed_at&.iso8601,
-      recommendation_available: job.customer_recommendation_request&.status == "open"
+      completed_at: job.completed_at&.iso8601
     }
   end
 end

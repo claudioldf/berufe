@@ -54,7 +54,7 @@ class ProfessionalQuoteSharer
 
   # S051: re-sharing reuses the link the customer may already hold.
   def reactivate_token!(quote, now)
-    return if quote.approved?
+    return if quote.locked_for_editing?
 
     token = QuoteShareToken.decrypt(quote.share_token_ciphertext)
     return unless token

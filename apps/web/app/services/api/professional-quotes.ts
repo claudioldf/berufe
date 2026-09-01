@@ -65,13 +65,8 @@ export function mapProfessionalQuote(quote: ContractQuote): Quote {
       ? {
           id: quote.service_job.id,
           status: quote.service_job.status,
-          completionRequestedAt: quote.service_job.completion_requested_at,
-          completionIssueMessage:
-            quote.service_job.completion_issue_message ?? "",
           completedAt: quote.service_job.completed_at,
           cancelledAt: quote.service_job.cancelled_at,
-          recommendationAvailable:
-            quote.service_job.recommendation_request_status === "open",
         }
       : null,
     items: quote.items.map((item) => ({

@@ -27,20 +27,18 @@ RSpec.describe "Public professional profiles", type: :request, openapi: true do
       instagram: "https://www.instagram.com/berufe.ana/",
       youtube: "https://www.youtube.com/@berufe-ana"
     )
-    photo = profile.published_photo
-    approved_portfolio = create_portfolio(
+    photo = profile.profile_photo
+    older_portfolio = create_portfolio(
       profile,
-      status: "approved",
       service: primary_service,
       submitted_at: 2.minutes.ago
     )
-    pending_portfolio = create_portfolio(
+    latest_portfolio = create_portfolio(
       profile,
-      status: "pending_review",
       service: additional_service,
       submitted_at: 1.minute.ago
     )
-    create_portfolio(profile, status: "hidden", service: additional_service)
+    create_portfolio(profile, service: additional_service, deleted: true)
     create_identity(profile, status: "approved")
     create_identity(profile, status: "pending_review")
     partner = create_published_profile(
@@ -78,7 +76,7 @@ RSpec.describe "Public professional profiles", type: :request, openapi: true do
       "bio" => "Instalações e reparos residenciais em Joinville.",
       "years_experience" => 11,
       "photo_url" => PublicProfilePhotoImageUrl.call(photo),
-      "public_snapshot_updated_at" => profile.published_revision.reviewed_at.iso8601
+      "public_snapshot_updated_at" => profile.published_revision.updated_at.iso8601
     )
     expect(professional.fetch("services")).to eq([
       {
@@ -109,26 +107,26 @@ RSpec.describe "Public professional profiles", type: :request, openapi: true do
     )
     expect(professional.fetch("portfolio")).to eq([
       {
-        "id" => pending_portfolio.id,
-        "title" => pending_portfolio.title,
-        "description" => pending_portfolio.description,
+        "id" => latest_portfolio.id,
+        "title" => latest_portfolio.title,
+        "description" => latest_portfolio.description,
         "service" => {
           "id" => additional_service.id,
           "name" => additional_service.name,
           "slug" => additional_service.slug
         },
-        "image_url" => PublicPortfolioImageUrl.call(pending_portfolio)
+        "image_url" => PublicPortfolioImageUrl.call(latest_portfolio)
       },
       {
-        "id" => approved_portfolio.id,
-        "title" => approved_portfolio.title,
-        "description" => approved_portfolio.description,
+        "id" => older_portfolio.id,
+        "title" => older_portfolio.title,
+        "description" => older_portfolio.description,
         "service" => {
           "id" => primary_service.id,
           "name" => primary_service.name,
           "slug" => primary_service.slug
         },
-        "image_url" => PublicPortfolioImageUrl.call(approved_portfolio)
+        "image_url" => PublicPortfolioImageUrl.call(older_portfolio)
       }
     ])
     expect(professional.fetch("relationships")).to eq([
@@ -141,7 +139,7 @@ RSpec.describe "Public professional profiles", type: :request, openapi: true do
           "id" => partner.id,
           "public_slug" => partner.public_slug,
           "display_name" => "Beto Parceiro Público",
-          "photo_url" => PublicProfilePhotoImageUrl.call(partner.published_photo)
+          "photo_url" => PublicProfilePhotoImageUrl.call(partner.profile_photo)
         }
       },
       {
@@ -153,7 +151,7 @@ RSpec.describe "Public professional profiles", type: :request, openapi: true do
           "id" => partner.id,
           "public_slug" => partner.public_slug,
           "display_name" => "Beto Parceiro Público",
-          "photo_url" => PublicProfilePhotoImageUrl.call(partner.published_photo)
+          "photo_url" => PublicProfilePhotoImageUrl.call(partner.profile_photo)
         }
       }
     ])
@@ -279,34 +277,29 @@ RSpec.describe "Public professional profiles", type: :request, openapi: true do
     upload = create_upload(profile, purpose: "profile_photo", content_type: "image/jpeg")
     profile.profile_photos.create!(
       media_upload: upload,
-      status: "approved",
       private_key: upload.sanitized_key,
-      public_key: "moderation/profile_photo/#{SecureRandom.uuid}.jpg",
       content_type: "image/jpeg",
       byte_size: 100,
       width: 640,
       height: 960,
-      submitted_at: 2.days.ago,
-      reviewed_at: 1.day.ago
+      submitted_at: 2.days.ago
     )
   end
 
-  def create_portfolio(profile, status:, service:, submitted_at: Time.current)
+  def create_portfolio(profile, service:, submitted_at: Time.current, deleted: false)
     upload = create_upload(profile, purpose: "portfolio_image", content_type: "image/png")
     profile.portfolio_items.create!(
       media_upload: upload,
       service:,
       title: "Quadro organizado",
       description: "Organização e identificação do quadro.",
-      status:,
       private_key: upload.sanitized_key,
-      public_key: ("moderation/portfolio_item/#{SecureRandom.uuid}.png" if status == "approved"),
       content_type: "image/png",
       byte_size: 100,
       width: 640,
       height: 380,
       submitted_at:,
-      reviewed_at: (Time.current if status == "approved")
+      deleted_at: deleted ? Time.current : nil
     )
   end
 

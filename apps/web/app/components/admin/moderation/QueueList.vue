@@ -9,14 +9,6 @@ defineProps<{
   loading?: boolean;
 }>();
 defineEmits<{ select: [id: string]; page: [page: number] }>();
-
-function itemIcon(item: ModerationQueueItem) {
-  if (item.targetType === "profile_revision") return "i-lucide-user-round";
-  if (item.targetType === "verification_request")
-    return "i-lucide-shield-check";
-  if (item.targetType === "profile_photo") return "i-lucide-user-round";
-  return "i-lucide-image";
-}
 </script>
 
 <template>
@@ -30,7 +22,7 @@ function itemIcon(item: ModerationQueueItem) {
       @click="$emit('select', item.id)"
     >
       <span class="moderation__type-icon">
-        <UIcon :name="itemIcon(item)" />
+        <UIcon name="i-lucide-shield-check" />
       </span>
       <span>
         <em>{{ item.type }}</em>
@@ -50,23 +42,33 @@ function itemIcon(item: ModerationQueueItem) {
       class="moderation__pagination"
       aria-label="Paginação da fila"
     >
-      <button
-        type="button"
-        :disabled="page <= 1 || loading"
-        aria-label="Página anterior"
-        @click="$emit('page', page - 1)"
+      <DesignSystemDisabledTooltip
+        :reason="page <= 1 ? null : loading ? 'Carregando a fila…' : null"
       >
-        <UIcon name="i-lucide-chevron-left" />
-      </button>
+        <button
+          type="button"
+          :disabled="page <= 1 || loading"
+          aria-label="Página anterior"
+          @click="$emit('page', page - 1)"
+        >
+          <UIcon name="i-lucide-chevron-left" />
+        </button>
+      </DesignSystemDisabledTooltip>
       <span>Página {{ page }} de {{ totalPages }}</span>
-      <button
-        type="button"
-        :disabled="page >= totalPages || loading"
-        aria-label="Próxima página"
-        @click="$emit('page', page + 1)"
+      <DesignSystemDisabledTooltip
+        :reason="
+          page >= totalPages ? null : loading ? 'Carregando a fila…' : null
+        "
       >
-        <UIcon name="i-lucide-chevron-right" />
-      </button>
+        <button
+          type="button"
+          :disabled="page >= totalPages || loading"
+          aria-label="Próxima página"
+          @click="$emit('page', page + 1)"
+        >
+          <UIcon name="i-lucide-chevron-right" />
+        </button>
+      </DesignSystemDisabledTooltip>
     </nav>
   </section>
 </template>

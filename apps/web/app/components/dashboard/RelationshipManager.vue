@@ -31,6 +31,11 @@ const selectedRelationship = shallowRef<ProfessionalRelationship | null>(null);
 const mutationInProgress = computed(
   () => Boolean(props.respondingId) || Boolean(props.removingId),
 );
+const mutationBlockedReason = computed(() =>
+  mutationInProgress.value
+    ? "Aguarde a atualização da conexão terminar."
+    : null,
+);
 const selectedOtherProfessional = computed(() => {
   const relationship = selectedRelationship.value;
   if (!relationship) return null;
@@ -122,6 +127,7 @@ function confirmRemoval() {
         :responding="respondingId === relationship.id"
         :removing="removingId === relationship.id"
         :disabled="mutationInProgress"
+        :disabled-reason="mutationBlockedReason"
         @respond="forwardResponse"
         @request-removal="requestRemoval"
       />
@@ -145,17 +151,19 @@ function confirmRemoval() {
       :description="removalDescription"
     >
       <template #footer>
-        <UButton
-          color="neutral"
-          variant="ghost"
-          :disabled="mutationInProgress"
-          @click="removalOpen = false"
-          >Manter conexão</UButton
-        >
+        <DesignSystemDisabledTooltip :reason="mutationBlockedReason">
+          <UButton
+            color="neutral"
+            variant="ghost"
+            :disabled="mutationInProgress"
+            @click="removalOpen = false"
+            >Manter conexão</UButton
+          >
+        </DesignSystemDisabledTooltip>
         <UButton
           color="error"
           icon="i-lucide-trash-2"
-          :disabled="mutationInProgress"
+          :loading="mutationInProgress"
           @click="confirmRemoval"
         >
           {{ removalTitle }}

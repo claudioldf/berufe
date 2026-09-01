@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type {
+  PortfolioItemUpdateDraft,
   Professional,
   ProfessionalProfileDraft,
   VerificationSubmission,
@@ -13,6 +14,7 @@ import type { ProfessionalRelationshipResponse } from "~/services/api/profession
 import { professionalAccountExclusionPath } from "~/utils/professional-auth";
 
 const route = useRoute();
+const router = useRouter();
 const { showToast } = useToast();
 const { account } = useApplicationSession();
 const { data: catalog, error: catalogError } = await useCatalogs();
@@ -35,6 +37,7 @@ const {
   removePhoto,
   portfolioSaving,
   createPortfolioItem,
+  updatePortfolioItem,
   deletePortfolioItem,
   verificationSaving,
   verificationError,
@@ -70,7 +73,7 @@ const professional = computed<Professional>(() => {
     name: profile.identity.name,
     headline: profile.identity.headline,
     bio: profile.identity.bio,
-    avatar: profile.photo.publishedImageUrl ?? "",
+    avatar: profile.photo.imageUrl ?? "",
     primaryService: primary?.name ?? "",
     primaryServiceSlug:
       services.value.find((service) => service.id === primary?.id)?.slug ?? "",
@@ -95,24 +98,17 @@ const professional = computed<Professional>(() => {
 });
 const statusLabels = {
   draft: "Rascunho",
-  pending_review: "Em análise",
   published: "Publicado",
   suspended: "Suspenso",
 } as const;
 const statusLabel = computed(() => {
   const profile = workspace.value!.profile;
-  if (profile.isPublic && profile.revisionStatus === "pending_review") {
-    return "Publicado · revisão pendente";
-  }
   if (profile.isPublic) return "Publicado";
   if (
     profile.status === "published" &&
     profile.publicationBlockers.includes("photo")
   ) {
     return "Indisponível · adicione uma foto";
-  }
-  if (profile.revisionStatus === "rejected") {
-    return "Indisponível após revisão";
   }
   return statusLabels[profile.status];
 });
@@ -122,6 +118,12 @@ const activeTab = computed(() =>
     ? String(route.query.tab)
     : "dados",
 );
+const requestedPortfolioEditId = computed(() => {
+  const requested = Array.isArray(route.query.edit)
+    ? route.query.edit[0]
+    : route.query.edit;
+  return typeof requested === "string" && requested ? requested : null;
+});
 
 definePageMeta({ layout: "workspace" });
 
@@ -162,7 +164,7 @@ async function handlePhoto(file: File) {
     await uploadPhoto(file);
     showToast({
       title: "Foto enviada",
-      description: "A nova foto já está no perfil e seguirá para revisão.",
+      description: "A nova foto já está no perfil.",
     });
   } catch (error) {
     showToast({
@@ -180,7 +182,7 @@ async function handlePhotoRetry() {
     await retryPhoto();
     showToast({
       title: "Foto reenviada",
-      description: "A nova foto já está no perfil e seguirá para revisão.",
+      description: "A nova foto já está no perfil.",
     });
   } catch (error) {
     showToast({
@@ -219,7 +221,7 @@ async function handlePortfolioAdd(
     await createPortfolioItem(draft);
     showToast({
       title: "Trabalho enviado",
-      description: "O trabalho já está no perfil e seguirá para revisão.",
+      description: "O trabalho já está no perfil.",
     });
   } catch (error) {
     showToast({
@@ -230,6 +232,34 @@ async function handlePortfolioAdd(
           : "Tente novamente em instantes.",
     });
   }
+}
+
+async function handlePortfolioUpdate(
+  id: string,
+  draft: PortfolioItemUpdateDraft,
+) {
+  try {
+    await updatePortfolioItem(id, draft);
+    showToast({
+      title: "Trabalho atualizado",
+      description: "As alterações já estão no perfil.",
+    });
+  } catch (error) {
+    showToast({
+      title: "Não foi possível reenviar o trabalho",
+      description:
+        error instanceof ApiRequestError
+          ? error.message
+          : "Tente novamente em instantes.",
+    });
+  }
+}
+
+async function clearPortfolioEditIntent() {
+  if (!route.query.edit) return;
+  const query = { ...route.query };
+  delete query.edit;
+  await router.replace({ path: route.path, query });
 }
 
 async function handlePortfolioRemove(id: string) {
@@ -319,19 +349,19 @@ async function handleRelationshipRemove(id: string) {
       <DesignSystemContainer class="workspace-heading__inner">
         <div>
           <NuxtLink to="/app/professional"
-            ><UIcon name="i-lucide-arrow-left" /> Painel</NuxtLink
+            ><UIcon name="i-lucide-arrow-left" /> Voltar ao painel</NuxtLink
           >
-          <h1>Meu perfil</h1>
-          <p>Organize as informações e evidências que clientes verão.</p>
+          <h1>Configurações</h1>
+          <p>
+            Organize sua informações, trabalhos feitos, recomentações,
+            referências e processo de verificação de conta.
+          </p>
         </div>
         <div class="workspace-heading__status">
           <span>
             <DesignSystemStatusDot tone="success" />
             <span>
               {{ statusLabel }}
-              <small v-if="workspace?.profile.revisionRejectionReason">
-                {{ workspace?.profile.revisionRejectionReason }}
-              </small>
             </span>
           </span>
         </div>
@@ -362,8 +392,11 @@ async function handleRelationshipRemove(id: string) {
           :items="workspace?.profile.portfolioItems ?? []"
           :service-options="professional.services"
           :submitting="portfolioSaving"
+          :initial-edit-item-id="requestedPortfolioEditId"
           @added="handlePortfolioAdd"
+          @updated="handlePortfolioUpdate"
           @removed="handlePortfolioRemove"
+          @edit-closed="clearPortfolioEditIntent"
         />
         <DashboardRelationshipManager
           v-else-if="activeTab === 'relacoes'"
@@ -415,13 +448,11 @@ async function handleRelationshipRemove(id: string) {
     align-items: end;
   }
   & a {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 5px;
-    margin-bottom: 20px;
-    color: rgb(255 255 255 / 58%);
-    font-size: 0.86rem;
-    font-weight: 700;
+    margin-bottom: 24px;
+    color: rgb(255 255 255 / 65%);
     text-decoration: none;
   }
   & h1 {

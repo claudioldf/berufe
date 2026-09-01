@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { ProfessionalWorkspace } from "~/types";
+import type { ProfessionalActionKind, ProfessionalWorkspace } from "~/types";
 import type { ProfessionalRelationshipResponse } from "~/services/api/professional-relationships";
 import { formatDateTime } from "~/utils/formatters";
 
-type ActivityItemType =
-  "profile" | "photo" | "portfolio" | "verification" | "relationship" | "quote";
+type ActivityItemType = "verification" | "relationship" | "quote" | "service";
 
 interface ActivityItem {
   id: string;
@@ -15,8 +14,41 @@ interface ActivityItem {
   detail: string;
   sortAt: string;
   responseRequired?: boolean;
-  to?: string;
+  action?:
+    | { kind: "link"; label: string; to: string }
+    | { kind: "act"; label: string; intent: ProfessionalActionKind };
 }
+
+const ACTION_ITEM_PRESENTATION: Record<
+  ProfessionalActionKind,
+  { type: ActivityItemType; status: string; actionLabel: string }
+> = {
+  quote_unshared: {
+    type: "quote",
+    status: "Não enviado",
+    actionLabel: "Enviar no WhatsApp",
+  },
+  quote_awaiting_response: {
+    type: "quote",
+    status: "Sem resposta",
+    actionLabel: "Reenviar no WhatsApp",
+  },
+  quote_change_requested: {
+    type: "quote",
+    status: "Alteração solicitada",
+    actionLabel: "Revisar orçamento",
+  },
+  service_open: {
+    type: "service",
+    status: "Aprovado",
+    actionLabel: "Concluído",
+  },
+  recommendation_unsent: {
+    type: "service",
+    status: "Sem recomendação",
+    actionLabel: "Pedir no WhatsApp",
+  },
+};
 
 interface ActivitySection {
   id: "attention" | "ongoing";
@@ -30,14 +62,19 @@ const props = withDefaults(
     workspace: ProfessionalWorkspace;
     respondingId?: string | null;
     relationshipError?: string;
+    actingId?: string | null;
+    actionError?: string;
   }>(),
   {
     respondingId: null,
     relationshipError: "",
+    actingId: null,
+    actionError: "",
   },
 );
 const emit = defineEmits<{
   respond: [id: string, response: ProfessionalRelationshipResponse];
+  act: [id: string, kind: ProfessionalActionKind];
 }>();
 
 const sections = computed<ActivitySection[]>(() => {
@@ -45,82 +82,28 @@ const sections = computed<ActivitySection[]>(() => {
   const ongoing: ActivityItem[] = [];
   const profile = props.workspace.profile;
 
-  for (const quote of props.workspace.dashboard.changeRequestedQuotes) {
-    const request = quote.latestChangeRequest;
+  for (const item of props.workspace.dashboard.actionItems) {
+    const presentation = ACTION_ITEM_PRESENTATION[item.kind];
     attention.push({
-      id: quote.id,
-      type: "quote",
-      title: `Orçamento #${quote.number} · ${quote.customerName}`,
-      status: "Alteração solicitada",
-      detail: `“${request.message}” · Solicitado em ${formatDateTime(request.requestedAt)}`,
-      sortAt: request.requestedAt,
-      to: `/app/professional/quotes/new?quote=${quote.id}`,
+      id: item.id,
+      type: presentation.type,
+      title: item.title,
+      status: presentation.status,
+      detail: item.subtitle,
+      sortAt: item.sortAt,
+      action:
+        item.kind === "quote_change_requested"
+          ? {
+              kind: "link",
+              label: presentation.actionLabel,
+              to: `/app/professional/quotes/new?quote=${item.id}`,
+            }
+          : {
+              kind: "act",
+              label: presentation.actionLabel,
+              intent: item.kind,
+            },
     });
-  }
-
-  if (profile.revisionStatus === "pending_review") {
-    ongoing.push({
-      id: `profile-${profile.id}`,
-      type: "profile",
-      title: "Perfil profissional",
-      status: "Em análise",
-      detail: profile.isPublic
-        ? "As alterações já estão públicas e aguardam revisão."
-        : "Perfil enviado para conferência da equipe.",
-      sortAt: "",
-    });
-  } else if (profile.revisionStatus === "rejected") {
-    attention.push({
-      id: `profile-${profile.id}`,
-      type: "profile",
-      title: "Perfil profissional",
-      status: "Precisa de ajustes",
-      detail: `${profile.revisionRejectionReason ?? "Revise os dados informados."} Edite e envie novamente.`,
-      sortAt: "",
-    });
-  }
-
-  const photo = profile.photo.current;
-  if (photo?.status === "pending_review") {
-    ongoing.push({
-      id: photo.id,
-      type: "photo",
-      title: "Foto do perfil",
-      status: "Em análise",
-      detail: `${profile.isPublic ? "Já está pública · " : ""}Enviada em ${formatDateTime(photo.submittedAt)}`,
-      sortAt: photo.submittedAt,
-    });
-  } else if (photo?.status === "rejected" || photo?.status === "hidden") {
-    attention.push({
-      id: photo.id,
-      type: "photo",
-      title: "Foto do perfil",
-      status: photo.status === "hidden" ? "Oculta" : "Precisa de ajustes",
-      detail: `${photo.rejectionReason ?? "A foto não pode ser exibida."} Envie uma nova foto.`,
-      sortAt: photo.submittedAt,
-    });
-  }
-
-  for (const item of profile.portfolioItems) {
-    if (item.status === "pending_review") {
-      ongoing.push({
-        id: item.id,
-        type: "portfolio",
-        title: item.title,
-        status: "Em análise",
-        detail: `${profile.isPublic ? "Já está público · " : ""}Enviado em ${formatDateTime(item.submittedAt)}`,
-        sortAt: item.submittedAt,
-      });
-    } else if (item.status === "rejected" || item.status === "hidden") {
-      attention.push({
-        id: item.id,
-        type: "portfolio",
-        title: item.title,
-        status: item.status === "hidden" ? "Oculto" : "Precisa de ajustes",
-        detail: `${item.rejectionReason ?? "O trabalho não pode ser exibido."} Adicione um novo trabalho.`,
-        sortAt: item.submittedAt,
-      });
-    }
   }
 
   const verification = profile.verification.current;
@@ -145,6 +128,11 @@ const sections = computed<ActivitySection[]>(() => {
         verification.status === "expired" ? "Expirada" : "Precisa de ajustes",
       detail: `${verification.rejectionReason ?? "A evidência precisa ser substituída."} Envie uma nova evidência.`,
       sortAt: verification.submittedAt,
+      action: {
+        kind: "link",
+        label: "Enviar evidência",
+        to: "/app/professional/profile?tab=verificacoes",
+      },
     });
   }
 
@@ -198,13 +186,27 @@ const sections = computed<ActivitySection[]>(() => {
 
 function activityIcon(type: ActivityItemType) {
   return {
-    profile: "i-lucide-user-round",
-    photo: "i-lucide-image",
-    portfolio: "i-lucide-image",
     verification: "i-lucide-id-card",
     relationship: "i-lucide-handshake",
     quote: "i-lucide-message-square-warning",
+    service: "i-lucide-clipboard-check",
   }[type];
+}
+
+const BUSY_ELSEWHERE_REASON = "Aguarde a outra ação do painel terminar.";
+
+function actBlockedReason(itemId: string) {
+  if (!props.actingId) return null;
+  return props.actingId === itemId
+    ? "Aguarde esta ação do painel terminar."
+    : BUSY_ELSEWHERE_REASON;
+}
+
+function respondBlockedReason(itemId: string) {
+  if (!props.respondingId) return null;
+  return props.respondingId === itemId
+    ? "Aguarde o envio da resposta à conexão terminar."
+    : BUSY_ELSEWHERE_REASON;
 }
 </script>
 
@@ -235,12 +237,19 @@ function activityIcon(type: ActivityItemType) {
       >
         {{ relationshipError }}
       </p>
+      <p
+        v-if="section.id === 'attention' && actionError"
+        class="activity-list__feedback"
+        role="alert"
+      >
+        {{ actionError }}
+      </p>
 
       <div class="activity-list">
         <article
           v-for="item in section.items"
           :key="`${item.type}-${item.id}`"
-          :class="{ 'activity-list__item--link': item.to }"
+          :class="{ 'activity-list__item--action': item.action }"
         >
           <span class="activity-list__icon">
             <UIcon :name="activityIcon(item.type)" aria-hidden="true" />
@@ -253,41 +262,64 @@ function activityIcon(type: ActivityItemType) {
             {{ item.status }}
           </span>
           <div
-            v-if="item.responseRequired || item.to"
+            v-if="item.responseRequired || item.action"
             class="activity-list__actions"
-            :class="{ 'activity-list__actions--link': item.to }"
+            :class="{ 'activity-list__actions--link': item.action }"
           >
             <UButton
-              v-if="item.to"
-              :to="item.to"
+              v-if="item.action?.kind === 'link'"
+              :to="item.action.to"
               size="sm"
               color="primary"
               variant="soft"
               trailing-icon="i-lucide-arrow-right"
             >
-              Revisar orçamento
+              {{ item.action.label }}
             </UButton>
-            <UButton
-              v-if="item.responseRequired"
-              size="sm"
-              color="neutral"
-              variant="ghost"
-              :loading="respondingId === item.id"
-              :disabled="Boolean(respondingId)"
-              @click="emit('respond', item.id, 'declined')"
+            <DesignSystemDisabledTooltip
+              v-else-if="item.action?.kind === 'act'"
+              :reason="actBlockedReason(item.id)"
             >
-              Recusar
-            </UButton>
-            <UButton
+              <UButton
+                size="sm"
+                color="primary"
+                variant="soft"
+                :loading="actingId === item.id"
+                :disabled="Boolean(actingId)"
+                @click="emit('act', item.id, item.action.intent)"
+              >
+                {{ item.action.label }}
+              </UButton>
+            </DesignSystemDisabledTooltip>
+            <DesignSystemDisabledTooltip
               v-if="item.responseRequired"
-              size="sm"
-              color="primary"
-              :loading="respondingId === item.id"
-              :disabled="Boolean(respondingId)"
-              @click="emit('respond', item.id, 'accepted')"
+              :reason="respondBlockedReason(item.id)"
             >
-              Conectar
-            </UButton>
+              <UButton
+                size="sm"
+                color="neutral"
+                variant="ghost"
+                :loading="respondingId === item.id"
+                :disabled="Boolean(respondingId)"
+                @click="emit('respond', item.id, 'declined')"
+              >
+                Recusar
+              </UButton>
+            </DesignSystemDisabledTooltip>
+            <DesignSystemDisabledTooltip
+              v-if="item.responseRequired"
+              :reason="respondBlockedReason(item.id)"
+            >
+              <UButton
+                size="sm"
+                color="primary"
+                :loading="respondingId === item.id"
+                :disabled="Boolean(respondingId)"
+                @click="emit('respond', item.id, 'accepted')"
+              >
+                Conectar
+              </UButton>
+            </DesignSystemDisabledTooltip>
           </div>
         </article>
       </div>
@@ -436,7 +468,7 @@ function activityIcon(type: ActivityItemType) {
       justify-self: start;
     }
 
-    &__item--link {
+    &__item--action {
       grid-template-columns: auto minmax(0, 1fr) auto;
     }
 

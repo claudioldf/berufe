@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { shallowRef } from "vue";
+import { computed, shallowRef } from "vue";
 import { useProfessionalNotifications } from "~/composables/useProfessionalNotifications";
 import type { ProfessionalNotification } from "~/types";
 
@@ -20,6 +20,16 @@ const {
   markRead,
   markAllRead,
 } = useProfessionalNotifications();
+const readingAllReason = computed(() =>
+  isReadingAll.value
+    ? "Aguarde todas as notificações serem marcadas como lidas."
+    : null,
+);
+const loadingMoreReason = computed(() =>
+  isLoadingMore.value
+    ? "Aguarde o carregamento das próximas notificações."
+    : null,
+);
 
 function handleOpen(value: boolean) {
   open.value = value;
@@ -89,14 +99,14 @@ function handleSelect(notification: ProfessionalNotification) {
           <span>
             {{ unreadCount }} {{ unreadCount === 1 ? "não lida" : "não lidas" }}
           </span>
-          <button
+          <DesignSystemDisabledTooltip
             v-if="unreadCount > 0"
-            type="button"
-            :disabled="isReadingAll"
-            @click="markAllRead"
+            :reason="readingAllReason"
           >
-            {{ isReadingAll ? "Marcando…" : "Marcar todas como lidas" }}
-          </button>
+            <button type="button" :disabled="isReadingAll" @click="markAllRead">
+              {{ isReadingAll ? "Marcando…" : "Marcar todas como lidas" }}
+            </button>
+          </DesignSystemDisabledTooltip>
         </div>
 
         <p
@@ -135,9 +145,11 @@ function handleSelect(notification: ProfessionalNotification) {
         </div>
 
         <footer v-if="hasMore" class="notification-hub__footer">
-          <button type="button" :disabled="isLoadingMore" @click="loadMore">
-            {{ isLoadingMore ? "Carregando…" : "Carregar mais" }}
-          </button>
+          <DesignSystemDisabledTooltip :reason="loadingMoreReason">
+            <button type="button" :disabled="isLoadingMore" @click="loadMore">
+              {{ isLoadingMore ? "Carregando…" : "Carregar mais" }}
+            </button>
+          </DesignSystemDisabledTooltip>
         </footer>
         <span v-else-if="isRefreshing && !isInitialLoading" class="sr-only">
           Atualizando notificações

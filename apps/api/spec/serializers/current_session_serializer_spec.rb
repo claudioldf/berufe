@@ -48,7 +48,6 @@ RSpec.describe CurrentSessionSerializer do
 
     expect(described_class.new(application_session:).as_json.dig(:account, :onboarding_completed)).to be(false)
 
-    revision.update!(status: "pending_review", submitted_at: now)
     profile.update!(profile_status: "published", published_revision: revision, published_at: now)
 
     expect(described_class.new(application_session:).as_json.dig(:account, :onboarding_completed)).to be(true)

@@ -76,6 +76,10 @@ const NuxtLinkStub = defineComponent({
   props: { to: { type: String, required: true } },
   template: '<a :href="to"><slot /></a>',
 });
+const TooltipStub = defineComponent({
+  props: { reason: { type: String, default: null } },
+  template: `<div :data-tooltip-reason="reason ?? ''"><slot /></div>`,
+});
 
 function mountIndex(result = pageFixture()) {
   return mount(QuoteIndex, {
@@ -83,6 +87,7 @@ function mountIndex(result = pageFixture()) {
     global: {
       stubs: {
         DesignSystemSurfaceCard: SurfaceCardStub,
+        DesignSystemDisabledTooltip: TooltipStub,
         NuxtLink: NuxtLinkStub,
         UButton: NuxtLinkStub,
         UIcon: true,
@@ -99,10 +104,10 @@ describe("professional quote index", () => {
   it("shows the commercial summary without presenting quote values as payments", () => {
     const wrapper = mountIndex();
 
-    expect(wrapper.get('[aria-label="Aguardando resposta"]').text()).toMatch(
+    expect(wrapper.get('[aria-label="Enviado ao cliente"]').text()).toMatch(
       /R\$\s*450,00/,
     );
-    expect(wrapper.get('[aria-label="Aguardando resposta"]').text()).toContain(
+    expect(wrapper.get('[aria-label="Enviado ao cliente"]').text()).toContain(
       "2 orçamentos",
     );
     expect(wrapper.get('[aria-label="Alterações solicitadas"]').text()).toMatch(
@@ -127,7 +132,7 @@ describe("professional quote index", () => {
       }),
     );
 
-    expect(wrapper.get('[aria-label="Aguardando resposta"]').text()).toMatch(
+    expect(wrapper.get('[aria-label="Enviado ao cliente"]').text()).toMatch(
       /R\$\s*0,00.*0 orçamentos/,
     );
     expect(wrapper.get('[aria-label="Alterações solicitadas"]').text()).toMatch(
@@ -199,9 +204,11 @@ describe("professional quote index", () => {
     const wrapper = mountIndex();
     const updated = wrapper.get('button[data-sort="updated"]');
 
-    expect(updated.element.parentElement?.getAttribute("aria-sort")).toBe(
-      "descending",
-    );
+    expect(
+      updated.element
+        .closest('[role="columnheader"]')
+        ?.getAttribute("aria-sort"),
+    ).toBe("descending");
     expect(updated.getComponent({ name: "UIcon" }).attributes("name")).toBe(
       "i-lucide-arrow-down",
     );
@@ -210,9 +217,11 @@ describe("professional quote index", () => {
     expect(wrapper.emitted("request")?.at(-1)).toEqual([
       expect.objectContaining({ sort: "updated", direction: "asc", page: 1 }),
     ]);
-    expect(updated.element.parentElement?.getAttribute("aria-sort")).toBe(
-      "ascending",
-    );
+    expect(
+      updated.element
+        .closest('[role="columnheader"]')
+        ?.getAttribute("aria-sort"),
+    ).toBe("ascending");
 
     await wrapper.get('button[data-sort="customer"]').trigger("click");
     expect(wrapper.emitted("request")?.at(-1)).toEqual([
@@ -234,6 +243,36 @@ describe("professional quote index", () => {
     expect(wrapper.emitted("request")?.at(-1)).toEqual([
       expect.objectContaining({ page: 3, perPage: 20 }),
     ]);
+  });
+
+  it("explains disabled sorting and pagination states", async () => {
+    const wrapper = mountIndex(
+      pageFixture({
+        meta: { page: 1, perPage: 20, totalCount: 45, totalPages: 3 },
+      }),
+    );
+    const previous = wrapper.get('button[aria-label="Página anterior"]');
+
+    expect(previous.attributes("disabled")).toBeDefined();
+    expect(
+      previous.element
+        .closest("[data-tooltip-reason]")
+        ?.getAttribute("data-tooltip-reason"),
+    ).toBe("Você já está na primeira página.");
+
+    await wrapper.setProps({ loading: true });
+    const sort = wrapper.get('button[data-sort="updated"]');
+    expect(sort.attributes("disabled")).toBeDefined();
+    expect(
+      sort.element
+        .closest("[data-tooltip-reason]")
+        ?.getAttribute("data-tooltip-reason"),
+    ).toBe("Aguarde a atualização da lista de orçamentos.");
+    expect(
+      previous.element
+        .closest("[data-tooltip-reason]")
+        ?.getAttribute("data-tooltip-reason"),
+    ).toBe("Aguarde o carregamento dos orçamentos terminar.");
   });
 
   it("replaces the first-use quote table with a helpful CTA", () => {

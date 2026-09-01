@@ -43,6 +43,7 @@ const UButtonStub = defineComponent({
   props: {
     label: { type: String, default: "" },
     disabled: { type: Boolean, default: false },
+    loading: { type: Boolean, default: false },
   },
   emits: ["click"],
   template:
@@ -251,5 +252,28 @@ describe("administrator professionals unpublish dialog", () => {
     expect(wrapper.emitted("update:reason")?.at(-1)).toEqual([
       "Motivo com detalhes suficientes.",
     ]);
+  });
+
+  it("locks the reason and dialog actions while submitting", async () => {
+    const wrapper = await mountSuspended(UnpublishDialog, {
+      props: {
+        open: true,
+        reason: "Motivo com detalhes suficientes.",
+        displayName: "Ana Souza",
+        submitting: true,
+      },
+      global: {
+        stubs: {
+          UModal: UModalStub,
+          UButton: UButtonStub,
+          DesignSystemFormField: FieldStub,
+        },
+      },
+    });
+
+    expect(wrapper.get("textarea").attributes("disabled")).toBeDefined();
+    for (const button of wrapper.findAll("button")) {
+      expect(button.attributes("disabled")).toBeDefined();
+    }
   });
 });

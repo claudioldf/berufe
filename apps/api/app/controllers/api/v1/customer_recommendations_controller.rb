@@ -35,6 +35,26 @@ module Api
         )
       end
 
+      def create_issue
+        request_record = CustomerFeedbackIssueSubmitter.new.call(
+          token: params[:token],
+          message: params[:message]
+        )
+        render json: {
+          data: {recommendation_request: CustomerRecommendationRequestSerializer.new(request_record)},
+          request_id: Current.request_id
+        }
+      rescue CustomerRecommendationResolver::NotFound
+        render_not_found
+      rescue CustomerFeedbackIssueSubmitter::Invalid => error
+        render_api_error(
+          code: "validation_failed",
+          message: "Revise sua mensagem.",
+          status: :unprocessable_entity,
+          field_errors: error.field_errors
+        )
+      end
+
       private
 
       def recommendation_params

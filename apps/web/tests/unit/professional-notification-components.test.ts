@@ -8,6 +8,10 @@ const NuxtLinkStub = defineComponent({
   emits: ["click"],
   template: '<a :href="to" @click="$emit(\'click\')"><slot /></a>',
 });
+const TooltipStub = defineComponent({
+  props: { reason: { type: String, default: null } },
+  template: `<div :data-tooltip-reason="reason ?? ''"><slot /></div>`,
+});
 
 const item: ProfessionalNotification = {
   id: "2cc1bdc4-e2d1-452b-8e76-241931a32bc9",
@@ -24,7 +28,13 @@ describe("professional notification item", () => {
   it("renders a navigable activity and exposes a separate read action", async () => {
     const wrapper = await mountSuspended(NotificationItem, {
       props: { notification: item },
-      global: { stubs: { NuxtLink: NuxtLinkStub, UIcon: true } },
+      global: {
+        stubs: {
+          NuxtLink: NuxtLinkStub,
+          DesignSystemDisabledTooltip: TooltipStub,
+          UIcon: true,
+        },
+      },
     });
 
     expect(wrapper.text()).toContain("Orçamento aprovado");
@@ -41,9 +51,21 @@ describe("professional notification item", () => {
   it("disables the read action while its mutation is pending", async () => {
     const wrapper = await mountSuspended(NotificationItem, {
       props: { notification: item, reading: true },
-      global: { stubs: { NuxtLink: NuxtLinkStub, UIcon: true } },
+      global: {
+        stubs: {
+          NuxtLink: NuxtLinkStub,
+          DesignSystemDisabledTooltip: TooltipStub,
+          UIcon: true,
+        },
+      },
     });
 
     expect(wrapper.get("button").attributes()).toHaveProperty("disabled");
+    expect(
+      wrapper
+        .get("button")
+        .element.closest("[data-tooltip-reason]")
+        ?.getAttribute("data-tooltip-reason"),
+    ).toBe("Aguarde esta notificação ser marcada como lida.");
   });
 });

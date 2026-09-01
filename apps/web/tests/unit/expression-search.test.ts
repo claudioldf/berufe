@@ -32,6 +32,7 @@ const ButtonStub = defineComponent({
   props: {
     type: { type: String, default: "button" },
     disabled: { type: Boolean, default: false },
+    loading: { type: Boolean, default: false },
   },
   template: '<button :type="type" :disabled="disabled"><slot /></button>',
 });
@@ -89,6 +90,23 @@ describe("expression search", () => {
     expect(wrapper.find('button[type="submit"]').exists()).toBe(false);
     await wrapper.get("form").trigger("submit");
 
+    expect(wrapper.emitted("submit")).toBeUndefined();
+  });
+
+  it("shows the submit button as loading and prevents repeated submissions", async () => {
+    const wrapper = await mountSuspended(ExpressionSearch, {
+      props: {
+        loading: true,
+        modelValue: "Preciso de um eletricista",
+      },
+      global: { stubs },
+    });
+
+    const button = wrapper.getComponent(ButtonStub);
+    expect(button.props()).toMatchObject({ loading: true, disabled: true });
+    expect(wrapper.get("form").attributes("aria-busy")).toBe("true");
+
+    await wrapper.get("form").trigger("submit");
     expect(wrapper.emitted("submit")).toBeUndefined();
   });
 });

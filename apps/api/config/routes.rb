@@ -36,7 +36,9 @@ Rails.application.routes.draw do
         post "profile/submission", to: "profiles#submission"
         put "profile/photo", to: "profile_photos#update"
         delete "profile/photo", to: "profile_photos#destroy"
-        resources :portfolio_items, only: %i[create destroy], path: "portfolio-items"
+        get "profile-photos/:id/image", to: "profile_photo_images#show"
+        resources :portfolio_items, only: %i[create update destroy], path: "portfolio-items"
+        get "portfolio-items/:id/image", to: "portfolio_item_images#show"
         resources :verification_requests, only: :create, path: "verification-requests"
         resources :relationship_candidates, only: :index, path: "relationship-candidates"
         resources :customer_candidates, only: :index, path: "customer-candidates"
@@ -51,9 +53,15 @@ Rails.application.routes.draw do
         end
         resources :service_jobs, only: %i[index show], path: "service-jobs" do
           member do
-            post :request_completion, path: "completion-request"
+            post :request_recommendation, path: "recommendation-request"
             post :complete
             post :cancel
+          end
+        end
+        resources :recommendations, only: :index do
+          member do
+            post :hide
+            post :unhide
           end
         end
         resources :media_uploads, only: %i[create show], path: "media-uploads" do
@@ -68,9 +76,9 @@ Rails.application.routes.draw do
       resource :session, only: %i[show destroy]
       post "shared-quotes/resolve", to: "shared_quotes#resolve"
       post "shared-quotes/decisions", to: "shared_quotes#decide"
-      post "shared-quotes/completions", to: "shared_quotes#complete"
       post "customer-recommendations/resolve", to: "customer_recommendations#resolve"
       post "customer-recommendations", to: "customer_recommendations#create"
+      post "customer-recommendations/issues", to: "customer_recommendations#create_issue"
       namespace :admin do
         resource :session, only: :create
         resource :catalog, only: :show
@@ -80,7 +88,6 @@ Rails.application.routes.draw do
         post "professionals/:id/publication", to: "professional_publications#create"
         get "moderation", to: "moderation#index"
         post "moderation/:target_type/:target_id/decisions", to: "moderation_decisions#create"
-        get "moderation/:target_type/:target_id/media", to: "moderation_media#show"
         get "verification-files/:id/content", to: "verification_files#show"
         post "catalog/services", to: "catalog_services#create"
         patch "catalog/services/:id", to: "catalog_services#update"

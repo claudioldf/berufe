@@ -24,10 +24,10 @@ module Api
           render json: service_job_response(job)
         end
 
-        def request_completion
+        def request_recommendation
           job = owned_service_job!
           authorize job, :update?
-          result = ProfessionalServiceJobCompletionRequester.new.call(service_job: job)
+          result = ProfessionalServiceJobRecommendationRequester.new.call(service_job: job)
           render json: {
             data: {
               service_job: ProfessionalServiceJobSerializer.new(result.service_job),
@@ -36,15 +36,32 @@ module Api
             },
             request_id: Current.request_id
           }
-        rescue ProfessionalServiceJobCompletionRequester::Unavailable
+        rescue ProfessionalServiceJobRecommendationRequester::Unavailable
           render_unavailable
         end
 
         def complete
           job = owned_service_job!
           authorize job, :update?
-          job = ProfessionalServiceJobCompleter.new.call(service_job: job)
-          render json: service_job_response(job)
+          result = ProfessionalServiceJobCompleter.new.call(
+            service_job: job,
+            request_recommendation: completion_params.fetch(:request_recommendation)
+          )
+          render json: {
+            data: {
+              service_job: ProfessionalServiceJobSerializer.new(result.service_job),
+              share_url: result.share_url,
+              whatsapp_url: result.whatsapp_url
+            },
+            request_id: Current.request_id
+          }
+        rescue ProfessionalServiceJobCompleter::Invalid => error
+          render_api_error(
+            code: "validation_failed",
+            message: "Revise a conclusão do serviço.",
+            status: :unprocessable_entity,
+            field_errors: error.field_errors
+          )
         rescue ProfessionalServiceJobCompleter::Unavailable
           render_unavailable
         end
@@ -72,6 +89,10 @@ module Api
 
         def owned_service_job!
           policy_scope(ServiceJob).find(params[:id])
+        end
+
+        def completion_params
+          params.require(:completion).permit(:request_recommendation)
         end
 
         def service_job_response(job)

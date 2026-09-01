@@ -87,7 +87,7 @@ describe("public profile page", () => {
     const requestMessage = "Eu preciso trocar a fiação da cozinha.";
     const wrapper = await mountSuspended(PublicProfilePage, {
       shallow: true,
-      route: `/profissionais/ana-souza?expressao=${encodedExpression}&contexto=signed-search-context&pedido=${encodeURIComponent(requestMessage)}`,
+      route: `/be/ana-souza?expressao=${encodedExpression}&contexto=signed-search-context&pedido=${encodeURIComponent(requestMessage)}`,
     });
     await flushPromises();
 
@@ -125,12 +125,45 @@ describe("public profile page", () => {
     const wrapper = await mountSuspended(PublicProfilePage, {
       shallow: true,
       route:
-        "/profissionais/ana-souza?servico=eletricista&bairro=america&contexto=signed-search-context",
+        "/be/ana-souza?servico=eletricista&bairro=america&contexto=signed-search-context",
     });
     await flushPromises();
 
     expect(wrapper.getComponent({ name: "ProfileHero" }).exists()).toBe(true);
     expect(mocks.recordView).toHaveBeenCalledOnce();
+  });
+
+  it("replaces a stale hydrated profile with the current API projection", async () => {
+    const staleResult: PublicProfessionalProfileResult = {
+      ...result,
+      professional: {
+        ...result.professional,
+        slug: "perfil-desatualizado",
+        bio: "Tenho menos de um ano de experiência na área.",
+      },
+    };
+    const refreshedResult: PublicProfessionalProfileResult = {
+      ...result,
+      professional: {
+        ...result.professional,
+        slug: "perfil-desatualizado",
+        bio: "No meu portfólio, você pode conhecer o meu trabalho.",
+      },
+    };
+    mocks.fetchProfile
+      .mockResolvedValueOnce(staleResult)
+      .mockResolvedValueOnce(refreshedResult);
+
+    const wrapper = await mountSuspended(PublicProfilePage, {
+      shallow: true,
+      route: "/be/perfil-desatualizado",
+    });
+    await flushPromises();
+
+    expect(
+      wrapper.getComponent({ name: "ProfileHero" }).props("professional"),
+    ).toEqual(refreshedResult.professional);
+    expect(mocks.fetchProfile).toHaveBeenCalledTimes(2);
   });
 
   it("selects the simplified public layout for an external profile", async () => {
@@ -162,7 +195,7 @@ describe("public profile page", () => {
 
     const wrapper = await mountSuspended(PublicProfilePage, {
       shallow: true,
-      route: "/profissionais/carla-pinturas",
+      route: "/be/carla-pinturas",
     });
     await flushPromises();
 
@@ -195,7 +228,7 @@ describe("public profile page", () => {
 
     const wrapper = await mountSuspended(PublicProfilePage, {
       shallow: true,
-      route: "/profissionais/ana-souza",
+      route: "/be/ana-souza",
       global: { renderStubDefaultSlot: true },
     });
     await flushPromises();

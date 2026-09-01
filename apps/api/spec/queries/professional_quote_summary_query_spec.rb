@@ -18,6 +18,8 @@ RSpec.describe ProfessionalQuoteSummaryQuery do
     create_quote(number: 5, total: 600, status: "approved", decided_at: Time.zone.parse("2026-09-01 02:29:59 UTC"))
     create_quote(number: 6, total: 900, status: "approved", decided_at: Time.zone.parse("2026-08-01 02:59:59 UTC"))
     create_quote(number: 7, total: 50, status: "draft")
+    create_quote(number: 8, total: 700, status: "completed", decided_at: Time.zone.parse("2026-08-10 12:00:00 UTC"))
+    create_quote(number: 9, total: 800, status: "cancelled", decided_at: Time.zone.parse("2026-08-20 12:00:00 UTC"))
     create_other_professional_quote(total: 1200, status: "shared")
 
     result = described_class.new.call(scope:, now:)
@@ -26,8 +28,8 @@ RSpec.describe ProfessionalQuoteSummaryQuery do
       awaiting_response_count: 2,
       awaiting_response_total_amount: BigDecimal("350.50"),
       changes_requested_count: 1,
-      approved_this_month_count: 2,
-      approved_this_month_total_amount: BigDecimal("1000.00")
+      approved_this_month_count: 4,
+      approved_this_month_total_amount: BigDecimal("2500.00")
     )
   end
 

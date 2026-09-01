@@ -16,10 +16,15 @@ const ButtonStub = defineComponent({
   template:
     '<button :disabled="disabled" :data-to="to" :data-loading="loading" @click="$emit(\'click\')"><slot /></button>',
 });
+const TooltipStub = defineComponent({
+  props: { reason: { type: String, default: null } },
+  template: `<div :data-tooltip-reason="reason ?? ''"><slot /></div>`,
+});
 const global = {
   stubs: {
     DesignSystemSurfaceCard: SurfaceCardStub,
     DesignSystemEyebrow: { template: "<span><slot /></span>" },
+    DesignSystemDisabledTooltip: TooltipStub,
     UButton: ButtonStub,
     UIcon: true,
   },
@@ -57,8 +62,26 @@ describe("account erasure components", () => {
       .find((button) => button.text().includes("Excluir conta"))!;
 
     expect(submit.attributes("disabled")).toBeDefined();
+    expect(
+      submit.element
+        .closest("[data-tooltip-reason]")
+        ?.getAttribute("data-tooltip-reason"),
+    ).toBe("Confirme que entende que a exclusão da conta é irreversível.");
     await wrapper.get('input[type="checkbox"]').setValue(true);
     expect(submit.attributes("disabled")).toBeUndefined();
+    expect(
+      submit.element
+        .closest("[data-tooltip-reason]")
+        ?.getAttribute("data-tooltip-reason"),
+    ).toBe("");
+
+    await wrapper.setProps({ submitting: true });
+    expect(
+      submit.element
+        .closest("[data-tooltip-reason]")
+        ?.getAttribute("data-tooltip-reason"),
+    ).toBe("Aguarde a solicitação de exclusão terminar.");
+    await wrapper.setProps({ submitting: false });
 
     await wrapper.get("form").trigger("submit");
     expect(wrapper.emitted("submit")).toHaveLength(1);

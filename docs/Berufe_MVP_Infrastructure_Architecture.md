@@ -304,7 +304,7 @@ PostgreSQL is the single application database. Rails/Active Record is the only a
 - Record the accepted terms and privacy-notice version with each acceptance timestamp; a timestamp alone is not sufficient audit evidence.
 - Enforce exactly one primary service per professional. The primary service is the singular main service shown on the public profile.
 - Represent “All Joinville” as a derived selector backed by a nullable professional service-area reference, never as a managed neighborhood, and prevent duplicate nullable-area rows using a partial unique index or a PostgreSQL `NULLS NOT DISTINCT` constraint.
-- Material edits create or update one private pending profile revision. The previous approved revision remains the complete public snapshot until approval atomically replaces it; rejection keeps that snapshot public and returns the reviewed revision to an editable private state. Public serializers never mix approved and unreviewed fields.
+- Material profile, service, and coverage edits update the working revision in place. Once a self-service profile is published, that same revision is also the public revision and changes become public immediately; only whole-profile eligibility controls whether serializers expose it.
 - Treat recipient acceptance as the complete publication decision for a professional relationship. Public serializers require `status = accepted` and both endpoint profiles/accounts to remain public and active; relationships never enter the moderation queue.
 - Keep product analytics privacy-friendly but source-aware enough to calculate the approved success signals. An anonymous search event may record whether at least one result profile was opened, while professional daily metrics distinguish WhatsApp handoffs originating on profiles from those originating on result cards. Do not create visitor identities to do so.
 - Store meaningful professional actions in one daily aggregate keyed by professional and local product date. Growth-report queries return only admin-authorized summary values. A separate password-admin search-audit endpoint may serialize the last six calendar months of prompt/output fields; quote customer details remain excluded.
@@ -313,7 +313,7 @@ PostgreSQL is the single application database. Rails/Active Record is the only a
 
 | Visibility     | Examples                                                                                                                               | Rule                                                                                                    |
 | -------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| Public         | Published profile, approved Instagram/YouTube profile links, approved portfolio, services, approved trust labels                       | Returned by public serializers only after approval.                                                     |
+| Public         | Eligible published profile, current photo, active portfolio, services, social links, and approved identity label                       | Returned by public serializers only while the whole profile remains eligible.                           |
 | Private        | Phone, moderation notes, professional notifications, draft quotes/customer details, and six-month LLM search prompts/output            | Owner/admin access only as required; search audit and notification copy are never logged.               |
 | Bearer-private | One shared quote and its customer-facing details                                                                                       | Returned only to the owner/admin or for the exact valid token; never indexed, logged, or shared-cached. |
 | Restricted     | Verification documents, Infobip credentials/challenge secrets, raw quote/session tokens, password digests, and stored session material | Server-only access and never logged; persist token/password digests rather than raw secrets.            |
@@ -322,21 +322,20 @@ Collect only data required by the MVP. Define retention/deletion rules for priva
 
 ## 10. File storage
 
-Use Cloudflare R2's S3-compatible API through a small Rails-owned storage adapter. Approved feature records retain the public URL/key fields described by the Feature Plan. A narrowly scoped pending-upload record may hold the temporary private key, ownership, purpose, state, and deletion time needed before a profile or portfolio image is approved; verification files continue to use `verification_file`.
+Use Cloudflare R2's S3-compatible API through a small Rails-owned storage adapter. Sanitized profile-photo and portfolio records retain private object keys; Rails streams them through public eligibility-checked routes and authenticated owner routes without exposing storage keys. A narrowly scoped upload record holds the temporary private key, ownership, purpose, state, and deletion time needed during processing; verification files continue to use `verification_file`.
 
-| Bucket                 | Access      | Contents                                         |
-| ---------------------- | ----------- | ------------------------------------------------ |
-| `berufe-public-media`  | Public read | Approved profile and optimized portfolio images. |
-| `berufe-private-media` | Private     | Pending uploads and verification evidence.       |
+| Bucket                 | Access  | Contents                                                                                  |
+| ---------------------- | ------- | ----------------------------------------------------------------------------------------- |
+| `berufe-private-media` | Private | Upload quarantine objects, sanitized profile/portfolio images, and verification evidence. |
 
 Flow:
 
 1. Vue requests an upload authorization from Rails.
 2. Rails checks the session, ownership, purpose, declared type, and declared size, then returns a 10-minute upload authorization for a quarantine key.
 3. In deployed environments the browser uploads directly to the private R2 bucket without application cookies; the signed request is content-type-bound and R2 CORS permits only the configured web origin and upload method. In local development it sends the same authorized body through the authenticated Rails local-upload endpoint using `API_PUBLIC_URL`. The browser then confirms completion to Rails.
-4. A retry-safe job reads the object, verifies its actual byte count and file signature, safely decodes it with libvips, normalizes orientation, strips metadata, and re-encodes it into a new object using the verified JPEG/PNG codec. The profile-photo purpose instead produces a JPEG fitted inside 1024 × 1536 pixels. Client filenames are not persisted or used in storage keys. The original quarantine object is deleted after processing; mismatched, oversized, or undecodable uploads are rejected and deleted without becoming reviewable.
-5. Rails records only the sanitized private key on the owning feature record. The authenticated workspace exposes workflow metadata but never the private key or a private media URL. The file remains private while pending review; processing failures are rejected and cannot be viewed.
-6. Approval creates the optimized public object for profile/portfolio media and records its public URL/key on the approved projection; rejected files are deleted according to the retention rule.
+4. A retry-safe job reads the object, verifies its actual byte count and file signature, safely decodes it with libvips, normalizes orientation, strips metadata, and re-encodes it into a new object using the verified JPEG/PNG codec. The profile-photo purpose instead produces a JPEG fitted inside 1024 × 1536 pixels. Client filenames are not persisted or used in storage keys. The original quarantine object is deleted after processing; mismatched, oversized, or undecodable uploads are rejected and deleted without being attachable.
+5. Rails records only the sanitized private key on the owning feature record. The authenticated workspace exposes an owner-scoped Rails image URL, never the storage key or an object-storage URL. Processing failures cannot be attached or viewed.
+6. Profile photos and portfolio items attach immediately after successful processing. Public media routes recheck the parent profile and record on every read; authenticated owner routes keep previews available while a profile is draft or suspended.
 
 Verification evidence is restricted to JPEG and PNG images no larger than 10 MiB or 25 megapixels. Do not trust extensions or browser MIME types. Admins may access only successfully regenerated evidence through a short-lived authorized response with an exact `image/jpeg` or `image/png` content type, `X-Content-Type-Options: nosniff`, `Cache-Control: no-store`, and `Content-Disposition: inline` using a server-generated filename. Never reflect the uploaded filename or expose R2 credentials or permanent URLs for verification evidence.
 
@@ -478,7 +477,7 @@ If production breaks: disable the affected flow or credential, assess scope, rec
 
 1. **Foundation:** monorepo, Dockerfiles and root Compose stack, Nuxt with Nuxt UI, Rails API-only, PostgreSQL, GoodJob, Railway production, CI, and security headers.
 2. **Access:** professional Infobip SMS OTP, dedicated admin email/password login, Rails-owned application sessions, abuse controls, roles/policies, and CORS/origin controls.
-3. **Profiles and evidence:** seeded and administrator-maintained service/location catalog, direct R2 uploads, background image processing, profile/portfolio/identity moderation, public serializers, and Nuxt public pages.
+3. **Profiles and evidence:** seeded and administrator-maintained service/location catalog, direct R2 uploads, background image processing, identity verification moderation, profile-level publication controls, public serializers, and Nuxt public pages.
 4. **Discovery and trust graph:** Finder and WhatsApp handoff followed by recipient-confirmed relationships between existing members.
 5. **Dashboard, quotes, and reporting:** profile readiness/sharing, simple quote creation and secure customer sharing, and the aggregate-only administrator growth report.
 6. **Launch:** critical end-to-end tests, database restore test, operational ownership, and launch gate.

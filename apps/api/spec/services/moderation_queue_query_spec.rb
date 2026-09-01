@@ -3,169 +3,94 @@
 require "rails_helper"
 
 RSpec.describe ModerationQueueQuery do
-  let(:profile) { create_profile(phone: "+5547999998202", name: "Ana Souza") }
-  let(:service) { create_selected_service(profile) }
-
-  it "combines every review family oldest first without exposing storage keys" do
-    revision = profile.working_revision
-    revision.update!(status: "pending_review", submitted_at: 4.hours.ago)
-    photo = create_photo(profile:, submitted_at: 3.hours.ago)
-    item = create_item(profile:, service:, submitted_at: 2.hours.ago)
-    verification = create_verification(profile:, submitted_at: 1.hour.ago)
+  it "lists only identity verification requests oldest first without storage keys" do
+    older = create_verification(2.hours.ago)
+    newer = create_verification(1.hour.ago)
 
     result = described_class.new.call
 
-    expect(result[:items].map { |entry| entry[:target_id] }).to eq(
-      [revision.id, photo.id, item.id, verification.id]
-    )
-    expect(result[:items].map { |entry| entry[:target_type] }).to eq(
-      %w[profile_revision profile_photo portfolio_item verification_request]
-    )
-    expect(result[:summary]).to include(pending_count: 4)
-    expect(result.to_json).not_to include("private_key", "sanitized/", "public_key")
+    expect(result[:items].pluck(:target_id)).to eq([older.id, newer.id])
+    expect(result[:items].pluck(:target_type).uniq).to eq(["verification_request"])
+    expect(result[:summary]).to include(pending_count: 2)
+    expect(result.to_json).not_to include("private_key", "sanitized/")
   end
 
-  it "filters, searches accent-insensitively, and paginates the safe presentation" do
-    create_item(profile:, service:, title: "Instalação elétrica", submitted_at: 2.hours.ago)
-    second = create_item(profile:, service:, title: "Quadro novo", submitted_at: 1.hour.ago)
+  it "filters, searches accent-insensitively, and paginates" do
+    first = create_verification(2.hours.ago)
+    create_verification(1.hour.ago)
 
-    searched = described_class.new.call(type: "portfolio_item", search: "instalacao")
-    paged = described_class.new.call(type: "portfolio_item", page: 2, per_page: 1)
+    searched = described_class.new.call(search: "ana")
+    paged = described_class.new.call(page: 2, per_page: 1)
 
-    expect(searched[:items].sole.fetch(:title)).to include("Instalação elétrica")
-    expect(paged[:items].sole.fetch(:target_id)).to eq(second.id)
+    expect(searched[:items].length).to eq(2)
+    expect(paged[:items].sole.fetch(:target_id)).not_to eq(first.id)
     expect(paged[:meta]).to eq(page: 2, per_page: 1, total_count: 2, total_pages: 2)
   end
 
-  it "does not count or present accepted relationships" do
-    partner = create_profile(phone: "+5547999998204", name: "Beto Lima")
-    ProfessionalRelationship.create!(
-      initiator_professional: partner,
-      recipient_professional: profile,
-      relationship_type: "recommendation",
-      context_note: "A parceria foi confirmada pelo profissional.",
-      status: "accepted",
-      responded_at: 30.minutes.ago
-    )
+  it "exposes only retained identity evidence as available" do
+    request_record = create_verification(1.hour.ago)
+    file = attach_file(request_record)
 
-    result = described_class.new.call
+    expect(described_class.new.call[:items].sole.fetch(:verification_file_id)).to eq(file.id)
 
-    expect(result[:items]).to be_empty
-    expect(result[:summary]).to include(pending_count: 0)
-    expect do
-      described_class.new.call(type: "professional_relationship")
-    end.to raise_error(described_class::Invalid)
+    file.update!(deleted_at: Time.current)
+    expect(described_class.new.call[:items].sole.fetch(:verification_file_id)).to be_nil
   end
 
-  it "rejects unknown or unbounded filters" do
+  it "rejects invalid or unbounded filters" do
     expect do
-      described_class.new.call(type: "relationship", status: "waiting", search: "x" * 101, page: 0, per_page: 51)
+      described_class.new.call(status: "waiting", search: "x" * 101, page: 0, per_page: 51)
     end.to raise_error(described_class::Invalid) { |error|
-      expect(error.field_errors.keys).to contain_exactly(:type, :status, :search, :page, :per_page)
+      expect(error.field_errors.keys).to contain_exactly(:status, :search, :page, :per_page)
     }
   end
 
   private
 
-  def create_profile(phone:, name:)
-    account = UserAccount.create!(phone_e164: phone, role: "professional", status: "active")
-    ProfessionalProfile.create!(user_account: account, display_name: name)
-  end
-
-  def create_selected_service(profile)
-    category = ServiceCategory.create!(
-      name: "Moderação",
-      slug: "moderacao-queue",
-      icon: "i-lucide-wrench",
-      is_active: true,
-      sort_order: 0
+  def create_verification(submitted_at)
+    @profile_sequence = @profile_sequence.to_i + 1
+    account = UserAccount.create!(
+      phone_e164: "+554799998#{format("%04d", @profile_sequence)}",
+      role: "professional",
+      status: "active"
     )
-    created = Service.create!(
-      category:,
-      name: "Eletricista",
-      slug: "eletricista-moderacao-queue",
-      icon: "i-lucide-zap",
-      description: "Instalações elétricas.",
-      aliases: [],
-      is_active: true,
-      sort_order: 0
-    )
-    ProfessionalProfileService.create!(
-      professional_profile_revision: profile.working_revision,
-      service: created,
-      is_primary: true
-    )
-    profile.working_revision.update!(coverage_city: joinville_city, covers_whole_city: true)
-    created
-  end
-
-  def create_upload(profile:, purpose:, content_type: "image/png")
-    MediaUpload.create!(
-      professional_profile: profile,
-      purpose:,
-      state: "processed",
-      declared_content_type: content_type,
-      declared_byte_size: 120,
-      actual_content_type: content_type,
-      sanitized_content_type: content_type,
-      actual_byte_size: 120,
-      sanitized_byte_size: 100,
-      width: 640,
-      height: 960,
-      quarantine_key: "quarantine/#{profile.id}/#{SecureRandom.uuid}",
-      sanitized_key: "sanitized/#{profile.id}/#{SecureRandom.uuid}.png",
-      authorization_expires_at: 5.minutes.from_now,
-      uploaded_at: 1.minute.ago,
-      processed_at: Time.current
-    )
-  end
-
-  def create_photo(profile:, submitted_at:)
-    upload = create_upload(profile:, purpose: "profile_photo", content_type: "image/jpeg")
-    profile.profile_photos.create!(
-      media_upload: upload,
-      status: "pending_review",
-      private_key: upload.sanitized_key,
-      content_type: "image/jpeg",
-      byte_size: 100,
-      width: 640,
-      height: 960,
-      submitted_at:
-    )
-  end
-
-  def create_item(profile:, service:, submitted_at:, title: "Cozinha iluminada")
-    upload = create_upload(profile:, purpose: "portfolio_image")
-    profile.portfolio_items.create!(
-      media_upload: upload,
-      service:,
-      title:,
-      status: "pending_review",
-      private_key: upload.sanitized_key,
-      content_type: "image/png",
-      byte_size: 100,
-      width: 640,
-      height: 380,
-      submitted_at:
-    )
-  end
-
-  def create_verification(profile:, submitted_at:)
-    upload = create_upload(profile:, purpose: "verification_identity")
-    record = profile.verification_requests.create!(
+    profile = ProfessionalProfile.create!(user_account: account, display_name: "Ána Souza")
+    profile.verification_requests.create!(
       verification_type: "identity",
       status: "pending_review",
       submitted_at:
     )
-    record.create_verification_file!(
+  end
+
+  def attach_file(request_record)
+    profile = request_record.professional_profile
+    upload = MediaUpload.create!(
+      professional_profile: profile,
+      purpose: "verification_identity",
+      state: "attached",
+      declared_content_type: "image/png",
+      declared_byte_size: 100,
+      actual_content_type: "image/png",
+      sanitized_content_type: "image/png",
+      actual_byte_size: 100,
+      sanitized_byte_size: 100,
+      width: 10,
+      height: 10,
+      quarantine_key: "quarantine/#{profile.id}/#{SecureRandom.uuid}",
+      sanitized_key: "sanitized/#{profile.id}/#{SecureRandom.uuid}.png",
+      authorization_expires_at: 5.minutes.from_now,
+      uploaded_at: 1.minute.ago,
+      processed_at: Time.current,
+      attached_at: Time.current
+    )
+    request_record.create_verification_file!(
       media_upload: upload,
       private_key: upload.sanitized_key,
       content_type: "image/png",
       byte_size: 100,
-      width: 640,
-      height: 960,
-      uploaded_at: submitted_at
+      width: 10,
+      height: 10,
+      uploaded_at: Time.current
     )
-    record
   end
 end

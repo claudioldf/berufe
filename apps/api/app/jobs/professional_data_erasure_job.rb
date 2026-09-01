@@ -43,13 +43,11 @@ class ProfessionalDataErasureJob < ApplicationJob
       objects << [:private, quarantine_key]
       objects << [:private, sanitized_key] if sanitized_key.present?
     end
-    profile.profile_photos.pluck(:private_key, :public_key).each do |private_key, public_key|
+    profile.profile_photos.pluck(:private_key).each do |private_key|
       objects << [:private, private_key]
-      objects << [:public, public_key] if public_key.present?
     end
-    profile.portfolio_items.pluck(:private_key, :public_key).each do |private_key, public_key|
+    profile.portfolio_items.pluck(:private_key).each do |private_key|
       objects << [:private, private_key]
-      objects << [:public, public_key] if public_key.present?
     end
     VerificationFile.joins(:verification_request)
       .where(verification_requests: {professional_profile_id: profile.id})
@@ -88,10 +86,7 @@ class ProfessionalDataErasureJob < ApplicationJob
       profile.update_columns(
         working_revision_id: nil,
         published_revision_id: nil,
-        approved_revision_id: nil,
-        working_photo_id: nil,
-        published_photo_id: nil,
-        approved_photo_id: nil,
+        profile_photo_id: nil,
         updated_at: now
       )
       PortfolioItem.where(id: ids.fetch(:portfolio_item_ids)).delete_all
@@ -117,6 +112,7 @@ class ProfessionalDataErasureJob < ApplicationJob
     quote_ids = Quote.where(professional_id: profile.id).pluck(:id)
     verification_request_ids = VerificationRequest.where(professional_profile_id: profile.id).pluck(:id)
     {
+      professional_profile_ids: [profile.id],
       quote_ids:,
       service_job_ids: ServiceJob.where(quote_id: quote_ids).pluck(:id),
       revision_ids: ProfessionalProfileRevision.where(professional_profile_id: profile.id).pluck(:id),
@@ -189,17 +185,12 @@ class ProfessionalDataErasureJob < ApplicationJob
   def delete_moderation_records!(ids)
     target_groups(ids).each do |target_type, target_ids|
       ModerationAction.where(target_type:, target_id: target_ids).delete_all
-      next unless target_type.in?(%w[profile_photo portfolio_item])
-
-      ModerationMediaAccessEvent.where(target_type:, target_id: target_ids).delete_all
     end
   end
 
   def target_groups(ids)
     {
-      "profile_revision" => ids.fetch(:revision_ids),
-      "profile_photo" => ids.fetch(:photo_ids),
-      "portfolio_item" => ids.fetch(:portfolio_item_ids),
+      "professional_profile" => ids.fetch(:professional_profile_ids),
       "verification_request" => ids.fetch(:verification_request_ids)
     }
   end

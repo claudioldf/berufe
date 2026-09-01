@@ -31,7 +31,7 @@ RSpec.describe ProfessionalDashboardReadiness do
     profile.working_revision.update!(coverage_city: joinville_city, covers_whole_city: true)
     expect(readiness).to include(percentage: 50)
 
-    portfolio = create_portfolio(service:, status: "pending_review")
+    portfolio = create_portfolio(service:)
     expect(readiness).to include(percentage: 75)
 
     profile.verification_requests.create!(
@@ -49,7 +49,7 @@ RSpec.describe ProfessionalDashboardReadiness do
       }
     )
 
-    portfolio.update!(status: "rejected")
+    portfolio.update!(deleted_at: Time.current)
     expect(readiness.dig(:steps, :reviewable_portfolio)).to be(false)
     expect(readiness.fetch(:percentage)).to eq(75)
   end
@@ -64,10 +64,7 @@ RSpec.describe ProfessionalDashboardReadiness do
     profile.working_revision.update!(coverage_city: joinville_city, covers_whole_city: false)
     profile.working_revision.professional_profile_service_areas.create!(neighborhood_code: neighborhood.code)
 
-    %w[rejected hidden].each do |status|
-      create_portfolio(service:, status:)
-    end
-    deleted = create_portfolio(service:, status: "approved")
+    deleted = create_portfolio(service:)
     deleted.update!(deleted_at: Time.current)
 
     expect(readiness).to include(percentage: 25)
@@ -85,7 +82,7 @@ RSpec.describe ProfessionalDashboardReadiness do
 
   def complete_identity_contact
     photo = create_public_profile_photo(profile)
-    profile.update!(birthdate: Date.new(1990, 4, 12), working_photo: photo)
+    profile.update!(birthdate: Date.new(1990, 4, 12), profile_photo: photo)
   end
 
   def create_service
@@ -108,7 +105,7 @@ RSpec.describe ProfessionalDashboardReadiness do
     )
   end
 
-  def create_portfolio(service:, status:)
+  def create_portfolio(service:)
     upload = MediaUpload.create!(
       professional_profile: profile,
       purpose: "portfolio_image",
@@ -132,9 +129,7 @@ RSpec.describe ProfessionalDashboardReadiness do
       media_upload: upload,
       service:,
       title: "Trabalho residencial",
-      status:,
       private_key: upload.sanitized_key,
-      public_key: status.in?(%w[approved hidden]) ? "public/#{SecureRandom.uuid}.png" : nil,
       content_type: "image/png",
       byte_size: 100,
       width: 640,

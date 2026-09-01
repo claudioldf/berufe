@@ -52,7 +52,14 @@ export interface Quote {
   discount: number;
   notes: string;
   status:
-    "draft" | "saved" | "shared" | "change_requested" | "approved" | "declined";
+    | "draft"
+    | "saved"
+    | "shared"
+    | "change_requested"
+    | "approved"
+    | "declined"
+    | "completed"
+    | "cancelled";
   subtotal: number;
   total: number;
   sharedAt: string | null;
@@ -66,17 +73,9 @@ export interface Quote {
 
 export interface QuoteServiceJob {
   id: string | null;
-  status:
-    | "approved"
-    | "completion_requested"
-    | "completion_issue"
-    | "completed"
-    | "cancelled";
-  completionRequestedAt: string | null;
-  completionIssueMessage: string;
+  status: "approved" | "completed" | "cancelled";
   completedAt: string | null;
   cancelledAt: string | null;
-  recommendationAvailable: boolean;
 }
 
 export interface QuoteProfessional {

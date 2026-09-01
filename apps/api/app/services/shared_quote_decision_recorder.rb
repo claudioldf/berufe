@@ -69,7 +69,7 @@ class SharedQuoteDecisionRecorder
           "approved" => "quote_approved",
           "declined" => "quote_declined"
         }.fetch(target_status),
-        route: "/app/professional/quotes/new?quote=#{quote.id}",
+        route_params: {quote_id: quote.id},
         idempotency_key: "quote:#{quote.id}:revision:#{revision.to_i}:#{target_status}",
         occurred_at: now
       )

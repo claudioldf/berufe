@@ -1,9 +1,58 @@
-<p>Olá, <%= @customer_name %>!</p>
+<p style="margin: 0 0 18px; color: #12625d; font-size: 13px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase;">
+  Sua experiência importa
+</p>
 
-<p>Você confirmou a conclusão de “<%= @service_description %>”, realizado por <%= @professional_name %>.</p>
+<h1 class="email-title" style="margin: 0 0 18px; color: #17352f; font-size: 38px; font-weight: 750; letter-spacing: -1.2px; line-height: 1.15;">
+  Como foi o serviço?
+</h1>
 
-<p>Sua recomendação ajuda outras pessoas a escolher um profissional com mais confiança.</p>
+<p style="margin: 0 0 28px; color: #59706a; font-size: 17px; line-height: 1.65;">
+  Olá, <strong style="color: #17352f;"><%= @customer_name %></strong>! <%= @professional_name %> marcou o trabalho como concluído e gostaria de saber como foi sua experiência.
+</p>
 
-<p><a href="<%= @recommendation_url %>">Escrever recomendação</a></p>
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width: 100%; margin: 0 0 28px;">
+  <tr>
+    <td bgcolor="#eff7f4" style="padding: 20px 22px; background-color: #eff7f4; border: 1px solid #d8f0e7; border-radius: 12px;">
+      <p style="margin: 0 0 5px; color: #3f8372; font-size: 11px; font-weight: 700; letter-spacing: 1.1px; text-transform: uppercase;">
+        Serviço realizado
+      </p>
+      <p style="margin: 0 0 3px; color: #17352f; font-size: 18px; font-weight: 700; line-height: 1.4;">
+        <%= @service_description %>
+      </p>
+      <p style="margin: 0; color: #59706a; font-size: 14px;">
+        por <%= @professional_name %>
+      </p>
+    </td>
+  </tr>
+</table>
 
-<p>O convite é pessoal, foi enviado para este e-mail e expira em 14 dias.</p>
+<p style="margin: 0 0 26px; color: #59706a; font-size: 16px; line-height: 1.65;">
+  Sua avaliação ajuda outras pessoas a escolher com mais confiança e ajuda <%= @professional_name %> a fortalecer o próprio trabalho na Berufe.
+</p>
+
+<table role="presentation" align="center" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto 28px;">
+  <tr>
+    <td bgcolor="#12625d" style="background-color: #12625d; border-radius: 12px;">
+      <a class="email-button" href="<%= @recommendation_url %>" style="display: inline-block; padding: 15px 26px; color: #ffffff; font-size: 16px; font-weight: 700; line-height: 1.2; text-decoration: none;">
+        Contar como foi&nbsp;&nbsp;→
+      </a>
+    </td>
+  </tr>
+</table>
+
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width: 100%; margin: 0 0 24px;">
+  <tr>
+    <td bgcolor="#fff7de" style="padding: 15px 18px; background-color: #fff7de; border-radius: 10px; color: #6b5a28; font-size: 13px; line-height: 1.55;">
+      Se algo ainda precisa ser resolvido, você também poderá avisar <%= @professional_name %> em particular, sem publicar uma avaliação.
+    </td>
+  </tr>
+</table>
+
+<p style="margin: 0 0 8px; color: #82928d; font-size: 12px; line-height: 1.6;">
+  Este convite é pessoal, foi enviado somente para este e-mail e expira em 14 dias. Não encaminhe esta mensagem.
+</p>
+
+<p style="margin: 0; color: #82928d; font-size: 11px; line-height: 1.5; word-break: break-all;">
+  Se o botão não funcionar, copie e cole este endereço no navegador:<br>
+  <a href="<%= @recommendation_url %>" style="color: #12625d; text-decoration: underline;"><%= @recommendation_url %></a>
+</p>

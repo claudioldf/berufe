@@ -8,10 +8,9 @@ const mocks = vi.hoisted(() => ({
   client: {},
   fetchService: vi.fn(),
   completeService: vi.fn(),
-  requestCompletion: vi.fn(),
+  requestRecommendation: vi.fn(),
   cancelService: vi.fn(),
   showToast: vi.fn(),
-  copyText: vi.fn(),
 }));
 
 vi.mock("@app/services/api/client", () => ({
@@ -20,14 +19,11 @@ vi.mock("@app/services/api/client", () => ({
 vi.mock("@app/services/api/professional-service-jobs", () => ({
   fetchProfessionalServiceJob: mocks.fetchService,
   completeProfessionalServiceJob: mocks.completeService,
-  requestProfessionalServiceCompletion: mocks.requestCompletion,
+  requestProfessionalServiceRecommendation: mocks.requestRecommendation,
   cancelProfessionalServiceJob: mocks.cancelService,
 }));
 vi.mock("@app/composables/useToast", () => ({
   useToast: () => ({ showToast: mocks.showToast }),
-}));
-vi.mock("@app/composables/useShare", () => ({
-  useShare: () => ({ copyText: mocks.copyText }),
 }));
 vi.mock("~/composables/useApplicationSession", async () => {
   const { ref } = await import("vue");
@@ -54,22 +50,24 @@ const service: ProfessionalServiceJob = {
     scheduledOn: "2026-08-22",
     total: 120,
   },
-  completionRequestedAt: null,
-  completionIssueAt: null,
-  completionIssueMessage: "",
+  customerFeedbackMessage: "",
   completedAt: null,
-  completionConfirmedBy: null,
   cancelledAt: null,
   cancellationReason: "",
-  recommendationRequestStatus: null,
+  recommendation: null,
   createdAt: "2026-08-29T12:00:00Z",
   updatedAt: "2026-08-29T12:00:00Z",
 };
 
 const SlotStub = defineComponent({ template: "<div><slot /></div>" });
 const ButtonStub = defineComponent({
+  props: {
+    disabled: { type: Boolean, default: false },
+    loading: { type: Boolean, default: false },
+  },
   emits: ["click"],
-  template: '<button type="button" @click="$emit(\'click\')"><slot /></button>',
+  template:
+    '<button type="button" :disabled="disabled" :data-loading="loading" @click="$emit(\'click\')"><slot /></button>',
 });
 const ModalStub = defineComponent({
   props: { open: Boolean },
@@ -120,44 +118,226 @@ describe("professional service show page", () => {
     );
   });
 
-  it("allows the professional to confirm completion and records the source", async () => {
+  it("lets the professional complete without requesting an evaluation", async () => {
     mocks.completeService.mockResolvedValue({
-      ...service,
-      status: "completed",
-      completedAt: "2026-08-29T15:00:00Z",
-      completionConfirmedBy: "professional",
+      serviceJob: {
+        ...service,
+        status: "completed",
+        completedAt: "2026-08-29T15:00:00Z",
+        recommendation: null,
+      },
+      shareUrl: null,
+      whatsappUrl: null,
     });
     const wrapper = await mountPage();
 
+    expect(
+      wrapper.findAll("button").some((button) => button.text() === "Concluído"),
+    ).toBe(true);
     await wrapper
       .findAll("button")
-      .find((button) => button.text() === "Marcar como concluído")
+      .find((button) => button.text() === "Concluído")
       ?.trigger("click");
     await nextTick();
     await wrapper
       .findAll("button")
-      .find((button) => button.text() === "Confirmar conclusão")
+      .find((button) =>
+        button.text().includes("Concluir sem solicitar avaliação"),
+      )
       ?.trigger("click");
     await flushPromises();
 
-    expect(mocks.completeService).toHaveBeenCalledWith(mocks.client, serviceId);
-    expect(wrapper.text()).toContain(
-      "A conclusão foi confirmada pelo profissional.",
+    expect(mocks.completeService).toHaveBeenCalledWith(
+      mocks.client,
+      serviceId,
+      false,
     );
-    expect(wrapper.text()).not.toContain("Marcar como concluído");
+    expect(wrapper.text()).toContain("Serviço concluído");
+    expect(wrapper.text()).toContain(
+      "Registrado por você sem solicitar uma avaliação ao cliente.",
+    );
+    expect(
+      wrapper.findAll("button").some((button) => button.text() === "Concluído"),
+    ).toBe(false);
   });
 
-  it("keeps customer-confirmed completion copy for the customer flow", async () => {
+  it("closes the confirmation without changing the service", async () => {
+    const wrapper = await mountPage();
+
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text() === "Concluído")
+      ?.trigger("click");
+    await nextTick();
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text() === "Cancelar")
+      ?.trigger("click");
+    await flushPromises();
+
+    expect(mocks.completeService).not.toHaveBeenCalled();
+    expect(
+      wrapper.findAll("button").some((button) => button.text() === "Concluído"),
+    ).toBe(true);
+  });
+
+  it("requests an email evaluation only after explicit confirmation", async () => {
+    mocks.completeService.mockResolvedValue({
+      serviceJob: {
+        ...service,
+        status: "completed",
+        completedAt: "2026-08-29T15:00:00Z",
+        recommendation: {
+          status: "open",
+          deliveryChannel: "email",
+          sentAt: null,
+        },
+      },
+      shareUrl: null,
+      whatsappUrl: null,
+    });
+    const wrapper = await mountPage();
+
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text() === "Concluído")
+      ?.trigger("click");
+    await nextTick();
+    await wrapper
+      .findAll("button")
+      .find((button) =>
+        button.text().includes("Concluir e solicitar avaliação"),
+      )
+      ?.trigger("click");
+    await flushPromises();
+
+    expect(mocks.completeService).toHaveBeenCalledWith(
+      mocks.client,
+      serviceId,
+      true,
+    );
+    expect(mocks.showToast).toHaveBeenCalledWith(
+      expect.objectContaining({
+        description:
+          "O pedido de avaliação foi enfileirado para envio por e-mail.",
+      }),
+    );
+  });
+
+  it("opens the prepared WhatsApp evaluation after completion when email is absent", async () => {
+    mocks.fetchService.mockResolvedValue({
+      ...service,
+      quote: { ...service.quote, customerEmail: "" },
+    });
+    mocks.completeService.mockResolvedValue({
+      serviceJob: {
+        ...service,
+        status: "completed",
+        completedAt: "2026-08-29T15:00:00Z",
+        quote: { ...service.quote, customerEmail: "" },
+        recommendation: {
+          status: "open",
+          deliveryChannel: "whatsapp",
+          sentAt: "2026-08-29T15:00:00Z",
+        },
+      },
+      shareUrl: "http://localhost:3000/recomendacao/token",
+      whatsappUrl: "https://wa.me/5547999991111?text=avaliacao",
+    });
+    const replace = vi.fn();
+    const close = vi.fn();
+    const handoff = {
+      opener: window,
+      location: { replace },
+      close,
+    } as unknown as Window;
+    const open = vi.spyOn(window, "open").mockReturnValue(handoff);
+    const wrapper = await mountPage();
+
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text() === "Concluído")
+      ?.trigger("click");
+    await nextTick();
+    await wrapper
+      .findAll("button")
+      .find((button) =>
+        button.text().includes("Concluir e solicitar avaliação"),
+      )
+      ?.trigger("click");
+    await flushPromises();
+
+    expect(open).toHaveBeenCalledWith("about:blank", "_blank");
+    expect(replace).toHaveBeenCalledWith(
+      "https://wa.me/5547999991111?text=avaliacao",
+    );
+    expect(close).not.toHaveBeenCalled();
+    open.mockRestore();
+  });
+
+  it("keeps the confirmation open when completion fails", async () => {
+    mocks.completeService.mockRejectedValue(new Error("offline"));
+    const wrapper = await mountPage();
+
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text() === "Concluído")
+      ?.trigger("click");
+    await nextTick();
+    await wrapper
+      .findAll("button")
+      .find((button) =>
+        button.text().includes("Concluir sem solicitar avaliação"),
+      )
+      ?.trigger("click");
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("Não foi possível concluir o serviço.");
+    expect(wrapper.text()).toContain("Concluir sem solicitar avaliação");
+    expect(
+      wrapper.findAll("button").some((button) => button.text() === "Concluído"),
+    ).toBe(true);
+  });
+
+  it("offers a WhatsApp recommendation handoff only when the request has no email to deliver to", async () => {
     mocks.fetchService.mockResolvedValue({
       ...service,
       status: "completed",
       completedAt: "2026-08-29T15:00:00Z",
-      completionConfirmedBy: "customer",
+      recommendation: {
+        status: "open",
+        deliveryChannel: "whatsapp",
+        sentAt: null,
+      },
     });
     const wrapper = await mountPage();
 
-    expect(wrapper.text()).toContain(
-      "A conclusão foi confirmada pelo cliente.",
-    );
+    expect(
+      wrapper
+        .findAll("button")
+        .some((button) =>
+          button.text().includes("Pedir a recomendação pelo WhatsApp"),
+        ),
+    ).toBe(true);
+  });
+
+  it("does not offer a WhatsApp handoff for an email evaluation request", async () => {
+    mocks.fetchService.mockResolvedValue({
+      ...service,
+      status: "completed",
+      completedAt: "2026-08-29T15:00:00Z",
+      recommendation: {
+        status: "open",
+        deliveryChannel: "email",
+        sentAt: null,
+      },
+    });
+    const wrapper = await mountPage();
+
+    expect(
+      wrapper
+        .findAll("button")
+        .some((button) => button.text().includes("recomendação")),
+    ).toBe(false);
   });
 });

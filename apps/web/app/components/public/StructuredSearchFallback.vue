@@ -30,6 +30,11 @@ const selectedCity = computed(() =>
 const canSubmit = computed(
   () => Boolean(selectedService.value && selectedCity.value) && !props.loading,
 );
+const submitBlockedReason = computed(() =>
+  !props.loading && !(selectedService.value && selectedCity.value)
+    ? "Escolha um serviço e uma cidade"
+    : null,
+);
 
 watch(
   () => props.cities,
@@ -126,16 +131,18 @@ function submit() {
       </label>
     </div>
 
-    <UButton
-      type="submit"
-      color="primary"
-      class="structured-search__button"
-      :disabled="!canSubmit"
-      :loading="loading"
-    >
-      <span>Buscar novamente</span>
-      <UIcon name="i-lucide-arrow-right" aria-hidden="true" />
-    </UButton>
+    <DesignSystemDisabledTooltip :reason="submitBlockedReason">
+      <UButton
+        type="submit"
+        color="primary"
+        class="structured-search__button"
+        :disabled="!canSubmit"
+        :loading="loading"
+      >
+        <span>Buscar novamente</span>
+        <UIcon name="i-lucide-arrow-right" aria-hidden="true" />
+      </UButton>
+    </DesignSystemDisabledTooltip>
   </form>
 </template>
 
