@@ -232,7 +232,7 @@ const props = withDefaults(
     width: 16px;
     height: 16px;
     border-radius: 50%;
-    background: #ffffff;
+    background: #fff;
   }
 
   &__step--done &__step-marker {
@@ -241,10 +241,10 @@ const props = withDefaults(
   }
 
   &__step--current &__step-marker {
-    border-color: var(--color-warning);
+    border-color: var(--color-accent);
     box-shadow: 0 0 0 5px var(--color-accent-tint);
     & > span {
-      background: var(--color-warning);
+      background: var(--color-accent);
     }
   }
 
