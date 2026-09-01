@@ -8,7 +8,7 @@ class ProfessionalQuoteRevoker
 
   def call(quote:)
     quote.with_lock do
-      raise NotShared if quote.draft? || quote.saved? || quote.approved?
+      raise NotShared if quote.draft? || quote.saved? || quote.locked_for_editing?
 
       quote.update!(
         status: "saved",

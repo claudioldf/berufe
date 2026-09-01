@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { shallowRef, useTemplateRef } from "vue";
+import { computed, shallowRef, useTemplateRef } from "vue";
 import type { VerificationSubmission } from "~/types";
 import { useInlineFormValidation } from "~/composables/useInlineFormValidation";
 import { validateOnboardingImage } from "~/composables/useProfessionalOnboarding";
@@ -27,6 +27,9 @@ const file = shallowRef<File | null>(null);
 const error = shallowRef("");
 const formRoot = useTemplateRef<HTMLFormElement>("formRoot");
 const { revealValidation, resetValidation } = useInlineFormValidation(formRoot);
+const submittingReason = computed(() =>
+  props.submitting ? "Aguarde o envio do documento terminar." : null,
+);
 
 function selectFile(event: Event) {
   file.value = (event.target as HTMLInputElement).files?.[0] ?? null;
@@ -99,15 +102,19 @@ function submit() {
     >
       {{ error }}
     </p>
-    <UButton
+    <DesignSystemDisabledTooltip
       v-if="props.showSubmit"
-      type="submit"
-      color="primary"
-      :loading="props.submitting"
-      :disabled="props.submitting"
+      :reason="submittingReason"
     >
-      {{ submitLabel }}
-    </UButton>
+      <UButton
+        type="submit"
+        color="primary"
+        :loading="props.submitting"
+        :disabled="props.submitting"
+      >
+        {{ submitLabel }}
+      </UButton>
+    </DesignSystemDisabledTooltip>
   </form>
 </template>
 

@@ -26,6 +26,9 @@ const displayedNameError = computed(() =>
 const displayedTermsError = computed(() =>
   validationAttempted.value ? termsError.value : "",
 );
+const submitBlockedReason = computed(() =>
+  props.loading ? "Aguarde a criação do perfil terminar." : null,
+);
 
 function submit() {
   const valid = !nameError.value && !termsError.value;
@@ -114,16 +117,18 @@ function submit() {
       >
         <UIcon name="i-lucide-circle-alert" /> {{ props.error }}
       </p>
-      <UButton
-        class="registration-step__submit"
-        type="submit"
-        color="primary"
-        trailing-icon="i-lucide-arrow-right"
-        :loading="loading"
-        :disabled="loading"
-      >
-        Criar meu perfil
-      </UButton>
+      <DesignSystemDisabledTooltip :reason="submitBlockedReason">
+        <UButton
+          class="registration-step__submit"
+          type="submit"
+          color="primary"
+          trailing-icon="i-lucide-arrow-right"
+          :loading="loading"
+          :disabled="loading"
+        >
+          Criar meu perfil
+        </UButton>
+      </DesignSystemDisabledTooltip>
     </form>
   </section>
 </template>

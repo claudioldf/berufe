@@ -1,8 +1,18 @@
 Olá, <%= @customer_name %>!
 
-Você confirmou a conclusão de “<%= @service_description %>”, realizado por <%= @professional_name %>.
+Como foi o serviço?
 
-Sua recomendação ajuda outras pessoas a escolher um profissional com mais confiança:
+<%= @professional_name %> marcou o trabalho como concluído e gostaria de saber como foi sua experiência.
+
+SERVIÇO REALIZADO
+<%= @service_description %>
+por <%= @professional_name %>
+
+Sua avaliação ajuda outras pessoas a escolher com mais confiança e ajuda <%= @professional_name %> a fortalecer o próprio trabalho na Berufe.
+
+Conte como foi:
 <%= @recommendation_url %>
 
-O convite é pessoal, foi enviado para este e-mail e expira em 14 dias.
+Se algo ainda precisa ser resolvido, você também poderá avisar <%= @professional_name %> em particular, sem publicar uma avaliação.
+
+Este convite é pessoal, foi enviado somente para este e-mail e expira em 14 dias. Não encaminhe esta mensagem.

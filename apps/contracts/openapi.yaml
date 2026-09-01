@@ -316,13 +316,12 @@ paths:
   /api/v1/admin/moderation:
     get:
       operationId: getAdminModerationQueue
-      summary: Read the shared professional-supply moderation queue
+      summary: Read the identity-verification moderation queue
       tags:
         - Moderation
       security:
         - applicationSession: []
       parameters:
-        - $ref: "#/components/parameters/ModerationType"
         - $ref: "#/components/parameters/ModerationStatus"
         - $ref: "#/components/parameters/ModerationSearch"
         - $ref: "#/components/parameters/Page"
@@ -339,8 +338,6 @@ paths:
                 $ref: "#/components/schemas/AdminModerationResponse"
         "401":
           $ref: "#/components/responses/AdminModerationUnauthorized"
-        "422":
-          $ref: "#/components/responses/AdminModerationInvalid"
   /api/v1/admin/reports/growth:
     get:
       operationId: getAdminGrowthReport
@@ -392,7 +389,14 @@ paths:
           required: false
           schema:
             type: string
-            enum: [zero_results, not_understood, thin_results, operational_issue, healthy]
+            enum:
+              [
+                zero_results,
+                not_understood,
+                thin_results,
+                operational_issue,
+                healthy,
+              ]
         - name: sort
           in: query
           required: false
@@ -428,7 +432,6 @@ paths:
       security:
         - applicationSession: []
       parameters:
-        - $ref: "#/components/parameters/ModerationType"
         - $ref: "#/components/parameters/ModerationStatus"
         - $ref: "#/components/parameters/ModerationSearch"
         - $ref: "#/components/parameters/Page"
@@ -459,48 +462,6 @@ paths:
           $ref: "#/components/responses/AdminModerationConflict"
         "422":
           $ref: "#/components/responses/AdminModerationInvalid"
-  /api/v1/admin/moderation/{target_type}/{target_id}/media:
-    parameters:
-      - $ref: "#/components/parameters/ModerationMediaTargetType"
-      - $ref: "#/components/parameters/ModerationTargetId"
-    get:
-      operationId: getAdminModerationMedia
-      summary: Read a regenerated private image for in-place moderation preview
-      tags:
-        - Moderation
-      security:
-        - applicationSession: []
-      responses:
-        "200":
-          description: The regenerated private image; access is recorded immutably.
-          headers:
-            X-Request-Id:
-              $ref: "#/components/headers/RequestId"
-            Cache-Control:
-              schema:
-                type: string
-                const: no-store
-            Content-Disposition:
-              schema:
-                type: string
-                pattern: '^inline; filename="berufe-analise-(profile_photo|portfolio_item)-[a-f0-9-]+\.(jpg|png)"'
-            X-Content-Type-Options:
-              schema:
-                type: string
-                const: nosniff
-          content:
-            image/jpeg:
-              schema:
-                type: string
-                format: binary
-            image/png:
-              schema:
-                type: string
-                format: binary
-        "401":
-          $ref: "#/components/responses/AdminModerationUnauthorized"
-        "404":
-          $ref: "#/components/responses/AdminModerationNotFound"
   /api/v1/admin/verification-files/{id}/content:
     parameters:
       - name: id
@@ -597,7 +558,7 @@ paths:
           format: uuid
     post:
       operationId: setAdminProfessionalPublication
-      summary: Publish or unpublish a professional profile and refresh the directory
+      summary: Restore or unpublish a professional profile and refresh the directory
       tags:
         - Professional supply
       security:
@@ -620,7 +581,7 @@ paths:
               $ref: "#/components/schemas/AdminProfessionalPublicationRequest"
       responses:
         "200":
-          description: The publication decision and its immutable audit record were committed together.
+          description: The restoration or unpublication and its immutable audit record were committed together.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
@@ -753,7 +714,7 @@ paths:
   /api/v1/public/professionals/featured:
     get:
       operationId: getFeaturedPublicProfessionals
-      summary: Read the most recently approved publicly eligible professionals
+      summary: Read the most recently updated publicly eligible professionals
       tags:
         - Public discovery
       security: []
@@ -1110,13 +1071,13 @@ paths:
           maxLength: 2048
     get:
       operationId: getPublicProfessionalProfile
-      summary: Read one complete approved public professional profile
+      summary: Read one complete published professional profile
       tags:
         - Public discovery
       security: []
       responses:
         "200":
-          description: The approved public snapshot and a short-lived profile interaction.
+          description: The current published profile and a short-lived profile interaction.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
@@ -1266,7 +1227,7 @@ paths:
               schema:
                 type: string
         "404":
-          description: The professional is not currently public or has no approved contact.
+          description: The professional is not currently public or has no public contact.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
@@ -1302,13 +1263,13 @@ paths:
           format: uuid
     get:
       operationId: getPublicProfilePhotoImage
-      summary: Read a currently published pending or approved profile photo
+      summary: Read the current public profile photo
       tags:
         - Public discovery
       security: []
       responses:
         "200":
-          description: A pending or approved JPEG profile photo whose parent remains publicly eligible.
+          description: The current JPEG profile photo whose parent remains publicly eligible.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
@@ -1332,7 +1293,7 @@ paths:
                 type: string
                 format: binary
         "404":
-          description: The photo is absent, rejected/hidden, has an ineligible parent, or its object is unavailable.
+          description: The photo is absent or deleted, its parent is ineligible, or its object is unavailable.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
@@ -1350,13 +1311,13 @@ paths:
           format: uuid
     get:
       operationId: getPublicPortfolioItemImage
-      summary: Read a public pending or approved regenerated portfolio image
+      summary: Read an active public portfolio image
       tags:
         - Professional supply
       security: []
       responses:
         "200":
-          description: A pending or approved portfolio image that remains eligible for public display.
+          description: An active portfolio image whose parent remains publicly eligible.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
@@ -1384,7 +1345,7 @@ paths:
                 type: string
                 format: binary
         "404":
-          description: The portfolio item was rejected/hidden/deleted, its parent is unavailable, or its object is unavailable.
+          description: The portfolio item was deleted, its parent is unavailable, or its object is unavailable.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
@@ -1934,7 +1895,10 @@ paths:
           description: Up to ten owner-scoped matching customers.
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/ProfessionalCustomerCandidateListResponse" }
+              schema:
+                {
+                  $ref: "#/components/schemas/ProfessionalCustomerCandidateListResponse",
+                }
         "401":
           description: An active session is required.
           content:
@@ -1961,7 +1925,10 @@ paths:
           description: Owner-scoped customers ordered by normalized name.
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/ProfessionalCustomerListResponse" }
+              schema:
+                {
+                  $ref: "#/components/schemas/ProfessionalCustomerListResponse",
+                }
         "401":
           description: An active session is required.
           content:
@@ -1994,7 +1961,8 @@ paths:
           description: The owner-scoped customer and quote summary.
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/ProfessionalCustomerResponse" }
+              schema:
+                { $ref: "#/components/schemas/ProfessionalCustomerResponse" }
         "401":
           description: An active session is required.
           content:
@@ -2016,13 +1984,15 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: "#/components/schemas/ProfessionalCustomerWriteRequest" }
+            schema:
+              { $ref: "#/components/schemas/ProfessionalCustomerWriteRequest" }
       responses:
         "200":
           description: The normalized customer contact was updated.
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/ProfessionalCustomerResponse" }
+              schema:
+                { $ref: "#/components/schemas/ProfessionalCustomerResponse" }
         "401":
           description: An active session is required.
           content:
@@ -2055,7 +2025,10 @@ paths:
           description: Services ordered by recent activity.
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/ProfessionalServiceJobListResponse" }
+              schema:
+                {
+                  $ref: "#/components/schemas/ProfessionalServiceJobListResponse",
+                }
         "401":
           description: An active session is required.
           content:
@@ -2078,7 +2051,8 @@ paths:
           description: The owned service.
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/ProfessionalServiceJobResponse" }
+              schema:
+                { $ref: "#/components/schemas/ProfessionalServiceJobResponse" }
         "401":
           description: An active session is required.
           content:
@@ -2089,24 +2063,27 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorResponse" }
-  /api/v1/professional/service-jobs/{id}/completion-request:
+  /api/v1/professional/service-jobs/{id}/recommendation-request:
     parameters:
       - name: id
         in: path
         required: true
         schema: { type: string, format: uuid }
     post:
-      operationId: requestProfessionalServiceCompletion
-      summary: Ask the customer to confirm completion
+      operationId: requestProfessionalServiceRecommendation
+      summary: Open a WhatsApp handoff to the recommendation link for a customer with no email on file
       tags: [Professional services]
       security:
         - applicationSession: []
       responses:
         "200":
-          description: The direct WhatsApp completion handoff.
+          description: The direct WhatsApp recommendation handoff. Reusable on repeat calls.
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/ProfessionalCompletionRequestResponse" }
+              schema:
+                {
+                  $ref: "#/components/schemas/ProfessionalRecommendationRequestResponse",
+                }
         "401":
           description: An active session is required.
           content:
@@ -2123,7 +2100,7 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorResponse" }
         "409":
-          description: Completion cannot be requested in the current state.
+          description: The service job is not completed, or already has an email-delivered request.
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorResponse" }
@@ -2139,12 +2116,30 @@ paths:
       tags: [Professional services]
       security:
         - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [completion]
+              properties:
+                completion:
+                  type: object
+                  additionalProperties: false
+                  required: [request_recommendation]
+                  properties:
+                    request_recommendation: { type: boolean }
       responses:
         "200":
-          description: The completed service with the professional recorded as confirmer.
+          description: The completed service and any immediate recommendation handoff.
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/ProfessionalServiceJobResponse" }
+              schema:
+                {
+                  $ref: "#/components/schemas/ProfessionalServiceCompletionResponse",
+                }
         "401":
           description: An active session is required.
           content:
@@ -2162,6 +2157,11 @@ paths:
               schema: { $ref: "#/components/schemas/ErrorResponse" }
         "409":
           description: The service is already completed or cancelled.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "422":
+          description: The recommendation choice is missing or invalid.
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorResponse" }
@@ -2197,7 +2197,8 @@ paths:
           description: The cancelled service.
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/ProfessionalServiceJobResponse" }
+              schema:
+                { $ref: "#/components/schemas/ProfessionalServiceJobResponse" }
         "401":
           description: An active session is required.
           content:
@@ -2220,6 +2221,110 @@ paths:
               schema: { $ref: "#/components/schemas/ErrorResponse" }
         "422":
           description: The cancellation reason is invalid.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+  /api/v1/professional/recommendations:
+    get:
+      operationId: listProfessionalRecommendations
+      summary: List every recommendation received, including hidden ones
+      tags: [Professional recommendations]
+      security:
+        - applicationSession: []
+      responses:
+        "200":
+          description: Recommendations ordered by most recent first.
+          content:
+            application/json:
+              schema:
+                {
+                  $ref: "#/components/schemas/ProfessionalRecommendationListResponse",
+                }
+        "401":
+          description: An active session is required.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+  /api/v1/professional/recommendations/{id}/hide:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      operationId: hideProfessionalRecommendation
+      summary: Remove one recommendation from the public profile immediately
+      tags: [Professional recommendations]
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [hide]
+              properties:
+                hide:
+                  type: object
+                  additionalProperties: false
+                  required: [reason]
+                  properties:
+                    reason: { type: [string, "null"], maxLength: 700 }
+      responses:
+        "200":
+          description: The recommendation is hidden and excluded from public counts.
+          content:
+            application/json:
+              schema:
+                { $ref: "#/components/schemas/ProfessionalRecommendationResponse" }
+        "401":
+          description: An active session is required.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403":
+          description: The origin or owner is invalid.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: The recommendation does not exist.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+  /api/v1/professional/recommendations/{id}/unhide:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      operationId: unhideProfessionalRecommendation
+      summary: Restore one hidden recommendation to the public profile
+      tags: [Professional recommendations]
+      security:
+        - applicationSession: []
+      responses:
+        "200":
+          description: The recommendation is public again.
+          content:
+            application/json:
+              schema:
+                { $ref: "#/components/schemas/ProfessionalRecommendationResponse" }
+        "401":
+          description: An active session is required.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403":
+          description: The origin or owner is invalid.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: The recommendation does not exist.
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorResponse" }
@@ -2700,43 +2805,6 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorResponse" }
-  /api/v1/shared-quotes/completions:
-    post:
-      operationId: completeSharedQuoteService
-      summary: Confirm completion or report an issue through the quote bearer
-      tags: [Shared quotes]
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: "#/components/schemas/SharedQuoteCompletionRequest" }
-      responses:
-        "200":
-          description: The completion response was recorded.
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/SharedQuoteResponse" }
-        "403":
-          description: The exact configured Nuxt origin is required.
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/ErrorResponse" }
-        "404":
-          description: The bearer is not available.
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/ErrorResponse" }
-        "409":
-          description: The service cannot receive this transition.
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/ErrorResponse" }
-        "422":
-          description: The issue response is invalid.
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/ErrorResponse" }
   /api/v1/customer-recommendations/resolve:
     post:
       operationId: resolveCustomerRecommendation
@@ -2747,13 +2815,19 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: "#/components/schemas/CustomerRecommendationResolveRequest" }
+            schema:
+              {
+                $ref: "#/components/schemas/CustomerRecommendationResolveRequest",
+              }
       responses:
         "200":
           description: The open invitation context.
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/CustomerRecommendationResolveResponse" }
+              schema:
+                {
+                  $ref: "#/components/schemas/CustomerRecommendationResolveResponse",
+                }
         "403":
           description: The exact configured Nuxt origin is required.
           content:
@@ -2767,20 +2841,24 @@ paths:
   /api/v1/customer-recommendations:
     post:
       operationId: createCustomerRecommendation
-      summary: Publish one recommendation from an emailed bearer
+      summary: Publish one recommendation from an emailed or WhatsApp-delivered bearer
       tags: [Customer recommendations]
       security: []
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: "#/components/schemas/CustomerRecommendationWriteRequest" }
+            schema:
+              {
+                $ref: "#/components/schemas/CustomerRecommendationWriteRequest",
+              }
       responses:
         "201":
           description: The recommendation was published immediately.
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/CustomerRecommendationResponse" }
+              schema:
+                { $ref: "#/components/schemas/CustomerRecommendationResponse" }
         "403":
           description: The exact configured Nuxt origin is required.
           content:
@@ -2793,6 +2871,44 @@ paths:
               schema: { $ref: "#/components/schemas/ErrorResponse" }
         "422":
           description: The recommendation or consent fields are invalid.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+  /api/v1/customer-recommendations/issues:
+    post:
+      operationId: createCustomerFeedbackIssue
+      summary: Privately report an outstanding problem instead of recommending
+      tags: [Customer recommendations]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              { $ref: "#/components/schemas/CustomerFeedbackIssueRequest" }
+      responses:
+        "200":
+          description: >-
+            The professional was notified privately; nothing is published or
+            changes the underlying service job's status.
+          content:
+            application/json:
+              schema:
+                {
+                  $ref: "#/components/schemas/CustomerRecommendationResolveResponse",
+                }
+        "403":
+          description: The exact configured Nuxt origin is required.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Generic response for invalid, used, or expired links.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "422":
+          description: The feedback message is invalid.
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorResponse" }
@@ -2859,7 +2975,7 @@ paths:
   /api/v1/professional/profile/submission:
     post:
       operationId: submitProfessionalProfile
-      summary: Publish the persisted professional profile and enqueue post-publication review
+      summary: Publish the complete persisted professional profile immediately
       tags:
         - Professional supply
       security:
@@ -2913,7 +3029,7 @@ paths:
   /api/v1/professional/profile/photo:
     put:
       operationId: updateProfessionalProfilePhoto
-      summary: Attach a processed profile photo and enqueue post-publication review
+      summary: Attach a processed profile photo for immediate use
       tags:
         - Professional supply
       security:
@@ -3014,10 +3130,66 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/professional/profile-photos/{id}/image:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getProfessionalProfilePhotoImage
+      summary: Read the authenticated professional's current profile photo
+      tags:
+        - Professional supply
+      security:
+        - applicationSession: []
+      responses:
+        "200":
+          description: The current owned JPEG profile photo, including while the profile is draft or suspended.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+            Content-Disposition:
+              schema:
+                type: string
+                pattern: '^inline; filename="berufe-profile-photo-[a-f0-9-]+\.jpg"'
+            X-Content-Type-Options:
+              schema:
+                type: string
+                const: nosniff
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+        "401":
+          description: An active Rails application session is required.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: The profile, current owned photo, or stored object was not found.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/professional/portfolio-items:
     post:
       operationId: createProfessionalPortfolioItem
-      summary: Attach one processed image and submit a portfolio item for review
+      summary: Attach one processed image as an immediately active portfolio item
       tags:
         - Professional supply
       security:
@@ -3030,7 +3202,7 @@ paths:
               $ref: "#/components/schemas/ProfessionalPortfolioItemCreateRequest"
       responses:
         "201":
-          description: The portfolio item was persisted privately for review.
+          description: The portfolio item was persisted and is immediately visible when its profile is public.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
@@ -3088,7 +3260,7 @@ paths:
           format: uuid
     patch:
       operationId: updateProfessionalPortfolioItem
-      summary: Update and resubmit one rejected or hidden owned portfolio item
+      summary: Update one active owned portfolio item immediately
       tags:
         - Professional supply
       security:
@@ -3101,7 +3273,7 @@ paths:
               $ref: "#/components/schemas/ProfessionalPortfolioItemUpdateRequest"
       responses:
         "200":
-          description: The same portfolio item was updated and returned to pending review.
+          description: The same portfolio item was updated and is immediately visible when its profile is public.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
@@ -3129,15 +3301,6 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: Professional registration, active owned item, or replacement upload was not found.
-          headers:
-            X-Request-Id:
-              $ref: "#/components/headers/RequestId"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "409":
-          description: The portfolio item is no longer rejected or hidden.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
@@ -3191,6 +3354,66 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: Professional registration or the active owned item was not found.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/professional/portfolio-items/{id}/image:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getProfessionalPortfolioItemImage
+      summary: Read an authenticated professional's active portfolio image
+      tags:
+        - Professional supply
+      security:
+        - applicationSession: []
+      responses:
+        "200":
+          description: An active owned portfolio image, including while the profile is draft or suspended.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+            Content-Disposition:
+              schema:
+                type: string
+                pattern: '^inline; filename="berufe-portfolio-[a-f0-9-]+\.(jpg|png)"'
+            X-Content-Type-Options:
+              schema:
+                type: string
+                const: nosniff
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+        "401":
+          description: An active Rails application session is required.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: The profile, active owned item, or stored object was not found.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
@@ -3682,19 +3905,6 @@ components:
       schema:
         type: string
         format: uuid
-    ModerationType:
-      name: type
-      in: query
-      description: Moderation target family shown by the existing type control.
-      schema:
-        type: string
-        default: all
-        enum:
-          - all
-          - profile_revision
-          - profile_photo
-          - portfolio_item
-          - verification_request
     ModerationStatus:
       name: status
       in: query
@@ -3706,7 +3916,6 @@ components:
           - pending_review
           - approved
           - rejected
-          - hidden
           - all
     ModerationSearch:
       name: search
@@ -3760,6 +3969,8 @@ components:
           - change_requested
           - approved
           - declined
+          - completed
+          - cancelled
     ProfessionalQuoteScheduledOn:
       name: scheduled_on
       in: query
@@ -3796,15 +4007,6 @@ components:
       required: true
       schema:
         $ref: "#/components/schemas/ModerationTargetType"
-    ModerationMediaTargetType:
-      name: target_type
-      in: path
-      required: true
-      schema:
-        type: string
-        enum:
-          - profile_photo
-          - portfolio_item
     ModerationTargetId:
       name: target_id
       in: path
@@ -3992,7 +4194,7 @@ components:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
     AdminModerationNotFound:
-      description: The moderation target or regenerated private image does not exist.
+      description: The identity request or retained private document does not exist.
       headers:
         X-Request-Id:
           $ref: "#/components/headers/RequestId"
@@ -4044,7 +4246,15 @@ components:
     AdminSearchAuditSummary:
       type: object
       additionalProperties: false
-      required: [total, zero_results, not_understood, thin_results, operational_issue, healthy]
+      required:
+        [
+          total,
+          zero_results,
+          not_understood,
+          thin_results,
+          operational_issue,
+          healthy,
+        ]
       properties:
         total: { type: integer, minimum: 0 }
         zero_results: { type: integer, minimum: 0 }
@@ -4055,7 +4265,21 @@ components:
     AdminSearchAuditItem:
       type: object
       additionalProperties: false
-      required: [id, input_prompt, raw_llm_response, parsed_response, status, response_source, adapter, model, provider_request_id, prompt_digest, result_count, created_at]
+      required:
+        [
+          id,
+          input_prompt,
+          raw_llm_response,
+          parsed_response,
+          status,
+          response_source,
+          adapter,
+          model,
+          provider_request_id,
+          prompt_digest,
+          result_count,
+          created_at,
+        ]
       properties:
         id: { type: string, format: uuid }
         input_prompt: { type: string, minLength: 1, maxLength: 200 }
@@ -4066,7 +4290,16 @@ components:
             - type: "null"
         status:
           type: string
-          enum: [processing, completed, application_rate_limited, provider_rate_limited, provider_unavailable, response_rejected, search_failed]
+          enum:
+            [
+              processing,
+              completed,
+              application_rate_limited,
+              provider_rate_limited,
+              provider_unavailable,
+              response_rejected,
+              search_failed,
+            ]
         response_source:
           type: [string, "null"]
           enum: [provider, cache, null]
@@ -4144,7 +4377,8 @@ components:
     AdminProfessionalsSummary:
       type: object
       additionalProperties: false
-      required: [total, published, suspended, onboarding_finished, identity_verified]
+      required:
+        [total, published, suspended, onboarding_finished, identity_verified]
       properties:
         total: { type: integer, minimum: 0 }
         published: { type: integer, minimum: 0 }
@@ -4181,7 +4415,7 @@ components:
         display_name: { type: [string, "null"] }
         profile_status:
           type: [string, "null"]
-          enum: [draft, pending_review, published, suspended, null]
+          enum: [draft, published, suspended, null]
         city: { type: [string, "null"] }
         state: { type: [string, "null"], minLength: 2, maxLength: 2 }
         phone_verified: { type: boolean }
@@ -4218,6 +4452,8 @@ components:
           type: boolean
         reason:
           type: [string, "null"]
+          description: User-visible reason required when unpublishing; omit when restoring.
+          minLength: 10
           maxLength: 500
     AdminGrowthReportPeriodKey:
       type: string
@@ -4234,7 +4470,19 @@ components:
     AdminGrowthReportData:
       type: object
       additionalProperties: false
-      required: [generated_at, period, privacy_notice, summary, supply, discovery, engagement, trust, quotes, moderation]
+      required:
+        [
+          generated_at,
+          period,
+          privacy_notice,
+          summary,
+          supply,
+          discovery,
+          engagement,
+          trust,
+          quotes,
+          moderation,
+        ]
       properties:
         generated_at: { type: string, format: date-time }
         period: { $ref: "#/components/schemas/AdminGrowthReportPeriod" }
@@ -4249,7 +4497,17 @@ components:
     AdminGrowthReportPeriod:
       type: object
       additionalProperties: false
-      required: [key, label, short_label, window_label, start_at, end_at, truncated, data_available_from]
+      required:
+        [
+          key,
+          label,
+          short_label,
+          window_label,
+          start_at,
+          end_at,
+          truncated,
+          data_available_from,
+        ]
       properties:
         key: { $ref: "#/components/schemas/AdminGrowthReportPeriodKey" }
         label: { type: string }
@@ -4286,11 +4544,15 @@ components:
       additionalProperties: false
       required: [published, activated, search_coverage, handoffs, returning]
       properties:
-        published: { $ref: "#/components/schemas/AdminGrowthReportPublishedSummary" }
-        activated: { $ref: "#/components/schemas/AdminGrowthReportRatioSummary" }
-        search_coverage: { $ref: "#/components/schemas/AdminGrowthReportRatioSummary" }
+        published:
+          { $ref: "#/components/schemas/AdminGrowthReportPublishedSummary" }
+        activated:
+          { $ref: "#/components/schemas/AdminGrowthReportRatioSummary" }
+        search_coverage:
+          { $ref: "#/components/schemas/AdminGrowthReportRatioSummary" }
         handoffs: { $ref: "#/components/schemas/AdminGrowthReportRatioSummary" }
-        returning: { $ref: "#/components/schemas/AdminGrowthReportRatioSummary" }
+        returning:
+          { $ref: "#/components/schemas/AdminGrowthReportRatioSummary" }
     AdminGrowthReportPublishedSummary:
       type: object
       additionalProperties: false
@@ -4309,7 +4571,8 @@ components:
             metric_type:
               type: string
               enum: [flow, cohort_outcome, current_stock]
-            comparison: { $ref: "#/components/schemas/AdminGrowthReportComparison" }
+            comparison:
+              { $ref: "#/components/schemas/AdminGrowthReportComparison" }
     AdminGrowthReportSupply:
       type: object
       additionalProperties: false
@@ -4346,11 +4609,13 @@ components:
     AdminGrowthReportDiscovery:
       type: object
       additionalProperties: false
-      required: [stages, profile_views, whatsapp_handoffs, demand, other_count, gaps]
+      required:
+        [stages, profile_views, whatsapp_handoffs, demand, other_count, gaps]
       properties:
         stages:
           type: array
-          items: { $ref: "#/components/schemas/AdminGrowthReportDiscoveryStage" }
+          items:
+            { $ref: "#/components/schemas/AdminGrowthReportDiscoveryStage" }
         profile_views: { type: integer, minimum: 0 }
         whatsapp_handoffs: { type: integer, minimum: 0 }
         demand:
@@ -4378,7 +4643,16 @@ components:
     AdminGrowthReportGap:
       type: object
       additionalProperties: false
-      required: [service, location, searches, zero_result_searches, thin_result_searches, professionals, catalog_status]
+      required:
+        [
+          service,
+          location,
+          searches,
+          zero_result_searches,
+          thin_result_searches,
+          professionals,
+          catalog_status,
+        ]
       properties:
         service: { type: string }
         location: { type: string }
@@ -4392,11 +4666,22 @@ components:
     AdminGrowthReportEngagement:
       type: object
       additionalProperties: false
-      required: [eligible_professionals, meaningful_actives, meaningful_active_rate, returning_professionals, returning_rate, active_weeks, actions, cohorts]
+      required:
+        [
+          eligible_professionals,
+          meaningful_actives,
+          meaningful_active_rate,
+          returning_professionals,
+          returning_rate,
+          active_weeks,
+          actions,
+          cohorts,
+        ]
       properties:
         eligible_professionals: { type: integer, minimum: 0 }
         meaningful_actives: { type: integer, minimum: 0 }
-        meaningful_active_rate: { $ref: "#/components/schemas/AdminGrowthReportRate" }
+        meaningful_active_rate:
+          { $ref: "#/components/schemas/AdminGrowthReportRate" }
         returning_professionals: { type: integer, minimum: 0 }
         returning_rate: { $ref: "#/components/schemas/AdminGrowthReportRate" }
         active_weeks:
@@ -4436,7 +4721,8 @@ components:
     AdminGrowthReportTrustFunnel:
       type: object
       additionalProperties: false
-      required: [key, label, started, responded, approved, response_rate, approval_rate]
+      required:
+        [key, label, started, responded, approved, response_rate, approval_rate]
       properties:
         key: { type: string, const: relationships }
         label: { type: string }
@@ -4464,7 +4750,20 @@ components:
     AdminGrowthReportModeration:
       type: object
       additionalProperties: false
-      required: [pending, oldest_pending_hours, oldest_pending_target_hours, median_review_hours, p90_review_hours, rejected, reviewed, approval_rate, hidden, by_target_type]
+      required:
+        [
+          pending,
+          oldest_pending_hours,
+          oldest_pending_target_hours,
+          median_review_hours,
+          p90_review_hours,
+          rejected,
+          reviewed,
+          approval_rate,
+          hidden,
+          restored,
+          by_target_type,
+        ]
       properties:
         pending: { type: integer, minimum: 0 }
         oldest_pending_hours: { type: number, minimum: 0 }
@@ -4475,6 +4774,7 @@ components:
         reviewed: { type: integer, minimum: 0 }
         approval_rate: { $ref: "#/components/schemas/AdminGrowthReportRate" }
         hidden: { type: integer, minimum: 0 }
+        restored: { type: integer, minimum: 0 }
         by_target_type:
           type: object
           additionalProperties:
@@ -4786,18 +5086,8 @@ components:
     ProfessionalNotificationType:
       type: string
       enum:
-        - profile_moderation_approved
-        - profile_moderation_rejected
         - profile_moderation_hidden
         - profile_moderation_restored
-        - profile_photo_moderation_approved
-        - profile_photo_moderation_rejected
-        - profile_photo_moderation_hidden
-        - profile_photo_moderation_restored
-        - portfolio_item_moderation_approved
-        - portfolio_item_moderation_rejected
-        - portfolio_item_moderation_hidden
-        - portfolio_item_moderation_restored
         - verification_request_moderation_approved
         - verification_request_moderation_rejected
         - relationship_request_received
@@ -4806,7 +5096,6 @@ components:
         - quote_change_requested
         - quote_approved
         - quote_declined
-        - service_completion_confirmed
         - service_completion_issue_reported
         - customer_recommendation_published
     ProfessionalNotification:
@@ -4948,14 +5237,21 @@ components:
     ProfessionalDashboardSummary:
       type: object
       additionalProperties: false
-      required: [local_date, readiness, change_requested_quotes, recent_quotes, recent_service_jobs]
+      required:
+        [
+          local_date,
+          readiness,
+          action_items,
+          recent_quotes,
+          recent_service_jobs,
+        ]
       properties:
         local_date: { type: string, format: date }
         readiness:
           $ref: "#/components/schemas/ProfessionalDashboardReadiness"
-        change_requested_quotes:
+        action_items:
           type: array
-          items: { $ref: "#/components/schemas/ProfessionalDashboardChangeRequestedQuote" }
+          items: { $ref: "#/components/schemas/ProfessionalActionItem" }
         recent_quotes:
           type: array
           maxItems: 5
@@ -4964,6 +5260,36 @@ components:
           type: array
           maxItems: 5
           items: { $ref: "#/components/schemas/ProfessionalServiceJob" }
+    ProfessionalActionKind:
+      type: string
+      enum:
+        [
+          quote_unshared,
+          quote_awaiting_response,
+          quote_change_requested,
+          service_open,
+          recommendation_unsent,
+        ]
+    ProfessionalActionItem:
+      type: object
+      additionalProperties: false
+      required:
+        [id, kind, title, subtitle, sort_at, recommendation_delivery_channel]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: >-
+            The quote id for quote_* kinds, the service job id for
+            service_open and recommendation_unsent.
+        kind: { $ref: "#/components/schemas/ProfessionalActionKind" }
+        title: { type: string, minLength: 1, maxLength: 160 }
+        subtitle: { type: string, minLength: 1, maxLength: 200 }
+        sort_at: { type: string, format: date-time }
+        recommendation_delivery_channel:
+          oneOf:
+            - $ref: "#/components/schemas/RecommendationDeliveryChannel"
+            - type: "null"
     ProfessionalDashboardReadiness:
       type: object
       additionalProperties: false
@@ -4973,7 +5299,13 @@ components:
         steps:
           type: object
           additionalProperties: false
-          required: [identity_contact, service_coverage, reviewable_portfolio, approved_identity]
+          required:
+            [
+              identity_contact,
+              service_coverage,
+              reviewable_portfolio,
+              approved_identity,
+            ]
           properties:
             identity_contact: { type: boolean }
             service_coverage: { type: boolean }
@@ -4981,31 +5313,41 @@ components:
             approved_identity: { type: boolean }
     QuoteStatus:
       type: string
-      enum: [draft, saved, shared, change_requested, approved, declined]
+      enum:
+        [
+          draft,
+          saved,
+          shared,
+          change_requested,
+          approved,
+          declined,
+          completed,
+          cancelled,
+        ]
     ServiceJobStatus:
       type: string
-      enum: [approved, completion_requested, completion_issue, completed, cancelled]
-    ServiceJobCompletionConfirmer:
-      type: string
-      enum: [customer, professional]
+      enum: [approved, completed, cancelled]
     RecommendationRequestStatus:
       type: string
       enum: [open, completed, expired]
-    ProfessionalDashboardChangeRequestedQuote:
-      type: object
-      additionalProperties: false
-      required: [id, quote_number, customer_name, service_description, latest_change_request]
-      properties:
-        id: { type: string, format: uuid }
-        quote_number: { type: integer, minimum: 1 }
-        customer_name: { type: string, minLength: 1, maxLength: 80 }
-        service_description: { type: string, minLength: 1, maxLength: 160 }
-        latest_change_request:
-          $ref: "#/components/schemas/ProfessionalQuoteChangeRequest"
+    RecommendationDeliveryChannel:
+      type: string
+      enum: [email, whatsapp]
     ProfessionalQuoteSummary:
       type: object
       additionalProperties: false
-      required: [id, quote_number, revision, customer_name, service_description, total_amount, status, service_job_status, created_at]
+      required:
+        [
+          id,
+          quote_number,
+          revision,
+          customer_name,
+          service_description,
+          total_amount,
+          status,
+          service_job_status,
+          created_at,
+        ]
       properties:
         id: { type: string, format: uuid }
         quote_number: { type: integer, minimum: 1 }
@@ -5027,13 +5369,24 @@ components:
         quote:
           type: object
           additionalProperties: false
-          required: [customer, service_description, service_address, scheduled_on, discount_amount, valid_until, notes, items]
+          required:
+            [
+              customer,
+              service_description,
+              service_address,
+              scheduled_on,
+              discount_amount,
+              valid_until,
+              notes,
+              items,
+            ]
           properties:
             revision: { type: integer, minimum: 0 }
             status:
               type: string
               enum: [draft, saved]
-            customer: { $ref: "#/components/schemas/ProfessionalQuoteCustomerInput" }
+            customer:
+              { $ref: "#/components/schemas/ProfessionalQuoteCustomerInput" }
             service_description: { type: string, maxLength: 160 }
             service_address:
               type: [string, "null"]
@@ -5081,7 +5434,10 @@ components:
               type: array
               items: { $ref: "#/components/schemas/ProfessionalQuote" }
             meta: { $ref: "#/components/schemas/PageMeta" }
-            summary: { $ref: "#/components/schemas/ProfessionalQuoteCommercialSummary" }
+            summary:
+              {
+                $ref: "#/components/schemas/ProfessionalQuoteCommercialSummary",
+              }
         request_id: { $ref: "#/components/schemas/RequestId" }
     ProfessionalQuoteCommercialSummary:
       type: object
@@ -5131,8 +5487,18 @@ components:
           required: [quote, share_url, whatsapp_url]
           properties:
             quote: { $ref: "#/components/schemas/ProfessionalQuote" }
-            share_url: { type: string, format: uri, pattern: "/orcamento/bq_[A-Za-z0-9_-]{43}$" }
-            whatsapp_url: { type: string, format: uri, pattern: "^https://wa\\.me/55[1-9][0-9]9[0-9]{8}\\?text=" }
+            share_url:
+              {
+                type: string,
+                format: uri,
+                pattern: "/orcamento/bq_[A-Za-z0-9_-]{43}$",
+              }
+            whatsapp_url:
+              {
+                type: string,
+                format: uri,
+                pattern: "^https://wa\\.me/55[1-9][0-9]9[0-9]{8}\\?text=",
+              }
         request_id: { $ref: "#/components/schemas/RequestId" }
     ProfessionalQuoteShareRequest:
       type: object
@@ -5166,19 +5532,6 @@ components:
             revision: { type: integer, minimum: 0 }
             terms_accepted: { type: boolean }
             message: { type: [string, "null"], maxLength: 700 }
-    SharedQuoteCompletionRequest:
-      type: object
-      additionalProperties: false
-      required: [token, completion]
-      properties:
-        token: { type: string, maxLength: 200 }
-        completion:
-          type: object
-          additionalProperties: false
-          required: [kind, message]
-          properties:
-            kind: { type: string, enum: [confirm, report_issue] }
-            message: { type: [string, "null"], maxLength: 700 }
     SharedQuoteResponse:
       type: object
       additionalProperties: false
@@ -5190,12 +5543,30 @@ components:
           required: [quote, professional]
           properties:
             quote: { $ref: "#/components/schemas/SharedQuote" }
-            professional: { $ref: "#/components/schemas/SharedQuoteProfessional" }
+            professional:
+              { $ref: "#/components/schemas/SharedQuoteProfessional" }
         request_id: { $ref: "#/components/schemas/RequestId" }
     SharedQuote:
       type: object
       additionalProperties: false
-      required: [quote_number, revision, status, customer_name, service_description, service_address, scheduled_on, valid_until, notes, subtotal_amount, discount_amount, total_amount, customer_decision_message, service_job, items]
+      required:
+        [
+          quote_number,
+          revision,
+          status,
+          customer_name,
+          service_description,
+          service_address,
+          scheduled_on,
+          valid_until,
+          notes,
+          subtotal_amount,
+          discount_amount,
+          total_amount,
+          customer_decision_message,
+          service_job,
+          items,
+        ]
       properties:
         quote_number: { type: integer, minimum: 1 }
         revision: { type: integer, minimum: 0 }
@@ -5222,17 +5593,15 @@ components:
     SharedQuoteServiceJob:
       type: object
       additionalProperties: false
-      required: [status, completion_requested_at, completion_issue_message, completed_at, recommendation_available]
+      required: [status, completed_at]
       properties:
         status: { $ref: "#/components/schemas/ServiceJobStatus" }
-        completion_requested_at: { type: [string, "null"], format: date-time }
-        completion_issue_message: { type: [string, "null"], maxLength: 700 }
         completed_at: { type: [string, "null"], format: date-time }
-        recommendation_available: { type: boolean }
     SharedQuoteItem:
       type: object
       additionalProperties: false
-      required: [description, quantity, unit, unit_price, line_total, sort_order]
+      required:
+        [description, quantity, unit, unit_price, line_total, sort_order]
       properties:
         description: { type: string, minLength: 1, maxLength: 160 }
         quantity: { type: string, pattern: "^[0-9]+(?:\\.[0-9]{1,3})?$" }
@@ -5252,7 +5621,33 @@ components:
     ProfessionalQuote:
       type: object
       additionalProperties: false
-      required: [id, quote_number, revision, customer, customer_name, customer_phone_e164, customer_email, service_description, service_address, scheduled_on, valid_until, notes, status, subtotal_amount, discount_amount, total_amount, shared_at, customer_decided_at, customer_decision_message, change_requests, service_job, created_at, updated_at, items]
+      required:
+        [
+          id,
+          quote_number,
+          revision,
+          customer,
+          customer_name,
+          customer_phone_e164,
+          customer_email,
+          service_description,
+          service_address,
+          scheduled_on,
+          valid_until,
+          notes,
+          status,
+          subtotal_amount,
+          discount_amount,
+          total_amount,
+          shared_at,
+          customer_decided_at,
+          customer_decision_message,
+          change_requests,
+          service_job,
+          created_at,
+          updated_at,
+          items,
+        ]
       properties:
         id: { type: string, format: uuid }
         quote_number: { type: integer, minimum: 1 }
@@ -5308,22 +5703,17 @@ components:
     ProfessionalQuoteServiceJob:
       type: object
       additionalProperties: false
-      required: [id, status, completion_requested_at, completion_issue_message, completed_at, cancelled_at, recommendation_request_status]
+      required: [id, status, completed_at, cancelled_at]
       properties:
         id: { type: string, format: uuid }
         status: { $ref: "#/components/schemas/ServiceJobStatus" }
-        completion_requested_at: { type: [string, "null"], format: date-time }
-        completion_issue_message: { type: [string, "null"], maxLength: 700 }
         completed_at: { type: [string, "null"], format: date-time }
         cancelled_at: { type: [string, "null"], format: date-time }
-        recommendation_request_status:
-          oneOf:
-            - $ref: "#/components/schemas/RecommendationRequestStatus"
-            - type: "null"
     ProfessionalQuoteItem:
       type: object
       additionalProperties: false
-      required: [id, description, quantity, unit, unit_price, line_total, sort_order]
+      required:
+        [id, description, quantity, unit, unit_price, line_total, sort_order]
       properties:
         id: { type: string, format: uuid }
         description: { type: string, maxLength: 160 }
@@ -5335,37 +5725,65 @@ components:
     ProfessionalServiceJob:
       type: object
       additionalProperties: false
-      required: [id, status, quote, completion_requested_at, completion_issue_at, completion_issue_message, completed_at, completion_confirmed_by, cancelled_at, cancellation_reason, recommendation_request_status, created_at, updated_at]
+      required:
+        [
+          id,
+          status,
+          quote,
+          customer_feedback_message,
+          completed_at,
+          cancelled_at,
+          cancellation_reason,
+          recommendation,
+          created_at,
+          updated_at,
+        ]
       properties:
         id: { type: string, format: uuid }
         status: { $ref: "#/components/schemas/ServiceJobStatus" }
         quote: { $ref: "#/components/schemas/ProfessionalServiceJobQuote" }
-        completion_requested_at: { type: [string, "null"], format: date-time }
-        completion_issue_at: { type: [string, "null"], format: date-time }
-        completion_issue_message: { type: [string, "null"], maxLength: 700 }
+        customer_feedback_message: { type: [string, "null"], maxLength: 700 }
         completed_at: { type: [string, "null"], format: date-time }
-        completion_confirmed_by:
-          oneOf:
-            - $ref: "#/components/schemas/ServiceJobCompletionConfirmer"
-            - type: "null"
         cancelled_at: { type: [string, "null"], format: date-time }
         cancellation_reason: { type: [string, "null"], maxLength: 700 }
-        recommendation_request_status:
+        recommendation:
           oneOf:
-            - $ref: "#/components/schemas/RecommendationRequestStatus"
+            - $ref: "#/components/schemas/ProfessionalServiceJobRecommendation"
             - type: "null"
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
+    ProfessionalServiceJobRecommendation:
+      type: object
+      additionalProperties: false
+      required: [status, delivery_channel, sent_at]
+      properties:
+        status: { $ref: "#/components/schemas/RecommendationRequestStatus" }
+        delivery_channel:
+          { $ref: "#/components/schemas/RecommendationDeliveryChannel" }
+        sent_at: { type: [string, "null"], format: date-time }
     ProfessionalServiceJobQuote:
       type: object
       additionalProperties: false
-      required: [id, quote_number, customer_name, customer_phone_e164, customer_email, service_description, service_address, scheduled_on, total_amount]
+      required:
+        [
+          id,
+          quote_number,
+          customer_name,
+          customer_phone_e164,
+          customer_email,
+          service_description,
+          service_address,
+          scheduled_on,
+          total_amount,
+        ]
       properties:
         id: { type: string, format: uuid }
         quote_number: { type: integer, minimum: 1 }
         customer_name: { type: string, minLength: 1, maxLength: 80 }
-        customer_phone_e164: { type: string, pattern: "^\\+55[1-9][0-9]9[0-9]{8}$" }
-        customer_email: { type: [string, "null"], format: email, maxLength: 254 }
+        customer_phone_e164:
+          { type: string, pattern: "^\\+55[1-9][0-9]9[0-9]{8}$" }
+        customer_email:
+          { type: [string, "null"], format: email, maxLength: 254 }
         service_description: { type: string, minLength: 1, maxLength: 160 }
         service_address: { type: [string, "null"], maxLength: 240 }
         scheduled_on: { type: [string, "null"], format: date }
@@ -5382,6 +5800,20 @@ components:
           properties:
             service_job: { $ref: "#/components/schemas/ProfessionalServiceJob" }
         request_id: { $ref: "#/components/schemas/RequestId" }
+    ProfessionalServiceCompletionResponse:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [service_job, share_url, whatsapp_url]
+          properties:
+            service_job: { $ref: "#/components/schemas/ProfessionalServiceJob" }
+            share_url: { type: [string, "null"], format: uri }
+            whatsapp_url: { type: [string, "null"], format: uri }
+        request_id: { $ref: "#/components/schemas/RequestId" }
     ProfessionalServiceJobListResponse:
       type: object
       additionalProperties: false
@@ -5396,7 +5828,7 @@ components:
               type: array
               items: { $ref: "#/components/schemas/ProfessionalServiceJob" }
         request_id: { $ref: "#/components/schemas/RequestId" }
-    ProfessionalCompletionRequestResponse:
+    ProfessionalRecommendationRequestResponse:
       type: object
       additionalProperties: false
       required: [data, request_id]
@@ -5409,6 +5841,59 @@ components:
             service_job: { $ref: "#/components/schemas/ProfessionalServiceJob" }
             share_url: { type: string, format: uri }
             whatsapp_url: { type: string, format: uri }
+        request_id: { $ref: "#/components/schemas/RequestId" }
+    ProfessionalRecommendation:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          id,
+          display_name,
+          recommendation_text,
+          delivery_channel,
+          submitted_at,
+          customer_name,
+          service_description,
+          hidden_at,
+          hidden_reason,
+        ]
+      properties:
+        id: { type: string, format: uuid }
+        display_name: { type: string, minLength: 1, maxLength: 80 }
+        recommendation_text: { type: string, minLength: 1, maxLength: 700 }
+        delivery_channel:
+          { $ref: "#/components/schemas/RecommendationDeliveryChannel" }
+        submitted_at: { type: string, format: date-time }
+        customer_name: { type: string, minLength: 1, maxLength: 80 }
+        service_description: { type: string, minLength: 1, maxLength: 160 }
+        hidden_at: { type: [string, "null"], format: date-time }
+        hidden_reason: { type: [string, "null"], maxLength: 700 }
+    ProfessionalRecommendationResponse:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [recommendation]
+          properties:
+            recommendation:
+              { $ref: "#/components/schemas/ProfessionalRecommendation" }
+        request_id: { $ref: "#/components/schemas/RequestId" }
+    ProfessionalRecommendationListResponse:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [recommendations]
+          properties:
+            recommendations:
+              type: array
+              items: { $ref: "#/components/schemas/ProfessionalRecommendation" }
         request_id: { $ref: "#/components/schemas/RequestId" }
     ProfessionalCustomerCandidate:
       type: object
@@ -5433,7 +5918,8 @@ components:
             customers:
               type: array
               maxItems: 10
-              items: { $ref: "#/components/schemas/ProfessionalCustomerCandidate" }
+              items:
+                { $ref: "#/components/schemas/ProfessionalCustomerCandidate" }
         request_id: { $ref: "#/components/schemas/RequestId" }
     ProfessionalCustomer:
       type: object
@@ -5491,7 +5977,8 @@ components:
           additionalProperties: false
           properties:
             name: { type: string, minLength: 1, maxLength: 80 }
-            whatsapp_e164: { type: string, pattern: "^\\+55[1-9][0-9]9[0-9]{8}$" }
+            whatsapp_e164:
+              { type: string, pattern: "^\\+55[1-9][0-9]9[0-9]{8}$" }
             email: { type: [string, "null"], format: email, maxLength: 254 }
     CustomerRecommendationResolveRequest:
       type: object
@@ -5508,12 +5995,25 @@ components:
         recommendation:
           type: object
           additionalProperties: false
-          required: [display_name, recommendation_text, service_confirmed, publication_consent]
+          required:
+            [
+              display_name,
+              recommendation_text,
+              service_confirmed,
+              publication_consent,
+            ]
           properties:
             display_name: { type: string, minLength: 1, maxLength: 80 }
             recommendation_text: { type: string, minLength: 1, maxLength: 700 }
             service_confirmed: { type: boolean }
             publication_consent: { type: boolean }
+    CustomerFeedbackIssueRequest:
+      type: object
+      additionalProperties: false
+      required: [token, message]
+      properties:
+        token: { type: string, maxLength: 200 }
+        message: { type: string, minLength: 1, maxLength: 700 }
     CustomerRecommendationRequest:
       type: object
       additionalProperties: false
@@ -5539,18 +6039,27 @@ components:
           additionalProperties: false
           required: [recommendation_request]
           properties:
-            recommendation_request: { $ref: "#/components/schemas/CustomerRecommendationRequest" }
+            recommendation_request:
+              { $ref: "#/components/schemas/CustomerRecommendationRequest" }
         request_id: { $ref: "#/components/schemas/RequestId" }
     CustomerRecommendation:
       type: object
       additionalProperties: false
-      required: [id, display_name, recommendation_text, submitted_at, verification_label]
+      required:
+        [
+          id,
+          display_name,
+          recommendation_text,
+          submitted_at,
+          verification_label,
+        ]
       properties:
         id: { type: string, format: uuid }
         display_name: { type: string, minLength: 1, maxLength: 80 }
         recommendation_text: { type: string, minLength: 1, maxLength: 700 }
         submitted_at: { type: string, format: date-time }
-        verification_label: { type: string, const: "Link enviado por e-mail" }
+        verification_label:
+          { type: string, enum: ["Link enviado por e-mail", "Link enviado por WhatsApp"] }
     CustomerRecommendationResponse:
       type: object
       additionalProperties: false
@@ -5561,7 +6070,8 @@ components:
           additionalProperties: false
           required: [recommendation]
           properties:
-            recommendation: { $ref: "#/components/schemas/CustomerRecommendation" }
+            recommendation:
+              { $ref: "#/components/schemas/CustomerRecommendation" }
         request_id: { $ref: "#/components/schemas/RequestId" }
     MoneyAmount:
       type: string
@@ -5577,9 +6087,8 @@ components:
         - is_public
         - is_search_eligible
         - is_indexable
+        - suspension_reason
         - publication_blockers
-        - revision_status
-        - revision_rejection_reason
         - has_published_revision
         - photo
         - portfolio_items
@@ -5599,7 +6108,6 @@ components:
           type: string
           enum:
             - draft
-            - pending_review
             - published
             - suspended
         presentation_type:
@@ -5616,6 +6124,12 @@ components:
           description: >-
             Whether this profile currently meets the bar to be indexed by
             search engines (see PublicIndexability on the API side).
+        suspension_reason:
+          type:
+            - string
+            - "null"
+          minLength: 10
+          maxLength: 500
         publication_blockers:
           type: array
           uniqueItems: true
@@ -5626,19 +6140,6 @@ components:
               - photo
               - services
               - coverage
-        revision_status:
-          type: string
-          enum:
-            - draft
-            - pending_review
-            - approved
-            - rejected
-            - superseded
-        revision_rejection_reason:
-          type:
-            - string
-            - "null"
-          maxLength: 500
         has_published_revision:
           type: boolean
         photo:
@@ -5921,17 +6422,17 @@ components:
       additionalProperties: false
       required:
         - current
-        - has_published_photo
-        - published_image_url
+        - has_photo
+        - image_url
         - latest_upload
       properties:
         current:
           oneOf:
             - $ref: "#/components/schemas/ProfessionalProfilePhotoSummary"
             - type: "null"
-        has_published_photo:
+        has_photo:
           type: boolean
-        published_image_url:
+        image_url:
           type:
             - string
             - "null"
@@ -5945,26 +6446,11 @@ components:
       additionalProperties: false
       required:
         - id
-        - status
-        - rejection_reason
         - submitted_at
       properties:
         id:
           type: string
           format: uuid
-        status:
-          type: string
-          enum:
-            - pending_review
-            - approved
-            - rejected
-            - hidden
-            - superseded
-        rejection_reason:
-          type:
-            - string
-            - "null"
-          maxLength: 500
         submitted_at:
           type: string
           format: date-time
@@ -6044,8 +6530,6 @@ components:
         - title
         - description
         - service
-        - status
-        - rejection_reason
         - submitted_at
         - image_url
       properties:
@@ -6075,18 +6559,6 @@ components:
               type: string
               minLength: 1
               maxLength: 80
-        status:
-          type: string
-          enum:
-            - pending_review
-            - approved
-            - rejected
-            - hidden
-        rejection_reason:
-          type:
-            - string
-            - "null"
-          maxLength: 500
         submitted_at:
           type: string
           format: date-time
@@ -6850,11 +7322,7 @@ components:
         - submitted_at
         - details
         - preview
-        - currently_public
-        - fallback_available
-        - changes
         - claimed_birthdate
-        - has_media
         - verification_file_id
       properties:
         target_type:
@@ -6877,39 +7345,16 @@ components:
           minLength: 1
         preview:
           type: string
-        currently_public:
-          type: boolean
-        fallback_available:
-          type: boolean
-        changes:
-          type: array
-          items:
-            $ref: "#/components/schemas/AdminModerationChange"
         claimed_birthdate:
           type:
             - string
             - "null"
           format: date
-        has_media:
-          type: boolean
         verification_file_id:
           type:
             - string
             - "null"
           format: uuid
-    AdminModerationChange:
-      type: object
-      additionalProperties: false
-      required:
-        - field
-        - before
-        - after
-      properties:
-        field:
-          type: string
-          minLength: 1
-        before: {}
-        after: {}
     AdminModerationSummary:
       type: object
       additionalProperties: false
@@ -6948,34 +7393,29 @@ components:
           enum:
             - approved
             - rejected
-            - hidden
-            - restored
         reason:
           type:
             - string
             - "null"
+          description: User-visible rejection reason; required when action is rejected.
           maxLength: 500
         note:
           type:
             - string
             - "null"
+          description: Optional private administrator note.
           maxLength: 500
         identity_match_confirmed:
           type: boolean
     ModerationTargetType:
       type: string
-      enum:
-        - profile_revision
-        - profile_photo
-        - portfolio_item
-        - verification_request
+      const: verification_request
     ModerationStatus:
       type: string
       enum:
         - pending_review
         - approved
         - rejected
-        - hidden
     CatalogData:
       type: object
       additionalProperties: false
@@ -7754,21 +8194,36 @@ components:
     PublicProfessionalEvidenceSummary:
       type: object
       additionalProperties: false
-      required: [completed_services, recommendations, worked_together_professionals]
+      required:
+        [
+          registered_services,
+          recommendations,
+          hidden_recommendations,
+          worked_together_professionals,
+        ]
       properties:
-        completed_services: { type: integer, minimum: 0 }
+        registered_services: { type: integer, minimum: 0 }
         recommendations: { type: integer, minimum: 0 }
+        hidden_recommendations: { type: integer, minimum: 0 }
         worked_together_professionals: { type: integer, minimum: 0 }
     PublicCustomerRecommendation:
       type: object
       additionalProperties: false
-      required: [id, display_name, recommendation_text, submitted_at, verification_label]
+      required:
+        [
+          id,
+          display_name,
+          recommendation_text,
+          submitted_at,
+          verification_label,
+        ]
       properties:
         id: { type: string, format: uuid }
         display_name: { type: string, minLength: 1, maxLength: 80 }
         recommendation_text: { type: string, minLength: 1, maxLength: 700 }
         submitted_at: { type: string, format: date-time }
-        verification_label: { type: string, const: "Link enviado por e-mail" }
+        verification_label:
+          { type: string, enum: ["Link enviado por e-mail", "Link enviado por WhatsApp"] }
     PublicProfessionalProfileService:
       type: object
       additionalProperties: false

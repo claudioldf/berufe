@@ -14,8 +14,8 @@ class ProfessionalQuoteSummaryQuery
   def call(scope:, now: Time.current)
     local_month = now.in_time_zone(PRODUCT_TIME_ZONE).beginning_of_month
     approved_condition = ActiveRecord::Base.sanitize_sql_array([
-      "quotes.status = ? AND quotes.customer_decided_at >= ? AND quotes.customer_decided_at < ?",
-      "approved",
+      "quotes.status IN (?) AND quotes.customer_decided_at >= ? AND quotes.customer_decided_at < ?",
+      Quote::LOCKED_STATUSES,
       local_month,
       local_month.next_month
     ])

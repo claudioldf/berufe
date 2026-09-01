@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import type { Quote, QuoteSortDirection, QuoteSortKey } from "~/types";
 import { formatCurrency, formatDateTime } from "~/utils/formatters";
 
@@ -12,14 +13,19 @@ const props = defineProps<{
 const emit = defineEmits<{
   sort: [column: QuoteSortKey];
 }>();
+const loadingReason = computed(() =>
+  props.loading ? "Aguarde a atualização da lista de orçamentos." : null,
+);
 
 const statusLabel = {
   draft: "Rascunho",
   saved: "Aguardando envio ao cliente",
-  shared: "Aguardando resposta",
+  shared: "Enviado ao cliente",
   change_requested: "Alteração solicitada",
   approved: "Aprovado",
   declined: "Recusado",
+  completed: "Concluído",
+  cancelled: "Cancelado",
 } as const;
 
 function ariaSort(column: QuoteSortKey) {
@@ -50,69 +56,79 @@ function sortLabel(column: QuoteSortKey, label: string) {
   >
     <div v-if="quotes.length" class="quote-table__head" role="row">
       <span role="columnheader" :aria-sort="ariaSort('number')">
-        <button
-          type="button"
-          class="quote-table__sort-button"
-          data-sort="number"
-          :disabled="loading"
-          :aria-label="sortLabel('number', 'por número')"
-          @click="emit('sort', 'number')"
-        >
-          Orçamento
-          <UIcon :name="sortIcon('number')" aria-hidden="true" />
-        </button>
+        <DesignSystemDisabledTooltip :reason="loadingReason">
+          <button
+            type="button"
+            class="quote-table__sort-button"
+            data-sort="number"
+            :disabled="loading"
+            :aria-label="sortLabel('number', 'por número')"
+            @click="emit('sort', 'number')"
+          >
+            Orçamento
+            <UIcon :name="sortIcon('number')" aria-hidden="true" />
+          </button>
+        </DesignSystemDisabledTooltip>
       </span>
       <span role="columnheader" :aria-sort="ariaSort('customer')">
-        <button
-          type="button"
-          class="quote-table__sort-button"
-          data-sort="customer"
-          :disabled="loading"
-          :aria-label="sortLabel('customer', 'por cliente')"
-          @click="emit('sort', 'customer')"
-        >
-          Cliente
-          <UIcon :name="sortIcon('customer')" aria-hidden="true" />
-        </button>
+        <DesignSystemDisabledTooltip :reason="loadingReason">
+          <button
+            type="button"
+            class="quote-table__sort-button"
+            data-sort="customer"
+            :disabled="loading"
+            :aria-label="sortLabel('customer', 'por cliente')"
+            @click="emit('sort', 'customer')"
+          >
+            Cliente
+            <UIcon :name="sortIcon('customer')" aria-hidden="true" />
+          </button>
+        </DesignSystemDisabledTooltip>
       </span>
       <span role="columnheader" :aria-sort="ariaSort('total')">
-        <button
-          type="button"
-          class="quote-table__sort-button"
-          data-sort="total"
-          :disabled="loading"
-          :aria-label="sortLabel('total', 'por valor')"
-          @click="emit('sort', 'total')"
-        >
-          Valor
-          <UIcon :name="sortIcon('total')" aria-hidden="true" />
-        </button>
+        <DesignSystemDisabledTooltip :reason="loadingReason">
+          <button
+            type="button"
+            class="quote-table__sort-button"
+            data-sort="total"
+            :disabled="loading"
+            :aria-label="sortLabel('total', 'por valor')"
+            @click="emit('sort', 'total')"
+          >
+            Valor
+            <UIcon :name="sortIcon('total')" aria-hidden="true" />
+          </button>
+        </DesignSystemDisabledTooltip>
       </span>
       <span role="columnheader" :aria-sort="ariaSort('status')">
-        <button
-          type="button"
-          class="quote-table__sort-button"
-          data-sort="status"
-          :disabled="loading"
-          :aria-label="sortLabel('status', 'por status')"
-          @click="emit('sort', 'status')"
-        >
-          Status
-          <UIcon :name="sortIcon('status')" aria-hidden="true" />
-        </button>
+        <DesignSystemDisabledTooltip :reason="loadingReason">
+          <button
+            type="button"
+            class="quote-table__sort-button"
+            data-sort="status"
+            :disabled="loading"
+            :aria-label="sortLabel('status', 'por status')"
+            @click="emit('sort', 'status')"
+          >
+            Status
+            <UIcon :name="sortIcon('status')" aria-hidden="true" />
+          </button>
+        </DesignSystemDisabledTooltip>
       </span>
       <span role="columnheader" :aria-sort="ariaSort('updated')">
-        <button
-          type="button"
-          class="quote-table__sort-button"
-          data-sort="updated"
-          :disabled="loading"
-          :aria-label="sortLabel('updated', 'por atualização')"
-          @click="emit('sort', 'updated')"
-        >
-          Atualizado
-          <UIcon :name="sortIcon('updated')" aria-hidden="true" />
-        </button>
+        <DesignSystemDisabledTooltip :reason="loadingReason">
+          <button
+            type="button"
+            class="quote-table__sort-button"
+            data-sort="updated"
+            :disabled="loading"
+            :aria-label="sortLabel('updated', 'por atualização')"
+            @click="emit('sort', 'updated')"
+          >
+            Atualizado
+            <UIcon :name="sortIcon('updated')" aria-hidden="true" />
+          </button>
+        </DesignSystemDisabledTooltip>
       </span>
     </div>
     <NuxtLink
@@ -271,7 +287,8 @@ function sortLabel(column: QuoteSortKey, label: string) {
 
   &__status.saved,
   &__status.shared,
-  &__status.approved {
+  &__status.approved,
+  &__status.completed {
     background: var(--mint);
     color: var(--color-brand);
   }
@@ -281,7 +298,8 @@ function sortLabel(column: QuoteSortKey, label: string) {
     color: var(--color-warning);
   }
 
-  &__status.declined {
+  &__status.declined,
+  &__status.cancelled {
     background: var(--color-danger-tint);
     color: var(--color-danger);
   }

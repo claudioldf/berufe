@@ -22,7 +22,7 @@ class ProfessionalProfileSupplyUpdater
       revision = editor.call(profile:)
       replace_services!(revision, normalized_services)
       replace_coverage!(revision, normalized_coverage)
-      editor.synchronize_review_state!(profile:)
+      editor.synchronize_public_revision!(profile:)
     end
     profile
   rescue ActiveRecord::RecordInvalid => error

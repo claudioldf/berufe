@@ -10,7 +10,7 @@ RSpec.describe ProfessionalProfilePhotoAttacher do
     ProfessionalProfile.create!(user_account: account, display_name: "Ana Souza")
   end
 
-  it "attaches an owned processed JPEG for review and is idempotent" do
+  it "attaches an owned processed JPEG and is idempotent" do
     upload = processed_upload
 
     photo = described_class.new.call(profile:, media_upload_id: upload.id)
@@ -18,37 +18,30 @@ RSpec.describe ProfessionalProfilePhotoAttacher do
 
     expect(repeated).to eq(photo)
     expect(photo).to have_attributes(
-      status: "pending_review",
       private_key: upload.sanitized_key,
       content_type: "image/jpeg",
       width: 640,
       height: 960
     )
     expect(upload.reload).to be_attached
-    expect(profile.reload.working_photo).to eq(photo)
+    expect(profile.reload.profile_photo).to eq(photo)
   end
 
-  it "supersedes only the previous pending photo and preserves the approved pointer" do
-    approved = profile.profile_photos.create!(
+  it "replaces the current photo and soft-deletes the previous one" do
+    previous = profile.profile_photos.create!(
       media_upload: processed_upload,
-      status: "approved",
       private_key: "sanitized/#{profile.id}/approved.jpg",
-      public_key: "public/#{profile.id}/approved.jpg",
       content_type: "image/jpeg",
       byte_size: 100,
       width: 640,
       height: 960,
-      submitted_at: 2.days.ago,
-      reviewed_at: 1.day.ago
+      submitted_at: 2.days.ago
     )
-    profile.update!(published_photo: approved)
-    first = described_class.new.call(profile:, media_upload_id: processed_upload.id)
-
+    profile.update!(profile_photo: previous)
     replacement = described_class.new.call(profile:, media_upload_id: processed_upload.id)
 
-    expect(first.reload).to be_superseded
-    expect(replacement).to be_pending_review
-    expect(profile.reload).to have_attributes(working_photo: replacement, published_photo: approved)
+    expect(previous.reload.deleted_at).to be_present
+    expect(profile.reload.profile_photo).to eq(replacement)
   end
 
   it "rejects unprocessed uploads and uploads for another purpose" do

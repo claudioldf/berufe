@@ -14,6 +14,9 @@ defineEmits<{
 }>();
 
 const pendingItems = computed(() => props.items.filter((item) => !item.done));
+const publishingReason = computed(() =>
+  props.publishing ? "Aguarde a publicação do perfil terminar." : null,
+);
 </script>
 
 <template>
@@ -46,17 +49,19 @@ const pendingItems = computed(() => props.items.filter((item) => !item.done));
       </NuxtLink>
     </div>
     <footer v-if="canPublish" class="checklist-card__footer">
-      <UButton
-        type="button"
-        color="primary"
-        icon="i-lucide-megaphone"
-        block
-        :loading="publishing"
-        :disabled="publishing"
-        @click="$emit('publish')"
-      >
-        Publicar perfil
-      </UButton>
+      <DesignSystemDisabledTooltip :reason="publishingReason">
+        <UButton
+          type="button"
+          color="primary"
+          icon="i-lucide-megaphone"
+          block
+          :loading="publishing"
+          :disabled="publishing"
+          @click="$emit('publish')"
+        >
+          Publicar perfil
+        </UButton>
+      </DesignSystemDisabledTooltip>
     </footer>
   </DesignSystemSurfaceCard>
 </template>

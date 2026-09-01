@@ -27,7 +27,7 @@ function reviewCountLabel(count: number) {
 const cards = computed<SummaryCard[]>(() => [
   {
     key: "awaiting-response",
-    label: "Aguardando resposta",
+    label: "Enviado ao cliente",
     value: formatCurrency(props.summary.awaitingResponse.total),
     detail: quoteCountLabel(props.summary.awaitingResponse.count),
     icon: "i-lucide-clock-3",

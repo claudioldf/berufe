@@ -79,14 +79,14 @@ Join `professional_profiles.owner_user_id` to `user_accounts.id` and require:
 
 - `professional_profiles.profile_status = 'published'`;
 - `user_accounts.status = 'active'`;
-- the approved public snapshot, not an unapproved pending revision, is used;
+- the profile's current information and photo are used;
 - the profile has the selected active service and coverage when the query is for search supply.
 
 A suspended account/profile is excluded immediately from current public stock. A profile that was later suspended remains in historical publication and retention cohorts unless it was legally deleted; this prevents retrospective rewriting of cohort denominators.
 
-#### Approved portfolio item
+#### Active portfolio item
 
-Require `portfolio_items.moderation_status = 'approved'` and a publicly eligible parent profile. Rejected, pending, or hidden items do not count.
+Require `portfolio_items.deleted_at IS NULL` and a publicly eligible parent profile. Deleted items do not count.
 
 #### Approved identity verification
 
@@ -191,7 +191,7 @@ Without this field, Berufe can show total WhatsApp handoffs and source counts fr
 
 #### Moderation submission time
 
-Every moderation queue projection needs an immutable `submitted_at`. Existing records already provide it for recommendations and verification requests. Profiles/profile revisions and portfolio items need either an explicit `submitted_at` or a shared moderation-submission record. `updated_at` must not be used for queue age. Relationships are not queue targets; `responded_at` is used only for relationship funnel reporting.
+Every identity-verification queue row uses the verification request's immutable `submitted_at`. `updated_at` must not be used for queue age. Profile publication actions are recorded in the audit trail but are performed from the professionals admin page and do not enter the moderation queue.
 
 ### 3.3 Prototype-only data that must not be represented as real
 
@@ -266,7 +266,7 @@ Do not filter historical first publications by current status when calculating t
 
 ### Card 2 — Perfis ativados
 
-**Meaning:** Newly published profiles in the selected period that currently satisfy all three transparent quality criteria: approved identity, at least three approved portfolio items, and at least two public professional relationships.
+**Meaning:** Newly published profiles in the selected period that currently satisfy all three transparent quality criteria: approved identity, at least three active portfolio items, and at least two public professional relationships.
 
 **Goal:** Increase the fraction of published profiles that provide enough visible trust evidence, without collapsing the criteria into an opaque score.
 
@@ -418,11 +418,11 @@ This widget is a current-stock snapshot and its denominator is the current publi
 
 **Source:** `portfolio_items` belonging to each published professional.
 
-**Condition:** `moderation_status = 'approved'`.
+**Condition:** `deleted_at IS NULL`.
 
 **Calculation:** profiles with `COUNT(DISTINCT portfolio_items.id) >= 3`, divided by current published denominator.
 
-Pending, rejected, and hidden portfolio items do not count. The twelve-item upload cap does not alter this threshold.
+Deleted portfolio items do not count. The twelve-item upload cap does not alter this threshold.
 
 ### Two or more relationships
 
@@ -720,11 +720,11 @@ The launch row is a cohort funnel: “iniciadas” means created inside the sele
 
 **Completed:** started requests that have their unique associated `client_recommendation`, equivalently a successfully consumed request. Do not rely only on the request's current status if the associated record is missing.
 
-**Approved:** completed recommendations with `moderation_status = 'approved'` at report generation time.
+**Published:** completed recommendations whose associated recommendation still has publication consent at report generation time.
 
-**Rates:** completed / started; approved / completed.
+**Rates:** completed / started; published / completed.
 
-Expired, revoked, and still-open requests remain only in started. Rejected/hidden recommendations remain completed but not approved. A hidden recommendation can therefore reduce the current cohort approval rate.
+Expired and still-open requests remain only in started. Recommendations publish immediately when the verified customer submits them; withdrawing publication consent can therefore reduce the current cohort publication rate.
 
 ### Existing-member relationships
 
@@ -827,17 +827,7 @@ The moderation widget combines a current queue snapshot with decision flows insi
 
 ### Shared moderation queue projection
 
-Use the exact same query object as the admin moderation queue to prevent reporting drift. It should union pending work from:
-
-| Target                         | Pending condition                                              | Submission timestamp                      |
-| ------------------------------ | -------------------------------------------------------------- | ----------------------------------------- |
-| Profile/profile revision/photo | pending-review revision/snapshot                               | immutable `submitted_at`                  |
-| Portfolio item                 | `moderation_status = 'pending'`                                | `submitted_at` or initial submission time |
-| Client recommendation          | `moderation_status = 'pending'`                                | `submitted_at`                            |
-| Professional relationship      | `status = 'accepted'` and no effective approve/reject decision | `responded_at`                            |
-| Verification request           | `status = 'pending'`                                           | `submitted_at`                            |
-
-Content reports are triage work but should be returned separately from evidence moderation unless the product intentionally includes them in the same queue.
+Use the exact same query object as the admin moderation queue to prevent reporting drift. The queue contains only identity verification requests whose `status = 'pending'`, ordered by their immutable `submitted_at`. Profile publication actions are audited separately and do not enter this queue.
 
 ### Pendentes
 
@@ -971,7 +961,7 @@ For the initial 30–50-profile market, direct indexed PostgreSQL aggregate quer
 
 - `professional_profiles(published_at)` and `(profile_status)`;
 - `verification_requests(professional_id, verification_type, status)`;
-- `portfolio_items(professional_id, moderation_status)`;
+- `portfolio_items(professional_profile_id, submitted_at, id) WHERE deleted_at IS NULL`;
 - `professional_relationships(initiator_professional_id, status)` and `(recipient_professional_id, status)`;
 - `search_events(created_at, service_id, neighborhood_code)`;
 - `professional_daily_metrics(metric_date, professional_id)`;

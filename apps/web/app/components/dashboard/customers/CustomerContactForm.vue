@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, toRef, watch } from "vue";
+import { computed, reactive, toRef, watch } from "vue";
 import type { ProfessionalCustomer, ProfessionalCustomerDraft } from "~/types";
 import { useBrazilianMobilePhoneMask } from "~/composables/useBrazilianMobilePhoneMask";
 
@@ -27,6 +27,9 @@ const draft = reactive<ProfessionalCustomerDraft>({
   email: props.customer.email,
 });
 const maskedPhone = useBrazilianMobilePhoneMask(toRef(draft, "phone"));
+const savingReason = computed(() =>
+  props.saving ? "Aguarde o salvamento dos dados do cliente terminar." : null,
+);
 
 watch(
   () => props.customer,
@@ -124,13 +127,15 @@ function submit() {
         {{ error }}
       </p>
       <div class="customer-contact__actions">
-        <button type="submit" :disabled="saving">
-          <UIcon
-            :name="saving ? 'i-lucide-loader-circle' : 'i-lucide-save'"
-            aria-hidden="true"
-          />
-          {{ saving ? "Salvando…" : "Salvar alterações" }}
-        </button>
+        <DesignSystemDisabledTooltip :reason="savingReason">
+          <button type="submit" :disabled="saving">
+            <UIcon
+              :name="saving ? 'i-lucide-loader-circle' : 'i-lucide-save'"
+              aria-hidden="true"
+            />
+            {{ saving ? "Salvando…" : "Salvar alterações" }}
+          </button>
+        </DesignSystemDisabledTooltip>
       </div>
     </form>
 

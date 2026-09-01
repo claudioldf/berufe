@@ -41,15 +41,14 @@ RSpec.describe ProfessionalDataErasureJob do
     )
     photo = profile.profile_photos.create!(
       media_upload: upload,
-      status: "rejected",
       private_key: upload.sanitized_key,
       content_type: "image/jpeg",
       byte_size: 100,
       width: 100,
       height: 100,
-      submitted_at: now - 1.day,
-      reviewed_at: now - 1.day
+      submitted_at: now - 1.day
     )
+    profile.update!(profile_photo: photo)
     request_record = DataErasureRequest.create!(
       target_user_account_id: account.id,
       subject_digest: PrivacySubjectDigest.call(account.phone_e164),

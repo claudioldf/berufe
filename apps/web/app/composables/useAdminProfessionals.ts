@@ -248,6 +248,9 @@ export function useAdminProfessionals(
         reason,
         filters(),
       );
+      if (item.publicSlug) {
+        clearNuxtData(`public-professional-profile-${item.publicSlug}`);
+      }
     } catch (cause) {
       mutationError.value =
         cause instanceof Error

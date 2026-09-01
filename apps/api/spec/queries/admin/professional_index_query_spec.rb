@@ -202,7 +202,6 @@ RSpec.describe Admin::ProfessionalIndexQuery do
       media_upload: upload,
       service:,
       title: "Trabalho",
-      status: "approved",
       private_key: upload.sanitized_key,
       content_type: "image/png",
       byte_size: 100,

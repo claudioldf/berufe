@@ -116,24 +116,32 @@ function toggleNeighborhood(code: string) {
         :error="stateValidationError"
         required
       >
-        <select
-          :id="field.controlId"
-          :class="{
-            'location-coverage-fields__select--invalid': stateInvalid,
-          }"
-          :value="selectedStateCode"
-          name="coverage-state"
-          required
-          :disabled="loading"
-          :aria-describedby="field.describedBy"
-          :aria-invalid="stateInvalid"
-          @change="changeState"
+        <DesignSystemDisabledTooltip
+          :reason="loading ? 'Carregando a lista de estados…' : null"
         >
-          <option value="">Selecione</option>
-          <option v-for="state in states" :key="state.code" :value="state.code">
-            {{ state.name }} ({{ state.abbreviation }})
-          </option>
-        </select>
+          <select
+            :id="field.controlId"
+            :class="{
+              'location-coverage-fields__select--invalid': stateInvalid,
+            }"
+            :value="selectedStateCode"
+            name="coverage-state"
+            required
+            :disabled="loading"
+            :aria-describedby="field.describedBy"
+            :aria-invalid="stateInvalid"
+            @change="changeState"
+          >
+            <option value="">Selecione</option>
+            <option
+              v-for="state in states"
+              :key="state.code"
+              :value="state.code"
+            >
+              {{ state.name }} ({{ state.abbreviation }})
+            </option>
+          </select>
+        </DesignSystemDisabledTooltip>
       </DesignSystemFormField>
       <DesignSystemFormField
         id="coverage-city"
@@ -142,27 +150,37 @@ function toggleNeighborhood(code: string) {
         :error="cityValidationError"
         required
       >
-        <select
-          :id="field.controlId"
-          :class="{
-            'location-coverage-fields__select--invalid': cityInvalid,
-          }"
-          :value="model.cityCode"
-          name="coverage-city"
-          required
-          :disabled="loading || !selectedStateCode"
-          :aria-describedby="
-            field.describedBy ||
-            (cityInvalid ? 'coverage-state-error' : undefined)
+        <DesignSystemDisabledTooltip
+          :reason="
+            !selectedStateCode
+              ? 'Selecione um estado primeiro'
+              : loading
+                ? 'Carregando as cidades…'
+                : null
           "
-          :aria-invalid="cityInvalid"
-          @change="changeCity"
         >
-          <option value="">Selecione</option>
-          <option v-for="city in cities" :key="city.code" :value="city.code">
-            {{ city.name }}
-          </option>
-        </select>
+          <select
+            :id="field.controlId"
+            :class="{
+              'location-coverage-fields__select--invalid': cityInvalid,
+            }"
+            :value="model.cityCode"
+            name="coverage-city"
+            required
+            :disabled="loading || !selectedStateCode"
+            :aria-describedby="
+              field.describedBy ||
+              (cityInvalid ? 'coverage-state-error' : undefined)
+            "
+            :aria-invalid="cityInvalid"
+            @change="changeCity"
+          >
+            <option value="">Selecione</option>
+            <option v-for="city in cities" :key="city.code" :value="city.code">
+              {{ city.name }}
+            </option>
+          </select>
+        </DesignSystemDisabledTooltip>
       </DesignSystemFormField>
     </div>
 

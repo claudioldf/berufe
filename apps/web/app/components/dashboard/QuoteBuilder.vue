@@ -17,6 +17,7 @@ const props = defineProps<{
   sharingMethod: QuoteShareMethod | null;
   shareError: string;
   shareEnabled?: boolean;
+  shareBlockedReason?: string | null;
   revoking?: boolean;
 }>();
 const emit = defineEmits<{
@@ -29,7 +30,30 @@ const shareOpen = defineModel<boolean>("shareOpen", { default: false });
 const revokeOpen = shallowRef(false);
 const validationAttempted = shallowRef(false);
 const formRoot = useTemplateRef<HTMLElement>("formRoot");
-const locked = computed(() => props.initialQuote.status === "approved");
+const locked = computed(() =>
+  ["approved", "completed", "cancelled"].includes(props.initialQuote.status),
+);
+const lockedPresentation = computed(() => {
+  if (props.initialQuote.status === "completed") {
+    return {
+      title: "Orçamento concluído",
+      description:
+        "O serviço foi concluído e este orçamento não pode mais ser alterado.",
+    };
+  }
+  if (props.initialQuote.status === "cancelled") {
+    return {
+      title: "Orçamento cancelado",
+      description:
+        "O serviço foi cancelado e este orçamento não pode mais ser alterado.",
+    };
+  }
+  return {
+    title: "Orçamento aprovado",
+    description:
+      "Este orçamento foi aprovado e não pode mais ser alterado. Acompanhe o andamento na área de serviços.",
+  };
+});
 
 function confirmRevoke() {
   revokeOpen.value = false;
@@ -58,6 +82,15 @@ const saveBarError = computed(() => {
   return validationAttempted.value && !isValid.value
     ? "Revise os campos destacados para continuar."
     : "";
+});
+const sharingBlockedReason = computed(() => {
+  if (props.sharingMethod === "copy") {
+    return "Aguarde a cópia do link do orçamento terminar.";
+  }
+  if (props.sharingMethod === "whatsapp") {
+    return "Aguarde a preparação do compartilhamento pelo WhatsApp.";
+  }
+  return null;
 });
 
 watch(
@@ -104,11 +137,8 @@ function requestShare() {
       <DesignSystemSurfaceCard v-if="locked" class="quote-builder__locked">
         <UIcon name="i-lucide-lock-keyhole" />
         <div>
-          <strong>Orçamento aprovado</strong>
-          <p>
-            Este orçamento foi aprovado e não pode mais ser alterado. Acompanhe
-            o andamento na área de serviços.
-          </p>
+          <strong>{{ lockedPresentation.title }}</strong>
+          <p>{{ lockedPresentation.description }}</p>
         </div>
         <UButton
           v-if="initialQuote.serviceJob?.id"
@@ -149,9 +179,11 @@ function requestShare() {
           :shared="isShared"
           :ready-to-share="readyToShare"
           :valid="isValid"
+          :editing="Boolean(initialQuote.id)"
           :saving-intent="savingIntent"
           :error="saveBarError"
           :share-enabled="shareEnabled ?? false"
+          :share-blocked-reason="shareBlockedReason"
           @preview="previewOpen = true"
           @save="save"
           @share="requestShare"
@@ -221,22 +253,27 @@ function requestShare() {
       <template #footer
         ><UButton color="neutral" variant="ghost" @click="shareOpen = false"
           >Cancelar</UButton
-        ><UButton
-          color="neutral"
-          variant="outline"
-          icon="i-lucide-link"
-          :loading="sharingMethod === 'copy'"
-          :disabled="Boolean(sharingMethod)"
-          @click="emit('share', 'copy')"
-          >Copiar link</UButton
-        ><UButton
-          color="primary"
-          icon="i-lucide-message-circle"
-          :loading="sharingMethod === 'whatsapp'"
-          :disabled="Boolean(sharingMethod)"
-          @click="emit('share', 'whatsapp')"
-          >Abrir WhatsApp</UButton
-        ></template
+        ><DesignSystemDisabledTooltip :reason="sharingBlockedReason">
+          <UButton
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-link"
+            :loading="sharingMethod === 'copy'"
+            :disabled="Boolean(sharingMethod)"
+            @click="emit('share', 'copy')"
+            >Copiar link</UButton
+          >
+        </DesignSystemDisabledTooltip>
+        <DesignSystemDisabledTooltip :reason="sharingBlockedReason">
+          <UButton
+            color="primary"
+            icon="i-lucide-message-circle"
+            :loading="sharingMethod === 'whatsapp'"
+            :disabled="Boolean(sharingMethod)"
+            @click="emit('share', 'whatsapp')"
+            >Abrir WhatsApp</UButton
+          >
+        </DesignSystemDisabledTooltip></template
       >
     </UModal>
 

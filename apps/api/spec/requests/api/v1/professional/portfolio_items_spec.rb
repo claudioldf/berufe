@@ -3,12 +3,8 @@
 require "rails_helper"
 
 RSpec.describe "Professional portfolio items", type: :request, openapi: true do
-  let(:account) do
-    UserAccount.create!(phone_e164: "+5547999996206", role: "professional", status: "active")
-  end
-  let(:profile) do
-    ProfessionalProfile.create!(user_account: account, display_name: "Ana Souza")
-  end
+  let(:account) { UserAccount.create!(phone_e164: "+5547999996206", role: "professional", status: "active") }
+  let(:profile) { ProfessionalProfile.create!(user_account: account, display_name: "Ana Souza") }
   let(:service) do
     category = ServiceCategory.create!(
       name: "Portfólio Request",
@@ -27,345 +23,223 @@ RSpec.describe "Professional portfolio items", type: :request, openapi: true do
       is_active: true,
       sort_order: 0
     )
-    ProfessionalProfileService.create!(
-      professional_profile_revision: profile.working_revision,
-      service: created,
-      is_primary: true
-    )
+    profile.working_revision.professional_profile_services.create!(service: created, is_primary: true)
     created
   end
-  let(:session_token) do
-    profile
-    ApplicationSession.issue!(user_account: account).last
+  let(:token) { ApplicationSession.issue!(user_account: account).last }
+  let(:storage) { instance_double(LocalDiskStorage) }
+
+  before do
+    allow(MediaStorage).to receive(:build).and_return(storage)
+    allow(storage).to receive(:read)
   end
 
-  it "creates a private pending item and returns it through the owned workspace" do
+  it "creates, immediately updates, and deletes an owned item" do
     upload = processed_upload
-
     post "/api/v1/professional/portfolio-items",
-      params: create_params(upload),
-      headers: session_headers(request_id: "portfolio-create", origin: true),
+      params: {portfolio_item: attributes(upload)},
+      headers: headers("portfolio-create"),
       as: :json
 
     expect(response).to have_http_status(:created)
-    expect(response.headers["Location"]).to end_with(PortfolioItem.last.id)
+    item = PortfolioItem.sole
     expect(response.parsed_body.dig("data", "profile", "portfolio_items")).to contain_exactly(
       hash_including(
-        "id" => PortfolioItem.last.id,
+        "id" => item.id,
         "title" => "Cozinha iluminada",
-        "description" => "Instalação completa.",
-        "service" => {"id" => service.id, "name" => service.name},
-        "status" => "pending_review",
-        "rejection_reason" => nil,
-        "image_url" => nil
+        "image_url" => a_string_including("/api/v1/professional/portfolio-items/#{item.id}/image")
       )
     )
-    expect(ProfessionalDailyActivity.sole).to have_attributes(
-      professional: profile,
-      evidence_creations: 1
-    )
     assert_api_conform(status: 201)
-  end
-
-  it "rejects invalid or unselected item data" do
-    post "/api/v1/professional/portfolio-items",
-      params: create_params(processed_upload).deep_merge(
-        portfolio_item: {service_id: SecureRandom.uuid}
-      ),
-      headers: session_headers(request_id: "portfolio-invalid", origin: true),
-      as: :json
-
-    expect(response).to have_http_status(:unprocessable_entity)
-    expect(response.parsed_body.dig("error", "field_errors", "service_id")).to be_present
-    assert_api_conform(status: 422)
-  end
-
-  it "updates and resubmits a rejected item without creating another item" do
-    item = create_portfolio_item
-    original_upload_id = item.media_upload_id
-    item.update!(
-      status: "rejected",
-      rejection_reason: "A descrição precisa explicar melhor o trabalho realizado.",
-      reviewed_at: 1.day.ago
-    )
 
     patch "/api/v1/professional/portfolio-items/#{item.id}",
-      params: update_params(title: "Cozinha revisada", description: "Descrição corrigida."),
-      headers: session_headers(request_id: "portfolio-update", origin: true),
+      params: {portfolio_item: attributes(nil).merge(title: "Cozinha atualizada")},
+      headers: headers("portfolio-update"),
       as: :json
-
     expect(response).to have_http_status(:ok)
-    expect(profile.portfolio_items.active.count).to eq(1)
-    expect(item.reload).to have_attributes(
-      media_upload_id: original_upload_id,
-      service:,
-      title: "Cozinha revisada",
-      description: "Descrição corrigida.",
-      status: "pending_review",
-      rejection_reason: nil,
-      reviewed_at: nil,
-      hidden_at: nil
-    )
-    expect(response.parsed_body.dig("data", "profile", "portfolio_items")).to contain_exactly(
-      hash_including("id" => item.id, "status" => "pending_review", "rejection_reason" => nil)
-    )
+    expect(item.reload.title).to eq("Cozinha atualizada")
     assert_api_conform(status: 200)
-  end
 
-  it "replaces the image while resubmitting a hidden item" do
-    item = create_portfolio_item
-    previous_upload_id = item.media_upload_id
-    replacement = processed_upload
-    item.update!(
-      status: "hidden",
-      rejection_reason: "A imagem precisa ser substituída antes de voltar ao perfil.",
-      reviewed_at: 1.day.ago,
-      hidden_at: 1.day.ago
-    )
-
-    patch "/api/v1/professional/portfolio-items/#{item.id}",
-      params: update_params(media_upload_id: replacement.id),
-      headers: session_headers(request_id: "portfolio-replace", origin: true),
-      as: :json
-
-    expect(response).to have_http_status(:ok)
-    expect(item.reload).to have_attributes(
-      media_upload: replacement,
-      private_key: replacement.sanitized_key,
-      status: "pending_review",
-      rejection_reason: nil,
-      reviewed_at: nil,
-      hidden_at: nil
-    )
-    expect(replacement.reload).to have_attributes(state: "attached", attached_at: be_present)
-    expect(MediaUpload.find(previous_upload_id)).to be_present
-    assert_api_conform(status: 200)
-  end
-
-  it "resubmits the same item when the portfolio already has 12 active works" do
-    item = create_portfolio_item
-    11.times { |index| create_portfolio_item(title: "Trabalho #{index}") }
-    item.update!(status: "rejected", rejection_reason: "Revise a descrição do trabalho.", reviewed_at: 1.day.ago)
-
-    patch "/api/v1/professional/portfolio-items/#{item.id}",
-      params: update_params,
-      headers: session_headers(request_id: "portfolio-update-full", origin: true),
-      as: :json
-
-    expect(response).to have_http_status(:ok)
-    expect(profile.portfolio_items.active.count).to eq(12)
-    expect(item.reload).to be_pending_review
-    assert_api_conform(status: 200)
-  end
-
-  it "rejects resubmission when the item is not rejected or hidden" do
-    item = create_portfolio_item
-
-    patch "/api/v1/professional/portfolio-items/#{item.id}",
-      params: update_params,
-      headers: session_headers(request_id: "portfolio-update-conflict", origin: true),
-      as: :json
-
-    expect(response).to have_http_status(:conflict)
-    expect(response.parsed_body.dig("error", "code")).to eq("portfolio_item_conflict")
-    assert_api_conform(status: 409)
-  end
-
-  it "rejects invalid resubmission data" do
-    item = create_portfolio_item
-    item.update!(status: "rejected", rejection_reason: "Revise os dados enviados.", reviewed_at: 1.day.ago)
-
-    patch "/api/v1/professional/portfolio-items/#{item.id}",
-      params: update_params(service_id: SecureRandom.uuid),
-      headers: session_headers(request_id: "portfolio-update-invalid", origin: true),
-      as: :json
-
-    expect(response).to have_http_status(:unprocessable_entity)
-    expect(response.parsed_body.dig("error", "field_errors", "service_id")).to be_present
-    assert_api_conform(status: 422)
-  end
-
-  it "soft-deletes an owned item and removes it from the workspace projection" do
-    item = create_portfolio_item
-
-    delete "/api/v1/professional/portfolio-items/#{item.id}",
-      headers: session_headers(request_id: "portfolio-delete", origin: true)
-
+    delete "/api/v1/professional/portfolio-items/#{item.id}", headers: headers("portfolio-delete")
     expect(response).to have_http_status(:ok)
     expect(item.reload.deleted_at).to be_present
-    expect(response.parsed_body.dig("data", "profile", "portfolio_items")).to eq([])
     assert_api_conform(status: 200)
   end
 
-  it "denies anonymous create, update, and delete requests" do
+  it "serves an active image to its owner while the profile is draft or suspended" do
+    item = PortfolioItemCreator.new.call(profile:, attributes: attributes(processed_upload))
+    allow(storage).to receive(:read).with(scope: :private, key: item.private_key).and_return("owner-portfolio")
+
+    get "/api/v1/professional/portfolio-items/#{item.id}/image", headers: headers("portfolio-image-owner-draft")
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to eq("owner-portfolio")
+    expect(response.media_type).to eq("image/png")
+    expect(response.headers.fetch("Cache-Control")).to eq("no-store")
+    expect(response.headers.fetch("X-Content-Type-Options")).to eq("nosniff")
+    assert_api_conform(status: 200)
+
+    profile.update!(profile_status: "suspended")
+    get "/api/v1/professional/portfolio-items/#{item.id}/image", headers: headers("portfolio-image-owner-suspended")
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to eq("owner-portfolio")
+    assert_api_conform(status: 200)
+
+    jpeg_item = PortfolioItemCreator.new.call(
+      profile:,
+      attributes: attributes(processed_upload(content_type: "image/jpeg"))
+    )
+    allow(storage).to receive(:read).with(scope: :private, key: jpeg_item.private_key).and_return("owner-jpeg")
+
+    get "/api/v1/professional/portfolio-items/#{jpeg_item.id}/image", headers: headers("portfolio-image-jpeg")
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to eq("owner-jpeg")
+    expect(response.media_type).to eq("image/jpeg")
+    assert_api_conform(status: 200)
+  end
+
+  it "does not expose owner portfolio previews anonymously or after deletion" do
+    item = PortfolioItemCreator.new.call(profile:, attributes: attributes(processed_upload))
+
+    get "/api/v1/professional/portfolio-items/#{item.id}/image",
+      headers: {"X-Request-Id" => "portfolio-image-owner-anonymous"}
+    expect(response).to have_http_status(:unauthorized)
+    assert_api_conform(status: 401)
+
+    item.update!(deleted_at: Time.current)
+    get "/api/v1/professional/portfolio-items/#{item.id}/image", headers: headers("portfolio-image-owner-deleted")
+    expect(response).to have_http_status(:not_found)
+    expect(storage).not_to have_received(:read)
+    assert_api_conform(status: 404)
+  end
+
+  it "rejects unselected services and foreign items" do
     post "/api/v1/professional/portfolio-items",
-      params: contract_create_params,
+      params: {portfolio_item: attributes(processed_upload).merge(service_id: SecureRandom.uuid)},
+      headers: headers("portfolio-invalid"),
+      as: :json
+    expect(response).to have_http_status(:unprocessable_entity)
+    assert_api_conform(status: 422)
+
+    patch "/api/v1/professional/portfolio-items/#{SecureRandom.uuid}",
+      params: {portfolio_item: attributes(nil)},
+      headers: headers("portfolio-missing"),
+      as: :json
+    expect(response).to have_http_status(:not_found)
+    assert_api_conform(status: 404)
+  end
+
+  it "documents authentication, origin, validation, and ownership failures" do
+    upload = processed_upload
+    request_attributes = {portfolio_item: attributes(upload)}
+
+    post "/api/v1/professional/portfolio-items",
+      params: request_attributes,
       headers: {"X-Request-Id" => "portfolio-create-anonymous", "Origin" => ENV.fetch("WEB_ORIGIN")},
       as: :json
     expect(response).to have_http_status(:unauthorized)
     assert_api_conform(status: 401)
 
-    patch "/api/v1/professional/portfolio-items/#{SecureRandom.uuid}",
-      params: update_params,
+    post "/api/v1/professional/portfolio-items",
+      params: request_attributes,
+      headers: headers("portfolio-create-origin").except("Origin"),
+      as: :json
+    expect(response).to have_http_status(:forbidden)
+    assert_api_conform(status: 403)
+
+    profileless_account = UserAccount.create!(
+      phone_e164: "+5547999996207",
+      role: "professional",
+      status: "active"
+    )
+    profileless_token = ApplicationSession.issue!(user_account: profileless_account).last
+    post "/api/v1/professional/portfolio-items",
+      params: request_attributes,
+      headers: {
+        "X-Request-Id" => "portfolio-create-profileless",
+        "Cookie" => "#{ApplicationSession::COOKIE_NAME}=#{profileless_token}",
+        "Origin" => ENV.fetch("WEB_ORIGIN")
+      },
+      as: :json
+    expect(response).to have_http_status(:not_found)
+    assert_api_conform(status: 404)
+
+    item = PortfolioItemCreator.new.call(profile:, attributes: attributes(upload))
+    update_attributes = {portfolio_item: attributes(nil)}
+
+    patch "/api/v1/professional/portfolio-items/#{item.id}",
+      params: update_attributes,
       headers: {"X-Request-Id" => "portfolio-update-anonymous", "Origin" => ENV.fetch("WEB_ORIGIN")},
       as: :json
     expect(response).to have_http_status(:unauthorized)
     assert_api_conform(status: 401)
 
-    delete "/api/v1/professional/portfolio-items/#{SecureRandom.uuid}",
+    patch "/api/v1/professional/portfolio-items/#{item.id}",
+      params: update_attributes,
+      headers: headers("portfolio-update-origin").except("Origin"),
+      as: :json
+    expect(response).to have_http_status(:forbidden)
+    assert_api_conform(status: 403)
+
+    patch "/api/v1/professional/portfolio-items/#{item.id}",
+      params: {portfolio_item: attributes(nil).merge(service_id: SecureRandom.uuid)},
+      headers: headers("portfolio-update-invalid"),
+      as: :json
+    expect(response).to have_http_status(:unprocessable_entity)
+    assert_api_conform(status: 422)
+
+    delete "/api/v1/professional/portfolio-items/#{item.id}",
       headers: {"X-Request-Id" => "portfolio-delete-anonymous", "Origin" => ENV.fetch("WEB_ORIGIN")}
     expect(response).to have_http_status(:unauthorized)
     assert_api_conform(status: 401)
-  end
 
-  it "denies invalid origins for create, update, and delete" do
-    post "/api/v1/professional/portfolio-items",
-      params: contract_create_params,
-      headers: session_headers(request_id: "portfolio-create-origin", origin: "https://untrusted.example"),
-      as: :json
+    delete "/api/v1/professional/portfolio-items/#{item.id}",
+      headers: headers("portfolio-delete-origin").except("Origin")
     expect(response).to have_http_status(:forbidden)
     assert_api_conform(status: 403)
 
-    patch "/api/v1/professional/portfolio-items/#{SecureRandom.uuid}",
-      params: update_params,
-      headers: session_headers(request_id: "portfolio-update-origin", origin: "https://untrusted.example"),
-      as: :json
-    expect(response).to have_http_status(:forbidden)
-    assert_api_conform(status: 403)
-
-    delete "/api/v1/professional/portfolio-items/#{SecureRandom.uuid}",
-      headers: session_headers(request_id: "portfolio-delete-origin", origin: "https://untrusted.example")
-    expect(response).to have_http_status(:forbidden)
-    assert_api_conform(status: 403)
-  end
-
-  it "returns not found for an unregistered professional or missing owned item" do
-    unregistered = UserAccount.create!(phone_e164: "+5547999996207", role: "professional", status: "active")
-    unregistered_token = ApplicationSession.issue!(user_account: unregistered).last
-    post "/api/v1/professional/portfolio-items",
-      params: contract_create_params,
-      headers: session_headers(
-        request_id: "portfolio-create-missing",
-        origin: true,
-        token: unregistered_token
-      ),
-      as: :json
-    expect(response).to have_http_status(:not_found)
-    assert_api_conform(status: 404)
-
-    patch "/api/v1/professional/portfolio-items/#{SecureRandom.uuid}",
-      params: update_params,
-      headers: session_headers(request_id: "portfolio-update-missing", origin: true),
-      as: :json
-    expect(response).to have_http_status(:not_found)
-    assert_api_conform(status: 404)
-
-    delete "/api/v1/professional/portfolio-items/#{SecureRandom.uuid}",
-      headers: session_headers(request_id: "portfolio-delete-missing", origin: true)
-    expect(response).to have_http_status(:not_found)
-    assert_api_conform(status: 404)
-  end
-
-  it "returns not found when resubmitting a foreign or deleted item" do
-    other_account = UserAccount.create!(phone_e164: "+5547999996208", role: "professional", status: "active")
-    other_profile = ProfessionalProfile.create!(user_account: other_account, display_name: "Outra Profissional")
-    ProfessionalProfileService.create!(
-      professional_profile_revision: other_profile.working_revision,
-      service:,
-      is_primary: true
-    )
-    foreign_item = PortfolioItemCreator.new.call(
-      profile: other_profile,
-      attributes: create_params(processed_upload(owner: other_profile)).fetch(:portfolio_item)
-    )
-    foreign_item.update!(status: "rejected", rejection_reason: "Revise o trabalho enviado.", reviewed_at: 1.day.ago)
-
-    patch "/api/v1/professional/portfolio-items/#{foreign_item.id}",
-      params: update_params,
-      headers: session_headers(request_id: "portfolio-update-foreign", origin: true),
-      as: :json
-    expect(response).to have_http_status(:not_found)
-    assert_api_conform(status: 404)
-
-    deleted_item = create_portfolio_item
-    deleted_item.update!(status: "rejected", rejection_reason: "Revise o trabalho enviado.", reviewed_at: 1.day.ago)
-    PortfolioItemDeleter.new.call(item: deleted_item)
-    patch "/api/v1/professional/portfolio-items/#{deleted_item.id}",
-      params: update_params,
-      headers: session_headers(request_id: "portfolio-update-deleted", origin: true),
-      as: :json
+    delete "/api/v1/professional/portfolio-items/#{SecureRandom.uuid}", headers: headers("portfolio-delete-missing")
     expect(response).to have_http_status(:not_found)
     assert_api_conform(status: 404)
   end
 
   private
 
-  def create_params(upload)
+  def attributes(upload)
     {
-      portfolio_item: {
-        media_upload_id: upload.id,
-        service_id: service.id,
-        title: "Cozinha iluminada",
-        description: "Instalação completa."
-      }
-    }
+      media_upload_id: upload&.id,
+      service_id: service.id,
+      title: "Cozinha iluminada",
+      description: "Instalação completa."
+    }.compact
   end
 
-  def contract_create_params
-    {
-      portfolio_item: {
-        media_upload_id: SecureRandom.uuid,
-        service_id: SecureRandom.uuid,
-        title: "Cozinha iluminada",
-        description: nil
-      }
-    }
-  end
-
-  def update_params(media_upload_id: nil, service_id: service.id, title: "Cozinha atualizada", description: "Instalação revisada.")
-    attributes = {
-      service_id:,
-      title:,
-      description:
-    }
-    attributes[:media_upload_id] = media_upload_id if media_upload_id
-    {portfolio_item: attributes}
-  end
-
-  def create_portfolio_item(title: "Cozinha iluminada")
-    PortfolioItemCreator.new.call(
-      profile:,
-      attributes: create_params(processed_upload).fetch(:portfolio_item).merge(title:)
-    )
-  end
-
-  def processed_upload(owner: profile)
+  def processed_upload(content_type: "image/png")
+    extension = (content_type == "image/jpeg") ? "jpg" : "png"
     MediaUpload.create!(
-      professional_profile: owner,
+      professional_profile: profile,
       purpose: "portfolio_image",
       state: "processed",
-      declared_content_type: "image/png",
+      declared_content_type: content_type,
       declared_byte_size: 120,
-      actual_content_type: "image/png",
-      sanitized_content_type: "image/png",
+      actual_content_type: content_type,
+      sanitized_content_type: content_type,
       actual_byte_size: 120,
       sanitized_byte_size: 100,
       width: 640,
       height: 380,
       quarantine_key: "quarantine/#{profile.id}/#{SecureRandom.uuid}",
-      sanitized_key: "sanitized/#{profile.id}/#{SecureRandom.uuid}.png",
+      sanitized_key: "sanitized/#{profile.id}/#{SecureRandom.uuid}.#{extension}",
       authorization_expires_at: 5.minutes.from_now,
       uploaded_at: 1.minute.ago,
       processed_at: Time.current
     )
   end
 
-  def session_headers(request_id:, origin: false, token: session_token)
-    headers = {
+  def headers(request_id)
+    {
       "X-Request-Id" => request_id,
-      "Cookie" => "#{ApplicationSession::COOKIE_NAME}=#{token}"
+      "Cookie" => "#{ApplicationSession::COOKIE_NAME}=#{token}",
+      "Origin" => ENV.fetch("WEB_ORIGIN")
     }
-    headers["Origin"] = (origin == true) ? ENV.fetch("WEB_ORIGIN") : origin if origin
-    headers
   end
 end

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { VerificationSubmission } from "~/types";
 
-defineProps<{
+const props = defineProps<{
   submitted: boolean;
   saving?: boolean;
   submitting?: boolean;
@@ -19,6 +19,11 @@ function submit(submission: VerificationSubmission) {
 }
 
 const verificationFormId = "onboarding-identity-verification";
+const busyReason = computed(() => {
+  if (props.saving) return "Aguarde o envio da verificação terminar.";
+  if (props.submitting) return "Aguarde a publicação do perfil terminar.";
+  return null;
+});
 </script>
 
 <template>
@@ -54,49 +59,56 @@ const verificationFormId = "onboarding-identity-verification";
     </DesignSystemSurfaceCard>
 
     <footer class="onboarding-step-actions">
-      <UButton
-        type="button"
-        color="neutral"
-        variant="ghost"
-        icon="i-lucide-arrow-left"
-        :disabled="saving || submitting"
-        @click="$emit('back')"
-      >
-        Voltar
-      </UButton>
+      <DesignSystemDisabledTooltip :reason="busyReason">
+        <UButton
+          type="button"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-arrow-left"
+          :disabled="saving || submitting"
+          @click="$emit('back')"
+        >
+          Voltar
+        </UButton>
+      </DesignSystemDisabledTooltip>
       <div class="onboarding-verification-actions">
         <template v-if="!submitted">
+          <DesignSystemDisabledTooltip :reason="busyReason">
+            <UButton
+              type="button"
+              color="neutral"
+              variant="outline"
+              :loading="submitting"
+              :disabled="saving || submitting"
+              @click="$emit('skip')"
+            >
+              Pular verificação e publicar perfil
+            </UButton>
+          </DesignSystemDisabledTooltip>
+          <DesignSystemDisabledTooltip :reason="busyReason">
+            <UButton
+              type="submit"
+              :form="verificationFormId"
+              color="primary"
+              :loading="saving"
+              :disabled="saving || submitting"
+            >
+              Enviar e concluir
+            </UButton>
+          </DesignSystemDisabledTooltip>
+        </template>
+        <DesignSystemDisabledTooltip v-else :reason="busyReason">
           <UButton
             type="button"
-            color="neutral"
-            variant="outline"
+            color="primary"
+            trailing-icon="i-lucide-check"
             :loading="submitting"
             :disabled="saving || submitting"
-            @click="$emit('skip')"
+            @click="$emit('finish')"
           >
-            Pular verificação e publicar perfil
+            Publicar perfil
           </UButton>
-          <UButton
-            type="submit"
-            :form="verificationFormId"
-            color="primary"
-            :loading="saving"
-            :disabled="saving || submitting"
-          >
-            Enviar e concluir
-          </UButton>
-        </template>
-        <UButton
-          v-else
-          type="button"
-          color="primary"
-          trailing-icon="i-lucide-check"
-          :loading="submitting"
-          :disabled="saving || submitting"
-          @click="$emit('finish')"
-        >
-          Publicar perfil
-        </UButton>
+        </DesignSystemDisabledTooltip>
       </div>
     </footer>
   </section>

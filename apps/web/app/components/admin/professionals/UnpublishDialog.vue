@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const open = defineModel<boolean>("open", { required: true });
 const reason = defineModel<string>("reason", { required: true });
-defineProps<{ displayName: string | null }>();
+defineProps<{ displayName: string | null; submitting?: boolean }>();
 defineEmits<{ confirm: [] }>();
 </script>
 
@@ -16,7 +16,7 @@ defineEmits<{ confirm: [] }>();
         id="unpublish-reason"
         class="unpublish-form"
         label="Motivo da despublicação"
-        hint="Motivo privado, visível apenas na trilha de auditoria."
+        hint="O motivo será exibido ao profissional e registrado na trilha de auditoria."
         required
       >
         <textarea
@@ -27,21 +27,36 @@ defineEmits<{ confirm: [] }>();
           required
           minlength="10"
           maxlength="500"
+          :disabled="submitting"
           placeholder="Explique por que este perfil está sendo despublicado…"
         />
       </DesignSystemFormField>
     </template>
     <template #footer>
-      <UButton color="neutral" variant="ghost" @click="open = false">
+      <UButton
+        color="neutral"
+        variant="ghost"
+        :disabled="submitting"
+        @click="open = false"
+      >
         Cancelar
       </UButton>
-      <UButton
-        color="error"
-        :disabled="reason.length < 10"
-        @click="$emit('confirm')"
+      <DesignSystemDisabledTooltip
+        :reason="
+          !submitting && reason.trim().length < 10
+            ? 'Escreva ao menos 10 caracteres explicando o motivo'
+            : null
+        "
       >
-        Confirmar despublicação
-      </UButton>
+        <UButton
+          color="error"
+          :loading="submitting"
+          :disabled="submitting || reason.trim().length < 10"
+          @click="$emit('confirm')"
+        >
+          Confirmar despublicação
+        </UButton>
+      </DesignSystemDisabledTooltip>
     </template>
   </UModal>
 </template>

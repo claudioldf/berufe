@@ -27,6 +27,12 @@ const tabs = [
     to: "/app/professional/customers",
   },
   {
+    id: "recomendacoes",
+    label: "Recomendações",
+    icon: "i-lucide-message-square-heart",
+    to: "/app/professional/recommendations",
+  },
+  {
     id: "relacoes",
     label: "Minha rede",
     icon: "i-lucide-handshake",
@@ -42,10 +48,15 @@ const tabs = [
 
 const activeTab = computed(() => {
   if (route.path.startsWith("/app/professional/customers")) return "clientes";
+  if (route.path.startsWith("/app/professional/recommendations"))
+    return "recomendacoes";
   const requested = Array.isArray(route.query.tab)
     ? route.query.tab[0]
     : route.query.tab;
-  return tabs.some((tab) => tab.id === requested && tab.id !== "clientes")
+  return tabs.some(
+    (tab) =>
+      tab.id === requested && !["clientes", "recomendacoes"].includes(tab.id),
+  )
     ? requested
     : "dados";
 });

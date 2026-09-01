@@ -27,24 +27,18 @@ module Api
         def update
           profile = owned_profile!
           item = profile.portfolio_items.active.find(params[:id])
-          PortfolioItemResubmitter.new.call(
+          PortfolioItemUpdater.new.call(
             profile:,
             item:,
             attributes: portfolio_item_params.to_h.symbolize_keys
           )
           render json: workspace_response(profile)
-        rescue PortfolioItemResubmitter::Invalid => error
+        rescue PortfolioItemUpdater::Invalid => error
           render_api_error(
             code: "validation_failed",
             message: "Revise os dados do trabalho.",
             status: :unprocessable_entity,
             field_errors: error.field_errors
-          )
-        rescue PortfolioItemResubmitter::Conflict
-          render_api_error(
-            code: "portfolio_item_conflict",
-            message: "Este trabalho não está mais disponível para correção.",
-            status: :conflict
           )
         end
 

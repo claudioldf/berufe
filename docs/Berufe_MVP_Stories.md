@@ -373,7 +373,7 @@ Apply these rules whenever they are relevant to the story:
 
 **Status:** DONE
 
-**Increment outcome:** founding professionals can create, submit, and receive approval for complete profiles, portfolio evidence, and verification labels. Approved profiles are safe to expose publicly.
+**Increment outcome:** founding professionals can create and publish complete profiles and portfolio evidence immediately, while identity verification remains the only manually approved trust label.
 
 **Approved implementation detail:** `Berufe_Increment_2_Implementation_Plan.md` resolves the Increment 2 workflow, mockup, API, retention, and delivery-order decisions and is normative for S019–S031.
 
@@ -429,55 +429,54 @@ Apply these rules whenever they are relevant to the story:
 **Depends on:** S019, S020.
 **Covers:** Features A2 and B3.
 
-### S022 — Submit a profile for moderation
+### S022 — Publish a complete professional profile
 
 **Status:** DONE
 
-**Story:** As a professional, I want to submit a sufficiently complete profile so that Berufe can review it for publication.
+**Story:** As a professional, I want to publish a sufficiently complete profile without waiting for content moderation.
 
 **Acceptance criteria:**
 
 - A calculated checklist identifies missing required identity, service, and area data.
-- Submission changes the profile from `draft` to `pending_review` in one transaction.
+- Publication changes the profile from `draft` to `published` in one transaction.
 - Incomplete profiles cannot be submitted and receive field/actionable errors.
-- A professional can see the current status but cannot publish their own profile.
-- Submission validates the already-persisted four-step onboarding state, including one reviewable portfolio item and one reviewable identity request; the final action does not resend an accumulated browser payload.
-- Editing material published content creates or updates one private pending revision while the previous approved revision remains the complete public snapshot. Approval swaps the public revision atomically; rejection leaves the previous snapshot public and returns the rejected revision to an editable private state.
+- A professional can publish their own profile once name, birthdate, phone, photo, service, and coverage requirements are met.
+- Publication validates the already-persisted onboarding state; portfolio and identity verification are not publication gates, and the final action does not resend an accumulated browser payload.
+- Edits to a published self-service profile update its working and public revision immediately without a moderation state.
 
 **Depends on:** S021.
 **Covers:** Features A2 and A6.
 
-### S023 — Build the shared moderation queue and audit trail
+### S023 — Build the identity-verification queue and audit trail
 
 **Status:** DONE
 
-**Story:** As an admin, I want one oldest-first queue for pending content so that the founding cohort can be reviewed consistently.
+**Story:** As an admin, I want one oldest-first queue for identity documents so that verification requests are reviewed consistently.
 
 **Acceptance criteria:**
 
-- The admin area lists profile revisions/photos, portfolio items, and identity-verification requests oldest first, with pagination plus type/status/search filters. Professional relationships never join this queue.
-- The reviewer sees only fields and files required for the selected decision.
-- The existing review preview loads regenerated profile-photo and portfolio images through authenticated, no-store Rails responses with an immutable admin access record; storage keys and permanent private URLs never reach Nuxt.
-- Approve, reject, hide, and restore actions create immutable `moderation_actions` with actor, target, action, private reason, time, and request ID.
-- Rejection and hide require a private reason.
-- Pending, rejected, and hidden items never appear through public scopes.
+- The admin area lists only identity-verification requests oldest first, with pagination plus status/search filters.
+- The reviewer sees the claimed birthdate and opens only the retained regenerated identity document through the dedicated audited endpoint.
+- Approve and reject actions create immutable `moderation_actions` with actor, target, action, reason/internal note, time, and request ID.
+- Approval requires explicit identity-match confirmation. Rejection requires a 10–500 character reason visible to the professional.
+- Profile information, profile photos, portfolio items, and professional relationships never join this queue.
 
 **Depends on:** S017, S022.
 **Covers:** Feature E1.
 
-### S024 — Approve and publish a professional profile
+### S024 — Unpublish and restore an entire professional profile
 
 **Status:** DONE
 
-**Story:** As an admin, I want to approve or reject a submitted profile so that only suitable profiles become searchable.
+**Story:** As an admin, I want to unpublish a complete profile with a reason so that an unsafe profile can be removed from discovery without moderating its individual fields.
 
 **Acceptance criteria:**
 
-- Approval publishes the first revision or atomically replaces the public revision pointer. Rejection returns the reviewed revision to an editable private state with a reason visible to its owner while any previous approved revision remains public.
-- Public serializers expose only approved profile, service, and coverage fields.
-- Hide, suspend, and restore operations update public availability immediately.
-- Professionals can see moderation status and rejection guidance in the authenticated UI.
-- State-transition, policy, and serializer tests cover every allowed path.
+- The action is available from the administrator professional directory, not the identity queue.
+- Unpublishing transitions `published` to `suspended`, requires a 10–500 character user-visible reason, and removes the complete profile from public discovery immediately.
+- Restoring transitions `suspended` to `published` without changing individual profile content.
+- Both operations append immutable `professional_profile` moderation actions and notify the professional. The current suspension reason appears in the authenticated dashboard and profile banner.
+- State-transition, policy, notification, and serializer tests cover every allowed path.
 
 **Depends on:** S023.
 **Covers:** Features A2 and E1.
@@ -490,11 +489,11 @@ Apply these rules whenever they are relevant to the story:
 
 **Acceptance criteria:**
 
-- A small Rails-owned storage adapter uses an authenticated Rails upload endpoint backed by local disk in development and separate public/private Cloudflare R2 buckets in deployed environments.
+- A small Rails-owned storage adapter uses an authenticated Rails upload endpoint backed by local disk in development and one private Cloudflare R2 bucket in deployed environments.
 - Rails authorizes upload purpose, ownership, declared content type, and declared size before issuing a 10-minute upload authorization to a private quarantine key.
 - After upload confirmation, a retry-safe job checks actual bytes and file signature, safely decodes with libvips, normalizes orientation, strips metadata, and re-encodes into a new private object. It deletes the quarantine original after processing; mismatched, oversized, or undecodable uploads are rejected and deleted without becoming reviewable.
 - Sanitized media and verification evidence remain in private storage, and a processing failure is rejected without exposing the object to an admin or the public. Rails-owned image endpoints expose only profile and portfolio media that are currently eligible for public display.
-- Approved profile photos persist public keys as defined by Feature A2. Portfolio image URLs remain stable across review, while rejected or hidden items become unavailable immediately; verification evidence uses `verification_file` and always remains private.
+- Profile-photo and portfolio image URLs remain stable Rails-owned routes while current active records are public; verification evidence uses `verification_file` and always remains private.
 - R2 credentials and permanent verification-file URLs never reach Nuxt.
 - Provider adapter tests use fakes and do not contact R2.
 - The generic sanitizer preserves the verified JPEG/PNG codec, never retains the client filename, and expires abandoned authorizations through GoodJob every 10 minutes. Purpose-specific stories create any stricter derived variants.
@@ -502,22 +501,22 @@ Apply these rules whenever they are relevant to the story:
 **Depends on:** S003, S015.
 **Covers:** Features A2–A4; Infrastructure §§4 and 10.
 
-### S026 — Upload and moderate the profile photo
+### S026 — Upload and manage the profile photo
 
 **Status:** DONE
 
-**Story:** As a professional, I want to add a profile photo so that customers can recognize me while unsafe or unapproved images remain private.
+**Story:** As a professional, I want to add or replace a profile photo so that customers can recognize me.
 
 **Acceptance criteria:**
 
 - The profile accepts one optional JPEG/PNG image no larger than 10 MiB or 25 megapixels and produces one metadata-free JPEG fitted within 1024 × 1536 pixels.
-- The sanitized image remains private until approved and replaces the public photo only after moderation.
+- The sanitized image remains in private object storage and becomes the current photo immediately after processing and attachment.
 - libvips safely decodes, normalizes orientation, re-encodes, removes metadata, and creates the required display variant through a retry-safe job.
-- Upload, processing, rejection, and replacement states are visible to the owner.
+- Upload, processing, retry, replacement, and removal states are visible to the owner; there is no photo moderation state.
 - A failed processing job is visible and retryable without duplicating records.
 
-**Depends on:** S005, S023, S025.
-**Covers:** Features A2 and E1; Infrastructure §§6 and 10.
+**Depends on:** S005, S025.
+**Covers:** Feature A2; Infrastructure §§6 and 10.
 
 ### S027 — Create and manage portfolio items
 
@@ -529,31 +528,28 @@ Apply these rules whenever they are relevant to the story:
 
 - A professional can upload an image, select one catalog service, add a short title/description, and submit the item.
 - Rails enforces ownership and a maximum of 12 non-deleted items per professional.
-- Pending and approved items appear newest first, with ID as the deterministic tie-breaker.
+- Active items appear newest first, with ID as the deterministic tie-breaker.
 - Images use the same private-upload and libvips-processing rules as profile photos, then become available through a stable Rails-owned public image endpoint.
-- Pending and approved items are visible to anonymous users when the professional profile is public. Rejected or hidden items remain visible only to the owner with private moderation guidance.
+- Active items are visible to anonymous users when the professional profile is public. Deleted items are excluded from owner and public projections.
 - Deletion is soft deletion through the existing management action. Manual ordering is not exposed; public ordering remains newest first.
 
 **Depends on:** S020, S025, S026.
 **Covers:** Feature A3.
 
-### S028 — Moderate portfolio items
+### S028 — Remove portfolio moderation
 
 **Status:** DONE
 
-**Story:** As an admin, I want to approve, reject, hide, and restore portfolio items so that unsafe work can be removed without delaying legitimate publication.
+**Story:** As a professional, I want portfolio items to save immediately without per-item moderation.
 
 **Acceptance criteria:**
 
-- Portfolio items appear in the shared moderation queue.
-- A new item is public immediately while it remains in the pending moderation queue.
-- Approval marks the item reviewed and removes it from the pending queue without changing its public URL, service association, or order.
-- Rejection or hiding removes public access and records the reason without exposing it publicly.
-- The owner sees item status and rejection guidance.
-- Public portfolio queries return pending and approved items only.
+- Portfolio records have no moderation status, rejection reason, review timestamps, or public-copy key.
+- Create and update operations make active items immediately visible when the parent profile is public.
+- The professional can soft-delete an item. Administrators control public visibility only by unpublishing the complete professional profile under S024.
 
 **Depends on:** S027.
-**Covers:** Features A3 and E1.
+**Covers:** Feature A3.
 
 ### S029 — Submit private verification evidence
 
@@ -582,9 +578,9 @@ Apply these rules whenever they are relevant to the story:
 
 **Acceptance criteria:**
 
-- Verification requests appear in the shared moderation queue.
+- Verification requests appear in the identity-verification moderation queue.
 - Approval records reviewer/time and publishes the controlled “Identity verified” label; professionals cannot write their own labels.
-- Rejection requires a private reason visible to the professional.
+- Rejection requires a user-visible reason; an optional administrator note remains private.
 - Public APIs return only the label and verification date, never files, identifiers, or review notes.
 - Phone confirmation is represented separately from manually reviewed identity evidence. Company/certificate verification types are not accepted by the MVP API.
 
@@ -675,11 +671,11 @@ Apply these rules whenever they are relevant to the story:
 
 **Acceptance criteria:**
 
-- Each card shows photo, name, exact matching service, coverage, precise verification labels, approved portfolio counts, and confirmed relationship counts.
+- Each card shows photo, name, exact matching service, coverage, precise verification labels, active portfolio counts, and confirmed relationship counts.
 - Ordering follows the documented sequence: exact service, neighborhood coverage, identity verification, portfolio evidence, professional-relationship evidence, then recent profile update.
 - The API and UI display no numeric trust score, sponsored rank, availability, or price sort.
 - Ordering is deterministic for equivalent records and covered by request/query tests.
-- Pending, rejected, hidden, or suspended evidence contributes neither labels nor counts.
+- Pending or rejected identity verification contributes no verification label, deleted portfolio items contribute no count, and suspended profiles do not appear.
 - Result-to-profile links carry the anonymous search-event context. The first profile open marks that search as having produced an open; later opens from the same search do not increase the search-level numerator.
 
 **Depends on:** S033, S028, S030.
@@ -797,7 +793,7 @@ Public profiles also show a visible Berufe support/report contact that routes to
 **Acceptance criteria:**
 
 - The dashboard calculates profile readiness from existing data without a checklist table.
-- Readiness uses four equally weighted rows: complete identity/contact, valid service/coverage, at least one pending-or-approved reviewable portfolio item, and approved identity verification.
+- Readiness uses four equally weighted rows: complete identity/contact, valid service/coverage, at least one active portfolio item, and approved identity verification.
 - It shows profile/publication status, missing setup steps, pending moderation/verification, and pending relationship confirmations.
 - Primary actions link to edit profile, add portfolio, request identity verification, find an existing member for a relationship, and create a quote.
 - Profile sharing uses the Web Share API and falls back to copying the stable public URL.
@@ -996,11 +992,11 @@ The MVP report includes only implemented launch domains: professional supply and
 **Acceptance criteria:**
 
 - First publication occurs from the final onboarding step after the professional submits optional identity evidence or explicitly skips it. Name, processed photo, private birthdate, confirmed-phone contact, exactly one primary service, and valid Joinville coverage are required; portfolio and identity verification are not.
-- A material profile edit creates an immutable pending revision and makes it public atomically. New profile photos and portfolio items also become public while pending. Recipient-accepted professional relationships become public without moderation state. Public APIs never expose content moderation state.
-- Approval marks current moderated content reviewed without changing public visibility. Rejection restores the last approved profile revision or photo; without that fallback the profile is unavailable. Rejected portfolio items are removed from public results.
-- Newer pending revisions/photos supersede older pending items. Relationship requests retain only the recipient-owned `pending`, `accepted`, and `declined` lifecycle.
+- A material profile edit updates the public self-service revision atomically. New profile photos and portfolio items also become public immediately. Recipient-accepted professional relationships become public without moderation state. Public APIs never expose content moderation state.
+- Only identity-verification requests enter moderation. Profile revisions, photos, portfolio items, and relationships have no moderation transitions.
+- Relationship requests retain only the recipient-owned `pending`, `accepted`, and `declined` lifecycle.
 - Birthdate is never public. An identity request captures the claimed birthdate, admin approval records explicit identity-match confirmation, and changing birthdate expires pending/approved identity verification and begins evidence cleanup retention.
-- Admin review shows current-public and fallback context, profile changes against the approved fallback, and uses “Marcar como revisado” for approval. Public media uses stable eligibility-checking application URLs so rejection/hiding has immediate effect.
+- Admin review shows the claimed birthdate and restricted identity document and requires explicit match confirmation for approval. Public profile and portfolio media use stable eligibility-checking application URLs.
 - The professional workspace returns derived public/search eligibility and actionable publication blockers. Dashboard readiness continues to treat portfolio and approved identity as trust improvements rather than publication gates.
 - The supply funnel is Registered → Published → Identity verified within the published cohort → Activated; activation continues to use approved evidence.
 
@@ -1017,7 +1013,7 @@ The MVP report includes only implemented launch domains: professional supply and
 - The directory lists every professional account, including one that never started a profile, with name, phone-verified status (masked to the last four digits), identity-verified status, portfolio/references/customers/quotes counts, signup time, last-login time, login count, and city/state.
 - References count only mutually accepted professional relationships; portfolio counts exclude deleted items.
 - Administrators filter by name and phone (accent- and digit-insensitive, server-side), city, state, identity-verified (yes/no/all), and onboarding-finished (yes/no/all — a professional who never submitted a profile counts as unfinished), and sort by recency, last login, or name. Filter state lives in the URL.
-- Publish/unpublish only transitions a profile between `published` and `suspended`; unpublishing requires a private reason of 10–500 characters. A profile that never submitted (`draft` or `pending_review`) shows the control disabled with the reason why. Both transitions append an immutable `moderation_actions` row (`hidden`/`restored`) with the acting administrator and request ID, reusing the Feature E1 audit trail — no new moderation concept.
+- Publish/unpublish only transitions a profile between `published` and `suspended`; unpublishing requires a user-visible reason of 10–500 characters. A draft profile shows the control disabled with the reason why. Both transitions append an immutable `moderation_actions` row (`hidden`/`restored`) with the acting administrator and request ID, reusing the Feature E1 audit trail — no new moderation concept.
 - `login_count` is a new persisted counter on the account, incremented on every successful authentication (SMS OTP or admin password) alongside the existing `last_login_at`. It is operational-identity information only: it is never surfaced in or added to the growth report (R008, R013 continue to exclude logins from meaningful activity).
 - The full phone number never leaves the API; access to the directory is logged the same way as the search-audit surface.
 

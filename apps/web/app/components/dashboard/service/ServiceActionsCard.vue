@@ -4,45 +4,26 @@ import type { ServiceJobStatus } from "~/types";
 
 const props = defineProps<{
   status: ServiceJobStatus;
-  canRequestCompletion: boolean;
   canComplete: boolean;
   canCancel: boolean;
+  canRequestRecommendation: boolean;
+  recommendationSentAt: string | null;
   acting: boolean;
-  copyFallbackUrl: string;
 }>();
 
 const emit = defineEmits<{
-  requestCompletion: [];
-  copyFallback: [];
-  openCancel: [];
   openComplete: [];
+  requestRecommendation: [];
+  openCancel: [];
 }>();
 
 const actionCopy = computed(() => {
-  if (props.status === "completion_requested") {
-    return {
-      label: "Aguardando retorno",
-      title: "O cliente recebeu o pedido",
-      description:
-        "Você será avisado quando ele confirmar. Se preferir, também pode concluir por aqui.",
-      icon: "i-lucide-send",
-    };
-  }
-  if (props.status === "completion_issue") {
-    return {
-      label: "Próximo passo",
-      title: "Resolva a pendência",
-      description:
-        "Alinhe o ponto indicado pelo cliente e envie uma nova solicitação quando estiver tudo certo.",
-      icon: "i-lucide-circle-alert",
-    };
-  }
   if (props.status === "completed") {
     return {
       label: "Tudo certo",
-      title: "Serviço finalizado",
+      title: "Serviço concluído",
       description:
-        "A conclusão está registrada e este serviço já saiu da sua lista de trabalhos em andamento.",
+        "Registrado como concluído por você. Este serviço já saiu da sua lista de trabalhos em andamento.",
       icon: "i-lucide-check-circle-2",
     };
   }
@@ -58,16 +39,23 @@ const actionCopy = computed(() => {
     label: "Próximo passo",
     title: "Finalize com confiança",
     description:
-      "Quando o trabalho terminar, envie um pedido rápido para o cliente confirmar a conclusão.",
-    icon: "i-lucide-message-circle",
+      "Quando o trabalho terminar, confirme a conclusão e escolha se deseja solicitar uma avaliação ao cliente.",
+    icon: "i-lucide-clipboard-check",
   };
 });
 
+const recommendationLabel = computed(() =>
+  props.recommendationSentAt
+    ? "Pedir a recomendação de novo pelo WhatsApp"
+    : "Pedir a recomendação pelo WhatsApp",
+);
+
 const hasPrimaryActions = computed(
-  () =>
-    props.canRequestCompletion ||
-    props.canComplete ||
-    Boolean(props.copyFallbackUrl),
+  () => props.canComplete || props.canRequestRecommendation,
+);
+
+const actingReason = computed(() =>
+  props.acting ? "Aguarde a atualização do serviço terminar." : null,
 );
 </script>
 
@@ -85,39 +73,29 @@ const hasPrimaryActions = computed(
     <p>{{ actionCopy.description }}</p>
 
     <div v-if="hasPrimaryActions" class="actions-card__buttons">
+      <DesignSystemDisabledTooltip v-if="canComplete" :reason="actingReason">
+        <UButton
+          block
+          size="lg"
+          color="primary"
+          icon="i-lucide-circle-check-big"
+          :disabled="acting"
+          @click="emit('openComplete')"
+        >
+          Concluído
+        </UButton>
+      </DesignSystemDisabledTooltip>
       <UButton
-        v-if="canRequestCompletion"
+        v-if="canRequestRecommendation"
         block
         size="lg"
-        color="primary"
+        :color="recommendationSentAt ? 'neutral' : 'primary'"
+        :variant="recommendationSentAt ? 'outline' : 'solid'"
         icon="i-lucide-message-circle"
         :loading="acting"
-        @click="emit('requestCompletion')"
+        @click="emit('requestRecommendation')"
       >
-        Pedir confirmação de conclusão
-      </UButton>
-      <UButton
-        v-if="canComplete"
-        block
-        size="lg"
-        color="neutral"
-        variant="outline"
-        icon="i-lucide-circle-check-big"
-        :disabled="acting"
-        @click="emit('openComplete')"
-      >
-        Marcar como concluído
-      </UButton>
-      <UButton
-        v-if="copyFallbackUrl"
-        block
-        color="neutral"
-        variant="soft"
-        icon="i-lucide-link"
-        :disabled="acting"
-        @click="emit('copyFallback')"
-      >
-        Copiar link como alternativa
+        {{ recommendationLabel }}
       </UButton>
     </div>
 
@@ -143,14 +121,16 @@ const hasPrimaryActions = computed(
 
     <div v-if="canCancel" class="actions-card__cancel">
       <span>Precisa encerrar este atendimento?</span>
-      <UButton
-        color="neutral"
-        variant="link"
-        :disabled="acting"
-        @click="emit('openCancel')"
-      >
-        Cancelar serviço
-      </UButton>
+      <DesignSystemDisabledTooltip :reason="actingReason">
+        <UButton
+          color="neutral"
+          variant="link"
+          :disabled="acting"
+          @click="emit('openCancel')"
+        >
+          Cancelar serviço
+        </UButton>
+      </DesignSystemDisabledTooltip>
     </div>
   </DesignSystemSurfaceCard>
 </template>

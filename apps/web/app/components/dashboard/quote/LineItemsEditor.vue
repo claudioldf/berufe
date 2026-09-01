@@ -48,10 +48,10 @@ const emit = defineEmits<{
       >
         <span class="quote-item__mobile-index">Item {{ index + 1 }}</span>
         <button
+          v-if="quote.items.length > 1"
           class="quote-item__remove"
           type="button"
           :aria-label="`Remover item ${index + 1}`"
-          :disabled="quote.items.length === 1"
           @click="emit('remove', item.id)"
         >
           <UIcon name="i-lucide-trash-2" aria-hidden="true" />

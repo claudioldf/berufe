@@ -19,7 +19,7 @@ class SharedQuoteResolver
     professional = ProfessionalProfile
       .publicly_eligible
       .includes(
-        :published_photo,
+        :profile_photo,
         :verification_requests,
         published_revision: {professional_profile_services: :service}
       )

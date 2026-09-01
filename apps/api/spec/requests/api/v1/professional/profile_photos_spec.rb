@@ -13,8 +13,14 @@ RSpec.describe "Professional profile photo", type: :request, openapi: true do
     profile
     ApplicationSession.issue!(user_account: account).last
   end
+  let(:storage) { instance_double(LocalDiskStorage) }
 
-  it "attaches the owned processed photo and returns its review state" do
+  before do
+    allow(MediaStorage).to receive(:build).and_return(storage)
+    allow(storage).to receive(:read)
+  end
+
+  it "attaches the owned processed photo and publishes it immediately" do
     upload = processed_upload
 
     put "/api/v1/professional/profile/photo",
@@ -25,16 +31,59 @@ RSpec.describe "Professional profile photo", type: :request, openapi: true do
     expect(response).to have_http_status(:ok)
     expect(response.parsed_body.dig("data", "profile", "photo")).to match(
       "current" => hash_including(
-        "id" => ProfessionalProfilePhoto.last.id,
-        "status" => "pending_review",
-        "rejection_reason" => nil
+        "id" => ProfessionalProfilePhoto.last.id
       ),
-      "has_published_photo" => false,
-      "published_image_url" => nil,
+      "has_photo" => true,
+      "image_url" => a_string_including(ProfessionalProfilePhoto.last.id),
       "latest_upload" => nil
     )
     expect(upload.reload).to be_attached
     assert_api_conform(status: 200)
+  end
+
+  it "serves the current photo to its owner while the profile is draft or suspended" do
+    photo = ProfessionalProfilePhotoAttacher.new.call(
+      profile:,
+      media_upload_id: processed_upload.id
+    )
+    allow(storage).to receive(:read).with(scope: :private, key: photo.private_key).and_return("owner-photo")
+
+    get "/api/v1/professional/profile-photos/#{photo.id}/image",
+      headers: session_headers(request_id: "profile-photo-owner-draft")
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to eq("owner-photo")
+    expect(response.media_type).to eq("image/jpeg")
+    expect(response.headers.fetch("Cache-Control")).to eq("no-store")
+    expect(response.headers.fetch("X-Content-Type-Options")).to eq("nosniff")
+    assert_api_conform(status: 200)
+
+    profile.update!(profile_status: "suspended")
+    get "/api/v1/professional/profile-photos/#{photo.id}/image",
+      headers: session_headers(request_id: "profile-photo-owner-suspended")
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to eq("owner-photo")
+    assert_api_conform(status: 200)
+  end
+
+  it "does not expose owner photo previews anonymously or through stale pointers" do
+    photo = ProfessionalProfilePhotoAttacher.new.call(
+      profile:,
+      media_upload_id: processed_upload.id
+    )
+
+    get "/api/v1/professional/profile-photos/#{photo.id}/image",
+      headers: {"X-Request-Id" => "profile-photo-owner-anonymous"}
+    expect(response).to have_http_status(:unauthorized)
+    assert_api_conform(status: 401)
+
+    profile.update!(profile_photo: nil)
+    get "/api/v1/professional/profile-photos/#{photo.id}/image",
+      headers: session_headers(request_id: "profile-photo-owner-stale")
+    expect(response).to have_http_status(:not_found)
+    expect(storage).not_to have_received(:read)
+    assert_api_conform(status: 404)
   end
 
   it "rejects a photo that has not finished processing" do
@@ -55,7 +104,6 @@ RSpec.describe "Professional profile photo", type: :request, openapi: true do
       profile:,
       media_upload_id: processed_upload.id
     )
-    profile.update!(published_photo: photo)
 
     delete "/api/v1/professional/profile/photo",
       headers: session_headers(request_id: "profile-photo-remove", origin: true),
@@ -64,16 +112,12 @@ RSpec.describe "Professional profile photo", type: :request, openapi: true do
     expect(response).to have_http_status(:ok)
     expect(response.parsed_body.dig("data", "profile", "photo")).to eq(
       "current" => nil,
-      "has_published_photo" => false,
-      "published_image_url" => nil,
+      "has_photo" => false,
+      "image_url" => nil,
       "latest_upload" => nil
     )
-    expect(profile.reload).to have_attributes(
-      working_photo: nil,
-      published_photo: nil,
-      approved_photo: nil
-    )
-    expect(photo.reload).to be_superseded
+    expect(profile.reload.profile_photo).to be_nil
+    expect(photo.reload.deleted_at).to be_present
     assert_api_conform(status: 200)
   end
 

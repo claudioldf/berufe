@@ -141,7 +141,8 @@ const data: ApiReport = {
     reviewed: 3,
     approval_rate: rate(2, 3),
     hidden: 0,
-    by_target_type: { profile_revision: 3 },
+    restored: 0,
+    by_target_type: { verification_request: 3, professional_profile: 0 },
   },
 };
 

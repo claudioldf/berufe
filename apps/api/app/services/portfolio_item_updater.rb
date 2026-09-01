@@ -1,14 +1,12 @@
 # frozen_string_literal: true
 
-class PortfolioItemResubmitter
-  class Conflict < StandardError; end
-
+class PortfolioItemUpdater
   class Invalid < StandardError
     attr_reader :field_errors
 
     def initialize(field_errors)
       @field_errors = field_errors
-      super("invalid portfolio item resubmission")
+      super("invalid portfolio item")
     end
   end
 
@@ -17,18 +15,12 @@ class PortfolioItemResubmitter
       profile.lock!
       item.lock!
       raise ActiveRecord::RecordNotFound unless item.professional_profile_id == profile.id && item.deleted_at.nil?
-      raise Conflict unless item.status.in?(%w[rejected hidden])
 
       upload = replacement_upload(profile, attributes[:media_upload_id])
       item.assign_attributes(
         service: selected_service!(profile, attributes.fetch(:service_id)),
         title: attributes[:title].to_s.squish,
         description: attributes[:description].to_s.squish.presence,
-        status: "pending_review",
-        rejection_reason: nil,
-        reviewed_at: nil,
-        hidden_at: nil,
-        public_key: nil,
         submitted_at: now
       )
       assign_replacement_image!(item, upload) if upload

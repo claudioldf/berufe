@@ -47,8 +47,18 @@ Rails.application.configure do
   # Highlight code that triggered redirect in logs.
   config.action_dispatch.verbose_redirect_logs = true
 
-  config.action_mailer.delivery_method = :file
-  config.action_mailer.file_settings = {location: Rails.root.join("tmp/mails")}
+  # MailCatcher (compose.yaml) traps outgoing mail at http://localhost:1080.
+  # Deliberately separate from the production-shaped SMTP_* variables (whose
+  # .env.example defaults, e.g. port 587, do not describe MailCatcher).
+  # Override MAILER_SMTP_HOST/PORT for a host-run `bin/rails server` pointed
+  # at a locally installed MailCatcher instead of the Compose one — the
+  # Compose container also publishes 1025 to the host, so localhost works.
+  config.action_mailer.delivery_method = :smtp
+  config.action_mailer.smtp_settings = {
+    address: ENV.fetch("MAILER_SMTP_HOST", "mailcatcher"),
+    port: Integer(ENV.fetch("MAILER_SMTP_PORT", "1025")),
+    enable_starttls_auto: false
+  }
   config.action_mailer.perform_deliveries = true
   config.action_mailer.raise_delivery_errors = true
 

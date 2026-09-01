@@ -23,7 +23,7 @@ class ProfessionalRelationshipCandidateQuery
       .joins(:published_revision)
       .where.not(id: initiator.id)
       .where("professional_profile_revisions.display_name ILIKE ?", pattern)
-      .includes(:user_account, :published_photo, :published_revision)
+      .includes(:user_account, :profile_photo, :published_revision)
       .order(Arel.sql("professional_profile_revisions.display_name ASC"), id: :asc)
       .limit(LIMIT)
   end

@@ -24,11 +24,10 @@ RSpec.describe "Professional profile submission", type: :request, openapi: true 
     expect(response).to have_http_status(:ok)
     expect(response.parsed_body.dig("data", "profile")).to include(
       "profile_status" => "published",
-      "revision_status" => "pending_review",
       "is_public" => true,
       "is_search_eligible" => true
     )
-    expect(profile.reload.working_revision.submitted_at).to be_present
+    expect(profile.reload.published_revision).to eq(profile.working_revision)
     assert_api_conform(status: 200)
   end
 

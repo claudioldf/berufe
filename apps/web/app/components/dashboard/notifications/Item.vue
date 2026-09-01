@@ -27,6 +27,9 @@ const icon = computed(() => {
   }
   return "i-lucide-circle-check";
 });
+const readingReason = computed(() =>
+  props.reading ? "Aguarde esta notificação ser marcada como lida." : null,
+);
 </script>
 
 <template>
@@ -47,19 +50,21 @@ const icon = computed(() => {
         </time>
       </span>
     </NuxtLink>
-    <button
-      type="button"
-      class="notification-item__read"
-      :disabled="reading"
-      :aria-label="`Marcar como lida: ${notification.title}`"
-      @click="emit('read', notification)"
-    >
-      <UIcon
-        :name="reading ? 'i-lucide-loader-circle' : 'i-lucide-check'"
-        :class="{ 'notification-item__spinner': reading }"
-        aria-hidden="true"
-      />
-    </button>
+    <DesignSystemDisabledTooltip :reason="readingReason">
+      <button
+        type="button"
+        class="notification-item__read"
+        :disabled="reading"
+        :aria-label="`Marcar como lida: ${notification.title}`"
+        @click="emit('read', notification)"
+      >
+        <UIcon
+          :name="reading ? 'i-lucide-loader-circle' : 'i-lucide-check'"
+          :class="{ 'notification-item__spinner': reading }"
+          aria-hidden="true"
+        />
+      </button>
+    </DesignSystemDisabledTooltip>
   </article>
 </template>
 

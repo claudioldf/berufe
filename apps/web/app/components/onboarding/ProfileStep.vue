@@ -39,10 +39,7 @@ const form = ref<ProfessionalProfileDraft>({
 });
 const formRoot = useTemplateRef<HTMLFormElement>("formRoot");
 const validation = computed(() => {
-  const photoReady = Boolean(
-    props.photo?.hasPublishedPhoto ||
-    ["pending_review", "approved"].includes(props.photo?.current?.status ?? ""),
-  );
+  const photoReady = Boolean(props.photo?.hasPhoto || props.photo?.current);
   return validateOnboardingProfile(form.value, photoReady);
 });
 const isValid = computed(() =>
@@ -74,6 +71,9 @@ const error = computed(
 );
 const photoError = computed(
   () => props.photoError || displayedErrors.value?.photo || "",
+);
+const savingReason = computed(() =>
+  props.saving ? "Aguarde o salvamento desta etapa terminar." : null,
 );
 
 function submit() {
@@ -123,15 +123,17 @@ function submit() {
         />
       </DashboardProfileFormLayout>
       <footer class="onboarding-step-actions onboarding-step-actions--end">
-        <UButton
-          type="submit"
-          color="primary"
-          trailing-icon="i-lucide-arrow-right"
-          :loading="props.saving"
-          :disabled="props.saving"
-        >
-          Salvar e continuar
-        </UButton>
+        <DesignSystemDisabledTooltip :reason="savingReason">
+          <UButton
+            type="submit"
+            color="primary"
+            trailing-icon="i-lucide-arrow-right"
+            :loading="props.saving"
+            :disabled="props.saving"
+          >
+            Salvar e continuar
+          </UButton>
+        </DesignSystemDisabledTooltip>
       </footer>
     </form>
   </section>

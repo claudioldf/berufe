@@ -43,10 +43,15 @@ async function confirmUnpublish() {
   const target = unpublishTarget.value;
   if (!target) return;
 
-  await setPublication(target, false, unpublishReason.value.trim()).catch(
-    () => undefined,
-  );
-  unpublishOpen.value = false;
+  try {
+    await setPublication(target, false, unpublishReason.value.trim());
+    unpublishOpen.value = false;
+    unpublishTarget.value = null;
+    unpublishReason.value = "";
+  } catch {
+    // The composable exposes the user-facing mutation error. Keep the dialog
+    // and entered reason intact so the administrator can retry.
+  }
 }
 
 async function publish(item: AdminProfessionalItem) {
@@ -136,6 +141,7 @@ async function publish(item: AdminProfessionalItem) {
       v-model:open="unpublishOpen"
       v-model:reason="unpublishReason"
       :display-name="unpublishTarget?.displayName ?? null"
+      :submitting="isMutating"
       @confirm="confirmUnpublish"
     />
   </div>

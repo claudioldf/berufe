@@ -40,10 +40,6 @@ const connectionCountLabel = computed(() =>
           <em v-if="index === 0">Principal</em>
         </div>
       </div>
-      <div class="declaration-note">
-        <UIcon name="i-lucide-info" /> Os anos de experiência são declarados
-        pelo profissional e não representam uma verificação da Berufe.
-      </div>
     </section>
 
     <section

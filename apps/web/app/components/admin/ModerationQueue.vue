@@ -8,22 +8,17 @@ const { showToast } = useToast();
 const {
   queue,
   selectedId,
-  typeFilter,
   statusFilter,
   searchQuery,
   note,
   isLoading,
   isMutating,
   loadError,
-  mediaUrl,
-  mediaLoading,
-  mediaError,
   evidenceLoading,
   evidenceError,
   selected,
   load,
   select,
-  setTypeFilter,
   setStatusFilter,
   setSearchQuery,
   setPage,
@@ -33,7 +28,6 @@ const {
 } = useModerationQueue();
 const reasonOpen = shallowRef(false);
 const reason = shallowRef("");
-const reasonAction = shallowRef<"rejected" | "hidden">("rejected");
 const identityMatchConfirmed = shallowRef(false);
 
 onMounted(() => void load().catch(() => undefined));
@@ -41,24 +35,21 @@ watch(selectedId, () => {
   identityMatchConfirmed.value = false;
 });
 
-function requestReason(action: "rejected" | "hidden") {
-  reasonAction.value = action;
+function requestReason() {
   reason.value = "";
   reasonOpen.value = true;
 }
 
-async function decide(action: ModerationDecision, privateReason?: string) {
+async function decide(action: ModerationDecision, rejectionReason?: string) {
   try {
     const item = await recordDecision(action, {
-      reason: privateReason,
+      reason: rejectionReason,
       identityMatchConfirmed: identityMatchConfirmed.value,
     });
     if (!item) return;
     const titles: Record<ModerationDecision, string> = {
-      approved: "Item aprovado",
-      rejected: "Item rejeitado",
-      hidden: "Item ocultado",
-      restored: "Item restaurado",
+      approved: "Identidade aprovada",
+      rejected: "Verificação rejeitada",
     };
     showToast({
       title: titles[action],
@@ -117,10 +108,8 @@ async function openEvidence() {
     </div>
 
     <AdminModerationToolbar
-      :type-filter="typeFilter"
       :status-filter="statusFilter"
       :search="searchQuery"
-      @type="setTypeFilter"
       @status="setStatusFilter"
       @search="setSearchQuery"
     />
@@ -148,18 +137,13 @@ async function openEvidence() {
         v-if="selected"
         :item="selected"
         :note="note"
-        :media-url="mediaUrl"
-        :media-loading="mediaLoading"
-        :media-error="mediaError"
         :evidence-loading="evidenceLoading"
         :mutating="isMutating"
         :identity-match-confirmed="identityMatchConfirmed"
         @note="setNote"
         @identity-match="identityMatchConfirmed = $event"
         @approve="decide('approved')"
-        @reject="requestReason('rejected')"
-        @hide="requestReason('hidden')"
-        @restore="decide('restored')"
+        @reject="requestReason"
         @open-evidence="openEvidence"
       />
     </div>
@@ -175,8 +159,7 @@ async function openEvidence() {
     <AdminModerationRejectionDialog
       v-model:open="reasonOpen"
       v-model:reason="reason"
-      :action="reasonAction"
-      @confirm="decide(reasonAction, reason)"
+      @confirm="decide('rejected', reason)"
     />
   </div>
 </template>

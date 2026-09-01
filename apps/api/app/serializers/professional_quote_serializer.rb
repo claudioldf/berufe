@@ -75,11 +75,8 @@ class ProfessionalQuoteSerializer
     {
       id: job.id,
       status: job.status,
-      completion_requested_at: job.completion_requested_at&.iso8601,
-      completion_issue_message: job.completion_issue_message,
       completed_at: job.completed_at&.iso8601,
-      cancelled_at: job.cancelled_at&.iso8601,
-      recommendation_request_status: job.customer_recommendation_request&.status
+      cancelled_at: job.cancelled_at&.iso8601
     }
   end
 end

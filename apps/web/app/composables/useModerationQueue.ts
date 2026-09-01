@@ -5,12 +5,10 @@ import type {
   ModerationQueue,
   ModerationQueueItem,
   ModerationStatusFilter,
-  ModerationTypeFilter,
 } from "~/types";
 import {
   createAdminModerationDecision,
   fetchAdminModeration,
-  fetchAdminModerationMedia,
   fetchAdminVerificationFile,
 } from "~/services/api/admin-moderation";
 import { useApiClient } from "~/services/api/client";
@@ -38,7 +36,6 @@ interface ModerationQueueDependencies {
       identityMatchConfirmed?: boolean;
     },
   ) => Promise<ModerationQueue>;
-  loadMedia?: (item: ModerationQueueItem) => Promise<Blob>;
   loadEvidence?: (item: ModerationQueueItem) => Promise<Blob>;
   createObjectUrl?: (blob: Blob) => string;
   revokeObjectUrl?: (url: string) => void;
@@ -54,7 +51,6 @@ export function useModerationQueue(
   const client = useApiClient();
   const queue = shallowRef<ModerationQueue>(emptyQueue());
   const selectedId = shallowRef("");
-  const typeFilter = shallowRef<ModerationTypeFilter>("all");
   const statusFilter = shallowRef<ModerationStatusFilter>("pending_review");
   const searchQuery = shallowRef("");
   const page = shallowRef(1);
@@ -62,19 +58,13 @@ export function useModerationQueue(
   const isLoading = shallowRef(false);
   const isMutating = shallowRef(false);
   const loadError = shallowRef("");
-  const mediaUrl = shallowRef("");
-  const mediaLoading = shallowRef(false);
-  const mediaError = shallowRef("");
   const evidenceLoading = shallowRef(false);
   const evidenceError = shallowRef("");
   let loadSequence = 0;
   let searchTimer: ReturnType<typeof setTimeout> | undefined;
-  let mediaSequence = 0;
-  let mediaExpiryTimer: ReturnType<typeof setTimeout> | undefined;
   const evidenceExpiryTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
   const filters = computed<ModerationFilters>(() => ({
-    type: typeFilter.value,
     status: statusFilter.value,
     search: searchQuery.value.trim(),
     page: page.value,
@@ -96,17 +86,6 @@ export function useModerationQueue(
         input,
         attributes,
       ));
-  const loadTargetMedia =
-    dependencies.loadMedia ??
-    ((item) => {
-      if (
-        item.targetType !== "profile_photo" &&
-        item.targetType !== "portfolio_item"
-      ) {
-        throw new Error("Este item não possui imagem de moderação.");
-      }
-      return fetchAdminModerationMedia(client, item.targetType, item.id);
-    });
   const loadTargetEvidence =
     dependencies.loadEvidence ??
     ((item) => {
@@ -132,10 +111,17 @@ export function useModerationQueue(
       };
     });
 
+  function setSelectedId(id: string) {
+    if (selectedId.value === id) return;
+
+    selectedId.value = id;
+    note.value = "";
+  }
+
   function adopt(nextQueue: ModerationQueue) {
     queue.value = nextQueue;
     if (!nextQueue.items.some((item) => item.id === selectedId.value)) {
-      selectedId.value = nextQueue.items[0]?.id ?? "";
+      setSelectedId(nextQueue.items[0]?.id ?? "");
     }
   }
 
@@ -185,16 +171,6 @@ export function useModerationQueue(
     }
   }
 
-  function releaseMedia() {
-    mediaSequence += 1;
-    if (mediaExpiryTimer) clearTimeout(mediaExpiryTimer);
-    mediaExpiryTimer = undefined;
-    if (mediaUrl.value) revokeObjectUrl(mediaUrl.value);
-    mediaUrl.value = "";
-    mediaLoading.value = false;
-    mediaError.value = "";
-  }
-
   function releaseEvidence(url: string) {
     const timer = evidenceExpiryTimers.get(url);
     if (timer) clearTimeout(timer);
@@ -204,7 +180,11 @@ export function useModerationQueue(
 
   async function openEvidence() {
     const item = selected.value;
-    if (!item?.verificationFileId || evidenceLoading.value) return null;
+    if (!item || evidenceLoading.value) return null;
+    if (!item.verificationFileId) {
+      evidenceError.value = "Este item não possui evidência disponível.";
+      throw new Error(evidenceError.value);
+    }
 
     evidenceLoading.value = true;
     evidenceError.value = "";
@@ -238,36 +218,8 @@ export function useModerationQueue(
     }
   }
 
-  async function loadSelectedMedia(item: ModerationQueueItem) {
-    releaseMedia();
-    if (!item.hasMedia) return;
-
-    const sequence = ++mediaSequence;
-    mediaLoading.value = true;
-    try {
-      const blob = await loadTargetMedia(item);
-      if (sequence !== mediaSequence) return;
-      mediaUrl.value = createObjectUrl(blob);
-      mediaExpiryTimer = setTimeout(releaseMedia, 60_000);
-    } catch (error) {
-      if (sequence === mediaSequence) {
-        mediaError.value =
-          error instanceof Error
-            ? error.message
-            : "Não foi possível abrir a imagem privada.";
-      }
-    } finally {
-      if (sequence === mediaSequence) mediaLoading.value = false;
-    }
-  }
-
   function select(id: string) {
-    selectedId.value = id;
-  }
-
-  function setTypeFilter(value: ModerationTypeFilter) {
-    page.value = 1;
-    typeFilter.value = value;
+    setSelectedId(id);
   }
 
   function setStatusFilter(value: ModerationStatusFilter) {
@@ -293,21 +245,16 @@ export function useModerationQueue(
     void load().catch(() => undefined);
   }
 
-  watch([typeFilter, statusFilter, searchQuery, page], (current, previous) => {
+  watch([statusFilter, searchQuery, page], (current, previous) => {
     if (searchTimer) clearTimeout(searchTimer);
-    if (current[2] !== previous[2]) {
+    if (current[1] !== previous[1]) {
       searchTimer = setTimeout(refreshSafely, 250);
     } else {
       refreshSafely();
     }
   });
-  watch(selected, (item) => {
-    if (item) void loadSelectedMedia(item);
-    else releaseMedia();
-  });
   onScopeDispose(() => {
     if (searchTimer) clearTimeout(searchTimer);
-    releaseMedia();
     for (const url of [...evidenceExpiryTimers.keys()]) releaseEvidence(url);
   });
 
@@ -315,27 +262,21 @@ export function useModerationQueue(
     queue: readonly(queue),
     selectedId: readonly(selectedId),
     selected,
-    typeFilter: readonly(typeFilter),
     statusFilter: readonly(statusFilter),
     searchQuery: readonly(searchQuery),
     note: readonly(note),
     isLoading: readonly(isLoading),
     isMutating: readonly(isMutating),
     loadError: readonly(loadError),
-    mediaUrl: readonly(mediaUrl),
-    mediaLoading: readonly(mediaLoading),
-    mediaError: readonly(mediaError),
     evidenceLoading: readonly(evidenceLoading),
     evidenceError: readonly(evidenceError),
     load,
     select,
-    setTypeFilter,
     setStatusFilter,
     setSearchQuery,
     setPage,
     setNote,
     decide,
     openEvidence,
-    releaseMedia,
   };
 }

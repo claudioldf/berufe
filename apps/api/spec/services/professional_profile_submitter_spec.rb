@@ -15,18 +15,13 @@ RSpec.describe ProfessionalProfileSubmitter do
     expect(profile.reload.publication_blockers).to be_empty
 
     result = described_class.new.call(profile:)
-    submitted_at = result.working_revision.submitted_at
-
     expect(result).to have_attributes(
       profile_status: "published",
       published_revision: result.working_revision,
-      published_photo: result.working_photo
+      profile_photo: result.profile_photo
     )
     expect(result).to be_publicly_available
-    expect(result.working_revision).to have_attributes(status: "pending_review")
-    expect(submitted_at).to be_present
-
-    expect(described_class.new.call(profile:).working_revision.submitted_at).to eq(submitted_at)
+    expect { described_class.new.call(profile:) }.not_to change { result.reload.updated_at }
   end
 
   it "returns every actionable publication blocker without changing state" do
@@ -37,7 +32,7 @@ RSpec.describe ProfessionalProfileSubmitter do
     }
 
     expect(profile.reload).to have_attributes(profile_status: "draft", published_at: nil)
-    expect(profile.working_revision).to have_attributes(status: "draft", submitted_at: nil)
+    expect(profile.working_revision).to be_present
   end
 
   it "does not require portfolio or identity verification" do

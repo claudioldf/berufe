@@ -72,7 +72,7 @@ const professional = computed<QuoteProfessional | null>(() => {
     workspace.profile.services[0];
   return {
     name: workspace.profile.identity.name,
-    avatar: workspace.profile.photo.publishedImageUrl,
+    avatar: workspace.profile.photo.imageUrl,
     primaryService: primaryService?.name ?? "",
     identityVerified: workspace.dashboard.readiness.steps.approvedIdentity,
   };
@@ -81,20 +81,21 @@ const shareEnabled = computed(() => {
   const workspace = editor.data.value?.workspace;
   return Boolean(
     quote.value &&
-    quote.value.status !== "approved" &&
+    !["approved", "completed", "cancelled"].includes(quote.value.status) &&
     workspace?.profile.isPublic,
   );
 });
-const quoteStatusLabel = computed(() => {
-  const labels = {
-    draft: "Rascunho",
-    saved: "Aguardando envio ao cliente",
-    shared: "Aguardando resposta",
-    change_requested: "Alteração solicitada",
-    approved: "Aprovado",
-    declined: "Recusado",
-  } as const;
-  return quote.value ? labels[quote.value.status] : "Rascunho";
+// The quote editor hides the share bar entirely for a locked
+// quote, so in practice the only reachable cause here is a non-public
+// profile — surface why, reusing the same reason the dashboard shows.
+const shareBlockedReason = computed(() => {
+  if (shareEnabled.value) return null;
+  const profile = editor.data.value?.workspace.profile;
+  if (!profile) return null;
+  return (
+    profile.suspensionReason ??
+    "Seu perfil não está público, então o link do orçamento não pode ser aberto pelo cliente."
+  );
 });
 const editorTitle = computed(() =>
   quote.value?.number ? "Orçamento" : "Novo orçamento",
@@ -294,7 +295,6 @@ async function revokeShare() {
               cliente.
             </p>
           </div>
-          <span><DesignSystemStatusDot /> {{ quoteStatusLabel }}</span>
         </div>
       </DesignSystemContainer>
     </section>
@@ -306,22 +306,29 @@ async function revokeShare() {
         Não foi possível carregar o orçamento. Volte à lista de orçamentos e
         tente novamente.
       </p>
-      <DashboardQuoteBuilder
-        v-else
-        v-model:share-open="shareOpen"
-        :initial-quote="quote"
-        :professional="professional"
-        :saving-intent="savingIntent"
-        :save-error="saveError"
-        :sharing-method="sharingMethod"
-        :share-error="shareError"
-        :share-enabled="shareEnabled"
-        :revoking="revoking"
-        @save="saveQuote"
-        @prepare-share="prepareShare"
-        @share="shareQuote"
-        @revoke="revokeShare"
-      />
+      <template v-else>
+        <DashboardQuoteStatusCard
+          class="quote-workspace__status"
+          :quote="quote"
+        />
+        <DashboardQuoteBuilder
+          v-model:share-open="shareOpen"
+          class="quote-workspace__builder"
+          :initial-quote="quote"
+          :professional="professional"
+          :saving-intent="savingIntent"
+          :save-error="saveError"
+          :sharing-method="sharingMethod"
+          :share-error="shareError"
+          :share-enabled="shareEnabled"
+          :share-blocked-reason="shareBlockedReason"
+          :revoking="revoking"
+          @save="saveQuote"
+          @prepare-share="prepareShare"
+          @share="shareQuote"
+          @revoke="revokeShare"
+        />
+      </template>
     </DesignSystemContainer>
   </div>
 </template>
@@ -332,7 +339,7 @@ async function revokeShare() {
   padding-bottom: 80px;
   background: var(--color-surface-canvas);
   &__heading {
-    padding: 28px 0 34px;
+    padding: 28px 0 100px;
     background: var(--color-brand-strong);
     color: white;
   }
@@ -385,6 +392,28 @@ async function revokeShare() {
   }
   &__content {
     padding-top: 24px;
+  }
+  &__status {
+    margin-top: -84px;
+  }
+  &__builder {
+    margin-top: 24px;
+  }
+}
+
+@media (width <= 560px) {
+  .quote-workspace {
+    &__heading {
+      padding-bottom: 76px;
+    }
+
+    &__status {
+      margin-top: -58px;
+    }
+
+    &__builder {
+      margin-top: 16px;
+    }
   }
 }
 </style>

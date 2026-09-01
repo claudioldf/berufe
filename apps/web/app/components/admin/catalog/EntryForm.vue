@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive } from "vue";
+import { computed, reactive } from "vue";
 import type {
   CatalogCategoryOption,
   CatalogEntry,
@@ -30,61 +30,86 @@ function submit() {
     category: form.category,
   });
 }
+
+const savingReason = computed(() =>
+  props.disabled ? "Salvando as alterações…" : null,
+);
 </script>
 
 <template>
   <form class="catalog-form" @submit.prevent="submit">
     <label class="catalog-form__field">
       <span>Nome</span>
-      <input v-model="form.name" maxlength="80" required :disabled="disabled" />
+      <DesignSystemDisabledTooltip :reason="savingReason">
+        <input
+          v-model="form.name"
+          maxlength="80"
+          required
+          :disabled="disabled"
+        />
+      </DesignSystemDisabledTooltip>
     </label>
     <label class="catalog-form__field">
       <span>Categoria</span>
-      <select v-model="form.category" required :disabled="disabled">
-        <option
-          v-for="category in categories"
-          :key="category.id"
-          :value="category.id"
-        >
-          {{ category.name }}
-        </option>
-      </select>
+      <DesignSystemDisabledTooltip :reason="savingReason">
+        <select v-model="form.category" required :disabled="disabled">
+          <option
+            v-for="category in categories"
+            :key="category.id"
+            :value="category.id"
+          >
+            {{ category.name }}
+          </option>
+        </select>
+      </DesignSystemDisabledTooltip>
     </label>
     <label class="catalog-form__field">
       <span>Slug</span>
-      <input
-        v-model="form.identifier"
-        maxlength="80"
-        pattern="[a-z0-9-]+"
-        required
-        :disabled="Boolean(entry) || disabled"
-      />
+      <DesignSystemDisabledTooltip :reason="entry ? null : savingReason">
+        <input
+          v-model="form.identifier"
+          maxlength="80"
+          pattern="[a-z0-9-]+"
+          required
+          :disabled="Boolean(entry) || disabled"
+        />
+      </DesignSystemDisabledTooltip>
       <small v-if="entry"
         >O slug permanece estável para preservar referências históricas.</small
       >
     </label>
     <label class="catalog-form__field">
       <span>Descrição</span>
-      <textarea
-        v-model="form.description"
-        rows="3"
-        maxlength="240"
-        required
-        :disabled="disabled"
-      />
+      <DesignSystemDisabledTooltip :reason="savingReason">
+        <textarea
+          v-model="form.description"
+          rows="3"
+          maxlength="240"
+          required
+          :disabled="disabled"
+        />
+      </DesignSystemDisabledTooltip>
     </label>
     <div class="catalog-form__actions">
-      <button
-        type="button"
-        class="catalog-form__cancel"
-        :disabled="disabled"
-        @click="emit('cancel')"
+      <DesignSystemDisabledTooltip
+        :reason="disabled ? 'Aguarde o salvamento terminar' : null"
       >
-        Cancelar
-      </button>
-      <button type="submit" class="catalog-form__save" :disabled="disabled">
-        {{ entry ? "Salvar alterações" : "Adicionar serviço" }}
-      </button>
+        <button
+          type="button"
+          class="catalog-form__cancel"
+          :disabled="disabled"
+          @click="emit('cancel')"
+        >
+          Cancelar
+        </button>
+      </DesignSystemDisabledTooltip>
+      <DesignSystemDisabledTooltip
+        :reason="disabled ? 'Salvando… aguarde um instante' : null"
+      >
+        <button type="submit" class="catalog-form__save" :disabled="disabled">
+          {{ entry ? "Salvar alterações" : "Adicionar serviço" }}
+        </button>
+      </DesignSystemDisabledTooltip>
     </div>
   </form>
 </template>

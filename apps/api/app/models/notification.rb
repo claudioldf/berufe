@@ -2,18 +2,8 @@
 
 class Notification < ApplicationRecord
   TYPES = %w[
-    profile_moderation_approved
-    profile_moderation_rejected
     profile_moderation_hidden
     profile_moderation_restored
-    profile_photo_moderation_approved
-    profile_photo_moderation_rejected
-    profile_photo_moderation_hidden
-    profile_photo_moderation_restored
-    portfolio_item_moderation_approved
-    portfolio_item_moderation_rejected
-    portfolio_item_moderation_hidden
-    portfolio_item_moderation_restored
     verification_request_moderation_approved
     verification_request_moderation_rejected
     relationship_request_received
@@ -22,13 +12,12 @@ class Notification < ApplicationRecord
     quote_change_requested
     quote_approved
     quote_declined
-    service_completion_confirmed
     service_completion_issue_reported
     customer_recommendation_published
   ].freeze
   STATUSES = %w[unread read].freeze
   QUOTE_TYPES = %w[quote_change_requested quote_approved quote_declined].freeze
-  SERVICE_JOB_TYPES = %w[service_completion_confirmed service_completion_issue_reported].freeze
+  SERVICE_JOB_TYPES = %w[service_completion_issue_reported].freeze
 
   belongs_to :recipient_user_account, class_name: "UserAccount", inverse_of: :notifications
 

@@ -1,60 +1,30 @@
 <script setup lang="ts">
 import type { ModerationQueueItem } from "~/types";
 
-const props = defineProps<{
+defineProps<{
   item: ModerationQueueItem;
   note: string;
-  mediaUrl?: string;
-  mediaLoading?: boolean;
-  mediaError?: string;
   evidenceLoading?: boolean;
   mutating?: boolean;
   identityMatchConfirmed?: boolean;
 }>();
-const emit = defineEmits<{
+defineEmits<{
   approve: [];
   reject: [];
-  hide: [];
-  restore: [];
   openEvidence: [];
   note: [value: string];
   identityMatch: [value: boolean];
 }>();
-
-function toggleVisibility() {
-  if (props.item.status === "hidden") emit("restore");
-  else emit("hide");
-}
 </script>
 
 <template>
   <section class="moderation__review" aria-labelledby="moderation-item-title">
     <header>
       <div>
-        <span>{{ item.type }}</span>
+        <span>Verificação de identidade</span>
         <h2 id="moderation-item-title">{{ item.title }}</h2>
         <p>{{ item.subtitle }}</p>
       </div>
-      <UPopover v-if="item.status === 'approved' || item.status === 'hidden'">
-        <button type="button" aria-label="Mais opções">
-          <UIcon name="i-lucide-ellipsis" />
-        </button>
-        <template #content>
-          <button
-            class="moderation__overflow-action"
-            type="button"
-            :disabled="mutating"
-            @click="toggleVisibility"
-          >
-            <UIcon
-              :name="
-                item.status === 'hidden' ? 'i-lucide-eye' : 'i-lucide-eye-off'
-              "
-            />
-            {{ item.status === "hidden" ? "Restaurar" : "Ocultar" }}
-          </button>
-        </template>
-      </UPopover>
     </header>
     <div class="moderation__meta">
       <span
@@ -65,51 +35,15 @@ function toggleVisibility() {
     <div class="moderation__review-block">
       <span>Contexto da análise</span>
       <p>{{ item.details }}</p>
-      <p>
-        <strong>{{
-          item.currentlyPublic ? "Está público agora" : "Não está público"
-        }}</strong>
-        <template v-if="item.fallbackAvailable">
-          · há conteúdo revisado para rollback
-        </template>
-      </p>
     </div>
-    <div v-if="item.changes.length" class="moderation__review-block">
-      <span>Alterações desde a última revisão</span>
-      <ul>
-        <li v-for="change in item.changes" :key="change.field">
-          <strong>{{ change.field }}</strong
-          >: {{ change.before ?? "—" }} →
-          {{ change.after ?? "—" }}
-        </li>
-      </ul>
-    </div>
-    <div class="moderation__preview" :class="{ 'has-image': mediaUrl }">
-      <img
-        v-if="mediaUrl"
-        :src="mediaUrl"
-        :alt="`Conteúdo enviado para análise: ${item.title}`"
-        width="112"
-        height="112"
-        loading="lazy"
-      />
-      <div v-else>
-        <UIcon
-          :name="
-            item.type === 'Verificação'
-              ? 'i-lucide-file-lock-2'
-              : 'i-lucide-scan-search'
-          "
-        />
-      </div>
+    <div class="moderation__preview">
+      <div><UIcon name="i-lucide-file-lock-2" /></div>
       <span>
-        <small>Conteúdo enviado</small>
-        <p v-if="mediaLoading">Abrindo imagem privada…</p>
-        <p v-else-if="mediaError">{{ mediaError }}</p>
-        <p v-else>{{ item.preview }}</p>
+        <small>Documento enviado</small>
+        <p>{{ item.preview }}</p>
       </span>
     </div>
-    <div v-if="item.type === 'Verificação'" class="moderation__private-warning">
+    <div class="moderation__private-warning">
       <UIcon name="i-lucide-lock-keyhole" />
       <span>
         <strong>Acesso a arquivo restrito</strong>
@@ -123,18 +57,21 @@ function toggleVisibility() {
         color="neutral"
         variant="outline"
         :loading="evidenceLoading"
+        :disabled="!item.verificationFileId"
         @click="$emit('openEvidence')"
       >
-        Abrir documento
+        {{
+          item.verificationFileId ? "Abrir documento" : "Documento indisponível"
+        }}
       </UButton>
     </div>
     <label
-      v-if="item.type === 'Verificação'"
+      v-if="item.status === 'pending_review'"
       class="moderation__identity-match"
     >
       <input
         type="checkbox"
-        :checked="props.identityMatchConfirmed"
+        :checked="identityMatchConfirmed"
         @change="
           $emit('identityMatch', ($event.target as HTMLInputElement).checked)
         "
@@ -146,6 +83,7 @@ function toggleVisibility() {
       </span>
     </label>
     <DesignSystemFormField
+      v-if="item.status === 'pending_review'"
       id="moderation-note"
       class="moderation__note"
       label="Nota interna opcional"
@@ -161,29 +99,38 @@ function toggleVisibility() {
       />
     </DesignSystemFormField>
     <footer v-if="item.status === 'pending_review'">
-      <UButton
-        class="moderation__decision moderation__decision--reject"
-        color="error"
-        variant="outline"
-        icon="i-lucide-x"
-        :disabled="mutating"
-        @click="$emit('reject')"
+      <DesignSystemDisabledTooltip
+        :reason="mutating ? 'Aguarde a decisão anterior' : null"
       >
-        Rejeitar
-      </UButton>
-      <UButton
-        class="moderation__decision moderation__decision--approve"
-        color="primary"
-        icon="i-lucide-check"
-        :loading="mutating"
-        :disabled="
-          mutating ||
-          (item.type === 'Verificação' && !props.identityMatchConfirmed)
+        <UButton
+          class="moderation__decision moderation__decision--reject"
+          color="error"
+          variant="outline"
+          icon="i-lucide-x"
+          :disabled="mutating"
+          @click="$emit('reject')"
+        >
+          Rejeitar
+        </UButton>
+      </DesignSystemDisabledTooltip>
+      <DesignSystemDisabledTooltip
+        :reason="
+          !mutating && !identityMatchConfirmed
+            ? 'Confirme a identidade no checkbox acima'
+            : null
         "
-        @click="$emit('approve')"
       >
-        Marcar como revisado
-      </UButton>
+        <UButton
+          class="moderation__decision moderation__decision--approve"
+          color="primary"
+          icon="i-lucide-check"
+          :loading="mutating"
+          :disabled="mutating || !identityMatchConfirmed"
+          @click="$emit('approve')"
+        >
+          Aprovar identidade
+        </UButton>
+      </DesignSystemDisabledTooltip>
     </footer>
   </section>
 </template>

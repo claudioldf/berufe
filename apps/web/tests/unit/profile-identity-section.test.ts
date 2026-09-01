@@ -56,6 +56,10 @@ const FormFieldStub = defineComponent({
     </label>
   `,
 });
+const TooltipStub = defineComponent({
+  props: { reason: { type: String, default: null } },
+  template: `<div :data-tooltip-reason="reason ?? ''"><slot /></div>`,
+});
 
 const global = {
   stubs: {
@@ -63,6 +67,7 @@ const global = {
     UButton: ButtonStub,
     UIcon: true,
     DesignSystemFormField: FormFieldStub,
+    DesignSystemDisabledTooltip: TooltipStub,
   },
 };
 
@@ -99,12 +104,10 @@ describe("professional profile identity photo control", () => {
         photo: {
           current: {
             id: "d25c64fa-3e6a-4e56-adc9-85bdac0045cb",
-            status: "approved",
-            rejectionReason: null,
             submittedAt: "2026-08-23T12:00:00Z",
           },
-          hasPublishedPhoto: true,
-          publishedImageUrl: "https://api.example.test/profile-photo.jpg",
+          hasPhoto: true,
+          imageUrl: "https://api.example.test/profile-photo.jpg",
           latestUpload: null,
         },
       },
@@ -141,6 +144,33 @@ describe("professional profile identity photo control", () => {
     });
 
     expect(wrapper.text()).not.toContain("Remover foto");
+  });
+
+  it("explains why photo actions are unavailable while a mutation runs", async () => {
+    const wrapper = await mountSuspended(IdentitySection, {
+      props: {
+        modelValue: { ...draft },
+        photoUploading: true,
+      },
+      global,
+    });
+    const action = wrapper
+      .findAll("button")
+      .find((button) => button.text() === "Adicionar foto")!;
+
+    expect(action.attributes("disabled")).toBeDefined();
+    expect(
+      action.element
+        .closest("[data-tooltip-reason]")
+        ?.getAttribute("data-tooltip-reason"),
+    ).toBe("Aguarde o envio da foto terminar.");
+
+    await wrapper.setProps({ photoUploading: false, photoRemoving: true });
+    expect(
+      action.element
+        .closest("[data-tooltip-reason]")
+        ?.getAttribute("data-tooltip-reason"),
+    ).toBe("Aguarde a remoção da foto terminar.");
   });
 
   it("allows a professional biography of up to 2,500 characters", async () => {

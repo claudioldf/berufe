@@ -21,15 +21,15 @@ const sortedQuotes = computed(() =>
 const quoteStatusLabel = {
   draft: "Rascunho",
   saved: "Aguardando envio ao cliente",
-  shared: "Aguardando resposta",
+  shared: "Enviado ao cliente",
   change_requested: "Alteração solicitada",
   approved: "Aprovado",
   declined: "Recusado",
+  completed: "Concluído",
+  cancelled: "Cancelado",
 } as const;
 const serviceStatusLabel = {
   approved: "Aprovado",
-  completion_requested: "Aguardando confirmação",
-  completion_issue: "Pendência",
   completed: "Concluído",
   cancelled: "Cancelado",
 } as const;
@@ -240,9 +240,17 @@ const serviceStatusLabel = {
     font-weight: 800;
   }
 
-  & em.shared {
+  & em.shared,
+  & em.approved,
+  & em.completed {
     background: var(--mint);
     color: var(--color-brand);
+  }
+
+  & em.declined,
+  & em.cancelled {
+    background: var(--color-danger-tint);
+    color: var(--color-danger);
   }
 
   &__row-action {

@@ -6,14 +6,20 @@ import type {
   SearchLocationSource,
 } from "~/types";
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     compact?: boolean;
+    loading?: boolean;
     location?: SearchLocation;
     cities?: SearchLocation[];
     locationSource?: SearchLocationSource;
   }>(),
-  { compact: false, cities: () => [], locationSource: "fallback" },
+  {
+    compact: false,
+    loading: false,
+    cities: () => [],
+    locationSource: "fallback",
+  },
 );
 
 const emit = defineEmits<{
@@ -29,7 +35,8 @@ const canSubmit = computed(() => {
 
 function submit() {
   const value = expression.value.trim();
-  if (!value || value.length > MAXIMUM_EXPRESSION_LENGTH) return;
+  if (props.loading || !value || value.length > MAXIMUM_EXPRESSION_LENGTH)
+    return;
 
   emit("submit", { expression: value });
 }
@@ -40,6 +47,7 @@ function submit() {
     <form
       class="expression-search"
       :class="{ 'expression-search--compact': compact }"
+      :aria-busy="loading"
       @submit.prevent="submit"
     >
       <div class="expression-search__field">
@@ -67,9 +75,12 @@ function submit() {
         type="submit"
         color="primary"
         class="expression-search__button"
+        icon="i-lucide-arrow-right"
+        trailing
+        :loading="loading"
+        :disabled="loading"
       >
         <span>Buscar profissionais</span>
-        <UIcon name="i-lucide-arrow-right" aria-hidden="true" />
       </UButton>
     </form>
 

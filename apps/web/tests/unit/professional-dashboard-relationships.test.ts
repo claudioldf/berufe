@@ -1,5 +1,5 @@
 import { mockNuxtImport, mountSuspended } from "@nuxt/test-utils/runtime";
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
 import { defineComponent, ref, shallowRef } from "vue";
 import DashboardChecklist from "@app/components/dashboard/DashboardChecklist.vue";
 import DashboardQuickActions from "@app/components/dashboard/DashboardQuickActions.vue";
@@ -11,6 +11,8 @@ const mocks = vi.hoisted(() => ({
   useCatalogs: vi.fn(),
   showToast: vi.fn(),
   share: vi.fn(),
+  completeService: vi.fn(),
+  client: {},
 }));
 
 vi.mock("@app/composables/useProfessionalWorkspace", () => ({
@@ -24,6 +26,13 @@ vi.mock("@app/composables/useToast", () => ({
 }));
 vi.mock("@app/composables/useShare", () => ({
   useShare: () => ({ share: mocks.share }),
+}));
+vi.mock("@app/services/api/client", () => ({
+  useApiClient: () => mocks.client,
+}));
+vi.mock("@app/services/api/professional-service-jobs", () => ({
+  completeProfessionalServiceJob: mocks.completeService,
+  requestProfessionalServiceRecommendation: vi.fn(),
 }));
 // withSiteUrl resolves relatively (no request host) outside a real SSR
 // request context; pin it to an absolute origin to match production.
@@ -40,6 +49,20 @@ const ButtonStub = defineComponent({
   template:
     '<button type="button" :disabled="disabled" :data-loading="loading" @click="$emit(\'click\')"><slot /></button>',
 });
+const TooltipStub = defineComponent({
+  props: { reason: { type: String, default: null } },
+  template: `<div :data-tooltip-reason="reason ?? ''"><slot /></div>`,
+});
+const ModalStub = defineComponent({
+  props: { open: Boolean },
+  emits: ["update:open"],
+  template: `
+    <div v-if="open" class="modal">
+      <slot name="body" />
+      <slot name="footer" />
+    </div>
+  `,
+});
 
 const mountOptions = {
   shallow: true,
@@ -47,12 +70,15 @@ const mountOptions = {
     renderStubDefaultSlot: true,
     stubs: {
       UButton: ButtonStub,
+      DesignSystemDisabledTooltip: TooltipStub,
+      UModal: ModalStub,
       DashboardActivitySections: false,
       DashboardChecklist: false,
       DashboardQuickActions: false,
       DashboardQuoteEmptyState: false,
       DashboardRecentWork: false,
       DesignSystemFeatureEmptyState: false,
+      ServiceCompletionDialog: false,
     },
   },
 } as const;
@@ -108,7 +134,7 @@ function workspace(options: { pending?: boolean; failed?: boolean } = {}) {
             approvedIdentity: true,
           },
         },
-        changeRequestedQuotes: [],
+        actionItems: [],
         recentQuotes: [],
         recentServiceJobs: [],
       },
@@ -122,14 +148,13 @@ function workspace(options: { pending?: boolean; failed?: boolean } = {}) {
         isPublic: true,
         isSearchEligible: true,
         isIndexable: true,
+        suspensionReason: null,
         publicationBlockers: [],
-        revisionStatus: "approved",
-        revisionRejectionReason: null,
         hasPublishedRevision: true,
         photo: {
           current: null,
-          hasPublishedPhoto: false,
-          publishedImageUrl: null,
+          hasPhoto: false,
+          imageUrl: null,
           latestUpload: null,
         },
         portfolioItems: [],
@@ -258,6 +283,107 @@ describe("professional dashboard", () => {
     );
   });
 
+  it("opens the completion choice before completing a dashboard service", async () => {
+    const currentWorkspace = workspace();
+    currentWorkspace.data.value.dashboard.actionItems = [
+      {
+        id: "service-id",
+        kind: "service_open",
+        title: "Adequação elétrica · Ana Paula",
+        subtitle: "Aprovado, aguardando você concluir",
+        sortAt: "2026-08-19T14:00:00Z",
+        recommendationDeliveryChannel: "email",
+      },
+    ];
+    mocks.useWorkspace.mockResolvedValue(currentWorkspace);
+    mocks.completeService.mockResolvedValue({
+      serviceJob: { id: "service-id", status: "completed" },
+      shareUrl: null,
+      whatsappUrl: null,
+    });
+    const wrapper = await mountSuspended(
+      ProfessionalDashboardPage,
+      mountOptions,
+    );
+
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text() === "Concluído")!
+      .trigger("click");
+    expect(mocks.completeService).not.toHaveBeenCalled();
+    expect(wrapper.text()).toContain("Concluir e solicitar avaliação");
+
+    await wrapper
+      .findAll("button")
+      .find((button) =>
+        button.text().includes("Concluir e solicitar avaliação"),
+      )!
+      .trigger("click");
+    await flushPromises();
+
+    expect(mocks.completeService).toHaveBeenCalledWith(
+      mocks.client,
+      "service-id",
+      true,
+    );
+  });
+
+  it("opens the prepared WhatsApp evaluation from the dashboard", async () => {
+    const currentWorkspace = workspace();
+    currentWorkspace.data.value.dashboard.actionItems = [
+      {
+        id: "whatsapp-service-id",
+        kind: "service_open",
+        title: "Reparo hidráulico · Cliente Whatsapp",
+        subtitle: "Aprovado, aguardando você concluir",
+        sortAt: "2026-08-19T14:00:00Z",
+        recommendationDeliveryChannel: "whatsapp",
+      },
+    ];
+    mocks.useWorkspace.mockResolvedValue(currentWorkspace);
+    mocks.completeService.mockResolvedValue({
+      serviceJob: { id: "whatsapp-service-id", status: "completed" },
+      shareUrl: "http://localhost:3000/recomendacao/token",
+      whatsappUrl: "https://wa.me/5547999912699?text=avaliacao",
+    });
+    const replace = vi.fn();
+    const close = vi.fn();
+    const handoff = {
+      opener: window,
+      location: { replace },
+      close,
+    } as unknown as Window;
+    const open = vi.spyOn(window, "open").mockReturnValue(handoff);
+    const wrapper = await mountSuspended(
+      ProfessionalDashboardPage,
+      mountOptions,
+    );
+
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text() === "Concluído")!
+      .trigger("click");
+    await wrapper
+      .findAll("button")
+      .find((button) =>
+        button.text().includes("Concluir e solicitar avaliação"),
+      )!
+      .trigger("click");
+    await flushPromises();
+
+    expect(open).toHaveBeenCalledWith("about:blank", "_blank");
+    expect(mocks.completeService).toHaveBeenCalledWith(
+      mocks.client,
+      "whatsapp-service-id",
+      true,
+    );
+    expect(replace).toHaveBeenCalledWith(
+      "https://wa.me/5547999912699?text=avaliacao",
+    );
+    expect(close).not.toHaveBeenCalled();
+    open.mockRestore();
+  });
+
   it("shows outbound pending connections without recipient response actions", async () => {
     const currentWorkspace = workspace();
     currentWorkspace.data.value.pendingRelationships = [];
@@ -350,15 +476,14 @@ describe("professional dashboard", () => {
     );
   });
 
-  it("shows real rejected work and the server-calculated readiness", async () => {
+  it("shows the profile suspension reason, identity rejection, and server-calculated readiness", async () => {
     const currentWorkspace = workspace();
     currentWorkspace.data.value.dashboard.readiness.percentage = 25;
     currentWorkspace.data.value.pendingRelationships = [];
-    currentWorkspace.data.value.profile.status = "draft";
+    currentWorkspace.data.value.profile.status = "suspended";
     currentWorkspace.data.value.profile.isPublic = false;
-    currentWorkspace.data.value.profile.revisionStatus = "rejected";
-    currentWorkspace.data.value.profile.revisionRejectionReason =
-      "A apresentação precisa de mais detalhes.";
+    currentWorkspace.data.value.profile.suspensionReason =
+      "O perfil foi despublicado após uma denúncia confirmada.";
     currentWorkspace.data.value.profile.verification.current!.status =
       "rejected";
     currentWorkspace.data.value.profile.verification.current!.rejectionReason =
@@ -370,9 +495,9 @@ describe("professional dashboard", () => {
       mountOptions,
     );
 
-    expect(wrapper.text()).toContain("Seu perfil precisa de ajustes");
+    expect(wrapper.text()).toContain("Seu perfil está temporariamente oculto");
     expect(wrapper.text()).toContain(
-      "A apresentação precisa de mais detalhes.",
+      "O perfil foi despublicado após uma denúncia confirmada.",
     );
     expect(wrapper.text()).toContain("A imagem não está legível.");
     expect(wrapper.findComponent(DashboardChecklist).props("readiness")).toBe(
@@ -416,7 +541,6 @@ describe("professional dashboard", () => {
     currentWorkspace.data.value.profile.status = "draft";
     currentWorkspace.data.value.profile.isPublic = false;
     currentWorkspace.data.value.profile.isSearchEligible = false;
-    currentWorkspace.data.value.profile.revisionStatus = "draft";
     currentWorkspace.data.value.profile.hasPublishedRevision = false;
     mocks.useWorkspace.mockResolvedValue(currentWorkspace);
 
@@ -442,6 +566,30 @@ describe("professional dashboard", () => {
     expect(wrapper.findComponent(DashboardChecklist).props("canPublish")).toBe(
       true,
     );
+  });
+
+  it("explains the disabled status-banner action while publishing", async () => {
+    const currentWorkspace = workspace();
+    currentWorkspace.data.value.profile.status = "draft";
+    currentWorkspace.data.value.profile.isPublic = false;
+    currentWorkspace.data.value.profile.hasPublishedRevision = false;
+    currentWorkspace.submissionSaving.value = true;
+    mocks.useWorkspace.mockResolvedValue(currentWorkspace);
+
+    const wrapper = await mountSuspended(
+      ProfessionalDashboardPage,
+      mountOptions,
+    );
+    const publish = wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("Publicar perfil"))!;
+
+    expect(publish.attributes("disabled")).toBeDefined();
+    expect(
+      publish.element
+        .closest("[data-tooltip-reason]")
+        ?.getAttribute("data-tooltip-reason"),
+    ).toBe("Aguarde a publicação do perfil terminar.");
   });
 
   it("hides completed checklist items and emits the publish action", async () => {
@@ -472,6 +620,7 @@ describe("professional dashboard", () => {
       global: {
         stubs: {
           DesignSystemSurfaceCard: { template: "<section><slot /></section>" },
+          DesignSystemDisabledTooltip: TooltipStub,
           NuxtLink: { template: "<a><slot /></a>" },
           UButton: ButtonStub,
           UIcon: true,
@@ -486,6 +635,14 @@ describe("professional dashboard", () => {
     expect(publishButton.text()).toContain("Publicar perfil");
     await publishButton.trigger("click");
     expect(wrapper.emitted("publish")).toEqual([[]]);
+
+    await wrapper.setProps({ publishing: true });
+    expect(publishButton.attributes("disabled")).toBeDefined();
+    expect(
+      publishButton.element
+        .closest("[data-tooltip-reason]")
+        ?.getAttribute("data-tooltip-reason"),
+    ).toBe("Aguarde a publicação do perfil terminar.");
   });
 
   it("renders the ordered quick actions and emits the recommendation action", async () => {

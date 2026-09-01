@@ -176,7 +176,7 @@ module Api
         def render_quote_locked
           render_api_error(
             code: "quote_locked",
-            message: "Um orçamento aprovado não pode mais ser alterado.",
+            message: "Um orçamento aprovado ou encerrado não pode mais ser alterado.",
             status: :conflict
           )
         end

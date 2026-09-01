@@ -2,28 +2,21 @@
 
 class ModerationQueueSummaryQuery
   def call(now: Time.current)
-    pending_times = [
-      ProfessionalProfileRevision.where(status: "pending_review").minimum(:submitted_at),
-      ProfessionalProfilePhoto.where(status: "pending_review").minimum(:submitted_at),
-      PortfolioItem.active.where(status: "pending_review").minimum(:submitted_at),
-      VerificationRequest.where(status: "pending_review").minimum(:submitted_at)
-    ].compact
+    oldest_pending = VerificationRequest.where(status: "pending_review").minimum(:submitted_at)
     {
       pending_count: pending_count,
       reviewed_today_count: ModerationAction.where(
+        target_type: "verification_request",
         action: %w[approved rejected],
         created_at: now.all_day
       ).count,
-      oldest_pending_submitted_at: pending_times.min
+      oldest_pending_submitted_at: oldest_pending
     }
   end
 
   private
 
   def pending_count
-    ProfessionalProfileRevision.where(status: "pending_review").count +
-      ProfessionalProfilePhoto.where(status: "pending_review").count +
-      PortfolioItem.active.where(status: "pending_review").count +
-      VerificationRequest.where(status: "pending_review").count
+    VerificationRequest.where(status: "pending_review").count
   end
 end

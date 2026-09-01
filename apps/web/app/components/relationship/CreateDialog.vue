@@ -107,6 +107,16 @@ const externalDetailsValid = computed(
   () => !phoneValidationError.value && !coverageValidationError.value,
 );
 const error = computed(() => relationships.error.value);
+const submittingReason = computed(() =>
+  relationships.isSubmitting.value
+    ? "Aguarde o envio da solicitação de conexão terminar."
+    : null,
+);
+const candidateSearchBlockedReason = computed(() =>
+  candidateSearchLoading.value
+    ? "Aguarde a busca de profissionais terminar."
+    : null,
+);
 let candidateSearchAttempt = 0;
 
 watch([open, searchQuery], ([isOpen, query], _, onCleanup) => {
@@ -404,39 +414,49 @@ async function submit() {
       </form>
     </template>
     <template #footer>
-      <UButton
+      <DesignSystemDisabledTooltip
         v-if="step === 'lookup'"
-        color="neutral"
-        variant="ghost"
-        :disabled="relationships.isSubmitting.value"
-        @click="open = false"
+        :reason="submittingReason"
       >
-        Cancelar
-      </UButton>
-      <UButton
-        v-else
-        color="neutral"
-        variant="ghost"
-        :disabled="relationships.isSubmitting.value"
-        @click="returnToLookup"
-      >
-        Voltar
-      </UButton>
-      <UButton
+        <UButton
+          color="neutral"
+          variant="ghost"
+          :disabled="relationships.isSubmitting.value"
+          @click="open = false"
+        >
+          Cancelar
+        </UButton>
+      </DesignSystemDisabledTooltip>
+      <DesignSystemDisabledTooltip v-else :reason="submittingReason">
+        <UButton
+          color="neutral"
+          variant="ghost"
+          :disabled="relationships.isSubmitting.value"
+          @click="returnToLookup"
+        >
+          Voltar
+        </UButton>
+      </DesignSystemDisabledTooltip>
+      <DesignSystemDisabledTooltip
         v-if="eligible && step === 'lookup'"
-        :disabled="candidateSearchLoading"
-        @click="continueToDetails"
+        :reason="candidateSearchBlockedReason"
       >
-        Continuar
-      </UButton>
-      <UButton
+        <UButton :disabled="candidateSearchLoading" @click="continueToDetails">
+          Continuar
+        </UButton>
+      </DesignSystemDisabledTooltip>
+      <DesignSystemDisabledTooltip
         v-else-if="eligible"
-        :loading="relationships.isSubmitting.value"
-        :disabled="relationships.isSubmitting.value"
-        @click="submit"
+        :reason="submittingReason"
       >
-        Conectar
-      </UButton>
+        <UButton
+          :loading="relationships.isSubmitting.value"
+          :disabled="relationships.isSubmitting.value"
+          @click="submit"
+        >
+          Conectar
+        </UButton>
+      </DesignSystemDisabledTooltip>
     </template>
   </UModal>
 </template>

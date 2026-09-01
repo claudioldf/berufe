@@ -166,7 +166,7 @@ class PublicProfessionalSearch
   def page_of(relation, criteria, page, per_page)
     relation
       .includes(
-        :published_photo,
+        :profile_photo,
         :verification_requests,
         :portfolio_items,
         published_revision: {
@@ -185,9 +185,9 @@ class PublicProfessionalSearch
       matching_service_order(criteria.service_ids),
       explicit_neighborhood_order(criteria.locations.filter_map(&:neighborhood_code).uniq),
       approved_identity_order,
-      approved_portfolio_order,
+      active_portfolio_order,
       public_relationship_order,
-      Arel.sql("professional_profile_revisions.reviewed_at DESC NULLS LAST"),
+      Arel.sql("professional_profile_revisions.updated_at DESC"),
       Arel.sql("professional_profiles.id ASC")
     ].compact
   end
@@ -247,13 +247,12 @@ class PublicProfessionalSearch
     SQL
   end
 
-  def approved_portfolio_order
+  def active_portfolio_order
     Arel.sql(<<~SQL.squish)
       CASE WHEN EXISTS (
         SELECT 1
         FROM portfolio_items ranked_portfolio
         WHERE ranked_portfolio.professional_profile_id = professional_profiles.id
-          AND ranked_portfolio.status = 'approved'
           AND ranked_portfolio.deleted_at IS NULL
       ) THEN 0 ELSE 1 END ASC
     SQL

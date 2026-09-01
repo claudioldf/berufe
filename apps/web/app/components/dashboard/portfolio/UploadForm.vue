@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, shallowRef, useTemplateRef, watch } from "vue";
+import { computed, reactive, shallowRef, useTemplateRef, watch } from "vue";
 import type {
   PortfolioItemUpdateDraft,
   ProfessionalPortfolioItem,
@@ -43,6 +43,9 @@ const errors = reactive({ file: "", title: "", service: "" });
 const formRoot = useTemplateRef<HTMLFormElement>("formRoot");
 const { revealValidation, resetValidation } = useInlineFormValidation(formRoot);
 const { previewUrl, setPreviewFile, clearPreview } = useImagePreview();
+const submittingReason = computed(() =>
+  props.submitting ? "Aguarde o salvamento do trabalho terminar." : null,
+);
 
 watch(
   [() => props.initialValues, () => props.serviceOptions],
@@ -218,24 +221,27 @@ function submit() {
       />
     </DesignSystemFormField>
     <footer class="portfolio-upload__actions">
-      <UButton
-        v-if="showCancel"
-        type="button"
-        color="neutral"
-        variant="ghost"
-        :disabled="props.submitting"
-        @click="cancel"
-      >
-        Cancelar
-      </UButton>
-      <UButton
-        type="submit"
-        color="primary"
-        :loading="props.submitting"
-        :disabled="props.submitting"
-      >
-        {{ submitLabel }}
-      </UButton>
+      <DesignSystemDisabledTooltip v-if="showCancel" :reason="submittingReason">
+        <UButton
+          type="button"
+          color="neutral"
+          variant="ghost"
+          :disabled="props.submitting"
+          @click="cancel"
+        >
+          Cancelar
+        </UButton>
+      </DesignSystemDisabledTooltip>
+      <DesignSystemDisabledTooltip :reason="submittingReason">
+        <UButton
+          type="submit"
+          color="primary"
+          :loading="props.submitting"
+          :disabled="props.submitting"
+        >
+          {{ submitLabel }}
+        </UButton>
+      </DesignSystemDisabledTooltip>
     </footer>
   </form>
 </template>

@@ -96,11 +96,7 @@ RSpec.describe ProfessionalRegistration do
       whatsapp_e164: account.phone_e164
     )
     external_revision = external_profile.working_revision
-    external_revision.update!(
-      profile_type: "external",
-      status: "pending_review",
-      submitted_at: Time.current
-    )
+    external_revision.update!(profile_type: "external")
     external_revision.professional_profile_services.create!(service:, is_primary: true)
     external_revision.update!(coverage_city: joinville_city, covers_whole_city: true)
     external_profile.update!(
@@ -129,7 +125,6 @@ RSpec.describe ProfessionalRegistration do
     )
     expect(self_service_revision).to have_attributes(
       profile_type: "self_service",
-      status: "draft",
       display_name: "Ana Souza",
       whatsapp_e164: account.phone_e164,
       coverage_city_code: joinville_city.code,
@@ -144,16 +139,15 @@ RSpec.describe ProfessionalRegistration do
     )
 
     photo = create_public_profile_photo(claimed_profile)
-    claimed_profile.update!(birthdate: Date.new(1990, 4, 12), working_photo: photo)
+    claimed_profile.update!(birthdate: Date.new(1990, 4, 12), profile_photo: photo)
     ProfessionalProfileSubmitter.new.call(profile: claimed_profile)
 
     expect(claimed_profile.reload).to have_attributes(
       creation_source: "external",
       profile_status: "published",
       published_revision: self_service_revision,
-      published_photo: photo
+      profile_photo: photo
     )
-    expect(self_service_revision.reload.status).to eq("pending_review")
     expect(PublicProfessionalProfileSerializer.new(claimed_profile).as_json).to include(
       profile_type: "self_service",
       claimed: true,

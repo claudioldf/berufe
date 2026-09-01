@@ -73,7 +73,7 @@ const professional = computed<Professional>(() => {
     name: profile.identity.name,
     headline: profile.identity.headline,
     bio: profile.identity.bio,
-    avatar: profile.photo.publishedImageUrl ?? "",
+    avatar: profile.photo.imageUrl ?? "",
     primaryService: primary?.name ?? "",
     primaryServiceSlug:
       services.value.find((service) => service.id === primary?.id)?.slug ?? "",
@@ -98,24 +98,17 @@ const professional = computed<Professional>(() => {
 });
 const statusLabels = {
   draft: "Rascunho",
-  pending_review: "Em análise",
   published: "Publicado",
   suspended: "Suspenso",
 } as const;
 const statusLabel = computed(() => {
   const profile = workspace.value!.profile;
-  if (profile.isPublic && profile.revisionStatus === "pending_review") {
-    return "Publicado · revisão pendente";
-  }
   if (profile.isPublic) return "Publicado";
   if (
     profile.status === "published" &&
     profile.publicationBlockers.includes("photo")
   ) {
     return "Indisponível · adicione uma foto";
-  }
-  if (profile.revisionStatus === "rejected") {
-    return "Indisponível após revisão";
   }
   return statusLabels[profile.status];
 });
@@ -171,7 +164,7 @@ async function handlePhoto(file: File) {
     await uploadPhoto(file);
     showToast({
       title: "Foto enviada",
-      description: "A nova foto já está no perfil e seguirá para revisão.",
+      description: "A nova foto já está no perfil.",
     });
   } catch (error) {
     showToast({
@@ -189,7 +182,7 @@ async function handlePhotoRetry() {
     await retryPhoto();
     showToast({
       title: "Foto reenviada",
-      description: "A nova foto já está no perfil e seguirá para revisão.",
+      description: "A nova foto já está no perfil.",
     });
   } catch (error) {
     showToast({
@@ -228,7 +221,7 @@ async function handlePortfolioAdd(
     await createPortfolioItem(draft);
     showToast({
       title: "Trabalho enviado",
-      description: "O trabalho já está no perfil e seguirá para revisão.",
+      description: "O trabalho já está no perfil.",
     });
   } catch (error) {
     showToast({
@@ -248,8 +241,8 @@ async function handlePortfolioUpdate(
   try {
     await updatePortfolioItem(id, draft);
     showToast({
-      title: "Trabalho reenviado",
-      description: "As correções foram salvas e seguirão para nova análise.",
+      title: "Trabalho atualizado",
+      description: "As alterações já estão no perfil.",
     });
   } catch (error) {
     showToast({
@@ -356,19 +349,19 @@ async function handleRelationshipRemove(id: string) {
       <DesignSystemContainer class="workspace-heading__inner">
         <div>
           <NuxtLink to="/app/professional"
-            ><UIcon name="i-lucide-arrow-left" /> Painel</NuxtLink
+            ><UIcon name="i-lucide-arrow-left" /> Voltar ao painel</NuxtLink
           >
-          <h1>Meu perfil</h1>
-          <p>Organize as informações e evidências que clientes verão.</p>
+          <h1>Configurações</h1>
+          <p>
+            Organize sua informações, trabalhos feitos, recomentações,
+            referências e processo de verificação de conta.
+          </p>
         </div>
         <div class="workspace-heading__status">
           <span>
             <DesignSystemStatusDot tone="success" />
             <span>
               {{ statusLabel }}
-              <small v-if="workspace?.profile.revisionRejectionReason">
-                {{ workspace?.profile.revisionRejectionReason }}
-              </small>
             </span>
           </span>
         </div>
@@ -455,13 +448,11 @@ async function handleRelationshipRemove(id: string) {
     align-items: end;
   }
   & a {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 5px;
-    margin-bottom: 20px;
-    color: rgb(255 255 255 / 58%);
-    font-size: 0.86rem;
-    font-weight: 700;
+    margin-bottom: 24px;
+    color: rgb(255 255 255 / 65%);
     text-decoration: none;
   }
   & h1 {

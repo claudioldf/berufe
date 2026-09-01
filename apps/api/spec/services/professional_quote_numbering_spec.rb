@@ -55,8 +55,7 @@ RSpec.describe "Professional quote numbering" do
       profile.update_columns(
         working_revision_id: nil,
         published_revision_id: nil,
-        working_photo_id: nil,
-        published_photo_id: nil
+        profile_photo_id: nil
       )
       profile.destroy!
     end

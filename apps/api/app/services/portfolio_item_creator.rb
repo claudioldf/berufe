@@ -26,7 +26,6 @@ class PortfolioItemCreator
         service:,
         title: attributes[:title].to_s.squish,
         description: attributes[:description].to_s.squish.presence,
-        status: "pending_review",
         private_key: upload.sanitized_key,
         content_type: upload.sanitized_content_type,
         byte_size: upload.sanitized_byte_size,

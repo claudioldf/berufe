@@ -111,6 +111,8 @@ Former MVP story and feature IDs are recorded for traceability and are not reuse
 
 ### V2-008 — Create and share a client recommendation request
 
+**Status:** Retired 2026-08-31. `docs/Berufe_Increment_9_Implementation_Plan.md` (S067) adopts this entry's WhatsApp-deep-link delivery criterion for the already-shipped email-based recommendation flow, so the identifier is retired and not reused. V2-009's SMS-challenge submission and V2-010's admin moderation are **not** adopted — Increment 9 keeps the existing emailed-bearer-link proof and immediate publication; see that document for the accepted trust trade-off.
+
 **Former scope:** Feature A5; S039.
 
 **Story:** As a professional, I want a one-time recommendation link so that a past client can confirm completed work without creating an account.

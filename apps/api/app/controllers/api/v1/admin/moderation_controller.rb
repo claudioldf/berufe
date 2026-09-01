@@ -6,7 +6,6 @@ module Api
       class ModerationController < ModerationBaseController
         def index
           result = ModerationQueueQuery.new.call(
-            type: params[:type],
             status: params[:status],
             search: params[:search],
             page: params[:page],

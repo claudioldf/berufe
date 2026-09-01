@@ -157,9 +157,7 @@ class ProfessionalRelationshipRequester
     revision.update!(
       profile_type: "external",
       coverage_city_code: coverage[:city]&.code,
-      covers_whole_city: coverage[:whole_city],
-      status: "pending_review",
-      submitted_at: now
+      covers_whole_city: coverage[:whole_city]
     )
     services.each_with_index do |service, index|
       revision.professional_profile_services.create!(service:, is_primary: index.zero?)

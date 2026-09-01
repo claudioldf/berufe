@@ -36,7 +36,7 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
               "approved_identity" => false
             }
           },
-          "change_requested_quotes" => [],
+          "action_items" => [],
           "recent_quotes" => [],
           "recent_service_jobs" => []
         },
@@ -47,8 +47,7 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
           "public_slug" => "ana-souza",
           "profile_status" => "draft",
           "presentation_type" => "self_service",
-          "revision_status" => "draft",
-          "revision_rejection_reason" => nil,
+          "suspension_reason" => nil,
           "has_published_revision" => false,
           "is_public" => false,
           "is_search_eligible" => false,
@@ -56,8 +55,8 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
           "publication_blockers" => %w[identity photo services coverage],
           "photo" => {
             "current" => nil,
-            "has_published_photo" => false,
-            "published_image_url" => nil,
+            "has_photo" => false,
+            "image_url" => nil,
             "latest_upload" => nil
           },
           "portfolio_items" => [],
@@ -115,8 +114,7 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
     ServiceJob.create!(
       quote: completed_quote,
       status: "completed",
-      completed_at: Time.current,
-      completion_confirmed_by: "customer"
+      completed_at: Time.current
     )
     ServiceJob.create!(
       quote: cancelled_quote,
@@ -246,7 +244,7 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
       method: "copy",
       now: first_newer_request_at + 1.minute
     )
-    latest_request = request_quote_change(
+    request_quote_change(
       newer,
       message: "Trocar dois pontos de tomada.",
       at: latest_newer_request_at
@@ -261,18 +259,16 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
       headers: session_headers(request_id: "workspace-quote-change-requests")
 
     expect(response).to have_http_status(:ok)
-    alerts = response.parsed_body.dig("data", "dashboard", "change_requested_quotes")
+    alerts = response.parsed_body.dig("data", "dashboard", "action_items")
+      .select { |item| item.fetch("kind") == "quote_change_requested" }
     expect(alerts.pluck("id")).to eq([newer.id, older.id])
     expect(alerts.first).to include(
-      "quote_number" => newer.quote_number,
-      "customer_name" => "Cliente Recente",
-      "service_description" => "Instalação elétrica",
-      "latest_change_request" => {
-        "id" => latest_request.id,
-        "revision" => latest_request.requested_revision,
-        "message" => "Trocar dois pontos de tomada.",
-        "requested_at" => latest_newer_request_at.iso8601
-      }
+      "id" => newer.id,
+      "kind" => "quote_change_requested",
+      "title" => "Orçamento ##{newer.quote_number} · Cliente Recente",
+      "subtitle" => "Trocar dois pontos de tomada.",
+      "sort_at" => latest_newer_request_at.iso8601,
+      "recommendation_delivery_channel" => nil
     )
     assert_api_conform(status: 200)
 
@@ -286,7 +282,9 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
 
     expect(response).to have_http_status(:ok)
     expect(
-      response.parsed_body.dig("data", "dashboard", "change_requested_quotes").pluck("id")
+      response.parsed_body.dig("data", "dashboard", "action_items")
+        .select { |item| item.fetch("kind") == "quote_change_requested" }
+        .pluck("id")
     ).to eq([older.id])
     assert_api_conform(status: 200)
   end

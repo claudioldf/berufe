@@ -193,17 +193,21 @@ function submit() {
 
       <label for="professionals-city">
         <span>Cidade</span>
-        <select
-          id="professionals-city"
-          :value="props.city ?? ''"
-          :disabled="!props.state"
-          @change="changeCity"
+        <DesignSystemDisabledTooltip
+          :reason="!props.state ? 'Selecione um estado primeiro' : null"
         >
-          <option value="">Todas</option>
-          <option v-for="item in cities" :key="item.code" :value="item.code">
-            {{ item.name }}
-          </option>
-        </select>
+          <select
+            id="professionals-city"
+            :value="props.city ?? ''"
+            :disabled="!props.state"
+            @change="changeCity"
+          >
+            <option value="">Todas</option>
+            <option v-for="item in cities" :key="item.code" :value="item.code">
+              {{ item.name }}
+            </option>
+          </select>
+        </DesignSystemDisabledTooltip>
       </label>
 
       <label for="professionals-identity">

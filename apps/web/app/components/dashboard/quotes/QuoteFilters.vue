@@ -58,10 +58,12 @@ function inputValue(event: Event) {
         <option value="all">Todos os status</option>
         <option value="draft">Rascunho</option>
         <option value="saved">Aguardando envio ao cliente</option>
-        <option value="shared">Aguardando resposta</option>
+        <option value="shared">Enviado ao cliente</option>
         <option value="change_requested">Alteração solicitada</option>
         <option value="approved">Aprovado</option>
         <option value="declined">Recusado</option>
+        <option value="completed">Concluído</option>
+        <option value="cancelled">Cancelado</option>
       </select>
     </label>
 

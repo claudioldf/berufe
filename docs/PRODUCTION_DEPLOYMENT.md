@@ -111,7 +111,6 @@ MEDIA_STORAGE_ADAPTER=r2
 R2_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
 R2_ACCESS_KEY_ID=<secret>
 R2_SECRET_ACCESS_KEY=<secret>
-R2_PUBLIC_BUCKET=berufe-production-public
 R2_PRIVATE_BUCKET=berufe-production-private
 
 SMTP_ADDRESS=smtp.resend.com
@@ -150,18 +149,14 @@ that signed the URL would fail verification. The IaC pins both HTTP listeners to
 
 ## 2. Cloudflare R2
 
-Activate R2 and create exactly these buckets:
+Activate R2 and create one private bucket: `berufe-production-private`.
 
-- `berufe-production-public`
-- `berufe-production-private`
+Create one scoped object read/write API token limited to that bucket. Record the S3
+endpoint, access-key ID, and secret once in Railway. Do not enable bucket listing.
+Rails serves profile and portfolio images through controlled public API routes; browsers upload
+only to short-lived signed URLs for the private quarantine area.
 
-Create one scoped object read/write API token limited to those two buckets. Record the S3
-endpoint, access-key ID, and secret once in Railway. Do not enable public bucket listing.
-Rails serves approved public media through controlled API routes; browsers upload only to
-short-lived signed URLs for the private quarantine bucket.
-
-Apply this CORS policy to the private bucket (and the public bucket if Cloudflare requires a
-bucket-wide policy in the dashboard):
+Apply this CORS policy to the private bucket:
 
 ```json
 [

@@ -101,5 +101,6 @@ export interface ReportPeriodData {
     reviewed: number;
     approvalRate: ReportRate;
     hidden: number;
+    restored: number;
   };
 }

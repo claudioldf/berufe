@@ -16,11 +16,11 @@ RSpec.describe "Public portfolio images", type: :request, openapi: true do
     allow(storage).to receive(:read)
   end
 
-  it "serves approved regenerated JPEG and PNG images without exposing storage keys" do
+  it "serves active JPEG and PNG images from private storage without exposing keys" do
     jpeg = create_item(content_type: "image/jpeg")
     png = create_item(content_type: "image/png")
-    allow(storage).to receive(:read).with(scope: :public, key: jpeg.public_key).and_return("jpeg-image")
-    allow(storage).to receive(:read).with(scope: :public, key: png.public_key).and_return("png-image")
+    allow(storage).to receive(:read).with(scope: :private, key: jpeg.private_key).and_return("jpeg-image")
+    allow(storage).to receive(:read).with(scope: :private, key: png.private_key).and_return("png-image")
 
     get "/api/v1/public/portfolio-items/#{jpeg.id}/image", headers: {"X-Request-Id" => "portfolio-image-jpeg"}
     expect(response).to have_http_status(:ok)
@@ -38,39 +38,21 @@ RSpec.describe "Public portfolio images", type: :request, openapi: true do
     assert_api_conform(status: 200)
   end
 
-  it "keeps the same image link public when a pending item is approved" do
-    item = create_item(status: "pending_review", public_key: nil)
-    allow(storage).to receive(:read).with(scope: :private, key: item.private_key).and_return("pending-image")
+  it "keeps the same image link public without moderation transitions" do
+    item = create_item
+    allow(storage).to receive(:read).with(scope: :private, key: item.private_key).and_return("image")
 
     get "/api/v1/public/portfolio-items/#{item.id}/image", headers: {"X-Request-Id" => "portfolio-image-pending"}
 
     expect(response).to have_http_status(:ok)
-    expect(response.body).to eq("pending-image")
-    expect(response.headers.fetch("Cache-Control")).to eq("no-store")
-    assert_api_conform(status: 200)
-
-    item.update!(status: "approved", reviewed_at: Time.current)
-    get "/api/v1/public/portfolio-items/#{item.id}/image", headers: {"X-Request-Id" => "portfolio-image-approved"}
-
-    expect(response).to have_http_status(:ok)
-    expect(response.body).to eq("pending-image")
+    expect(response.body).to eq("image")
     expect(response.headers.fetch("Cache-Control")).to eq("max-age=0, public, must-revalidate")
     assert_api_conform(status: 200)
   end
 
-  it "unpublishes the same image link when a pending item is rejected" do
-    item = create_item(status: "pending_review", public_key: nil)
-    allow(storage).to receive(:read).with(scope: :private, key: item.private_key).and_return("pending-image")
-
-    get "/api/v1/public/portfolio-items/#{item.id}/image", headers: {"X-Request-Id" => "portfolio-image-before-rejection"}
-    expect(response).to have_http_status(:ok)
-    assert_api_conform(status: 200)
-
-    item.update!(
-      status: "rejected",
-      reviewed_at: Time.current,
-      rejection_reason: "A imagem está desfocada e precisa ser substituída."
-    )
+  it "unpublishes the image link when the owner deletes the item" do
+    item = create_item
+    item.update!(deleted_at: Time.current)
     get "/api/v1/public/portfolio-items/#{item.id}/image", headers: {"X-Request-Id" => "portfolio-image-after-rejection"}
 
     expect(response).to have_http_status(:not_found)
@@ -79,7 +61,7 @@ RSpec.describe "Public portfolio images", type: :request, openapi: true do
 
   it "revalidates the parent professional on every image read" do
     item = create_item
-    allow(storage).to receive(:read).with(scope: :public, key: item.public_key).and_return("image")
+    allow(storage).to receive(:read).with(scope: :private, key: item.private_key).and_return("image")
     account.update!(status: "suspended")
 
     get "/api/v1/public/portfolio-items/#{item.id}/image", headers: {"X-Request-Id" => "portfolio-parent-private"}
@@ -111,7 +93,7 @@ RSpec.describe "Public portfolio images", type: :request, openapi: true do
     )
   end
 
-  def create_item(content_type: "image/png", status: "approved", public_key: :generated)
+  def create_item(content_type: "image/png")
     extension = (content_type == "image/png") ? "png" : "jpg"
     upload = MediaUpload.create!(
       professional_profile: profile,
@@ -132,20 +114,16 @@ RSpec.describe "Public portfolio images", type: :request, openapi: true do
       processed_at: Time.current,
       attached_at: Time.current
     )
-    key = (public_key == :generated) ? "moderation/portfolio_item/#{SecureRandom.uuid}.#{extension}" : public_key
     profile.portfolio_items.create!(
       media_upload: upload,
       service:,
       title: "Trabalho #{extension}",
-      status:,
       private_key: upload.sanitized_key,
-      public_key: key,
       content_type:,
       byte_size: 100,
       width: 640,
       height: 380,
-      submitted_at: Time.current,
-      reviewed_at: (status == "approved") ? Time.current : nil
+      submitted_at: Time.current
     )
   end
 end
