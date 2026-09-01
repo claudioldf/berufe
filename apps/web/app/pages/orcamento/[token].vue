@@ -48,7 +48,12 @@ const professional = computed(() => current.value.professional);
 const decisionMessage = shallowRef("");
 const termsAccepted = shallowRef(false);
 const submitting = shallowRef(false);
+const submittingDecision = shallowRef<
+  "approve" | "request_change" | "decline" | null
+>(null);
 const actionError = shallowRef("");
+const decisionMessageError = shallowRef("");
+const termsAcceptedError = shallowRef("");
 
 useSeoMeta({
   title: `Orçamento #${quote.value.number}`,
@@ -59,10 +64,36 @@ function printQuote() {
   if (import.meta.client) window.print();
 }
 
+function validateDecision(kind: "approve" | "request_change" | "decline") {
+  decisionMessageError.value = "";
+  termsAcceptedError.value = "";
+
+  if (kind === "request_change" && !decisionMessage.value.trim()) {
+    decisionMessageError.value = "Explique o que precisa ser alterado.";
+  }
+  if (kind === "approve" && !termsAccepted.value) {
+    termsAcceptedError.value =
+      "Confirme que você revisou o escopo, o valor e a validade.";
+  }
+
+  return !decisionMessageError.value && !termsAcceptedError.value;
+}
+
+watch(decisionMessage, (message) => {
+  if (message.trim()) decisionMessageError.value = "";
+});
+
+watch(termsAccepted, (accepted) => {
+  if (accepted) termsAcceptedError.value = "";
+});
+
 async function submitDecision(kind: "approve" | "request_change" | "decline") {
   if (submitting.value) return;
-  submitting.value = true;
   actionError.value = "";
+  if (!validateDecision(kind)) return;
+
+  submitting.value = true;
+  submittingDecision.value = kind;
   try {
     current.value = await decideSharedQuote(client, token.value, {
       kind,
@@ -71,12 +102,19 @@ async function submitDecision(kind: "approve" | "request_change" | "decline") {
       message: decisionMessage.value,
     });
   } catch (error) {
-    actionError.value =
-      error instanceof ApiRequestError
-        ? error.message
-        : "Não foi possível registrar sua resposta. Tente novamente.";
+    if (error instanceof ApiRequestError) {
+      decisionMessageError.value = error.fieldErrors.message?.[0] ?? "";
+      termsAcceptedError.value = error.fieldErrors.terms_accepted?.[0] ?? "";
+      if (!decisionMessageError.value && !termsAcceptedError.value) {
+        actionError.value = error.message;
+      }
+    } else {
+      actionError.value =
+        "Não foi possível registrar sua resposta. Tente novamente.";
+    }
   } finally {
     submitting.value = false;
+    submittingDecision.value = null;
   }
 }
 </script>
@@ -131,42 +169,83 @@ async function submitDecision(kind: "approve" | "request_change" | "decline") {
             apresentados. Isso não substitui um contrato nem confirma pagamento.
           </p>
         </div>
-        <label>
+        <label
+          :class="{
+            'shared-quote-page__field--invalid': decisionMessageError,
+          }"
+        >
           Mensagem para o profissional (obrigatória para solicitar alterações)
           <textarea
             v-model="decisionMessage"
             maxlength="700"
             rows="3"
             placeholder="Descreva o que você gostaria de alterar"
+            :aria-invalid="Boolean(decisionMessageError)"
+            :aria-describedby="
+              decisionMessageError ? 'quote-decision-message-error' : undefined
+            "
           />
+          <small
+            v-if="decisionMessageError"
+            id="quote-decision-message-error"
+            class="shared-quote-page__field-error"
+            role="alert"
+          >
+            {{ decisionMessageError }}
+          </small>
         </label>
-        <label class="shared-quote-page__check">
-          <input v-model="termsAccepted" type="checkbox" />
-          Revisei o escopo, o valor e a validade deste orçamento.
-        </label>
+        <div
+          class="shared-quote-page__check-field"
+          :class="{
+            'shared-quote-page__check-field--invalid': termsAcceptedError,
+          }"
+        >
+          <label class="shared-quote-page__check">
+            <input
+              v-model="termsAccepted"
+              type="checkbox"
+              :aria-invalid="Boolean(termsAcceptedError)"
+              :aria-describedby="
+                termsAcceptedError ? 'quote-terms-accepted-error' : undefined
+              "
+            />
+            Revisei o escopo, o valor e a validade deste orçamento.
+          </label>
+          <small
+            v-if="termsAcceptedError"
+            id="quote-terms-accepted-error"
+            class="shared-quote-page__field-error"
+            role="alert"
+          >
+            {{ termsAcceptedError }}
+          </small>
+        </div>
         <p v-if="actionError" role="alert" class="shared-quote-page__error">
           {{ actionError }}
         </p>
         <div class="shared-quote-page__actions">
           <UButton
-            color="neutral"
-            variant="outline"
-            :disabled="submitting || !decisionMessage.trim()"
-            @click="submitDecision('request_change')"
-            >Solicitar alterações</UButton
-          >
-          <UButton
-            color="neutral"
+            class="shared-quote-page__decline"
+            color="error"
             variant="ghost"
+            :loading="submittingDecision === 'decline'"
             :disabled="submitting"
             @click="submitDecision('decline')"
             >Recusar</UButton
           >
           <UButton
+            color="neutral"
+            variant="outline"
+            :loading="submittingDecision === 'request_change'"
+            :disabled="submitting"
+            @click="submitDecision('request_change')"
+            >Solicitar alterações</UButton
+          >
+          <UButton
             color="primary"
             icon="i-lucide-circle-check"
-            :loading="submitting"
-            :disabled="!termsAccepted"
+            :loading="submittingDecision === 'approve'"
+            :disabled="submitting"
             @click="submitDecision('approve')"
             >Aprovar orçamento</UButton
           >
@@ -336,6 +415,28 @@ async function submitDecision(kind: "approve" | "request_change" | "decline") {
     color: var(--ink);
     font: inherit;
   }
+  &__field--invalid textarea {
+    border-color: var(--color-danger);
+    background: var(--color-danger-tint);
+  }
+  &__field-error {
+    color: var(--color-danger);
+    font-size: 0.78rem;
+    font-weight: 750;
+    line-height: 1.4;
+  }
+  &__check-field {
+    display: grid;
+    gap: 6px;
+    width: fit-content;
+    padding: 9px 10px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+  }
+  &__check-field--invalid {
+    border-color: var(--color-danger);
+    background: var(--color-danger-tint);
+  }
   &__check {
     display: flex;
     align-items: center;
@@ -351,6 +452,9 @@ async function submitDecision(kind: "approve" | "request_change" | "decline") {
     justify-content: flex-end;
     gap: 8px;
     flex-wrap: wrap;
+  }
+  &__decline {
+    margin-right: auto;
   }
   &__error {
     color: var(--color-danger) !important;
