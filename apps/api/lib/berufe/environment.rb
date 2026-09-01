@@ -9,6 +9,7 @@ module Berufe
       :sms_otp_adapter,
       :media_storage_adapter,
       :llm_adapter,
+      :mail_adapter,
       :openai_model,
       :product_launch_date
     )
@@ -70,6 +71,7 @@ module Berufe
     ].freeze
     OPENAI_REQUIRED = %w[OPENAI_API_KEY].freeze
     MAXMIND_REQUIRED = %w[MAXMIND_ACCOUNT_ID MAXMIND_LICENSE_KEY].freeze
+    MAIL_ADAPTERS = %w[smtp resend].freeze
     SMTP_REQUIRED = %w[
       SMTP_ADDRESS
       SMTP_PORT
@@ -80,6 +82,10 @@ module Berufe
       SMTP_STARTTLS
       MAIL_FROM
     ].freeze
+    RESEND_REQUIRED = %w[
+      RESEND_API_KEY
+      MAIL_FROM
+    ].freeze
 
     DEFAULTS = {
       "development" => {
@@ -87,6 +93,7 @@ module Berufe
         "SMS_OTP_ADAPTER" => "fake",
         "MEDIA_STORAGE_ADAPTER" => "local",
         "LLM_ADAPTER" => "fake",
+        "MAIL_ADAPTER" => "smtp",
         "OPENAI_MODEL" => "gpt-5-mini",
         "PRODUCT_LAUNCH_DATE" => "2026-08-01"
       },
@@ -95,6 +102,7 @@ module Berufe
         "SMS_OTP_ADAPTER" => "fake",
         "MEDIA_STORAGE_ADAPTER" => "local",
         "LLM_ADAPTER" => "fake",
+        "MAIL_ADAPTER" => "smtp",
         "OPENAI_MODEL" => "gpt-5-mini",
         "PRODUCT_LAUNCH_DATE" => "2026-08-01"
       }
@@ -106,11 +114,15 @@ module Berufe
       sms_otp_adapter = values["SMS_OTP_ADAPTER"]
       media_storage_adapter = values["MEDIA_STORAGE_ADAPTER"]
       llm_adapter = values["LLM_ADAPTER"]
+      mail_adapter = values["MAIL_ADAPTER"]
       openai_model = values["OPENAI_MODEL"].to_s.strip.presence || "gpt-5-mini"
       errors = []
       product_launch_date = parse_product_launch_date(values["PRODUCT_LAUNCH_DATE"], errors)
 
       errors << "BERUFE_ENV must be one of: #{ENVIRONMENTS.join(", ")}" unless ENVIRONMENTS.include?(name)
+      unless mail_adapter.to_s.strip.empty? || MAIL_ADAPTERS.include?(mail_adapter)
+        errors << "MAIL_ADAPTER must be one of: #{MAIL_ADAPTERS.join(", ")}"
+      end
 
       if ENVIRONMENTS.include?(name)
         allowed_sms_otp_adapters = SMS_OTP_ADAPTERS.fetch(name)
@@ -127,11 +139,12 @@ module Berufe
         end
       end
 
-      required = required_variables(name, sms_otp_adapter, media_storage_adapter, llm_adapter, values)
+      required = required_variables(name, sms_otp_adapter, media_storage_adapter, llm_adapter, mail_adapter, values)
       missing = required.select { |key| values[key].to_s.strip.empty? }
       errors << "missing required variables: #{missing.sort.join(", ")}" if missing.any?
 
       validate_infobip_configuration(name, sms_otp_adapter, values, errors)
+      validate_mail_configuration(name, mail_adapter, errors)
       validate_job_configuration(name, values, errors)
 
       raise InvalidConfiguration, "Invalid Berufe configuration: #{errors.join("; ")}" if errors.any?
@@ -141,6 +154,7 @@ module Berufe
         sms_otp_adapter:,
         media_storage_adapter:,
         llm_adapter:,
+        mail_adapter:,
         openai_model:,
         product_launch_date:
       )
@@ -159,7 +173,7 @@ module Berufe
     end
     private_class_method :parse_product_launch_date
 
-    def self.required_variables(name, sms_otp_adapter, media_storage_adapter, llm_adapter, values)
+    def self.required_variables(name, sms_otp_adapter, media_storage_adapter, llm_adapter, mail_adapter, values)
       required = (name == "test") ? %w[TEST_DATABASE_URL DB_POOL] : COMMON_REQUIRED.dup
       required.concat(FAKE_OTP_REQUIRED) if sms_otp_adapter == "fake"
       required.concat(INFOBIP_REQUIRED) if sms_otp_adapter == "infobip"
@@ -168,7 +182,10 @@ module Berufe
       required.concat(OPENAI_REQUIRED) if llm_adapter == "openai"
       required.concat(MAXMIND_REQUIRED) if %w[staging integration production].include?(name)
       required.concat(DEPLOYMENT_SECRET_REQUIRED) if %w[staging integration production].include?(name)
-      required.concat(SMTP_REQUIRED) if %w[staging integration production].include?(name)
+      if %w[staging integration production].include?(name)
+        required.concat(RESEND_REQUIRED) if mail_adapter == "resend"
+        required.concat(SMTP_REQUIRED) if mail_adapter == "smtp"
+      end
       required << "BUGSNAG_API_KEY" if name == "production"
       required.concat(EXTERNAL_JOB_REQUIRED) if name != "test" && values["GOOD_JOB_EXECUTION_MODE"] == "external"
       required
@@ -196,6 +213,13 @@ module Berufe
       errors << "INFOBIP_TEST_NUMBERS must contain comma-separated Brazilian E.164 mobile numbers"
     end
     private_class_method :validate_infobip_configuration
+
+    def self.validate_mail_configuration(name, mail_adapter, errors)
+      return unless %w[staging integration production].include?(name)
+
+      errors << "MAIL_ADAPTER must be resend for #{name}" unless mail_adapter == "resend"
+    end
+    private_class_method :validate_mail_configuration
 
     def self.validate_job_configuration(name, values, errors)
       return if name == "test"

@@ -18,6 +18,9 @@ const browserSecurityHeaders = {
 
 export default defineNuxtConfig({
   compatibilityDate: "2026-08-01",
+  // Public routes must ship complete HTML to crawlers. The authenticated
+  // workspace is the only route family allowed to opt out below.
+  ssr: true,
   devtools: { enabled: true },
   runtimeConfig: {
     apiInternalBaseUrl: process.env.NUXT_API_INTERNAL_BASE_URL,
@@ -64,8 +67,10 @@ export default defineNuxtConfig({
   sitemap: {
     exclude: [
       "/app/**",
+      "/encontrar",
       "/exclusao-de-conta/**",
       "/orcamento/**",
+      "/profissionais/**",
       "/recomendacao/**",
       "/foundation",
     ],
@@ -73,6 +78,7 @@ export default defineNuxtConfig({
       "/api/__sitemap__/professionals",
       "/api/__sitemap__/listings",
       "/api/__sitemap__/para-profissionais",
+      "/api/__sitemap__/guides",
     ],
   },
   linkChecker: {

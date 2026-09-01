@@ -1027,13 +1027,13 @@ paths:
   /api/v1/public/sitemap-professionals:
     get:
       operationId: getPublicSitemapProfessionals
-      summary: List every self-service published professional slug for the sitemap
+      summary: List every indexable professional slug for the sitemap
       tags:
         - Public discovery
       security: []
       responses:
         "200":
-          description: The slug and last-updated timestamp of every self-service published professional.
+          description: The slug and last-updated timestamp of every professional whose canonical profile is indexable.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"

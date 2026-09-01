@@ -17,11 +17,20 @@ const sections: LegalDocumentSection[] = [
   { id: "disposicoes", label: "Disposições finais" },
 ];
 
+const title = "Termos de Uso";
+const description = "Regras vigentes de uso da Berufe.";
+const canonicalUrl = withSiteUrl("/termos-de-uso");
+
 useSeoMeta({
-  title: "Termos de Uso",
-  description: "Regras vigentes de uso da Berufe.",
+  title,
+  description,
+  ogTitle: title,
+  ogDescription: description,
+  ogUrl: () => canonicalUrl.value,
+  ogType: "website",
   robots: "index, follow",
 });
+useHead(() => ({ link: [{ rel: "canonical", href: canonicalUrl.value }] }));
 </script>
 
 <template>

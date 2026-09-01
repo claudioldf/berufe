@@ -1,20 +1,29 @@
 # frozen_string_literal: true
 
-# The bulk professional slug list behind the sitemap. Self-service and
-# published only -- the same population PublicIndexability.profile_indexable?
-# ultimately allows, but without re-checking each profile's specific
-# evidence (portfolio/recommendation/verification): at current founding-cohort
-# scale that per-profile check is unnecessary weight, and the small resulting
-# over-inclusion is self-correcting -- a profile without evidence yet still
-# renders `noindex`, so Search Console reports it as excluded, not broken.
+# The bulk professional slug list behind the sitemap. Sitemap membership must
+# match the canonical profile's own indexability decision exactly: publishing a
+# `noindex` URL in the sitemap sends conflicting signals to crawlers.
 class PublicSitemapProfessionalsQuery
   Entry = Data.define(:slug, :updated_at)
 
   def call
     ProfessionalProfile
       .publicly_eligible
-      .joins(:published_revision)
-      .pluck(:public_slug, "professional_profile_revisions.updated_at")
-      .map { |slug, updated_at| Entry.new(slug:, updated_at:) }
+      .includes(
+        :profile_photo,
+        :verification_requests,
+        portfolio_items: :service,
+        published_revision: {
+          professional_profile_services: :service,
+          professional_profile_service_areas: :neighborhood
+        }
+      )
+      .order(:public_slug)
+      .filter_map do |profile|
+        payload = PublicProfessionalProfileSerializer.new(profile).as_json
+        next unless payload&.fetch(:indexable)
+
+        Entry.new(slug: profile.public_slug, updated_at: profile.published_revision.updated_at)
+      end
   end
 end

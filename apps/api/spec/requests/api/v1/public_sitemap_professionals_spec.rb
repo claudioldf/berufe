@@ -25,16 +25,20 @@ RSpec.describe "Public sitemap professionals", type: :request, openapi: true do
     )
   end
 
-  it "lists only self-service published professionals" do
-    published = create_published_profile("+5547999996501", "Ana Sitemap")
-    account = UserAccount.create!(phone_e164: "+5547999996502", role: "professional", status: "active")
-    ProfessionalProfile.create!(user_account: account, display_name: "Beto Rascunho")
+  it "lists only professionals whose canonical profiles are indexable" do
+    indexable = create_published_profile("+5547999996501", "Ana Sitemap")
+    thin = create_published_profile("+5547999996502", "Beto Sem Evidência")
+    thin.user_account.update_columns(phone_verified_at: nil, registered_at: nil)
+    suspended = create_published_profile("+5547999996503", "Caio Suspenso")
+    suspended.user_account.update!(status: "suspended")
+    account = UserAccount.create!(phone_e164: "+5547999996504", role: "professional", status: "active")
+    ProfessionalProfile.create!(user_account: account, display_name: "Dora Rascunho")
 
     get "/api/v1/public/sitemap-professionals", headers: {"X-Request-Id" => "sitemap-professionals-200"}
 
     expect(response).to have_http_status(:ok)
     professionals = response.parsed_body.dig("data", "professionals")
-    expect(professionals.pluck("slug")).to eq([published.public_slug])
+    expect(professionals.pluck("slug")).to eq([indexable.public_slug])
     expect(professionals.first["updated_at"]).to be_present
     assert_api_conform(status: 200)
   end
