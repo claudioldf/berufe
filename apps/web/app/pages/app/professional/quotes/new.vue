@@ -306,7 +306,6 @@ async function revokeShare() {
               cliente.
             </p>
           </div>
-          <span><DesignSystemStatusDot /> {{ quoteStatusLabel }}</span>
         </div>
       </DesignSystemContainer>
     </section>
