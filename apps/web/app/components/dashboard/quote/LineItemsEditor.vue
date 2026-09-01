@@ -47,23 +47,15 @@ const emit = defineEmits<{
         @input="emit('dirty')"
       >
         <span class="quote-item__mobile-index">Item {{ index + 1 }}</span>
-        <DesignSystemDisabledTooltip
-          :reason="
-            quote.items.length === 1
-              ? 'O orçamento precisa de pelo menos um item'
-              : null
-          "
+        <button
+          v-if="quote.items.length > 1"
+          class="quote-item__remove"
+          type="button"
+          :aria-label="`Remover item ${index + 1}`"
+          @click="emit('remove', item.id)"
         >
-          <button
-            class="quote-item__remove"
-            type="button"
-            :aria-label="`Remover item ${index + 1}`"
-            :disabled="quote.items.length === 1"
-            @click="emit('remove', item.id)"
-          >
-            <UIcon name="i-lucide-trash-2" aria-hidden="true" />
-          </button>
-        </DesignSystemDisabledTooltip>
+          <UIcon name="i-lucide-trash-2" aria-hidden="true" />
+        </button>
         <label
           class="quote-item__description"
           :class="{
