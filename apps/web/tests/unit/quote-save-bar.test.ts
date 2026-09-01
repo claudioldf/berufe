@@ -73,7 +73,7 @@ describe("quote save bar", () => {
       .findAll("button")
       .find((button) => button.text() === "Salvar rascunho");
 
-    expect(wrapper.text()).toContain("Compartilhar");
+    expect(wrapper.text()).toContain("Enviar ao cliente");
     expect(wrapper.get('[role="status"]').text()).toContain(
       "Aguardando envio ao cliente",
     );
@@ -87,7 +87,7 @@ describe("quote save bar", () => {
     );
   });
 
-  it("uses a check for saving and a send icon only for sharing", () => {
+  it("uses a check for saving and a share icon only for sending", () => {
     const save = mountSaveBar();
     const share = mountSaveBar({ saved: true, readyToShare: true });
 
@@ -100,9 +100,9 @@ describe("quote save bar", () => {
     expect(
       share
         .findAll("button")
-        .find((button) => button.text() === "Compartilhar")
+        .find((button) => button.text() === "Enviar ao cliente")
         ?.attributes("data-icon"),
-    ).toBe("i-lucide-send");
+    ).toBe("i-lucide-share");
   });
 
   it("announces and loads only the save-before-share action", () => {
@@ -150,7 +150,7 @@ describe("quote save bar", () => {
     });
     const share = wrapper
       .findAll("button")
-      .find((button) => button.text() === "Compartilhar");
+      .find((button) => button.text() === "Enviar ao cliente");
 
     expect(wrapper.get('[role="alert"]').text()).toContain(
       "Não foi possível salvar. Tente novamente.",
@@ -174,7 +174,7 @@ describe("quote save bar", () => {
     });
     const share = blocked
       .findAll("button")
-      .find((button) => button.text() === "Compartilhar");
+      .find((button) => button.text() === "Enviar ao cliente");
 
     expect(share?.attributes("disabled")).toBeDefined();
     expect(
@@ -191,7 +191,7 @@ describe("quote save bar", () => {
     });
     const availableShare = available
       .findAll("button")
-      .find((button) => button.text() === "Compartilhar");
+      .find((button) => button.text() === "Enviar ao cliente");
     expect(
       availableShare?.element
         .closest("[data-tooltip-reason]")

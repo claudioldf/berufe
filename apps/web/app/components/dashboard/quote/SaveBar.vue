@@ -71,7 +71,7 @@ const statusText = computed(() => {
 });
 const shareLabel = computed(() => {
   if (props.savingIntent === "share") return "Salvando…";
-  return props.readyToShare ? "Compartilhar" : "Salvar";
+  return props.readyToShare ? "Enviar ao cliente" : "Salvar";
 });
 </script>
 
@@ -116,7 +116,7 @@ const shareLabel = computed(() => {
       <DesignSystemDisabledTooltip :reason="shareActionBlockedReason">
         <UButton
           color="primary"
-          :icon="readyToShare ? 'i-lucide-send' : 'i-lucide-check'"
+          :icon="readyToShare ? 'i-lucide-share' : 'i-lucide-check'"
           :loading="savingIntent === 'share'"
           :disabled="(readyToShare && !shareEnabled) || pending"
           @click="$emit('share')"
