@@ -318,23 +318,29 @@ async function revokeShare() {
         Não foi possível carregar o orçamento. Volte à lista de orçamentos e
         tente novamente.
       </p>
-      <DashboardQuoteBuilder
-        v-else
-        v-model:share-open="shareOpen"
-        :initial-quote="quote"
-        :professional="professional"
-        :saving-intent="savingIntent"
-        :save-error="saveError"
-        :sharing-method="sharingMethod"
-        :share-error="shareError"
-        :share-enabled="shareEnabled"
-        :share-blocked-reason="shareBlockedReason"
-        :revoking="revoking"
-        @save="saveQuote"
-        @prepare-share="prepareShare"
-        @share="shareQuote"
-        @revoke="revokeShare"
-      />
+      <template v-else>
+        <DashboardQuoteStatusCard
+          class="quote-workspace__status"
+          :quote="quote"
+        />
+        <DashboardQuoteBuilder
+          v-model:share-open="shareOpen"
+          class="quote-workspace__builder"
+          :initial-quote="quote"
+          :professional="professional"
+          :saving-intent="savingIntent"
+          :save-error="saveError"
+          :sharing-method="sharingMethod"
+          :share-error="shareError"
+          :share-enabled="shareEnabled"
+          :share-blocked-reason="shareBlockedReason"
+          :revoking="revoking"
+          @save="saveQuote"
+          @prepare-share="prepareShare"
+          @share="shareQuote"
+          @revoke="revokeShare"
+        />
+      </template>
     </DesignSystemContainer>
   </div>
 </template>
@@ -345,7 +351,7 @@ async function revokeShare() {
   padding-bottom: 80px;
   background: var(--color-surface-canvas);
   &__heading {
-    padding: 28px 0 34px;
+    padding: 28px 0 100px;
     background: var(--color-brand-strong);
     color: white;
   }
@@ -398,6 +404,28 @@ async function revokeShare() {
   }
   &__content {
     padding-top: 24px;
+  }
+  &__status {
+    margin-top: -84px;
+  }
+  &__builder {
+    margin-top: 24px;
+  }
+}
+
+@media (width <= 560px) {
+  .quote-workspace {
+    &__heading {
+      padding-bottom: 76px;
+    }
+
+    &__status {
+      margin-top: -58px;
+    }
+
+    &__builder {
+      margin-top: 16px;
+    }
   }
 }
 </style>

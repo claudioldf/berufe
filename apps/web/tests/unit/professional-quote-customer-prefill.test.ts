@@ -153,6 +153,13 @@ describe("new quote customer prefill", () => {
       customerEmail: "cliente@example.com",
       validUntil: quoteDateAfterDays(30),
     });
+    expect(
+      wrapper.getComponent({ name: "DashboardQuoteStatusCard" }).props("quote"),
+    ).toMatchObject({
+      id: null,
+      customerId,
+      status: "draft",
+    });
   });
 
   it("gives an existing quote precedence over a customer query", async () => {
@@ -179,6 +186,12 @@ describe("new quote customer prefill", () => {
       id: quoteId,
       customerName: "Cliente do orçamento",
       validUntil: quoteDateAfterDays(30),
+    });
+    expect(
+      wrapper.getComponent({ name: "DashboardQuoteStatusCard" }).props("quote"),
+    ).toMatchObject({
+      id: quoteId,
+      status: "draft",
     });
   });
 
