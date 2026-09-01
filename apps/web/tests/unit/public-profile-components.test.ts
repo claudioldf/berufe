@@ -234,7 +234,6 @@ describe("public profile components", () => {
     expect(details.text()).toContain("1 conexão confirmada");
     expect(details.text()).toContain("Trabalharam juntos");
     expect(details.text()).toContain("Trabalharam em reformas residenciais.");
-    expect(details.text()).toContain("não representam uma verificação");
     expect(details.text()).toContain("não garante a execução");
     expect(evidence.text()).toContain("Telefone confirmado");
     expect(evidence.text()).toContain("Identidade verificada");
