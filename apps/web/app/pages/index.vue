@@ -52,6 +52,7 @@ useSeoMeta({
   ogUrl: () => canonicalUrl.value,
   ogType: "website",
   twitterCard: "summary_large_image",
+  robots: "index, follow",
 });
 useHead(() => ({ link: [{ rel: "canonical", href: canonicalUrl.value }] }));
 defineOgImageSafely("BerufeDefault", { title, description });

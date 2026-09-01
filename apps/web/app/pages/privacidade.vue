@@ -15,11 +15,20 @@ const sections: LegalDocumentSection[] = [
   { id: "direitos", label: "Direitos e contato" },
 ];
 
+const title = "Política de Privacidade";
+const description = "Como a Berufe trata e protege dados pessoais.";
+const canonicalUrl = withSiteUrl("/privacidade");
+
 useSeoMeta({
-  title: "Política de Privacidade",
-  description: "Como a Berufe trata e protege dados pessoais.",
+  title,
+  description,
+  ogTitle: title,
+  ogDescription: description,
+  ogUrl: () => canonicalUrl.value,
+  ogType: "website",
   robots: "index, follow",
 });
+useHead(() => ({ link: [{ rel: "canonical", href: canonicalUrl.value }] }));
 </script>
 
 <template>

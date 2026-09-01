@@ -175,6 +175,14 @@ jobs:
         run: |
           curl --fail --silent --show-error http://localhost:3000/foundation --output "${RUNNER_TEMP}/foundation.html"
           grep --fixed-strings "berufe-api" "${RUNNER_TEMP}/foundation.html"
+          curl --fail --silent --show-error http://localhost:3000/be/marcos-alves --output "${RUNNER_TEMP}/profile.html"
+          grep --fixed-strings ">Marcos Alves</h1>" "${RUNNER_TEMP}/profile.html"
+          grep --fixed-strings 'content="index, follow"' "${RUNNER_TEMP}/profile.html"
+          grep --fixed-strings 'href="http://localhost:3000/be/marcos-alves"' "${RUNNER_TEMP}/profile.html"
+          curl --fail --silent --show-error http://localhost:3000/sitemap.xml --output "${RUNNER_TEMP}/sitemap.xml"
+          grep --fixed-strings "<loc>http://localhost:3000/be/marcos-alves</loc>" "${RUNNER_TEMP}/sitemap.xml"
+          if grep --fixed-strings --quiet "http://localhost:3000/profissionais/" "${RUNNER_TEMP}/sitemap.xml"; then exit 1; fi
+          if grep --fixed-strings --quiet "<loc>http://localhost:3000/encontrar</loc>" "${RUNNER_TEMP}/sitemap.xml"; then exit 1; fi
 
       - name: Verify worker database connectivity
         run: curl --fail --silent --show-error http://localhost:7001/status/connected
@@ -215,6 +223,12 @@ jobs:
           grep --fixed-strings "berufe-api" "${RUNNER_TEMP}/status.json"
           curl --fail --silent --show-error http://localhost:3100/foundation --output "${RUNNER_TEMP}/production-foundation.html"
           grep --fixed-strings "berufe-api" "${RUNNER_TEMP}/production-foundation.html"
+          curl --fail --silent --show-error http://localhost:3100/guias/como-conseguir-clientes-profissional-autonomo --output "${RUNNER_TEMP}/production-guide.html"
+          grep --fixed-strings ">Como conseguir clientes sendo um profissional autônomo</h1>" "${RUNNER_TEMP}/production-guide.html"
+          grep --fixed-strings 'content="index, follow"' "${RUNNER_TEMP}/production-guide.html"
+          grep --fixed-strings 'href="https://www.berufe.com.br/guias/como-conseguir-clientes-profissional-autonomo"' "${RUNNER_TEMP}/production-guide.html"
+          curl --fail --silent --show-error http://localhost:3100/sitemap.xml --output "${RUNNER_TEMP}/production-sitemap.xml"
+          grep --fixed-strings "<loc>https://www.berufe.com.br/guias/como-conseguir-clientes-profissional-autonomo</loc>" "${RUNNER_TEMP}/production-sitemap.xml"
 
       - name: Show service logs after a failure
         if: failure()

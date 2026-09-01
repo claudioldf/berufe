@@ -27,6 +27,7 @@ useSeoMeta({
   ogDescription: description,
   ogUrl: () => canonicalUrl.value,
   ogType: "website",
+  robots: "index, follow",
 });
 useHead(() => ({ link: [{ rel: "canonical", href: canonicalUrl.value }] }));
 defineOgImageSafely("BerufeDefault", { title, description });
