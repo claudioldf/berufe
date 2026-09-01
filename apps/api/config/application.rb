@@ -45,7 +45,10 @@ module BerufeApi
     end
     config.middleware.insert_before 0, SecurityHeaders
     config.middleware.insert_before ActionDispatch::RequestId, RequestIdSanitizer
+    config.middleware.use Rack::MethodOverride
     config.middleware.use ActionDispatch::Cookies
+    config.middleware.use ActionDispatch::Session::CookieStore
+    config.middleware.use ActionDispatch::Flash
 
     # Only loads a smaller set of middleware suitable for API only apps.
     # Middleware like session, flash, cookies can be added back manually.
