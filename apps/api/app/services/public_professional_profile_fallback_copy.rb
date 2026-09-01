@@ -4,6 +4,7 @@ class PublicProfessionalProfileFallbackCopy
   Result = Data.define(:headline, :bio)
   SUMMARY_LIMIT = 3
   MAXIMUM_HEADLINE_LENGTH = 120
+  MAXIMUM_BIO_LENGTH = 2500
 
   def self.call(profile:)
     new.call(profile:)
@@ -26,7 +27,7 @@ class PublicProfessionalProfileFallbackCopy
   def fallback_headline
     service = ordered_service_selections.first&.service&.name
     city = revision.coverage_city&.name
-    headline = if service.present? && city.present?
+    base = if service.present? && city.present?
       "#{service} em #{city}"
     elsif service.present?
       service
@@ -36,49 +37,70 @@ class PublicProfessionalProfileFallbackCopy
       "Perfil profissional"
     end
 
-    headline.truncate(MAXIMUM_HEADLINE_LENGTH, separator: " ", omission: "…")
+    candidates = []
+    candidates << "#{base} com #{experience_length}" if experience_length
+    candidates << base
+    candidates << service if service.present?
+    candidates << "Perfil profissional"
+    candidates.find { |candidate| candidate.length <= MAXIMUM_HEADLINE_LENGTH }
   end
 
   def fallback_bio
     sections = [
-      services_section,
-      coverage_section,
+      offering_section,
       experience_section,
       portfolio_section
     ].compact
 
-    sections.join(" ").presence || "Veja as informações profissionais disponíveis neste perfil."
+    (sections.join(" ").presence || generic_bio)
+      .truncate(MAXIMUM_BIO_LENGTH, separator: " ", omission: "…")
   end
 
-  def services_section
-    names = ordered_service_selections.map { |selection| selection.service.name }
-    return if names.empty?
-
-    "Serviços informados: #{summarized_list(names, remainder: "serviço")}."
-  end
-
-  def coverage_section
+  def offering_section
+    services = service_names.map { |name| name.downcase }
     city = revision.coverage_city&.name
-    return unless city
-    return "Atendimento em toda a cidade de #{city}." if revision.covers_whole_city?
+    neighborhoods = neighborhood_names
 
-    neighborhoods = revision.professional_profile_service_areas
+    if services.any?
+      sentence = "#{external_profile? ? "Oferece" : "Ofereço"} serviços como " \
+        "#{summarized_list(services, remainder: "serviço")}"
+      sentence += if city.present? && revision.covers_whole_city?
+        " em toda a cidade de #{city}"
+      elsif city.present? && neighborhoods.any?
+        " em #{city}, com atendimento #{neighborhood_phrase(neighborhoods)}"
+      elsif city.present?
+        " em #{city}"
+      else
+        ""
+      end
+      return "#{sentence}."
+    end
+
+    return unless city
+    return "#{external_profile? ? "Atende" : "Atendo"} em toda a cidade de #{city}." if revision.covers_whole_city?
+    return "#{external_profile? ? "Atende" : "Atendo"} em #{city}." if neighborhoods.empty?
+
+    "#{external_profile? ? "Atende" : "Atendo"} em #{city}, #{neighborhood_phrase(neighborhoods)}."
+  end
+
+  def neighborhood_names
+    @neighborhood_names ||= revision.professional_profile_service_areas
       .filter_map(&:neighborhood)
       .sort_by { |neighborhood| [neighborhood.name, neighborhood.code] }
       .map(&:name)
-    return "Área de atendimento: #{city}." if neighborhoods.empty?
+  end
 
+  def neighborhood_phrase(neighborhoods)
     label = (neighborhoods.one? ? "bairro" : "bairros")
-    "Área de atendimento: #{label} #{summarized_list(neighborhoods, remainder: "bairro")}, em #{city}."
+    preposition = (neighborhoods.one? ? "no" : "nos")
+    "#{preposition} #{label} #{summarized_list(neighborhoods, remainder: "bairro")}"
   end
 
   def experience_section
     years = revision.years_experience
-    return if years.nil?
-    return "Experiência declarada: menos de 1 ano." if years.zero?
+    return if years.nil? || years.zero?
 
-    unit = (years == 1) ? "ano" : "anos"
-    "Experiência declarada: #{years} #{unit}."
+    "#{external_profile? ? "Tem" : "Tenho"} #{experience_length} na área."
   end
 
   def portfolio_section
@@ -87,10 +109,29 @@ class PublicProfessionalProfileFallbackCopy
 
     titles = items.first(SUMMARY_LIMIT).map { |item| "“#{item.title}”" }
     if items.one?
-      "Portfólio com 1 trabalho publicado: #{titles.first}."
+      "No meu portfólio, você pode conhecer o trabalho #{titles.first}."
     else
-      "Portfólio com #{items.length} trabalhos publicados, incluindo #{sentence_list(titles)}."
+      "No meu portfólio, você pode conhecer trabalhos como #{sentence_list(titles)}."
     end
+  end
+
+  def experience_length
+    years = revision.years_experience
+    return if years.nil? || years.zero?
+
+    "#{years} #{(years == 1) ? "ano" : "anos"} de experiência"
+  end
+
+  def generic_bio
+    if external_profile?
+      "Aqui você encontra mais informações sobre este profissional e pode entrar em contato para saber mais."
+    else
+      "Aqui você encontra mais informações sobre o meu trabalho e pode falar comigo para saber mais."
+    end
+  end
+
+  def service_names
+    @service_names ||= ordered_service_selections.map { |selection| selection.service.name }
   end
 
   def ordered_service_selections
@@ -100,11 +141,15 @@ class PublicProfessionalProfileFallbackCopy
   end
 
   def public_portfolio_items
-    return [] if profile.external_presentation?
+    return [] if external_profile?
 
     profile.portfolio_items
       .reject { |item| item.deleted_at.present? }
       .sort_by { |item| [-item.submitted_at.to_f, item.id] }
+  end
+
+  def external_profile?
+    @external_profile ||= profile.external_presentation?
   end
 
   def summarized_list(values, remainder:)

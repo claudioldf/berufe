@@ -30,9 +30,9 @@ RSpec.describe PublicProfessionalProfileSerializer do
     publish(profile)
 
     expect(described_class.new(profile.reload).as_json).to include(
-      headline: "Serviço #{profile.id} em Joinville",
-      bio: "Serviços informados: Serviço #{profile.id}. Atendimento em toda a cidade de Joinville. " \
-        "Experiência declarada: 7 anos."
+      headline: "Serviço #{profile.id} em Joinville com 7 anos de experiência",
+      bio: "Ofereço serviços como serviço #{profile.id} em toda a cidade de Joinville. " \
+        "Tenho 7 anos de experiência na área."
     )
     expect(profile.published_revision).to have_attributes(headline: nil, bio: nil)
   end

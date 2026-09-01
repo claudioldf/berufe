@@ -133,6 +133,39 @@ describe("public profile page", () => {
     expect(mocks.recordView).toHaveBeenCalledOnce();
   });
 
+  it("replaces a stale hydrated profile with the current API projection", async () => {
+    const staleResult: PublicProfessionalProfileResult = {
+      ...result,
+      professional: {
+        ...result.professional,
+        slug: "perfil-desatualizado",
+        bio: "Tenho menos de um ano de experiência na área.",
+      },
+    };
+    const refreshedResult: PublicProfessionalProfileResult = {
+      ...result,
+      professional: {
+        ...result.professional,
+        slug: "perfil-desatualizado",
+        bio: "No meu portfólio, você pode conhecer o meu trabalho.",
+      },
+    };
+    mocks.fetchProfile
+      .mockResolvedValueOnce(staleResult)
+      .mockResolvedValueOnce(refreshedResult);
+
+    const wrapper = await mountSuspended(PublicProfilePage, {
+      shallow: true,
+      route: "/be/perfil-desatualizado",
+    });
+    await flushPromises();
+
+    expect(
+      wrapper.getComponent({ name: "ProfileHero" }).props("professional"),
+    ).toEqual(refreshedResult.professional);
+    expect(mocks.fetchProfile).toHaveBeenCalledTimes(2);
+  });
+
   it("selects the simplified public layout for an external profile", async () => {
     const externalResult: PublicProfessionalProfileResult = {
       ...result,

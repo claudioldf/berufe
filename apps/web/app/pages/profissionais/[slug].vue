@@ -37,17 +37,18 @@ const incomingRequestMessage = computed(() => {
   const value = route.query.pedido;
   return Array.isArray(value) ? value[0] : value;
 });
+const loadProfile = () =>
+  fetchPublicProfessionalProfile(
+    client,
+    requestedSlug.value,
+    incomingInteractionToken.value || undefined,
+  );
 const { data: profileResult, error: profileError } = await useAsyncData(
   `public-professional-profile-${requestedSlug.value}`,
-  () =>
-    fetchPublicProfessionalProfile(
-      client,
-      requestedSlug.value,
-      incomingInteractionToken.value || undefined,
-    ),
+  loadProfile,
   {
-    // Keep the server payload during hydration, then revalidate every client
-    // navigation so an administrator suspension cannot reuse an older profile.
+    // Keep the server payload during hydration. A client refresh after mount
+    // replaces stale SWR HTML and keeps profile edits and suspensions current.
     getCachedData: hydrationOnlyCachedData,
   },
 );
@@ -200,6 +201,11 @@ defineOgImageSafely("BerufeProfessional", {
 });
 
 onMounted(() => {
+  void loadProfile()
+    .then((currentProfile) => {
+      profileResult.value = currentProfile;
+    })
+    .catch(() => undefined);
   void recordPublicProfessionalProfileView(
     client,
     professional.value.id,

@@ -64,12 +64,11 @@ RSpec.describe PublicProfessionalProfileFallbackCopy do
 
     result = described_class.call(profile:)
 
-    expect(result.headline).to eq("Eletricista em Joinville")
+    expect(result.headline).to eq("Eletricista em Joinville com 11 anos de experiência")
     expect(result.bio).to eq(
-      "Serviços informados: Eletricista e Marido de aluguel. " \
-      "Área de atendimento: bairros América e Centro, em Joinville. " \
-      "Experiência declarada: 11 anos. " \
-      "Portfólio com 2 trabalhos publicados, incluindo “Troca de tomadas” e “Quadro organizado”."
+      "Ofereço serviços como eletricista e marido de aluguel em Joinville, " \
+      "com atendimento nos bairros América e Centro. Tenho 11 anos de experiência na área. " \
+      "No meu portfólio, você pode conhecer trabalhos como “Troca de tomadas” e “Quadro organizado”."
     )
     expect(result.bio).not_to include("Trabalho removido")
   end
@@ -83,7 +82,7 @@ RSpec.describe PublicProfessionalProfileFallbackCopy do
 
     expect(headline_result).to have_attributes(
       headline: "Atendimento cuidadoso.",
-      bio: "Veja as informações profissionais disponíveis neste perfil."
+      bio: "Aqui você encontra mais informações sobre o meu trabalho e pode falar comigo para saber mais."
     )
     expect(bio_result).to have_attributes(
       headline: "Perfil profissional",
@@ -91,7 +90,7 @@ RSpec.describe PublicProfessionalProfileFallbackCopy do
     )
   end
 
-  it "describes whole-city coverage and a declared first year without portfolio copy for external profiles" do
+  it "omits experience below one year and portfolio copy for external profiles" do
     revision = revision_with(
       years_experience: 0,
       coverage_city: city_value_class.new(name: "Joinville"),
@@ -107,10 +106,7 @@ RSpec.describe PublicProfessionalProfileFallbackCopy do
     result = described_class.call(profile:)
 
     expect(result.headline).to eq("Pintor em Joinville")
-    expect(result.bio).to eq(
-      "Serviços informados: Pintor. Atendimento em toda a cidade de Joinville. " \
-      "Experiência declarada: menos de 1 ano."
-    )
+    expect(result.bio).to eq("Oferece serviços como pintor em toda a cidade de Joinville.")
   end
 
   private
