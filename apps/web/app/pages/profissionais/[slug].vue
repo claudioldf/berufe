@@ -542,19 +542,6 @@ async function shareProfile() {
       text-transform: uppercase;
     }
   }
-  .declaration-note {
-    display: flex;
-    align-items: flex-start;
-    gap: 7px;
-    margin-top: 14px;
-    color: var(--ink-soft);
-    font-size: 0.86rem;
-    line-height: 1.5;
-  }
-  .declaration-note svg {
-    flex: 0 0 auto;
-    margin-top: 2px;
-  }
   .profile-section {
     &__heading {
       display: flex;
