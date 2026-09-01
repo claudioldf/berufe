@@ -54,18 +54,47 @@ Rails.application.configure do
   # Do not dump schema after migrations.
   config.active_record.dump_schema_after_migration = false
 
-  config.action_mailer.delivery_method = :smtp
   config.action_mailer.perform_deliveries = true
   config.action_mailer.raise_delivery_errors = true
-  config.action_mailer.smtp_settings = {
-    address: ENV.fetch("SMTP_ADDRESS", "localhost"),
-    port: ENV.fetch("SMTP_PORT", "587").to_i,
-    domain: ENV.fetch("SMTP_DOMAIN", "berufe.com.br"),
-    user_name: ENV["SMTP_USERNAME"],
-    password: ENV["SMTP_PASSWORD"],
-    authentication: ENV.fetch("SMTP_AUTHENTICATION", "plain"),
-    enable_starttls_auto: ENV.fetch("SMTP_STARTTLS", "true") == "true"
-  }
+
+  # Deployed environments (staging/integration/production) run on Railway,
+  # which blocks outbound SMTP below its Pro plan — a connection to
+  # smtp.resend.com:587 times out (Net::OpenTimeout) rather than being
+  # refused. MAIL_ADAPTER=resend routes mail through Resend's HTTP API
+  # instead (see lib/berufe/resend_mail_client.rb); MAIL_ADAPTER=smtp is kept
+  # for rollback and for preview, which does not require either adapter's
+  # variables and falls back to these unset-safe defaults.
+  if ENV.fetch("MAIL_ADAPTER", "smtp") == "resend"
+    # Registered here, directly on the class, rather than through
+    # config.action_mailer.resend_settings — the ActionMailer railtie's
+    # "action_mailer.set_configs" initializer applies config.action_mailer.*
+    # before any config/initializers/*.rb runs, so a not-yet-registered
+    # `:resend` delivery method would leave no resend_settings= to call.
+    require Rails.root.join("lib/berufe/mail_delivery")
+    require Rails.root.join("lib/berufe/resend_mail_client")
+    ActionMailer::Base.add_delivery_method(
+      :resend,
+      Berufe::ResendMailClient,
+      api_key: ENV.fetch("RESEND_API_KEY"),
+      request_timeout: ENV.fetch("RESEND_REQUEST_TIMEOUT_SECONDS", "10").to_f
+      # No logger: this settings hash is frozen at boot, before Rails.logger
+      # exists — ResendMailClient falls back to Rails.logger lazily instead.
+    )
+    config.action_mailer.delivery_method = :resend
+  else
+    config.action_mailer.delivery_method = :smtp
+    config.action_mailer.smtp_settings = {
+      address: ENV.fetch("SMTP_ADDRESS", "localhost"),
+      port: ENV.fetch("SMTP_PORT", "587").to_i,
+      domain: ENV.fetch("SMTP_DOMAIN", "berufe.com.br"),
+      user_name: ENV["SMTP_USERNAME"],
+      password: ENV["SMTP_PASSWORD"],
+      authentication: ENV.fetch("SMTP_AUTHENTICATION", "plain"),
+      enable_starttls_auto: ENV.fetch("SMTP_STARTTLS", "true") == "true",
+      open_timeout: ENV.fetch("SMTP_OPEN_TIMEOUT_SECONDS", "10").to_i,
+      read_timeout: ENV.fetch("SMTP_READ_TIMEOUT_SECONDS", "10").to_i
+    }
+  end
 
   # Only use :id for inspections in production.
   config.active_record.attributes_for_inspect = [:id]

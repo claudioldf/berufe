@@ -56,6 +56,14 @@ export default defineRailway(() => {
       R2_SECRET_ACCESS_KEY: preserve(),
       R2_PUBLIC_BUCKET: "berufe-production-public",
       R2_PRIVATE_BUCKET: "berufe-production-private",
+      // Railway blocks outbound SMTP below its Pro plan, so smtp.resend.com:587
+      // times out (Net::OpenTimeout) instead of being refused. MAIL_ADAPTER=resend
+      // routes recommendation email through Resend's HTTP API instead; Rails
+      // refuses to boot in production with any other adapter. The SMTP_* variables
+      // stay set only so a rollback to the previous release still boots — remove
+      // them once this release has been stable for a deploy cycle.
+      MAIL_ADAPTER: "resend",
+      RESEND_API_KEY: preserve(),
       SMTP_ADDRESS: "smtp.resend.com",
       SMTP_PORT: "587",
       SMTP_DOMAIN: "berufe.com.br",

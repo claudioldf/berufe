@@ -27,13 +27,11 @@ x-api-environment: &api-environment
   R2_ACCESS_KEY_ID: smoke-only
   R2_SECRET_ACCESS_KEY: smoke-only
   R2_PRIVATE_BUCKET: berufe-production-private
-  SMTP_ADDRESS: smtp.resend.com
-  SMTP_PORT: "587"
-  SMTP_DOMAIN: berufe.com.br
-  SMTP_USERNAME: resend
-  SMTP_PASSWORD: smoke-only
-  SMTP_AUTHENTICATION: plain
-  SMTP_STARTTLS: "true"
+  # BERUFE_ENV=production requires the resend adapter (Railway blocks
+  # outbound SMTP below its Pro plan); this smoke stack never triggers a
+  # real send, so the key only needs to satisfy boot validation.
+  MAIL_ADAPTER: resend
+  RESEND_API_KEY: smoke-only
   MAIL_FROM: Berufe <nao-responda@berufe.com.br>
   GOOD_JOB_EXECUTION_MODE: async
   GOOD_JOB_MAX_THREADS: "1"

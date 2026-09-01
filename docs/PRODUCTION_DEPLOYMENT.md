@@ -10,9 +10,10 @@ Berufe runs in Railway's Virginia region (`us-east4-eqdc4a`) as three services:
 | `api`      | Rails plus one in-process GoodJob thread | `api.berufe.com.br` |
 | `Postgres` | Railway managed PostgreSQL               | private only        |
 
-Cloudflare provides authoritative DNS and two R2 buckets. Resend provides SMTP, Infobip
-provides production SMS OTP, and separate Bugsnag projects receive privacy-scrubbed Rails
-and browser exceptions.
+Cloudflare provides authoritative DNS and two R2 buckets. Resend provides recommendation
+email over its HTTP API (Railway blocks outbound SMTP below its Pro plan, so `MAIL_ADAPTER`
+must be `resend`, not `smtp`, here), Infobip provides production SMS OTP, and separate
+Bugsnag projects receive privacy-scrubbed Rails and browser exceptions.
 
 There is no permanent staging service, Redis, separate production worker, or pull-request
 environment. Local Compose and CI are the release-candidate environments. The expected
@@ -113,13 +114,11 @@ R2_ACCESS_KEY_ID=<secret>
 R2_SECRET_ACCESS_KEY=<secret>
 R2_PRIVATE_BUCKET=berufe-production-private
 
-SMTP_ADDRESS=smtp.resend.com
-SMTP_PORT=587
-SMTP_DOMAIN=berufe.com.br
-SMTP_USERNAME=resend
-SMTP_PASSWORD=<secret Resend API key>
-SMTP_AUTHENTICATION=plain
-SMTP_STARTTLS=true
+# Railway blocks outbound SMTP below its Pro plan (smtp.resend.com:587 times
+# out with Net::OpenTimeout instead of being refused), so production must use
+# Resend's HTTP API. Rails refuses to boot here with any other MAIL_ADAPTER.
+MAIL_ADAPTER=resend
+RESEND_API_KEY=<secret Resend API key>
 MAIL_FROM=Berufe <nao-responda@berufe.com.br>
 
 GOOD_JOB_EXECUTION_MODE=async
@@ -173,8 +172,11 @@ Apply this CORS policy to the private bucket:
 ## 3. Email, SMS, and error reporting
 
 In Resend, verify `berufe.com.br`, add every SPF/DKIM record Resend supplies, create a
-send-only API key, and use it as `SMTP_PASSWORD`. Preserve any existing DNS records not
-explicitly replaced.
+send-only API key, and use it as `RESEND_API_KEY`. Preserve any existing DNS records not
+explicitly replaced. Delivery goes through Resend's HTTP API
+(`lib/berufe/resend_mail_client.rb`), not SMTP — Railway blocks outbound SMTP below its Pro
+plan, so a connection to `smtp.resend.com:587` would time out (`Net::OpenTimeout`) rather
+than being refused.
 
 In Infobip, use the approved production base URL, 2FA application, template, sender, and a
 dedicated API key. Confirm sender registration, per-message cost, monthly spend alerts,
