@@ -132,7 +132,7 @@ describe("professional quote index", () => {
       }),
     );
 
-    expect(wrapper.get('[aria-label="Aguardando resposta"]').text()).toMatch(
+    expect(wrapper.get('[aria-label="Enviado ao cliente"]').text()).toMatch(
       /R\$\s*0,00.*0 orçamentos/,
     );
     expect(wrapper.get('[aria-label="Alterações solicitadas"]').text()).toMatch(
