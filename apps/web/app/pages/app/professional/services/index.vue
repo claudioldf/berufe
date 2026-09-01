@@ -133,6 +133,11 @@ const statusLabel = {
   font-weight: 800;
 }
 
+.service-list em.cancelled {
+  background: var(--color-danger-tint);
+  color: var(--color-danger);
+}
+
 @media (width <= 720px) {
   .service-list > a {
     grid-template-columns: 1fr auto;

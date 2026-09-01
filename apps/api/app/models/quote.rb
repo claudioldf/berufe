@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
 class Quote < ApplicationRecord
-  STATUSES = %w[draft saved shared change_requested approved declined].freeze
+  STATUSES = %w[draft saved shared change_requested approved declined completed cancelled].freeze
+  LOCKED_STATUSES = %w[approved completed cancelled].freeze
+  SERVICE_OUTCOME_STATUSES = %w[completed cancelled].freeze
   MAX_ITEMS = 20
   MONEY_SCALE = 2
 
@@ -57,6 +59,10 @@ class Quote < ApplicationRecord
 
   STATUSES.each do |known_status|
     define_method("#{known_status}?") { status == known_status }
+  end
+
+  def locked_for_editing?
+    status.in?(LOCKED_STATUSES)
   end
 
   private
@@ -127,9 +133,20 @@ class Quote < ApplicationRecord
   end
 
   def approved_content_is_immutable
-    return unless status_in_database == "approved"
-    return unless changes_to_save.except("updated_at", "lock_version").any?
+    persisted_status = status_in_database
+    return unless persisted_status.in?(LOCKED_STATUSES)
 
-    errors.add(:base, "um orçamento aprovado não pode ser alterado")
+    material_changes = changes_to_save.except("updated_at", "lock_version")
+    return if permitted_service_outcome_transition?(persisted_status, material_changes)
+    return unless material_changes.any?
+
+    errors.add(:base, "um orçamento aprovado ou encerrado não pode ser alterado")
+  end
+
+  def permitted_service_outcome_transition?(persisted_status, material_changes)
+    persisted_status == "approved" &&
+      material_changes.one? &&
+      material_changes.key?("status") &&
+      status.in?(SERVICE_OUTCOME_STATUSES)
   end
 end

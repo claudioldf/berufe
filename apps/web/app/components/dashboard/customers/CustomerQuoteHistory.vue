@@ -20,6 +20,8 @@ const statusLabel = {
   change_requested: "Alteração solicitada",
   approved: "Aprovado",
   declined: "Recusado",
+  completed: "Concluído",
+  cancelled: "Cancelado",
 } as const;
 </script>
 
@@ -150,7 +152,8 @@ const statusLabel = {
     text-align: center;
   }
 
-  &__list em.declined {
+  &__list em.declined,
+  &__list em.cancelled {
     background: var(--color-danger-tint);
     color: var(--color-danger);
   }

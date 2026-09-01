@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_31_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_31_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -735,7 +735,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_140000) do
     t.check_constraint "quote_number > 0", name: "quotes_positive_number"
     t.check_constraint "status::text = 'draft'::text OR customer_phone_e164::text ~ '^\\+55[1-9][0-9]9[0-9]{8}$'::text", name: "quotes_customer_brazilian_mobile"
     t.check_constraint "status::text = 'draft'::text OR discount_amount <= subtotal_amount AND total_amount = (subtotal_amount - discount_amount)", name: "quotes_consistent_totals"
-    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying::text, 'saved'::character varying::text, 'shared'::character varying::text, 'change_requested'::character varying::text, 'approved'::character varying::text, 'declined'::character varying::text])", name: "quotes_known_status"
+    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying, 'saved'::character varying, 'shared'::character varying, 'change_requested'::character varying, 'approved'::character varying, 'declined'::character varying, 'completed'::character varying, 'cancelled'::character varying]::text[])", name: "quotes_known_status"
     t.check_constraint "subtotal_amount >= 0::numeric AND discount_amount >= 0::numeric AND total_amount >= 0::numeric", name: "quotes_nonnegative_amounts"
   end
 

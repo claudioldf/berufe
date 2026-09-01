@@ -30,7 +30,30 @@ const shareOpen = defineModel<boolean>("shareOpen", { default: false });
 const revokeOpen = shallowRef(false);
 const validationAttempted = shallowRef(false);
 const formRoot = useTemplateRef<HTMLElement>("formRoot");
-const locked = computed(() => props.initialQuote.status === "approved");
+const locked = computed(() =>
+  ["approved", "completed", "cancelled"].includes(props.initialQuote.status),
+);
+const lockedPresentation = computed(() => {
+  if (props.initialQuote.status === "completed") {
+    return {
+      title: "Orçamento concluído",
+      description:
+        "O serviço foi concluído e este orçamento não pode mais ser alterado.",
+    };
+  }
+  if (props.initialQuote.status === "cancelled") {
+    return {
+      title: "Orçamento cancelado",
+      description:
+        "O serviço foi cancelado e este orçamento não pode mais ser alterado.",
+    };
+  }
+  return {
+    title: "Orçamento aprovado",
+    description:
+      "Este orçamento foi aprovado e não pode mais ser alterado. Acompanhe o andamento na área de serviços.",
+  };
+});
 
 function confirmRevoke() {
   revokeOpen.value = false;
@@ -114,11 +137,8 @@ function requestShare() {
       <DesignSystemSurfaceCard v-if="locked" class="quote-builder__locked">
         <UIcon name="i-lucide-lock-keyhole" />
         <div>
-          <strong>Orçamento aprovado</strong>
-          <p>
-            Este orçamento foi aprovado e não pode mais ser alterado. Acompanhe
-            o andamento na área de serviços.
-          </p>
+          <strong>{{ lockedPresentation.title }}</strong>
+          <p>{{ lockedPresentation.description }}</p>
         </div>
         <UButton
           v-if="initialQuote.serviceJob?.id"
@@ -159,6 +179,7 @@ function requestShare() {
           :shared="isShared"
           :ready-to-share="readyToShare"
           :valid="isValid"
+          :editing="Boolean(initialQuote.id)"
           :saving-intent="savingIntent"
           :error="saveBarError"
           :share-enabled="shareEnabled ?? false"

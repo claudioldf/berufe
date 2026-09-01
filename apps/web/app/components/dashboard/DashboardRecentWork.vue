@@ -25,6 +25,8 @@ const quoteStatusLabel = {
   change_requested: "Alteração solicitada",
   approved: "Aprovado",
   declined: "Recusado",
+  completed: "Concluído",
+  cancelled: "Cancelado",
 } as const;
 const serviceStatusLabel = {
   approved: "Aprovado",
@@ -238,9 +240,17 @@ const serviceStatusLabel = {
     font-weight: 800;
   }
 
-  & em.shared {
+  & em.shared,
+  & em.approved,
+  & em.completed {
     background: var(--mint);
     color: var(--color-brand);
+  }
+
+  & em.declined,
+  & em.cancelled {
+    background: var(--color-danger-tint);
+    color: var(--color-danger);
   }
 
   &__row-action {

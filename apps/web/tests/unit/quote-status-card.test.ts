@@ -54,6 +54,7 @@ describe("quote status card", () => {
     ["shared", "Aguardando resposta do cliente", "Enviado"],
     ["change_requested", "Alterações solicitadas", "Enviado"],
     ["approved", "Orçamento aprovado", "Aprovado"],
+    ["completed", "Orçamento concluído", "Concluído"],
   ] as const)(
     "presents the %s lifecycle stage",
     (status, expectedTitle, expectedCurrentStep) => {
@@ -66,6 +67,7 @@ describe("quote status card", () => {
         "Rascunho",
         "Enviado",
         "Aprovado",
+        "Concluído",
       ]);
       expect(progress.get('[aria-current="step"]').text()).toContain(
         expectedCurrentStep,
@@ -98,5 +100,16 @@ describe("quote status card", () => {
     expect(wrapper.get("h2").text()).toBe("Orçamento recusado");
     expect(progress.find('[aria-current="step"]').exists()).toBe(false);
     expect(progress.text()).toContain("Decisão do cliente");
+  });
+
+  it("shows a cancelled branch after approval without marking completion as current", () => {
+    const wrapper = mountStatus("cancelled");
+    const progress = wrapper.get('[aria-label="Etapas do orçamento"]');
+
+    expect(wrapper.get("h2").text()).toBe("Orçamento cancelado");
+    expect(wrapper.classes()).toContain("status-card--danger");
+    expect(progress.classes()).toContain("status-card__progress--muted");
+    expect(progress.find('[aria-current="step"]').exists()).toBe(false);
+    expect(progress.text()).toContain("Serviço cancelado");
   });
 });

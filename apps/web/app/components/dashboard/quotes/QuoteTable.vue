@@ -24,6 +24,8 @@ const statusLabel = {
   change_requested: "Alteração solicitada",
   approved: "Aprovado",
   declined: "Recusado",
+  completed: "Concluído",
+  cancelled: "Cancelado",
 } as const;
 
 function ariaSort(column: QuoteSortKey) {
@@ -285,7 +287,8 @@ function sortLabel(column: QuoteSortKey, label: string) {
 
   &__status.saved,
   &__status.shared,
-  &__status.approved {
+  &__status.approved,
+  &__status.completed {
     background: var(--mint);
     color: var(--color-brand);
   }
@@ -295,7 +298,8 @@ function sortLabel(column: QuoteSortKey, label: string) {
     color: var(--color-warning);
   }
 
-  &__status.declined {
+  &__status.declined,
+  &__status.cancelled {
     background: var(--color-danger-tint);
     color: var(--color-danger);
   }

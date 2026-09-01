@@ -81,11 +81,11 @@ const shareEnabled = computed(() => {
   const workspace = editor.data.value?.workspace;
   return Boolean(
     quote.value &&
-    quote.value.status !== "approved" &&
+    !["approved", "completed", "cancelled"].includes(quote.value.status) &&
     workspace?.profile.isPublic,
   );
 });
-// The quote editor hides the share bar entirely for an approved (locked)
+// The quote editor hides the share bar entirely for a locked
 // quote, so in practice the only reachable cause here is a non-public
 // profile — surface why, reusing the same reason the dashboard shows.
 const shareBlockedReason = computed(() => {
@@ -96,17 +96,6 @@ const shareBlockedReason = computed(() => {
     profile.suspensionReason ??
     "Seu perfil não está público, então o link do orçamento não pode ser aberto pelo cliente."
   );
-});
-const quoteStatusLabel = computed(() => {
-  const labels = {
-    draft: "Rascunho",
-    saved: "Aguardando envio ao cliente",
-    shared: "Enviado ao cliente",
-    change_requested: "Alteração solicitada",
-    approved: "Aprovado",
-    declined: "Recusado",
-  } as const;
-  return quote.value ? labels[quote.value.status] : "Rascunho";
 });
 const editorTitle = computed(() =>
   quote.value?.number ? "Orçamento" : "Novo orçamento",

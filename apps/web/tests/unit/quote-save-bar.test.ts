@@ -35,6 +35,7 @@ function mountSaveBar(
       shared: false,
       readyToShare: false,
       valid: true,
+      editing: false,
       savingIntent: null,
       error: "",
       shareEnabled: true,
@@ -51,21 +52,27 @@ function mountSaveBar(
 }
 
 describe("quote save bar", () => {
-  it("offers one explicit primary save action for an unsaved quote", async () => {
-    const wrapper = mountSaveBar();
-    const share = wrapper
-      .findAll("button")
-      .find((button) => button.text() === "Salvar");
+  it.each([
+    [false, "Criar"],
+    [true, "Atualizar"],
+  ] as const)(
+    "labels the primary action for editing=%s",
+    async (editing, expectedLabel) => {
+      const wrapper = mountSaveBar({ editing });
+      const share = wrapper
+        .findAll("button")
+        .find((button) => button.text() === expectedLabel);
 
-    expect(wrapper.get('[role="status"]').text()).toContain(
-      "Alterações não salvas",
-    );
-    expect(share?.attributes("disabled")).toBeUndefined();
+      expect(wrapper.get('[role="status"]').text()).toContain(
+        "Alterações não salvas",
+      );
+      expect(share?.attributes("disabled")).toBeUndefined();
 
-    await share?.trigger("click");
+      await share?.trigger("click");
 
-    expect(wrapper.emitted("share")).toHaveLength(1);
-  });
+      expect(wrapper.emitted("share")).toHaveLength(1);
+    },
+  );
 
   it("shows direct sharing and disables redundant saving when already saved", () => {
     const wrapper = mountSaveBar({ saved: true, readyToShare: true });
@@ -94,7 +101,7 @@ describe("quote save bar", () => {
     expect(
       save
         .findAll("button")
-        .find((button) => button.text() === "Salvar")
+        .find((button) => button.text() === "Criar")
         ?.attributes("data-icon"),
     ).toBe("i-lucide-check");
     expect(
@@ -206,7 +213,7 @@ describe("quote save bar", () => {
       .find((button) => button.text() === "Salvar rascunho");
     const share = wrapper
       .findAll("button")
-      .find((button) => button.text() === "Salvar");
+      .find((button) => button.text() === "Criar");
 
     expect(wrapper.get('[role="status"]').text()).toContain(
       "Preencha os campos obrigatórios",

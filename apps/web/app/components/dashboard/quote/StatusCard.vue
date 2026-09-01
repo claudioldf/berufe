@@ -51,6 +51,21 @@ const statusPresentation = computed(() => {
         icon: "i-lucide-x",
         tone: "danger" as const,
       };
+    case "completed":
+      return {
+        title: "Orçamento concluído",
+        description: "O serviço deste orçamento foi marcado como concluído.",
+        icon: "i-lucide-badge-check",
+        tone: "success" as const,
+      };
+    case "cancelled":
+      return {
+        title: "Orçamento cancelado",
+        description:
+          "O serviço aprovado foi cancelado e este orçamento foi encerrado.",
+        icon: "i-lucide-ban",
+        tone: "danger" as const,
+      };
     case "draft":
     default:
       return {
@@ -67,7 +82,8 @@ const statusPresentation = computed(() => {
 });
 
 const currentStep = computed(() => {
-  if (props.quote.status === "approved") return 2;
+  if (props.quote.status === "completed") return 3;
+  if (["approved", "cancelled"].includes(props.quote.status)) return 2;
   if (["shared", "change_requested", "declined"].includes(props.quote.status)) {
     return 1;
   }
@@ -77,7 +93,15 @@ const currentStep = computed(() => {
 const progressSteps = computed<
   Array<{ label: string; description: string; state: StepState }>
 >(() => {
-  const sent = ["shared", "change_requested", "approved", "declined"].includes(
+  const sent = [
+    "shared",
+    "change_requested",
+    "approved",
+    "declined",
+    "completed",
+    "cancelled",
+  ].includes(props.quote.status);
+  const approved = ["approved", "completed", "cancelled"].includes(
     props.quote.status,
   );
   const steps = [
@@ -96,10 +120,16 @@ const progressSteps = computed<
     },
     {
       label: "Aprovado",
+      description: approved ? "Aceito pelo cliente" : "Decisão do cliente",
+    },
+    {
+      label: "Concluído",
       description:
-        props.quote.status === "approved"
-          ? "Aceito pelo cliente"
-          : "Decisão do cliente",
+        props.quote.status === "completed"
+          ? "Serviço finalizado"
+          : props.quote.status === "cancelled"
+            ? "Serviço cancelado"
+            : "Conclusão do serviço",
     },
   ];
 
@@ -110,11 +140,15 @@ const progressSteps = computed<
         ? index < 2
           ? "done"
           : "upcoming"
-        : index < currentStep.value
-          ? "done"
-          : index === currentStep.value
-            ? "current"
-            : "upcoming",
+        : props.quote.status === "cancelled"
+          ? index < 3
+            ? "done"
+            : "upcoming"
+          : index < currentStep.value
+            ? "done"
+            : index === currentStep.value
+              ? "current"
+              : "upcoming",
   }));
 });
 
@@ -150,7 +184,7 @@ const statusNote = computed(() => {
     :tone="statusPresentation.tone"
     :steps="progressSteps"
     progress-label="Etapas do orçamento"
-    :progress-muted="props.quote.status === 'declined'"
+    :progress-muted="['declined', 'cancelled'].includes(props.quote.status)"
     :note="statusNote"
   />
 </template>

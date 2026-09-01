@@ -3969,6 +3969,8 @@ components:
           - change_requested
           - approved
           - declined
+          - completed
+          - cancelled
     ProfessionalQuoteScheduledOn:
       name: scheduled_on
       in: query
@@ -5311,7 +5313,17 @@ components:
             approved_identity: { type: boolean }
     QuoteStatus:
       type: string
-      enum: [draft, saved, shared, change_requested, approved, declined]
+      enum:
+        [
+          draft,
+          saved,
+          shared,
+          change_requested,
+          approved,
+          declined,
+          completed,
+          cancelled,
+        ]
     ServiceJobStatus:
       type: string
       enum: [approved, completed, cancelled]

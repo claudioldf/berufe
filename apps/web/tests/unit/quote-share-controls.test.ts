@@ -58,10 +58,14 @@ const TooltipStub = defineComponent({
   template: `<div :data-tooltip-reason="reason ?? ''"><slot /></div>`,
 });
 const SaveBarStub = defineComponent({
-  props: { error: { type: String, default: "" } },
+  props: {
+    editing: Boolean,
+    error: { type: String, default: "" },
+  },
   emits: ["save", "share"],
   template: `
     <div>
+      <span class="save-mode">{{ editing ? "edit" : "create" }}</span>
       <p class="save-bar-error">{{ error }}</p>
       <button class="save-draft" @click="$emit('save')">Save draft</button>
       <button class="request-share" @click="$emit('share')">Share</button>
@@ -208,6 +212,7 @@ describe("quote share controls", () => {
 
     await wrapper.get(".request-share").trigger("click");
 
+    expect(wrapper.get(".save-mode").text()).toBe("create");
     expect(wrapper.emitted("prepareShare")?.[0]?.[0]).toMatchObject({
       id: null,
       customerName: quote.customerName,
@@ -246,6 +251,7 @@ describe("quote share controls", () => {
 
     await wrapper.get(".request-share").trigger("click");
 
+    expect(wrapper.get(".save-mode").text()).toBe("edit");
     expect(wrapper.emitted("prepareShare")?.[0]?.[0]).toMatchObject({
       id: quote.id,
       status: "saved",
@@ -377,5 +383,55 @@ describe("quote share controls", () => {
       serviceDescription: "",
     });
     expect(wrapper.get(".customer-name-error").text()).toBe("");
+  });
+
+  it.each([
+    ["approved", "Orçamento aprovado"],
+    ["completed", "Orçamento concluído"],
+    ["cancelled", "Orçamento cancelado"],
+  ] as const)("keeps a %s quote read-only", (status, title) => {
+    const wrapper = mount(QuoteBuilder, {
+      props: {
+        initialQuote: {
+          ...quote,
+          status,
+          serviceJob: {
+            id: "7a2ffba8-2e04-4237-94e6-3bc06c2de888",
+            status:
+              status === "cancelled"
+                ? "cancelled"
+                : status === "completed"
+                  ? "completed"
+                  : "approved",
+            completedAt: status === "completed" ? "2026-08-29T15:00:00Z" : null,
+            cancelledAt: status === "cancelled" ? "2026-08-29T15:00:00Z" : null,
+          },
+        },
+        professional,
+        savingIntent: null,
+        saveError: "",
+        sharingMethod: null,
+        shareError: "",
+        shareEnabled: false,
+      },
+      global: {
+        stubs: {
+          DashboardQuoteCustomerFields: true,
+          DashboardQuoteServiceFields: true,
+          DashboardQuoteChangeRequests: true,
+          DashboardQuoteLineItemsEditor: true,
+          DashboardQuoteNotesField: true,
+          DashboardQuoteSaveBar: SaveBarStub,
+          QuotesQuotePreview: true,
+          UModal: ModalStub,
+          UButton: ButtonStub,
+          UIcon: true,
+        },
+      },
+    });
+
+    expect(wrapper.get(".quote-builder__locked").text()).toContain(title);
+    expect(wrapper.find(".save-draft").exists()).toBe(false);
+    expect(wrapper.find(".quote-builder__revoke").exists()).toBe(false);
   });
 });

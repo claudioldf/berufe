@@ -1834,7 +1834,7 @@ export interface components {
             };
         };
         /** @enum {string} */
-        QuoteStatus: "draft" | "saved" | "shared" | "change_requested" | "approved" | "declined";
+        QuoteStatus: "draft" | "saved" | "shared" | "change_requested" | "approved" | "declined" | "completed" | "cancelled";
         /** @enum {string} */
         ServiceJobStatus: "approved" | "completed" | "cancelled";
         /** @enum {string} */
@@ -3188,7 +3188,7 @@ export interface components {
         /** @description Return only quotes associated with this owner-scoped customer. */
         ProfessionalQuoteCustomerId: string;
         /** @description Quote workflow status; defaults to all statuses. */
-        ProfessionalQuoteStatus: "all" | "draft" | "saved" | "shared" | "change_requested" | "approved" | "declined";
+        ProfessionalQuoteStatus: "all" | "draft" | "saved" | "shared" | "change_requested" | "approved" | "declined" | "completed" | "cancelled";
         /** @description Exact combined service date. */
         ProfessionalQuoteScheduledOn: string;
         /** @description Quote table column used for deterministic ordering. */

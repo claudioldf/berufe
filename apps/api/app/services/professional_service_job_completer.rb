@@ -33,7 +33,12 @@ class ProfessionalServiceJobCompleter
     service_job.with_lock do
       raise Unavailable if service_job.completed? || service_job.cancelled?
 
+      quote = service_job.quote
+      quote.lock!
+      raise Unavailable unless quote.approved?
+
       service_job.update!(status: "completed", completed_at: now)
+      quote.update!(status: "completed")
       if request_recommendation
         recommendation_request = @recommendation_request_creator.call(service_job:, now:)
       end

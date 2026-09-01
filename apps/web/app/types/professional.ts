@@ -358,7 +358,9 @@ export interface ProfessionalWorkspace {
         | "shared"
         | "change_requested"
         | "approved"
-        | "declined";
+        | "declined"
+        | "completed"
+        | "cancelled";
       serviceJobStatus: ProfessionalServiceJob["status"] | null;
       createdAt: string;
     }>;

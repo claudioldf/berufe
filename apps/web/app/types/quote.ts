@@ -52,7 +52,14 @@ export interface Quote {
   discount: number;
   notes: string;
   status:
-    "draft" | "saved" | "shared" | "change_requested" | "approved" | "declined";
+    | "draft"
+    | "saved"
+    | "shared"
+    | "change_requested"
+    | "approved"
+    | "declined"
+    | "completed"
+    | "cancelled";
   subtotal: number;
   total: number;
   sharedAt: string | null;

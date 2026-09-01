@@ -6,6 +6,7 @@ const props = defineProps<{
   shared: boolean;
   readyToShare: boolean;
   valid: boolean;
+  editing: boolean;
   savingIntent: QuoteSaveIntent | null;
   error: string;
   shareEnabled: boolean;
@@ -71,7 +72,8 @@ const statusText = computed(() => {
 });
 const shareLabel = computed(() => {
   if (props.savingIntent === "share") return "Salvando…";
-  return props.readyToShare ? "Enviar ao cliente" : "Salvar";
+  if (props.readyToShare) return "Enviar ao cliente";
+  return props.editing ? "Atualizar" : "Criar";
 });
 </script>
 

@@ -217,6 +217,7 @@ RSpec.describe "Quote service loop", type: :request, openapi: true do
     expect(response).to have_http_status(:ok)
     expect(response.parsed_body.dig("data", "service_job")).to include("status" => "completed")
     expect(service_job.reload).to have_attributes(status: "completed")
+    expect(quote.reload).to be_completed
     expect(service_job.completed_at).to be_present
     assert_api_conform(status: 200)
 
@@ -430,6 +431,7 @@ RSpec.describe "Quote service loop", type: :request, openapi: true do
     expect(response.parsed_body.dig("data", "service_job")).to include("status" => "completed")
     expect(response.parsed_body.dig("data", "service_job")).not_to have_key("completion_confirmed_by")
     expect(service_job.reload).to have_attributes(status: "completed")
+    expect(quote.reload).to be_completed
     expect(service_job.completed_at).to be_present
     expect(service_job.customer_recommendation_request).to be_nil
     expect(response.parsed_body.dig("data", "service_job", "recommendation")).to be_nil
@@ -676,6 +678,7 @@ RSpec.describe "Quote service loop", type: :request, openapi: true do
       as: :json
     expect(response).to have_http_status(:ok)
     expect(service_job.reload).to be_cancelled
+    expect(quote.reload).to be_cancelled
     assert_api_conform(status: 200)
 
     post "/api/v1/professional/service-jobs/#{service_job.id}/cancel",
