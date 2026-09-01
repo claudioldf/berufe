@@ -426,48 +426,6 @@ async function shareProfile() {
       font-size: 0.84rem;
     }
   }
-  .evidence-strip {
-    border-bottom: 1px solid var(--line);
-    background: white;
-    &__inner {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 22px;
-      min-height: 100px;
-    }
-    &__inner > div {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    &__icon {
-      display: grid;
-      place-items: center;
-      width: 42px;
-      height: 42px;
-      border-radius: 12px;
-      background: var(--mint);
-      color: var(--color-brand);
-      font-size: 1.25rem;
-    }
-    & strong,
-    & small {
-      display: block;
-    }
-    & strong {
-      font-size: 0.86rem;
-    }
-    & small {
-      margin-top: 3px;
-      color: var(--ink-soft);
-      font-size: 0.86rem;
-    }
-    &__badges {
-      justify-content: flex-end;
-      flex-wrap: wrap;
-    }
-  }
   .profile-content {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 280px;
@@ -824,15 +782,6 @@ async function shareProfile() {
       &__meta {
         display: grid;
         gap: 6px;
-      }
-    }
-    .evidence-strip {
-      &__inner {
-        display: grid;
-        padding-block: 18px;
-      }
-      &__badges {
-        justify-content: flex-start;
       }
     }
     .profile-content {
