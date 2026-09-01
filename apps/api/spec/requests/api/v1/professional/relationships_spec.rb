@@ -408,8 +408,8 @@ RSpec.describe "Professional relationship requests", type: :request, openapi: tr
       claimed: false,
       display_name: "Carla Pinturas",
       photo_url: nil,
-      headline: nil,
-      bio: nil,
+      headline: "#{service.name} em Joinville",
+      bio: "Serviços informados: #{service.name}. Área de atendimento: bairro América, em Joinville.",
       portfolio: [],
       relationships: []
     )

@@ -248,6 +248,31 @@ describe("professional search composable", () => {
     expect(useRoute().path).toBe(finderPath);
   });
 
+  it("enters the searching state before route navigation completes", async () => {
+    const search = await useProfessionalSearch({ location });
+    let resolveNavigation: (() => void) | undefined;
+    const push = vi.spyOn(useRouter(), "push").mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveNavigation = resolve;
+        }),
+    );
+
+    try {
+      const submission = search.submitSearch({ expression });
+
+      expect(search.isSearching.value).toBe(true);
+      expect(push).toHaveBeenCalledOnce();
+
+      resolveNavigation?.();
+      await submission;
+
+      expect(search.isSearching.value).toBe(false);
+    } finally {
+      push.mockRestore();
+    }
+  });
+
   it("preserves a rate-limit error code across the Nuxt async-data boundary", async () => {
     apiClient.POST.mockResolvedValue(rateLimitedResponse());
     await useRouter().replace(

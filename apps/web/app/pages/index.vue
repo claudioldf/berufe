@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from "vue";
+import { computed, onMounted, shallowRef } from "vue";
 import { useCatalogs } from "~/composables/useCatalogs";
 import { useFeaturedProfessionals } from "~/composables/useFeaturedProfessionals";
 import { useDetectedSearchLocation } from "~/composables/useDetectedSearchLocation";
@@ -8,6 +8,7 @@ import { encodeSearchExpression } from "~/utils/searchExpression";
 import { searchLocationPath } from "~/utils/searchLocation";
 
 const router = useRouter();
+const isSearchPending = shallowRef(false);
 const [catalogResult, featuredResult] = await Promise.all([
   useCatalogs(),
   useFeaturedProfessionals(),
@@ -56,10 +57,17 @@ useHead(() => ({ link: [{ rel: "canonical", href: canonicalUrl.value }] }));
 defineOgImageSafely("BerufeDefault", { title, description });
 
 async function search(payload: ExpressionSearchPayload) {
-  await router.push({
-    path: searchLocationPath(location.value),
-    query: { expressao: encodeSearchExpression(payload.expression) },
-  });
+  if (isSearchPending.value) return;
+
+  isSearchPending.value = true;
+  try {
+    await router.push({
+      path: searchLocationPath(location.value),
+      query: { expressao: encodeSearchExpression(payload.expression) },
+    });
+  } finally {
+    isSearchPending.value = false;
+  }
 }
 
 function changeLocation(nextLocation: SearchLocation) {
@@ -73,6 +81,7 @@ function changeLocation(nextLocation: SearchLocation) {
       :location="location"
       :cities="cities"
       :location-source="locationSource"
+      :loading="isSearchPending"
       @search="search"
       @location-change="changeLocation"
     />

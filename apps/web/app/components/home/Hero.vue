@@ -5,11 +5,15 @@ import type {
   SearchLocationSource,
 } from "~/types";
 
-defineProps<{
-  location: SearchLocation;
-  cities: SearchLocation[];
-  locationSource: SearchLocationSource;
-}>();
+withDefaults(
+  defineProps<{
+    location: SearchLocation;
+    cities: SearchLocation[];
+    locationSource: SearchLocationSource;
+    loading?: boolean;
+  }>(),
+  { loading: false },
+);
 
 defineEmits<{
   search: [payload: ExpressionSearchPayload];
@@ -38,6 +42,7 @@ defineEmits<{
           :location="location"
           :cities="cities"
           :location-source="locationSource"
+          :loading="loading"
           @submit="$emit('search', $event)"
           @location-change="$emit('locationChange', $event)"
         />

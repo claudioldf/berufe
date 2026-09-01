@@ -25,6 +25,18 @@ RSpec.describe PublicProfessionalProfileSerializer do
     expect(described_class.new(profile).as_json).to be_nil
   end
 
+  it "uses generated public copy when the professional leaves headline and bio empty" do
+    profile.working_revision.update!(headline: nil, bio: nil, years_experience: 7)
+    publish(profile)
+
+    expect(described_class.new(profile.reload).as_json).to include(
+      headline: "Serviço #{profile.id} em Joinville",
+      bio: "Serviços informados: Serviço #{profile.id}. Atendimento em toda a cidade de Joinville. " \
+        "Experiência declarada: 7 anos."
+    )
+    expect(profile.published_revision).to have_attributes(headline: nil, bio: nil)
+  end
+
   it "publishes a material edit immediately without moderation state" do
     revision = profile.working_revision
     category = ServiceCategory.create!(

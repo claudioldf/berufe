@@ -193,7 +193,7 @@ describe("application header", () => {
 
     expect(wrapper.classes()).toContain("header--workspace");
     expect(wrapper.text()).toContain("Início");
-    expect(wrapper.text()).toContain("Gerenciar Perfil");
+    expect(wrapper.text()).toContain("Configurações");
     expect(wrapper.text()).toContain("Orçamentos");
     expect(wrapper.get('a[href="/app/professional/quotes"]')).toBeDefined();
     expect(wrapper.findAll(".logout-stub")).toHaveLength(1);

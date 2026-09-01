@@ -15,6 +15,7 @@ class PublicProfessionalProfileSerializer
       [selection.is_primary? ? 0 : 1, selection.service.name, selection.id]
     end
     verification = PublicVerificationSerializer.new(profile).as_json
+    copy = PublicProfessionalProfileFallbackCopy.call(profile:)
 
     payload = {
       id: profile.id,
@@ -22,8 +23,8 @@ class PublicProfessionalProfileSerializer
       profile_type: revision.profile_type,
       claimed: profile.user_account.registered?,
       display_name: revision.display_name,
-      headline: revision.headline,
-      bio: revision.bio,
+      headline: copy.headline,
+      bio: copy.bio,
       years_experience: revision.years_experience,
       photo_url: public_photo_url,
       services: selections.map do |selection|

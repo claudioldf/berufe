@@ -349,10 +349,13 @@ async function handleRelationshipRemove(id: string) {
       <DesignSystemContainer class="workspace-heading__inner">
         <div>
           <NuxtLink to="/app/professional"
-            ><UIcon name="i-lucide-arrow-left" /> Painel</NuxtLink
+            ><UIcon name="i-lucide-arrow-left" /> Voltar ao painel</NuxtLink
           >
-          <h1>Meu perfil</h1>
-          <p>Organize as informações e evidências que clientes verão.</p>
+          <h1>Configurações</h1>
+          <p>
+            Organize sua informações, trabalhos feitos, recomentações,
+            referências e processo de verificação de conta.
+          </p>
         </div>
         <div class="workspace-heading__status">
           <span>
@@ -445,13 +448,11 @@ async function handleRelationshipRemove(id: string) {
     align-items: end;
   }
   & a {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 5px;
-    margin-bottom: 20px;
-    color: rgb(255 255 255 / 58%);
-    font-size: 0.86rem;
-    font-weight: 700;
+    margin-bottom: 24px;
+    color: rgb(255 255 255 / 65%);
     text-decoration: none;
   }
   & h1 {

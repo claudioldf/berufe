@@ -4,7 +4,7 @@ import { useApplicationSession } from "~/composables/useApplicationSession";
 import { useAppRole } from "~/composables/useAppRole";
 import { useToast } from "~/composables/useToast";
 
-const { isEnding, logout } = useApplicationSession();
+const { isEnding, logout, clearSession } = useApplicationSession();
 const { setRole } = useAppRole();
 const { showToast } = useToast();
 const logoutBlockedReason = computed(() =>
@@ -12,10 +12,13 @@ const logoutBlockedReason = computed(() =>
 );
 
 async function signOut() {
+  const logoutRequest = logout();
+  clearSession();
+  setRole("visitor");
+
   try {
-    await logout();
-    setRole("visitor");
     await navigateTo("/app/professional/login", { replace: true });
+    await logoutRequest;
   } catch {
     showToast({
       title: "Não foi possível sair",
