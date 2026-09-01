@@ -56,6 +56,10 @@ RSpec.describe Berufe::Environment do
     end
     environment["SECRET_KEY_BASE"] = "server-secret" if %w[staging integration production].include?(name)
     environment["BUGSNAG_API_KEY"] = "bugsnag-secret" if name == "production"
+    if %w[staging integration production].include?(name)
+      environment["MAIL_ADAPTER"] = "resend"
+      environment["RESEND_API_KEY"] = "resend-secret"
+    end
     environment
   end
 
@@ -92,13 +96,15 @@ RSpec.describe Berufe::Environment do
       sms_otp_adapter: "fake",
       media_storage_adapter: "local",
       llm_adapter: "fake",
+      mail_adapter: "smtp",
       openai_model: "gpt-5-mini",
       product_launch_date: Date.new(2026, 8, 1)
     )
     expect(infobip_config).to have_attributes(
       name: "local",
       sms_otp_adapter: "infobip",
-      media_storage_adapter: "local"
+      media_storage_adapter: "local",
+      mail_adapter: "smtp"
     )
   end
 
@@ -129,6 +135,7 @@ RSpec.describe Berufe::Environment do
       expect(config.sms_otp_adapter).to eq("infobip")
       expect(config.media_storage_adapter).to eq(media_storage)
       expect(config.llm_adapter).to eq("openai")
+      expect(config.mail_adapter).to eq("resend")
     end
   end
 
@@ -188,6 +195,7 @@ RSpec.describe Berufe::Environment do
 
     expect(config.name).to eq("production")
     expect(config.sms_otp_adapter).to eq("infobip")
+    expect(config.mail_adapter).to eq("resend")
   end
 
   it "uses the economical in-process job budget in production" do
@@ -224,10 +232,24 @@ RSpec.describe Berufe::Environment do
   end
 
   it "requires recommendation email delivery in deployed environments" do
-    environment = production_environment.merge("SMTP_PASSWORD" => "")
+    environment = production_environment.merge("RESEND_API_KEY" => "")
 
     expect { described_class.load!(environment:, rails_environment: "production") }
-      .to raise_error(described_class::InvalidConfiguration, /SMTP_PASSWORD/)
+      .to raise_error(described_class::InvalidConfiguration, /RESEND_API_KEY/)
+  end
+
+  it "refuses SMTP in deployed environments, since Railway blocks it below its Pro plan" do
+    environment = production_environment.merge("MAIL_ADAPTER" => "smtp")
+
+    expect { described_class.load!(environment:, rails_environment: "production") }
+      .to raise_error(described_class::InvalidConfiguration, /MAIL_ADAPTER must be resend for production/)
+  end
+
+  it "rejects an unrecognized MAIL_ADAPTER value" do
+    environment = local_environment.merge("MAIL_ADAPTER" => "postmark")
+
+    expect { described_class.load!(environment:) }
+      .to raise_error(described_class::InvalidConfiguration, /MAIL_ADAPTER must be one of: smtp, resend/)
   end
 
   it "requires server-only MaxMind credentials in deployed environments" do
