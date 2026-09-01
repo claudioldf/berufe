@@ -50,7 +50,7 @@ const statusPresentation = computed(() => {
       description: !recommendation
         ? "Registrado por você sem solicitar uma avaliação ao cliente."
         : recommendation.deliveryChannel === "email"
-          ? "Registrado por você. O pedido de avaliação foi encaminhado por e-mail."
+          ? "Registrado por você. O pedido de avaliação foi encaminhado por e-mail do cliente."
           : "Registrado por você. O pedido de avaliação foi aberto no WhatsApp.",
       icon: "i-lucide-check-circle-2",
       tone: "success" as const,
