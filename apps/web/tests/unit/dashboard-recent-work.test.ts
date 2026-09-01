@@ -85,7 +85,7 @@ describe("dashboard recent work", () => {
       text.indexOf("Orçamentos recentes."),
     );
     expect(text).toContain("Marina Cliente");
-    expect(text).toContain("Aguardando resposta");
+    expect(text).toContain("Enviado ao cliente");
     expect(text).toContain("Paulo Cliente");
     expect(text).toContain("Aprovado");
     const quoteTable = wrapper.find(".quotes-table--quotes");

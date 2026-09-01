@@ -16,7 +16,7 @@ defineEmits<{
 const statusLabel = {
   draft: "Rascunho",
   saved: "Aguardando envio ao cliente",
-  shared: "Aguardando resposta",
+  shared: "Enviado ao cliente",
   change_requested: "Alteração solicitada",
   approved: "Aprovado",
   declined: "Recusado",

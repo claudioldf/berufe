@@ -104,10 +104,10 @@ describe("professional quote index", () => {
   it("shows the commercial summary without presenting quote values as payments", () => {
     const wrapper = mountIndex();
 
-    expect(wrapper.get('[aria-label="Aguardando resposta"]').text()).toMatch(
+    expect(wrapper.get('[aria-label="Enviado ao cliente"]').text()).toMatch(
       /R\$\s*450,00/,
     );
-    expect(wrapper.get('[aria-label="Aguardando resposta"]').text()).toContain(
+    expect(wrapper.get('[aria-label="Enviado ao cliente"]').text()).toContain(
       "2 orçamentos",
     );
     expect(wrapper.get('[aria-label="Alterações solicitadas"]').text()).toMatch(
