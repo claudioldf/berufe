@@ -442,7 +442,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List every self-service published professional slug for the sitemap */
+        /** List every indexable professional slug for the sitemap */
         get: operations["getPublicSitemapProfessionals"];
         put?: never;
         post?: never;
@@ -4195,7 +4195,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The slug and last-updated timestamp of every self-service published professional. */
+            /** @description The slug and last-updated timestamp of every professional whose canonical profile is indexable. */
             200: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];

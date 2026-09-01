@@ -71,6 +71,76 @@ function syntheticPhone(projectName: string, sequence: number) {
   return `479${projectDigit}${runPhoneSegment}${sequence.toString().padStart(4, "0")}`;
 }
 
+test("canonical public pages ship indexable server-rendered HTML", async ({
+  request,
+}, testInfo) => {
+  test.skip(
+    testInfo.project.name !== "chromium",
+    "Raw HTML does not vary by viewport.",
+  );
+
+  const profileResponse = await request.get("/be/marcos-alves");
+  expect(profileResponse.ok()).toBe(true);
+  const profileHtml = await profileResponse.text();
+  expect(profileHtml).toContain("<h1>Marcos Alves</h1>");
+  expect(profileHtml).toMatch(
+    /<meta[^>]+name="robots"[^>]+content="index, follow"[^>]*>/,
+  );
+  expect(profileHtml).toMatch(
+    /<link[^>]+rel="canonical"[^>]+href="[^"]*\/be\/marcos-alves"[^>]*>/,
+  );
+  expect(profileHtml).toContain('type="application/ld+json"');
+
+  const searchVariantResponse = await request.get(
+    "/encontrar/sc/joinville?expressao=UGludG9y",
+  );
+  expect(searchVariantResponse.ok()).toBe(true);
+  const searchVariantHtml = await searchVariantResponse.text();
+  expect(searchVariantHtml).toMatch(
+    /<meta[^>]+name="robots"[^>]+content="noindex, follow"[^>]*>/,
+  );
+  expect(searchVariantHtml).toMatch(
+    /<link[^>]+rel="canonical"[^>]+href="[^"]*\/encontrar\/sc\/joinville"[^>]*>/,
+  );
+
+  const guideResponse = await request.get(
+    "/guias/como-conseguir-clientes-profissional-autonomo",
+  );
+  expect(guideResponse.ok()).toBe(true);
+  const guideHtml = await guideResponse.text();
+  expect(guideHtml).toMatch(
+    /<h1[^>]*>Como conseguir clientes sendo um profissional autônomo<\/h1>/,
+  );
+  expect(guideHtml).toMatch(
+    /<meta[^>]+name="robots"[^>]+content="index, follow"[^>]*>/,
+  );
+  expect(guideHtml).toMatch(
+    /<link[^>]+rel="canonical"[^>]+href="[^"]*\/guias\/como-conseguir-clientes-profissional-autonomo"[^>]*>/,
+  );
+});
+
+test("sitemap exposes only canonical indexable public URLs", async ({
+  request,
+}, testInfo) => {
+  test.skip(
+    testInfo.project.name !== "chromium",
+    "The sitemap does not vary by viewport.",
+  );
+
+  const response = await request.get("/sitemap.xml");
+  expect(response.ok()).toBe(true);
+  const sitemap = await response.text();
+
+  expect(sitemap).toMatch(/<loc>[^<]+\/be\/marcos-alves<\/loc>/);
+  expect(sitemap).toMatch(
+    /<loc>[^<]+\/guias\/como-conseguir-clientes-profissional-autonomo<\/loc>/,
+  );
+  expect(sitemap).not.toMatch(/<loc>[^<]+\/profissionais\//);
+  expect(sitemap).not.toMatch(/<loc>[^<]+\/encontrar<\/loc>/);
+  expect(sitemap).not.toMatch(/<loc>[^<]+\/app(?:\/|<\/loc>)/);
+  expect(sitemap).not.toMatch(/<loc>[^<]+\/(?:orcamento|recomendacao)\//);
+});
+
 test("public header makes login and professional signup easy to find", async ({
   page,
 }) => {
