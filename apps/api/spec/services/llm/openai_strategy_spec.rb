@@ -80,6 +80,44 @@ RSpec.describe Llm::OpenaiStrategy do
     }.to raise_error(Llm::Client::RateLimited) { |raised| expect(raised.retry_after).to eq(37) }
   end
 
+  it "supports generic structured generation under its own schema name" do
+    content = double(text: '{"headline":"Eletricista em Joinville","bio":"Ofereço serviços elétricos."}')
+    output = double(content: [content])
+    usage = double(input_tokens: 40, input_tokens_details: double(cached_tokens: 0), output_tokens: 15)
+    response = double(output: [output], usage:, _request_id: "req_generate")
+    responses = double
+    client = double(responses:)
+    allow(responses).to receive(:create).and_return(response)
+    schema = {type: "object", properties: {}, required: [], additionalProperties: false}
+
+    result = described_class.new(model: "gpt-5-mini", client:).generate(
+      prompt: "Escreva o texto",
+      input: "Gere o headline e a bio.",
+      schema:,
+      schema_name: "berufe_professional_headline_bio",
+      fake_payload: nil
+    )
+
+    expect(responses).to have_received(:create).with(
+      model: "gpt-5-mini",
+      store: false,
+      input: [
+        {role: :system, content: "Escreva o texto"},
+        {role: :user, content: "Gere o headline e a bio."}
+      ],
+      text: {
+        format: {
+          type: :json_schema,
+          name: "berufe_professional_headline_bio",
+          strict: true,
+          schema:
+        }
+      },
+      max_output_tokens: 800
+    )
+    expect(result.payload).to eq({"headline" => "Eletricista em Joinville", "bio" => "Ofereço serviços elétricos."})
+  end
+
   it "preserves invalid provider text for the search audit" do
     content = double(text: "not valid json")
     response = double(
