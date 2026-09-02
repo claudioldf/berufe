@@ -314,6 +314,7 @@ function selectPhoto(event: Event) {
         id="profile-headline"
         class="editor-grid__full"
         label="Frase de apresentação (opcional)"
+        hint="Se deixar em branco, geramos uma frase para você com inteligência artificial, usando dados do seu perfil como cidade, serviços e experiência."
         :error="props.errors?.headline"
       >
         <template #label>
@@ -336,6 +337,7 @@ function selectPhoto(event: Event) {
         id="profile-bio"
         class="editor-grid__full"
         label="Conte um pouco sobre seu trabalho (opcional)"
+        hint="Se deixar em branco, geramos um texto para você com inteligência artificial, usando dados do seu perfil como cidade, serviços e experiência."
         :error="props.errors?.bio"
       >
         <template #label>
