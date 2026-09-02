@@ -30,9 +30,9 @@ export function formatRateWidth(rate: number | null) {
 
 export function formatDate(value?: string) {
   if (!value) return "—";
-  return new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC" }).format(
-    new Date(`${value}T12:00:00Z`),
-  );
+  const parsed = new Date(`${value}T12:00:00Z`);
+  if (Number.isNaN(parsed.getTime())) return "—";
+  return new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC" }).format(parsed);
 }
 
 export function formatTimestampDate(value?: string) {

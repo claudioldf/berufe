@@ -26,7 +26,9 @@ defineProps<{
           <footer>
             <span>
               <strong>{{ recommendation.displayName }}</strong>
-              <small>{{ formatTimestampDate(recommendation.submittedAt) }}</small>
+              <small>{{
+                formatTimestampDate(recommendation.submittedAt)
+              }}</small>
             </span>
             <em>
               <UIcon name="i-lucide-mail-check" />
