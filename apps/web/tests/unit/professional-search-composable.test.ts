@@ -159,7 +159,7 @@ describe("professional search composable", () => {
     });
     let mounted = false;
     const mounting = mountSuspended(SearchViewHarness, {
-      route: `${finderPath}?expressao=${encodeSearchExpression(expression)}`,
+      route: `${finderPath}?q=${encodeSearchExpression(expression)}`,
     }).then((wrapper) => {
       mounted = true;
       return wrapper;
@@ -190,13 +190,13 @@ describe("professional search composable", () => {
     expect(apiClient.POST).not.toHaveBeenCalled();
 
     await search.submitSearch({ expression: "   " });
-    expect(useRoute().query.expressao).toBeUndefined();
+    expect(useRoute().query.q).toBeUndefined();
   });
 
   it("decodes the route expression and sends its visible default location to Rails", async () => {
     apiClient.POST.mockResolvedValue(successfulResponse());
     await useRouter().replace(
-      `${finderPath}?expressao=${encodeSearchExpression(expression)}`,
+      `${finderPath}?q=${encodeSearchExpression(expression)}`,
     );
     await clearNuxtData();
 
@@ -237,13 +237,26 @@ describe("professional search composable", () => {
     );
   });
 
+  it("keeps previously shared expressao links searchable", async () => {
+    apiClient.POST.mockResolvedValue(successfulResponse());
+    await useRouter().replace(
+      `${finderPath}?expressao=${encodeSearchExpression(expression)}`,
+    );
+    await clearNuxtData();
+
+    const search = await useProfessionalSearch({ location });
+
+    expect(search.expressionInput.value).toBe(expression);
+    expect(search.results.value).toHaveLength(1);
+  });
+
   it("stores a submitted UTF-8 expression as unpadded Base64URL route state", async () => {
     const search = await useProfessionalSearch({ location });
 
     await search.submitSearch({ expression: `  ${expression}  ` });
 
     expect(useRoute().query).toEqual({
-      expressao: encodeSearchExpression(expression),
+      q: encodeSearchExpression(expression),
     });
     expect(useRoute().path).toBe(finderPath);
   });
@@ -276,7 +289,7 @@ describe("professional search composable", () => {
   it("preserves a rate-limit error code across the Nuxt async-data boundary", async () => {
     apiClient.POST.mockResolvedValue(rateLimitedResponse());
     await useRouter().replace(
-      `${finderPath}?expressao=${encodeSearchExpression(expression)}`,
+      `${finderPath}?q=${encodeSearchExpression(expression)}`,
     );
     await clearNuxtData();
 
@@ -302,7 +315,7 @@ describe("professional search composable", () => {
         ),
     );
     await useRouter().replace(
-      `${finderPath}?expressao=${encodeSearchExpression(expression)}`,
+      `${finderPath}?q=${encodeSearchExpression(expression)}`,
     );
     await clearNuxtData();
     const search = await useProfessionalSearch({ location });
@@ -320,7 +333,7 @@ describe("professional search composable", () => {
     expect(search.expressionInput.value).toBe("Eletricista em Curitiba");
     expect(useRoute().path).toBe("/encontrar/pr/curitiba");
     expect(useRoute().query).toEqual({
-      expressao: encodeSearchExpression("Eletricista em Curitiba"),
+      q: encodeSearchExpression("Eletricista em Curitiba"),
     });
     expect(search.error.value).toBeNull();
     expect(search.results.value.map((item) => item.name)).toEqual([

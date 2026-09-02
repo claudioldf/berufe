@@ -92,7 +92,7 @@ test("canonical public pages ship indexable server-rendered HTML", async ({
   expect(profileHtml).toContain('type="application/ld+json"');
 
   const searchVariantResponse = await request.get(
-    "/encontrar/sc/joinville?expressao=UGludG9y",
+    "/encontrar/sc/joinville?q=UGludG9y",
   );
   expect(searchVariantResponse.ok()).toBe(true);
   const searchVariantHtml = await searchVariantResponse.text();
@@ -205,7 +205,7 @@ test("page navigation provides immediate global feedback", async ({ page }) => {
     .getByRole("link", { name: /^Eletricista/i });
   await expect(electricianCard).toHaveAttribute(
     "href",
-    "/encontrar/sc/joinville?expressao=RWxldHJpY2lzdGE",
+    "/encontrar/sc/joinville?q=RWxldHJpY2lzdGE",
   );
 
   await page.evaluate(() => {
@@ -264,7 +264,7 @@ test("page navigation provides immediate global feedback", async ({ page }) => {
   const progress = page.locator(".app-navigation-progress");
   await electricianCard.click();
   await expect(page).toHaveURL(
-    /\/encontrar\/sc\/joinville\?expressao=RWxldHJpY2lzdGE$/,
+    /\/encontrar\/sc\/joinville\?q=RWxldHJpY2lzdGE$/,
   );
   const feedback = await page.evaluate(
     () =>
@@ -281,7 +281,61 @@ test("page navigation provides immediate global feedback", async ({ page }) => {
   expect(feedback?.clickedAt).not.toBeNull();
   expect(feedback?.progressAt).not.toBeNull();
   expect(feedback?.statusAt).not.toBeNull();
-  expect(feedback!.progressAt! - feedback!.clickedAt!).toBeLessThanOrEqual(500);
+  expect(feedback!.progressAt! - feedback!.clickedAt!).toBeLessThanOrEqual(100);
+  await expect(progress).toHaveCSS("opacity", "0");
+
+  await fillExpressionSearch(page, "Pintor");
+  await page.evaluate(() => {
+    const state = window as typeof window & {
+      __navigationFeedback?: {
+        clickedAt: number | null;
+        progressAt: number | null;
+        statusAt: number | null;
+      };
+    };
+    state.__navigationFeedback = {
+      clickedAt: null,
+      progressAt: null,
+      statusAt: null,
+    };
+  });
+  const searchButton = page.getByRole("button", {
+    name: "Buscar profissionais",
+  });
+  await searchButton.evaluate((element) => {
+    element.addEventListener(
+      "click",
+      () => {
+        const state = window as typeof window & {
+          __navigationFeedback?: { clickedAt: number | null };
+        };
+        if (state.__navigationFeedback) {
+          state.__navigationFeedback.clickedAt = performance.now();
+        }
+      },
+      { once: true },
+    );
+  });
+
+  await searchButton.click();
+  await expect(page).toHaveURL(/\/encontrar\/sc\/joinville\?q=UGludG9y$/);
+  const buttonFeedback = await page.evaluate(
+    () =>
+      (
+        window as typeof window & {
+          __navigationFeedback?: {
+            clickedAt: number | null;
+            progressAt: number | null;
+            statusAt: number | null;
+          };
+        }
+      ).__navigationFeedback,
+  );
+  expect(buttonFeedback?.clickedAt).not.toBeNull();
+  expect(buttonFeedback?.progressAt).not.toBeNull();
+  expect(
+    buttonFeedback!.progressAt! - buttonFeedback!.clickedAt!,
+  ).toBeLessThanOrEqual(100);
   await expect(progress).toHaveCSS("opacity", "0");
 });
 
@@ -348,9 +402,7 @@ test("an explicit search city overrides the selected finder city", async ({
     city: "Curitiba",
   });
 
-  await expect(page).toHaveURL(
-    /\/encontrar\/pr\/curitiba\?expressao=[A-Za-z0-9_-]+$/,
-  );
+  await expect(page).toHaveURL(/\/encontrar\/pr\/curitiba\?q=[A-Za-z0-9_-]+$/);
   await expect(
     page.getByRole("heading", { level: 1, name: /pintor em curitiba/i }),
   ).toBeVisible();
@@ -424,9 +476,7 @@ test("visitor can search, open a profile, and inspect the WhatsApp redirect", as
 
   await fillExpressionSearch(page, "Preciso de um eletricista em Joinville");
   await page.getByRole("button", { name: "Buscar profissionais" }).click();
-  await expect(page).toHaveURL(
-    /\/encontrar\/sc\/joinville\?expressao=[A-Za-z0-9_-]+$/,
-  );
+  await expect(page).toHaveURL(/\/encontrar\/sc\/joinville\?q=[A-Za-z0-9_-]+$/);
   await expect(
     page.getByText(
       /\d+ (?:profissional encontrado|profissionais encontrados)/i,

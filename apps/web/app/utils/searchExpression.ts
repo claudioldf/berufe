@@ -1,3 +1,18 @@
+export const searchExpressionQueryKey = "q";
+export const legacySearchExpressionQueryKey = "expressao";
+
+type SearchExpressionRouteQuery = Partial<
+  Record<
+    typeof searchExpressionQueryKey | typeof legacySearchExpressionQueryKey,
+    unknown
+  >
+>;
+
+function firstQueryValue(value: unknown): string {
+  const firstValue = Array.isArray(value) ? value[0] : value;
+  return typeof firstValue === "string" ? firstValue : "";
+}
+
 export function encodeSearchExpression(expression: string): string {
   const bytes = new TextEncoder().encode(expression.trim());
   let binary = "";
@@ -7,6 +22,19 @@ export function encodeSearchExpression(expression: string): string {
     .replaceAll("+", "-")
     .replaceAll("/", "_")
     .replace(/=+$/, "");
+}
+
+export function searchExpressionQuery(encodedExpression: string) {
+  return { [searchExpressionQueryKey]: encodedExpression };
+}
+
+export function readEncodedSearchExpression(
+  query: SearchExpressionRouteQuery,
+): string {
+  return (
+    firstQueryValue(query[searchExpressionQueryKey]) ||
+    firstQueryValue(query[legacySearchExpressionQueryKey])
+  );
 }
 
 export function decodeSearchExpression(encoded: unknown): string {

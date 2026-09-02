@@ -1,3 +1,5 @@
+import { searchExpressionQueryKey } from "~/utils/searchExpression";
+
 const recentSnapshotWindowMilliseconds = 90 * 24 * 60 * 60 * 1000;
 
 export function isRecentPublicSnapshot(
@@ -28,7 +30,9 @@ export function buildPublicProfilePath(slug: string) {
 export function buildPublicProfileResultUrl(
   options: PublicProfileResultUrlOptions,
 ) {
-  const query = new URLSearchParams({ expressao: options.encodedExpression });
+  const query = new URLSearchParams({
+    [searchExpressionQueryKey]: options.encodedExpression,
+  });
   if (options.interactionToken) {
     query.set("contexto", options.interactionToken);
   }

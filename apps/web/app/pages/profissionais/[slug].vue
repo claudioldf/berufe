@@ -10,6 +10,10 @@ import {
 } from "~/services/api/public-discovery";
 import { hydrationOnlyCachedData } from "~/utils/asyncDataCache";
 import { buildPublicProfileWhatsAppUrl } from "~/utils/publicProfiles";
+import {
+  readEncodedSearchExpression,
+  searchExpressionQuery,
+} from "~/utils/searchExpression";
 
 interface SocialLink {
   platform: "instagram" | "youtube";
@@ -86,13 +90,15 @@ const contactUrl = computed(() => {
   });
 });
 const resultsUrl = computed(() => {
-  const expression = route.query.expressao;
-  const encodedExpression = Array.isArray(expression)
-    ? expression[0]
-    : expression;
+  const encodedExpression = readEncodedSearchExpression(route.query);
   if (!encodedExpression) return "/encontrar";
 
-  return `/encontrar?${new URLSearchParams({ expressao: encodedExpression }).toString()}`;
+  const city = professional.value.coverage.city;
+  const path = city
+    ? `/encontrar/${city.stateAbbreviation.toLowerCase()}/${city.slug}`
+    : "/encontrar";
+  const query = new URLSearchParams(searchExpressionQuery(encodedExpression));
+  return `${path}?${query.toString()}`;
 });
 const socialLinks = computed<SocialLink[]>(() => {
   const profile = professional.value;

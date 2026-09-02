@@ -4,7 +4,10 @@ import { useCatalogs } from "~/composables/useCatalogs";
 import { useFeaturedProfessionals } from "~/composables/useFeaturedProfessionals";
 import { useDetectedSearchLocation } from "~/composables/useDetectedSearchLocation";
 import type { ExpressionSearchPayload, SearchLocation } from "~/types";
-import { encodeSearchExpression } from "~/utils/searchExpression";
+import {
+  encodeSearchExpression,
+  searchExpressionQuery,
+} from "~/utils/searchExpression";
 import { searchLocationPath } from "~/utils/searchLocation";
 
 const router = useRouter();
@@ -64,7 +67,7 @@ async function search(payload: ExpressionSearchPayload) {
   try {
     await router.push({
       path: searchLocationPath(location.value),
-      query: { expressao: encodeSearchExpression(payload.expression) },
+      query: searchExpressionQuery(encodeSearchExpression(payload.expression)),
     });
   } finally {
     isSearchPending.value = false;

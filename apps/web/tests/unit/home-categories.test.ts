@@ -2,6 +2,7 @@ import { mount } from "@vue/test-utils";
 import { defineComponent } from "vue";
 import Categories from "~/components/home/Categories.vue";
 import type { Service } from "~/types";
+import { encodeSearchExpression } from "~/utils/searchExpression";
 
 const NuxtLinkStub = defineComponent({
   props: { to: { type: [String, Object], required: true } },
@@ -42,6 +43,10 @@ describe("home categories", () => {
     expect(wrapper.text()).not.toContain("Serviço 9");
     expect(toggle.attributes("aria-expanded")).toBe("false");
     expect(toggle.text()).toContain("Ver todos os serviços");
+    expect(wrapper.findAllComponents(NuxtLinkStub)[0]?.props("to")).toEqual({
+      path: "/encontrar/sc/joinville",
+      query: { q: encodeSearchExpression("Serviço 1") },
+    });
 
     await toggle.trigger("click");
 

@@ -1,13 +1,56 @@
 <script setup lang="ts">
+import { onBeforeUnmount, onMounted } from "vue";
+
 const NAVIGATION_DURATION_MS = 2_000;
 const NAVIGATION_HIDE_DELAY_MS = 150;
 const NAVIGATION_RESET_DELAY_MS = 200;
 
-const { isLoading } = useLoadingIndicator({
+const nuxtApp = useNuxtApp();
+const router = useRouter();
+const { isLoading, start, finish } = useLoadingIndicator({
   duration: NAVIGATION_DURATION_MS,
   throttle: 0,
   hideDelay: NAVIGATION_HIDE_DELAY_MS,
   resetDelay: NAVIGATION_RESET_DELAY_MS,
+});
+const removeNavigationHooks: Array<() => void> = [];
+let navigationSequence = 0;
+let pageLoadingStarted = false;
+
+onMounted(() => {
+  removeNavigationHooks.push(
+    nuxtApp.hook("page:loading:start", () => {
+      pageLoadingStarted = true;
+    }),
+    nuxtApp.hook("page:loading:end", () => {
+      pageLoadingStarted = false;
+    }),
+    router.beforeEach((to, from) => {
+      if (to.fullPath === from.fullPath) return;
+
+      navigationSequence += 1;
+      pageLoadingStarted = false;
+      start({ force: true });
+    }),
+    router.afterEach((_to, _from, failure) => {
+      const completedSequence = navigationSequence;
+      if (failure) {
+        finish();
+        return;
+      }
+
+      requestAnimationFrame(() => {
+        if (completedSequence === navigationSequence && !pageLoadingStarted) {
+          finish();
+        }
+      });
+    }),
+    router.onError(() => finish({ error: true })),
+  );
+});
+
+onBeforeUnmount(() => {
+  for (const removeHook of removeNavigationHooks) removeHook();
 });
 </script>
 
