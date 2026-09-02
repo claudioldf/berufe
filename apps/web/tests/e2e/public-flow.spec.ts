@@ -196,6 +196,95 @@ test("public header makes login and professional signup easy to find", async ({
   ).toHaveAttribute("href", "/app/professional/login");
 });
 
+test("page navigation provides immediate global feedback", async ({ page }) => {
+  await page.goto("/");
+  await waitForNuxtHydration(page);
+
+  const electricianCard = page
+    .locator("#home-service-categories")
+    .getByRole("link", { name: /^Eletricista/i });
+  await expect(electricianCard).toHaveAttribute(
+    "href",
+    "/encontrar/sc/joinville?expressao=RWxldHJpY2lzdGE",
+  );
+
+  await page.evaluate(() => {
+    const state = window as typeof window & {
+      __navigationFeedback?: {
+        clickedAt: number | null;
+        progressAt: number | null;
+        statusAt: number | null;
+      };
+    };
+    state.__navigationFeedback = {
+      clickedAt: null,
+      progressAt: null,
+      statusAt: null,
+    };
+
+    const progress = document.querySelector<HTMLElement>(
+      ".app-navigation-progress",
+    );
+    const recordFeedback = () => {
+      const feedback = state.__navigationFeedback;
+      if (!feedback) return;
+      if (progress?.style.opacity === "1" && feedback.progressAt === null) {
+        feedback.progressAt = performance.now();
+      }
+      if (
+        document.querySelector(".app-navigation-status") &&
+        feedback.statusAt === null
+      ) {
+        feedback.statusAt = performance.now();
+      }
+    };
+    new MutationObserver(recordFeedback).observe(document.body, {
+      attributes: true,
+      attributeFilter: ["style"],
+      childList: true,
+      subtree: true,
+    });
+    recordFeedback();
+  });
+  await electricianCard.evaluate((element) => {
+    element.addEventListener(
+      "click",
+      () => {
+        const state = window as typeof window & {
+          __navigationFeedback?: { clickedAt: number | null };
+        };
+        if (state.__navigationFeedback) {
+          state.__navigationFeedback.clickedAt = performance.now();
+        }
+      },
+      { once: true },
+    );
+  });
+
+  const progress = page.locator(".app-navigation-progress");
+  await electricianCard.click();
+  await expect(page).toHaveURL(
+    /\/encontrar\/sc\/joinville\?expressao=RWxldHJpY2lzdGE$/,
+  );
+  const feedback = await page.evaluate(
+    () =>
+      (
+        window as typeof window & {
+          __navigationFeedback?: {
+            clickedAt: number | null;
+            progressAt: number | null;
+            statusAt: number | null;
+          };
+        }
+      ).__navigationFeedback,
+  );
+  expect(feedback?.clickedAt).not.toBeNull();
+  expect(feedback?.progressAt).not.toBeNull();
+  expect(feedback?.statusAt).not.toBeNull();
+  expect(feedback!.progressAt! - feedback!.clickedAt!).toBeLessThanOrEqual(500);
+  await expect(progress).toHaveCSS("opacity", "0");
+});
+
 test("visitor can choose the launch city from the home and finder pages", async ({
   page,
 }) => {

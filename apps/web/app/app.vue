@@ -13,6 +13,7 @@ const { toast, clearToast } = useToast();
 
 <template>
   <UApp>
+    <AppNavigationFeedback />
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>
