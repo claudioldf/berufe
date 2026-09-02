@@ -37,7 +37,7 @@ RSpec.describe "Public service coverage", type: :request, openapi: true do
     )
   end
 
-  it "counts professionals per service and city, matching the listing threshold for indexability" do
+  it "counts professionals per service and city, matching the listing supply threshold" do
     2.times { |index| create_published_profile(service: electrician, phone: "+554799999640#{index}") }
     create_published_profile(service: painter, phone: "+5547999996410")
 
@@ -47,9 +47,9 @@ RSpec.describe "Public service coverage", type: :request, openapi: true do
     entries = response.parsed_body.dig("data", "entries")
     electrician_entry = entries.find { |entry| entry.dig("service", "slug") == electrician.slug }
     painter_entry = entries.find { |entry| entry.dig("service", "slug") == painter.slug }
-    expect(electrician_entry).to include("professional_count" => 2, "indexable" => false)
+    expect(electrician_entry).to include("professional_count" => 2, "indexable" => true)
     expect(electrician_entry.dig("location", "city_slug")).to eq(joinville_city.slug)
-    expect(painter_entry).to include("professional_count" => 1, "indexable" => false)
+    expect(painter_entry).to include("professional_count" => 1, "indexable" => true)
     assert_api_conform(status: 200)
   end
 

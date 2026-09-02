@@ -25,9 +25,8 @@ RSpec.describe "Public professional listings", type: :request, openapi: true do
     )
   end
 
-  it "returns cards for a service and city, marked not indexable below the supply threshold" do
-    first = create_published_profile(phone: "+5547999996001", name: "Ana Listada")
-    second = create_published_profile(phone: "+5547999996002", name: "Beto Listado")
+  it "returns cards for a service and city, marked supply-eligible with one public professional" do
+    professional = create_published_profile(phone: "+5547999996001", name: "Ana Listada")
 
     get "/api/v1/public/professional-listings",
       params: {service_slug: electrician.slug, state_slug: "sc", city_slug: joinville_city.slug},
@@ -35,16 +34,16 @@ RSpec.describe "Public professional listings", type: :request, openapi: true do
 
     expect(response).to have_http_status(:ok)
     data = response.parsed_body.fetch("data")
-    expect(data.fetch("professionals").pluck("id")).to contain_exactly(first.id, second.id)
+    expect(data.fetch("professionals").pluck("id")).to contain_exactly(professional.id)
     expect(data.fetch("service")).to include("slug" => electrician.slug)
     expect(data.fetch("location")).to include("city_slug" => joinville_city.slug, "state_slug" => "sc")
-    expect(data.fetch("meta")).to include("total_count" => 2)
-    expect(data.fetch("indexable")).to eq(false)
+    expect(data.fetch("meta")).to include("total_count" => 1)
+    expect(data.fetch("indexable")).to eq(true)
     assert_api_conform(status: 200)
   end
 
-  it "is indexable once the service/city combination reaches the supply threshold" do
-    3.times { |index| create_published_profile(phone: "+554799999630#{index}", name: "Profissional #{index}") }
+  it "is supply-eligible once the service/city combination reaches the supply threshold" do
+    create_published_profile(phone: "+5547999996300", name: "Profissional elegível")
 
     get "/api/v1/public/professional-listings",
       params: {service_slug: electrician.slug, state_slug: "sc", city_slug: joinville_city.slug},

@@ -1,3 +1,6 @@
+import { queryCollection } from "@nuxt/content/server";
+import { buildLocalSitemapUrls } from "~~/app/utils/seoContent";
+
 interface ServiceCoverageResponse {
   data: {
     entries: Array<{
@@ -8,31 +11,30 @@ interface ServiceCoverageResponse {
   };
 }
 
-export default defineSitemapEventHandler(async () => {
+export default defineSitemapEventHandler(async (event) => {
   const config = useRuntimeConfig();
-  const response = await $fetch<ServiceCoverageResponse>(
-    "/api/v1/public/service-coverage",
-    { baseURL: config.apiInternalBaseUrl },
+  const [response, publishedPages] = await Promise.all([
+    $fetch<ServiceCoverageResponse>("/api/v1/public/service-coverage", {
+      baseURL: config.apiInternalBaseUrl,
+    }),
+    queryCollection(event, "localPages")
+      .where("published", "=", true)
+      .select(
+        "stateSlug",
+        "citySlug",
+        "serviceSlug",
+        "publishedAt",
+        "updatedAt",
+      )
+      .all(),
+  ]);
+  return buildLocalSitemapUrls(
+    response.data.entries.map((entry) => ({
+      stateSlug: entry.location.state_slug,
+      citySlug: entry.location.city_slug,
+      serviceSlug: entry.service.slug,
+      indexable: entry.indexable,
+    })),
+    publishedPages,
   );
-  const indexable = response.data.entries.filter((entry) => entry.indexable);
-
-  const listingUrls = indexable.map((entry) => ({
-    loc: `/encontrar/${entry.location.state_slug}/${entry.location.city_slug}/${entry.service.slug}`,
-  }));
-
-  const cityHubs = new Set(
-    indexable.map(
-      (entry) =>
-        `/encontrar/${entry.location.state_slug}/${entry.location.city_slug}`,
-    ),
-  );
-  const serviceHubs = new Set(
-    indexable.map((entry) => `/servicos/${entry.service.slug}`),
-  );
-
-  return [
-    ...listingUrls,
-    ...[...cityHubs].map((loc) => ({ loc })),
-    ...[...serviceHubs].map((loc) => ({ loc })),
-  ];
 });

@@ -1,7 +1,14 @@
 <script setup lang="ts">
+import { computed } from "vue";
+import LocalServiceEditorial from "~/components/public/local/LocalServiceEditorial.vue";
+import LocalServiceProfessionals from "~/components/public/local/LocalServiceProfessionals.vue";
 import { fetchPublicProfessionalListing } from "~/services/api/public-discovery";
 import { useApiClient } from "~/services/api/client";
 import { ApiRequestError } from "~/services/api/errors";
+import {
+  buildLocalServiceSchema,
+  isLocalPageIndexable,
+} from "~/utils/seoContent";
 
 const route = useRoute();
 const client = useApiClient();
@@ -29,19 +36,41 @@ if (error.value || !listing.value) {
   });
 }
 
+const { data: localContent } = await useAsyncData(
+  () =>
+    `local-content-${stateSlug.value}-${citySlug.value}-${serviceSlug.value}`,
+  () =>
+    queryCollection("localPages")
+      .where("stateSlug", "=", stateSlug.value)
+      .where("citySlug", "=", citySlug.value)
+      .where("serviceSlug", "=", serviceSlug.value)
+      .first(),
+);
+
+const publishedContent = computed(() =>
+  localContent.value?.published ? localContent.value : null,
+);
 const serviceName = computed(() => listing.value?.service.name ?? "");
 const cityName = computed(() => listing.value?.location.city ?? "");
 const title = computed(
-  () => `${serviceName.value} em ${cityName.value} — profissionais verificados`,
+  () =>
+    publishedContent.value?.title ??
+    `${serviceName.value} em ${cityName.value} — profissionais verificados`,
 );
 const description = computed(
   () =>
+    publishedContent.value?.description ??
     `${listing.value?.totalCount ?? 0} profissionais de ${serviceName.value.toLocaleLowerCase("pt-BR")} em ${cityName.value}. Veja portfólio, referências e fale direto pelo WhatsApp.`,
 );
-const siteUrl = withSiteUrl("/");
-const canonicalUrl = computed(
-  () => `${siteUrl.value.replace(/\/$/, "")}${route.path}`,
+const indexable = computed(() =>
+  isLocalPageIndexable(
+    listing.value?.indexable ?? false,
+    publishedContent.value,
+  ),
 );
+const siteUrl = withSiteUrl("/");
+const siteRoot = computed(() => siteUrl.value.replace(/\/$/, ""));
+const canonicalUrl = computed(() => `${siteRoot.value}${route.path}`);
 
 useSeoMeta({
   title: () => title.value,
@@ -50,15 +79,27 @@ useSeoMeta({
   ogDescription: () => description.value,
   ogUrl: () => canonicalUrl.value,
   ogType: "website",
-  robots: () =>
-    listing.value?.indexable ? "index, follow" : "noindex, follow",
+  robots: () => (indexable.value ? "index, follow" : "noindex, follow"),
 });
 useHead(() => ({ link: [{ rel: "canonical", href: canonicalUrl.value }] }));
 defineOgImageSafely("BerufeDefault", {
   title: () => title.value,
   description: () => description.value,
 });
+
 useSchemaOrg([
+  buildLocalServiceSchema({
+    canonicalUrl: canonicalUrl.value,
+    siteRoot: siteRoot.value,
+    serviceName: listing.value.service.name,
+    cityName: listing.value.location.city,
+    stateCode: listing.value.location.stateCode,
+    description: description.value,
+    professionals: listing.value.professionals.map((professional) => ({
+      name: professional.name,
+      slug: professional.slug,
+    })),
+  }),
   defineBreadcrumb({
     itemListElement: [
       { name: "Berufe", item: "/" },
@@ -72,7 +113,7 @@ useSchemaOrg([
   defineItemList({
     itemListElement: listing.value.professionals.map((professional) => ({
       name: professional.name,
-      url: buildPublicProfilePath(professional.slug),
+      url: `${siteRoot.value}${buildPublicProfilePath(professional.slug)}`,
     })),
   }),
 ]);
@@ -109,71 +150,20 @@ useSchemaOrg([
       </DesignSystemContainer>
     </section>
 
-    <DesignSystemPageSection class="listing__content">
-      <DesignSystemContainer>
-        <div v-if="listing.professionals.length" class="listing__grid">
-          <NuxtLink
-            v-for="professional in listing.professionals"
-            :key="professional.id"
-            :to="buildPublicProfilePath(professional.slug)"
-            class="listing-card"
-          >
-            <DesignSystemAvatar
-              :name="professional.name"
-              :src="professional.photoUrl ?? undefined"
-              size="lg"
-              shape="rounded"
-              loading="lazy"
-            />
-            <div class="listing-card__body">
-              <strong>{{ professional.name }}</strong>
-              <span v-if="professional.headline">{{
-                professional.headline
-              }}</span>
-              <span class="listing-card__coverage">
-                <UIcon name="i-lucide-map-pin" aria-hidden="true" />
-                {{
-                  professional.coverage.wholeCity
-                    ? `Toda ${professional.coverage.city?.name ?? cityName}`
-                    : professional.coverage.neighborhoods
-                        .slice(0, 2)
-                        .map((neighborhood) => neighborhood.name)
-                        .join(" e ") || cityName
-                }}
-              </span>
-            </div>
-            <UIcon name="i-lucide-arrow-up-right" aria-hidden="true" />
-          </NuxtLink>
-        </div>
+    <LocalServiceProfessionals
+      :listing="listing"
+      :state-slug="stateSlug"
+      :city-slug="citySlug"
+      :service-slug="serviceSlug"
+    />
 
-        <DesignSystemSurfaceCard v-else class="listing__empty">
-          <h2>
-            Ainda não temos
-            {{ serviceName.toLocaleLowerCase("pt-BR") }} publicado em
-            {{ cityName }}.
-          </h2>
-          <p>Seja o primeiro a aparecer para quem procura esse serviço.</p>
-          <UButton
-            :to="`/para-profissionais/${serviceSlug}`"
-            color="primary"
-            trailing-icon="i-lucide-arrow-right"
-          >
-            Criar perfil grátis
-          </UButton>
-        </DesignSystemSurfaceCard>
-
-        <div v-if="listing.relatedServices.length" class="listing__related">
-          <span>Serviços relacionados:</span>
-          <NuxtLink
-            v-for="related in listing.relatedServices"
-            :key="related.id"
-            :to="`/encontrar/${stateSlug}/${citySlug}/${related.slug}`"
-          >
-            {{ related.name }}
-          </NuxtLink>
-        </div>
-      </DesignSystemContainer>
-    </DesignSystemPageSection>
+    <LocalServiceEditorial
+      v-if="publishedContent"
+      :content="publishedContent"
+      :professional-count="listing.totalCount"
+      :service-name="serviceName"
+      :city-name="cityName"
+    />
   </div>
 </template>
 
@@ -214,95 +204,6 @@ useSchemaOrg([
     font-size: 0.86rem;
     font-weight: 800;
     text-decoration: none;
-  }
-
-  &__grid {
-    display: grid;
-    gap: 12px;
-  }
-
-  &__empty {
-    padding: 40px;
-    text-align: center;
-  }
-
-  &__empty h2 {
-    margin: 0 0 8px;
-    font-family: var(--font-display);
-    font-size: 1.3rem;
-  }
-
-  &__empty p {
-    margin: 0 0 20px;
-    color: var(--ink-soft);
-  }
-
-  &__related {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
-    margin-top: 24px;
-    font-size: 0.86rem;
-
-    span {
-      color: var(--ink-soft);
-      font-weight: 700;
-    }
-
-    a {
-      padding: 6px 12px;
-      border: 1px solid var(--line);
-      border-radius: 9px;
-      color: var(--ink);
-      font-weight: 700;
-      text-decoration: none;
-    }
-  }
-}
-
-.listing-card {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  color: inherit;
-  text-decoration: none;
-  transition: border-color 0.15s ease;
-
-  &:hover {
-    border-color: var(--color-brand);
-  }
-
-  &__body {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    min-width: 0;
-  }
-
-  &__body strong {
-    font-family: var(--font-display);
-    font-size: 1.05rem;
-  }
-
-  &__body > span {
-    color: var(--ink-soft);
-    font-size: 0.86rem;
-  }
-
-  &__coverage {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-
-  > svg:last-child {
-    flex-shrink: 0;
-    color: var(--ink-soft);
   }
 }
 </style>
