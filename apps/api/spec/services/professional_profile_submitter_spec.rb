@@ -35,6 +35,29 @@ RSpec.describe ProfessionalProfileSubmitter do
     expect(profile.working_revision).to be_present
   end
 
+  it "enqueues AI copy generation on first publish when headline or bio is blank" do
+    complete_required_profile
+
+    expect { described_class.new.call(profile:) }
+      .to have_enqueued_job(ProfessionalHeadlineBioGenerationJob).with(profile.working_revision.id)
+  end
+
+  it "does not enqueue AI copy generation again on idempotent re-submission" do
+    complete_required_profile
+    described_class.new.call(profile:)
+
+    expect { described_class.new.call(profile:) }
+      .not_to have_enqueued_job(ProfessionalHeadlineBioGenerationJob)
+  end
+
+  it "does not enqueue AI copy generation on publish when headline and bio are already authored" do
+    complete_required_profile
+    profile.working_revision.update!(headline: "Escrito pela profissional.", bio: "Também escrito por ela.")
+
+    expect { described_class.new.call(profile:) }
+      .not_to have_enqueued_job(ProfessionalHeadlineBioGenerationJob)
+  end
+
   it "does not require portfolio or identity verification" do
     complete_required_profile
 

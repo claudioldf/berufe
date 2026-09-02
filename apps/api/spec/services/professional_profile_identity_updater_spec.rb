@@ -37,6 +37,42 @@ RSpec.describe ProfessionalProfileIdentityUpdater do
     expect(result.birthdate).to eq(Date.new(1990, 4, 12))
   end
 
+  it "enqueues AI copy generation when headline or bio is left blank" do
+    expect do
+      described_class.new.call(
+        profile:,
+        attributes: {
+          display_name: "Ana Souza",
+          birthdate: "1990-04-12",
+          headline: "",
+          bio: "",
+          years_experience: "12",
+          whatsapp: "(47) 99999-6102",
+          instagram: nil,
+          youtube: nil
+        }
+      )
+    end.to have_enqueued_job(ProfessionalHeadlineBioGenerationJob).with(profile.working_revision.id)
+  end
+
+  it "does not enqueue AI copy generation once both fields are authored" do
+    expect do
+      described_class.new.call(
+        profile:,
+        attributes: {
+          display_name: "Ana Souza",
+          birthdate: "1990-04-12",
+          headline: "Elétrica residencial com cuidado.",
+          bio: "Instalações e manutenção em Joinville.",
+          years_experience: "12",
+          whatsapp: "(47) 99999-6102",
+          instagram: nil,
+          youtube: nil
+        }
+      )
+    end.not_to have_enqueued_job(ProfessionalHeadlineBioGenerationJob)
+  end
+
   it "returns actionable field errors without partially updating" do
     expect do
       described_class.new.call(

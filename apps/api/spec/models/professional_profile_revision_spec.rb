@@ -68,6 +68,19 @@ RSpec.describe ProfessionalProfileRevision, type: :model do
     end.to raise_error(ActiveRecord::StatementInvalid)
   end
 
+  it "accepts a 500-character AI-generated bio and rejects longer content" do
+    profile = ProfessionalProfile.create!(user_account: first_account, display_name: "Ana Souza")
+    revision = profile.working_revision
+
+    revision.ai_headline = "H" * 120
+    revision.ai_bio = "B" * 500
+    expect(revision).to be_valid
+
+    revision.ai_bio = "B" * 501
+    expect(revision).not_to be_valid
+    expect(revision.errors[:ai_bio]).to be_present
+  end
+
   it "rejects revision pointers that belong to another profile" do
     first = ProfessionalProfile.create!(user_account: first_account, display_name: "Ana Souza")
     second = ProfessionalProfile.create!(user_account: second_account, display_name: "Bia Lima")
