@@ -39,9 +39,9 @@ RSpec.describe ProfessionalHeadlineBioAiGenerator do
   let(:settings) { Data.define(:llm_adapter, :openai_model).new(llm_adapter: "fake", openai_model: "gpt-5-mini") }
   let(:client) { instance_double(Llm::Client) }
 
-  it "persists the generated headline and bio, clamped to their maximum lengths" do
+  def stub_generate(headline:, bio_intro:, bio_benefit:)
     response = Llm::Client::Response.new(
-      payload: {"headline" => "H" * 200, "bio" => "B" * 900},
+      payload: {"headline" => headline, "bio_intro" => bio_intro, "bio_benefit" => bio_benefit},
       raw_response: "{}",
       provider_request_id: "req_copy",
       input_tokens: 10,
@@ -50,27 +50,36 @@ RSpec.describe ProfessionalHeadlineBioAiGenerator do
       latency_ms: 20
     )
     allow(client).to receive(:generate).and_return(response)
+  end
+
+  it "joins the two bio paragraphs with a real blank line, guaranteed regardless of model behavior" do
+    stub_generate(
+      headline: "Eletricista em Joinville",
+      bio_intro: "Ofereço serviços elétricos em Joinville.",
+      bio_benefit: "Resolvo sua necessidade com praticidade. Fale comigo."
+    )
+
+    described_class.new(client:, settings:).call(revision:)
+
+    expect(revision.reload.ai_bio).to eq(
+      "Ofereço serviços elétricos em Joinville.\n\nResolvo sua necessidade com praticidade. Fale comigo."
+    )
+    expect(revision.ai_copy_model).to eq("gpt-5-mini")
+    expect(revision.ai_copy_generated_at).to be_present
+  end
+
+  it "clamps the headline and the combined bio to their maximum lengths" do
+    stub_generate(headline: "H" * 200, bio_intro: "I" * 700, bio_benefit: "B" * 700)
 
     described_class.new(client:, settings:).call(revision:)
 
     revision.reload
     expect(revision.ai_headline.length).to be <= 120
-    expect(revision.ai_bio.length).to be <= 500
-    expect(revision.ai_copy_model).to eq("gpt-5-mini")
-    expect(revision.ai_copy_generated_at).to be_present
+    expect(revision.ai_bio.length).to be <= 1000
   end
 
   it "sends a deterministic fake payload built from the revision, not the published profile" do
-    response = Llm::Client::Response.new(
-      payload: {"headline" => "Eletricista em Joinville", "bio" => "Ofereço serviços elétricos."},
-      raw_response: "{}",
-      provider_request_id: nil,
-      input_tokens: nil,
-      cached_input_tokens: nil,
-      output_tokens: nil,
-      latency_ms: 0
-    )
-    allow(client).to receive(:generate).and_return(response)
+    stub_generate(headline: "x", bio_intro: "x", bio_benefit: "x")
 
     described_class.new(client:, settings:).call(revision:)
 
@@ -78,7 +87,8 @@ RSpec.describe ProfessionalHeadlineBioAiGenerator do
       hash_including(
         fake_payload: {
           "headline" => "Eletricista AI Copy em Joinville com 6 anos de experiência",
-          "bio" => "Ofereço serviços como Eletricista AI Copy em Joinville. Fale comigo para saber mais."
+          "bio_intro" => "Ofereço serviços como Eletricista AI Copy em Joinville.",
+          "bio_benefit" => "Isso ajuda você a resolver sua necessidade com praticidade e tranquilidade. Fale comigo para saber mais."
         }
       )
     )
@@ -94,17 +104,17 @@ RSpec.describe ProfessionalHeadlineBioAiGenerator do
     expect(revision.reload.ai_headline).to be_nil
   end
 
-  it "does not persist a blank headline or bio" do
-    response = Llm::Client::Response.new(
-      payload: {"headline" => "   ", "bio" => "Ofereço serviços elétricos."},
-      raw_response: "{}",
-      provider_request_id: nil,
-      input_tokens: nil,
-      cached_input_tokens: nil,
-      output_tokens: nil,
-      latency_ms: 0
-    )
-    allow(client).to receive(:generate).and_return(response)
+  it "does not persist when the headline is blank" do
+    stub_generate(headline: "   ", bio_intro: "Ofereço serviços elétricos.", bio_benefit: "Fale comigo.")
+
+    described_class.new(client:, settings:).call(revision:)
+
+    expect(revision.reload.ai_headline).to be_nil
+    expect(revision.reload.ai_bio).to be_nil
+  end
+
+  it "does not persist when either bio paragraph is blank" do
+    stub_generate(headline: "Eletricista em Joinville", bio_intro: "   ", bio_benefit: "Fale comigo.")
 
     described_class.new(client:, settings:).call(revision:)
 

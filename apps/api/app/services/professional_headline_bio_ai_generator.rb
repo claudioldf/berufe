@@ -6,7 +6,13 @@
 # see PublicProfessionalProfileFallbackCopy for the always-instant read side.
 class ProfessionalHeadlineBioAiGenerator
   MAXIMUM_HEADLINE_LENGTH = 120
-  MAXIMUM_BIO_LENGTH = 500
+  MAXIMUM_BIO_LENGTH = 1000
+  # The bio is requested as two separate fields (intro/benefit) rather than a
+  # single string with an embedded blank-line separator: models are
+  # unreliable at emitting a literal paragraph break inside free text, even
+  # when explicitly instructed to. Joining two clean fields with "\n\n"
+  # ourselves guarantees the break every time.
+  MAXIMUM_BIO_PARAGRAPH_LENGTH = 600
 
   class ProviderUnavailable < StandardError; end
 
@@ -15,9 +21,10 @@ class ProfessionalHeadlineBioAiGenerator
     additionalProperties: false,
     properties: {
       headline: {type: "string", minLength: 1, maxLength: MAXIMUM_HEADLINE_LENGTH},
-      bio: {type: "string", minLength: 1, maxLength: MAXIMUM_BIO_LENGTH}
+      bio_intro: {type: "string", minLength: 1, maxLength: MAXIMUM_BIO_PARAGRAPH_LENGTH},
+      bio_benefit: {type: "string", minLength: 1, maxLength: MAXIMUM_BIO_PARAGRAPH_LENGTH}
     },
-    required: %w[headline bio]
+    required: %w[headline bio_intro bio_benefit]
   }.freeze
 
   def initialize(client: Llm::Client.build, settings: Rails.configuration.x.berufe.environment)
@@ -40,8 +47,8 @@ class ProfessionalHeadlineBioAiGenerator
       schema_name: "berufe_professional_headline_bio",
       fake_payload: fake_payload_for(city:, services:, years_experience:)
     )
-    headline = clamp(response.payload["headline"], MAXIMUM_HEADLINE_LENGTH)
-    bio = clamp(response.payload["bio"], MAXIMUM_BIO_LENGTH)
+    headline = clamp_field(response.payload["headline"], MAXIMUM_HEADLINE_LENGTH)
+    bio = build_bio(response.payload)
     return unless headline && bio
 
     revision.update!(
@@ -65,7 +72,19 @@ class ProfessionalHeadlineBioAiGenerator
       .map { |selection| selection.service.name }
   end
 
-  def clamp(value, maximum_length)
+  # Each paragraph is squished on its own (no internal line breaks expected
+  # from a single field), then joined with a real blank line. Only the
+  # combined result is truncated, so the paragraph break survives unless the
+  # cut itself falls before it.
+  def build_bio(payload)
+    intro = payload["bio_intro"].to_s.squish
+    benefit = payload["bio_benefit"].to_s.squish
+    return if intro.blank? || benefit.blank?
+
+    "#{intro}\n\n#{benefit}".truncate(MAXIMUM_BIO_LENGTH, separator: " ", omission: "…").presence
+  end
+
+  def clamp_field(value, maximum_length)
     value.to_s.squish.truncate(maximum_length, separator: " ", omission: "…").presence
   end
 
@@ -89,15 +108,17 @@ class ProfessionalHeadlineBioAiGenerator
     else
       base
     end
-    bio = if services.any?
+    bio_intro = if services.any?
       location = city ? " em #{city}" : ""
-      "Ofereço serviços como #{services.join(", ")}#{location}. Fale comigo para saber mais."
+      "Ofereço serviços como #{services.join(", ")}#{location}."
     else
-      "Aqui você encontra mais informações sobre o meu trabalho e pode falar comigo para saber mais."
+      "Aqui você encontra mais informações sobre o meu trabalho."
     end
+    bio_benefit = "Isso ajuda você a resolver sua necessidade com praticidade e tranquilidade. Fale comigo para saber mais."
     {
       "headline" => headline.truncate(MAXIMUM_HEADLINE_LENGTH),
-      "bio" => bio.truncate(MAXIMUM_BIO_LENGTH)
+      "bio_intro" => bio_intro.truncate(MAXIMUM_BIO_PARAGRAPH_LENGTH),
+      "bio_benefit" => bio_benefit.truncate(MAXIMUM_BIO_PARAGRAPH_LENGTH)
     }
   end
 end

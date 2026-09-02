@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_02_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_02_110000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -560,7 +560,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_02_100000) do
     t.index ["coverage_city_code"], name: "index_professional_profile_revisions_on_coverage_city_code"
     t.index ["professional_profile_id", "version"], name: "idx_profile_revisions_unique_version", unique: true
     t.index ["professional_profile_id"], name: "idx_on_professional_profile_id_7926e53c9d"
-    t.check_constraint "ai_bio IS NULL OR char_length(btrim(ai_bio)) >= 1 AND char_length(btrim(ai_bio)) <= 500", name: "professional_profile_revisions_ai_bio_length"
+    t.check_constraint "ai_bio IS NULL OR char_length(btrim(ai_bio)) >= 1 AND char_length(btrim(ai_bio)) <= 1000", name: "professional_profile_revisions_ai_bio_length"
     t.check_constraint "ai_headline IS NULL OR char_length(btrim(ai_headline)) >= 1 AND char_length(btrim(ai_headline)) <= 120", name: "professional_profile_revisions_ai_headline_length"
     t.check_constraint "bio IS NULL OR char_length(btrim(bio)) >= 1 AND char_length(btrim(bio)) <= 2500", name: "professional_profile_revisions_bio_length"
     t.check_constraint "char_length(btrim(display_name)) >= 3 AND char_length(btrim(display_name)) <= 70", name: "professional_profile_revisions_display_name_length"
