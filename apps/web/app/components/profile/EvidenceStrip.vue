@@ -1,10 +1,15 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import type { PublicProfessionalProfile } from "~/types";
 
-defineProps<{
+const props = defineProps<{
   evidence: PublicProfessionalProfile["evidence"];
   summary: PublicProfessionalProfile["evidenceSummary"];
 }>();
+
+const visibleEvidence = computed(() =>
+  props.evidence.filter((item) => item.type !== "phone"),
+);
 </script>
 
 <template>
@@ -16,7 +21,7 @@ defineProps<{
         </span>
         <div class="evidence-strip__verification-content">
           <div class="evidence-strip__heading">
-            <h2 id="evidence-strip-title">Verificações da Berufe</h2>
+            <h2 id="evidence-strip-title">Perfil verificado</h2>
             <p>Dados conferidos para você contratar com mais confiança.</p>
           </div>
           <div
@@ -24,7 +29,7 @@ defineProps<{
             aria-label="Verificações deste perfil"
           >
             <PublicEvidenceBadge
-              v-for="item in evidence"
+              v-for="item in visibleEvidence"
               :key="item.id"
               :evidence="item"
             />
@@ -35,7 +40,7 @@ defineProps<{
         <dl class="evidence-strip__outcomes" aria-label="Resumo do perfil">
           <div class="evidence-strip__metric">
             <dt>{{ summary.registeredServices }}</dt>
-            <dd>serviços registrados</dd>
+            <dd>serviços realizados</dd>
           </div>
           <div class="evidence-strip__metric">
             <dt>{{ summary.recommendations }}</dt>

@@ -269,12 +269,12 @@ async function shareProfile() {
       <DesignSystemContainer class="profile-content">
         <ProfileDetails
           :professional="professional"
-          :support-email-url="supportEmailUrl"
           @view-portfolio="openPortfolio"
         />
         <ProfileSidebar
           :professional="professional"
           :contact-url="contactUrl"
+          :support-email-url="supportEmailUrl"
           @contact="announceContact"
         />
       </DesignSystemContainer>
@@ -647,16 +647,6 @@ async function shareProfile() {
     font-size: 0.86rem;
     line-height: 1.55;
   }
-  .support-link {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    margin: 20px auto 0;
-    width: fit-content;
-    color: var(--ink-soft);
-    font-size: 0.86rem;
-    text-decoration: underline;
-  }
   .profile-sidebar {
     position: sticky;
     top: 24px;
@@ -713,6 +703,24 @@ async function shareProfile() {
       color: var(--ink-soft);
       font-size: 0.82rem;
     }
+    &__support {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+      padding-inline: 18px;
+      color: var(--ink-soft);
+      font-size: 0.86rem;
+      line-height: 1.45;
+      text-align: left;
+      text-decoration: underline;
+    }
+    &__support-icon {
+      flex: 0 0 auto;
+    }
+    &__support-text {
+      min-width: 0;
+    }
   }
   .mobile-contact {
     display: none;
@@ -741,7 +749,15 @@ async function shareProfile() {
       grid-template-columns: 1fr;
     }
     .profile-sidebar {
-      display: none;
+      position: static;
+      &__card,
+      &__coverage {
+        display: none;
+      }
+      &__support {
+        margin-top: 0;
+        padding-inline: 0;
+      }
     }
     .mobile-contact {
       position: fixed;
