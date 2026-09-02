@@ -47,6 +47,7 @@ defineEmits<{ confirm: [] }>();
             ? 'Escreva ao menos 10 caracteres explicando o motivo'
             : null
         "
+        :loading="submitting"
       >
         <UButton
           color="error"

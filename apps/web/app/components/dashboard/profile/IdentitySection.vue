@@ -167,7 +167,10 @@ function selectPhoto(event: Event) {
         @change="selectPhoto"
       />
       <div class="profile-photo-control__actions">
-        <DesignSystemDisabledTooltip :reason="photoBusyReason">
+        <DesignSystemDisabledTooltip
+          :reason="photoBusyReason"
+          :loading="props.photoUploading"
+        >
           <UButton
             type="button"
             color="neutral"
@@ -193,6 +196,7 @@ function selectPhoto(event: Event) {
         <DesignSystemDisabledTooltip
           v-if="props.allowPhotoRemoval && hasPhoto"
           :reason="photoBusyReason"
+          :loading="props.photoRemoving"
         >
           <UButton
             type="button"
@@ -225,7 +229,10 @@ function selectPhoto(event: Event) {
             Manter foto
           </UButton>
         </DesignSystemDisabledTooltip>
-        <DesignSystemDisabledTooltip :reason="photoBusyReason">
+        <DesignSystemDisabledTooltip
+          :reason="photoBusyReason"
+          :loading="props.photoRemoving"
+        >
           <UButton
             type="button"
             color="error"

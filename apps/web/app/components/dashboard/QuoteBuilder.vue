@@ -253,7 +253,10 @@ function requestShare() {
       <template #footer
         ><UButton color="neutral" variant="ghost" @click="shareOpen = false"
           >Cancelar</UButton
-        ><DesignSystemDisabledTooltip :reason="sharingBlockedReason">
+        ><DesignSystemDisabledTooltip
+          :reason="sharingBlockedReason"
+          :loading="sharingMethod === 'copy'"
+        >
           <UButton
             color="neutral"
             variant="outline"
@@ -264,7 +267,10 @@ function requestShare() {
             >Copiar link</UButton
           >
         </DesignSystemDisabledTooltip>
-        <DesignSystemDisabledTooltip :reason="sharingBlockedReason">
+        <DesignSystemDisabledTooltip
+          :reason="sharingBlockedReason"
+          :loading="sharingMethod === 'whatsapp'"
+        >
           <UButton
             color="primary"
             icon="i-lucide-message-circle"

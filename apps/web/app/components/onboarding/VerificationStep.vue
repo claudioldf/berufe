@@ -73,7 +73,10 @@ const busyReason = computed(() => {
       </DesignSystemDisabledTooltip>
       <div class="onboarding-verification-actions">
         <template v-if="!submitted">
-          <DesignSystemDisabledTooltip :reason="busyReason">
+          <DesignSystemDisabledTooltip
+            :reason="busyReason"
+            :loading="submitting"
+          >
             <UButton
               type="button"
               color="neutral"
@@ -85,7 +88,7 @@ const busyReason = computed(() => {
               Pular verificação e publicar perfil
             </UButton>
           </DesignSystemDisabledTooltip>
-          <DesignSystemDisabledTooltip :reason="busyReason">
+          <DesignSystemDisabledTooltip :reason="busyReason" :loading="saving">
             <UButton
               type="submit"
               :form="verificationFormId"
@@ -97,7 +100,11 @@ const busyReason = computed(() => {
             </UButton>
           </DesignSystemDisabledTooltip>
         </template>
-        <DesignSystemDisabledTooltip v-else :reason="busyReason">
+        <DesignSystemDisabledTooltip
+          v-else
+          :reason="busyReason"
+          :loading="submitting"
+        >
           <UButton
             type="button"
             color="primary"

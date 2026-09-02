@@ -62,7 +62,10 @@ function close() {
             Cancelar
           </UButton>
         </DesignSystemDisabledTooltip>
-        <DesignSystemDisabledTooltip :reason="busyReason">
+        <DesignSystemDisabledTooltip
+          :reason="busyReason"
+          :loading="busy && pendingChoice === false"
+        >
           <UButton
             color="neutral"
             variant="outline"
@@ -73,7 +76,10 @@ function close() {
             Concluir sem solicitar avaliação
           </UButton>
         </DesignSystemDisabledTooltip>
-        <DesignSystemDisabledTooltip :reason="busyReason">
+        <DesignSystemDisabledTooltip
+          :reason="busyReason"
+          :loading="busy && pendingChoice === true"
+        >
           <UButton
             color="primary"
             icon="i-lucide-check"

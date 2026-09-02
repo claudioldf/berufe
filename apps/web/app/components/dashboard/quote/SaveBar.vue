@@ -104,7 +104,10 @@ const shareLabel = computed(() => {
           Pré-visualizar
         </UButton>
       </DesignSystemDisabledTooltip>
-      <DesignSystemDisabledTooltip :reason="saveBlockedReason">
+      <DesignSystemDisabledTooltip
+        :reason="saveBlockedReason"
+        :loading="savingIntent === 'draft'"
+      >
         <UButton
           color="neutral"
           variant="outline"
@@ -115,7 +118,10 @@ const shareLabel = computed(() => {
           Salvar rascunho
         </UButton>
       </DesignSystemDisabledTooltip>
-      <DesignSystemDisabledTooltip :reason="shareActionBlockedReason">
+      <DesignSystemDisabledTooltip
+        :reason="shareActionBlockedReason"
+        :loading="savingIntent === 'share'"
+      >
         <UButton
           color="primary"
           :icon="readyToShare ? 'i-lucide-share' : 'i-lucide-check'"

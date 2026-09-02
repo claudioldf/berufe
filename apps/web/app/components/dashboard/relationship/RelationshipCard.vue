@@ -99,7 +99,10 @@ const blockedReason = computed(() => {
       </p>
       <div class="relationship-card__actions">
         <template v-if="relationship.status === 'pending' && !outgoing">
-          <DesignSystemDisabledTooltip :reason="blockedReason">
+          <DesignSystemDisabledTooltip
+            :reason="blockedReason"
+            :loading="responding"
+          >
             <UButton
               size="sm"
               color="neutral"
@@ -110,7 +113,10 @@ const blockedReason = computed(() => {
               >Recusar</UButton
             >
           </DesignSystemDisabledTooltip>
-          <DesignSystemDisabledTooltip :reason="blockedReason">
+          <DesignSystemDisabledTooltip
+            :reason="blockedReason"
+            :loading="responding"
+          >
             <UButton
               size="sm"
               color="primary"
@@ -121,7 +127,11 @@ const blockedReason = computed(() => {
             >
           </DesignSystemDisabledTooltip>
         </template>
-        <DesignSystemDisabledTooltip v-else :reason="blockedReason">
+        <DesignSystemDisabledTooltip
+          v-else
+          :reason="blockedReason"
+          :loading="removing"
+        >
           <UButton
             size="sm"
             color="error"

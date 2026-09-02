@@ -358,6 +358,7 @@ function updateCompletionOpen(open: boolean) {
         <DesignSystemDisabledTooltip
           v-if="canPublish"
           :reason="publishProfileBlockedReason"
+          :loading="professionalWorkspace.submissionSaving.value"
         >
           <UButton
             class="status-banner__action"
