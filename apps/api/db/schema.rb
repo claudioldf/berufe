@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_31_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_02_110000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -113,7 +113,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_150000) do
     t.index ["status", "expires_at"], name: "idx_recommendation_requests_status_expiry"
     t.index ["token_hash"], name: "idx_recommendation_requests_unique_token", unique: true
     t.check_constraint "delivery_channel::text = 'email'::text AND email_fingerprint IS NOT NULL OR delivery_channel::text = 'whatsapp'::text AND email_fingerprint IS NULL", name: "customer_recommendation_requests_consistent_channel"
-    t.check_constraint "delivery_channel::text = ANY (ARRAY['email'::character varying, 'whatsapp'::character varying]::text[])", name: "customer_recommendation_requests_known_delivery_channel"
+    t.check_constraint "delivery_channel::text = ANY (ARRAY['email'::character varying::text, 'whatsapp'::character varying::text])", name: "customer_recommendation_requests_known_delivery_channel"
     t.check_constraint "status::text = ANY (ARRAY['open'::character varying::text, 'completed'::character varying::text, 'expired'::character varying::text])", name: "customer_recommendation_requests_known_status"
   end
 
@@ -142,7 +142,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_150000) do
     t.check_constraint "char_length(btrim(display_name::text)) >= 1 AND char_length(btrim(display_name::text)) <= 80", name: "customer_recommendations_display_name_length"
     t.check_constraint "char_length(btrim(recommendation_text)) >= 1 AND char_length(btrim(recommendation_text)) <= 700", name: "customer_recommendations_text_length"
     t.check_constraint "delivery_channel::text = 'email'::text AND email_fingerprint IS NOT NULL AND email_verified_at IS NOT NULL OR delivery_channel::text = 'whatsapp'::text AND email_fingerprint IS NULL AND email_verified_at IS NULL", name: "customer_recommendations_consistent_channel"
-    t.check_constraint "delivery_channel::text = ANY (ARRAY['email'::character varying, 'whatsapp'::character varying]::text[])", name: "customer_recommendations_known_delivery_channel"
+    t.check_constraint "delivery_channel::text = ANY (ARRAY['email'::character varying::text, 'whatsapp'::character varying::text])", name: "customer_recommendations_known_delivery_channel"
     t.check_constraint "hidden_by_professional_at IS NOT NULL OR hidden_reason IS NULL", name: "customer_recommendations_hidden_reason_requires_hidden"
     t.check_constraint "hidden_reason IS NULL OR char_length(btrim(hidden_reason)) >= 1 AND char_length(btrim(hidden_reason)) <= 700", name: "customer_recommendations_hidden_reason_length"
   end
@@ -418,12 +418,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_150000) do
     t.index ["idempotency_key"], name: "index_notifications_on_idempotency_key", unique: true
     t.index ["recipient_user_account_id", "status", "occurred_at", "id"], name: "idx_notifications_recipient_status_order", order: { occurred_at: :desc, id: :desc }
     t.index ["recipient_user_account_id"], name: "index_notifications_on_recipient_user_account_id"
-    t.check_constraint "\nCASE\n    WHEN notification_type::text = ANY (ARRAY['quote_change_requested'::character varying, 'quote_approved'::character varying, 'quote_declined'::character varying]::text[]) THEN route_params = jsonb_build_object('quote_id', route_params ->> 'quote_id'::text) AND COALESCE((route_params ->> 'quote_id'::text) ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'::text, false)\n    WHEN notification_type::text = 'service_completion_issue_reported'::text THEN route_params = jsonb_build_object('service_job_id', route_params ->> 'service_job_id'::text) AND COALESCE((route_params ->> 'service_job_id'::text) ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'::text, false)\n    ELSE route_params = '{}'::jsonb\nEND", name: "notifications_route_params_match_type"
+    t.check_constraint "\nCASE\n    WHEN notification_type::text = ANY (ARRAY['quote_change_requested'::character varying::text, 'quote_approved'::character varying::text, 'quote_declined'::character varying::text]) THEN route_params = jsonb_build_object('quote_id', route_params ->> 'quote_id'::text) AND COALESCE((route_params ->> 'quote_id'::text) ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'::text, false)\n    WHEN notification_type::text = 'service_completion_issue_reported'::text THEN route_params = jsonb_build_object('service_job_id', route_params ->> 'service_job_id'::text) AND COALESCE((route_params ->> 'service_job_id'::text) ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'::text, false)\n    ELSE route_params = '{}'::jsonb\nEND", name: "notifications_route_params_match_type"
     t.check_constraint "char_length(btrim(description::text)) >= 1 AND char_length(btrim(description::text)) <= 240", name: "notifications_description_length"
     t.check_constraint "char_length(btrim(idempotency_key::text)) >= 1 AND char_length(btrim(idempotency_key::text)) <= 255", name: "notifications_idempotency_key_length"
     t.check_constraint "char_length(btrim(title::text)) >= 1 AND char_length(btrim(title::text)) <= 120", name: "notifications_title_length"
     t.check_constraint "jsonb_typeof(route_params) = 'object'::text", name: "notifications_route_params_object"
-    t.check_constraint "notification_type::text = ANY (ARRAY['profile_moderation_hidden'::character varying, 'profile_moderation_restored'::character varying, 'verification_request_moderation_approved'::character varying, 'verification_request_moderation_rejected'::character varying, 'relationship_request_received'::character varying, 'relationship_request_accepted'::character varying, 'relationship_request_declined'::character varying, 'quote_change_requested'::character varying, 'quote_approved'::character varying, 'quote_declined'::character varying, 'service_completion_issue_reported'::character varying, 'customer_recommendation_published'::character varying]::text[])", name: "notifications_known_type"
+    t.check_constraint "notification_type::text = ANY (ARRAY['profile_moderation_hidden'::character varying::text, 'profile_moderation_restored'::character varying::text, 'verification_request_moderation_approved'::character varying::text, 'verification_request_moderation_rejected'::character varying::text, 'relationship_request_received'::character varying::text, 'relationship_request_accepted'::character varying::text, 'relationship_request_declined'::character varying::text, 'quote_change_requested'::character varying::text, 'quote_approved'::character varying::text, 'quote_declined'::character varying::text, 'service_completion_issue_reported'::character varying::text, 'customer_recommendation_published'::character varying::text])", name: "notifications_known_type"
     t.check_constraint "status::text = 'unread'::text AND read_at IS NULL OR status::text = 'read'::text AND read_at IS NOT NULL", name: "notifications_read_state"
     t.check_constraint "status::text = ANY (ARRAY['unread'::character varying::text, 'read'::character varying::text])", name: "notifications_known_status"
   end
@@ -539,6 +539,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_150000) do
   end
 
   create_table "professional_profile_revisions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.text "ai_bio"
+    t.datetime "ai_copy_generated_at"
+    t.string "ai_copy_model", limit: 80
+    t.text "ai_headline"
     t.text "bio"
     t.text "coverage_city_code"
     t.boolean "covers_whole_city", default: false, null: false
@@ -556,6 +560,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_150000) do
     t.index ["coverage_city_code"], name: "index_professional_profile_revisions_on_coverage_city_code"
     t.index ["professional_profile_id", "version"], name: "idx_profile_revisions_unique_version", unique: true
     t.index ["professional_profile_id"], name: "idx_on_professional_profile_id_7926e53c9d"
+    t.check_constraint "ai_bio IS NULL OR char_length(btrim(ai_bio)) >= 1 AND char_length(btrim(ai_bio)) <= 1000", name: "professional_profile_revisions_ai_bio_length"
+    t.check_constraint "ai_headline IS NULL OR char_length(btrim(ai_headline)) >= 1 AND char_length(btrim(ai_headline)) <= 120", name: "professional_profile_revisions_ai_headline_length"
     t.check_constraint "bio IS NULL OR char_length(btrim(bio)) >= 1 AND char_length(btrim(bio)) <= 2500", name: "professional_profile_revisions_bio_length"
     t.check_constraint "char_length(btrim(display_name)) >= 3 AND char_length(btrim(display_name)) <= 70", name: "professional_profile_revisions_display_name_length"
     t.check_constraint "headline IS NULL OR char_length(btrim(headline)) >= 1 AND char_length(btrim(headline)) <= 120", name: "professional_profile_revisions_headline_length"
@@ -735,7 +741,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_150000) do
     t.check_constraint "quote_number > 0", name: "quotes_positive_number"
     t.check_constraint "status::text = 'draft'::text OR customer_phone_e164::text ~ '^\\+55[1-9][0-9]9[0-9]{8}$'::text", name: "quotes_customer_brazilian_mobile"
     t.check_constraint "status::text = 'draft'::text OR discount_amount <= subtotal_amount AND total_amount = (subtotal_amount - discount_amount)", name: "quotes_consistent_totals"
-    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying, 'saved'::character varying, 'shared'::character varying, 'change_requested'::character varying, 'approved'::character varying, 'declined'::character varying, 'completed'::character varying, 'cancelled'::character varying]::text[])", name: "quotes_known_status"
+    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying::text, 'saved'::character varying::text, 'shared'::character varying::text, 'change_requested'::character varying::text, 'approved'::character varying::text, 'declined'::character varying::text, 'completed'::character varying::text, 'cancelled'::character varying::text])", name: "quotes_known_status"
     t.check_constraint "subtotal_amount >= 0::numeric AND discount_amount >= 0::numeric AND total_amount >= 0::numeric", name: "quotes_nonnegative_amounts"
   end
 
@@ -827,7 +833,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_150000) do
     t.index ["status", "updated_at"], name: "index_service_jobs_on_status_and_updated_at"
     t.check_constraint "cancellation_reason IS NULL OR char_length(btrim(cancellation_reason)) >= 1 AND char_length(btrim(cancellation_reason)) <= 700", name: "service_jobs_cancellation_reason_length"
     t.check_constraint "customer_feedback_message IS NULL OR char_length(btrim(customer_feedback_message)) >= 1 AND char_length(btrim(customer_feedback_message)) <= 700", name: "service_jobs_customer_feedback_message_length"
-    t.check_constraint "status::text = ANY (ARRAY['approved'::character varying, 'completed'::character varying, 'cancelled'::character varying]::text[])", name: "service_jobs_known_status"
+    t.check_constraint "status::text = ANY (ARRAY['approved'::character varying::text, 'completed'::character varying::text, 'cancelled'::character varying::text])", name: "service_jobs_known_status"
   end
 
   create_table "services", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|

@@ -18,6 +18,8 @@ class ProfessionalProfileRevision < ApplicationRecord
   validates :display_name, length: {in: 3..70}
   validates :headline, length: {in: 1..120}, allow_nil: true
   validates :bio, length: {in: 1..2500}, allow_nil: true
+  validates :ai_headline, length: {in: 1..120}, allow_nil: true
+  validates :ai_bio, length: {in: 1..1000}, allow_nil: true
   validates :years_experience, numericality: {only_integer: true, in: 0..70}, allow_nil: true
   validates :whatsapp_e164, format: {with: UserAccount::BRAZILIAN_MOBILE_PATTERN}, allow_nil: true
   validates :instagram_url, length: {maximum: 200}, allow_nil: true
@@ -36,6 +38,11 @@ class ProfessionalProfileRevision < ApplicationRecord
     self.display_name = display_name.to_s.squish
     self.headline = headline.to_s.squish.presence
     self.bio = bio.to_s.squish.presence
+    self.ai_headline = ai_headline.to_s.squish.presence
+    # Not .squish: the AI bio deliberately carries a blank-line paragraph
+    # break (see ProfessionalHeadlineBioAiGenerator#build_bio), and squish
+    # would collapse that internal whitespace along with the trim.
+    self.ai_bio = ai_bio.to_s.strip.presence
     self.whatsapp_e164 = whatsapp_e164.to_s.strip.presence
     self.instagram_url = instagram_url.to_s.strip.presence
     self.youtube_url = youtube_url.to_s.strip.presence

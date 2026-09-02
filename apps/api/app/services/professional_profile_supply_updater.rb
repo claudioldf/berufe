@@ -23,6 +23,9 @@ class ProfessionalProfileSupplyUpdater
       replace_services!(revision, normalized_services)
       replace_coverage!(revision, normalized_coverage)
       editor.synchronize_public_revision!(profile:)
+      if revision.headline.blank? || revision.bio.blank?
+        ProfessionalHeadlineBioGenerationJob.perform_later(revision.id)
+      end
     end
     profile
   rescue ActiveRecord::RecordInvalid => error

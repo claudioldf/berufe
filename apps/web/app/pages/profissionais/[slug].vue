@@ -458,6 +458,7 @@ async function shareProfile() {
       margin: 24px 0;
       color: var(--ink-soft);
       line-height: 1.78;
+      white-space: pre-line;
     }
     &__services {
       display: grid;

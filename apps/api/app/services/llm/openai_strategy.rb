@@ -23,6 +23,32 @@ module Llm
     end
 
     def call(expression:, prompt:, schema:, services:, neighborhoods:, default_location: nil)
+      request_structured_output(
+        prompt:,
+        input: expression,
+        schema:,
+        schema_name: "berufe_public_search",
+        no_content_message: "OpenAI returned no structured search output",
+        error_message: "OpenAI search parsing failed"
+      )
+    end
+
+    def generate(prompt:, input:, schema:, schema_name:, fake_payload: nil)
+      request_structured_output(
+        prompt:,
+        input:,
+        schema:,
+        schema_name:,
+        no_content_message: "OpenAI returned no structured output",
+        error_message: "OpenAI structured generation failed"
+      )
+    end
+
+    private
+
+    attr_reader :client, :model
+
+    def request_structured_output(prompt:, input:, schema:, schema_name:, no_content_message:, error_message:)
       started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       raw_response = nil
       provider_request_id = nil
@@ -31,12 +57,12 @@ module Llm
         store: false,
         input: [
           {role: :system, content: prompt},
-          {role: :user, content: expression}
+          {role: :user, content: input}
         ],
         text: {
           format: {
             type: :json_schema,
-            name: "berufe_public_search",
+            name: schema_name,
             strict: true,
             schema:
           }
@@ -47,7 +73,7 @@ module Llm
         .filter_map { |item| item.content if item.respond_to?(:content) }
         .flatten
         .find { |item| item.respond_to?(:text) }
-      raise Client::Unavailable, "OpenAI returned no structured search output" unless content
+      raise Client::Unavailable, no_content_message unless content
 
       usage = response.usage
       raw_response = content.text
@@ -69,12 +95,8 @@ module Llm
       raise Client::InvalidResponse.new(raw_response:, provider_request_id:)
     rescue OpenAI::Errors::APIError, NoMethodError => error
       Rails.error.report(error)
-      raise Client::Unavailable, "OpenAI search parsing failed"
+      raise Client::Unavailable, error_message
     end
-
-    private
-
-    attr_reader :client, :model
 
     def retry_after(error)
       value = error.headers&.find do |name, _header_value|
