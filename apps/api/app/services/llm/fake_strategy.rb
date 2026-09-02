@@ -53,6 +53,21 @@ module Llm
       )
     end
 
+    # No network call and no domain logic here: the caller supplies exactly
+    # what a real provider would have returned, so behavior stays
+    # deterministic in local/test environments regardless of use case.
+    def generate(prompt:, input:, schema:, schema_name:, fake_payload:)
+      Client::Response.new(
+        payload: fake_payload,
+        raw_response: JSON.generate(fake_payload),
+        provider_request_id: nil,
+        input_tokens: nil,
+        cached_input_tokens: nil,
+        output_tokens: nil,
+        latency_ms: 0
+      )
+    end
+
     private
 
     def explicit_location(normalized_expression)

@@ -7,9 +7,9 @@ const TooltipStub = {
   template: `<div :data-text="text" :data-tooltip-disabled="disabled"><slot /></div>`,
 };
 
-function mountWrapped(reason: string | null) {
+function mountWrapped(reason: string | null, loading = false) {
   return mount(DisabledTooltip, {
-    props: { reason },
+    props: { reason, loading },
     slots: { default: '<button type="button" disabled>Compartilhar</button>' },
     global: { stubs: { UTooltip: TooltipStub } },
   });
@@ -47,6 +47,23 @@ describe("DesignSystemDisabledTooltip", () => {
     expect(withReason.findComponent(TooltipStub).props("open")).toBe(true);
     await withReason.get("span").trigger("click");
     expect(withReason.findComponent(TooltipStub).props("open")).toBe(false);
+  });
+
+  it("hides and closes the disabled reason while the control is loading", async () => {
+    const wrapper = mountWrapped("Conta suspensa.");
+    const trigger = wrapper.get(".disabled-tooltip");
+
+    await trigger.trigger("click");
+    expect(wrapper.findComponent(TooltipStub).props("open")).toBe(true);
+
+    await wrapper.setProps({ loading: true });
+
+    const tooltip = wrapper.get("[data-tooltip-disabled]");
+    expect(tooltip.attributes("data-tooltip-disabled")).toBe("true");
+    expect(tooltip.attributes("data-text")).toBeUndefined();
+    expect(trigger.attributes("tabindex")).toBe("-1");
+    expect(trigger.attributes("aria-disabled")).toBe("false");
+    expect(wrapper.findComponent(TooltipStub).props("open")).toBe(false);
   });
 
   it("opens on touch tap without the compatibility click closing it", async () => {

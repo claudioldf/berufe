@@ -279,6 +279,7 @@ function respondBlockedReason(itemId: string) {
             <DesignSystemDisabledTooltip
               v-else-if="item.action?.kind === 'act'"
               :reason="actBlockedReason(item.id)"
+              :loading="actingId === item.id"
             >
               <UButton
                 size="sm"
@@ -294,6 +295,7 @@ function respondBlockedReason(itemId: string) {
             <DesignSystemDisabledTooltip
               v-if="item.responseRequired"
               :reason="respondBlockedReason(item.id)"
+              :loading="respondingId === item.id"
             >
               <UButton
                 size="sm"
@@ -309,6 +311,7 @@ function respondBlockedReason(itemId: string) {
             <DesignSystemDisabledTooltip
               v-if="item.responseRequired"
               :reason="respondBlockedReason(item.id)"
+              :loading="respondingId === item.id"
             >
               <UButton
                 size="sm"

@@ -19,6 +19,8 @@ import {
 import {
   decodeSearchExpression,
   encodeSearchExpression,
+  readEncodedSearchExpression,
+  searchExpressionQuery,
 } from "~/utils/searchExpression";
 import { searchLocationPath } from "~/utils/searchLocation";
 
@@ -68,8 +70,7 @@ export async function useProfessionalSearch(options: {
   const suppressedRouteState = shallowRef("");
 
   const encodedExpression = computed(() => {
-    const value = route.query.expressao;
-    return String(Array.isArray(value) ? (value[0] ?? "") : (value ?? ""));
+    return readEncodedSearchExpression(route.query);
   });
   const expressionQuery = computed(() =>
     decodeSearchExpression(encodedExpression.value),
@@ -204,7 +205,10 @@ export async function useProfessionalSearch(options: {
 
     suppressedRouteState.value = routeState(expressionQuery.value, location);
     options.onLocationResolved?.(location);
-    await router.replace({ path: targetPath, query: route.query });
+    await router.replace({
+      path: targetPath,
+      query: searchExpressionQuery(encodedExpression.value),
+    });
   }
 
   watch(
@@ -251,7 +255,7 @@ export async function useProfessionalSearch(options: {
     try {
       await router.push({
         path: searchLocationPath(toValue(options.location)),
-        query: { expressao: encodeSearchExpression(expression) },
+        query: searchExpressionQuery(encodeSearchExpression(expression)),
       });
     } finally {
       isSubmittingSearch.value = false;
@@ -275,7 +279,7 @@ export async function useProfessionalSearch(options: {
     try {
       await router.push({
         path: searchLocationPath(selectedLocation),
-        query: { expressao: encodeSearchExpression(expression) },
+        query: searchExpressionQuery(encodeSearchExpression(expression)),
       });
       const result = await searchStructuredProfessionals(client, payload);
       structuredResponse.value = {

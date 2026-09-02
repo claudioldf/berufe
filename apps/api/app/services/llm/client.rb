@@ -54,6 +54,13 @@ module Llm
       strategy.call(expression:, prompt:, schema:, services:, neighborhoods:, default_location:)
     end
 
+    # Generic strict-JSON completion for any use case beyond search parsing.
+    # `fake_payload` is only consumed by the fake adapter, which never calls
+    # a provider and simply echoes it back as the structured result.
+    def generate(prompt:, input:, schema:, schema_name:, fake_payload:)
+      strategy.generate(prompt:, input:, schema:, schema_name:, fake_payload:)
+    end
+
     private
 
     attr_reader :strategy

@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { computed, shallowRef } from "vue";
 import type { SearchLocation, Service } from "~/types";
-import { encodeSearchExpression } from "~/utils/searchExpression";
+import {
+  encodeSearchExpression,
+  searchExpressionQuery,
+} from "~/utils/searchExpression";
 import {
   fallbackSearchLocation,
   searchLocationPath,
@@ -25,7 +28,7 @@ const visibleServices = computed(() =>
 function searchUrl(service: Service) {
   return {
     path: searchLocationPath(props.location ?? fallbackSearchLocation),
-    query: { expressao: encodeSearchExpression(service.name) },
+    query: searchExpressionQuery(encodeSearchExpression(service.name)),
   };
 }
 </script>

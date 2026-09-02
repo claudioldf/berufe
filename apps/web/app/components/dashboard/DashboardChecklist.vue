@@ -49,7 +49,10 @@ const publishingReason = computed(() =>
       </NuxtLink>
     </div>
     <footer v-if="canPublish" class="checklist-card__footer">
-      <DesignSystemDisabledTooltip :reason="publishingReason">
+      <DesignSystemDisabledTooltip
+        :reason="publishingReason"
+        :loading="publishing"
+      >
         <UButton
           type="button"
           color="primary"

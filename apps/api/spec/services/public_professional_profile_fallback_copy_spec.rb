@@ -19,6 +19,8 @@ RSpec.describe PublicProfessionalProfileFallbackCopy do
     Data.define(
       :headline,
       :bio,
+      :ai_headline,
+      :ai_bio,
       :years_experience,
       :coverage_city,
       :whole_city,
@@ -90,6 +92,33 @@ RSpec.describe PublicProfessionalProfileFallbackCopy do
     )
   end
 
+  it "prefers AI-generated copy over the deterministic template, but never over authored fields" do
+    generated_only = revision_with(
+      ai_headline: "Eletricista de confiança em Joinville.",
+      ai_bio: "Cuido de instalações elétricas residenciais com atenção aos detalhes.",
+      professional_profile_services: [selection(1, "Eletricista", primary: true)],
+      coverage_city: city_value_class.new(name: "Joinville")
+    )
+    authored_wins = revision_with(
+      headline: "Escrito pelo profissional.",
+      bio: "Também escrito pelo profissional.",
+      ai_headline: "Nunca deveria aparecer.",
+      ai_bio: "Nunca deveria aparecer."
+    )
+
+    generated_result = described_class.call(profile: profile_with(generated_only))
+    authored_result = described_class.call(profile: profile_with(authored_wins))
+
+    expect(generated_result).to have_attributes(
+      headline: "Eletricista de confiança em Joinville.",
+      bio: "Cuido de instalações elétricas residenciais com atenção aos detalhes."
+    )
+    expect(authored_result).to have_attributes(
+      headline: "Escrito pelo profissional.",
+      bio: "Também escrito pelo profissional."
+    )
+  end
+
   it "omits experience below one year and portfolio copy for external profiles" do
     revision = revision_with(
       years_experience: 0,
@@ -115,6 +144,8 @@ RSpec.describe PublicProfessionalProfileFallbackCopy do
     revision_value_class.new(
       headline: nil,
       bio: nil,
+      ai_headline: nil,
+      ai_bio: nil,
       years_experience: nil,
       coverage_city: nil,
       whole_city: false,

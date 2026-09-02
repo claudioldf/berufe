@@ -15,8 +15,8 @@ class PublicProfessionalProfileFallbackCopy
     @revision = profile.published_revision
 
     Result.new(
-      headline: revision.headline.presence || fallback_headline,
-      bio: revision.bio.presence || fallback_bio
+      headline: revision.headline.presence || revision.ai_headline.presence || fallback_headline,
+      bio: revision.bio.presence || revision.ai_bio.presence || fallback_bio
     )
   end
 

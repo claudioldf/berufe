@@ -26,6 +26,9 @@ class ProfessionalProfileSubmitter
         profile_status: "published",
         published_at: profile.published_at || submitted_at
       )
+      if revision.headline.blank? || revision.bio.blank?
+        ProfessionalHeadlineBioGenerationJob.perform_later(revision.id)
+      end
     end
     profile.reload
   rescue ActiveRecord::RecordInvalid => error

@@ -64,7 +64,7 @@ describe("professional search location override", () => {
       response: new Response(null),
     });
     await useRouter().replace(
-      `/encontrar/sc/joinville?expressao=${encodeSearchExpression("Pintor em Curitiba")}`,
+      `/encontrar/sc/joinville?q=${encodeSearchExpression("Pintor em Curitiba")}`,
     );
     await clearNuxtData();
     const activeLocation = shallowRef(joinville);
@@ -81,7 +81,7 @@ describe("professional search location override", () => {
     await vi.waitFor(() =>
       expect(useRoute().path).toBe("/encontrar/pr/curitiba"),
     );
-    expect(useRoute().query.expressao).toBe(
+    expect(useRoute().query.q).toBe(
       encodeSearchExpression("Pintor em Curitiba"),
     );
     expect(search.totalCount.value).toBe(0);

@@ -39,7 +39,27 @@ describe("legacy finder redirect", () => {
     expect(mocks.navigateTo).toHaveBeenCalledWith(
       {
         path: "/encontrar/sc/joinville",
-        query: { expressao: expression },
+        query: { q: expression },
+      },
+      { redirectCode: 302, replace: true },
+    );
+  });
+
+  it("encodes the plain q value supplied by the WebSite SearchAction", async () => {
+    mocks.fetchLocation.mockResolvedValue({
+      location: fallbackSearchLocation,
+      source: "ip",
+    });
+
+    await mountSuspended(LegacyFinderPage, {
+      shallow: true,
+      route: "/encontrar?q=Preciso%20de%20eletricista",
+    });
+
+    expect(mocks.navigateTo).toHaveBeenCalledWith(
+      {
+        path: "/encontrar/sc/joinville",
+        query: { q: encodeSearchExpression("Preciso de eletricista") },
       },
       { redirectCode: 302, replace: true },
     );

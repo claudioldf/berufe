@@ -62,6 +62,28 @@ RSpec.describe ProfessionalProfileSupplyUpdater do
     expect(profile.working_revision.professional_profile_service_areas).to be_empty
   end
 
+  it "enqueues AI copy generation since headline and bio are blank" do
+    expect do
+      described_class.new.call(
+        profile:,
+        services: [{service_id: service.id, is_primary: true, note: nil}],
+        coverage: {city_code: joinville_city.code, whole_city: true, neighborhood_codes: []}
+      )
+    end.to have_enqueued_job(ProfessionalHeadlineBioGenerationJob).with(profile.working_revision.id)
+  end
+
+  it "does not enqueue AI copy generation once both fields are already authored" do
+    profile.working_revision.update!(headline: "Escrito pela profissional.", bio: "Também escrito por ela.")
+
+    expect do
+      described_class.new.call(
+        profile:,
+        services: [{service_id: service.id, is_primary: true, note: nil}],
+        coverage: {city_code: joinville_city.code, whole_city: true, neighborhood_codes: []}
+      )
+    end.not_to have_enqueued_job(ProfessionalHeadlineBioGenerationJob)
+  end
+
   it "rejects contradictory, inactive, duplicate, and primary-less selections without partial replacement" do
     invalid_inputs = [
       {

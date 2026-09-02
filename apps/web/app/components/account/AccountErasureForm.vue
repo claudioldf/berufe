@@ -89,7 +89,10 @@ function submit() {
         <UButton to="/app/professional/profile" color="neutral" variant="ghost">
           Cancelar
         </UButton>
-        <DesignSystemDisabledTooltip :reason="submitBlockedReason">
+        <DesignSystemDisabledTooltip
+          :reason="submitBlockedReason"
+          :loading="submitting"
+        >
           <UButton
             type="submit"
             color="error"

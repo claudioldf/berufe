@@ -19,7 +19,7 @@ Increment 8 promotes V2-006 ("Publish dedicated SEO category landing pages") out
 - `@nuxtjs/seo` (robots, sitemap, og-image, schema-org, site-config, link-checker) is installed and configured from `site.url`/`site.name`.
 - `/robots.txt` disallows `/app`, `/orcamento`, `/recomendacao`, `/foundation`; production emits `index, follow` elsewhere, non-production defaults to `noindex`.
 - `/sitemap.xml` includes every static public route, every self-service published professional slug, every indexable service×city listing/city-hub/service-hub URL, and every `/para-profissionais/:service` page — sourced live from Rails, not hand-maintained.
-- Every public page emits a canonical `<link>`, and a page rendering one visitor's free-text query (`?expressao=`) is `noindex, follow` and canonicalizes to the clean URL.
+- Every public page emits a canonical `<link>`, and a page rendering one visitor's free-text query (`?q=`) is `noindex, follow` and canonicalizes to the clean URL.
 - Site-wide `Organization` (identity) and `WebSite` (with a `SearchAction`) JSON-LD render on every page; `/`, professional profiles, and listing pages add their own `WebPage`/`ProfilePage`/`Person`/`BreadcrumbList`/`ItemList` nodes with explicit `@id`s so they never collide with the site identity node.
 - A branded Open Graph image renders per page (`satori`, `BerufeDefault`/`BerufeProfessional` templates) instead of a generic screenshot.
 

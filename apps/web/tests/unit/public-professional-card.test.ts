@@ -120,6 +120,8 @@ describe("public professional result card", () => {
     const parsedProfileUrl = new URL(profileUrl, "https://berufe.test");
     expect(buildPublicProfilePath("ana-souza")).toBe("/be/ana-souza");
     expect(parsedProfileUrl.pathname).toBe("/be/ana-souza");
+    expect(parsedProfileUrl.searchParams.get("q")).toBe("ZWxldHJpY2lzdGE");
+    expect(parsedProfileUrl.searchParams.has("expressao")).toBe(false);
     expect(parsedProfileUrl.searchParams.get("pedido")).toBe(
       "Eu preciso trocar a fiação da cozinha.",
     );

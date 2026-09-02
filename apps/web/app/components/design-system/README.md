@@ -54,9 +54,14 @@ Feature components own validation and draft state; `FormField` only owns present
 Wrap a disabled `UButton` (or other control) in `DisabledTooltip` only when the reason it's disabled isn't already visible nearby (a loading spinner, an inline validation error, a status line right next to it). Compute the reason as a plain string and pass `null`/omit it when the control is enabled — `DisabledTooltip` stays fully inert with no reason, so it's safe to always wrap:
 
 ```vue
-<DesignSystemDisabledTooltip :reason="canShare ? null : shareBlockedReason">
-  <UButton :disabled="!canShare" @click="share">Compartilhar</UButton>
+<DesignSystemDisabledTooltip
+  :reason="canShare ? null : shareBlockedReason"
+  :loading="sharing"
+>
+  <UButton :loading="sharing" :disabled="!canShare" @click="share">
+    Compartilhar
+  </UButton>
 </DesignSystemDisabledTooltip>
 ```
 
-This does not replace `UButton`'s own disabled styling — the button itself still carries `:disabled`. `DisabledTooltip` only adds the explanation, via a focusable/tappable wrapper so the reason reaches keyboard and touch users, not just a mouse hovering a control that can't otherwise receive focus.
+This does not replace `UButton`'s own disabled styling — the button itself still carries `:disabled`. When a control also has a loading state, pass the same state to `DisabledTooltip`; the loading indicator already explains why the action is temporarily unavailable, so the disabled reason stays hidden until loading ends. `DisabledTooltip` only adds the explanation, via a focusable/tappable wrapper so the reason reaches keyboard and touch users, not just a mouse hovering a control that can't otherwise receive focus.

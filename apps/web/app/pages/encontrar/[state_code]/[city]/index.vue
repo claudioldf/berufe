@@ -16,7 +16,10 @@ import {
   buildPublicProfileResultUrl,
   buildSearchResultWhatsAppUrl,
 } from "~/utils/publicProfiles";
-import { encodeSearchExpression } from "~/utils/searchExpression";
+import {
+  encodeSearchExpression,
+  searchExpressionQuery,
+} from "~/utils/searchExpression";
 import { searchLocationPath } from "~/utils/searchLocation";
 
 definePageMeta({ key: "professional-finder" });
@@ -169,7 +172,7 @@ function contactUrl(professional: PublicProfessionalCard) {
 function relatedServiceUrl(service: PublicServiceSuggestion) {
   return {
     path: searchLocationPath(activeLocation.value),
-    query: { expressao: encodeSearchExpression(service.name) },
+    query: searchExpressionQuery(encodeSearchExpression(service.name)),
   };
 }
 
@@ -177,7 +180,9 @@ async function changeLocation(location: SearchLocation) {
   adoptLocation(location);
   await router.push({
     path: searchLocationPath(location),
-    query: route.query,
+    query: encodedExpression.value
+      ? searchExpressionQuery(encodedExpression.value)
+      : {},
   });
 }
 

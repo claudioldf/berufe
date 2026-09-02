@@ -105,6 +105,7 @@ function submit() {
     <DesignSystemDisabledTooltip
       v-if="props.showSubmit"
       :reason="submittingReason"
+      :loading="props.submitting"
     >
       <UButton
         type="submit"

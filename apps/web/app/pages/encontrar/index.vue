@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { fetchPublicSearchLocation } from "~/services/api/search-location";
 import { useApiClient } from "~/services/api/client";
-import { encodeSearchExpression } from "~/utils/searchExpression";
+import {
+  encodeSearchExpression,
+  searchExpressionQuery,
+} from "~/utils/searchExpression";
 import {
   fallbackSearchLocation,
   searchLocationPath,
@@ -17,17 +20,16 @@ try {
   location = fallbackSearchLocation;
 }
 
-// `q` is the plain-text entry point the WebSite SearchAction JSON-LD points
-// at (Google/answer engines expect a readable query param); `expressao` is
-// the already base64url-encoded internal form. Prefer an explicit
-// `expressao` if both are present.
-const rawExpression = route.query.expressao;
+// `q` is plain text only on this SearchAction entry point. City search URLs
+// use the same key with the base64url-encoded route state. `expressao` remains
+// accepted here solely to keep previously shared links working.
 const plainQuery = route.query.q;
+const legacyExpression = route.query.expressao;
 const expressionQuery =
-  rawExpression !== undefined
-    ? { expressao: rawExpression }
-    : typeof plainQuery === "string" && plainQuery.trim()
-      ? { expressao: encodeSearchExpression(plainQuery) }
+  typeof plainQuery === "string" && plainQuery.trim()
+    ? searchExpressionQuery(encodeSearchExpression(plainQuery))
+    : typeof legacyExpression === "string" && legacyExpression
+      ? searchExpressionQuery(legacyExpression)
       : {};
 
 await navigateTo(

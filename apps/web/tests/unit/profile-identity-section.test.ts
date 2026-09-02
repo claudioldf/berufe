@@ -42,6 +42,7 @@ const ButtonStub = defineComponent({
 const FormFieldStub = defineComponent({
   props: {
     id: { type: String, required: true },
+    hint: { type: String, default: "" },
     error: { type: String, default: "" },
   },
   template: `
@@ -53,6 +54,7 @@ const FormFieldStub = defineComponent({
         :invalid="Boolean(error)"
       />
       <span v-if="error" :id="id + '-error'" role="alert">{{ error }}</span>
+      <small v-else-if="hint">{{ hint }}</small>
     </label>
   `,
 });
@@ -182,6 +184,20 @@ describe("professional profile identity photo control", () => {
 
     expect(biography.attributes("maxlength")).toBe("2500");
     expect(wrapper.text()).toContain("2500/2500");
+  });
+
+  it("tells the professional that a blank headline or bio is generated with AI", async () => {
+    const wrapper = await mountSuspended(IdentitySection, {
+      props: { modelValue: { ...draft } },
+      global,
+    });
+
+    expect(wrapper.text()).toContain(
+      "Se deixar em branco, geramos uma frase para você com inteligência artificial",
+    );
+    expect(wrapper.text()).toContain(
+      "Se deixar em branco, geramos um texto para você com inteligência artificial",
+    );
   });
 
   it("connects identity errors to their fields", async () => {

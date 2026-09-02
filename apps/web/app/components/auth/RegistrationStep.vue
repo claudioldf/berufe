@@ -117,7 +117,10 @@ function submit() {
       >
         <UIcon name="i-lucide-circle-alert" /> {{ props.error }}
       </p>
-      <DesignSystemDisabledTooltip :reason="submitBlockedReason">
+      <DesignSystemDisabledTooltip
+        :reason="submitBlockedReason"
+        :loading="loading"
+      >
         <UButton
           class="registration-step__submit"
           type="submit"
