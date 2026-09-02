@@ -232,7 +232,10 @@ function submit() {
           Cancelar
         </UButton>
       </DesignSystemDisabledTooltip>
-      <DesignSystemDisabledTooltip :reason="submittingReason">
+      <DesignSystemDisabledTooltip
+        :reason="submittingReason"
+        :loading="props.submitting"
+      >
         <UButton
           type="submit"
           color="primary"

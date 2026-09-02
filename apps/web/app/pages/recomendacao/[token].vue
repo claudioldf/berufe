@@ -225,6 +225,7 @@ async function submitIssue() {
         </p>
         <DesignSystemDisabledTooltip
           :reason="submitting ? null : recommendationBlockedReason"
+          :loading="submitting"
         >
           <UButton
             type="submit"

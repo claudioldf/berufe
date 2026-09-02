@@ -28,7 +28,10 @@ const savingReason = computed(() =>
       }}
     </span>
     <div class="editor-savebar__actions">
-      <DesignSystemDisabledTooltip :reason="savingReason">
+      <DesignSystemDisabledTooltip
+        :reason="savingReason"
+        :loading="props.saving"
+      >
         <UButton
           type="submit"
           color="primary"

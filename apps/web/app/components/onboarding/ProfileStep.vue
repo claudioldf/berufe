@@ -123,7 +123,10 @@ function submit() {
         />
       </DashboardProfileFormLayout>
       <footer class="onboarding-step-actions onboarding-step-actions--end">
-        <DesignSystemDisabledTooltip :reason="savingReason">
+        <DesignSystemDisabledTooltip
+          :reason="savingReason"
+          :loading="props.saving"
+        >
           <UButton
             type="submit"
             color="primary"

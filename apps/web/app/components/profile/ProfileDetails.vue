@@ -5,7 +5,6 @@ import { formatCountLabel } from "~/utils/text";
 
 const props = defineProps<{
   professional: PublicProfessionalProfile;
-  supportEmailUrl: string;
 }>();
 defineEmits<{
   viewPortfolio: [index: number];
@@ -139,9 +138,5 @@ const connectionCountLabel = computed(() =>
         </p>
       </div>
     </section>
-
-    <a class="support-link" :href="supportEmailUrl">
-      <UIcon name="i-lucide-mail" /> Informar um problema à equipe de suporte
-    </a>
   </div>
 </template>

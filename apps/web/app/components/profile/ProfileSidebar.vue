@@ -4,6 +4,7 @@ import type { PublicProfessionalProfile } from "~/types";
 defineProps<{
   professional: PublicProfessionalProfile;
   contactUrl: string;
+  supportEmailUrl: string;
 }>();
 defineEmits<{ contact: [] }>();
 </script>
@@ -43,5 +44,15 @@ defineEmits<{ contact: [] }>();
         </span>
       </div>
     </div>
+    <a class="profile-sidebar__support" :href="supportEmailUrl">
+      <UIcon
+        class="profile-sidebar__support-icon"
+        name="i-lucide-mail"
+        aria-hidden="true"
+      />
+      <span class="profile-sidebar__support-text">
+        Reportar um problema à Berufe
+      </span>
+    </a>
   </aside>
 </template>

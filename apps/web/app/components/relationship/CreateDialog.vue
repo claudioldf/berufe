@@ -448,6 +448,7 @@ async function submit() {
       <DesignSystemDisabledTooltip
         v-else-if="eligible"
         :reason="submittingReason"
+        :loading="relationships.isSubmitting.value"
       >
         <UButton
           :loading="relationships.isSubmitting.value"

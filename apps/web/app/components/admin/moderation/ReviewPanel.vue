@@ -119,6 +119,7 @@ defineEmits<{
             ? 'Confirme a identidade no checkbox acima'
             : null
         "
+        :loading="mutating"
       >
         <UButton
           class="moderation__decision moderation__decision--approve"

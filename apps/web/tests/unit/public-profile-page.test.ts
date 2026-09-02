@@ -87,7 +87,7 @@ describe("public profile page", () => {
     const requestMessage = "Eu preciso trocar a fiação da cozinha.";
     const wrapper = await mountSuspended(PublicProfilePage, {
       shallow: true,
-      route: `/be/ana-souza?expressao=${encodedExpression}&contexto=signed-search-context&pedido=${encodeURIComponent(requestMessage)}`,
+      route: `/be/ana-souza?q=${encodedExpression}&contexto=signed-search-context&pedido=${encodeURIComponent(requestMessage)}`,
     });
     await flushPromises();
 
@@ -104,7 +104,7 @@ describe("public profile page", () => {
     const hero = wrapper.getComponent({ name: "ProfileHero" });
     expect(hero.props("professional")).toEqual(result.professional);
     expect(hero.props("resultsUrl")).toBe(
-      `/encontrar?expressao=${encodedExpression}`,
+      `/encontrar/sc/joinville?q=${encodedExpression}`,
     );
     const contactUrl = new URL(String(hero.props("contactUrl")));
     expect(contactUrl.pathname).toBe(

@@ -1,8 +1,10 @@
 import { mountSuspended } from "@nuxt/test-utils/runtime";
 import { defineComponent } from "vue";
+import CustomerRecommendations from "@app/components/profile/CustomerRecommendations.vue";
 import EvidenceStrip from "@app/components/profile/EvidenceStrip.vue";
 import ProfileDetails from "@app/components/profile/ProfileDetails.vue";
 import ProfileHero from "@app/components/profile/ProfileHero.vue";
+import ProfileSidebar from "@app/components/profile/ProfileSidebar.vue";
 import type { PublicProfessionalProfile } from "@app/types";
 
 const LinkStub = defineComponent({
@@ -210,13 +212,12 @@ describe("public profile components", () => {
     expect(wrapper.find("nav").exists()).toBe(false);
   });
 
-  it("distinguishes declarations, approved work, and relationship types without adding evidence", async () => {
+  it("distinguishes declarations, approved work, and relationship types without exposing phone verification", async () => {
     const profile = professional();
     const details = await mountSuspended(ProfileDetails, {
       props: {
         professional: profile,
         canRequestRelationship: false,
-        supportEmailUrl: "mailto:suporte@berufe.com.br",
       },
       global: { stubs: globalStubs },
     });
@@ -235,9 +236,12 @@ describe("public profile components", () => {
     expect(details.text()).toContain("Trabalharam juntos");
     expect(details.text()).toContain("Trabalharam em reformas residenciais.");
     expect(details.text()).toContain("não garante a execução");
-    expect(evidence.text()).toContain("Telefone confirmado");
+    expect(details.text()).not.toContain("Reportar um problema à Berufe");
+    expect(evidence.text()).toContain("Perfil verificado");
+    expect(evidence.text()).not.toContain("Verificações da Berufe");
+    expect(evidence.text()).not.toContain("Telefone confirmado");
     expect(evidence.text()).toContain("Identidade verificada");
-    expect(evidence.text()).toContain("3serviços registrados");
+    expect(evidence.text()).toContain("3serviços realizados");
   });
 
   it("discloses hidden recommendations without revealing which ones", async () => {
@@ -263,11 +267,43 @@ describe("public profile components", () => {
     expect(none.text()).not.toContain("ocultad");
   });
 
+  it("renders a customer recommendation with its submission date", async () => {
+    const wrapper = await mountSuspended(CustomerRecommendations, {
+      props: {
+        recommendations: [
+          {
+            id: "7849beeb-3100-4066-934f-f82d081f2580",
+            displayName: "sara",
+            text: "Muito bom! super recomendo esse profissional",
+            submittedAt: "2026-09-02T03:00:17Z",
+            verificationLabel: "Link enviado por e-mail",
+          },
+        ],
+      },
+      global: { stubs: globalStubs },
+    });
+
+    expect(wrapper.text()).toContain(
+      "Muito bom! super recomendo esse profissional",
+    );
+    expect(wrapper.text()).toContain("sara");
+    expect(wrapper.text()).toContain("02/09/2026");
+    expect(wrapper.text()).not.toContain("Link enviado por e-mail");
+  });
+
+  it("hides the customer recommendations section when there are none", async () => {
+    const wrapper = await mountSuspended(CustomerRecommendations, {
+      props: { recommendations: [] },
+      global: { stubs: globalStubs },
+    });
+
+    expect(wrapper.find("section").exists()).toBe(false);
+  });
+
   it("hides empty portfolio and professional-relationship sections", async () => {
     const details = await mountSuspended(ProfileDetails, {
       props: {
         professional: professional({ portfolio: [], relationships: [] }),
-        supportEmailUrl: "mailto:suporte@berufe.com.br",
       },
       global: { stubs: globalStubs },
     });
@@ -308,7 +344,6 @@ describe("public profile components", () => {
       props: {
         professional: profile,
         canRequestRelationship: false,
-        supportEmailUrl: "mailto:suporte@berufe.com.br",
       },
       global: { stubs: globalStubs },
     });
@@ -316,5 +351,24 @@ describe("public profile components", () => {
     expect(details.text()).toContain("Recomendado por Beto Lima");
     expect(details.text()).toContain("Recomendou Carla Luz");
     expect(details.text()).toContain("2 conexões confirmadas");
+  });
+
+  it("places support reporting at the bottom of the profile sidebar", async () => {
+    const supportEmailUrl =
+      "mailto:suporte@berufe.com.br?subject=Informacao%20sobre%20o%20perfil";
+    const wrapper = await mountSuspended(ProfileSidebar, {
+      props: {
+        professional: professional(),
+        contactUrl: "https://api.berufe.test/profile-whatsapp",
+        supportEmailUrl,
+      },
+      global: { stubs: globalStubs },
+    });
+
+    const supportLink = wrapper.get(`a[href="${supportEmailUrl}"]`);
+    expect(supportLink.text()).toContain("Reportar um problema à Berufe");
+    expect(wrapper.get("aside").element.lastElementChild).toBe(
+      supportLink.element,
+    );
   });
 });

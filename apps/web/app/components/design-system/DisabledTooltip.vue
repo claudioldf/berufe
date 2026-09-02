@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { shallowRef } from "vue";
+import { computed, shallowRef, watch } from "vue";
 
 interface Props {
   reason?: string | null;
+  loading?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   reason: null,
+  loading: false,
 });
 
 defineSlots<{
@@ -14,6 +16,13 @@ defineSlots<{
 }>();
 
 const open = shallowRef(false);
+const visibleReason = computed(() =>
+  props.loading ? null : props.reason?.trim() || null,
+);
+
+watch(visibleReason, (reason) => {
+  if (!reason) open.value = false;
+});
 
 const tooltipPosition = {
   side: "top",
@@ -36,7 +45,7 @@ let lastTapAt = Number.NEGATIVE_INFINITY;
 // equivalent at all. This span is the actual trigger — always focusable and
 // tappable — regardless of the disabled state of whatever it wraps.
 function toggleTooltip() {
-  if (!props.reason) return;
+  if (!visibleReason.value) return;
   open.value = !open.value;
 }
 
@@ -53,7 +62,7 @@ function onTriggerClick() {
 
 function onTriggerPointerUp(event: PointerEvent) {
   if (event.pointerType !== "touch" && event.pointerType !== "pen") return;
-  if (!props.reason) return;
+  if (!visibleReason.value) return;
 
   lastTapAt = Date.now();
   toggleTooltip();
@@ -63,8 +72,8 @@ function onTriggerPointerUp(event: PointerEvent) {
 <template>
   <UTooltip
     v-model:open="open"
-    :text="reason ?? undefined"
-    :disabled="!reason"
+    :text="visibleReason ?? undefined"
+    :disabled="!visibleReason"
     :content="tooltipPosition"
     :ui="tooltipUi"
     :delay-duration="250"
@@ -73,23 +82,23 @@ function onTriggerPointerUp(event: PointerEvent) {
   >
     <span
       class="disabled-tooltip"
-      :class="{ 'disabled-tooltip--boxed': reason }"
-      :tabindex="reason ? 0 : -1"
-      :aria-disabled="Boolean(reason)"
+      :class="{ 'disabled-tooltip--boxed': visibleReason }"
+      :tabindex="visibleReason ? 0 : -1"
+      :aria-disabled="Boolean(visibleReason)"
       @pointerup="onTriggerPointerUp"
       @click="onTriggerClick"
     >
       <slot />
     </span>
 
-    <template v-if="reason" #content>
+    <template v-if="visibleReason" #content>
       <span class="disabled-tooltip__content">
         <span class="disabled-tooltip__icon" aria-hidden="true">
           <UIcon name="i-lucide-lock-keyhole" />
         </span>
         <span class="disabled-tooltip__copy">
           <strong>Ação indisponível</strong>
-          <span>{{ reason }}</span>
+          <span>{{ visibleReason }}</span>
         </span>
       </span>
     </template>

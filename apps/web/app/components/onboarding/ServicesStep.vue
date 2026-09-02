@@ -123,7 +123,10 @@ function submit() {
         >
           Voltar
         </UButton>
-        <DesignSystemDisabledTooltip :reason="savingReason">
+        <DesignSystemDisabledTooltip
+          :reason="savingReason"
+          :loading="props.saving"
+        >
           <UButton
             type="submit"
             color="primary"

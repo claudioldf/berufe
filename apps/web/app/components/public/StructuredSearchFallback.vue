@@ -131,7 +131,10 @@ function submit() {
       </label>
     </div>
 
-    <DesignSystemDisabledTooltip :reason="submitBlockedReason">
+    <DesignSystemDisabledTooltip
+      :reason="submitBlockedReason"
+      :loading="loading"
+    >
       <UButton
         type="submit"
         color="primary"

@@ -142,7 +142,7 @@ function hasProfileReferences(professional: PublicProfessionalCard) {
     background: var(--mint);
   }
 
-  &__avatar {
+  &__image > &__avatar {
     display: block;
     width: 100%;
     height: 100%;
