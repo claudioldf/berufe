@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { PublicProfessionalProfile } from "~/types";
-import { formatDate } from "~/utils/formatters";
+import { formatTimestampDate } from "~/utils/formatters";
 
 defineProps<{
   recommendations: PublicProfessionalProfile["customerRecommendations"];
@@ -26,7 +26,7 @@ defineProps<{
           <footer>
             <span>
               <strong>{{ recommendation.displayName }}</strong>
-              <small>{{ formatDate(recommendation.submittedAt) }}</small>
+              <small>{{ formatTimestampDate(recommendation.submittedAt) }}</small>
             </span>
             <em>
               <UIcon name="i-lucide-mail-check" />

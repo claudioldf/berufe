@@ -1,5 +1,6 @@
 import { mountSuspended } from "@nuxt/test-utils/runtime";
 import { defineComponent } from "vue";
+import CustomerRecommendations from "@app/components/profile/CustomerRecommendations.vue";
 import EvidenceStrip from "@app/components/profile/EvidenceStrip.vue";
 import ProfileDetails from "@app/components/profile/ProfileDetails.vue";
 import ProfileHero from "@app/components/profile/ProfileHero.vue";
@@ -261,6 +262,39 @@ describe("public profile components", () => {
       global: { stubs: globalStubs },
     });
     expect(none.text()).not.toContain("ocultad");
+  });
+
+  it("renders a customer recommendation with its submission date", async () => {
+    const wrapper = await mountSuspended(CustomerRecommendations, {
+      props: {
+        recommendations: [
+          {
+            id: "7849beeb-3100-4066-934f-f82d081f2580",
+            displayName: "sara",
+            text: "Muito bom! super recomendo esse profissional",
+            submittedAt: "2026-09-02T03:00:17Z",
+            verificationLabel: "Link enviado por e-mail",
+          },
+        ],
+      },
+      global: { stubs: globalStubs },
+    });
+
+    expect(wrapper.text()).toContain(
+      "Muito bom! super recomendo esse profissional",
+    );
+    expect(wrapper.text()).toContain("sara");
+    expect(wrapper.text()).toContain("02/09/2026");
+    expect(wrapper.text()).toContain("Link enviado por e-mail");
+  });
+
+  it("hides the customer recommendations section when there are none", async () => {
+    const wrapper = await mountSuspended(CustomerRecommendations, {
+      props: { recommendations: [] },
+      global: { stubs: globalStubs },
+    });
+
+    expect(wrapper.find("section").exists()).toBe(false);
   });
 
   it("hides empty portfolio and professional-relationship sections", async () => {
