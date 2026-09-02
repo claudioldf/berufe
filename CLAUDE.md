@@ -152,4 +152,8 @@ Prettier is the sole formatter (ESLint formatting rules are off); stylelint uses
 
 Read `docs/` before changing product behavior — the code is downstream of these. `Berufe_MVP_Feature_Plan.md` (scope and value loop), `Berufe_MVP_Stories.md` (acceptance criteria for MVP surfaces, `Sxxx`), `Berufe_Reports_Stories.md` (admin reporting, `Rxxx`), `Berufe_MVP_Infrastructure_Architecture.md` (Rails API + Nuxt split, Compose layout, auth, storage, development standards), `Berufe_Increment_*_Implementation_Plan.md` (approved decisions that refine the stories for a given increment; these take precedence where they intentionally differ), `Berufe_V2_Stories.md` (explicitly deferred; identifiers are never reused).
 
-Commits are titled `[Sxxx]: <imperative summary>` for a story, or a plain imperative summary otherwise.
+## Git workflow
+
+Commits are titled `[Sxxx]: <imperative summary>` for a story, or a plain imperative summary otherwise. Never add a `Co-Authored-By` trailer, a Claude/session link, or any other AI-attribution footer to a commit message or PR description.
+
+Always commit; never leave finished work sitting uncommitted. Split changes into well-scoped commits along the boundaries the change actually has — a bug fix, a refactor, and a new feature that happen to land together are separate commits, not one. Each commit should be reviewable on its own and its message should describe why that scoped change was made, not restate the diff.
