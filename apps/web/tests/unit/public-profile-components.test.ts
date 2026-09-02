@@ -285,7 +285,7 @@ describe("public profile components", () => {
     );
     expect(wrapper.text()).toContain("sara");
     expect(wrapper.text()).toContain("02/09/2026");
-    expect(wrapper.text()).toContain("Link enviado por e-mail");
+    expect(wrapper.text()).not.toContain("Link enviado por e-mail");
   });
 
   it("hides the customer recommendations section when there are none", async () => {

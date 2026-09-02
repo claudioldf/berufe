@@ -30,10 +30,6 @@ defineProps<{
                 formatTimestampDate(recommendation.submittedAt)
               }}</small>
             </span>
-            <em>
-              <UIcon name="i-lucide-mail-check" />
-              {{ recommendation.verificationLabel }}
-            </em>
           </footer>
         </article>
       </div>
@@ -76,13 +72,6 @@ defineProps<{
     line-height: 1.6;
   }
 
-  footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: end;
-    gap: 14px;
-  }
-
   footer strong,
   footer small {
     display: block;
@@ -92,16 +81,6 @@ defineProps<{
     margin-top: 2px;
     color: var(--ink-soft);
     font-size: 0.76rem;
-  }
-
-  footer em {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    color: var(--color-brand);
-    font-size: 0.74rem;
-    font-style: normal;
-    font-weight: 800;
   }
 }
 
