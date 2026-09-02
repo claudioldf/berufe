@@ -21,6 +21,7 @@ import {
   searchExpressionQuery,
 } from "~/utils/searchExpression";
 import { searchLocationPath } from "~/utils/searchLocation";
+import { localSeoRoute } from "~/utils/seoContent";
 
 definePageMeta({ key: "professional-finder" });
 
@@ -122,8 +123,43 @@ const { data: coverage } = await useAsyncData(
     }),
   { watch: [activeLocation] },
 );
+const { data: localPages } = await useAsyncData(
+  () =>
+    `city-hub-content-${activeLocation.value.stateSlug}-${activeLocation.value.citySlug}`,
+  () =>
+    queryCollection("localPages")
+      .where("stateSlug", "=", activeLocation.value.stateSlug)
+      .where("citySlug", "=", activeLocation.value.citySlug)
+      .where("published", "=", true)
+      .select("stateSlug", "citySlug", "serviceSlug")
+      .all(),
+  { watch: [activeLocation] },
+);
+const publishedPaths = computed(
+  () =>
+    new Set(
+      (localPages.value ?? []).map((page) =>
+        localSeoRoute({
+          stateSlug: page.stateSlug,
+          citySlug: page.citySlug,
+          serviceSlug: page.serviceSlug,
+        }),
+      ),
+    ),
+);
 const indexableCityServices = computed(
-  () => coverage.value?.filter((entry) => entry.indexable) ?? [],
+  () =>
+    coverage.value?.filter(
+      (entry) =>
+        entry.indexable &&
+        publishedPaths.value.has(
+          localSeoRoute({
+            stateSlug: entry.location.stateSlug,
+            citySlug: entry.location.citySlug,
+            serviceSlug: entry.service.slug,
+          }),
+        ),
+    ) ?? [],
 );
 
 const siteUrl = withSiteUrl("/");
@@ -139,7 +175,10 @@ useSeoMeta({
   ogType: "website",
   // A page with a search term reflects one visitor's free-text query --
   // never indexable, and always canonicalized back to the clean city URL.
-  robots: () => (hasSearchTerm.value ? "noindex, follow" : "index, follow"),
+  robots: () =>
+    hasSearchTerm.value || !indexableCityServices.value.length
+      ? "noindex, follow"
+      : "index, follow",
 });
 useHead(() => ({ link: [{ rel: "canonical", href: canonicalUrl.value }] }));
 useSchemaOrg([

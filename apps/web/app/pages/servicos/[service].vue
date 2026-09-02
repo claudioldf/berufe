@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import { fetchPublicServiceCoverage } from "~/services/api/public-discovery";
 import { useApiClient } from "~/services/api/client";
+import { localSeoRoute } from "~/utils/seoContent";
 
 const route = useRoute();
 const client = useApiClient();
@@ -23,8 +25,33 @@ const { data: coverage } = await useAsyncData(
   () => `service-hub-coverage-${serviceSlug.value}`,
   () => fetchPublicServiceCoverage(client, { serviceSlug: serviceSlug.value }),
 );
+const { data: localPages } = await useAsyncData(
+  () => `service-hub-content-${serviceSlug.value}`,
+  () =>
+    queryCollection("localPages")
+      .where("serviceSlug", "=", serviceSlug.value)
+      .where("published", "=", true)
+      .select("stateSlug", "citySlug", "serviceSlug")
+      .all(),
+);
+const publishedPaths = computed(
+  () =>
+    new Set(
+      (localPages.value ?? []).map((page) =>
+        localSeoRoute({
+          stateSlug: page.stateSlug,
+          citySlug: page.citySlug,
+          serviceSlug: page.serviceSlug,
+        }),
+      ),
+    ),
+);
 const indexableCoverage = computed(
-  () => coverage.value?.filter((entry) => entry.indexable) ?? [],
+  () =>
+    coverage.value?.filter(
+      (entry) =>
+        entry.indexable && publishedPaths.value.has(listingPath(entry)),
+    ) ?? [],
 );
 const isIndexable = computed(() => indexableCoverage.value.length > 0);
 

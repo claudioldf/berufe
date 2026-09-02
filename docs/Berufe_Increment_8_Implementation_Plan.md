@@ -31,7 +31,7 @@ Increment 8 promotes V2-006 ("Publish dedicated SEO category landing pages") out
 
 - `PublicIndexability` (`apps/api/app/services/public_indexability.rb`) is the only place that decides indexability.
 - A professional profile is indexable only when self-service (never an external, unclaimed, referral-created profile — indexing those is both a quality risk and a privacy question the referral legitimate-interest assessment does not cover), published, with a photo, and with at least one piece of evidence (portfolio item, recommendation, or verification label). `GET /public/professionals/{slug}` and the professional workspace (`is_indexable`) both expose this via the same computation.
-- A service×city listing is indexable only at ≥3 published professionals (`PublicIndexability::MINIMUM_LISTING_PROFESSIONALS`); below that it is a real page (a recruitment opportunity — "be the first electrician in Blumenau") but `noindex, follow`.
+- A service×city listing is supply-eligible at ≥1 published professional (`PublicIndexability::MINIMUM_LISTING_PROFESSIONALS`). Nuxt additionally requires reviewed, published editorial content for that exact service×city combination before emitting `index, follow` or adding it to the sitemap; all other valid routes remain accessible with `noindex, follow`.
 - Nuxt never re-derives this decision; it renders whatever Rails reports.
 
 ### S061 — Publish gated service×city listing pages
