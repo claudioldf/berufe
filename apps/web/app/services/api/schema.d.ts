@@ -2758,7 +2758,7 @@ export interface components {
             professionals: components["schemas"]["PublicProfessionalCard"][];
             related_services: components["schemas"]["PublicServiceSuggestion"][];
             meta: components["schemas"]["PageMeta"];
-            /** @description Whether this service/city combination has enough supply to be worth indexing. */
+            /** @description Whether this service/city combination has at least one public professional; the web app also requires published editorial content before indexing. */
             indexable: boolean;
         };
         PublicServiceCoverageResponse: {
@@ -2772,6 +2772,7 @@ export interface components {
             service: components["schemas"]["PublicServiceSuggestion"];
             location: components["schemas"]["PublicProfessionalSearchEffectiveLocation"];
             professional_count: number;
+            /** @description Whether this service/city combination has at least one public professional; the web app also requires published editorial content before indexing. */
             indexable: boolean;
         };
         PublicServiceDemandResponse: {

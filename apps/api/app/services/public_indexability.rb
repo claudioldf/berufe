@@ -11,12 +11,11 @@
 #   both a content-quality risk and a privacy question the referral
 #   legitimate-interest assessment does not cover) and carries at least one
 #   piece of real evidence beyond a bare name and photo.
-# - A service x city listing is indexable only once it has enough real
-#   supply to be more than a templated shell. Near-identical thin pages are
-#   exactly what search engines de-index, and de-indexing drags down the
-#   whole domain's quality signal -- so gate before publishing, not after.
+# - A service x city listing is supply-eligible once it has at least one real
+#   professional. Nuxt combines this API-owned supply decision with its
+#   published editorial-content decision before emitting `index, follow`.
 class PublicIndexability
-  MINIMUM_LISTING_PROFESSIONALS = 3
+  MINIMUM_LISTING_PROFESSIONALS = 1
 
   def self.listing_indexable?(professional_count)
     professional_count.to_i >= MINIMUM_LISTING_PROFESSIONALS

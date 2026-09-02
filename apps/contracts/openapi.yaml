@@ -7708,7 +7708,7 @@ components:
           $ref: "#/components/schemas/PageMeta"
         indexable:
           type: boolean
-          description: Whether this service/city combination has enough supply to be worth indexing.
+          description: Whether this service/city combination has at least one public professional; the web app also requires published editorial content before indexing.
     PublicServiceCoverageResponse:
       type: object
       additionalProperties: false
@@ -7748,6 +7748,7 @@ components:
           minimum: 1
         indexable:
           type: boolean
+          description: Whether this service/city combination has at least one public professional; the web app also requires published editorial content before indexing.
     PublicServiceDemandResponse:
       type: object
       additionalProperties: false
