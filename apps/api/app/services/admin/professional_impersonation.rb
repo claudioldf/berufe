@@ -12,7 +12,7 @@ module Admin
           id: professional_account_id,
           role: "professional"
         )
-        raise Unavailable unless eligible?(target)
+        raise Unavailable unless target.impersonatable?
 
         application_session.update!(impersonated_user_account: target)
       end
@@ -26,12 +26,6 @@ module Admin
       end
 
       application_session
-    end
-
-    private
-
-    def eligible?(target)
-      target.active? && target.phone_verified? && target.registration_completed?
     end
   end
 end

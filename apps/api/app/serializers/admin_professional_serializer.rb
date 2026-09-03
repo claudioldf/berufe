@@ -34,8 +34,8 @@ class AdminProfessionalSerializer
       phone_verified: row.phone_verified_at.present?,
       phone_last4: row.phone_e164&.last(4),
       identity_verified: row.identity_verified,
-      account_status: row.account_status,
-      impersonation_eligible: impersonation_eligible?(row),
+      account_status: row.status,
+      impersonation_eligible: row.impersonatable?(professional_profile_present: row.professional_profile_id.present?),
       portfolio_count: row.portfolio_count,
       reference_count: row.reference_count,
       customer_count: row.customer_count,
@@ -45,15 +45,5 @@ class AdminProfessionalSerializer
       login_count: row.login_count,
       published_at: row.published_at&.iso8601
     }
-  end
-
-  def impersonation_eligible?(row)
-    row.account_status == "active" &&
-      row.registered_at.present? &&
-      row.phone_verified_at.present? &&
-      row.terms_accepted_at.present? &&
-      row.terms_version == LegalDocumentVersions::TERMS &&
-      row.privacy_notice_version == LegalDocumentVersions::PRIVACY_NOTICE &&
-      row.professional_profile_id.present?
   end
 end

@@ -33,8 +33,7 @@ class ApplicationSession < ApplicationRecord
   end
 
   def impersonation_target_eligible?
-    target = impersonated_user_account
-    target&.active? && target.professional? && target.phone_verified? && target.registration_completed?
+    impersonated_user_account&.impersonatable? || false
   end
 
   def self.issue!(user_account:, now: Time.current)
