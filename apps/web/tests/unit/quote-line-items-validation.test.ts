@@ -21,11 +21,13 @@ function createQuote(): Quote {
     customerName: "Ana Cliente",
     customerPhone: "(47) 99999-2222",
     customerEmail: "",
+    pricingMode: "itemized",
     serviceDescription: "Instalação elétrica",
     serviceAddress: "",
     scheduledOn: "",
     validUntil: "2026-09-28",
     discount: -1,
+    markup: 0,
     notes: "",
     status: "draft",
     subtotal: 0,
@@ -47,6 +49,7 @@ function createQuote(): Quote {
         sortOrder: 0,
       },
     ],
+    customerSuppliedMaterials: [],
   }) as Quote;
 }
 
@@ -55,6 +58,8 @@ function mountEditor(quote: Quote) {
     props: {
       modelValue: quote,
       subtotal: quoteSubtotal(quote),
+      priceBeforeDiscount: quoteSubtotal(quote),
+      total: quoteSubtotal(quote),
       errors: validateQuote(quote),
     },
     global: {

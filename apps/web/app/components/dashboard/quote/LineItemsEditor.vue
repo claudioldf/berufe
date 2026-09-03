@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import type { Quote, QuoteValidationErrors } from "~/types";
+import type { Quote, QuotePricingMode, QuoteValidationErrors } from "~/types";
 import { formatCurrency } from "~/utils/formatters";
 import { quoteItemTotal } from "~/utils/quotes";
 
 const props = defineProps<{
   subtotal: number;
+  priceBeforeDiscount: number;
+  total: number;
   errors?: QuoteValidationErrors;
 }>();
 const quote = defineModel<Quote>({ required: true });
@@ -12,17 +14,19 @@ const emit = defineEmits<{
   add: [];
   remove: [id: string];
   dirty: [];
+  changeMode: [mode: QuotePricingMode];
 }>();
+const fixedPrice = computed(() => quote.value.pricingMode === "fixed_price");
 </script>
 
 <template>
-  <DesignSystemSurfaceCard as="section" class="builder-card">
+  <DesignSystemSurfaceCard as="section" class="builder-card pricing-editor">
     <header>
       <div>
         <span>03</span>
         <div>
-          <h2>Itens do orçamento</h2>
-          <p>Descreva os itens, as quantidades e os valores.</p>
+          <h2>Forma de cobrança e valores</h2>
+          <p>Escolha como o preço será apresentado ao cliente.</p>
         </div>
       </div>
       <UButton
@@ -30,15 +34,78 @@ const emit = defineEmits<{
         color="neutral"
         variant="outline"
         icon="i-lucide-plus"
+        :disabled="quote.items.length >= 20"
         @click="emit('add')"
       >
         Adicionar item
       </UButton>
     </header>
+
+    <fieldset class="pricing-mode">
+      <legend>Forma de cobrança</legend>
+      <label
+        class="pricing-mode__option"
+        :class="{
+          'pricing-mode__option--selected': quote.pricingMode === 'fixed_price',
+        }"
+      >
+        <input
+          type="radio"
+          name="pricing-mode"
+          value="fixed_price"
+          :checked="quote.pricingMode === 'fixed_price'"
+          @change="emit('changeMode', 'fixed_price')"
+        />
+        <span class="pricing-mode__icon"
+          ><UIcon name="i-lucide-lock-keyhole" aria-hidden="true"
+        /></span>
+        <span>
+          <strong>Preço fechado</strong>
+          <small
+            >O cliente vê somente o valor final. Os cálculos abaixo ficam
+            privados.</small
+          >
+        </span>
+      </label>
+      <label
+        class="pricing-mode__option"
+        :class="{
+          'pricing-mode__option--selected': quote.pricingMode === 'itemized',
+        }"
+      >
+        <input
+          type="radio"
+          name="pricing-mode"
+          value="itemized"
+          :checked="quote.pricingMode === 'itemized'"
+          @change="emit('changeMode', 'itemized')"
+        />
+        <span class="pricing-mode__icon"
+          ><UIcon name="i-lucide-list" aria-hidden="true"
+        /></span>
+        <span>
+          <strong>Detalhado</strong>
+          <small
+            >O cliente vê cada item, quantidade, valor unitário e total.</small
+          >
+        </span>
+      </label>
+    </fieldset>
+
+    <div v-if="fixedPrice" class="pricing-editor__private-note">
+      <UIcon name="i-lucide-eye-off" aria-hidden="true" />
+      <span
+        ><strong>Cálculo particular</strong> Só você vê os itens, custos,
+        acréscimo e desconto abaixo.</span
+      >
+    </div>
+
     <div class="quote-items">
       <div class="quote-item quote-item--head" aria-hidden="true">
         <span>Descrição</span><span>Qtd.</span><span>Unidade</span
-        ><span>Valor unit.</span><span>Total</span><span />
+        ><span>{{ fixedPrice ? "Custo unit." : "Valor unit." }}</span
+        ><span>{{ fixedPrice ? "Custo" : "Total" }}</span
+        ><span />
       </div>
       <div
         v-for="(item, index) in quote.items"
@@ -70,7 +137,9 @@ const emit = defineEmits<{
             v-model="item.description"
             :name="`item-${item.id}-description`"
             autocomplete="off"
-            :placeholder="`Item ${index + 1}…`"
+            :placeholder="
+              fixedPrice ? 'Ex.: mão de obra…' : `Item ${index + 1}…`
+            "
             :aria-describedby="
               props.errors?.items[item.id]?.description
                 ? `item-${item.id}-description-error`
@@ -108,8 +177,8 @@ const emit = defineEmits<{
                 : undefined
             "
             :aria-invalid="Boolean(props.errors?.items[item.id]?.quantity)"
-            min="0.01"
-            step="0.01"
+            min="0.001"
+            step="0.001"
           />
           <small
             v-if="props.errors?.items[item.id]?.quantity"
@@ -157,7 +226,8 @@ const emit = defineEmits<{
           }"
         >
           <span class="quote-item__label"
-            >Valor unitário do item {{ index + 1 }}</span
+            >{{ fixedPrice ? "Custo" : "Valor" }} unitário do item
+            {{ index + 1 }}</span
           >
           <input
             v-model.number="item.unitPrice"
@@ -183,7 +253,9 @@ const emit = defineEmits<{
           </small>
         </label>
         <span class="quote-item__total">
-          <span class="quote-item__label">Total do item {{ index + 1 }}</span>
+          <span class="quote-item__label"
+            >{{ fixedPrice ? "Custo" : "Total" }} do item {{ index + 1 }}</span
+          >
           <strong>{{ formatCurrency(quoteItemTotal(item)) }}</strong>
         </span>
       </div>
@@ -201,13 +273,53 @@ const emit = defineEmits<{
       variant="outline"
       block
       icon="i-lucide-plus"
+      :disabled="quote.items.length >= 20"
       @click="emit('add')"
     >
       Adicionar item
     </UButton>
     <div class="builder-total">
       <div>
-        <span>Subtotal</span><strong>{{ formatCurrency(subtotal) }}</strong>
+        <span>{{ fixedPrice ? "Custo calculado" : "Subtotal" }}</span
+        ><strong>{{ formatCurrency(subtotal) }}</strong>
+      </div>
+      <label v-if="fixedPrice">
+        <span>Acréscimo</span>
+        <span class="builder-total__field">
+          <span
+            class="builder-total__control"
+            :class="{
+              'builder-total__control--invalid': props.errors?.markup,
+            }"
+          >
+            <em>R$</em>
+            <input
+              v-model.number="quote.markup"
+              name="markup"
+              type="number"
+              inputmode="decimal"
+              autocomplete="off"
+              :aria-describedby="
+                props.errors?.markup ? 'quote-markup-error' : undefined
+              "
+              :aria-invalid="Boolean(props.errors?.markup)"
+              min="0"
+              step="0.01"
+              @input="emit('dirty')"
+            />
+          </span>
+          <small
+            v-if="props.errors?.markup"
+            id="quote-markup-error"
+            class="builder-total__error"
+          >
+            {{ props.errors.markup }}
+          </small>
+        </span>
+      </label>
+      <div v-if="fixedPrice">
+        <span>Valor antes do desconto</span
+        ><strong>{{ formatCurrency(priceBeforeDiscount) }}</strong>
       </div>
       <label>
         <span>Desconto</span>
@@ -230,7 +342,7 @@ const emit = defineEmits<{
               "
               :aria-invalid="Boolean(props.errors?.discount)"
               min="0"
-              :max="subtotal"
+              :max="priceBeforeDiscount"
               step="0.01"
               @input="emit('dirty')"
             />
@@ -245,11 +357,108 @@ const emit = defineEmits<{
         </span>
       </label>
       <div>
-        <span>Total</span
-        ><strong>{{
-          formatCurrency(Math.max(0, subtotal - quote.discount))
-        }}</strong>
+        <span>{{ fixedPrice ? "Preço final ao cliente" : "Total" }}</span
+        ><strong>{{ formatCurrency(total) }}</strong>
       </div>
     </div>
   </DesignSystemSurfaceCard>
 </template>
+
+<style scoped lang="scss">
+.pricing-mode {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  padding: 0;
+  margin: 0 0 18px;
+  border: 0;
+
+  legend {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  &__option {
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    gap: 10px;
+    align-items: start;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--color-surface-control);
+    cursor: pointer;
+    transition:
+      border-color var(--motion-fast) ease,
+      background var(--motion-fast) ease;
+  }
+
+  &__option--selected {
+    border-color: var(--color-brand);
+    background: var(--color-brand-tint-muted);
+  }
+
+  &__option input {
+    margin-top: 4px;
+    accent-color: var(--color-brand);
+  }
+
+  &__icon {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    background: white;
+    color: var(--color-brand);
+  }
+
+  &__option strong,
+  &__option small {
+    display: block;
+  }
+
+  &__option strong {
+    font-size: 0.88rem;
+  }
+
+  &__option small {
+    margin-top: 3px;
+    color: var(--ink-soft);
+    font-size: 0.78rem;
+    line-height: 1.4;
+  }
+}
+
+.pricing-editor__private-note {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  padding: 11px 13px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  background: #f5f3ed;
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+  line-height: 1.4;
+
+  svg {
+    flex: 0 0 auto;
+    color: var(--color-brand);
+    font-size: 1.05rem;
+  }
+
+  strong {
+    color: var(--ink);
+  }
+}
+
+@media (width <= 720px) {
+  .pricing-mode {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

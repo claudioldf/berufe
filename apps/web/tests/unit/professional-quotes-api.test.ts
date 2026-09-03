@@ -24,6 +24,7 @@ const contractQuote: ContractQuote = {
   customer_name: "Ana Paula",
   customer_phone_e164: "+5547999991111",
   customer_email: "ana@example.com",
+  pricing_mode: "itemized",
   service_description: "Adequação elétrica",
   service_address: "Rua das Flores, 10",
   scheduled_on: "2026-08-22",
@@ -31,6 +32,7 @@ const contractQuote: ContractQuote = {
   notes: "Materiais a definir.",
   status: "draft",
   subtotal_amount: "13.33",
+  markup_amount: "0.00",
   discount_amount: "1.33",
   total_amount: "12.00",
   shared_at: null,
@@ -67,6 +69,15 @@ const contractQuote: ContractQuote = {
       sort_order: 1,
     },
   ],
+  customer_supplied_materials: [
+    {
+      id: "a9ed185e-75e8-4bb7-b3cf-f05ed72ce34d",
+      description: "Tinta acrílica branca 18 L",
+      quantity: "2",
+      unit: "lata",
+      sort_order: 0,
+    },
+  ],
 };
 
 function clientReturning(
@@ -91,7 +102,9 @@ describe("professional quote API", () => {
       customerId: contractQuote.customer.id,
       customerPhone: "(47) 9 9999-1111",
       customerEmail: "ana@example.com",
+      pricingMode: "itemized",
       subtotal: 13.33,
+      markup: 0,
       discount: 1.33,
       total: 12,
       changeRequests: [
@@ -104,6 +117,13 @@ describe("professional quote API", () => {
       items: [
         { description: "Material", quantity: 0.333, lineTotal: 3.33 },
         { description: "Serviço", quantity: 1, lineTotal: 10 },
+      ],
+      customerSuppliedMaterials: [
+        {
+          description: "Tinta acrílica branca 18 L",
+          quantity: 2,
+          unit: "lata",
+        },
       ],
     });
   });
@@ -202,6 +222,8 @@ describe("professional quote API", () => {
             whatsapp_e164: "5547999991111",
             email: "ana@example.com",
           },
+          pricing_mode: "itemized",
+          markup_amount: 0,
           service_description: "Adequação elétrica",
           service_address: "Rua das Flores, 10",
           scheduled_on: "2026-08-22",
@@ -220,6 +242,13 @@ describe("professional quote API", () => {
               quantity: 1,
               unit: "serviço",
               unit_price: 10,
+            },
+          ],
+          customer_supplied_materials: [
+            {
+              description: "Tinta acrílica branca 18 L",
+              quantity: 2,
+              unit: "lata",
             },
           ],
         },

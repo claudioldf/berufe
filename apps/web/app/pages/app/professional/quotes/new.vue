@@ -44,17 +44,26 @@ const requestedCustomerId = requestedQuoteId
 const editor = await useAsyncData(
   `professional-quote-editor-${requestedQuoteId ?? `new-${requestedCustomerId ?? "blank"}`}`,
   async () => {
-    const [workspace, quote] = await Promise.all([
-      fetchProfessionalWorkspace(client),
-      requestedQuoteId
-        ? fetchProfessionalQuote(client, requestedQuoteId)
-        : requestedCustomerId
-          ? fetchProfessionalCustomer(client, requestedCustomerId).then(
-              createEmptyQuote,
-            )
-          : Promise.resolve(createEmptyQuote()),
+    const workspaceRequest = fetchProfessionalWorkspace(client);
+    if (requestedQuoteId) {
+      const [workspace, initialQuote] = await Promise.all([
+        workspaceRequest,
+        fetchProfessionalQuote(client, requestedQuoteId),
+      ]);
+      return { workspace, quote: withDefaultQuoteValidity(initialQuote) };
+    }
+
+    const [workspace, customer] = await Promise.all([
+      workspaceRequest,
+      requestedCustomerId
+        ? fetchProfessionalCustomer(client, requestedCustomerId)
+        : Promise.resolve(undefined),
     ]);
-    return { workspace, quote: withDefaultQuoteValidity(quote) };
+    const initialQuote = createEmptyQuote(
+      workspace.quoteDefaults.pricingMode,
+      customer,
+    );
+    return { workspace, quote: withDefaultQuoteValidity(initialQuote) };
   },
 );
 const savingIntent = shallowRef<QuoteSaveIntent | null>(null);
@@ -115,6 +124,7 @@ watch(shareOpen, (open) => {
 });
 
 function createEmptyQuote(
+  pricingMode: Quote["pricingMode"],
   customer?: Awaited<ReturnType<typeof fetchProfessionalCustomer>>,
 ): Quote {
   return {
@@ -125,11 +135,13 @@ function createEmptyQuote(
     customerName: customer?.name ?? "",
     customerPhone: customer?.phone ?? "",
     customerEmail: customer?.email ?? "",
+    pricingMode,
     serviceDescription: "",
     serviceAddress: "",
     scheduledOn: "",
     validUntil: quoteDateAfterDays(30),
     discount: 0,
+    markup: 0,
     notes: "",
     status: "draft",
     subtotal: 0,
@@ -151,6 +163,7 @@ function createEmptyQuote(
         sortOrder: 0,
       },
     ],
+    customerSuppliedMaterials: [],
   };
 }
 

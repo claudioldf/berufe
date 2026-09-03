@@ -18,19 +18,16 @@ class SharedQuoteSerializer
         scheduled_on: quote.scheduled_on&.iso8601,
         valid_until: quote.valid_until&.iso8601,
         notes: quote.notes,
-        subtotal_amount: money(quote.subtotal_amount),
-        discount_amount: money(quote.discount_amount),
         total_amount: money(quote.total_amount),
+        pricing: serialized_pricing,
         customer_decision_message: quote.customer_decision_message,
         service_job: serialized_service_job,
-        items: quote.quote_items.map do |item|
+        customer_supplied_materials: quote.quote_materials.map do |material|
           {
-            description: item.description,
-            quantity: decimal(item.quantity),
-            unit: item.unit,
-            unit_price: money(item.unit_price),
-            line_total: money(item.line_total),
-            sort_order: item.sort_order
+            description: material.description,
+            quantity: decimal(material.quantity),
+            unit: material.unit,
+            sort_order: material.sort_order
           }
         end
       },
@@ -74,6 +71,26 @@ class SharedQuoteSerializer
     {
       status: job.status,
       completed_at: job.completed_at&.iso8601
+    }
+  end
+
+  def serialized_pricing
+    return {mode: "fixed_price"} if quote.fixed_price?
+
+    {
+      mode: "itemized",
+      subtotal_amount: money(quote.subtotal_amount),
+      discount_amount: money(quote.discount_amount),
+      items: quote.quote_items.map do |item|
+        {
+          description: item.description,
+          quantity: decimal(item.quantity),
+          unit: item.unit,
+          unit_price: money(item.unit_price),
+          line_total: money(item.line_total),
+          sort_order: item.sort_order
+        }
+      end
     }
   end
 end

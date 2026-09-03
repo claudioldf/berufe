@@ -180,6 +180,7 @@ test("published professional creates, previews, securely shares, and live-edits 
   const customerPhone = testInfo.project.name.startsWith("mobile")
     ? "47999995555"
     : "47999994444";
+  await page.getByRole("radio", { name: /Detalhado/ }).check();
   await page.getByLabel("Nome do cliente").fill(customerName);
   await page.getByLabel("WhatsApp").fill(customerPhone);
   await page
@@ -188,6 +189,12 @@ test("published professional creates, previews, securely shares, and live-edits 
   await page.getByLabel("Descrição do item 1").fill("Instalação elétrica");
   await page.getByLabel("Quantidade do item 1").fill("2");
   await page.getByLabel("Valor unitário do item 1").fill("125.50");
+  await page.getByRole("button", { name: "Adicionar material" }).click();
+  await page
+    .getByLabel("Descrição do material 1")
+    .fill("Cabo elétrico 2,5 mm²");
+  await page.getByLabel("Quantidade do material 1").fill("20");
+  await page.getByLabel("Unidade do material 1").fill("metro");
 
   await clickQuoteAction(page, "Pré-visualizar");
   const preview = page.getByRole("dialog", { name: "Prévia do orçamento" });
@@ -199,7 +206,7 @@ test("published professional creates, previews, securely shares, and live-edits 
       response.url().endsWith("/api/v1/professional/quotes") &&
       response.request().method() === "POST",
   );
-  await clickQuoteAction(page, "Salvar");
+  await clickQuoteAction(page, "Criar");
   expect((await createResponse).status()).toBe(201);
   await expect(page).toHaveURL(/\/quotes\/new\?quote=[a-f0-9-]+$/);
   const shareDialog = page.getByRole("dialog", {
@@ -229,6 +236,7 @@ test("published professional creates, previews, securely shares, and live-edits 
     page.getByRole("heading", { name: "Aqui está seu orçamento." }),
   ).toBeVisible();
   await expect(page.getByText(customerName, { exact: true })).toBeVisible();
+  await expect(page.getByText("Cabo elétrico 2,5 mm²")).toBeVisible();
   await page.evaluate(() => {
     window.print = () =>
       document.body.setAttribute("data-print-called", "true");
@@ -242,7 +250,7 @@ test("published professional creates, previews, securely shares, and live-edits 
   const invalidResponse = await page.goto("/orcamento/malformed");
   expect(invalidResponse?.status()).toBe(404);
   await expect(
-    page.getByRole("heading", { name: "Orçamento não encontrado" }),
+    page.getByRole("heading", { name: "Este endereço não mora mais aqui." }),
   ).toBeVisible();
 
   await page.goto(editorUrl);

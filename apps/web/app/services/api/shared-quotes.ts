@@ -19,6 +19,8 @@ function requestError(error: unknown, response: Response) {
 }
 
 function mapSharedQuote(quote: ContractSharedQuote): Quote {
+  const itemizedPricing =
+    quote.pricing.mode === "itemized" ? quote.pricing : null;
   return {
     id: null,
     number: quote.quote_number,
@@ -27,14 +29,16 @@ function mapSharedQuote(quote: ContractSharedQuote): Quote {
     customerName: quote.customer_name,
     customerPhone: "",
     customerEmail: "",
+    pricingMode: quote.pricing.mode,
     serviceDescription: quote.service_description,
     serviceAddress: quote.service_address ?? "",
     scheduledOn: quote.scheduled_on ?? "",
     validUntil: quote.valid_until ?? "",
-    discount: Number(quote.discount_amount),
+    discount: Number(itemizedPricing?.discount_amount ?? 0),
+    markup: 0,
     notes: quote.notes ?? "",
     status: quote.status,
-    subtotal: Number(quote.subtotal_amount),
+    subtotal: Number(itemizedPricing?.subtotal_amount ?? 0),
     total: Number(quote.total_amount),
     sharedAt: null,
     createdAt: null,
@@ -49,7 +53,7 @@ function mapSharedQuote(quote: ContractSharedQuote): Quote {
           cancelledAt: null,
         }
       : null,
-    items: quote.items.map((item) => ({
+    items: (itemizedPricing?.items ?? []).map((item) => ({
       id: `shared-${quote.quote_number}-${item.sort_order}`,
       description: item.description,
       quantity: Number(item.quantity),
@@ -58,6 +62,15 @@ function mapSharedQuote(quote: ContractSharedQuote): Quote {
       lineTotal: Number(item.line_total),
       sortOrder: item.sort_order,
     })),
+    customerSuppliedMaterials: quote.customer_supplied_materials.map(
+      (material, index) => ({
+        id: `shared-material-${quote.quote_number}-${index}`,
+        description: material.description,
+        quantity: Number(material.quantity),
+        unit: material.unit,
+        sortOrder: material.sort_order,
+      }),
+    ),
   };
 }
 

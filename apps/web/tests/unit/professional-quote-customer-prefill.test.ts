@@ -83,11 +83,13 @@ const existingQuote: Quote = {
   customerName: "Cliente do orçamento",
   customerPhone: "(47) 99999-1111",
   customerEmail: "quote@example.com",
+  pricingMode: "itemized",
   serviceDescription: "Adequação elétrica",
   serviceAddress: "",
   scheduledOn: "",
   validUntil: "",
   discount: 0,
+  markup: 0,
   notes: "",
   status: "draft",
   subtotal: 100,
@@ -99,12 +101,14 @@ const existingQuote: Quote = {
   changeRequests: [],
   serviceJob: null,
   items: [],
+  customerSuppliedMaterials: [],
 };
 
 beforeEach(async () => {
   vi.clearAllMocks();
   clearNuxtData();
   mocks.fetchWorkspace.mockResolvedValue({
+    quoteDefaults: { pricingMode: "fixed_price" },
     profile: {
       isPublic: true,
       services: [{ name: "Eletricista", isPrimary: true }],
@@ -151,6 +155,7 @@ describe("new quote customer prefill", () => {
       customerName: "Ana Cliente",
       customerPhone: "(47) 99999-2222",
       customerEmail: "cliente@example.com",
+      pricingMode: "fixed_price",
       validUntil: quoteDateAfterDays(30),
     });
     expect(

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_02_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_03_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -601,6 +601,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_02_120000) do
     t.datetime "created_at", null: false
     t.text "creation_source", default: "self_service", null: false
     t.datetime "external_published_at"
+    t.string "last_quote_pricing_mode", limit: 16, default: "fixed_price", null: false
     t.uuid "profile_photo_id"
     t.text "profile_status", default: "draft", null: false
     t.text "public_slug", null: false
@@ -620,6 +621,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_02_120000) do
     t.index ["working_revision_id"], name: "index_professional_profiles_on_working_revision_id", unique: true
     t.check_constraint "creation_source = 'external'::text OR external_published_at IS NULL", name: "professional_profiles_external_publication_source"
     t.check_constraint "creation_source = ANY (ARRAY['self_service'::text, 'external'::text])", name: "professional_profiles_known_creation_source"
+    t.check_constraint "last_quote_pricing_mode::text = ANY (ARRAY['fixed_price'::character varying, 'itemized'::character varying]::text[])", name: "professional_profiles_known_quote_pricing_mode"
     t.check_constraint "profile_status = ANY (ARRAY['draft'::text, 'published'::text, 'suspended'::text])", name: "professional_profiles_known_status"
     t.check_constraint "public_slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'::text", name: "professional_profiles_public_slug_format"
   end
@@ -707,6 +709,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_02_120000) do
     t.check_constraint "unit_price >= 0::numeric AND line_total >= 0::numeric", name: "quote_items_nonnegative_amounts"
   end
 
+  create_table "quote_materials", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "description", limit: 160, null: false
+    t.decimal "quantity", precision: 12, scale: 3, null: false
+    t.uuid "quote_id", null: false
+    t.integer "sort_order", null: false
+    t.string "unit", limit: 20, null: false
+    t.datetime "updated_at", null: false
+    t.index ["quote_id", "sort_order"], name: "index_quote_materials_on_quote_id_and_sort_order", unique: true
+    t.index ["quote_id"], name: "index_quote_materials_on_quote_id"
+    t.check_constraint "quantity >= 0::numeric", name: "quote_materials_nonnegative_quantity"
+    t.check_constraint "sort_order >= 0", name: "quote_materials_nonnegative_sort_order"
+  end
+
   create_table "quotes", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "customer_decided_at"
@@ -717,7 +733,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_02_120000) do
     t.string "customer_phone_e164", limit: 20
     t.decimal "discount_amount", precision: 14, scale: 2, default: "0.0", null: false
     t.integer "lock_version", default: 0, null: false
+    t.decimal "markup_amount", precision: 14, scale: 2, default: "0.0", null: false
     t.text "notes"
+    t.string "pricing_mode", limit: 16, default: "itemized", null: false
     t.uuid "professional_id", null: false
     t.integer "quote_number", null: false
     t.date "scheduled_on"
@@ -740,9 +758,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_02_120000) do
     t.index ["share_token_hash"], name: "index_quotes_on_share_token_hash", unique: true
     t.check_constraint "(status::text = ANY (ARRAY['draft'::character varying::text, 'saved'::character varying::text])) AND share_token_hash IS NULL AND share_token_ciphertext IS NULL AND shared_at IS NULL OR (status::text <> ALL (ARRAY['draft'::character varying::text, 'saved'::character varying::text])) AND share_token_hash IS NOT NULL AND share_token_ciphertext IS NOT NULL AND shared_at IS NOT NULL", name: "quotes_consistent_share_state"
     t.check_constraint "customer_decision_message IS NULL OR char_length(btrim(customer_decision_message)) >= 1 AND char_length(btrim(customer_decision_message)) <= 700", name: "quotes_customer_decision_message_length"
+    t.check_constraint "markup_amount >= 0::numeric", name: "quotes_nonnegative_markup"
+    t.check_constraint "pricing_mode::text = 'fixed_price'::text OR markup_amount = 0::numeric", name: "quotes_itemized_without_markup"
+    t.check_constraint "pricing_mode::text = ANY (ARRAY['fixed_price'::character varying, 'itemized'::character varying]::text[])", name: "quotes_known_pricing_mode"
     t.check_constraint "quote_number > 0", name: "quotes_positive_number"
     t.check_constraint "status::text = 'draft'::text OR customer_phone_e164::text ~ '^\\+55[1-9][0-9]9[0-9]{8}$'::text", name: "quotes_customer_brazilian_mobile"
-    t.check_constraint "status::text = 'draft'::text OR discount_amount <= subtotal_amount AND total_amount = (subtotal_amount - discount_amount)", name: "quotes_consistent_totals"
+    t.check_constraint "status::text = 'draft'::text OR discount_amount <= (subtotal_amount + markup_amount) AND total_amount = (subtotal_amount + markup_amount - discount_amount)", name: "quotes_consistent_totals"
     t.check_constraint "status::text = ANY (ARRAY['draft'::character varying::text, 'saved'::character varying::text, 'shared'::character varying::text, 'change_requested'::character varying::text, 'approved'::character varying::text, 'declined'::character varying::text, 'completed'::character varying::text, 'cancelled'::character varying::text])", name: "quotes_known_status"
     t.check_constraint "subtotal_amount >= 0::numeric AND discount_amount >= 0::numeric AND total_amount >= 0::numeric", name: "quotes_nonnegative_amounts"
   end
@@ -995,6 +1016,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_02_120000) do
   add_foreign_key "public_search_event_deduplications", "search_events", on_delete: :cascade
   add_foreign_key "quote_change_requests", "quotes", on_delete: :cascade
   add_foreign_key "quote_items", "quotes", on_delete: :cascade
+  add_foreign_key "quote_materials", "quotes", on_delete: :cascade
   add_foreign_key "quotes", "customers", column: ["customer_id", "professional_id"], primary_key: ["id", "professional_id"], name: "quotes_customer_owned_by_professional"
   add_foreign_key "quotes", "professional_profiles", column: "professional_id"
   add_foreign_key "search_daily_rollups", "cities", column: "city_code", primary_key: "code"

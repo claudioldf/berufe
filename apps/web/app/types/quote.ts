@@ -8,11 +8,27 @@ export interface QuoteItem {
   sortOrder: number;
 }
 
+export type QuotePricingMode = "fixed_price" | "itemized";
+
+export interface QuoteMaterial {
+  id: string;
+  description: string;
+  quantity: number;
+  unit: string;
+  sortOrder: number;
+}
+
 export interface QuoteItemValidationErrors {
   description?: string;
   quantity?: string;
   unit?: string;
   unitPrice?: string;
+}
+
+export interface QuoteMaterialValidationErrors {
+  description?: string;
+  quantity?: string;
+  unit?: string;
 }
 
 export interface QuoteValidationErrors {
@@ -23,10 +39,13 @@ export interface QuoteValidationErrors {
   serviceAddress?: string;
   scheduledOn?: string;
   validUntil?: string;
+  markup?: string;
   discount?: string;
   notes?: string;
   itemsMessage?: string;
   items: Record<string, QuoteItemValidationErrors>;
+  materialsMessage?: string;
+  materials: Record<string, QuoteMaterialValidationErrors>;
 }
 
 export interface QuoteChangeRequest {
@@ -44,12 +63,14 @@ export interface Quote {
   customerName: string;
   customerPhone: string;
   customerEmail: string;
+  pricingMode: QuotePricingMode;
   serviceDescription: string;
   serviceAddress: string;
   scheduledOn: string;
   validUntil: string;
   issuedAt?: string;
   discount: number;
+  markup: number;
   notes: string;
   status:
     | "draft"
@@ -69,6 +90,7 @@ export interface Quote {
   changeRequests: QuoteChangeRequest[];
   serviceJob: QuoteServiceJob | null;
   items: QuoteItem[];
+  customerSuppliedMaterials: QuoteMaterial[];
 }
 
 export interface QuoteServiceJob {

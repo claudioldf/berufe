@@ -20,11 +20,13 @@ const source: Quote = {
   customerName: "Ana Paula",
   customerPhone: "(47) 99999-1111",
   customerEmail: "ana@example.com",
+  pricingMode: "itemized",
   serviceDescription: "Adequação elétrica",
   serviceAddress: "Rua das Flores, 10",
   scheduledOn: "2026-08-22",
   validUntil: "2026-08-25",
   discount: 75,
+  markup: 0,
   notes: "Materiais a definir.",
   status: "draft",
   subtotal: 1520,
@@ -55,6 +57,7 @@ const source: Quote = {
       sortOrder: 1,
     },
   ],
+  customerSuppliedMaterials: [],
 };
 
 describe("quote utilities", () => {
@@ -105,7 +108,7 @@ describe("quote utilities", () => {
       validUntil: "Informe uma data válida.",
       scheduledOn: "Informe uma data válida.",
       serviceDescription: "Descreva o serviço.",
-      discount: "O desconto não pode ultrapassar o subtotal.",
+      discount: "O desconto não pode ultrapassar o valor calculado.",
       items: {
         [source.items[0]!.id]: {
           description: "Descreva este item.",
@@ -133,6 +136,43 @@ describe("quote utilities", () => {
       withDefaultQuoteValidity({ ...source, validUntil: "" }, from).validUntil,
     ).toBe("2026-09-28");
     expect(withDefaultQuoteValidity(source, from)).toBe(source);
+  });
+
+  it("calculates fixed pricing with a currency markup and private discount", () => {
+    const fixed = {
+      ...cloneQuote(source),
+      pricingMode: "fixed_price" as const,
+      markup: 400,
+      discount: 100,
+      items: [
+        { ...source.items[0]!, quantity: 1, unitPrice: 1500 },
+        { ...source.items[1]!, quantity: 1, unitPrice: 200 },
+      ],
+    };
+
+    expect(quoteSubtotal(fixed)).toBe(1700);
+    expect(quoteTotal(fixed)).toBe(2000);
+    expect(validateQuote(fixed).discount).toBeUndefined();
+  });
+
+  it("validates every customer-supplied material without adding it to the price", () => {
+    const quote = cloneQuote(source);
+    quote.customerSuppliedMaterials = [
+      {
+        id: "material-1",
+        description: "",
+        quantity: 0,
+        unit: "",
+        sortOrder: 0,
+      },
+    ];
+
+    expect(validateQuote(quote).materials["material-1"]).toEqual({
+      description: "Descreva este material.",
+      quantity: "Informe uma quantidade maior que zero.",
+      unit: "Informe a unidade.",
+    });
+    expect(quoteTotal(quote)).toBe(source.total);
   });
 });
 
@@ -172,5 +212,45 @@ describe("quote draft state", () => {
 
     expect(draft.isSaved.value).toBe(false);
     expect(draft.isShared.value).toBe(true);
+  });
+
+  it("confirms mode changes only when monetary values would be discarded", () => {
+    const draft = useQuoteDraft(source);
+
+    draft.requestPricingMode("fixed_price");
+    expect(draft.pricingModeConfirmationOpen.value).toBe(true);
+    expect(draft.quote.value.pricingMode).toBe("itemized");
+
+    draft.confirmPricingModeChange();
+    expect(draft.quote.value).toMatchObject({
+      pricingMode: "fixed_price",
+      markup: 0,
+      discount: 0,
+    });
+    expect(draft.quote.value.items).toHaveLength(1);
+    expect(draft.quote.value.items[0]?.unitPrice).toBe(0);
+  });
+
+  it("switches an unpriced draft immediately and preserves its materials", () => {
+    const draft = useQuoteDraft({
+      ...cloneQuote(source),
+      items: [{ ...source.items[0]!, unitPrice: 0, lineTotal: 0 }],
+      discount: 0,
+      customerSuppliedMaterials: [
+        {
+          id: "material-1",
+          description: "Lixa",
+          quantity: 10,
+          unit: "folha",
+          sortOrder: 0,
+        },
+      ],
+    });
+
+    draft.requestPricingMode("fixed_price");
+
+    expect(draft.pricingModeConfirmationOpen.value).toBe(false);
+    expect(draft.quote.value.pricingMode).toBe("fixed_price");
+    expect(draft.quote.value.customerSuppliedMaterials).toHaveLength(1);
   });
 });

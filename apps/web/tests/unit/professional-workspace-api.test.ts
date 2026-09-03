@@ -19,6 +19,7 @@ import type { ProfessionalProfileDraft } from "~/types";
 type WorkspaceData = components["schemas"]["ProfessionalWorkspaceData"];
 
 const workspaceData: WorkspaceData = {
+  quote_defaults: { pricing_mode: "fixed_price" },
   dashboard: {
     local_date: "2026-08-18",
     readiness: {
@@ -109,6 +110,7 @@ function apiClientReturning(
 describe("professional workspace API", () => {
   it("maps the server-owned identity into the existing editor shape", () => {
     expect(mapProfessionalWorkspace(workspaceData)).toEqual({
+      quoteDefaults: { pricingMode: "fixed_price" },
       dashboard: {
         localDate: "2026-08-18",
         readiness: {

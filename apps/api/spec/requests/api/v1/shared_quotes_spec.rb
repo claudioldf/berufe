@@ -125,29 +125,33 @@ RSpec.describe "Shared quotes", type: :request, openapi: true do
       "scheduled_on" => nil,
       "valid_until" => "2026-01-01",
       "notes" => "Materiais definidos com a cliente.",
-      "subtotal_amount" => "840.00",
-      "discount_amount" => "40.00",
       "total_amount" => "800.00",
       "customer_decision_message" => nil,
       "service_job" => nil,
-      "items" => [
-        {
-          "description" => "Instalação",
-          "quantity" => "4",
-          "unit" => "ponto",
-          "unit_price" => "200.00",
-          "line_total" => "800.00",
-          "sort_order" => 0
-        },
-        {
-          "description" => "Revisão",
-          "quantity" => "1",
-          "unit" => "serviço",
-          "unit_price" => "40.00",
-          "line_total" => "40.00",
-          "sort_order" => 1
-        }
-      ]
+      "pricing" => {
+        "mode" => "itemized",
+        "subtotal_amount" => "840.00",
+        "discount_amount" => "40.00",
+        "items" => [
+          {
+            "description" => "Instalação",
+            "quantity" => "4",
+            "unit" => "ponto",
+            "unit_price" => "200.00",
+            "line_total" => "800.00",
+            "sort_order" => 0
+          },
+          {
+            "description" => "Revisão",
+            "quantity" => "1",
+            "unit" => "serviço",
+            "unit_price" => "40.00",
+            "line_total" => "40.00",
+            "sort_order" => 1
+          }
+        ]
+      },
+      "customer_supplied_materials" => []
     )
     expect(data.fetch("professional")).to eq(
       "display_name" => "Ana Souza",
@@ -172,6 +176,68 @@ RSpec.describe "Shared quotes", type: :request, openapi: true do
     resolve_quote(token:, request_id: "quote-resolve-live")
     expect(response.parsed_body.dig("data", "quote", "customer_name")).to eq("Conteúdo atualizado")
     expect(response.parsed_body.dig("data", "professional", "identity_verified")).to be(true)
+    assert_api_conform(status: 200)
+  end
+
+  it "exposes one fixed price and customer materials without leaking the private calculator" do
+    fixed_quote = ProfessionalQuoteWriter.new.call(
+      profile:,
+      attributes: {
+        customer: {
+          id: nil,
+          name: "Carla Mendes",
+          whatsapp_e164: "+5547999912042",
+          email: nil
+        },
+        pricing_mode: "fixed_price",
+        markup_amount: 400,
+        service_description: "Pintura interna completa",
+        discount_amount: 100,
+        valid_until: "2026-12-01",
+        items: [
+          {description: "Custo reservado de mão de obra", quantity: 1, unit: "serviço", unit_price: 1500},
+          {description: "Custo reservado de deslocamento", quantity: 1, unit: "serviço", unit_price: 200}
+        ],
+        customer_supplied_materials: [
+          {description: "Tinta acrílica branca 18 L", quantity: 2, unit: "lata"},
+          {description: "Lixa para parede", quantity: 10, unit: "folha"}
+        ]
+      }
+    )
+    fixed_quote.update!(status: "saved")
+
+    post "/api/v1/professional/quotes/#{fixed_quote.id}/share",
+      params: {share: {method: "copy"}},
+      headers: session_headers(request_id: "fixed-quote-share", origin: true),
+      as: :json
+    expect(response).to have_http_status(:ok)
+    token = URI(response.parsed_body.dig("data", "share_url")).path.split("/").last
+    assert_api_conform(status: 200)
+
+    resolve_quote(token:, request_id: "fixed-quote-resolve")
+
+    expect(response).to have_http_status(:ok)
+    shared = response.parsed_body.dig("data", "quote")
+    expect(shared).to include(
+      "pricing" => {"mode" => "fixed_price"},
+      "total_amount" => "2000.00",
+      "customer_supplied_materials" => [
+        {
+          "description" => "Tinta acrílica branca 18 L",
+          "quantity" => "2",
+          "unit" => "lata",
+          "sort_order" => 0
+        },
+        {
+          "description" => "Lixa para parede",
+          "quantity" => "10",
+          "unit" => "folha",
+          "sort_order" => 1
+        }
+      ]
+    )
+    expect(shared).not_to include("subtotal_amount", "markup_amount", "discount_amount", "items")
+    expect(response.body).not_to include("Custo reservado")
     assert_api_conform(status: 200)
   end
 

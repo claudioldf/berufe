@@ -21,6 +21,9 @@ export function mapProfessionalWorkspace(
 ): ProfessionalWorkspace {
   const identity = data.profile.identity;
   return {
+    quoteDefaults: {
+      pricingMode: data.quote_defaults.pricing_mode,
+    },
     dashboard: {
       localDate: data.dashboard.local_date,
       readiness: {

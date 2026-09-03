@@ -64,12 +64,21 @@ const {
   previewOpen,
   isSaved,
   isShared,
+  pricingModeConfirmationOpen,
+  pendingPricingMode,
   subtotal,
+  priceBeforeDiscount,
+  total,
   validation,
   isValid,
   markDirty,
   addItem,
   removeItem,
+  addMaterial,
+  removeMaterial,
+  requestPricingMode,
+  cancelPricingModeChange,
+  confirmPricingModeChange,
 } = useQuoteDraft(() => props.initialQuote);
 const displayedErrors = computed(() =>
   validationAttempted.value ? validation.value : undefined,
@@ -164,9 +173,19 @@ function requestShare() {
         <DashboardQuoteLineItemsEditor
           v-model="quote"
           :subtotal="subtotal"
+          :price-before-discount="priceBeforeDiscount"
+          :total="total"
           :errors="displayedErrors"
           @add="addItem"
           @remove="removeItem"
+          @change-mode="requestPricingMode"
+          @dirty="markDirty"
+        />
+        <DashboardQuoteMaterialsEditor
+          v-model="quote"
+          :errors="displayedErrors"
+          @add="addMaterial"
+          @remove="removeMaterial"
           @dirty="markDirty"
         />
         <DashboardQuoteNotesField
@@ -211,6 +230,43 @@ function requestShare() {
       </div>
       <QuotesQuotePreview :quote="quote" :professional="professional" />
     </aside>
+
+    <UModal
+      v-model:open="pricingModeConfirmationOpen"
+      title="Trocar a forma de cobrança?"
+      description="Os valores já preenchidos serão descartados para evitar misturar cálculos de modalidades diferentes."
+      :dismissible="false"
+    >
+      <template #body>
+        <div class="pricing-mode-warning">
+          <span
+            ><UIcon name="i-lucide-triangle-alert" aria-hidden="true"
+          /></span>
+          <div>
+            <strong>Esta ação não pode ser desfeita.</strong>
+            <p>
+              Itens, custos, acréscimo e desconto serão zerados. Os dados do
+              cliente, serviço, materiais e observações serão mantidos.
+            </p>
+          </div>
+        </div>
+      </template>
+      <template #footer>
+        <UButton
+          color="neutral"
+          variant="ghost"
+          @click="cancelPricingModeChange"
+        >
+          Continuar editando
+        </UButton>
+        <UButton color="error" @click="confirmPricingModeChange">
+          Descartar valores e trocar para
+          {{
+            pendingPricingMode === "fixed_price" ? "preço fechado" : "detalhado"
+          }}
+        </UButton>
+      </template>
+    </UModal>
 
     <UModal
       v-model:open="previewOpen"
@@ -670,6 +726,35 @@ function requestShare() {
     color: var(--ink-soft);
     font-size: 0.86rem;
     line-height: 1.5;
+  }
+  .pricing-mode-warning {
+    display: flex;
+    gap: 13px;
+    align-items: flex-start;
+    padding: 16px;
+    border: 1px solid #efc8c1;
+    border-radius: 13px;
+    background: var(--color-danger-tint);
+    & > span {
+      display: grid;
+      flex: 0 0 auto;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 11px;
+      background: white;
+      color: var(--color-danger);
+      font-size: 1.15rem;
+    }
+    & strong {
+      font-size: 0.88rem;
+    }
+    & p {
+      margin: 5px 0 0;
+      color: var(--ink-soft);
+      font-size: 0.84rem;
+      line-height: 1.5;
+    }
   }
   .quote-builder__revoke {
     display: flex;

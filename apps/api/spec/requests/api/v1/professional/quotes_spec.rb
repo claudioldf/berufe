@@ -25,8 +25,10 @@ RSpec.describe "Professional quotes", type: :request, openapi: true do
       "id" => quote.id,
       "quote_number" => 1,
       "customer_name" => "Ana Paula",
+      "pricing_mode" => "itemized",
       "service_description" => "Iluminação da cozinha",
       "subtotal_amount" => "840.00",
+      "markup_amount" => "0.00",
       "discount_amount" => "40.00",
       "total_amount" => "800.00",
       "status" => "draft",
@@ -35,6 +37,15 @@ RSpec.describe "Professional quotes", type: :request, openapi: true do
     expect(response.parsed_body.dig("data", "quote", "items").pluck("description", "sort_order")).to eq([
       ["Instalação", 0],
       ["Revisão", 1]
+    ])
+    expect(response.parsed_body.dig("data", "quote", "customer_supplied_materials")).to eq([
+      {
+        "id" => quote.quote_materials.sole.id,
+        "description" => "Tinta acrílica branca 18 L",
+        "quantity" => "2",
+        "unit" => "lata",
+        "sort_order" => 0
+      }
     ])
     expect(ProfessionalDailyActivity.sole.quotes_created).to eq(1)
     assert_api_conform(status: 201)
@@ -462,7 +473,7 @@ RSpec.describe "Professional quotes", type: :request, openapi: true do
     customer = attributes[:customer].merge(name: customer_name || attributes.dig(:customer, :name))
     {
       quote: {
-        **attributes.slice(:revision, :status),
+        **attributes.slice(:revision, :status, :pricing_mode, :markup_amount),
         customer:,
         service_description: attributes[:service_description],
         service_address: attributes[:service_address],
@@ -470,7 +481,8 @@ RSpec.describe "Professional quotes", type: :request, openapi: true do
         discount_amount: attributes[:discount_amount],
         valid_until: attributes[:valid_until],
         notes: attributes[:notes],
-        items: attributes[:items]
+        items: attributes[:items],
+        customer_supplied_materials: attributes[:customer_supplied_materials]
       }
     }
   end
@@ -484,6 +496,8 @@ RSpec.describe "Professional quotes", type: :request, openapi: true do
         email: "ana.paula@example.com"
       },
       service_description: "Iluminação da cozinha",
+      pricing_mode: "itemized",
+      markup_amount: 0,
       service_address: "Rua das Flores, 100",
       scheduled_on: "2026-08-27",
       discount_amount: 40,
@@ -492,6 +506,9 @@ RSpec.describe "Professional quotes", type: :request, openapi: true do
       items: [
         {description: "Instalação", quantity: 4, unit: "ponto", unit_price: 200},
         {description: "Revisão", quantity: 1, unit: "serviço", unit_price: 40}
+      ],
+      customer_supplied_materials: [
+        {description: "Tinta acrílica branca 18 L", quantity: 2, unit: "lata"}
       ]
     }
   end

@@ -12,11 +12,13 @@ function quoteFixture(overrides: Partial<Quote>): Quote {
     customerName: "Ana Paula",
     customerPhone: "(47) 99999-1111",
     customerEmail: "ana@example.com",
+    pricingMode: "fixed_price",
     serviceDescription: "Adequação elétrica",
     serviceAddress: "Rua das Flores, 10",
     scheduledOn: "2026-08-22",
     validUntil: "2026-08-25",
     discount: 0,
+    markup: 0,
     notes: "",
     status: "draft",
     subtotal: 100,
@@ -28,6 +30,7 @@ function quoteFixture(overrides: Partial<Quote>): Quote {
     changeRequests: [],
     serviceJob: null,
     items: [],
+    customerSuppliedMaterials: [],
     ...overrides,
   };
 }

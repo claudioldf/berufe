@@ -67,6 +67,7 @@ class ProfessionalDataErasureJob < ApplicationJob
       CustomerRecommendation.where(service_job_id: ids.fetch(:service_job_ids)).delete_all
       ServiceJob.where(id: ids.fetch(:service_job_ids)).delete_all
       QuoteChangeRequest.where(quote_id: ids.fetch(:quote_ids)).delete_all
+      QuoteMaterial.where(quote_id: ids.fetch(:quote_ids)).delete_all
       QuoteItem.where(quote_id: ids.fetch(:quote_ids)).delete_all
       Quote.where(id: ids.fetch(:quote_ids)).delete_all
       Customer.where(professional_id: profile.id).delete_all

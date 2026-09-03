@@ -5,10 +5,18 @@ import type { Quote, QuoteProfessional } from "~/types";
 const quote: Quote = {
   id: null,
   number: 12,
+  revision: 2,
+  customerId: null,
   customerName: "Ana Paula",
+  customerPhone: "",
+  customerEmail: "",
+  pricingMode: "itemized",
   serviceDescription: "Iluminação da cozinha",
+  serviceAddress: "",
+  scheduledOn: "",
   validUntil: "2026-08-25",
   discount: 0,
+  markup: 0,
   notes: "",
   status: "shared",
   subtotal: 0,
@@ -16,6 +24,9 @@ const quote: Quote = {
   sharedAt: null,
   createdAt: null,
   updatedAt: null,
+  customerDecisionMessage: "",
+  changeRequests: [],
+  serviceJob: null,
   items: [
     {
       id: "shared-12-0",
@@ -36,6 +47,7 @@ const quote: Quote = {
       sortOrder: 1,
     },
   ],
+  customerSuppliedMaterials: [],
 };
 const professional: QuoteProfessional = {
   name: "Ana Souza",
@@ -102,5 +114,52 @@ describe("quote customer preview", () => {
     );
     expect(wrapper.text()).not.toContain("Preparado para");
     expect(wrapper.text()).not.toContain("Data combinada");
+  });
+
+  it("shows only one customer price for a fixed quote and lists required materials", () => {
+    const wrapper = mount(QuotePreview, {
+      props: {
+        quote: {
+          ...quote,
+          pricingMode: "fixed_price",
+          subtotal: 1700,
+          markup: 400,
+          discount: 100,
+          total: 2000,
+          items: quote.items.map((item, index) => ({
+            ...item,
+            description: `Custo reservado ${index + 1}`,
+          })),
+          customerSuppliedMaterials: [
+            {
+              id: "material-1",
+              description: "Tinta acrílica branca 18 L",
+              quantity: 2,
+              unit: "lata",
+              sortOrder: 0,
+            },
+            {
+              id: "material-2",
+              description: "Lixa para parede",
+              quantity: 10,
+              unit: "folha",
+              sortOrder: 1,
+            },
+          ],
+        },
+        professional,
+        authoritativeTotals: true,
+      },
+      global,
+    });
+
+    expect(wrapper.text()).toContain("Valor do serviço");
+    expect(wrapper.text()).toContain("R$ 2.000,00");
+    expect(wrapper.text()).toContain("2 lata");
+    expect(wrapper.text()).toContain("Tinta acrílica branca 18 L");
+    expect(wrapper.text()).not.toContain("Custo reservado");
+    expect(wrapper.text()).not.toContain("Subtotal");
+    expect(wrapper.text()).not.toContain("Desconto");
+    expect(wrapper.text()).not.toContain("R$ 1.700,00");
   });
 });
