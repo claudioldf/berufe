@@ -87,6 +87,10 @@ const existingQuote: Quote = {
   serviceAddress: "",
   scheduledOn: "",
   validUntil: "",
+  pricingMode: "itemized",
+  lumpSumAmount: null,
+  itemsVisibleToCustomer: true,
+  itemsAmount: 0,
   discount: 0,
   notes: "",
   status: "draft",
@@ -99,6 +103,7 @@ const existingQuote: Quote = {
   changeRequests: [],
   serviceJob: null,
   items: [],
+  materials: [],
 };
 
 beforeEach(async () => {

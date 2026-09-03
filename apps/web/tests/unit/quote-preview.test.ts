@@ -5,9 +5,19 @@ import type { Quote, QuoteProfessional } from "~/types";
 const quote: Quote = {
   id: null,
   number: 12,
+  revision: 0,
+  customerId: null,
   customerName: "Ana Paula",
+  customerPhone: "",
+  customerEmail: "",
   serviceDescription: "Iluminação da cozinha",
+  serviceAddress: "",
+  scheduledOn: "",
   validUntil: "2026-08-25",
+  pricingMode: "itemized",
+  lumpSumAmount: null,
+  itemsVisibleToCustomer: true,
+  itemsAmount: 0,
   discount: 0,
   notes: "",
   status: "shared",
@@ -16,6 +26,9 @@ const quote: Quote = {
   sharedAt: null,
   createdAt: null,
   updatedAt: null,
+  customerDecisionMessage: "",
+  changeRequests: [],
+  serviceJob: null,
   items: [
     {
       id: "shared-12-0",
@@ -36,6 +49,7 @@ const quote: Quote = {
       sortOrder: 1,
     },
   ],
+  materials: [],
 };
 const professional: QuoteProfessional = {
   name: "Ana Souza",
@@ -102,5 +116,79 @@ describe("quote customer preview", () => {
     );
     expect(wrapper.text()).not.toContain("Preparado para");
     expect(wrapper.text()).not.toContain("Data combinada");
+  });
+
+  it("shows only the closed price when the breakdown is hidden", () => {
+    const wrapper = mount(QuotePreview, {
+      props: {
+        quote: {
+          ...quote,
+          pricingMode: "lump_sum",
+          itemsVisibleToCustomer: false,
+          subtotal: 2000,
+          total: 2000,
+        },
+        professional,
+        authoritativeTotals: true,
+      },
+      global,
+    });
+
+    expect(wrapper.find(".quote-preview__items").exists()).toBe(false);
+    const totalsText = wrapper
+      .get(".quote-preview__totals")
+      .text()
+      .replace(/\s/g, " ");
+    expect(totalsText).toContain("Valor do serviço");
+    expect(totalsText).toContain("R$ 2.000,00");
+  });
+
+  it("shows scope without any price when the breakdown is visible", () => {
+    const wrapper = mount(QuotePreview, {
+      props: {
+        quote: {
+          ...quote,
+          pricingMode: "lump_sum",
+          itemsVisibleToCustomer: true,
+          subtotal: 2000,
+          total: 2000,
+        },
+        professional,
+        authoritativeTotals: true,
+      },
+      global,
+    });
+    const items = wrapper.get(".quote-preview__items");
+
+    expect(items.text()).toContain("Material A");
+    expect(items.text()).not.toContain("R$");
+  });
+
+  it("lists materials without any price, separate from the priced total", () => {
+    const wrapper = mount(QuotePreview, {
+      props: {
+        quote: {
+          ...quote,
+          materials: [
+            {
+              id: "material-1",
+              description: "Tinta acrílica fosca 18L",
+              quantity: 2,
+              unit: "lata",
+              sortOrder: 0,
+            },
+          ],
+        },
+        professional,
+      },
+      global,
+    });
+    const materials = wrapper.get(".quote-preview__materials");
+
+    expect(materials.text()).toContain("Tinta acrílica fosca 18L");
+    expect(materials.text()).toContain(
+      "A compra dos materiais é por conta do cliente.",
+    );
+    expect(materials.text()).not.toContain("R$");
   });
 });

@@ -16,6 +16,10 @@ function quoteFixture(overrides: Partial<Quote>): Quote {
     serviceAddress: "Rua das Flores, 10",
     scheduledOn: "2026-08-22",
     validUntil: "2026-08-25",
+    pricingMode: "itemized",
+    lumpSumAmount: null,
+    itemsVisibleToCustomer: true,
+    itemsAmount: 100,
     discount: 0,
     notes: "",
     status: "draft",
@@ -28,6 +32,7 @@ function quoteFixture(overrides: Partial<Quote>): Quote {
     changeRequests: [],
     serviceJob: null,
     items: [],
+    materials: [],
     ...overrides,
   };
 }

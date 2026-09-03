@@ -32,6 +32,10 @@ const result: SharedQuoteResult = {
     serviceAddress: "Rua das Flores, 10",
     scheduledOn: "2026-09-08",
     validUntil: "2026-09-30",
+    pricingMode: "itemized",
+    lumpSumAmount: null,
+    itemsVisibleToCustomer: true,
+    itemsAmount: 0,
     discount: 0,
     notes: "",
     status: "shared",
@@ -54,6 +58,7 @@ const result: SharedQuoteResult = {
         sortOrder: 0,
       },
     ],
+    materials: [],
   },
   professional: {
     name: "Claudio Dias",

@@ -30,6 +30,10 @@ const contractQuote: ContractQuote = {
   valid_until: "2026-08-25",
   notes: "Materiais a definir.",
   status: "draft",
+  pricing_mode: "itemized",
+  lump_sum_amount: null,
+  items_visible_to_customer: true,
+  items_amount: "13.33",
   subtotal_amount: "13.33",
   discount_amount: "1.33",
   total_amount: "12.00",
@@ -67,6 +71,15 @@ const contractQuote: ContractQuote = {
       sort_order: 1,
     },
   ],
+  materials: [
+    {
+      id: "6b46e3a1-3a0b-4d40-9b0a-2a6f7f2e5c11",
+      description: "Fita isolante",
+      quantity: "3",
+      unit: "rolo",
+      sort_order: 0,
+    },
+  ],
 };
 
 function clientReturning(
@@ -91,6 +104,10 @@ describe("professional quote API", () => {
       customerId: contractQuote.customer.id,
       customerPhone: "(47) 9 9999-1111",
       customerEmail: "ana@example.com",
+      pricingMode: "itemized",
+      lumpSumAmount: null,
+      itemsVisibleToCustomer: true,
+      itemsAmount: 13.33,
       subtotal: 13.33,
       discount: 1.33,
       total: 12,
@@ -105,6 +122,23 @@ describe("professional quote API", () => {
         { description: "Material", quantity: 0.333, lineTotal: 3.33 },
         { description: "Serviço", quantity: 1, lineTotal: 10 },
       ],
+      materials: [{ description: "Fita isolante", quantity: 3, unit: "rolo" }],
+    });
+  });
+
+  it("maps a closed-price quote's owner-only fields", () => {
+    const lumpSum: ContractQuote = {
+      ...contractQuote,
+      pricing_mode: "lump_sum",
+      lump_sum_amount: "2000.00",
+      items_visible_to_customer: false,
+    };
+
+    expect(mapProfessionalQuote(lumpSum)).toMatchObject({
+      pricingMode: "lump_sum",
+      lumpSumAmount: 2000,
+      itemsVisibleToCustomer: false,
+      itemsAmount: 13.33,
     });
   });
 
@@ -205,7 +239,10 @@ describe("professional quote API", () => {
           service_description: "Adequação elétrica",
           service_address: "Rua das Flores, 10",
           scheduled_on: "2026-08-22",
+          pricing_mode: "itemized",
+          lump_sum_amount: null,
           discount_amount: 1.33,
+          items_visible_to_customer: true,
           valid_until: "2026-08-25",
           notes: "Materiais a definir.",
           items: [
@@ -221,6 +258,9 @@ describe("professional quote API", () => {
               unit: "serviço",
               unit_price: 10,
             },
+          ],
+          materials: [
+            { description: "Fita isolante", quantity: 3, unit: "rolo" },
           ],
         },
       },

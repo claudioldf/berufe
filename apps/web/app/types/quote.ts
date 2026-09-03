@@ -1,3 +1,5 @@
+export type QuotePricingMode = "itemized" | "lump_sum";
+
 export interface QuoteItem {
   id: string;
   description: string;
@@ -8,11 +10,25 @@ export interface QuoteItem {
   sortOrder: number;
 }
 
+export interface QuoteMaterial {
+  id: string;
+  description: string;
+  quantity: number;
+  unit: string;
+  sortOrder: number;
+}
+
 export interface QuoteItemValidationErrors {
   description?: string;
   quantity?: string;
   unit?: string;
   unitPrice?: string;
+}
+
+export interface QuoteMaterialValidationErrors {
+  description?: string;
+  quantity?: string;
+  unit?: string;
 }
 
 export interface QuoteValidationErrors {
@@ -23,10 +39,12 @@ export interface QuoteValidationErrors {
   serviceAddress?: string;
   scheduledOn?: string;
   validUntil?: string;
+  lumpSumAmount?: string;
   discount?: string;
   notes?: string;
   itemsMessage?: string;
   items: Record<string, QuoteItemValidationErrors>;
+  materials: Record<string, QuoteMaterialValidationErrors>;
 }
 
 export interface QuoteChangeRequest {
@@ -49,6 +67,10 @@ export interface Quote {
   scheduledOn: string;
   validUntil: string;
   issuedAt?: string;
+  pricingMode: QuotePricingMode;
+  lumpSumAmount: number | null;
+  itemsVisibleToCustomer: boolean;
+  itemsAmount: number;
   discount: number;
   notes: string;
   status:
@@ -69,6 +91,7 @@ export interface Quote {
   changeRequests: QuoteChangeRequest[];
   serviceJob: QuoteServiceJob | null;
   items: QuoteItem[];
+  materials: QuoteMaterial[];
 }
 
 export interface QuoteServiceJob {

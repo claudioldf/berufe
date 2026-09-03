@@ -2,7 +2,7 @@ import { mount } from "@vue/test-utils";
 import { defineComponent, nextTick, reactive } from "vue";
 import LineItemsEditor from "~/components/dashboard/quote/LineItemsEditor.vue";
 import type { Quote } from "~/types";
-import { quoteSubtotal, validateQuote } from "~/utils/quotes";
+import { quoteItemsAmount, quoteSubtotal, validateQuote } from "~/utils/quotes";
 
 const SurfaceCardStub = defineComponent({
   template: "<section><slot /></section>",
@@ -25,6 +25,10 @@ function createQuote(): Quote {
     serviceAddress: "",
     scheduledOn: "",
     validUntil: "2026-09-28",
+    pricingMode: "itemized",
+    lumpSumAmount: null,
+    itemsVisibleToCustomer: true,
+    itemsAmount: 0,
     discount: -1,
     notes: "",
     status: "draft",
@@ -47,6 +51,7 @@ function createQuote(): Quote {
         sortOrder: 0,
       },
     ],
+    materials: [],
   }) as Quote;
 }
 
@@ -55,6 +60,7 @@ function mountEditor(quote: Quote) {
     props: {
       modelValue: quote,
       subtotal: quoteSubtotal(quote),
+      itemsAmount: quoteItemsAmount(quote),
       errors: validateQuote(quote),
     },
     global: {
@@ -116,5 +122,28 @@ describe("quote line item validation", () => {
 
     expect(wrapper.find('[aria-label="Remover item 1"]').exists()).toBe(true);
     expect(wrapper.find('[aria-label="Remover item 2"]').exists()).toBe(true);
+  });
+
+  it("switches between the itemized and closed-price layouts", async () => {
+    const quote = createQuote();
+    const wrapper = mountEditor(quote);
+
+    expect(wrapper.find('input[name="discount"]').exists()).toBe(true);
+    expect(wrapper.find('input[name="lump-sum-amount"]').exists()).toBe(false);
+
+    quote.pricingMode = "lump_sum";
+    await nextTick();
+
+    expect(wrapper.find('input[name="discount"]').exists()).toBe(false);
+    expect(wrapper.find('input[name="lump-sum-amount"]').exists()).toBe(true);
+    expect(wrapper.text()).toContain("Cálculo interno");
+  });
+
+  it("emits a pricing-mode change when the closed-price option is selected", async () => {
+    const wrapper = mountEditor(createQuote());
+
+    await wrapper.find('input[type="radio"][value="lump_sum"]').setValue();
+
+    expect(wrapper.emitted("setPricingMode")).toEqual([["lump_sum"]]);
   });
 });

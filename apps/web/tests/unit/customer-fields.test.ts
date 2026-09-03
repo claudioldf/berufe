@@ -45,6 +45,10 @@ function quoteFixture(): Quote {
     serviceAddress: "",
     scheduledOn: "",
     validUntil: "",
+    pricingMode: "itemized",
+    lumpSumAmount: null,
+    itemsVisibleToCustomer: true,
+    itemsAmount: 100,
     discount: 0,
     notes: "",
     status: "draft",
@@ -67,6 +71,7 @@ function quoteFixture(): Quote {
         sortOrder: 0,
       },
     ],
+    materials: [],
   };
 }
 

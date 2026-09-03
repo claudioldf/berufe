@@ -19,6 +19,10 @@ const quote: Quote = {
   serviceAddress: "",
   scheduledOn: "",
   validUntil: "2026-09-30",
+  pricingMode: "itemized",
+  lumpSumAmount: null,
+  itemsVisibleToCustomer: true,
+  itemsAmount: 0,
   discount: 0,
   notes: "",
   status: "draft",
@@ -31,6 +35,7 @@ const quote: Quote = {
   changeRequests: [],
   serviceJob: null,
   items: [],
+  materials: [],
 };
 
 function mountStatus(status: Quote["status"], overrides: Partial<Quote> = {}) {

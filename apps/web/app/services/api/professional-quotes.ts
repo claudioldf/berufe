@@ -46,6 +46,11 @@ export function mapProfessionalQuote(quote: ContractQuote): Quote {
     serviceAddress: quote.service_address ?? "",
     scheduledOn: quote.scheduled_on ?? "",
     validUntil: quote.valid_until ?? "",
+    pricingMode: quote.pricing_mode,
+    lumpSumAmount:
+      quote.lump_sum_amount === null ? null : Number(quote.lump_sum_amount),
+    itemsVisibleToCustomer: quote.items_visible_to_customer,
+    itemsAmount: Number(quote.items_amount),
     discount: Number(quote.discount_amount),
     notes: quote.notes ?? "",
     status: quote.status,
@@ -77,6 +82,13 @@ export function mapProfessionalQuote(quote: ContractQuote): Quote {
       unitPrice: Number(item.unit_price),
       lineTotal: Number(item.line_total),
       sortOrder: item.sort_order,
+    })),
+    materials: quote.materials.map((material) => ({
+      id: material.id,
+      description: material.description,
+      quantity: Number(material.quantity),
+      unit: material.unit,
+      sortOrder: material.sort_order,
     })),
   };
 }
@@ -144,7 +156,11 @@ function writeBody(quote: QuoteDraft) {
       service_description: quote.serviceDescription,
       service_address: quote.serviceAddress.trim() || null,
       scheduled_on: quote.scheduledOn || null,
+      pricing_mode: quote.pricingMode,
+      lump_sum_amount:
+        quote.pricingMode === "lump_sum" ? Number(quote.lumpSumAmount) : null,
       discount_amount: Number(quote.discount),
+      items_visible_to_customer: quote.itemsVisibleToCustomer,
       valid_until: quote.validUntil || null,
       notes: quote.notes || null,
       items: quote.items.map((item) => ({
@@ -152,6 +168,11 @@ function writeBody(quote: QuoteDraft) {
         quantity: Number(item.quantity),
         unit: item.unit,
         unit_price: Number(item.unitPrice),
+      })),
+      materials: quote.materials.map((material) => ({
+        description: material.description,
+        quantity: Number(material.quantity),
+        unit: material.unit,
       })),
     },
   };

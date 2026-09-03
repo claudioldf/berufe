@@ -129,6 +129,10 @@ function createEmptyQuote(
     serviceAddress: "",
     scheduledOn: "",
     validUntil: quoteDateAfterDays(30),
+    pricingMode: "itemized",
+    lumpSumAmount: null,
+    itemsVisibleToCustomer: true,
+    itemsAmount: 0,
     discount: 0,
     notes: "",
     status: "draft",
@@ -151,6 +155,7 @@ function createEmptyQuote(
         sortOrder: 0,
       },
     ],
+    materials: [],
   };
 }
 

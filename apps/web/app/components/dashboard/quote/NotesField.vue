@@ -10,10 +10,10 @@ const emit = defineEmits<{ dirty: [] }>();
   <DesignSystemSurfaceCard as="section" class="builder-card">
     <header>
       <div>
-        <span>04</span>
+        <span>05</span>
         <div>
           <h2>Observações</h2>
-          <p>Inclua prazos, materiais ou condições importantes.</p>
+          <p>Inclua prazos, condições ou combinados importantes.</p>
         </div>
       </div>
     </header>

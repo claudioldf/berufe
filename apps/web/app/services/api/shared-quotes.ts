@@ -31,6 +31,13 @@ function mapSharedQuote(quote: ContractSharedQuote): Quote {
     serviceAddress: quote.service_address ?? "",
     scheduledOn: quote.scheduled_on ?? "",
     validUntil: quote.valid_until ?? "",
+    pricingMode: quote.pricing_mode,
+    // The private calculation is owner-only and never appears in this
+    // response — these fields are meaningless here and go unused because
+    // the customer page always reads the server's authoritative totals.
+    lumpSumAmount: null,
+    itemsVisibleToCustomer: quote.items_visible_to_customer,
+    itemsAmount: 0,
     discount: Number(quote.discount_amount),
     notes: quote.notes ?? "",
     status: quote.status,
@@ -54,9 +61,19 @@ function mapSharedQuote(quote: ContractSharedQuote): Quote {
       description: item.description,
       quantity: Number(item.quantity),
       unit: item.unit,
-      unitPrice: Number(item.unit_price),
-      lineTotal: Number(item.line_total),
+      // Null in `lump_sum` mode — a visible scope item never carries a
+      // price. Coerced to 0 here only because QuoteItem stays a plain
+      // number; the preview branches on pricingMode, not on this value.
+      unitPrice: Number(item.unit_price ?? 0),
+      lineTotal: Number(item.line_total ?? 0),
       sortOrder: item.sort_order,
+    })),
+    materials: quote.materials.map((material) => ({
+      id: `shared-material-${quote.quote_number}-${material.sort_order}`,
+      description: material.description,
+      quantity: Number(material.quantity),
+      unit: material.unit,
+      sortOrder: material.sort_order,
     })),
   };
 }

@@ -1,9 +1,10 @@
 import { computed, ref, shallowRef, toValue, watch } from "vue";
 import type { MaybeRefOrGetter } from "vue";
-import type { Quote } from "~/types";
+import type { Quote, QuotePricingMode } from "~/types";
 import {
   cloneQuote,
   hasQuoteValidationErrors,
+  quoteItemsAmount,
   quoteSubtotal,
   quoteTotal,
   validateQuote,
@@ -19,6 +20,7 @@ export function useQuoteDraft(initialQuote: MaybeRefOrGetter<Quote>) {
 
   const subtotal = computed(() => quoteSubtotal(quote.value));
   const total = computed(() => quoteTotal(quote.value));
+  const itemsAmount = computed(() => quoteItemsAmount(quote.value));
   const validation = computed(() => validateQuote(quote.value));
   const isValid = computed(() => !hasQuoteValidationErrors(validation.value));
 
@@ -52,8 +54,52 @@ export function useQuoteDraft(initialQuote: MaybeRefOrGetter<Quote>) {
   }
 
   function removeItem(id: string) {
-    if (quote.value.items.length === 1) return;
+    // Items are the customer-facing content in `itemized` mode, so at least
+    // one must remain. In `lump_sum` mode they are an optional private
+    // calculation and may go to zero.
+    if (
+      quote.value.pricingMode !== "lump_sum" &&
+      quote.value.items.length === 1
+    ) {
+      return;
+    }
     quote.value.items = quote.value.items.filter((item) => item.id !== id);
+    markDirty();
+  }
+
+  function addMaterial() {
+    quote.value.materials.push({
+      id: globalThis.crypto.randomUUID(),
+      description: "",
+      quantity: 1,
+      unit: "unidade",
+      sortOrder: quote.value.materials.length,
+    });
+    markDirty();
+  }
+
+  function removeMaterial(id: string) {
+    quote.value.materials = quote.value.materials.filter(
+      (material) => material.id !== id,
+    );
+    markDirty();
+  }
+
+  function setPricingMode(mode: QuotePricingMode) {
+    quote.value.pricingMode = mode;
+    if (mode === "lump_sum") {
+      // A closed price already reflects any negotiation, so the discount is
+      // unavailable in this mode.
+      quote.value.discount = 0;
+      if (quote.value.lumpSumAmount === null) {
+        quote.value.lumpSumAmount = quoteItemsAmount(quote.value);
+      }
+    }
+    markDirty();
+  }
+
+  function applyItemsAmountToLumpSum() {
+    quote.value.lumpSumAmount = quoteItemsAmount(quote.value);
     markDirty();
   }
 
@@ -73,12 +119,17 @@ export function useQuoteDraft(initialQuote: MaybeRefOrGetter<Quote>) {
     isShared,
     subtotal,
     total,
+    itemsAmount,
     validation,
     isValid,
     reset,
     markDirty,
     addItem,
     removeItem,
+    addMaterial,
+    removeMaterial,
+    setPricingMode,
+    applyItemsAmountToLumpSum,
     markSaved,
     markShared,
   };

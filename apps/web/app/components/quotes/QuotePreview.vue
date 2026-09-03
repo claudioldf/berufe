@@ -16,6 +16,14 @@ const subtotal = computed(() =>
 const total = computed(() =>
   props.authoritativeTotals ? props.quote.total : quoteTotal(props.quote),
 );
+const isLumpSum = computed(() => props.quote.pricingMode === "lump_sum");
+// In `itemized` mode the items are already the customer-facing content. In
+// `lump_sum` mode they are the professional's private calculation and show
+// here — as a priceless scope list, never with a unit price or line total —
+// only when the owner opted in.
+const showItems = computed(
+  () => !isLumpSum.value || props.quote.itemsVisibleToCustomer,
+);
 
 function itemTotal(index: number) {
   const item = props.quote.items[index];
@@ -80,9 +88,14 @@ function itemTotal(index: number) {
         </div>
       </dl>
     </section>
-    <section class="quote-preview__items">
+    <section
+      v-if="showItems"
+      class="quote-preview__items"
+      :class="{ 'quote-preview__items--scope': isLumpSum }"
+    >
       <div class="quote-preview__item quote-preview__item--head">
-        <span>Descrição</span><span>Qtd.</span><span>Valor</span>
+        <span>{{ isLumpSum ? "Escopo do serviço" : "Descrição" }}</span
+        ><span>Qtd.</span><span v-if="!isLumpSum">Valor</span>
       </div>
       <div
         v-for="(item, index) in quote.items"
@@ -91,25 +104,43 @@ function itemTotal(index: number) {
       >
         <span
           ><strong>{{ item.description || "Novo item" }}</strong
-          ><small
+          ><small v-if="!isLumpSum"
             >{{ formatCurrency(item.unitPrice) }} / {{ item.unit }}</small
-          ></span
+          ><small v-else>{{ item.unit }}</small></span
         >
         <span>{{ item.quantity }}</span>
-        <span>{{ formatCurrency(itemTotal(index)) }}</span>
+        <span v-if="!isLumpSum">{{ formatCurrency(itemTotal(index)) }}</span>
       </div>
     </section>
     <section class="quote-preview__totals">
-      <div>
-        <span>Subtotal</span><strong>{{ formatCurrency(subtotal) }}</strong>
-      </div>
-      <div v-if="quote.discount">
-        <span>Desconto</span
-        ><strong>− {{ formatCurrency(quote.discount) }}</strong>
-      </div>
-      <div>
-        <span>Total</span><strong>{{ formatCurrency(total) }}</strong>
-      </div>
+      <template v-if="isLumpSum">
+        <div>
+          <span>Valor do serviço</span
+          ><strong>{{ formatCurrency(total) }}</strong>
+        </div>
+      </template>
+      <template v-else>
+        <div>
+          <span>Subtotal</span><strong>{{ formatCurrency(subtotal) }}</strong>
+        </div>
+        <div v-if="quote.discount">
+          <span>Desconto</span
+          ><strong>− {{ formatCurrency(quote.discount) }}</strong>
+        </div>
+        <div>
+          <span>Total</span><strong>{{ formatCurrency(total) }}</strong>
+        </div>
+      </template>
+    </section>
+    <section v-if="quote.materials.length" class="quote-preview__materials">
+      <span>Materiais por conta do cliente</span>
+      <ul>
+        <li v-for="material in quote.materials" :key="material.id">
+          <strong>{{ material.description || "Novo material" }}</strong>
+          <small>{{ material.quantity }} {{ material.unit }}</small>
+        </li>
+      </ul>
+      <p>A compra dos materiais é por conta do cliente.</p>
     </section>
     <section v-if="quote.notes" class="quote-preview__notes">
       <span>Observações</span>
@@ -291,6 +322,9 @@ function itemTotal(index: number) {
     color: var(--ink-soft);
     font-size: 0.82rem;
   }
+  &__items--scope &__item {
+    grid-template-columns: 1fr 60px;
+  }
   &__totals {
     margin: 12px 22px 0 auto;
     width: 190px;
@@ -307,6 +341,44 @@ function itemTotal(index: number) {
     padding-top: 10px;
     border-top: 2px solid var(--ink);
     font-size: 0.84rem;
+  }
+  &__materials {
+    margin: 0 22px 18px;
+    padding: 13px;
+    border-radius: 10px;
+    background: #f5f3ed;
+  }
+  &__materials > span {
+    display: block;
+    color: var(--ink-soft);
+    font-size: 0.82rem;
+    font-weight: 850;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  &__materials ul {
+    display: grid;
+    gap: 6px;
+    margin: 8px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  &__materials li {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 0.84rem;
+  }
+  &__materials li small {
+    flex: 0 0 auto;
+    color: var(--ink-soft);
+    font-size: 0.82rem;
+  }
+  &__materials p {
+    margin: 10px 0 0;
+    color: var(--ink-soft);
+    font-size: 0.78rem;
+    line-height: 1.4;
   }
   &__notes {
     margin: 0 22px 18px;

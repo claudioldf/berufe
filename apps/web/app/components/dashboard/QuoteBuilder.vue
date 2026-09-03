@@ -65,11 +65,16 @@ const {
   isSaved,
   isShared,
   subtotal,
+  itemsAmount,
   validation,
   isValid,
   markDirty,
   addItem,
   removeItem,
+  addMaterial,
+  removeMaterial,
+  setPricingMode,
+  applyItemsAmountToLumpSum,
 } = useQuoteDraft(() => props.initialQuote);
 const displayedErrors = computed(() =>
   validationAttempted.value ? validation.value : undefined,
@@ -164,9 +169,19 @@ function requestShare() {
         <DashboardQuoteLineItemsEditor
           v-model="quote"
           :subtotal="subtotal"
+          :items-amount="itemsAmount"
           :errors="displayedErrors"
           @add="addItem"
           @remove="removeItem"
+          @dirty="markDirty"
+          @set-pricing-mode="setPricingMode"
+          @apply-items-amount="applyItemsAmountToLumpSum"
+        />
+        <DashboardQuoteMaterialsEditor
+          v-model="quote"
+          :errors="displayedErrors"
+          @add="addMaterial"
+          @remove="removeMaterial"
           @dirty="markDirty"
         />
         <DashboardQuoteNotesField
@@ -415,6 +430,57 @@ function requestShare() {
     :where(input, select, textarea):not([aria-invalid="true"]):focus-visible {
     box-shadow: none;
   }
+  .quote-pricing-mode {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    padding: 0 0 16px;
+    margin: 0;
+    border: 0;
+    legend {
+      padding: 0;
+      color: var(--ink-soft);
+      font-size: 0.82rem;
+      font-weight: 800;
+    }
+    &__options {
+      display: flex;
+      gap: 6px;
+      padding: 3px;
+      border-radius: 10px;
+      background: var(--color-surface-neutral);
+    }
+    &__options label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      color: var(--ink-soft);
+      font-size: 0.82rem;
+      font-weight: 750;
+      cursor: pointer;
+      transition:
+        background var(--motion-fast) ease,
+        color var(--motion-fast) ease;
+    }
+    &__options input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+      border: 0;
+    }
+    &__option--active {
+      background: white;
+      color: var(--ink);
+      box-shadow: var(--shadow-sm);
+    }
+  }
   .quote-items {
     overflow-x: auto;
   }
@@ -578,6 +644,191 @@ function requestShare() {
   .builder-total input:focus-visible {
     box-shadow: none;
   }
+  .builder-lump-sum {
+    display: grid;
+    gap: 10px;
+    width: min(320px, 100%);
+    margin: 18px 0 0 auto;
+    &__calc {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--line);
+    }
+    &__calc span {
+      color: var(--ink-soft);
+      font-size: 0.84rem;
+    }
+    &__calc strong {
+      font-size: 0.86rem;
+    }
+    &__calc small {
+      flex-basis: 100%;
+      color: var(--ink-soft);
+      font-size: 0.74rem;
+    }
+    &__field {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    &__field > span {
+      color: var(--ink);
+      font-size: 0.86rem;
+      font-weight: 800;
+    }
+    &__field--invalid &__control {
+      border-color: var(--color-danger);
+      background-color: var(--color-danger-tint);
+    }
+    &__control {
+      display: grid;
+      grid-template-columns: auto 100px;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      transition: border-color var(--motion-fast) ease;
+    }
+    &__control:focus-within {
+      border-color: var(--color-brand);
+    }
+    &__control em {
+      padding-left: 8px;
+      font-size: 0.82rem;
+      font-style: normal;
+    }
+    &__control input {
+      width: 100px;
+      padding: 8px;
+      border: 0;
+      background: transparent;
+      text-align: right;
+      font-size: 0.86rem;
+    }
+    &__control input:focus-visible {
+      box-shadow: none;
+    }
+    &__error {
+      color: var(--color-danger);
+      font-size: 0.72rem;
+      font-weight: 650;
+      text-align: right;
+    }
+    &__delta {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 4px;
+      margin: 0;
+      color: var(--ink-soft);
+      font-size: 0.78rem;
+    }
+    &__toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 6px;
+      color: var(--ink);
+      font-size: 0.84rem;
+    }
+    &__toggle input {
+      flex: 0 0 auto;
+      margin: 0;
+    }
+    &__hint {
+      margin: -4px 0 0;
+      text-align: right;
+      color: var(--ink-soft);
+      font-size: 0.76rem;
+    }
+  }
+  .quote-materials__empty {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 0.84rem;
+  }
+  .quote-materials {
+    overflow-x: auto;
+  }
+  .quote-material {
+    display: grid;
+    grid-template-columns: minmax(150px, 1.4fr) 80px 140px 30px;
+    gap: 7px;
+    align-items: start;
+    min-width: 460px;
+    padding: 8px 0;
+    border-top: 1px solid var(--line);
+    &--head {
+      align-items: center;
+      border: 0;
+      color: var(--ink-soft);
+      font-size: 0.82rem;
+      font-weight: 850;
+      text-transform: uppercase;
+    }
+    &--head span:nth-child(2) {
+      text-align: right;
+    }
+    & input,
+    & select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background-color: var(--color-surface-control);
+      font-size: 0.84rem;
+      transition: border-color var(--motion-fast) ease;
+    }
+    & > label {
+      display: grid;
+      gap: 4px;
+    }
+    &__mobile-index,
+    &__label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+      border: 0;
+    }
+    &__field--invalid input,
+    &__field--invalid select {
+      border-color: var(--color-danger);
+      background-color: var(--color-danger-tint);
+    }
+    &__error {
+      color: var(--color-danger);
+      font-size: 0.72rem;
+      font-weight: 650;
+      line-height: 1.25;
+    }
+    & select {
+      padding-right: 2.25rem;
+    }
+    & button {
+      display: grid;
+      place-items: center;
+      width: 27px;
+      height: 27px;
+      border: 0;
+      border-radius: 7px;
+      background: transparent;
+      color: #a45245;
+      cursor: pointer;
+    }
+    &__remove {
+      grid-column: 4;
+      grid-row: 1;
+      margin-top: 5px;
+    }
+  }
   .quote-builder {
     &__savebar {
       position: sticky;
@@ -699,7 +950,10 @@ function requestShare() {
   @media (width <= 720px) {
     .quote-item input,
     .quote-item select,
-    .builder-total input {
+    .quote-material input,
+    .quote-material select,
+    .builder-total input,
+    .builder-lump-sum__control input {
       font-size: 1rem;
     }
     .builder-fields {
@@ -784,6 +1038,58 @@ function requestShare() {
         height: 44px;
         margin: 0;
       }
+    }
+    .quote-materials {
+      display: grid;
+      gap: 12px;
+      overflow-x: visible;
+    }
+    .quote-material {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      min-width: 0;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--color-surface);
+      &--head {
+        display: none;
+      }
+      &__mobile-index,
+      &__label {
+        position: static;
+        width: auto;
+        height: auto;
+        padding: 0;
+        overflow: visible;
+        clip-path: none;
+        white-space: normal;
+      }
+      &__mobile-index {
+        align-self: center;
+        color: var(--ink);
+        font-size: 0.82rem;
+        font-weight: 850;
+      }
+      &__label {
+        color: var(--ink-soft);
+        font-size: 0.76rem;
+        font-weight: 800;
+      }
+      &__description {
+        grid-column: 1 / -1;
+      }
+      &__remove {
+        grid-column: 2;
+        grid-row: 1;
+        justify-self: end;
+        width: 44px;
+        height: 44px;
+        margin: 0;
+      }
+    }
+    .builder-lump-sum {
+      width: 100%;
     }
     .builder-card {
       padding: 17px;

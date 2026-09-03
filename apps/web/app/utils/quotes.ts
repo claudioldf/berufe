@@ -2,6 +2,7 @@ import type {
   Quote,
   QuoteItem,
   QuoteItemValidationErrors,
+  QuoteMaterialValidationErrors,
   QuoteValidationErrors,
 } from "~/types";
 import { normalizeBrazilianMobilePhone } from "~/utils/brazilian-phone";
@@ -14,6 +15,7 @@ export function cloneQuote(quote: Quote): Quote {
     ...quote,
     changeRequests: quote.changeRequests.map((request) => ({ ...request })),
     items: quote.items.map((item) => ({ ...item })),
+    materials: quote.materials.map((material) => ({ ...material })),
   };
 }
 
@@ -21,12 +23,31 @@ export function quoteItemTotal(item: QuoteItem) {
   return Number(item.quantity) * Number(item.unitPrice);
 }
 
-export function quoteSubtotal(quote: Quote) {
+// The professional's private reference calculation: the sum of any entered
+// line items. In `lump_sum` mode this is never the quote's price — it exists
+// only to help the professional reach one — and it is never shown to the
+// customer.
+export function quoteItemsAmount(quote: Quote) {
   return quote.items.reduce((sum, item) => sum + quoteItemTotal(item), 0);
 }
 
+export function quoteSubtotal(quote: Quote) {
+  return quote.pricingMode === "lump_sum"
+    ? Number(quote.lumpSumAmount ?? 0)
+    : quoteItemsAmount(quote);
+}
+
 export function quoteTotal(quote: Quote) {
+  if (quote.pricingMode === "lump_sum")
+    return Math.max(0, quoteSubtotal(quote));
   return Math.max(0, quoteSubtotal(quote) - Number(quote.discount));
+}
+
+// Positive when the typed price is above the private calculation, negative
+// when below. Purely a reference for the professional; never sent or shown
+// to the customer.
+export function quoteLumpSumDelta(quote: Quote) {
+  return Number(quote.lumpSumAmount ?? 0) - quoteItemsAmount(quote);
 }
 
 export function quoteDateAfterDays(days: number, from = new Date()) {
@@ -61,8 +82,9 @@ export function isValidQuoteInputDate(value: string) {
 }
 
 export function validateQuote(quote: Quote): QuoteValidationErrors {
+  const isLumpSum = quote.pricingMode === "lump_sum";
   const subtotal = quoteSubtotal(quote);
-  const errors: QuoteValidationErrors = { items: {} };
+  const errors: QuoteValidationErrors = { items: {}, materials: {} };
   const customerName = quote.customerName.trim();
   const customerEmail = quote.customerEmail.trim();
   const serviceDescription = quote.serviceDescription.trim();
@@ -104,7 +126,18 @@ export function validateQuote(quote: Quote): QuoteValidationErrors {
     errors.serviceAddress = "Use no máximo 240 caracteres.";
   }
 
-  if (!quote.items.length) {
+  if (isLumpSum) {
+    const lumpSumAmount = Number(quote.lumpSumAmount);
+    const lumpSumAmountIsBlank =
+      String(quote.lumpSumAmount ?? "").trim() === "";
+    if (
+      lumpSumAmountIsBlank ||
+      !Number.isFinite(lumpSumAmount) ||
+      lumpSumAmount < 0
+    ) {
+      errors.lumpSumAmount = "Informe o valor do serviço.";
+    }
+  } else if (!quote.items.length) {
     errors.itemsMessage = "Adicione pelo menos um item ao orçamento.";
   }
 
@@ -131,15 +164,37 @@ export function validateQuote(quote: Quote): QuoteValidationErrors {
     if (Object.keys(itemErrors).length) errors.items[item.id] = itemErrors;
   }
 
-  const discount = Number(quote.discount);
-  if (
-    String(quote.discount).trim() === "" ||
-    !Number.isFinite(discount) ||
-    discount < 0
-  ) {
-    errors.discount = "Informe um desconto válido.";
-  } else if (discount > subtotal) {
-    errors.discount = "O desconto não pode ultrapassar o subtotal.";
+  if (!isLumpSum) {
+    const discount = Number(quote.discount);
+    if (
+      String(quote.discount).trim() === "" ||
+      !Number.isFinite(discount) ||
+      discount < 0
+    ) {
+      errors.discount = "Informe um desconto válido.";
+    } else if (discount > subtotal) {
+      errors.discount = "O desconto não pode ultrapassar o subtotal.";
+    }
+  }
+
+  for (const material of quote.materials) {
+    const materialErrors: QuoteMaterialValidationErrors = {};
+    const quantity = Number(material.quantity);
+    const quantityIsBlank = String(material.quantity).trim() === "";
+
+    if (!material.description.trim()) {
+      materialErrors.description = "Descreva este material.";
+    } else if (material.description.trim().length > 160) {
+      materialErrors.description = "Use no máximo 160 caracteres.";
+    }
+    if (quantityIsBlank || !Number.isFinite(quantity) || quantity <= 0) {
+      materialErrors.quantity = "Informe uma quantidade maior que zero.";
+    }
+    if (!material.unit.trim()) materialErrors.unit = "Selecione a unidade.";
+
+    if (Object.keys(materialErrors).length) {
+      errors.materials[material.id] = materialErrors;
+    }
   }
 
   if (quote.notes.length > 700) {
@@ -151,8 +206,9 @@ export function validateQuote(quote: Quote): QuoteValidationErrors {
 
 export function hasQuoteValidationErrors(errors: QuoteValidationErrors) {
   return (
-    Object.keys(errors).some((key) => key !== "items") ||
-    Object.keys(errors.items).length > 0
+    Object.keys(errors).some((key) => key !== "items" && key !== "materials") ||
+    Object.keys(errors.items).length > 0 ||
+    Object.keys(errors.materials).length > 0
   );
 }
 

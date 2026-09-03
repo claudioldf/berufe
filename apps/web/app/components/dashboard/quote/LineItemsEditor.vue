@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import type { Quote, QuoteValidationErrors } from "~/types";
+import { computed } from "vue";
+import type { Quote, QuotePricingMode, QuoteValidationErrors } from "~/types";
 import { formatCurrency } from "~/utils/formatters";
-import { quoteItemTotal } from "~/utils/quotes";
+import { quoteItemTotal, quoteLumpSumDelta } from "~/utils/quotes";
 
 const props = defineProps<{
   subtotal: number;
+  itemsAmount: number;
   errors?: QuoteValidationErrors;
 }>();
 const quote = defineModel<Quote>({ required: true });
@@ -12,7 +14,12 @@ const emit = defineEmits<{
   add: [];
   remove: [id: string];
   dirty: [];
+  setPricingMode: [mode: QuotePricingMode];
+  applyItemsAmount: [];
 }>();
+
+const isLumpSum = computed(() => quote.value.pricingMode === "lump_sum");
+const delta = computed(() => quoteLumpSumDelta(quote.value));
 </script>
 
 <template>
@@ -21,8 +28,18 @@ const emit = defineEmits<{
       <div>
         <span>03</span>
         <div>
-          <h2>Itens do orçamento</h2>
-          <p>Descreva os itens, as quantidades e os valores.</p>
+          <h2>
+            {{
+              isLumpSum ? "Cálculo e valor do serviço" : "Itens do orçamento"
+            }}
+          </h2>
+          <p>
+            {{
+              isLumpSum
+                ? "Use os itens como um cálculo privado para chegar ao valor final."
+                : "Descreva os itens, as quantidades e os valores."
+            }}
+          </p>
         </div>
       </div>
       <UButton
@@ -35,6 +52,31 @@ const emit = defineEmits<{
         Adicionar item
       </UButton>
     </header>
+    <fieldset class="quote-pricing-mode">
+      <legend>Como você vai cobrar?</legend>
+      <div class="quote-pricing-mode__options">
+        <label :class="{ 'quote-pricing-mode__option--active': !isLumpSum }">
+          <input
+            type="radio"
+            name="pricing-mode"
+            value="itemized"
+            :checked="!isLumpSum"
+            @change="emit('setPricingMode', 'itemized')"
+          />
+          Por itens
+        </label>
+        <label :class="{ 'quote-pricing-mode__option--active': isLumpSum }">
+          <input
+            type="radio"
+            name="pricing-mode"
+            value="lump_sum"
+            :checked="isLumpSum"
+            @change="emit('setPricingMode', 'lump_sum')"
+          />
+          Preço fechado
+        </label>
+      </div>
+    </fieldset>
     <div class="quote-items">
       <div class="quote-item quote-item--head" aria-hidden="true">
         <span>Descrição</span><span>Qtd.</span><span>Unidade</span
@@ -48,7 +90,7 @@ const emit = defineEmits<{
       >
         <span class="quote-item__mobile-index">Item {{ index + 1 }}</span>
         <button
-          v-if="quote.items.length > 1"
+          v-if="isLumpSum || quote.items.length > 1"
           class="quote-item__remove"
           type="button"
           :aria-label="`Remover item ${index + 1}`"
@@ -189,7 +231,7 @@ const emit = defineEmits<{
       </div>
     </div>
     <p
-      v-if="props.errors?.itemsMessage"
+      v-if="!isLumpSum && props.errors?.itemsMessage"
       class="quote-items__error"
       role="alert"
     >
@@ -205,7 +247,7 @@ const emit = defineEmits<{
     >
       Adicionar item
     </UButton>
-    <div class="builder-total">
+    <div v-if="!isLumpSum" class="builder-total">
       <div>
         <span>Subtotal</span><strong>{{ formatCurrency(subtotal) }}</strong>
       </div>
@@ -250,6 +292,75 @@ const emit = defineEmits<{
           formatCurrency(Math.max(0, subtotal - quote.discount))
         }}</strong>
       </div>
+    </div>
+    <div v-else class="builder-lump-sum">
+      <div class="builder-lump-sum__calc">
+        <span>Cálculo interno</span>
+        <strong>{{ formatCurrency(itemsAmount) }}</strong>
+        <small>Só você vê este cálculo.</small>
+      </div>
+      <label
+        class="builder-lump-sum__field"
+        :class="{
+          'builder-lump-sum__field--invalid': props.errors?.lumpSumAmount,
+        }"
+      >
+        <span>Valor do serviço</span>
+        <span class="builder-lump-sum__control">
+          <em>R$</em>
+          <input
+            v-model.number="quote.lumpSumAmount"
+            name="lump-sum-amount"
+            type="number"
+            inputmode="decimal"
+            autocomplete="off"
+            :aria-describedby="
+              props.errors?.lumpSumAmount
+                ? 'quote-lump-sum-amount-error'
+                : undefined
+            "
+            :aria-invalid="Boolean(props.errors?.lumpSumAmount)"
+            min="0"
+            step="0.01"
+            @input="emit('dirty')"
+          />
+        </span>
+        <small
+          v-if="props.errors?.lumpSumAmount"
+          id="quote-lump-sum-amount-error"
+          class="builder-lump-sum__error"
+        >
+          {{ props.errors.lumpSumAmount }}
+        </small>
+      </label>
+      <UButton
+        v-if="itemsAmount > 0"
+        size="sm"
+        color="neutral"
+        variant="outline"
+        icon="i-lucide-refresh-ccw"
+        @click="emit('applyItemsAmount')"
+      >
+        Usar {{ formatCurrency(itemsAmount) }}
+      </UButton>
+      <p v-if="itemsAmount > 0 && delta !== 0" class="builder-lump-sum__delta">
+        <UIcon
+          :name="delta > 0 ? 'i-lucide-arrow-up' : 'i-lucide-arrow-down'"
+        />
+        {{ formatCurrency(Math.abs(delta)) }}
+        {{ delta > 0 ? "acima" : "abaixo" }} do cálculo interno
+      </p>
+      <label class="builder-lump-sum__toggle">
+        <input
+          v-model="quote.itemsVisibleToCustomer"
+          type="checkbox"
+          @change="emit('dirty')"
+        />
+        Mostrar o detalhamento do serviço ao cliente
+      </label>
+      <small class="builder-lump-sum__hint"
+        >O cliente vê o que será feito, sem os valores por item.</small
+      >
     </div>
   </DesignSystemSurfaceCard>
 </template>

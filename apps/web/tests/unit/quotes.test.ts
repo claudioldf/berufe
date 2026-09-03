@@ -6,6 +6,8 @@ import {
   isQuoteValid,
   isValidQuoteInputDate,
   quoteDateAfterDays,
+  quoteItemsAmount,
+  quoteLumpSumDelta,
   quoteSubtotal,
   quoteTotal,
   validateQuote,
@@ -24,6 +26,10 @@ const source: Quote = {
   serviceAddress: "Rua das Flores, 10",
   scheduledOn: "2026-08-22",
   validUntil: "2026-08-25",
+  pricingMode: "itemized",
+  lumpSumAmount: null,
+  itemsVisibleToCustomer: true,
+  itemsAmount: 1520,
   discount: 75,
   notes: "Materiais a definir.",
   status: "draft",
@@ -55,6 +61,15 @@ const source: Quote = {
       sortOrder: 1,
     },
   ],
+  materials: [
+    {
+      id: "6b46e3a1-3a0b-4d40-9b0a-2a6f7f2e5c11",
+      description: "Fita isolante",
+      quantity: 3,
+      unit: "rolo",
+      sortOrder: 0,
+    },
+  ],
 };
 
 describe("quote utilities", () => {
@@ -70,10 +85,12 @@ describe("quote utilities", () => {
     expect(quoteTotal(quote)).toBe(0);
   });
 
-  it("clones line items without mutating the source", () => {
+  it("clones line items and materials without mutating the source", () => {
     const clone = cloneQuote(source);
     clone.items[0]!.description = "Alterado";
+    clone.materials[0]!.description = "Alterado";
     expect(source.items[0]!.description).not.toBe("Alterado");
+    expect(source.materials[0]!.description).not.toBe("Alterado");
   });
 
   it("validates customer, service, items, and discount constraints", () => {
@@ -136,6 +153,60 @@ describe("quote utilities", () => {
   });
 });
 
+describe("lump-sum pricing", () => {
+  const lumpSum: Quote = {
+    ...source,
+    pricingMode: "lump_sum",
+    lumpSumAmount: 2000,
+    discount: 0,
+  };
+
+  it("prices the quote from the typed amount, not the item sum", () => {
+    expect(quoteItemsAmount(lumpSum)).toBe(1520);
+    expect(quoteSubtotal(lumpSum)).toBe(2000);
+    expect(quoteTotal(lumpSum)).toBe(2000);
+  });
+
+  it("floors the total at zero for a negative typed amount", () => {
+    expect(quoteTotal({ ...lumpSum, lumpSumAmount: -10 })).toBe(0);
+  });
+
+  it("reports the delta between the typed amount and the private calculation", () => {
+    expect(quoteLumpSumDelta(lumpSum)).toBe(480);
+    expect(quoteLumpSumDelta({ ...lumpSum, lumpSumAmount: 1000 })).toBe(-520);
+  });
+
+  it("requires a lump sum amount instead of a minimum item count", () => {
+    const blank = { ...lumpSum, lumpSumAmount: null, items: [] };
+    const errors = validateQuote(blank);
+    expect(errors.lumpSumAmount).toBe("Informe o valor do serviço.");
+    expect(errors.itemsMessage).toBeUndefined();
+    expect(isQuoteValid(blank)).toBe(false);
+  });
+
+  it("makes the discount unavailable", () => {
+    const errors = validateQuote({ ...lumpSum, discount: -5 });
+    expect(errors.discount).toBeUndefined();
+  });
+
+  it("validates materials in both pricing modes", () => {
+    const invalidMaterial = {
+      ...lumpSum,
+      materials: [
+        { ...lumpSum.materials[0]!, description: "", quantity: 0, unit: "" },
+      ],
+    };
+    expect(validateQuote(invalidMaterial).materials).toMatchObject({
+      [lumpSum.materials[0]!.id]: {
+        description: "Descreva este material.",
+        quantity: "Informe uma quantidade maior que zero.",
+        unit: "Selecione a unidade.",
+      },
+    });
+    expect(isQuoteValid(invalidMaterial)).toBe(false);
+  });
+});
+
 describe("quote draft state", () => {
   it("starts a new quote as unsaved", () => {
     const draft = useQuoteDraft({
@@ -172,5 +243,58 @@ describe("quote draft state", () => {
 
     expect(draft.isSaved.value).toBe(false);
     expect(draft.isShared.value).toBe(true);
+  });
+
+  it("switches pricing mode, zeroing the discount and seeding the price", () => {
+    const draft = useQuoteDraft(source);
+    expect(draft.itemsAmount.value).toBe(1520);
+
+    draft.setPricingMode("lump_sum");
+
+    expect(draft.quote.value.pricingMode).toBe("lump_sum");
+    expect(draft.quote.value.discount).toBe(0);
+    expect(draft.quote.value.lumpSumAmount).toBe(1520);
+    expect(draft.total.value).toBe(1520);
+  });
+
+  it("does not overwrite an already-typed lump sum amount when switching back", () => {
+    const draft = useQuoteDraft(source);
+    draft.setPricingMode("lump_sum");
+    draft.quote.value.lumpSumAmount = 2000;
+    draft.setPricingMode("itemized");
+    draft.setPricingMode("lump_sum");
+
+    expect(draft.quote.value.lumpSumAmount).toBe(2000);
+  });
+
+  it("applies the private calculation to the typed price on demand", () => {
+    const draft = useQuoteDraft(source);
+    draft.setPricingMode("lump_sum");
+    draft.quote.value.lumpSumAmount = 2000;
+
+    draft.applyItemsAmountToLumpSum();
+
+    expect(draft.quote.value.lumpSumAmount).toBe(1520);
+  });
+
+  it("removes the last item only in lump_sum mode", () => {
+    const draft = useQuoteDraft({ ...source, items: [source.items[0]!] });
+    draft.removeItem(source.items[0]!.id);
+    expect(draft.quote.value.items).toHaveLength(1);
+
+    draft.setPricingMode("lump_sum");
+    draft.removeItem(source.items[0]!.id);
+    expect(draft.quote.value.items).toHaveLength(0);
+  });
+
+  it("adds and removes materials freely, down to zero", () => {
+    const draft = useQuoteDraft(source);
+    const [existing] = draft.quote.value.materials;
+    draft.addMaterial();
+    expect(draft.quote.value.materials).toHaveLength(2);
+
+    draft.removeMaterial(existing!.id);
+    draft.removeMaterial(draft.quote.value.materials[0]!.id);
+    expect(draft.quote.value.materials).toHaveLength(0);
   });
 });
