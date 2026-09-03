@@ -7,6 +7,7 @@ import {
 } from "~/utils/professional-auth";
 
 const adminLoginPath = "/app/admin/login";
+const professionalAccountExclusionPath = "/app/professional/account/exclusion";
 type WorkspaceRole = "professional" | "admin";
 
 function requiredWorkspaceRole(path: string): WorkspaceRole | undefined {
@@ -23,9 +24,10 @@ function requiresApplicationSession(path: string) {
 export default defineNuxtRouteMiddleware(async (to, from) => {
   const requiredRole = requiredWorkspaceRole(to.path);
   const isProfessionalAuthRoute = to.path === professionalLoginPath;
+  const isAdminAuthRoute = to.path === adminLoginPath;
   if (
     typeof window === "undefined" ||
-    (!requiredRole && !isProfessionalAuthRoute)
+    (!requiredRole && !isProfessionalAuthRoute && !isAdminAuthRoute)
   ) {
     return;
   }
@@ -35,16 +37,29 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   try {
     authenticated = await restoreSession();
   } catch (error) {
-    if (isProfessionalAuthRoute) return;
+    if (isProfessionalAuthRoute || isAdminAuthRoute) return;
     throw error;
   }
 
   if (!authenticated) {
-    if (isProfessionalAuthRoute) return;
+    if (isProfessionalAuthRoute || isAdminAuthRoute) return;
     return navigateTo(
       requiredRole === "admin" ? adminLoginPath : professionalLoginPath,
       { replace: true },
     );
+  }
+
+  if (isAdminAuthRoute) {
+    if (session?.value?.impersonating) {
+      return navigateTo(professionalDashboardPath, { replace: true });
+    }
+    if (
+      account.value?.role === "admin" &&
+      session?.value?.authenticationMethod === "password"
+    ) {
+      return navigateTo("/app/admin", { replace: true });
+    }
+    return;
   }
 
   if (isProfessionalAuthRoute) {
@@ -66,8 +81,23 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   }
 
   if (
+    requiredRole === "professional" &&
+    session?.value?.authenticationMethod === "password" &&
+    !session.value.impersonating
+  ) {
+    return navigateTo(professionalLoginPath, { replace: true });
+  }
+
+  if (
+    session?.value?.impersonating &&
+    to.path === professionalAccountExclusionPath
+  ) {
+    return navigateTo(professionalDashboardPath, { replace: true });
+  }
+
+  if (
     requiredRole === "admin" &&
-    session.value?.authenticationMethod !== "password"
+    session?.value?.authenticationMethod !== "password"
   ) {
     return navigateTo(adminLoginPath, { replace: true });
   }

@@ -16,7 +16,7 @@ import { professionalAccountExclusionPath } from "~/utils/professional-auth";
 const route = useRoute();
 const router = useRouter();
 const { showToast } = useToast();
-const { account } = useApplicationSession();
+const { account, session } = useApplicationSession();
 const { data: catalog, error: catalogError } = await useCatalogs();
 if (catalogError.value || !catalog.value) {
   throw createError({
@@ -59,6 +59,7 @@ const relationshipOpen = shallowRef(false);
 const relationshipEligible = computed(
   () => account.value?.relationshipEligible ?? false,
 );
+const isImpersonating = computed(() => session.value?.impersonating ?? false);
 // Every field is derived from the authenticated workspace. Nothing is borrowed
 // from a fixture: the editor must only ever show this professional's own data.
 const professional = computed<Professional>(() => {
@@ -417,7 +418,10 @@ async function handleRelationshipRemove(id: string) {
           :server-error="verificationError"
           @submitted="handleVerificationSubmission"
         />
-        <div v-if="activeTab === 'dados'" class="profile-workspace__account">
+        <div
+          v-if="activeTab === 'dados' && !isImpersonating"
+          class="profile-workspace__account"
+        >
           <NuxtLink :to="professionalAccountExclusionPath">
             Excluir minha conta <UIcon name="i-lucide-arrow-right" />
           </NuxtLink>

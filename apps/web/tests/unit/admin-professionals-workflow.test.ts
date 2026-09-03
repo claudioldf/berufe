@@ -4,6 +4,7 @@ import Professionals from "@app/components/admin/professionals/Professionals.vue
 
 const mocks = vi.hoisted(() => ({
   setPublication: vi.fn(),
+  startImpersonation: vi.fn(),
 }));
 
 vi.mock("@app/composables/useAdminProfessionals", async () => {
@@ -21,6 +22,7 @@ vi.mock("@app/composables/useAdminProfessionals", async () => {
     phoneLast4: "4002",
     identityVerified: true,
     accountStatus: "active" as const,
+    impersonationEligible: true,
     portfolioCount: 1,
     referenceCount: 0,
     customerCount: 0,
@@ -70,11 +72,22 @@ vi.mock("@app/composables/useAdminProfessionals", async () => {
   };
 });
 
+vi.mock("@app/composables/useAdminImpersonation", async () => {
+  const { readonly, shallowRef } = await import("vue");
+  return {
+    useAdminImpersonation: () => ({
+      isChanging: readonly(shallowRef(false)),
+      error: readonly(shallowRef("")),
+      start: mocks.startImpersonation,
+    }),
+  };
+});
+
 const TableStub = defineComponent({
   props: { items: { type: Array, required: true } },
-  emits: ["unpublish"],
+  emits: ["manage", "unpublish"],
   template:
-    "<button data-unpublish @click=\"$emit('unpublish', items[0])\">Despublicar</button>",
+    "<div><button data-manage @click=\"$emit('manage', items[0])\">Gerenciar</button><button data-unpublish @click=\"$emit('unpublish', items[0])\">Despublicar</button></div>",
 });
 
 const DialogStub = defineComponent({
@@ -96,6 +109,26 @@ const DialogStub = defineComponent({
 });
 
 describe("administrator professionals publication workflow", () => {
+  it("starts account management from the selected directory row", async () => {
+    const wrapper = mount(Professionals, {
+      global: {
+        stubs: {
+          AdminProfessionalsToolbar: true,
+          AdminProfessionalsTable: TableStub,
+          AdminProfessionalsUnpublishDialog: DialogStub,
+          DesignSystemSurfaceCard: true,
+          UIcon: true,
+        },
+      },
+    });
+
+    await wrapper.get("[data-manage]").trigger("click");
+
+    expect(mocks.startImpersonation).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "account-1" }),
+    );
+  });
+
   it("keeps the dialog and reason when unpublishing fails", async () => {
     mocks.setPublication.mockRejectedValueOnce(new Error("Falha temporária."));
     const wrapper = mount(Professionals, {

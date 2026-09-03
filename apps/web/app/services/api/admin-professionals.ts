@@ -28,6 +28,7 @@ export function mapAdminProfessionals(
       phoneLast4: item.phone_last4,
       identityVerified: item.identity_verified,
       accountStatus: item.account_status,
+      impersonationEligible: item.impersonation_eligible,
       portfolioCount: item.portfolio_count,
       referenceCount: item.reference_count,
       customerCount: item.customer_count,
