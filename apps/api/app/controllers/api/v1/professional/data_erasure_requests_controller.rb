@@ -6,6 +6,7 @@ module Api
       class DataErasureRequestsController < BaseController
         before_action :prevent_caching
         before_action :authenticate_application_session!
+        before_action :reject_impersonated_action!
 
         def create
           account = Current.user_account

@@ -79,6 +79,45 @@ RSpec.describe UserAccount, type: :model do
     expect(account.reload).to be_registration_completed
   end
 
+  it "keeps every delegated-account-management eligibility check agreeing with #impersonatable?" do
+    account = described_class.create!(
+      phone_e164: "+5547999993355",
+      role: "professional",
+      status: "active",
+      phone_verified_at: 2.minutes.ago,
+      registered_at: 1.minute.ago,
+      terms_accepted_at: 1.minute.ago,
+      terms_version: "0.3",
+      privacy_notice_version: LegalDocumentVersions::PRIVACY_NOTICE
+    )
+    ProfessionalProfile.create!(user_account: account, display_name: "Ana Souza")
+    account.reload
+    admin = described_class.create!(
+      email: "impersonation-eligibility-admin@example.com",
+      password: "a-secure-admin-password",
+      password_confirmation: "a-secure-admin-password",
+      role: "admin",
+      status: "active"
+    )
+    admin_session = ApplicationSession.issue!(user_account: admin).first
+
+    expect(account).not_to be_impersonatable
+    expect(ApplicationSession.new(impersonated_user_account: account)).not_to be_impersonation_target_eligible
+    account.reload # building the throwaway session above caches an inverse association on account
+    expect do
+      Admin::ProfessionalImpersonation.new.start!(application_session: admin_session, professional_account_id: account.id)
+    end.to raise_error(Admin::ProfessionalImpersonation::Unavailable)
+
+    account.update!(terms_version: LegalDocumentVersions::TERMS)
+    account.reload
+
+    expect(account).to be_impersonatable
+    expect(ApplicationSession.new(impersonated_user_account: account)).to be_impersonation_target_eligible
+    expect do
+      Admin::ProfessionalImpersonation.new.start!(application_session: admin_session, professional_account_id: account.id)
+    end.not_to raise_error
+  end
+
   it "keeps administrator credentials separate from professional phone credentials" do
     account = described_class.create!(
       email: " ADMIN@EXAMPLE.COM ",

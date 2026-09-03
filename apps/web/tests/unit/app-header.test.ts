@@ -83,6 +83,7 @@ function restoredProfessional(
     },
     session: {
       authenticationMethod: "sms_otp",
+      impersonating: false,
       authenticatedAt: "2026-08-15T12:00:00.000Z",
       idleExpiresAt: "2026-08-15T12:30:00.000Z",
       absoluteExpiresAt: "2026-08-16T00:00:00.000Z",
@@ -106,6 +107,7 @@ function restoredAdmin(): RestoredApplicationSession {
     },
     session: {
       authenticationMethod: "password",
+      impersonating: false,
       authenticatedAt: "2026-08-15T12:00:00.000Z",
       idleExpiresAt: "2026-08-15T12:30:00.000Z",
       absoluteExpiresAt: "2026-08-16T00:00:00.000Z",

@@ -11,6 +11,7 @@ const props = defineProps<{
   verification: ProfessionalVerificationState;
   submitting?: boolean;
   serverError?: string;
+  delegated?: boolean;
 }>();
 const emit = defineEmits<{
   submitted: [submission: VerificationSubmission];
@@ -109,8 +110,12 @@ const canSubmit = computed(
       >
         {{ props.serverError }}
       </p>
+      <p v-if="canSubmit && props.delegated" class="verification-panel__notice">
+        O profissional precisa enviar o documento de identidade pela própria
+        conta. Essa ação não está disponível ao gerenciar a conta.
+      </p>
       <DashboardVerificationIdentityUploadForm
-        v-if="canSubmit"
+        v-else-if="canSubmit"
         :submitting="props.submitting"
         @submitted="emit('submitted', $event)"
       />
@@ -259,6 +264,12 @@ const canSubmit = computed(
     color: var(--color-danger);
     font-size: 0.84rem;
     font-weight: 700;
+  }
+  &__notice {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 0.84rem;
+    line-height: 1.5;
   }
 }
 

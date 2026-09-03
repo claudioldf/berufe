@@ -182,6 +182,83 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/admin/impersonation:
+    post:
+      operationId: startAdminProfessionalImpersonation
+      summary: Manage an active registered professional through the current administrator session
+      tags:
+        - Authentication
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminImpersonationRequest"
+      responses:
+        "200":
+          description: The administrator session now exposes the selected professional as its effective account.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentSessionResponse"
+        "401":
+          description: An active password-authenticated administrator session is required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: The exact browser origin is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: The professional account does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: The session is already impersonating or the professional is not eligible.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: The professional account identifier is missing.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: stopAdminProfessionalImpersonation
+      summary: Return the current impersonating session to its administrator account
+      tags:
+        - Authentication
+      security:
+        - applicationSession: []
+      responses:
+        "200":
+          description: The administrator account is again the session's effective account.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentSessionResponse"
+        "401":
+          description: An active password-authenticated administrator session is required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: The exact browser origin is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/admin/catalog:
     get:
       operationId: getAdminCatalog
@@ -202,6 +279,8 @@ paths:
                 $ref: "#/components/schemas/AdminCatalogResponse"
         "401":
           $ref: "#/components/responses/AdminCatalogUnauthorized"
+        "403":
+          $ref: "#/components/responses/AdminCatalogForbidden"
         "503":
           $ref: "#/components/responses/AdminCatalogUnavailable"
   /api/v1/admin/catalog/services:
@@ -338,6 +417,8 @@ paths:
                 $ref: "#/components/schemas/AdminModerationResponse"
         "401":
           $ref: "#/components/responses/AdminModerationUnauthorized"
+        "403":
+          $ref: "#/components/responses/AdminModerationForbidden"
   /api/v1/admin/reports/growth:
     get:
       operationId: getAdminGrowthReport
@@ -506,6 +587,8 @@ paths:
                 format: binary
         "401":
           $ref: "#/components/responses/AdminModerationUnauthorized"
+        "403":
+          $ref: "#/components/responses/AdminModerationForbidden"
         "404":
           description: The evidence is absent, deleted, unsafe, or not a retained regenerated identity image.
           headers:
@@ -545,6 +628,8 @@ paths:
                 $ref: "#/components/schemas/AdminProfessionalsResponse"
         "401":
           $ref: "#/components/responses/AdminModerationUnauthorized"
+        "403":
+          $ref: "#/components/responses/AdminModerationForbidden"
         "422":
           $ref: "#/components/responses/AdminModerationInvalid"
   /api/v1/admin/professionals/{id}/publication:
@@ -3458,7 +3543,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "403":
-          description: The exact browser origin or profile owner is invalid.
+          description: The exact browser origin or profile owner is invalid, or the session is delegated administrator access.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
@@ -3540,6 +3625,8 @@ paths:
                 $ref: "#/components/schemas/MediaUploadResponse"
         "401":
           $ref: "#/components/responses/ProfessionalMediaUnauthorized"
+        "403":
+          $ref: "#/components/responses/ProfessionalMediaForbidden"
         "404":
           $ref: "#/components/responses/ProfessionalMediaNotFound"
   /api/v1/professional/media-uploads/{id}/content:
@@ -4077,7 +4164,7 @@ components:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
     ProfessionalMediaForbidden:
-      description: The exact browser origin or professional ownership check failed.
+      description: The exact browser origin or professional ownership check failed, or the session is delegated administrator access acting on an identity verification upload.
       headers:
         X-Request-Id:
           $ref: "#/components/headers/RequestId"
@@ -4400,6 +4487,7 @@ components:
         - phone_last4
         - identity_verified
         - account_status
+        - impersonation_eligible
         - portfolio_count
         - reference_count
         - customer_count
@@ -4426,6 +4514,7 @@ components:
         account_status:
           type: string
           enum: [active, suspended]
+        impersonation_eligible: { type: boolean }
         portfolio_count: { type: integer, minimum: 0 }
         reference_count: { type: integer, minimum: 0 }
         customer_count: { type: integer, minimum: 0 }
@@ -4796,6 +4885,15 @@ components:
           type: string
           minLength: 1
           maxLength: 72
+    AdminImpersonationRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - professional_account_id
+      properties:
+        professional_account_id:
+          type: string
+          format: uuid
     AdminSessionResponse:
       type: object
       additionalProperties: false
@@ -7014,6 +7112,7 @@ components:
       additionalProperties: false
       required:
         - authentication_method
+        - impersonating
         - authenticated_at
         - idle_expires_at
         - absolute_expires_at
@@ -7023,6 +7122,8 @@ components:
           enum:
             - sms_otp
             - password
+        impersonating:
+          type: boolean
         authenticated_at:
           type: string
           format: date-time

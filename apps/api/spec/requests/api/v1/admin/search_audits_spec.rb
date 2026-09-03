@@ -94,8 +94,8 @@ RSpec.describe "Administrator search audits", type: :request, openapi: true do
     professional_token = ApplicationSession.issue!(user_account: professional).last
     get "/api/v1/admin/search-audits",
       headers: session_headers(professional_token, "search-audits-professional")
-    expect(response).to have_http_status(:forbidden)
-    assert_api_conform(status: 403)
+    expect(response).to have_http_status(:unauthorized)
+    assert_api_conform(status: 401)
   end
 
   private

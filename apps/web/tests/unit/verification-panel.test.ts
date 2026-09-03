@@ -106,4 +106,19 @@ describe("professional verification panel", () => {
     expect(wrapper.text()).toContain("A imagem não está legível.");
     expect(wrapper.find('input[type="file"]').exists()).toBe(true);
   });
+
+  it("replaces the upload form with a delegated-access notice while impersonating", () => {
+    const wrapper = mount(VerificationPanel, {
+      props: {
+        evidence: [],
+        verification: { current: null },
+        delegated: true,
+      },
+    });
+
+    expect(wrapper.find('input[type="file"]').exists()).toBe(false);
+    expect(wrapper.text()).toContain(
+      "O profissional precisa enviar o documento de identidade pela própria conta.",
+    );
+  });
 });

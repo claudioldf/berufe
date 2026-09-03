@@ -55,6 +55,16 @@ export function useApplicationSession(
     resetSession("anonymous");
   }
 
+  function replaceSession(restored: RestoredApplicationSession) {
+    if (account.value?.id !== restored.account.id) {
+      clearProfessionalNotificationState();
+    }
+    account.value = restored.account;
+    session.value = restored.session;
+    status.value = "authenticated";
+    setRole(restored.account.role);
+  }
+
   async function restoreSession(): Promise<boolean> {
     if (status.value === "authenticated") return true;
     if (status.value === "anonymous") return false;
@@ -69,10 +79,7 @@ export function useApplicationSession(
           return false;
         }
 
-        account.value = restored.account;
-        session.value = restored.session;
-        status.value = "authenticated";
-        setRole(restored.account.role);
+        replaceSession(restored);
         return true;
       } catch (error) {
         resetSession("unknown");
@@ -118,5 +125,6 @@ export function useApplicationSession(
     refreshSession,
     logout,
     clearSession,
+    replaceSession,
   };
 }

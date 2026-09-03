@@ -13,11 +13,28 @@ class ApplicationSession < ApplicationRecord
   }.freeze
 
   belongs_to :user_account
+  belongs_to :impersonated_user_account,
+    class_name: "UserAccount",
+    optional: true,
+    inverse_of: :impersonating_application_sessions
 
   validates :authentication_method, inclusion: {in: AUTHENTICATION_METHODS.values}
   validates :token_digest, format: {with: /\A[0-9a-f]{64}\z/}
   validates :authenticated_at, :last_active_at, :idle_expires_at, :absolute_expires_at, presence: true
   validate :authentication_method_matches_role
+  validate :impersonation_is_valid
+
+  def effective_user_account
+    impersonated_user_account || user_account
+  end
+
+  def impersonating?
+    impersonated_user_account_id.present?
+  end
+
+  def impersonation_target_eligible?
+    impersonated_user_account&.impersonatable? || false
+  end
 
   def self.issue!(user_account:, now: Time.current)
     session_token = generate_token
@@ -75,5 +92,14 @@ class ApplicationSession < ApplicationRecord
     return if authentication_method == AUTHENTICATION_METHODS[user_account.role]
 
     errors.add(:authentication_method, :invalid)
+  end
+
+  def impersonation_is_valid
+    return unless impersonating?
+
+    unless user_account&.active? && user_account.admin? && authentication_method == "password"
+      errors.add(:impersonated_user_account, :invalid)
+    end
+    errors.add(:impersonated_user_account, :invalid) unless impersonation_target_eligible?
   end
 end

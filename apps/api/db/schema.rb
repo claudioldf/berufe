@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_02_110000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_02_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -47,6 +47,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_02_110000) do
     t.text "authentication_method", null: false
     t.datetime "created_at", null: false
     t.datetime "idle_expires_at", null: false
+    t.uuid "impersonated_user_account_id"
     t.datetime "last_active_at", null: false
     t.datetime "revoked_at"
     t.text "token_digest", null: false
@@ -54,6 +55,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_02_110000) do
     t.uuid "user_account_id", null: false
     t.index ["absolute_expires_at"], name: "index_application_sessions_on_absolute_expires_at"
     t.index ["idle_expires_at"], name: "index_application_sessions_on_idle_expires_at"
+    t.index ["impersonated_user_account_id"], name: "index_application_sessions_on_impersonated_user_account_id"
     t.index ["token_digest"], name: "index_application_sessions_on_token_digest", unique: true
     t.index ["user_account_id", "created_at"], name: "index_application_sessions_on_user_account_id_and_created_at"
     t.index ["user_account_id"], name: "index_application_sessions_on_user_account_id"
@@ -960,6 +962,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_02_110000) do
 
   add_foreign_key "admin_access_events", "user_accounts", column: "admin_user_id"
   add_foreign_key "application_sessions", "user_accounts"
+  add_foreign_key "application_sessions", "user_accounts", column: "impersonated_user_account_id", on_delete: :nullify
   add_foreign_key "catalog_change_events", "user_accounts", column: "admin_user_id"
   add_foreign_key "cities", "states", column: "state_code", primary_key: "code"
   add_foreign_key "customer_recommendation_requests", "service_jobs"

@@ -9,7 +9,7 @@ import {
 
 const route = useRoute();
 const isMenuOpen = shallowRef(false);
-const { account, status, restoreSession } = useApplicationSession();
+const { account, session, status, restoreSession } = useApplicationSession();
 
 const adminLoginPath = "/app/admin/login";
 const isProfessional = computed(
@@ -19,6 +19,10 @@ const isProfessional = computed(
 );
 const isAdmin = computed(
   () => route.path.startsWith("/app/admin") && route.path !== adminLoginPath,
+);
+const isImpersonating = computed(() => session.value?.impersonating === true);
+const showSignOut = computed(
+  () => (isProfessional.value || isAdmin.value) && !isImpersonating.value,
 );
 const showPublicAuthActions = computed(() => !route.path.startsWith("/app/"));
 const isAuthenticatedProfessional = computed(
@@ -155,10 +159,7 @@ function isLinkActive(to: string) {
           class="header__mobile-login"
         />
         <DashboardNotificationsHub v-if="showProfessionalNotifications" />
-        <AuthSessionLogoutButton
-          v-if="isProfessional || isAdmin"
-          class="header__logout"
-        />
+        <AuthSessionLogoutButton v-if="showSignOut" class="header__logout" />
         <button
           class="header__menu"
           type="button"
@@ -200,7 +201,7 @@ function isLinkActive(to: string) {
         {{ link.label }}
       </NuxtLink>
       <AuthSessionLogoutButton
-        v-if="isProfessional || isAdmin"
+        v-if="showSignOut"
         class="header__mobile-logout"
       />
     </nav>

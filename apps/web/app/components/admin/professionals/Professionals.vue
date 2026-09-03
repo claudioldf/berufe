@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { shallowRef } from "vue";
 import { useAdminProfessionals } from "~/composables/useAdminProfessionals";
+import { useAdminImpersonation } from "~/composables/useAdminImpersonation";
 import type { AdminProfessionalItem } from "~/types";
 
 const {
@@ -28,6 +29,11 @@ const {
   clearFilters,
   setPublication,
 } = useAdminProfessionals();
+const {
+  isChanging: isManaging,
+  error: impersonationError,
+  start: startImpersonation,
+} = useAdminImpersonation();
 
 const unpublishOpen = shallowRef(false);
 const unpublishReason = shallowRef("");
@@ -84,6 +90,9 @@ async function publish(item: AdminProfessionalItem) {
     <p v-if="mutationError" class="professionals__notice" role="alert">
       {{ mutationError }}
     </p>
+    <p v-if="impersonationError" class="professionals__notice" role="alert">
+      {{ impersonationError }}
+    </p>
 
     <DesignSystemSurfaceCard
       v-if="isLoading && professionals.items.length === 0"
@@ -131,7 +140,9 @@ async function publish(item: AdminProfessionalItem) {
         :items="professionals.items"
         :meta="professionals.meta"
         :is-mutating="isMutating"
+        :is-managing="isManaging"
         @change-page="setPage"
+        @manage="startImpersonation"
         @publish="publish"
         @unpublish="openUnpublish"
       />

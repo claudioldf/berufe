@@ -8,7 +8,7 @@ RSpec.describe AdminSessionConstraint do
       alias_method :admin?, :admin
     end
   end
-  let(:session_class) { Data.define(:user_account, :authentication_method) }
+  let(:session_class) { Data.define(:user_account, :authentication_method, :impersonating) { alias_method :impersonating?, :impersonating } }
   let(:request_env) { {} }
   let(:request) do
     instance_double(
@@ -19,7 +19,7 @@ RSpec.describe AdminSessionConstraint do
   end
 
   it "allows a locally authenticated administrator password session" do
-    session = session_class.new(account_class.new(true), "password")
+    session = session_class.new(account_class.new(true), "password", false)
     allow_authenticator(session)
 
     expect(described_class.new.matches?(request)).to be(true)
@@ -29,8 +29,9 @@ RSpec.describe AdminSessionConstraint do
   it "rejects missing, professional, and non-password sessions" do
     sessions = [
       nil,
-      session_class.new(account_class.new(false), "sms_otp"),
-      session_class.new(account_class.new(true), "sms_otp")
+      session_class.new(account_class.new(false), "sms_otp", false),
+      session_class.new(account_class.new(true), "sms_otp", false),
+      session_class.new(account_class.new(true), "password", true)
     ]
 
     sessions.each do |session|

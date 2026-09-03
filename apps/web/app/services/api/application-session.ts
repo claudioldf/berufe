@@ -1,5 +1,8 @@
 import type { BerufeApiClient } from "./client";
 import { ApiRequestError, normalizeApiError } from "./errors";
+import type { components } from "./schema";
+
+export type CurrentSessionData = components["schemas"]["CurrentSessionData"];
 
 export interface CurrentAccount {
   id: string;
@@ -16,6 +19,7 @@ export interface CurrentAccount {
 
 export interface CurrentSession {
   authenticationMethod: "sms_otp" | "password";
+  impersonating: boolean;
   authenticatedAt: string;
   idleExpiresAt: string;
   absoluteExpiresAt: string;
@@ -24,6 +28,32 @@ export interface CurrentSession {
 export interface RestoredApplicationSession {
   account: CurrentAccount;
   session: CurrentSession;
+}
+
+export function mapCurrentApplicationSession(
+  data: CurrentSessionData,
+): RestoredApplicationSession {
+  return {
+    account: {
+      id: data.account.id,
+      role: data.account.role,
+      status: data.account.status,
+      registered: data.account.registered,
+      verified: data.account.verified,
+      registrationCompleted: data.account.registration_completed,
+      onboardingCompleted: data.account.onboarding_completed,
+      registrationDisplayName: data.account.registration_display_name,
+      professionalProfileId: data.account.professional_profile_id,
+      relationshipEligible: data.account.relationship_eligible,
+    },
+    session: {
+      authenticationMethod: data.session.authentication_method,
+      impersonating: data.session.impersonating,
+      authenticatedAt: data.session.authenticated_at,
+      idleExpiresAt: data.session.idle_expires_at,
+      absoluteExpiresAt: data.session.absolute_expires_at,
+    },
+  };
 }
 
 export async function getCurrentApplicationSession(
@@ -40,26 +70,7 @@ export async function getCurrentApplicationSession(
     );
   }
 
-  return {
-    account: {
-      id: data.data.account.id,
-      role: data.data.account.role,
-      status: data.data.account.status,
-      registered: data.data.account.registered,
-      verified: data.data.account.verified,
-      registrationCompleted: data.data.account.registration_completed,
-      onboardingCompleted: data.data.account.onboarding_completed,
-      registrationDisplayName: data.data.account.registration_display_name,
-      professionalProfileId: data.data.account.professional_profile_id,
-      relationshipEligible: data.data.account.relationship_eligible,
-    },
-    session: {
-      authenticationMethod: data.data.session.authentication_method,
-      authenticatedAt: data.data.session.authenticated_at,
-      idleExpiresAt: data.data.session.idle_expires_at,
-      absoluteExpiresAt: data.data.session.absolute_expires_at,
-    },
-  };
+  return mapCurrentApplicationSession(data.data);
 }
 
 export async function endCurrentApplicationSession(

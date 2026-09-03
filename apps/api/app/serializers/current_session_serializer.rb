@@ -3,7 +3,7 @@
 class CurrentSessionSerializer
   def initialize(application_session:)
     @application_session = application_session
-    @account = application_session.user_account
+    @account = application_session.effective_user_account
   end
 
   def as_json(*)
@@ -22,6 +22,7 @@ class CurrentSessionSerializer
       },
       session: {
         authentication_method: @application_session.authentication_method,
+        impersonating: @application_session.impersonating?,
         authenticated_at: @application_session.authenticated_at,
         idle_expires_at: @application_session.idle_expires_at,
         absolute_expires_at: @application_session.absolute_expires_at

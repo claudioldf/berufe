@@ -55,6 +55,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/impersonation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Manage an active registered professional through the current administrator session */
+        post: operations["startAdminProfessionalImpersonation"];
+        /** Return the current impersonating session to its administrator account */
+        delete: operations["stopAdminProfessionalImpersonation"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/catalog": {
         parameters: {
             query?: never;
@@ -1467,6 +1485,7 @@ export interface components {
             identity_verified: boolean;
             /** @enum {string} */
             account_status: "active" | "suspended";
+            impersonation_eligible: boolean;
             portfolio_count: number;
             reference_count: number;
             customer_count: number;
@@ -1658,6 +1677,10 @@ export interface components {
             /** Format: email */
             email: string;
             password: string;
+        };
+        AdminImpersonationRequest: {
+            /** Format: uuid */
+            professional_account_id: string;
         };
         AdminSessionResponse: {
             data: {
@@ -2542,6 +2565,7 @@ export interface components {
         ApplicationSessionSummary: {
             /** @enum {string} */
             authentication_method: "sms_otp" | "password";
+            impersonating: boolean;
             /** Format: date-time */
             authenticated_at: string;
             /** Format: date-time */
@@ -3006,7 +3030,7 @@ export interface components {
                 "application/json": components["schemas"]["ErrorResponse"];
             };
         };
-        /** @description The exact browser origin or professional ownership check failed. */
+        /** @description The exact browser origin or professional ownership check failed, or the session is delegated administrator access acting on an identity verification upload. */
         ProfessionalMediaForbidden: {
             headers: {
                 "X-Request-Id": components["headers"]["RequestId"];
@@ -3415,6 +3439,113 @@ export interface operations {
             };
         };
     };
+    startAdminProfessionalImpersonation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminImpersonationRequest"];
+            };
+        };
+        responses: {
+            /** @description The administrator session now exposes the selected professional as its effective account. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurrentSessionResponse"];
+                };
+            };
+            /** @description An active password-authenticated administrator session is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The exact browser origin is invalid. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The professional account does not exist. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The session is already impersonating or the professional is not eligible. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The professional account identifier is missing. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    stopAdminProfessionalImpersonation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The administrator account is again the session's effective account. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurrentSessionResponse"];
+                };
+            };
+            /** @description An active password-authenticated administrator session is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The exact browser origin is invalid. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     getAdminCatalog: {
         parameters: {
             query?: never;
@@ -3435,6 +3566,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["AdminCatalogUnauthorized"];
+            403: components["responses"]["AdminCatalogForbidden"];
             503: components["responses"]["AdminCatalogUnavailable"];
         };
     };
@@ -3559,6 +3691,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["AdminModerationUnauthorized"];
+            403: components["responses"]["AdminModerationForbidden"];
         };
     };
     getAdminGrowthReport: {
@@ -3688,6 +3821,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["AdminModerationUnauthorized"];
+            403: components["responses"]["AdminModerationForbidden"];
             /** @description The evidence is absent, deleted, unsafe, or not a retained regenerated identity image. */
             404: {
                 headers: {
@@ -3739,6 +3873,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["AdminModerationUnauthorized"];
+            403: components["responses"]["AdminModerationForbidden"];
             422: components["responses"]["AdminModerationInvalid"];
         };
     };
@@ -6799,7 +6934,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description The exact browser origin or profile owner is invalid. */
+            /** @description The exact browser origin or profile owner is invalid, or the session is delegated administrator access. */
             403: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
@@ -6884,6 +7019,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["ProfessionalMediaUnauthorized"];
+            403: components["responses"]["ProfessionalMediaForbidden"];
             404: components["responses"]["ProfessionalMediaNotFound"];
         };
     };

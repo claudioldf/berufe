@@ -48,6 +48,7 @@ module Admin
 
     SELECT_SQL = <<~SQL.squish.freeze
       user_accounts.id,
+      user_accounts.role,
       professional_profiles.id AS professional_profile_id,
       professional_profiles.public_slug,
       professional_profiles.profile_status,
@@ -58,9 +59,12 @@ module Admin
       user_accounts.phone_e164,
       user_accounts.phone_verified_at,
       user_accounts.registered_at,
+      user_accounts.terms_accepted_at,
+      user_accounts.terms_version,
+      user_accounts.privacy_notice_version,
       user_accounts.last_login_at,
       user_accounts.login_count,
-      user_accounts.status AS account_status,
+      user_accounts.status,
       (#{IDENTITY_VERIFIED_EXISTS_SQL}) AS identity_verified,
       (SELECT COUNT(*) FROM portfolio_items
          WHERE portfolio_items.professional_profile_id = professional_profiles.id

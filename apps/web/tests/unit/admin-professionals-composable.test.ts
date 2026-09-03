@@ -30,6 +30,7 @@ const item: AdminProfessionalItem = {
   phoneLast4: "4002",
   identityVerified: true,
   accountStatus: "active",
+  impersonationEligible: true,
   portfolioCount: 1,
   referenceCount: 0,
   customerCount: 0,

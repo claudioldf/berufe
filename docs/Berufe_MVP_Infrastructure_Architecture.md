@@ -320,6 +320,14 @@ PostgreSQL is the single application database. Rails/Active Record is the only a
 
 Collect only data required by the MVP. Define retention/deletion rules for private and restricted fields before launch. Support correction, suspension, and deletion requests. Obtain qualified Brazilian privacy/legal review before accepting real users.
 
+### Administrator delegated account management
+
+An active, password-authenticated administrator may temporarily manage the operational workspace of an active, fully registered professional. The application session remains owned by the administrator and keeps the administrator's 30-minute idle and 12-hour absolute expiry; Rails exposes the selected professional only as the request-scoped effective account. This does not create a professional session, increment that professional's login metrics, or count toward that professional's daily activity/quote-share counters.
+
+The browser shows a persistent delegated-access banner, hides the ordinary sign-out control, and offers a direct return to the administrator directory. Delegated access may use the ordinary professional profile, portfolio, customer, quote, service, relationship, recommendation, and notification operations. It cannot accept terms, complete professional registration, request account erasure, submit identity verification evidence, enter administrator surfaces, or open the GoodJob dashboard — identity verification is excluded so one administrator can never both submit and approve the same evidence. Only active accounts with complete current legal acceptance and an existing professional profile are eligible, and Rails clears the target when it becomes ineligible.
+
+The approved product decision does not create dedicated impersonation start/stop events or per-request impersonation audit records. Ordinary request and infrastructure logs remain unchanged. This deliberately reduces incident-attribution capability and must be reconsidered if administrator roles expand beyond the small trusted operating team.
+
 ## 10. File storage
 
 Use Cloudflare R2's S3-compatible API through a small Rails-owned storage adapter. Sanitized profile-photo and portfolio records retain private object keys; Rails streams them through public eligibility-checked routes and authenticated owner routes without exposing storage keys. A narrowly scoped upload record holds the temporary private key, ownership, purpose, state, and deletion time needed during processing; verification files continue to use `verification_file`.

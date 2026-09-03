@@ -17,6 +17,7 @@ export interface AdminProfessionalItem {
   phoneLast4: string | null;
   identityVerified: boolean;
   accountStatus: "active" | "suspended";
+  impersonationEligible: boolean;
   portfolioCount: number;
   referenceCount: number;
   customerCount: number;

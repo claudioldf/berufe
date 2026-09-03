@@ -33,6 +33,7 @@ RSpec.describe "Application sessions", type: :request, openapi: true do
         },
         "session" => {
           "authentication_method" => "sms_otp",
+          "impersonating" => false,
           "authenticated_at" => now.iso8601(3),
           "idle_expires_at" => (now + 7.days).iso8601(3),
           "absolute_expires_at" => (now + 30.days).iso8601(3)
