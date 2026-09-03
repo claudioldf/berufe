@@ -27,6 +27,12 @@ RSpec.describe "Administrator professional directory", type: :request, openapi: 
     )
     profile = ProfessionalProfile.create!(user_account: account, display_name: "Ana Souza")
     make_profile_publicly_eligible(profile)
+    account.update!(
+      terms_accepted_at: Time.current,
+      terms_version: LegalDocumentVersions::TERMS,
+      privacy_notice_version: LegalDocumentVersions::PRIVACY_NOTICE
+    )
+    profile
   end
 
   before do
@@ -60,6 +66,7 @@ RSpec.describe "Administrator professional directory", type: :request, openapi: 
       "phone_verified" => true,
       "phone_last4" => "4002",
       "account_status" => "active",
+      "impersonation_eligible" => true,
       "login_count" => 3
     )
     expect(response.body).not_to include(published_profile.user_account.phone_e164)

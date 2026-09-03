@@ -25,6 +25,7 @@ RSpec.describe CurrentSessionSerializer do
       },
       session: {
         authentication_method: "sms_otp",
+        impersonating: false,
         authenticated_at: now,
         idle_expires_at: now + 7.days,
         absolute_expires_at: now + 30.days

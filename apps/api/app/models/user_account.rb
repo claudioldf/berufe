@@ -8,6 +8,11 @@ class UserAccount < ApplicationRecord
   ADMIN_PASSWORD_MAXIMUM_BYTES = 72
 
   has_many :application_sessions, dependent: :destroy
+  has_many :impersonating_application_sessions,
+    class_name: "ApplicationSession",
+    foreign_key: :impersonated_user_account_id,
+    dependent: :nullify,
+    inverse_of: :impersonated_user_account
   has_many :admin_access_events, foreign_key: :admin_user_id, dependent: :restrict_with_exception,
     inverse_of: :admin_user
   has_many :catalog_change_events, foreign_key: :admin_user_id, dependent: :restrict_with_exception,

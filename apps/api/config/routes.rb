@@ -81,6 +81,7 @@ Rails.application.routes.draw do
       post "customer-recommendations/issues", to: "customer_recommendations#create_issue"
       namespace :admin do
         resource :session, only: :create
+        resource :impersonation, only: %i[create destroy]
         resource :catalog, only: :show
         get "reports/growth", to: "reports#growth"
         get "search-audits", to: "search_audits#index"
