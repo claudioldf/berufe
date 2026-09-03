@@ -1861,6 +1861,8 @@ export interface components {
         /** @enum {string} */
         ServiceJobStatus: "approved" | "completed" | "cancelled";
         /** @enum {string} */
+        QuotePricingMode: "itemized" | "lump_sum";
+        /** @enum {string} */
         RecommendationRequestStatus: "open" | "completed" | "expired";
         /** @enum {string} */
         RecommendationDeliveryChannel: "email" | "whatsapp";
@@ -1887,11 +1889,15 @@ export interface components {
                 service_address: string | null;
                 /** Format: date */
                 scheduled_on: string | null;
+                pricing_mode: components["schemas"]["QuotePricingMode"];
+                lump_sum_amount: number | null;
                 discount_amount: number;
+                items_visible_to_customer: boolean;
                 /** Format: date */
                 valid_until: string | null;
                 notes: string | null;
                 items: components["schemas"]["ProfessionalQuoteItemInput"][];
+                materials: components["schemas"]["ProfessionalQuoteMaterialInput"][];
             };
         };
         ProfessionalQuoteCustomerInput: {
@@ -1906,6 +1912,11 @@ export interface components {
             quantity: number;
             unit: string;
             unit_price: number;
+        };
+        ProfessionalQuoteMaterialInput: {
+            description: string;
+            quantity: number;
+            unit: string;
         };
         ProfessionalQuoteListResponse: {
             data: {
@@ -1982,12 +1993,15 @@ export interface components {
             /** Format: date */
             valid_until: string | null;
             notes: string | null;
+            pricing_mode: components["schemas"]["QuotePricingMode"];
+            items_visible_to_customer: boolean;
             subtotal_amount: components["schemas"]["MoneyAmount"];
             discount_amount: components["schemas"]["MoneyAmount"];
             total_amount: components["schemas"]["MoneyAmount"];
             customer_decision_message: string | null;
             service_job: components["schemas"]["SharedQuoteServiceJob"] | null;
             items: components["schemas"]["SharedQuoteItem"][];
+            materials: components["schemas"]["SharedQuoteMaterial"][];
         };
         SharedQuoteServiceJob: {
             status: components["schemas"]["ServiceJobStatus"];
@@ -1998,8 +2012,14 @@ export interface components {
             description: string;
             quantity: string;
             unit: string;
-            unit_price: components["schemas"]["MoneyAmount"];
-            line_total: components["schemas"]["MoneyAmount"];
+            unit_price: components["schemas"]["MoneyAmount"] | null;
+            line_total: components["schemas"]["MoneyAmount"] | null;
+            sort_order: number;
+        };
+        SharedQuoteMaterial: {
+            description: string;
+            quantity: string;
+            unit: string;
             sort_order: number;
         };
         SharedQuoteProfessional: {
@@ -2026,6 +2046,10 @@ export interface components {
             valid_until: string | null;
             notes: string | null;
             status: components["schemas"]["QuoteStatus"];
+            pricing_mode: components["schemas"]["QuotePricingMode"];
+            lump_sum_amount: components["schemas"]["MoneyAmount"] | null;
+            items_visible_to_customer: boolean;
+            items_amount: components["schemas"]["MoneyAmount"];
             subtotal_amount: components["schemas"]["MoneyAmount"];
             discount_amount: components["schemas"]["MoneyAmount"];
             total_amount: components["schemas"]["MoneyAmount"];
@@ -2041,6 +2065,7 @@ export interface components {
             /** Format: date-time */
             updated_at: string;
             items: components["schemas"]["ProfessionalQuoteItem"][];
+            materials: components["schemas"]["ProfessionalQuoteMaterial"][];
         };
         ProfessionalQuoteCustomer: {
             /** Format: uuid */
@@ -2074,6 +2099,14 @@ export interface components {
             unit: string;
             unit_price: components["schemas"]["MoneyAmount"];
             line_total: components["schemas"]["MoneyAmount"];
+            sort_order: number;
+        };
+        ProfessionalQuoteMaterial: {
+            /** Format: uuid */
+            id: string;
+            description: string;
+            quantity: string;
+            unit: string;
             sort_order: number;
         };
         ProfessionalServiceJob: {
