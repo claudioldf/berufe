@@ -3566,6 +3566,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["AdminCatalogUnauthorized"];
+            403: components["responses"]["AdminCatalogForbidden"];
             503: components["responses"]["AdminCatalogUnavailable"];
         };
     };
@@ -3690,6 +3691,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["AdminModerationUnauthorized"];
+            403: components["responses"]["AdminModerationForbidden"];
         };
     };
     getAdminGrowthReport: {
@@ -3819,6 +3821,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["AdminModerationUnauthorized"];
+            403: components["responses"]["AdminModerationForbidden"];
             /** @description The evidence is absent, deleted, unsafe, or not a retained regenerated identity image. */
             404: {
                 headers: {

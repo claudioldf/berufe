@@ -5,8 +5,7 @@ module Api
     module Admin
       class ReportsController < BaseController
         before_action :prevent_caching
-        before_action :authenticate_application_session!
-        before_action :require_password_admin_authentication!
+        before_action :authenticate_password_admin_session!
         before_action -> { authorize :admin_report, :show? }
 
         def growth
@@ -24,15 +23,6 @@ module Api
             status: :unprocessable_entity,
             field_errors: {period: ["use um dos valores: #{::Admin::Reports::Period::KEYS.join(", ")}"]}
           )
-        end
-
-        private
-
-        def require_password_admin_authentication!
-          return if performed? || !Current.user_account&.admin?
-          return if Current.application_session.authentication_method == "password"
-
-          render_authentication_required
         end
       end
     end

@@ -56,8 +56,8 @@ RSpec.describe "Administrator growth report", type: :request, openapi: true do
     professional_token = ApplicationSession.issue!(user_account: professional).last
     get "/api/v1/admin/reports/growth",
       headers: session_headers(professional_token, "growth-professional")
-    expect(response).to have_http_status(:forbidden)
-    assert_api_conform(status: 403)
+    expect(response).to have_http_status(:unauthorized)
+    assert_api_conform(status: 401)
   end
 
   private

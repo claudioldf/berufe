@@ -279,6 +279,8 @@ paths:
                 $ref: "#/components/schemas/AdminCatalogResponse"
         "401":
           $ref: "#/components/responses/AdminCatalogUnauthorized"
+        "403":
+          $ref: "#/components/responses/AdminCatalogForbidden"
         "503":
           $ref: "#/components/responses/AdminCatalogUnavailable"
   /api/v1/admin/catalog/services:
@@ -415,6 +417,8 @@ paths:
                 $ref: "#/components/schemas/AdminModerationResponse"
         "401":
           $ref: "#/components/responses/AdminModerationUnauthorized"
+        "403":
+          $ref: "#/components/responses/AdminModerationForbidden"
   /api/v1/admin/reports/growth:
     get:
       operationId: getAdminGrowthReport
@@ -583,6 +587,8 @@ paths:
                 format: binary
         "401":
           $ref: "#/components/responses/AdminModerationUnauthorized"
+        "403":
+          $ref: "#/components/responses/AdminModerationForbidden"
         "404":
           description: The evidence is absent, deleted, unsafe, or not a retained regenerated identity image.
           headers:

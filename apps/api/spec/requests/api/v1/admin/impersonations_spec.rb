@@ -106,6 +106,21 @@ RSpec.describe "Administrator professional impersonation", type: :request, opena
       headers: session_headers(admin_token, "impersonation-search-audits-denied")
     expect(response).to have_http_status(:forbidden)
 
+    get "/api/v1/admin/catalog",
+      headers: session_headers(admin_token, "impersonation-catalog-denied")
+    expect(response).to have_http_status(:forbidden)
+    assert_api_conform(status: 403)
+
+    get "/api/v1/admin/moderation",
+      headers: session_headers(admin_token, "impersonation-moderation-denied")
+    expect(response).to have_http_status(:forbidden)
+    assert_api_conform(status: 403)
+
+    get "/api/v1/admin/verification-files/#{SecureRandom.uuid}/content",
+      headers: session_headers(admin_token, "impersonation-verification-file-denied")
+    expect(response).to have_http_status(:forbidden)
+    assert_api_conform(status: 403)
+
     put "/api/v1/professional-registration",
       params: {display_name: "Nome", accepted: true},
       headers: session_headers(admin_token, "impersonation-registration-denied", origin: true),
