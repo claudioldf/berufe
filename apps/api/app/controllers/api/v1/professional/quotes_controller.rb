@@ -26,6 +26,7 @@ module Api
           quotes = result.quotes
             .includes(
               :quote_items,
+              :quote_materials,
               :customer,
               :quote_change_requests,
               service_job: :customer_recommendation_request
@@ -147,13 +148,17 @@ module Api
             :service_description,
             :service_address,
             :scheduled_on,
+            :pricing_mode,
+            :lump_sum_amount,
             :discount_amount,
+            :items_visible_to_customer,
             :valid_until,
             :notes,
             :status,
             :revision,
             customer: %i[id name whatsapp_e164 email],
-            items: %i[description quantity unit unit_price]
+            items: %i[description quantity unit unit_price],
+            materials: %i[description quantity unit]
           )
         end
 

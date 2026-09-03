@@ -4,13 +4,20 @@ class Quote < ApplicationRecord
   STATUSES = %w[draft saved shared change_requested approved declined completed cancelled].freeze
   LOCKED_STATUSES = %w[approved completed cancelled].freeze
   SERVICE_OUTCOME_STATUSES = %w[completed cancelled].freeze
+  PRICING_MODES = %w[itemized lump_sum].freeze
   MAX_ITEMS = 20
+  MAX_MATERIALS = 20
   MONEY_SCALE = 2
 
   belongs_to :professional, class_name: "ProfessionalProfile", inverse_of: :quotes
   belongs_to :customer, inverse_of: :quotes, optional: true
   has_one :service_job, dependent: :restrict_with_exception
   has_many :quote_items,
+    -> { order(:sort_order, :id) },
+    inverse_of: :quote,
+    dependent: :destroy,
+    autosave: true
+  has_many :quote_materials,
     -> { order(:sort_order, :id) },
     inverse_of: :quote,
     dependent: :destroy,
@@ -33,8 +40,10 @@ class Quote < ApplicationRecord
   validates :notes, length: {maximum: 700}, allow_nil: true
   validates :customer_decision_message, length: {in: 1..700}, allow_nil: true
   validates :status, inclusion: {in: STATUSES}
+  validates :pricing_mode, inclusion: {in: PRICING_MODES}
   validates :subtotal_amount, :discount_amount, :total_amount,
     numericality: {greater_than_or_equal_to: 0}
+  validates :lump_sum_amount, numericality: {greater_than_or_equal_to: 0}, allow_nil: true
   validates :share_token_hash, format: {with: /\A[0-9a-f]{64}\z/}, uniqueness: true, allow_nil: true
   with_options unless: :draft? do
     validates :customer, presence: true
@@ -48,7 +57,11 @@ class Quote < ApplicationRecord
     validates :service_description, presence: true
     validates :valid_until, presence: true
   end
+  with_options if: -> { lump_sum? && !draft? } do
+    validates :lump_sum_amount, presence: true
+  end
   validate :has_valid_item_count
+  validate :has_valid_material_count
   validate :discount_does_not_exceed_subtotal
   validate :share_state_matches_status
   validate :customer_belongs_to_professional
@@ -61,8 +74,19 @@ class Quote < ApplicationRecord
     define_method("#{known_status}?") { status == known_status }
   end
 
+  PRICING_MODES.each do |known_pricing_mode|
+    define_method("#{known_pricing_mode}?") { pricing_mode == known_pricing_mode }
+  end
+
   def locked_for_editing?
     status.in?(LOCKED_STATUSES)
+  end
+
+  # The professional's private reference calculation in `lump_sum` mode: the
+  # sum of any entered line items. It is never persisted and never appears in
+  # a token-authorized (customer-facing) response.
+  def items_amount
+    quote_items.sum { |item| item.line_total || 0 }
   end
 
   private
@@ -75,6 +99,9 @@ class Quote < ApplicationRecord
     self.service_address = service_address.to_s.squish.presence
     self.notes = notes.to_s.squish.presence
     self.customer_decision_message = customer_decision_message.to_s.squish.presence
+    # The toggle is meaningful only in `lump_sum` mode; in `itemized` mode the
+    # items already are the customer-facing content, so it always reads true.
+    self.items_visible_to_customer = true if itemized?
   end
 
   def normalize_customer_phone
@@ -87,29 +114,50 @@ class Quote < ApplicationRecord
   end
 
   def recalculate_totals
-    subtotal = quote_items.sum do |item|
-      item.recalculate_line_total
-      item.line_total || 0
+    if lump_sum?
+      # A closed price already reflects any negotiation, so the discount is
+      # unavailable in this mode regardless of draft state.
+      self.discount_amount = BigDecimal(0)
+      if lump_sum_amount.present?
+        self.lump_sum_amount = BigDecimal(lump_sum_amount.to_s).round(
+          MONEY_SCALE,
+          BigDecimal::ROUND_HALF_UP
+        )
+      end
+      self.subtotal_amount = lump_sum_amount || BigDecimal(0)
+      self.total_amount = subtotal_amount
+    else
+      self.lump_sum_amount = nil
+      subtotal = quote_items.sum do |item|
+        item.recalculate_line_total
+        item.line_total || 0
+      end
+      self.subtotal_amount = BigDecimal(subtotal.to_s).round(MONEY_SCALE, BigDecimal::ROUND_HALF_UP)
+      self.discount_amount = BigDecimal(discount_amount.to_s.presence || "0").round(
+        MONEY_SCALE,
+        BigDecimal::ROUND_HALF_UP
+      )
+      self.total_amount = [subtotal_amount - discount_amount, BigDecimal(0)].max
     end
-    self.subtotal_amount = BigDecimal(subtotal.to_s).round(MONEY_SCALE, BigDecimal::ROUND_HALF_UP)
-    self.discount_amount = BigDecimal(discount_amount.to_s.presence || "0").round(
-      MONEY_SCALE,
-      BigDecimal::ROUND_HALF_UP
-    )
-    self.total_amount = [subtotal_amount - discount_amount, BigDecimal(0)].max
   rescue ArgumentError
     # Numericality validations return the normalized field errors.
   end
 
   def has_valid_item_count
-    minimum = draft? ? 0 : 1
+    minimum = (draft? || lump_sum?) ? 0 : 1
     return if quote_items.length.between?(minimum, MAX_ITEMS)
 
     errors.add(:quote_items, "deve conter entre #{minimum} e #{MAX_ITEMS} itens")
   end
 
+  def has_valid_material_count
+    return if quote_materials.length.between?(0, MAX_MATERIALS)
+
+    errors.add(:quote_materials, "deve conter no máximo #{MAX_MATERIALS} itens")
+  end
+
   def discount_does_not_exceed_subtotal
-    return if draft?
+    return if draft? || lump_sum?
     return unless discount_amount && subtotal_amount && discount_amount > subtotal_amount
 
     errors.add(:discount_amount, "não pode ultrapassar o subtotal")

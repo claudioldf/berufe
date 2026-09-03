@@ -188,10 +188,14 @@ RSpec.describe "Quote service loop", type: :request, openapi: true do
           service_description: quote.service_description,
           service_address: quote.service_address,
           scheduled_on: quote.scheduled_on,
+          pricing_mode: "itemized",
+          lump_sum_amount: nil,
           discount_amount: 0,
+          items_visible_to_customer: true,
           valid_until: quote.valid_until,
           notes: nil,
-          items: [{description: "Instalação", quantity: 2, unit: "ponto", unit_price: 120}]
+          items: [{description: "Instalação", quantity: 2, unit: "ponto", unit_price: 120}],
+          materials: []
         }
       },
       headers: session_headers("approved-quote-update"),

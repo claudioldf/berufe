@@ -14,10 +14,12 @@ class ProfessionalQuoteWriter
   end
 
   QUOTE_FIELDS = %i[
-    service_description service_address scheduled_on discount_amount valid_until notes
+    service_description service_address scheduled_on pricing_mode lump_sum_amount
+    discount_amount items_visible_to_customer valid_until notes
   ].freeze
   WRITABLE_STATUSES = %w[draft saved].freeze
   ITEM_FIELDS = %i[description quantity unit unit_price].freeze
+  MATERIAL_FIELDS = %i[description quantity unit].freeze
 
   def call(profile:, attributes:, quote: nil)
     created = quote.nil?
@@ -39,6 +41,7 @@ class ProfessionalQuoteWriter
         raise Stale if expected_version.nil? || expected_version.to_i != quote.lock_version
 
         quote.quote_items.destroy_all
+        quote.quote_materials.destroy_all
       end
 
       if created || quote.draft? || quote.saved?
@@ -59,6 +62,11 @@ class ProfessionalQuoteWriter
       Array(attributes[:items]).each_with_index do |item_attributes, sort_order|
         quote.quote_items.build(
           item_attributes.to_h.symbolize_keys.slice(*ITEM_FIELDS).merge(sort_order:)
+        )
+      end
+      Array(attributes[:materials]).each_with_index do |material_attributes, sort_order|
+        quote.quote_materials.build(
+          material_attributes.to_h.symbolize_keys.slice(*MATERIAL_FIELDS).merge(sort_order:)
         )
       end
       quote.save!

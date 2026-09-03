@@ -175,6 +175,82 @@ RSpec.describe "Shared quotes", type: :request, openapi: true do
     assert_api_conform(status: 200)
   end
 
+  it "keeps the private calculation owner-only while sharing materials in both visibility states" do
+    hidden_quote = ProfessionalQuoteWriter.new.call(
+      profile:,
+      attributes: {
+        customer: {id: nil, name: "Bruno Melo", whatsapp_e164: "+5547999912044", email: nil},
+        service_description: "Pintura completa",
+        pricing_mode: "lump_sum",
+        lump_sum_amount: 2000,
+        discount_amount: 0,
+        items_visible_to_customer: false,
+        valid_until: "2026-01-01",
+        items: [
+          {description: "Pintura das paredes", quantity: 60, unit: "m²", unit_price: 18},
+          {description: "Pintura do teto", quantity: 22, unit: "m²", unit_price: 15}
+        ],
+        materials: [
+          {description: "Tinta acrílica fosca 18L", quantity: 2, unit: "lata"}
+        ]
+      }
+    )
+    hidden_token = issue_share_token!(hidden_quote)
+
+    resolve_quote(token: hidden_token, request_id: "quote-resolve-lump-sum-hidden")
+    expect(response).to have_http_status(:ok)
+    hidden_data = response.parsed_body.dig("data", "quote")
+    expect(hidden_data).to include(
+      "pricing_mode" => "lump_sum",
+      "items_visible_to_customer" => false,
+      "subtotal_amount" => "2000.00",
+      "discount_amount" => "0.00",
+      "total_amount" => "2000.00",
+      "items" => []
+    )
+    expect(hidden_data.fetch("materials")).to eq([
+      {"description" => "Tinta acrílica fosca 18L", "quantity" => "2", "unit" => "lata", "sort_order" => 0}
+    ])
+    # The private calculation (item sum 1410.00) and the field it would
+    # travel under must never reach a token-authorized response.
+    expect(response.body).not_to include("items_amount", "1410.00", "lump_sum_amount")
+    assert_api_conform(status: 200)
+
+    visible_quote = ProfessionalQuoteWriter.new.call(
+      profile:,
+      attributes: {
+        customer: {id: nil, name: "Carla Nunes", whatsapp_e164: "+5547999912045", email: nil},
+        service_description: "Pintura completa",
+        pricing_mode: "lump_sum",
+        lump_sum_amount: 2000,
+        discount_amount: 0,
+        items_visible_to_customer: true,
+        valid_until: "2026-01-01",
+        items: [{description: "Pintura das paredes", quantity: 60, unit: "m²", unit_price: 18}],
+        materials: []
+      }
+    )
+    visible_token = issue_share_token!(visible_quote)
+
+    resolve_quote(token: visible_token, request_id: "quote-resolve-lump-sum-visible")
+    expect(response).to have_http_status(:ok)
+    visible_data = response.parsed_body.dig("data", "quote")
+    expect(visible_data.fetch("items")).to eq([
+      {
+        "description" => "Pintura das paredes",
+        "quantity" => "60",
+        "unit" => "m²",
+        "unit_price" => nil,
+        "line_total" => nil,
+        "sort_order" => 0
+      }
+    ])
+    expect(visible_data.fetch("materials")).to eq([])
+    # Scope is visible, but never priced: no unit price or line total leaks.
+    expect(response.body).not_to include("18.00", "1080.00", "items_amount", "lump_sum_amount")
+    assert_api_conform(status: 200)
+  end
+
   it "uses the same generic denial for malformed, unknown, revoked, and non-public bearers" do
     share_quote(request_id: "quote-share-for-denials", method: "copy")
     token = URI(response.parsed_body.dig("data", "share_url")).path.split("/").last
@@ -379,6 +455,17 @@ RSpec.describe "Shared quotes", type: :request, openapi: true do
     delete "/api/v1/professional/quotes/#{quote.id}/share",
       headers: session_headers(request_id:, origin: true),
       as: :json
+  end
+
+  def issue_share_token!(quote)
+    token = QuoteShareToken.issue
+    quote.update!(
+      status: "shared",
+      share_token_hash: QuoteShareToken.digest(token),
+      share_token_ciphertext: QuoteShareToken.encrypt(token),
+      shared_at: Time.current
+    )
+    token
   end
 
   def resolve_quote(token:, request_id:)

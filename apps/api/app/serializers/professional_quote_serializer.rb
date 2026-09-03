@@ -25,6 +25,10 @@ class ProfessionalQuoteSerializer
       valid_until: quote.valid_until&.iso8601,
       notes: quote.notes,
       status: quote.status,
+      pricing_mode: quote.pricing_mode,
+      lump_sum_amount: quote.lump_sum_amount && money(quote.lump_sum_amount),
+      items_visible_to_customer: quote.items_visible_to_customer,
+      items_amount: money(quote.items_amount),
       subtotal_amount: money(quote.subtotal_amount),
       discount_amount: money(quote.discount_amount),
       total_amount: money(quote.total_amount),
@@ -51,6 +55,15 @@ class ProfessionalQuoteSerializer
           unit_price: money(item.unit_price),
           line_total: money(item.line_total),
           sort_order: item.sort_order
+        }
+      end,
+      materials: quote.quote_materials.map do |material|
+        {
+          id: material.id,
+          description: material.description,
+          quantity: decimal(material.quantity),
+          unit: material.unit,
+          sort_order: material.sort_order
         }
       end
     }

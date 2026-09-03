@@ -18,19 +18,20 @@ class SharedQuoteSerializer
         scheduled_on: quote.scheduled_on&.iso8601,
         valid_until: quote.valid_until&.iso8601,
         notes: quote.notes,
+        pricing_mode: quote.pricing_mode,
+        items_visible_to_customer: quote.items_visible_to_customer,
         subtotal_amount: money(quote.subtotal_amount),
         discount_amount: money(quote.discount_amount),
         total_amount: money(quote.total_amount),
         customer_decision_message: quote.customer_decision_message,
         service_job: serialized_service_job,
-        items: quote.quote_items.map do |item|
+        items: serialized_items,
+        materials: quote.quote_materials.map do |material|
           {
-            description: item.description,
-            quantity: decimal(item.quantity),
-            unit: item.unit,
-            unit_price: money(item.unit_price),
-            line_total: money(item.line_total),
-            sort_order: item.sort_order
+            description: material.description,
+            quantity: decimal(material.quantity),
+            unit: material.unit,
+            sort_order: material.sort_order
           }
         end
       },
@@ -74,6 +75,39 @@ class SharedQuoteSerializer
     {
       status: job.status,
       completed_at: job.completed_at&.iso8601
+    }
+  end
+
+  # In `itemized` mode the items are the customer-facing content. In
+  # `lump_sum` mode they are the professional's private calculation and are
+  # sent to the customer only as a priceless scope list, and only when the
+  # owner opted in — never with a unit price or line total.
+  def serialized_items
+    return quote.quote_items.map { |item| priced_item(item) } if quote.itemized?
+    return [] unless quote.items_visible_to_customer
+
+    quote.quote_items.map { |item| scoped_item(item) }
+  end
+
+  def priced_item(item)
+    {
+      description: item.description,
+      quantity: decimal(item.quantity),
+      unit: item.unit,
+      unit_price: money(item.unit_price),
+      line_total: money(item.line_total),
+      sort_order: item.sort_order
+    }
+  end
+
+  def scoped_item(item)
+    {
+      description: item.description,
+      quantity: decimal(item.quantity),
+      unit: item.unit,
+      unit_price: nil,
+      line_total: nil,
+      sort_order: item.sort_order
     }
   end
 end

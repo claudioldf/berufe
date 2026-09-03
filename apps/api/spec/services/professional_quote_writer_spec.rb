@@ -106,6 +106,58 @@ RSpec.describe ProfessionalQuoteWriter do
     expect(profile.customers).to be_empty
   end
 
+  it "prices a lump_sum quote from the typed amount, ignoring the item sum, and forces the discount to zero" do
+    quote = described_class.new.call(
+      profile:,
+      attributes: valid_attributes.merge(
+        status: "saved",
+        pricing_mode: "lump_sum",
+        lump_sum_amount: "2000.00",
+        discount_amount: "500.00"
+      )
+    )
+
+    expect(quote).to have_attributes(
+      pricing_mode: "lump_sum",
+      lump_sum_amount: BigDecimal("2000.00"),
+      discount_amount: BigDecimal("0.00"),
+      subtotal_amount: BigDecimal("2000.00"),
+      total_amount: BigDecimal("2000.00")
+    )
+    # The item list still exists as the professional's private calculation,
+    # but it is not what the quote is priced from.
+    expect(quote.items_amount).to eq(BigDecimal("13.33"))
+    expect(quote.quote_items.length).to eq(2)
+  end
+
+  it "replaces materials wholesale with a deterministic sort order on update" do
+    quote = described_class.new.call(
+      profile:,
+      attributes: valid_attributes.merge(
+        materials: [
+          {description: "Tinta acrílica fosca 18L", quantity: "2", unit: "lata"},
+          {description: "Lixa 120", quantity: "10", unit: "folha"}
+        ]
+      )
+    )
+    expect(quote.quote_materials.pluck(:description, :sort_order)).to eq([
+      ["Tinta acrílica fosca 18L", 0],
+      ["Lixa 120", 1]
+    ])
+
+    updated = described_class.new.call(
+      profile:,
+      quote:,
+      attributes: valid_attributes.merge(
+        revision: quote.lock_version,
+        materials: [{description: "Rolo de pintura", quantity: "3", unit: "unidade"}]
+      )
+    )
+    expect(updated.quote_materials.pluck(:description, :sort_order)).to eq([
+      ["Rolo de pintura", 0]
+    ])
+  end
+
   it "keeps shared lifecycle state and token stable while replacing live content" do
     quote = described_class.new.call(profile:, attributes: valid_attributes)
     shared_at = 2.minutes.ago.change(usec: 0)

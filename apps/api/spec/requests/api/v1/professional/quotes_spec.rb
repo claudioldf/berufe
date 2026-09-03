@@ -146,6 +146,55 @@ RSpec.describe "Professional quotes", type: :request, openapi: true do
     assert_api_conform(status: 200)
   end
 
+  it "prices a quote by a closed sum with a private calculation and a materials list" do
+    post "/api/v1/professional/quotes",
+      params: quote_body(
+        status: "saved",
+        pricing_mode: "lump_sum",
+        lump_sum_amount: 2000,
+        discount_amount: 0,
+        items_visible_to_customer: true,
+        items: [
+          {description: "Pintura das paredes", quantity: 60, unit: "m²", unit_price: 18},
+          {description: "Pintura do teto", quantity: 22, unit: "m²", unit_price: 15}
+        ],
+        materials: [
+          {description: "Tinta acrílica fosca 18L", quantity: 2, unit: "lata"},
+          {description: "Lixa 120", quantity: 10, unit: "folha"}
+        ]
+      ),
+      headers: session_headers(request_id: "quote-create-lump-sum", origin: true),
+      as: :json
+
+    expect(response).to have_http_status(:created)
+    quote = Quote.sole
+    # The item sum ("1410.00") is the professional's private calculation: it
+    # only reaches items_amount, never subtotal_amount or total_amount, which
+    # track the typed lump_sum_amount instead.
+    expect(response.parsed_body.dig("data", "quote")).to include(
+      "pricing_mode" => "lump_sum",
+      "lump_sum_amount" => "2000.00",
+      "items_visible_to_customer" => true,
+      "items_amount" => "1410.00",
+      "subtotal_amount" => "2000.00",
+      "discount_amount" => "0.00",
+      "total_amount" => "2000.00"
+    )
+    expect(
+      response.parsed_body.dig("data", "quote", "materials").pluck("description", "unit", "sort_order")
+    ).to eq([
+      ["Tinta acrílica fosca 18L", "lata", 0],
+      ["Lixa 120", "folha", 1]
+    ])
+    expect(quote).to have_attributes(
+      pricing_mode: "lump_sum",
+      lump_sum_amount: BigDecimal("2000.00"),
+      subtotal_amount: BigDecimal("2000.00"),
+      total_amount: BigDecimal("2000.00")
+    )
+    assert_api_conform(status: 201)
+  end
+
   it "saves a completed quote without marking it as shared" do
     post "/api/v1/professional/quotes",
       params: quote_body(status: "saved"),
@@ -467,10 +516,14 @@ RSpec.describe "Professional quotes", type: :request, openapi: true do
         service_description: attributes[:service_description],
         service_address: attributes[:service_address],
         scheduled_on: attributes[:scheduled_on],
+        pricing_mode: attributes[:pricing_mode],
+        lump_sum_amount: attributes[:lump_sum_amount],
         discount_amount: attributes[:discount_amount],
+        items_visible_to_customer: attributes[:items_visible_to_customer],
         valid_until: attributes[:valid_until],
         notes: attributes[:notes],
-        items: attributes[:items]
+        items: attributes[:items],
+        materials: attributes[:materials]
       }
     }
   end
@@ -486,13 +539,17 @@ RSpec.describe "Professional quotes", type: :request, openapi: true do
       service_description: "Iluminação da cozinha",
       service_address: "Rua das Flores, 100",
       scheduled_on: "2026-08-27",
+      pricing_mode: "itemized",
+      lump_sum_amount: nil,
       discount_amount: 40,
+      items_visible_to_customer: true,
       valid_until: "2026-08-30",
       notes: "Materiais definidos com a cliente.",
       items: [
         {description: "Instalação", quantity: 4, unit: "ponto", unit_price: 200},
         {description: "Revisão", quantity: 1, unit: "serviço", unit_price: 40}
-      ]
+      ],
+      materials: []
     }
   end
 
