@@ -27,6 +27,16 @@ RSpec.describe ProfessionalDailyActivity do
     )
   end
 
+  it "skips the counter while acting through a delegated administrator session" do
+    Current.application_session = instance_double(ApplicationSession, impersonating?: true)
+
+    described_class.increment!(professional_id: profile.id, counter: :profile_updates)
+
+    expect(described_class.count).to eq(0)
+  ensure
+    Current.reset
+  end
+
   it "rejects unknown counters and enforces non-negative values in Rails and PostgreSQL" do
     activity = described_class.create!(professional: profile, activity_date: Date.new(2026, 8, 18))
 

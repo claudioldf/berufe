@@ -89,6 +89,8 @@ RSpec.describe "Administrator professional impersonation", type: :request, opena
     expect(response).to have_http_status(:ok)
     expect(professional.professional_profile.reload.display_name).to eq("Ana Administrada")
     expect(other.professional_profile.reload.display_name).to eq("Outra Pessoa")
+    expect(ProfessionalDailyActivity.where(professional_id: professional.professional_profile.id).sum(:profile_updates))
+      .to eq(0)
   end
 
   it "blocks admin, registration, and erasure actions while impersonating" do

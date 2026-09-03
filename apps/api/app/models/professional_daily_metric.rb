@@ -40,6 +40,9 @@ class ProfessionalDailyMetric < ApplicationRecord
   end
 
   def self.increment_quote_shares!(professional_id:, occurred_at: Time.current)
+    # Delegated administrator support work is not professional engagement.
+    return if Current.delegated_request?
+
     metric = find_or_create_counter_row!(professional_id:, occurred_at:)
     where(id: metric.id).update_all(
       "quotes_shared = quotes_shared + 1, updated_at = CURRENT_TIMESTAMP"

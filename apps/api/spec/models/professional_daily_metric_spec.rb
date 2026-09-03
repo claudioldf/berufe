@@ -93,4 +93,14 @@ RSpec.describe ProfessionalDailyMetric do
       whatsapp_clicks: 0
     )
   end
+
+  it "skips the quote-share counter while acting through a delegated administrator session" do
+    Current.application_session = instance_double(ApplicationSession, impersonating?: true)
+
+    described_class.increment_quote_shares!(professional_id: profile.id)
+
+    expect(described_class.count).to eq(0)
+  ensure
+    Current.reset
+  end
 end
