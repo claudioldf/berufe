@@ -2,13 +2,20 @@ import type { BerufeApiClient } from "./client";
 import { ApiRequestError, normalizeApiError } from "./errors";
 import {
   mapCurrentApplicationSession,
+  type CurrentSessionData,
   type RestoredApplicationSession,
 } from "./application-session";
 
+interface ApiResult<T> {
+  data?: T;
+  error?: unknown;
+  response: Response;
+}
+
 function requireSession(
-  result: Awaited<ReturnType<BerufeApiClient["POST"]>>,
+  result: ApiResult<{ data: CurrentSessionData }>,
 ): RestoredApplicationSession {
-  if (result.error || !result.data || !("data" in result.data)) {
+  if (result.error || !result.data) {
     throw new ApiRequestError(
       normalizeApiError(
         result.error,
@@ -34,15 +41,5 @@ export async function startAdminProfessionalImpersonation(
 export async function stopAdminProfessionalImpersonation(
   client: BerufeApiClient,
 ): Promise<RestoredApplicationSession> {
-  const result = await client.DELETE("/api/v1/admin/impersonation");
-  if (result.error || !result.data) {
-    throw new ApiRequestError(
-      normalizeApiError(
-        result.error,
-        result.response.headers.get("X-Request-Id") ?? "client",
-      ),
-    );
-  }
-
-  return mapCurrentApplicationSession(result.data.data);
+  return requireSession(await client.DELETE("/api/v1/admin/impersonation"));
 }

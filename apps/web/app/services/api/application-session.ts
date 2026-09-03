@@ -2,7 +2,7 @@ import type { BerufeApiClient } from "./client";
 import { ApiRequestError, normalizeApiError } from "./errors";
 import type { components } from "./schema";
 
-type CurrentSessionData = components["schemas"]["CurrentSessionData"];
+export type CurrentSessionData = components["schemas"]["CurrentSessionData"];
 
 export interface CurrentAccount {
   id: string;

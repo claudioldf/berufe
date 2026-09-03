@@ -1,4 +1,4 @@
-import { readonly } from "vue";
+import { readonly, shallowRef } from "vue";
 import {
   startAdminProfessionalImpersonation,
   stopAdminProfessionalImpersonation,
@@ -37,7 +37,9 @@ export function useAdminImpersonation(
     "admin-impersonation-is-changing",
     () => false,
   );
-  const error = useState<string>("admin-impersonation-error", () => "");
+  // Per-instance: a failed start/stop should not leave a stale alert visible
+  // after navigating to a freshly mounted directory or banner.
+  const error = shallowRef("");
   const startRequest =
     dependencies.start ??
     ((professionalAccountId) =>

@@ -125,4 +125,40 @@ describe("administrator impersonation composable", () => {
     expect(workflow.isChanging.value).toBe(false);
     scope.stop();
   });
+
+  it("keeps a failed start's error scoped to its own instance", async () => {
+    const failingScope = effectScope();
+    const failingWorkflow = failingScope.run(() =>
+      useAdminImpersonation({
+        start: vi.fn().mockRejectedValue(new Error("Falha ao gerenciar.")),
+        stop: vi.fn(),
+        replaceSession: vi.fn(),
+        route: { fullPath: "/app/admin/professionals" },
+        router: { replace: vi.fn() },
+        storage: memoryStorage(),
+        clearProfessionalData: vi.fn(),
+      }),
+    )!;
+    await expect(failingWorkflow.start(professional)).resolves.toBe(false);
+    expect(failingWorkflow.error.value).toBe("Falha ao gerenciar.");
+    failingScope.stop();
+
+    // A freshly mounted instance (e.g. after navigating back to the directory)
+    // must not inherit the previous instance's error.
+    const freshScope = effectScope();
+    const freshWorkflow = freshScope.run(() =>
+      useAdminImpersonation({
+        start: vi.fn(),
+        stop: vi.fn(),
+        replaceSession: vi.fn(),
+        route: { fullPath: "/app/admin/professionals" },
+        router: { replace: vi.fn() },
+        storage: memoryStorage(),
+        clearProfessionalData: vi.fn(),
+      }),
+    )!;
+
+    expect(freshWorkflow.error.value).toBe("");
+    freshScope.stop();
+  });
 });

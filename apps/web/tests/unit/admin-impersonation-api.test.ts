@@ -101,4 +101,22 @@ describe("administrator impersonation API", () => {
       startAdminProfessionalImpersonation(client, currentSession.account.id),
     ).rejects.toThrow("Não é possível gerenciar esta conta profissional.");
   });
+
+  it("throws a normalized error instead of a TypeError when the response body is missing data", async () => {
+    const client = {
+      POST: vi.fn().mockResolvedValue({
+        data: undefined,
+        error: undefined,
+        response: new Response(null, {
+          headers: { "X-Request-Id": "impersonation-empty-body" },
+        }),
+      }),
+    } as unknown as BerufeApiClient;
+
+    await expect(
+      startAdminProfessionalImpersonation(client, currentSession.account.id),
+    ).rejects.toMatchObject({
+      requestId: "impersonation-empty-body",
+    });
+  });
 });
