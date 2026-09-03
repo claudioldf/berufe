@@ -41,6 +41,7 @@ test("administrator manages a professional account and returns to the directory"
     "Você está gerenciando a conta de Marcos Alves",
   );
   await expect(banner).toBeVisible();
+  await expect(page.getByRole("button", { name: "Sair" })).toBeHidden();
 
   await page.goto("/app/admin/professionals");
   await expect(page).toHaveURL(/\/app\/professional$/);
@@ -55,4 +56,5 @@ test("administrator manages a professional account and returns to the directory"
     page.getByRole("heading", { name: "Profissionais", exact: true }),
   ).toBeVisible();
   await expect(banner).toBeHidden();
+  await expect(page.getByRole("button", { name: "Sair" })).toBeVisible();
 });
