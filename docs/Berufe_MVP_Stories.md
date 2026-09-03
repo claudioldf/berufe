@@ -1021,6 +1021,43 @@ The MVP report includes only implemented launch domains: professional supply and
 
 **Covers:** Extends Feature E1 (administrator operations).
 
+### S070 — Quote a closed price with a private calculation
+
+**Story:** As a professional who charges by the job rather than by line item, I want to quote one closed price while still calculating it from a private breakdown so that I can price confidently without showing my customer a per-item table.
+
+**Acceptance criteria:**
+
+- Each quote has a `pricing_mode` of `itemized` (default, today's behavior) or `lump_sum`.
+- In `lump_sum`, the professional types the final price directly; line items become optional and are never summed into the quote total. Rails still computes `total_amount` from the typed price, and the discount is unavailable and forced to zero — a closed price already reflects any negotiation.
+- The sum of any entered line items is calculated and shown to the owner only, next to the price field, as a private reference; it is never persisted on the quote row and never appears in a token-authorized response, matching S049's rule that Rails owns every computed total.
+- A per-quote toggle controls whether the customer's shared link shows the line items as a scope list (description and quantity only, never a unit price or line total) or shows only the closed price. The toggle has no effect in `itemized` mode.
+- Switching `pricing_mode` on an editable draft or saved quote is allowed; it is not allowed once the quote is locked (`approved`, `completed`, `cancelled`), consistent with S049's immutability rule.
+- OpenAPI operations, generated Nuxt types, model/service validation tests, and request contract tests cover both modes, including a regression test asserting the private calculation is absent from every shared/customer response body.
+
+**Data shape:** `quote` gains `pricing_mode` (`itemized`/`lump_sum`), nullable `lump_sum_amount` (decimal, present only in `lump_sum`), and `items_visible_to_customer` (boolean, defaults true, meaningful only in `lump_sum`).
+
+**Depends on:** S049, S050.
+
+**Covers:** Feature D1.
+
+### S071 — List materials the customer buys
+
+**Story:** As a professional whose work requires the customer to supply materials, I want to list what they need to buy so that the customer arrives prepared and the professional isn't tracking that list outside Berufe.
+
+**Acceptance criteria:**
+
+- A quote can carry an ordered list of materials, each with a description, quantity, and unit — the same shape as a line item, but with no price of any kind.
+- Materials are available in both pricing modes, are entirely optional, and never contribute to `subtotal_amount`, `total_amount`, or the professional's commercial summary (S050's awaiting-response/approved-this-month aggregates).
+- The materials list is present in the owner's quote and, when the quote is shared, in the customer's copy — clearly separated from the priced scope so it cannot be read as part of the quoted amount.
+- The list holds at most 20 rows; order is deterministic and server-assigned, matching the existing `quote_item.sort_order` pattern.
+- OpenAPI operations, generated Nuxt types, and model/request contract tests ship with the feature.
+
+**Data shape:** `quote_material` contains UUID `id`, `quote_id`, length-limited description, non-negative decimal quantity, length-limited unit label, and deterministic `sort_order` — the same fields as `quote_item` minus `unit_price` and `line_total`.
+
+**Depends on:** S049, S050.
+
+**Covers:** Feature D1.
+
 ## 12. Increment summary
 
 | Increment               | Stories         | Demonstrable result                                                                                            |

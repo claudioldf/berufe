@@ -661,8 +661,8 @@ The profile helps professionals get discovered; the quote helps them perform a f
 #### 3. How it works and implementation overview
 
 1. The professional starts a quote from the dashboard.
-2. They enter the customer name, a short service description, ordered line items, optional discount, validity date, and notes.
-3. Rails calculates and persists every line total, subtotal, discount, and final total; browser calculations are previews only.
+2. They enter the customer name, a short service description, ordered line items, optional discount, validity date, notes, and an optional list of materials the customer needs to buy. A professional who charges by the job rather than by line item can switch the quote to a closed price: they type one final value, the line items become an optional private calculation shown only to them, and the discount is unavailable because a closed price already reflects any negotiation. A toggle controls whether the customer's link shows those line items as a scope list (description and quantity, never a price) or shows only the closed price. Materials are never priced and never contribute to any total, in either mode.
+3. Rails calculates and persists every line total, subtotal, discount, and final total — including the closed price — from server-side data only; browser calculations are previews only.
 4. The professional previews the mobile customer page.
 5. First share atomically marks the quote shared, creates a long random bearer token, records the aggregate share action, and opens WhatsApp with the link. Only a keyed hash of the token is indexed, plus an encrypted copy so the owner can re-share the same link; the raw token is never stored in the clear and is never derivable from the quote.
 6. The customer can view or print the quote without an account.
@@ -680,23 +680,26 @@ and are explicitly labeled as quote values rather than payments received.
 
 **`quote`**
 
-| Field                    | Type          | Rules                                                                                                             |
-| ------------------------ | ------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `id`                     | UUID          | Primary key                                                                                                       |
-| `professional_id`        | UUID          | Required owner reference                                                                                          |
-| `quote_number`           | integer       | Sequential per professional and concurrency-safe                                                                  |
-| `customer_name`          | text          | Required; no customer account                                                                                     |
-| `service_description`    | text          | Required and length-limited                                                                                       |
-| `subtotal_amount`        | decimal(14,2) | Server-calculated sum of the line totals; persisted so PostgreSQL can enforce the totals rule                     |
-| `discount_amount`        | decimal(14,2) | Defaults to zero; cannot exceed subtotal                                                                          |
-| `total_amount`           | decimal(14,2) | Server-calculated as `subtotal_amount - discount_amount`                                                          |
-| `valid_until`            | date          | Nullable                                                                                                          |
-| `notes`                  | text          | Nullable and length-limited                                                                                       |
-| `status`                 | enum          | `draft`, `shared`, `change_requested`, `approved`, or `declined`; revocation returns a shared quote to `draft`    |
-| `share_token_hash`       | text          | Unique keyed digest; nullable until first share and cleared by revocation; raw token is never stored in the clear |
-| `share_token_ciphertext` | text          | Encrypted owner copy of the active token so re-sharing reuses the same link; cleared by revocation                |
-| `created_at`             | timestamp     | Required                                                                                                          |
-| `shared_at`              | timestamp     | Nullable                                                                                                          |
+| Field                       | Type          | Rules                                                                                                               |
+| --------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `id`                        | UUID          | Primary key                                                                                                         |
+| `professional_id`           | UUID          | Required owner reference                                                                                            |
+| `quote_number`              | integer       | Sequential per professional and concurrency-safe                                                                    |
+| `customer_name`             | text          | Required; no customer account                                                                                       |
+| `service_description`       | text          | Required and length-limited                                                                                         |
+| `subtotal_amount`           | decimal(14,2) | Server-calculated sum of the line totals; persisted so PostgreSQL can enforce the totals rule                       |
+| `discount_amount`           | decimal(14,2) | Defaults to zero; cannot exceed subtotal                                                                            |
+| `total_amount`              | decimal(14,2) | Server-calculated as `subtotal_amount - discount_amount`                                                            |
+| `valid_until`               | date          | Nullable                                                                                                            |
+| `notes`                     | text          | Nullable and length-limited                                                                                         |
+| `status`                    | enum          | `draft`, `shared`, `change_requested`, `approved`, or `declined`; revocation returns a shared quote to `draft`      |
+| `share_token_hash`          | text          | Unique keyed digest; nullable until first share and cleared by revocation; raw token is never stored in the clear   |
+| `share_token_ciphertext`    | text          | Encrypted owner copy of the active token so re-sharing reuses the same link; cleared by revocation                  |
+| `pricing_mode`              | enum          | `itemized` (default) or `lump_sum`; only editable while the quote is not locked                                     |
+| `lump_sum_amount`           | decimal(14,2) | Nullable; required and zero or greater only when `pricing_mode` is `lump_sum`; becomes `total_amount` directly      |
+| `items_visible_to_customer` | boolean       | Defaults true; meaningful only in `lump_sum` — whether the customer link shows line items as a priceless scope list |
+| `created_at`                | timestamp     | Required                                                                                                            |
+| `shared_at`                 | timestamp     | Nullable                                                                                                            |
 
 **`quote_item`**
 
@@ -711,11 +714,26 @@ and are explicitly labeled as quote values rather than payments received.
 | `line_total`  | decimal(14,2) | Server-calculated                                                                                 |
 | `sort_order`  | smallint      | Required and deterministic                                                                        |
 
+In `lump_sum` mode, line items are optional and their sum is calculated for the owner only, as a private reference next to the price field; it is never persisted and never returned to the customer.
+
+**`quote_material`**
+
+| Field         | Type          | Rules                                                             |
+| ------------- | ------------- | ----------------------------------------------------------------- |
+| `id`          | UUID          | Primary key                                                       |
+| `quote_id`    | UUID          | Required quote reference                                          |
+| `description` | text          | Required and length-limited                                       |
+| `quantity`    | decimal(12,3) | Greater than zero; three decimals, same rationale as `quote_item` |
+| `unit`        | text          | Controlled length; examples: unidade, lata, saco, m²              |
+| `sort_order`  | smallint      | Required and deterministic                                        |
+
+Materials carry no price of any kind and never contribute to `subtotal_amount` or `total_amount`; they exist so the professional can tell the customer what to buy, not to bill for it.
+
 #### 5. Explicitly not in MVP
 
 - Electronic signature or contract execution.
 - Payment, installments, escrow, invoice, or tax document.
-- Expense, margin, or profit calculation.
+- Expense, margin, or profit calculation — the closed-price calculator computes a price, not a margin, and material quantities are not priced.
 - Generic customer CRM features such as notes, tags, merging, reminders, or
   campaigns; the MVP only reuses canonical contact details and quote history.
 - Contract generation, work orders, scheduling, or financial control.
