@@ -113,6 +113,31 @@ RSpec.describe "Administrator professional impersonation", type: :request, opena
     expect(response).to have_http_status(:forbidden)
     expect(response.parsed_body.dig("error", "code")).to eq("impersonation_action_denied")
 
+    post "/api/v1/professional/media-uploads",
+      params: {purpose: "verification_identity", content_type: "image/jpeg", byte_size: 1024},
+      headers: session_headers(admin_token, "impersonation-verification-upload-denied", origin: true),
+      as: :json
+    expect(response).to have_http_status(:forbidden)
+    expect(response.parsed_body.dig("error", "code")).to eq("impersonation_action_denied")
+
+    post "/api/v1/professional/verification-requests",
+      params: {verification_request: {media_upload_id: SecureRandom.uuid, verification_type: "identity"}},
+      headers: session_headers(admin_token, "impersonation-verification-request-denied", origin: true),
+      as: :json
+    expect(response).to have_http_status(:forbidden)
+    expect(response.parsed_body.dig("error", "code")).to eq("impersonation_action_denied")
+
+    identity_upload = create_media_upload(purpose: "verification_identity")
+    get "/api/v1/professional/media-uploads/#{identity_upload.id}",
+      headers: session_headers(admin_token, "impersonation-verification-upload-show-denied")
+    expect(response).to have_http_status(:forbidden)
+    expect(response.parsed_body.dig("error", "code")).to eq("impersonation_action_denied")
+
+    photo_upload = create_media_upload(purpose: "profile_photo")
+    get "/api/v1/professional/media-uploads/#{photo_upload.id}",
+      headers: session_headers(admin_token, "impersonation-profile-photo-upload-show-allowed")
+    expect(response).to have_http_status(:ok)
+
     post "/api/v1/professional/data-erasure-request",
       headers: session_headers(admin_token, "impersonation-erasure-denied", origin: true)
     expect(response).to have_http_status(:forbidden)
@@ -251,6 +276,18 @@ RSpec.describe "Administrator professional impersonation", type: :request, opena
       privacy_notice_version: LegalDocumentVersions::PRIVACY_NOTICE
     )
     account
+  end
+
+  def create_media_upload(purpose:)
+    MediaUpload.create!(
+      professional_profile: professional.professional_profile,
+      purpose:,
+      state: "authorized",
+      declared_content_type: "image/jpeg",
+      declared_byte_size: 1024,
+      quarantine_key: "quarantine/#{professional.professional_profile.id}/#{SecureRandom.uuid}",
+      authorization_expires_at: 5.minutes.from_now
+    )
   end
 
   def start_impersonating(account)

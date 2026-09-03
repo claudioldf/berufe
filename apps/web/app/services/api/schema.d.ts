@@ -3030,7 +3030,7 @@ export interface components {
                 "application/json": components["schemas"]["ErrorResponse"];
             };
         };
-        /** @description The exact browser origin or professional ownership check failed. */
+        /** @description The exact browser origin or professional ownership check failed, or the session is delegated administrator access acting on an identity verification upload. */
         ProfessionalMediaForbidden: {
             headers: {
                 "X-Request-Id": components["headers"]["RequestId"];
@@ -6931,7 +6931,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description The exact browser origin or profile owner is invalid. */
+            /** @description The exact browser origin or profile owner is invalid, or the session is delegated administrator access. */
             403: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
@@ -7016,6 +7016,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["ProfessionalMediaUnauthorized"];
+            403: components["responses"]["ProfessionalMediaForbidden"];
             404: components["responses"]["ProfessionalMediaNotFound"];
         };
     };

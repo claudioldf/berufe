@@ -3537,7 +3537,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "403":
-          description: The exact browser origin or profile owner is invalid.
+          description: The exact browser origin or profile owner is invalid, or the session is delegated administrator access.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
@@ -3619,6 +3619,8 @@ paths:
                 $ref: "#/components/schemas/MediaUploadResponse"
         "401":
           $ref: "#/components/responses/ProfessionalMediaUnauthorized"
+        "403":
+          $ref: "#/components/responses/ProfessionalMediaForbidden"
         "404":
           $ref: "#/components/responses/ProfessionalMediaNotFound"
   /api/v1/professional/media-uploads/{id}/content:
@@ -4156,7 +4158,7 @@ components:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
     ProfessionalMediaForbidden:
-      description: The exact browser origin or professional ownership check failed.
+      description: The exact browser origin or professional ownership check failed, or the session is delegated administrator access acting on an identity verification upload.
       headers:
         X-Request-Id:
           $ref: "#/components/headers/RequestId"

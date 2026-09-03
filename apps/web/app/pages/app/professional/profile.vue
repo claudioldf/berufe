@@ -416,6 +416,7 @@ async function handleRelationshipRemove(id: string) {
           :verification="workspace?.profile.verification ?? { current: null }"
           :submitting="verificationSaving"
           :server-error="verificationError"
+          :delegated="isImpersonating"
           @submitted="handleVerificationSubmission"
         />
         <div
