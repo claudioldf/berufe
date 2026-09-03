@@ -86,7 +86,7 @@ describe("shared quote API", () => {
         scheduledOn: "2026-08-22",
         validUntil: "2026-01-01",
         discount: 1.33,
-        markup: 0,
+        fixedPrice: 0,
         notes: "Materiais definidos.",
         status: "shared",
         subtotal: 13.33,

@@ -150,7 +150,7 @@ module Api
             :scheduled_on,
             :discount_amount,
             :pricing_mode,
-            :markup_amount,
+            :fixed_price_amount,
             :valid_until,
             :notes,
             :status,

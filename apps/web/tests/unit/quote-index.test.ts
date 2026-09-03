@@ -18,7 +18,7 @@ function quoteFixture(overrides: Partial<Quote>): Quote {
     scheduledOn: "2026-08-22",
     validUntil: "2026-08-25",
     discount: 0,
-    markup: 0,
+    fixedPrice: 0,
     notes: "",
     status: "draft",
     subtotal: 100,

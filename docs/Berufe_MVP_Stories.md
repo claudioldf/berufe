@@ -818,18 +818,17 @@ price real work.
   description, `fixed_price|itemized` mode, ordered pricing rows, optional
   discount, validity date, notes, and up to 20 ordered customer-supplied
   materials with description, quantity, and unit but no price.
-- A fixed-price quote treats its rows as a private calculator and derives the one
-  customer-facing total from subtotal plus non-negative markup minus discount.
-  An itemized quote requires zero markup and exposes the row and discount
-  breakdown to the customer.
+- A fixed-price quote treats its rows as a private cost calculator and accepts
+  an independent final customer price. It has no markup or discount field. An
+  itemized quote exposes the row and discount breakdown to the customer.
 - New quotes use the professional's last successfully saved pricing mode and
   fall back to fixed price before the first save.
-- Changing pricing mode clears all pricing rows, markup, and discount. The UI
+- Changing pricing mode clears all pricing rows, fixed price, and discount. The UI
   confirms first only when a monetary value would be discarded; customer,
   service, materials, dates, and notes are preserved.
-- Quantities are greater than zero for saved quotes, unit prices are
-  non-negative, and discount cannot exceed subtotal plus applicable markup.
-- Rails recalculates each line total, subtotal, markup, discount, and total with
+- Quantities are greater than zero for saved quotes, unit prices and fixed price
+  are non-negative, and itemized discount cannot exceed subtotal.
+- Rails recalculates each line total, subtotal, applicable discount, and total with
   `BigDecimal`; Nuxt calculations are preview-only and persisted client totals
   are never trusted.
 - Quote numbers are sequential per professional and assigned concurrency-safely.
@@ -838,8 +837,9 @@ price real work.
 - OpenAPI operations, generated Nuxt types, owner/admin policy tests, validation tests, and request contract tests ship with the feature.
 
 **Data shape:** `quote` adds `pricing_mode`, non-negative decimal
-`markup_amount`, decimal `discount_amount`, and server-calculated subtotal and
-total. `professional_profile` stores `last_quote_pricing_mode`.
+`fixed_price_amount`, itemized-only decimal `discount_amount`, and
+server-calculated subtotal and total. `professional_profile` stores
+`last_quote_pricing_mode`.
 `quote_item` retains ordered calculator/itemized rows. `quote_material` contains
 UUID `id`, `quote_id`, required description, positive decimal quantity,
 length-limited unit, and deterministic `sort_order`.
@@ -859,7 +859,7 @@ length-limited unit, and deterministic `sort_order`.
 - First share generates a high-entropy random token unrelated to the quote id, stores its keyed hash for lookup plus an encrypted owner copy for reuse, and atomically changes status from `draft` to `shared`.
 - A valid bearer link returns only the customer-visible quote and approved
   professional public identity/labels. Fixed-price links contain one total and
-  never expose calculator rows, subtotal, markup, or discount. Itemized links
+  never expose calculator rows, subtotal, fixed-price input, or discount. Itemized links
   contain their pricing breakdown. Both may contain the price-free list of
   materials the customer must provide.
 - Sharing and resolving require the owner to remain active and currently published; the identity label appears only when identity verification is actually approved.

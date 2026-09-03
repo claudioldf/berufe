@@ -5,7 +5,6 @@ import {
   cloneQuote,
   hasQuotePricingValues,
   hasQuoteValidationErrors,
-  quotePriceBeforeDiscount,
   quoteSubtotal,
   quoteTotal,
   validateQuote,
@@ -22,9 +21,6 @@ export function useQuoteDraft(initialQuote: MaybeRefOrGetter<Quote>) {
   const pendingPricingMode = shallowRef<QuotePricingMode | null>(null);
 
   const subtotal = computed(() => quoteSubtotal(quote.value));
-  const priceBeforeDiscount = computed(() =>
-    quotePriceBeforeDiscount(quote.value),
-  );
   const total = computed(() => quoteTotal(quote.value));
   const validation = computed(() => validateQuote(quote.value));
   const isValid = computed(() => !hasQuoteValidationErrors(validation.value));
@@ -103,7 +99,7 @@ export function useQuoteDraft(initialQuote: MaybeRefOrGetter<Quote>) {
 
   function applyPricingMode(mode: QuotePricingMode) {
     quote.value.pricingMode = mode;
-    quote.value.markup = 0;
+    quote.value.fixedPrice = 0;
     quote.value.discount = 0;
     quote.value.items = [
       {
@@ -142,7 +138,6 @@ export function useQuoteDraft(initialQuote: MaybeRefOrGetter<Quote>) {
     pricingModeConfirmationOpen,
     pendingPricingMode,
     subtotal,
-    priceBeforeDiscount,
     total,
     validation,
     isValid,

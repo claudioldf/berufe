@@ -190,9 +190,9 @@ RSpec.describe "Shared quotes", type: :request, openapi: true do
           email: nil
         },
         pricing_mode: "fixed_price",
-        markup_amount: 400,
+        fixed_price_amount: 2000,
         service_description: "Pintura interna completa",
-        discount_amount: 100,
+        discount_amount: 0,
         valid_until: "2026-12-01",
         items: [
           {description: "Custo reservado de mão de obra", quantity: 1, unit: "serviço", unit_price: 1500},
@@ -236,7 +236,7 @@ RSpec.describe "Shared quotes", type: :request, openapi: true do
         }
       ]
     )
-    expect(shared).not_to include("subtotal_amount", "markup_amount", "discount_amount", "items")
+    expect(shared).not_to include("subtotal_amount", "fixed_price_amount", "discount_amount", "items")
     expect(response.body).not_to include("Custo reservado")
     assert_api_conform(status: 200)
   end

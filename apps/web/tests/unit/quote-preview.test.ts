@@ -16,7 +16,7 @@ const quote: Quote = {
   scheduledOn: "",
   validUntil: "2026-08-25",
   discount: 0,
-  markup: 0,
+  fixedPrice: 0,
   notes: "",
   status: "shared",
   subtotal: 0,
@@ -123,8 +123,8 @@ describe("quote customer preview", () => {
           ...quote,
           pricingMode: "fixed_price",
           subtotal: 1700,
-          markup: 400,
-          discount: 100,
+          fixedPrice: 2000,
+          discount: 0,
           total: 2000,
           items: quote.items.map((item, index) => ({
             ...item,
@@ -153,7 +153,7 @@ describe("quote customer preview", () => {
       global,
     });
 
-    expect(wrapper.text()).toContain("Valor do serviço");
+    expect(wrapper.text()).toContain("Preço final ao cliente");
     expect(wrapper.text()).toContain("R$ 2.000,00");
     expect(wrapper.text()).toContain("2 lata");
     expect(wrapper.text()).toContain("Tinta acrílica branca 18 L");

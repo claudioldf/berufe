@@ -27,7 +27,7 @@ class ProfessionalQuoteSerializer
       notes: quote.notes,
       status: quote.status,
       subtotal_amount: money(quote.subtotal_amount),
-      markup_amount: money(quote.markup_amount),
+      fixed_price_amount: money(quote.fixed_price_amount),
       discount_amount: money(quote.discount_amount),
       total_amount: money(quote.total_amount),
       shared_at: quote.shared_at&.iso8601,

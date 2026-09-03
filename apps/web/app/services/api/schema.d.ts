@@ -1890,7 +1890,7 @@ export interface components {
                 status?: "draft" | "saved";
                 customer: components["schemas"]["ProfessionalQuoteCustomerInput"];
                 pricing_mode: components["schemas"]["QuotePricingMode"];
-                markup_amount: number;
+                fixed_price_amount: number;
                 service_description: string;
                 service_address: string | null;
                 /** Format: date */
@@ -2065,7 +2065,7 @@ export interface components {
             notes: string | null;
             status: components["schemas"]["QuoteStatus"];
             subtotal_amount: components["schemas"]["MoneyAmount"];
-            markup_amount: components["schemas"]["MoneyAmount"];
+            fixed_price_amount: components["schemas"]["MoneyAmount"];
             discount_amount: components["schemas"]["MoneyAmount"];
             total_amount: components["schemas"]["MoneyAmount"];
             /** Format: date-time */

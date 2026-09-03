@@ -27,7 +27,7 @@ function createQuote(): Quote {
     scheduledOn: "",
     validUntil: "2026-09-28",
     discount: -1,
-    markup: 0,
+    fixedPrice: 0,
     notes: "",
     status: "draft",
     subtotal: 0,
@@ -58,7 +58,6 @@ function mountEditor(quote: Quote) {
     props: {
       modelValue: quote,
       subtotal: quoteSubtotal(quote),
-      priceBeforeDiscount: quoteSubtotal(quote),
       total: quoteSubtotal(quote),
       errors: validateQuote(quote),
     },
@@ -121,5 +120,31 @@ describe("quote line item validation", () => {
 
     expect(wrapper.find('[aria-label="Remover item 1"]').exists()).toBe(true);
     expect(wrapper.find('[aria-label="Remover item 2"]').exists()).toBe(true);
+  });
+
+  it("explains and edits an independent customer price in fixed-price mode", async () => {
+    const quote = createQuote();
+    quote.pricingMode = "fixed_price";
+    quote.discount = 0;
+    quote.fixedPrice = 2000;
+    quote.items[0]!.description = "Mão de obra";
+    quote.items[0]!.quantity = 1;
+    quote.items[0]!.unit = "serviço";
+    quote.items[0]!.unitPrice = 1700;
+    const wrapper = mountEditor(quote);
+
+    expect(wrapper.text()).toContain(
+      "Os itens abaixo servem apenas para ajudar você a calcular o custo total do serviço.",
+    );
+    expect(wrapper.text()).toContain(
+      "Eles não definem o preço do orçamento e não aparecem para o cliente.",
+    );
+    expect(wrapper.text()).toContain("Custo total (particular)");
+    expect(wrapper.get('input[name="fixed-price"]').element.value).toBe("2000");
+    expect(wrapper.text()).not.toContain("Acréscimo");
+    expect(wrapper.find('input[name="discount"]').exists()).toBe(false);
+
+    await wrapper.get('input[name="fixed-price"]').setValue("2250");
+    expect(quote.fixedPrice).toBe(2250);
   });
 });

@@ -5483,7 +5483,7 @@ components:
             [
               customer,
               pricing_mode,
-              markup_amount,
+              fixed_price_amount,
               service_description,
               service_address,
               scheduled_on,
@@ -5501,7 +5501,7 @@ components:
             customer:
               { $ref: "#/components/schemas/ProfessionalQuoteCustomerInput" }
             pricing_mode: { $ref: "#/components/schemas/QuotePricingMode" }
-            markup_amount: { type: number, minimum: 0 }
+            fixed_price_amount: { type: number, minimum: 0 }
             service_description: { type: string, maxLength: 160 }
             service_address:
               type: [string, "null"]
@@ -5803,7 +5803,7 @@ components:
           notes,
           status,
           subtotal_amount,
-          markup_amount,
+          fixed_price_amount,
           discount_amount,
           total_amount,
           shared_at,
@@ -5832,7 +5832,7 @@ components:
         notes: { type: [string, "null"], maxLength: 700 }
         status: { $ref: "#/components/schemas/QuoteStatus" }
         subtotal_amount: { $ref: "#/components/schemas/MoneyAmount" }
-        markup_amount: { $ref: "#/components/schemas/MoneyAmount" }
+        fixed_price_amount: { $ref: "#/components/schemas/MoneyAmount" }
         discount_amount: { $ref: "#/components/schemas/MoneyAmount" }
         total_amount: { $ref: "#/components/schemas/MoneyAmount" }
         shared_at: { type: [string, "null"], format: date-time }

@@ -67,7 +67,6 @@ const {
   pricingModeConfirmationOpen,
   pendingPricingMode,
   subtotal,
-  priceBeforeDiscount,
   total,
   validation,
   isValid,
@@ -173,7 +172,6 @@ function requestShare() {
         <DashboardQuoteLineItemsEditor
           v-model="quote"
           :subtotal="subtotal"
-          :price-before-discount="priceBeforeDiscount"
           :total="total"
           :errors="displayedErrors"
           @add="addItem"
@@ -245,7 +243,7 @@ function requestShare() {
           <div>
             <strong>Esta ação não pode ser desfeita.</strong>
             <p>
-              Itens, custos, acréscimo e desconto serão zerados. Os dados do
+              Itens, custos, preço final e desconto serão zerados. Os dados do
               cliente, serviço, materiais e observações serão mantidos.
             </p>
           </div>

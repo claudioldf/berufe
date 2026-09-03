@@ -180,6 +180,17 @@ test("published professional creates, previews, securely shares, and live-edits 
   const customerPhone = testInfo.project.name.startsWith("mobile")
     ? "47999995555"
     : "47999994444";
+  await page.getByRole("radio", { name: /Preço fechado/ }).check();
+  const privateCalculationNote = page.locator(".pricing-editor__private-note");
+  await expect(privateCalculationNote).toContainText(
+    "Os itens abaixo servem apenas para ajudar você a calcular o custo total do serviço.",
+  );
+  await expect(privateCalculationNote).toHaveCSS(
+    "background-color",
+    "rgb(255, 247, 222)",
+  );
+  await expect(page.getByLabel("Preço final ao cliente")).toBeVisible();
+  await expect(page.getByText("Acréscimo", { exact: true })).toHaveCount(0);
   await page.getByRole("radio", { name: /Detalhado/ }).check();
   await page.getByLabel("Nome do cliente").fill(customerName);
   await page.getByLabel("WhatsApp").fill(customerPhone);

@@ -117,7 +117,9 @@ function itemTotal(index: number) {
       </div>
       <div>
         <span>{{
-          quote.pricingMode === "fixed_price" ? "Valor do serviço" : "Total"
+          quote.pricingMode === "fixed_price"
+            ? "Preço final ao cliente"
+            : "Total"
         }}</span
         ><strong>{{ formatCurrency(total) }}</strong>
       </div>

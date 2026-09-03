@@ -29,15 +29,12 @@ export function quoteSubtotal(quote: Quote) {
   return quote.items.reduce((sum, item) => sum + quoteItemTotal(item), 0);
 }
 
-export function quotePriceBeforeDiscount(quote: Quote) {
-  return (
-    quoteSubtotal(quote) +
-    (quote.pricingMode === "fixed_price" ? Number(quote.markup) : 0)
-  );
-}
-
 export function quoteTotal(quote: Quote) {
-  return Math.max(0, quotePriceBeforeDiscount(quote) - Number(quote.discount));
+  if (quote.pricingMode === "fixed_price") {
+    return Math.max(0, Number(quote.fixedPrice));
+  }
+
+  return Math.max(0, quoteSubtotal(quote) - Number(quote.discount));
 }
 
 export function hasQuotePricingValues(quote: Quote) {
@@ -46,7 +43,7 @@ export function hasQuotePricingValues(quote: Quote) {
 
   return (
     quote.items.some((item) => hasValue(item.unitPrice)) ||
-    hasValue(quote.markup) ||
+    hasValue(quote.fixedPrice) ||
     hasValue(quote.discount)
   );
 }
@@ -83,7 +80,6 @@ export function isValidQuoteInputDate(value: string) {
 }
 
 export function validateQuote(quote: Quote): QuoteValidationErrors {
-  const priceBeforeDiscount = quotePriceBeforeDiscount(quote);
   const errors: QuoteValidationErrors = { items: {}, materials: {} };
   const customerName = quote.customerName.trim();
   const customerEmail = quote.customerEmail.trim();
@@ -153,15 +149,15 @@ export function validateQuote(quote: Quote): QuoteValidationErrors {
     if (Object.keys(itemErrors).length) errors.items[item.id] = itemErrors;
   }
 
-  const markup = Number(quote.markup);
+  const fixedPrice = Number(quote.fixedPrice);
   if (
-    String(quote.markup).trim() === "" ||
-    !Number.isFinite(markup) ||
-    markup < 0
+    String(quote.fixedPrice).trim() === "" ||
+    !Number.isFinite(fixedPrice) ||
+    fixedPrice < 0
   ) {
-    errors.markup = "Informe um acréscimo válido.";
-  } else if (quote.pricingMode === "itemized" && markup !== 0) {
-    errors.markup = "O orçamento detalhado não usa acréscimo.";
+    errors.fixedPrice = "Informe um preço final válido.";
+  } else if (quote.pricingMode === "itemized" && fixedPrice !== 0) {
+    errors.fixedPrice = "O orçamento detalhado não usa preço fechado.";
   }
 
   for (const material of quote.customerSuppliedMaterials) {
@@ -195,8 +191,13 @@ export function validateQuote(quote: Quote): QuoteValidationErrors {
     discount < 0
   ) {
     errors.discount = "Informe um desconto válido.";
-  } else if (discount > priceBeforeDiscount) {
-    errors.discount = "O desconto não pode ultrapassar o valor calculado.";
+  } else if (quote.pricingMode === "fixed_price" && discount !== 0) {
+    errors.discount = "O preço fechado não usa desconto.";
+  } else if (
+    quote.pricingMode === "itemized" &&
+    discount > quoteSubtotal(quote)
+  ) {
+    errors.discount = "O desconto não pode ultrapassar o subtotal.";
   }
 
   if (quote.notes.length > 700) {

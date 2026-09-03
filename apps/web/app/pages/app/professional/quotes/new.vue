@@ -141,7 +141,7 @@ function createEmptyQuote(
     scheduledOn: "",
     validUntil: quoteDateAfterDays(30),
     discount: 0,
-    markup: 0,
+    fixedPrice: 0,
     notes: "",
     status: "draft",
     subtotal: 0,

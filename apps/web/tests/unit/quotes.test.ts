@@ -26,7 +26,7 @@ const source: Quote = {
   scheduledOn: "2026-08-22",
   validUntil: "2026-08-25",
   discount: 75,
-  markup: 0,
+  fixedPrice: 0,
   notes: "Materiais a definir.",
   status: "draft",
   subtotal: 1520,
@@ -108,7 +108,7 @@ describe("quote utilities", () => {
       validUntil: "Informe uma data válida.",
       scheduledOn: "Informe uma data válida.",
       serviceDescription: "Descreva o serviço.",
-      discount: "O desconto não pode ultrapassar o valor calculado.",
+      discount: "O desconto não pode ultrapassar o subtotal.",
       items: {
         [source.items[0]!.id]: {
           description: "Descreva este item.",
@@ -138,12 +138,12 @@ describe("quote utilities", () => {
     expect(withDefaultQuoteValidity(source, from)).toBe(source);
   });
 
-  it("calculates fixed pricing with a currency markup and private discount", () => {
+  it("keeps the fixed customer price independent from private costs", () => {
     const fixed = {
       ...cloneQuote(source),
       pricingMode: "fixed_price" as const,
-      markup: 400,
-      discount: 100,
+      fixedPrice: 2000,
+      discount: 0,
       items: [
         { ...source.items[0]!, quantity: 1, unitPrice: 1500 },
         { ...source.items[1]!, quantity: 1, unitPrice: 200 },
@@ -224,7 +224,7 @@ describe("quote draft state", () => {
     draft.confirmPricingModeChange();
     expect(draft.quote.value).toMatchObject({
       pricingMode: "fixed_price",
-      markup: 0,
+      fixedPrice: 0,
       discount: 0,
     });
     expect(draft.quote.value.items).toHaveLength(1);

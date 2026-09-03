@@ -186,7 +186,7 @@ RSpec.describe "Quote service loop", type: :request, openapi: true do
             email: quote.customer_email
           },
           pricing_mode: quote.pricing_mode,
-          markup_amount: quote.markup_amount.to_f,
+          fixed_price_amount: quote.fixed_price_amount.to_f,
           service_description: quote.service_description,
           service_address: quote.service_address,
           scheduled_on: quote.scheduled_on,

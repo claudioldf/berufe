@@ -67,7 +67,8 @@ draft -> shared -> approved
 - The quote now also carries optional service address and scheduled date. The
   free-text description, selected pricing mode, customer-visible price,
   validity, customer-supplied materials, and notes remain the commercial scope
-  for this MVP. Fixed-price calculator rows, markup, and discount remain private;
+  for this MVP. Fixed-price calculator rows and their cost subtotal remain
+  private while the professional sets an independent final customer price;
   itemized quotes expose their pricing breakdown.
 
 ## 4. Service lifecycle

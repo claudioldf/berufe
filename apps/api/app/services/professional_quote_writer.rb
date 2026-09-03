@@ -14,7 +14,7 @@ class ProfessionalQuoteWriter
   end
 
   QUOTE_FIELDS = %i[
-    pricing_mode markup_amount service_description service_address scheduled_on
+    pricing_mode fixed_price_amount service_description service_address scheduled_on
     discount_amount valid_until notes
   ].freeze
   WRITABLE_STATUSES = %w[draft saved].freeze

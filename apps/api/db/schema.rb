@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_03_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_03_164000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -732,8 +732,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_03_100000) do
     t.string "customer_name", limit: 80, null: false
     t.string "customer_phone_e164", limit: 20
     t.decimal "discount_amount", precision: 14, scale: 2, default: "0.0", null: false
+    t.decimal "fixed_price_amount", precision: 14, scale: 2, default: "0.0", null: false
     t.integer "lock_version", default: 0, null: false
-    t.decimal "markup_amount", precision: 14, scale: 2, default: "0.0", null: false
     t.text "notes"
     t.string "pricing_mode", limit: 16, default: "itemized", null: false
     t.uuid "professional_id", null: false
@@ -758,12 +758,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_03_100000) do
     t.index ["share_token_hash"], name: "index_quotes_on_share_token_hash", unique: true
     t.check_constraint "(status::text = ANY (ARRAY['draft'::character varying::text, 'saved'::character varying::text])) AND share_token_hash IS NULL AND share_token_ciphertext IS NULL AND shared_at IS NULL OR (status::text <> ALL (ARRAY['draft'::character varying::text, 'saved'::character varying::text])) AND share_token_hash IS NOT NULL AND share_token_ciphertext IS NOT NULL AND shared_at IS NOT NULL", name: "quotes_consistent_share_state"
     t.check_constraint "customer_decision_message IS NULL OR char_length(btrim(customer_decision_message)) >= 1 AND char_length(btrim(customer_decision_message)) <= 700", name: "quotes_customer_decision_message_length"
-    t.check_constraint "markup_amount >= 0::numeric", name: "quotes_nonnegative_markup"
-    t.check_constraint "pricing_mode::text = 'fixed_price'::text OR markup_amount = 0::numeric", name: "quotes_itemized_without_markup"
+    t.check_constraint "fixed_price_amount >= 0::numeric", name: "quotes_nonnegative_fixed_price"
+    t.check_constraint "pricing_mode::text = 'fixed_price'::text OR fixed_price_amount = 0::numeric", name: "quotes_itemized_without_fixed_price"
+    t.check_constraint "pricing_mode::text = 'itemized'::text OR discount_amount = 0::numeric", name: "quotes_fixed_price_without_discount"
     t.check_constraint "pricing_mode::text = ANY (ARRAY['fixed_price'::character varying, 'itemized'::character varying]::text[])", name: "quotes_known_pricing_mode"
     t.check_constraint "quote_number > 0", name: "quotes_positive_number"
     t.check_constraint "status::text = 'draft'::text OR customer_phone_e164::text ~ '^\\+55[1-9][0-9]9[0-9]{8}$'::text", name: "quotes_customer_brazilian_mobile"
-    t.check_constraint "status::text = 'draft'::text OR discount_amount <= (subtotal_amount + markup_amount) AND total_amount = (subtotal_amount + markup_amount - discount_amount)", name: "quotes_consistent_totals"
+    t.check_constraint "status::text = 'draft'::text OR pricing_mode::text = 'fixed_price'::text AND discount_amount = 0::numeric AND total_amount = fixed_price_amount OR pricing_mode::text = 'itemized'::text AND fixed_price_amount = 0::numeric AND discount_amount <= subtotal_amount AND total_amount = (subtotal_amount - discount_amount)", name: "quotes_consistent_totals"
     t.check_constraint "status::text = ANY (ARRAY['draft'::character varying::text, 'saved'::character varying::text, 'shared'::character varying::text, 'change_requested'::character varying::text, 'approved'::character varying::text, 'declined'::character varying::text, 'completed'::character varying::text, 'cancelled'::character varying::text])", name: "quotes_known_status"
     t.check_constraint "subtotal_amount >= 0::numeric AND discount_amount >= 0::numeric AND total_amount >= 0::numeric", name: "quotes_nonnegative_amounts"
   end

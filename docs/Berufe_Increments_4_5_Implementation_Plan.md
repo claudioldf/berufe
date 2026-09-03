@@ -65,11 +65,11 @@ S047 and S049 are delivered consecutively so the dashboard quote action and rece
 - The existing `/app/professional/quotes/new` screen is both creator and editor. An existing quote is loaded with `?quote={uuid}`; no additional quote page is introduced.
 - A blank editor shows no quote number. The per-professional number is assigned only by the first valid server create and is concurrency-safe.
 - Rails owns decimal line-total, subtotal, discount, and final-total calculation. Browser totals are preview-only.
-- Quotes support fixed-price and itemized modes. Fixed-price rows, markup, and
-  discount are owner-only calculator inputs; the anonymous representation
-  exposes only the final service value. Itemized quotes expose their ordered
-  breakdown. A separate price-free materials list tells the customer what to
-  provide.
+- Quotes support fixed-price and itemized modes. Fixed-price rows are an
+  owner-only cost calculator and the professional enters an independent final
+  customer price; the anonymous representation exposes only that price.
+  Itemized quotes expose their ordered breakdown. A separate price-free
+  materials list tells the customer what to provide.
 - The workspace remembers the professional's last successfully saved pricing
   mode for new quotes, with fixed price as the initial account default. Switching
   modes resets pricing inputs while preserving all non-pricing draft data.

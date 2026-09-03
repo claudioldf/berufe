@@ -35,7 +35,8 @@ function mapSharedQuote(quote: ContractSharedQuote): Quote {
     scheduledOn: quote.scheduled_on ?? "",
     validUntil: quote.valid_until ?? "",
     discount: Number(itemizedPricing?.discount_amount ?? 0),
-    markup: 0,
+    fixedPrice:
+      quote.pricing.mode === "fixed_price" ? Number(quote.total_amount) : 0,
     notes: quote.notes ?? "",
     status: quote.status,
     subtotal: Number(itemizedPricing?.subtotal_amount ?? 0),

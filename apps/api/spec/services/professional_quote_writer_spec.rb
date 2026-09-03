@@ -80,13 +80,13 @@ RSpec.describe ProfessionalQuoteWriter do
     )
   end
 
-  it "calculates fixed-price markup privately and persists customer-supplied materials" do
+  it "keeps the fixed customer price independent and persists customer-supplied materials" do
     quote = described_class.new.call(
       profile:,
       attributes: valid_attributes.merge(
         pricing_mode: "fixed_price",
-        markup_amount: 400,
-        discount_amount: 100,
+        fixed_price_amount: 2000,
+        discount_amount: 0,
         items: [
           {description: "Mão de obra", quantity: 1, unit: "serviço", unit_price: 1500},
           {description: "Deslocamento", quantity: 1, unit: "serviço", unit_price: 200}
@@ -101,8 +101,8 @@ RSpec.describe ProfessionalQuoteWriter do
     expect(quote).to have_attributes(
       pricing_mode: "fixed_price",
       subtotal_amount: BigDecimal("1700.00"),
-      markup_amount: BigDecimal("400.00"),
-      discount_amount: BigDecimal("100.00"),
+      fixed_price_amount: BigDecimal("2000.00"),
+      discount_amount: BigDecimal("0.00"),
       total_amount: BigDecimal("2000.00")
     )
     expect(quote.quote_materials.pluck(:description, :quantity, :unit, :sort_order)).to eq([
@@ -184,7 +184,7 @@ RSpec.describe ProfessionalQuoteWriter do
         email: "ana.cliente@example.com"
       },
       pricing_mode: "itemized",
-      markup_amount: 0,
+      fixed_price_amount: 0,
       service_description: "  Iluminação da cozinha  ",
       valid_until: Date.new(2026, 8, 30),
       discount_amount: "1.33",

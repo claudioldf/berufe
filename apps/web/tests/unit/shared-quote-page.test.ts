@@ -34,7 +34,7 @@ const result: SharedQuoteResult = {
     scheduledOn: "2026-09-08",
     validUntil: "2026-09-30",
     discount: 0,
-    markup: 0,
+    fixedPrice: 0,
     notes: "",
     status: "shared",
     subtotal: 300,

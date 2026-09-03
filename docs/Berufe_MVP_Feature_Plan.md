@@ -667,17 +667,18 @@ The profile helps professionals get discovered; the quote helps them perform a f
    scope, pricing inputs, an optional customer-supplied materials list, validity,
    and notes. A new quote defaults to the mode used in the professional's last
    successfully saved quote, falling back to fixed price for a new account.
-3. In fixed-price mode, ordered private calculator rows plus markup and discount
-   produce one customer-facing service total. In itemized mode, the customer sees
-   the ordered rows and discount breakdown. Changing modes clears monetary inputs
-   after confirmation when any value would be lost, while preserving materials
-   and the rest of the draft.
-4. Rails calculates and persists every line total, subtotal, markup, discount,
-   and final total; browser calculations are previews only.
+3. In fixed-price mode, ordered private calculator rows produce a cost subtotal
+   that helps the professional choose an independent final customer price. In
+   itemized mode, the customer sees the ordered rows and discount breakdown.
+   Changing modes clears monetary inputs after confirmation when any value would
+   be lost, while preserving materials and the rest of the draft.
+4. Rails calculates and persists every line total, cost subtotal, applicable
+   discount, and final total; browser calculations are previews only.
 5. The professional previews the mobile customer page.
 6. First share atomically marks the quote shared, creates a long random bearer token, records the aggregate share action, and opens WhatsApp with the link. Only a keyed hash of the token is indexed, plus an encrypted copy so the owner can re-share the same link; the raw token is never stored in the clear and is never derivable from the quote.
 7. The customer can view or print the quote without an account. Fixed-price
-   responses never expose calculator rows, subtotal, markup, or discount; both
+   responses never expose calculator rows, cost subtotal, fixed-price input, or
+   discount; both
    modes may show the price-free list of materials the customer must buy.
 8. The owner can revoke the link at any time. Revocation clears the token, hash, and `shared_at` together and returns the quote to `draft`, so the copy the customer holds stops resolving. Sharing again issues a different link.
 
@@ -702,9 +703,9 @@ and are explicitly labeled as quote values rather than payments received.
 | `service_description`    | text          | Required and length-limited                                                                                       |
 | `pricing_mode`           | enum          | `fixed_price` or `itemized`; defaults from the owner's last successfully saved mode                               |
 | `subtotal_amount`        | decimal(14,2) | Server-calculated sum of the line totals; persisted so PostgreSQL can enforce the totals rule                     |
-| `markup_amount`          | decimal(14,2) | Non-negative private adjustment used only by fixed-price quotes; zero for itemized quotes                         |
-| `discount_amount`        | decimal(14,2) | Defaults to zero; cannot exceed subtotal plus fixed-price markup                                                  |
-| `total_amount`           | decimal(14,2) | Server-calculated as subtotal plus applicable markup, minus discount                                              |
+| `fixed_price_amount`     | decimal(14,2) | Independent non-negative final customer price for fixed-price quotes; zero for itemized quotes                    |
+| `discount_amount`        | decimal(14,2) | Itemized-only; defaults to zero and cannot exceed subtotal                                                        |
+| `total_amount`           | decimal(14,2) | Server-selected fixed customer price or itemized subtotal minus discount                                          |
 | `valid_until`            | date          | Nullable                                                                                                          |
 | `notes`                  | text          | Nullable and length-limited                                                                                       |
 | `status`                 | enum          | `draft`, `shared`, `change_requested`, `approved`, or `declined`; revocation returns a shared quote to `draft`    |

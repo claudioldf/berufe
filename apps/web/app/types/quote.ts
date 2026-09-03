@@ -39,7 +39,7 @@ export interface QuoteValidationErrors {
   serviceAddress?: string;
   scheduledOn?: string;
   validUntil?: string;
-  markup?: string;
+  fixedPrice?: string;
   discount?: string;
   notes?: string;
   itemsMessage?: string;
@@ -70,7 +70,7 @@ export interface Quote {
   validUntil: string;
   issuedAt?: string;
   discount: number;
-  markup: number;
+  fixedPrice: number;
   notes: string;
   status:
     | "draft"

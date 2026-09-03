@@ -41,7 +41,7 @@ class Quote < ApplicationRecord
   validates :customer_decision_message, length: {in: 1..700}, allow_nil: true
   validates :status, inclusion: {in: STATUSES}
   validates :pricing_mode, inclusion: {in: PRICING_MODES}
-  validates :subtotal_amount, :markup_amount, :discount_amount, :total_amount,
+  validates :subtotal_amount, :fixed_price_amount, :discount_amount, :total_amount,
     numericality: {greater_than_or_equal_to: 0}
   validates :share_token_hash, format: {with: /\A[0-9a-f]{64}\z/}, uniqueness: true, allow_nil: true
   with_options unless: :draft? do
@@ -59,7 +59,8 @@ class Quote < ApplicationRecord
   validate :has_valid_item_count
   validate :has_valid_material_count
   validate :discount_does_not_exceed_subtotal
-  validate :itemized_quote_has_no_markup
+  validate :itemized_quote_has_no_fixed_price
+  validate :fixed_price_quote_has_no_discount
   validate :share_state_matches_status
   validate :customer_belongs_to_professional
   validate :approved_content_is_immutable, on: :update
@@ -110,12 +111,15 @@ class Quote < ApplicationRecord
       MONEY_SCALE,
       BigDecimal::ROUND_HALF_UP
     )
-    self.markup_amount = BigDecimal(markup_amount.to_s.presence || "0").round(
+    self.fixed_price_amount = BigDecimal(fixed_price_amount.to_s.presence || "0").round(
       MONEY_SCALE,
       BigDecimal::ROUND_HALF_UP
     )
-    price_before_discount = subtotal_amount + (fixed_price? ? markup_amount : BigDecimal(0))
-    self.total_amount = [price_before_discount - discount_amount, BigDecimal(0)].max
+    self.total_amount = if fixed_price?
+      fixed_price_amount
+    else
+      [subtotal_amount - discount_amount, BigDecimal(0)].max
+    end
   rescue ArgumentError
     # Numericality validations return the normalized field errors.
   end
@@ -135,18 +139,24 @@ class Quote < ApplicationRecord
 
   def discount_does_not_exceed_subtotal
     return if draft?
-    return unless discount_amount && subtotal_amount && markup_amount
+    return unless itemized?
+    return unless discount_amount && subtotal_amount
 
-    price_before_discount = subtotal_amount + (fixed_price? ? markup_amount : BigDecimal(0))
-    return unless discount_amount > price_before_discount
+    return unless discount_amount > subtotal_amount
 
-    errors.add(:discount_amount, "não pode ultrapassar o valor antes do desconto")
+    errors.add(:discount_amount, "não pode ultrapassar o subtotal")
   end
 
-  def itemized_quote_has_no_markup
-    return unless itemized? && markup_amount&.positive?
+  def itemized_quote_has_no_fixed_price
+    return unless itemized? && fixed_price_amount&.positive?
 
-    errors.add(:markup_amount, "deve ser zero no orçamento detalhado")
+    errors.add(:fixed_price_amount, "deve ser zero no orçamento detalhado")
+  end
+
+  def fixed_price_quote_has_no_discount
+    return unless fixed_price? && discount_amount&.positive?
+
+    errors.add(:discount_amount, "deve ser zero no orçamento de preço fechado")
   end
 
   def share_state_matches_status

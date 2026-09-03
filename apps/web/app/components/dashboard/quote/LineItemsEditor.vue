@@ -5,7 +5,6 @@ import { quoteItemTotal } from "~/utils/quotes";
 
 const props = defineProps<{
   subtotal: number;
-  priceBeforeDiscount: number;
   total: number;
   errors?: QuoteValidationErrors;
 }>();
@@ -94,10 +93,12 @@ const fixedPrice = computed(() => quote.value.pricingMode === "fixed_price");
 
     <div v-if="fixedPrice" class="pricing-editor__private-note">
       <UIcon name="i-lucide-eye-off" aria-hidden="true" />
-      <span
-        ><strong>Cálculo particular</strong> Só você vê os itens, custos,
-        acréscimo e desconto abaixo.</span
-      >
+      <span>
+        <strong>Cálculo particular</strong> Os itens abaixo servem apenas para
+        ajudar você a calcular o custo total do serviço. Eles não definem o
+        preço do orçamento e não aparecem para o cliente. O cliente verá somente
+        o “Preço final ao cliente” e a descrição informada na seção Serviço.
+      </span>
     </div>
 
     <div class="quote-items">
@@ -280,48 +281,44 @@ const fixedPrice = computed(() => quote.value.pricingMode === "fixed_price");
     </UButton>
     <div class="builder-total">
       <div>
-        <span>{{ fixedPrice ? "Custo calculado" : "Subtotal" }}</span
+        <span>{{ fixedPrice ? "Custo total (particular)" : "Subtotal" }}</span
         ><strong>{{ formatCurrency(subtotal) }}</strong>
       </div>
       <label v-if="fixedPrice">
-        <span>Acréscimo</span>
+        <span>Preço final ao cliente</span>
         <span class="builder-total__field">
           <span
             class="builder-total__control"
             :class="{
-              'builder-total__control--invalid': props.errors?.markup,
+              'builder-total__control--invalid': props.errors?.fixedPrice,
             }"
           >
             <em>R$</em>
             <input
-              v-model.number="quote.markup"
-              name="markup"
+              v-model.number="quote.fixedPrice"
+              name="fixed-price"
               type="number"
               inputmode="decimal"
               autocomplete="off"
               :aria-describedby="
-                props.errors?.markup ? 'quote-markup-error' : undefined
+                props.errors?.fixedPrice ? 'quote-fixed-price-error' : undefined
               "
-              :aria-invalid="Boolean(props.errors?.markup)"
+              :aria-invalid="Boolean(props.errors?.fixedPrice)"
               min="0"
               step="0.01"
               @input="emit('dirty')"
             />
           </span>
           <small
-            v-if="props.errors?.markup"
-            id="quote-markup-error"
+            v-if="props.errors?.fixedPrice"
+            id="quote-fixed-price-error"
             class="builder-total__error"
           >
-            {{ props.errors.markup }}
+            {{ props.errors.fixedPrice }}
           </small>
         </span>
       </label>
-      <div v-if="fixedPrice">
-        <span>Valor antes do desconto</span
-        ><strong>{{ formatCurrency(priceBeforeDiscount) }}</strong>
-      </div>
-      <label>
+      <label v-else>
         <span>Desconto</span>
         <span class="builder-total__field">
           <span
@@ -342,7 +339,7 @@ const fixedPrice = computed(() => quote.value.pricingMode === "fixed_price");
               "
               :aria-invalid="Boolean(props.errors?.discount)"
               min="0"
-              :max="priceBeforeDiscount"
+              :max="subtotal"
               step="0.01"
               @input="emit('dirty')"
             />
@@ -356,9 +353,8 @@ const fixedPrice = computed(() => quote.value.pricingMode === "fixed_price");
           </small>
         </span>
       </label>
-      <div>
-        <span>{{ fixedPrice ? "Preço final ao cliente" : "Total" }}</span
-        ><strong>{{ formatCurrency(total) }}</strong>
+      <div v-if="!fixedPrice">
+        <span>Total</span><strong>{{ formatCurrency(total) }}</strong>
       </div>
     </div>
   </DesignSystemSurfaceCard>
@@ -436,22 +432,27 @@ const fixedPrice = computed(() => quote.value.pricingMode === "fixed_price");
 .pricing-editor__private-note {
   display: flex;
   gap: 9px;
-  align-items: center;
-  padding: 11px 13px;
+  align-items: flex-start;
+  padding: 13px 14px;
   margin-bottom: 10px;
+  border: 1px solid color-mix(in srgb, var(--color-warning) 35%, var(--line));
   border-radius: 10px;
-  background: #f5f3ed;
-  color: var(--ink-soft);
+  background: var(--color-warning-tint);
+  box-shadow: inset 3px 0 0 var(--color-warning);
+  color: var(--ink);
   font-size: 0.8rem;
-  line-height: 1.4;
+  line-height: 1.5;
 
   svg {
     flex: 0 0 auto;
-    color: var(--color-brand);
-    font-size: 1.05rem;
+    margin-top: 2px;
+    color: var(--color-warning);
+    font-size: 1.1rem;
   }
 
   strong {
+    display: block;
+    margin-bottom: 2px;
     color: var(--ink);
   }
 }

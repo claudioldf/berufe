@@ -28,7 +28,7 @@ RSpec.describe "Professional quotes", type: :request, openapi: true do
       "pricing_mode" => "itemized",
       "service_description" => "Iluminação da cozinha",
       "subtotal_amount" => "840.00",
-      "markup_amount" => "0.00",
+      "fixed_price_amount" => "0.00",
       "discount_amount" => "40.00",
       "total_amount" => "800.00",
       "status" => "draft",
@@ -473,7 +473,7 @@ RSpec.describe "Professional quotes", type: :request, openapi: true do
     customer = attributes[:customer].merge(name: customer_name || attributes.dig(:customer, :name))
     {
       quote: {
-        **attributes.slice(:revision, :status, :pricing_mode, :markup_amount),
+        **attributes.slice(:revision, :status, :pricing_mode, :fixed_price_amount),
         customer:,
         service_description: attributes[:service_description],
         service_address: attributes[:service_address],
@@ -497,7 +497,7 @@ RSpec.describe "Professional quotes", type: :request, openapi: true do
       },
       service_description: "Iluminação da cozinha",
       pricing_mode: "itemized",
-      markup_amount: 0,
+      fixed_price_amount: 0,
       service_address: "Rua das Flores, 100",
       scheduled_on: "2026-08-27",
       discount_amount: 40,
