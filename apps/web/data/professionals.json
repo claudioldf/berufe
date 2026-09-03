@@ -134,8 +134,8 @@
       { "id": "ev-c2", "label": "Identidade verificada" }
     ],
     "portfolio": [
-      { "id": "port-c1", "title": "Fachada renovada", "service": "Pintor", "description": "Correção de fissuras e nova pintura externa.", "image": "/images/photo-1599619351208-3e6c839d6828.jpg" },
-      { "id": "port-c2", "title": "Sala em tons naturais", "service": "Pintor", "description": "Preparação e pintura de sala e circulação.", "image": "/images/photo-1600566753190-17f0baa2a6c3.jpg" }
+      { "id": "port-c1", "title": "Fachada renovada", "service": "Pintor", "description": "Correção de fissuras e nova pintura externa.", "image": "/images/photo-1600566753190-17f0baa2a6c3.jpg" },
+      { "id": "port-c2", "title": "Sala em tons naturais", "service": "Pintor", "description": "Preparação e pintura de sala e circulação.", "image": "/images/photo-1599619351208-3e6c839d6828.jpg" }
     ],
     "relationships": [],
     "updatedAt": "2026-07-22",
