@@ -20,8 +20,18 @@ export default defineNuxtPlugin((nuxtApp) => {
   if (!measurementId || import.meta.dev) return;
 
   window.dataLayer = window.dataLayer || [];
-  function gtag(...args: unknown[]) {
-    window.dataLayer.push(args);
+  // Must push the real `arguments` object, not a rest-params array. Verified
+  // empirically (Tag Assistant + direct interception of navigator.sendBeacon
+  // /fetch across three independent networks/devices): gtag.js's own command
+  // parser recognizes a queued `arguments` object as a command tuple but
+  // silently ignores a plain Array in the same shape, including the initial
+  // `consent default` call — leaving every visitor stuck in gtag's implicit/
+  // restricted mode with zero hits ever sent, never surfaced as an error.
+  // The rest param is declared only so TypeScript type-checks call sites
+  // below — the function ignores it and pushes the real `arguments` object.
+  function gtag(..._args: unknown[]) {
+    // eslint-disable-next-line prefer-rest-params -- see above; do not "fix".
+    window.dataLayer.push(arguments);
   }
   window.gtag = gtag;
   // Required: without an explicit default, gtag.js treats consent as
