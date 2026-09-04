@@ -896,7 +896,7 @@ Keep the oldest item under 24 hours and reduce median/P90 without weakening revi
 ### Rules
 
 - Do not create a customer or visitor account for reporting.
-- Do not add third-party analytics, cross-session IDs, advertising IDs, IP hashes, or device fingerprints.
+- Do not add third-party analytics, cross-session IDs, advertising IDs, IP hashes, or device fingerprints to Berufe's own reporting pipeline — this applies to `search_events`, daily aggregates, and the admin growth report. Site-wide audience measurement runs separately, on Google Analytics 4 (see `privacidade.vue` §6–8); no GA identifier enters Berufe's data model, and page paths carrying a bearer token (`/orcamento/:token`, `/recomendacao/:token`, `/exclusao-de-conta/:token`) are redacted before being sent.
 - Search-level booleans are one-way journey facts on the anonymous event, not a visitor history.
 - Daily professional aggregates contain counts and source, not customer identity.
 - Never infer hires, completed services, revenue, or WhatsApp message delivery.

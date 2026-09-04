@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useAnalyticsEvent } from "~/composables/useAnalyticsEvent";
 import { useApiClient } from "~/services/api/client";
 import { ApiRequestError } from "~/services/api/errors";
 import {
@@ -10,6 +11,7 @@ definePageMeta({ layout: false });
 
 const route = useRoute();
 const client = useApiClient();
+const { trackEvent } = useAnalyticsEvent();
 const token = computed(() =>
   Array.isArray(route.params.token)
     ? (route.params.token[0] ?? "")
@@ -60,6 +62,21 @@ useSeoMeta({
   robots: "noindex, nofollow",
 });
 
+const DECISION_EVENT_NAMES = {
+  approve: "quote_approved",
+  decline: "quote_declined",
+  request_change: "quote_change_requested",
+} as const;
+
+onMounted(() => {
+  // Only the professional's own public service category travels here —
+  // never the customer's name, phone, quote amount, or the page's token
+  // (already redacted from page_path by app/utils/analytics.ts).
+  trackEvent("quote_viewed", {
+    service: professional.value.primaryService,
+  });
+});
+
 function printQuote() {
   if (import.meta.client) window.print();
 }
@@ -100,6 +117,9 @@ async function submitDecision(kind: "approve" | "request_change" | "decline") {
       revision: quote.value.revision,
       termsAccepted: kind === "approve" && termsAccepted.value,
       message: decisionMessage.value,
+    });
+    trackEvent(DECISION_EVENT_NAMES[kind], {
+      service: professional.value.primaryService,
     });
   } catch (error) {
     if (error instanceof ApiRequestError) {

@@ -128,11 +128,19 @@ function rateLimitedResponse() {
 }
 
 describe("professional search composable", () => {
+  let gtag: ReturnType<typeof vi.fn>;
+
   beforeEach(async () => {
     vi.clearAllMocks();
     await clearNuxtData();
     await useRouter().replace("/encontrar");
     await flushPromises();
+    gtag = vi.fn();
+    window.gtag = gtag;
+  });
+
+  afterEach(() => {
+    Reflect.deleteProperty(window, "gtag");
   });
 
   it("mounts the search view while its initial request is still pending", async () => {
@@ -235,6 +243,12 @@ describe("professional search composable", () => {
         },
       },
     );
+    // Only the matched catalog service and resolved city travel to
+    // analytics — never the visitor's raw free-text expression.
+    expect(gtag).toHaveBeenCalledWith("event", "search", {
+      search_term: "Eletricista - Joinville",
+      result_count: 1,
+    });
   });
 
   it("keeps previously shared expressao links searchable", async () => {
