@@ -29,16 +29,16 @@ opened → quote decision. Every param is either public listing data (already vi
 page itself) or a controlled catalog value; see **Privacy constraints** below for what is
 deliberately excluded.
 
-| Event | Fires when | Params | Source |
-| --- | --- | --- | --- |
-| `search` | A search resolves (free-text or structured) | `search_term` (matched service + resolved city, e.g. "Eletricista - Joinville"), `result_count` | `useProfessionalSearch.ts` |
-| `view_item` | A professional's public profile page mounts | `item_id`, `item_category` (primary service), `city` | `pages/profissionais/[slug].vue` |
-| `generate_lead` | Visitor opens WhatsApp for a professional | `method: "whatsapp"`, `source: "public_profile" \| "search_result"`, `professional_id`, `service` | `pages/profissionais/[slug].vue`, `pages/encontrar/[state_code]/[city]/index.vue` |
-| `share` | Visitor shares a professional's profile | `method: "web_share" \| "clipboard"`, `content_type: "professional_profile"`, `item_id` | `pages/profissionais/[slug].vue` |
-| `quote_viewed` | A customer opens a shared quote link | `service` (professional's primary service) | `pages/orcamento/[token].vue` |
-| `quote_approved` | Customer approves a quote | `service` | `pages/orcamento/[token].vue` |
-| `quote_declined` | Customer declines a quote | `service` | `pages/orcamento/[token].vue` |
-| `quote_change_requested` | Customer requests a change | `service` | `pages/orcamento/[token].vue` |
+| Event                    | Fires when                                  | Params                                                                                            | Source                                                                            |
+| ------------------------ | ------------------------------------------- | ------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `search`                 | A search resolves (free-text or structured) | `search_term` (matched service + resolved city, e.g. "Eletricista - Joinville"), `result_count`   | `useProfessionalSearch.ts`                                                        |
+| `view_item`              | A professional's public profile page mounts | `item_id`, `item_category` (primary service), `city`                                              | `pages/profissionais/[slug].vue`                                                  |
+| `generate_lead`          | Visitor opens WhatsApp for a professional   | `method: "whatsapp"`, `source: "public_profile" \| "search_result"`, `professional_id`, `service` | `pages/profissionais/[slug].vue`, `pages/encontrar/[state_code]/[city]/index.vue` |
+| `share`                  | Visitor shares a professional's profile     | `method: "web_share" \| "clipboard"`, `content_type: "professional_profile"`, `item_id`           | `pages/profissionais/[slug].vue`                                                  |
+| `quote_viewed`           | A customer opens a shared quote link        | `service` (professional's primary service)                                                        | `pages/orcamento/[token].vue`                                                     |
+| `quote_approved`         | Customer approves a quote                   | `service`                                                                                         | `pages/orcamento/[token].vue`                                                     |
+| `quote_declined`         | Customer declines a quote                   | `service`                                                                                         | `pages/orcamento/[token].vue`                                                     |
+| `quote_change_requested` | Customer requests a change                  | `service`                                                                                         | `pages/orcamento/[token].vue`                                                     |
 
 `generate_lead` and `quote_approved` are the two funnel outcomes that matter for growth
 reporting and should be marked as Key Events once they start arriving (see **Property
