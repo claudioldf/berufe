@@ -34,3 +34,7 @@ assert.equal(
   "http://${{api.RAILWAY_PRIVATE_DOMAIN}}:${{api.PORT}}",
 );
 assert.equal(web?.variables?.NUXT_PUBLIC_BUGSNAG_API_KEY?.type, "preserve");
+assert.equal(
+  web?.variables?.NUXT_PUBLIC_GA_MEASUREMENT_ID?.value,
+  "G-K8GG56FD41",
+);
