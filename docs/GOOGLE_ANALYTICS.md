@@ -18,7 +18,7 @@ differs from Berufe's own (GA-free) reporting pipeline.
   **Calls `gtag('consent', 'default', {...})` before `config` — required.** Without an
   explicit default, gtag.js treats consent as "not configured" and silently drops every hit
   (confirmed via Tag Assistant: `Esta tag não enviou nenhum hit` / `O estado de consentimento
-  padrão ainda não foi definido`, reproduced both from a real browser and from three direct
+padrão ainda não foi definido`, reproduced both from a real browser and from three direct
   Measurement Protocol hits sent via `curl` — this is not a browser/ad-blocker issue, gtag.js
   itself withholds collection with no default set). `analytics_storage` is granted (this site
   loads GA4 unconditionally, no cookie banner — see `privacidade.vue` §7); `ad_storage`,
