@@ -15,6 +15,14 @@ differs from Berufe's own (GA-free) reporting pipeline.
   time, since GA4's own history-based auto page view fires before Nuxt updates the title and
   would leak the raw, un-redacted URL). Exposes `window.gtag` globally, matching Google's own
   snippet convention, so the rest of the app can send events without importing the plugin.
+  **Calls `gtag('consent', 'default', {...})` before `config` — required.** Without an
+  explicit default, gtag.js treats consent as "not configured" and silently drops every hit
+  (confirmed via Tag Assistant: `Esta tag não enviou nenhum hit` / `O estado de consentimento
+  padrão ainda não foi definido`, reproduced both from a real browser and from three direct
+  Measurement Protocol hits sent via `curl` — this is not a browser/ad-blocker issue, gtag.js
+  itself withholds collection with no default set). `analytics_storage` is granted (this site
+  loads GA4 unconditionally, no cookie banner — see `privacidade.vue` §7); `ad_storage`,
+  `ad_user_data`, and `ad_personalization` stay denied, matching Google Signals being off.
 - `app/composables/useAnalyticsEvent.ts` — `trackEvent(name, params)`. A thin wrapper over
   `window.gtag`; a no-op wherever GA is disabled (dev, tests, SSR), so call sites never need
   their own guard.
