@@ -291,9 +291,12 @@ useHead(() => ({ link: [{ rel: "canonical", href: canonicalUrl.value }] }));
         </li>
         <li>
           <strong>Google Analytics:</strong> identificador pseudônimo em cookie,
-          páginas visitadas, origem do acesso, tipo de dispositivo e localização
-          aproximada estimada a partir do IP, para medir audiência e uso
-          agregado do site;
+          páginas visitadas, origem do acesso, tipo de dispositivo, localização
+          aproximada estimada a partir do IP e eventos de interação com a busca
+          e os perfis (como serviço e cidade buscados, abertura de contato por
+          WhatsApp e decisão sobre um orçamento), sempre com dados do serviço já
+          público na página, nunca nome, telefone, texto da busca ou valor do
+          orçamento, para medir audiência e uso agregado do site;
         </li>
         <li>
           <strong>autoridades e assessores:</strong> somente quando houver base
