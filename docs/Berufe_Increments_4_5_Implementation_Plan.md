@@ -65,6 +65,14 @@ S047 and S049 are delivered consecutively so the dashboard quote action and rece
 - The existing `/app/professional/quotes/new` screen is both creator and editor. An existing quote is loaded with `?quote={uuid}`; no additional quote page is introduced.
 - A blank editor shows no quote number. The per-professional number is assigned only by the first valid server create and is concurrency-safe.
 - Rails owns decimal line-total, subtotal, discount, and final-total calculation. Browser totals are preview-only.
+- Quotes support fixed-price and itemized modes. Fixed-price rows are an
+  owner-only cost calculator and the professional enters an independent final
+  customer price; the anonymous representation exposes only that price.
+  Itemized quotes expose their ordered breakdown. A separate price-free
+  materials list tells the customer what to provide.
+- The workspace remembers the professional's last successfully saved pricing
+  mode for new quotes, with fixed price as the initial account default. Switching
+  modes resets pricing inputs while preserving all non-pricing draft data.
 - A shared quote remains editable by its owner. Editing preserves `shared` status, the original `shared_at`, and the same active token; resolving the customer link returns the latest saved content.
 - The recent-quotes dashboard surface is empty until real quotes exist and links back to the same editor route.
 
@@ -93,7 +101,10 @@ S047 and S049 are delivered consecutively so the dashboard quote action and rece
 
 ### S049–S051 — quotes
 
-- Add UUID-backed `quotes` and `quote_items` with owner foreign keys, database checks/indexes, deterministic item order, decimal money fields, and a unique per-professional quote number.
+- Add UUID-backed `quotes`, `quote_items`, and customer-supplied
+  `quote_materials` with owner foreign keys, database checks/indexes,
+  deterministic order, decimal money/quantity fields, and a unique
+  per-professional quote number.
 - Add owner-scoped list/create/show/update endpoints. Persist nested items transactionally and recalculate all monetary values with `BigDecimal`.
 - Add share and anonymous resolve endpoints. First share atomically sets `shared`, `shared_at`, and the token digest; later shares reproduce the active token and preserve lifecycle state.
 - Return only quote content and approved public professional identity to anonymous resolvers with private `no-store` behavior.
@@ -121,7 +132,11 @@ Each story adds focused Rails model/service/request/contract tests and behavior-
 
 - relationship eligibility, self/duplicate/race behavior, recipient-only one-time response, immediate accepted visibility, direction, exclusion rules, counts, and daily activity;
 - all dashboard readiness states, owner isolation, pending/rejected/empty states, profile-share fallback, and removal of runtime fixtures;
-- quote validation, decimal arithmetic, item order, concurrent numbering, ownership, live shared edits, stable token reproduction, digest-only persistence, generic invalid-token behavior, publication gates, cache controls, logging/privacy boundaries, and share counters;
+- quote validation, both pricing modes, fixed-price privacy, material order,
+  decimal arithmetic, item order, concurrent numbering, ownership, live shared
+  edits, stable token reproduction, digest-only persistence, generic
+  invalid-token behavior, publication gates, cache controls, logging/privacy
+  boundaries, and share counters;
 - API-backed Playwright journeys for relationship request/direct recipient confirmation and quote creation/share/customer view/live update without external WhatsApp navigation.
 
 The combined increment closes only after OpenAPI-generated types are current; full Rails and Nuxt tests, coverage, lint, type-check, and production builds pass; required browser journeys pass at supported sizes; and the working tree is clean.

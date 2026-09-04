@@ -6,11 +6,18 @@ import {
   formatRate,
   formatRateWidth,
   formatTimestampDate,
+  parseBrazilianCurrencyInput,
 } from "~/utils/formatters";
 
 describe("formatters", () => {
   it("formats BRL values for Brazilian readers", () => {
     expect(formatCurrency(1234.5).replace(/\s/g, " ")).toBe("R$ 1.234,50");
+  });
+
+  it("parses masked BRL input into decimal currency values", () => {
+    expect(parseBrazilianCurrencyInput("R$ 1.234,56")).toBe(1234.56);
+    expect(parseBrazilianCurrencyInput("125,50")).toBe(125.5);
+    expect(parseBrazilianCurrencyInput("")).toBe(0);
   });
 
   it("keeps percentage denominators explicit", () => {

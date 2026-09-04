@@ -42,11 +42,13 @@ export function mapProfessionalQuote(quote: ContractQuote): Quote {
     customerName: quote.customer_name,
     customerPhone: formatBrazilianMobilePhone(quote.customer_phone_e164 ?? ""),
     customerEmail: quote.customer_email ?? "",
+    pricingMode: quote.pricing_mode,
     serviceDescription: quote.service_description,
     serviceAddress: quote.service_address ?? "",
     scheduledOn: quote.scheduled_on ?? "",
     validUntil: quote.valid_until ?? "",
     discount: Number(quote.discount_amount),
+    fixedPrice: Number(quote.fixed_price_amount),
     notes: quote.notes ?? "",
     status: quote.status,
     subtotal: Number(quote.subtotal_amount),
@@ -78,6 +80,15 @@ export function mapProfessionalQuote(quote: ContractQuote): Quote {
       lineTotal: Number(item.line_total),
       sortOrder: item.sort_order,
     })),
+    customerSuppliedMaterials: quote.customer_supplied_materials.map(
+      (material) => ({
+        id: material.id,
+        description: material.description,
+        quantity: Number(material.quantity),
+        unit: material.unit,
+        sortOrder: material.sort_order,
+      }),
+    ),
   };
 }
 
@@ -141,6 +152,8 @@ function writeBody(quote: QuoteDraft) {
         whatsapp_e164: sanitizeBrazilianMobilePhone(quote.customerPhone),
         email: quote.customerEmail.trim() || null,
       },
+      pricing_mode: quote.pricingMode,
+      fixed_price_amount: Number(quote.fixedPrice),
       service_description: quote.serviceDescription,
       service_address: quote.serviceAddress.trim() || null,
       scheduled_on: quote.scheduledOn || null,
@@ -153,6 +166,13 @@ function writeBody(quote: QuoteDraft) {
         unit: item.unit,
         unit_price: Number(item.unitPrice),
       })),
+      customer_supplied_materials: quote.customerSuppliedMaterials.map(
+        (material) => ({
+          description: material.description,
+          quantity: Number(material.quantity),
+          unit: material.unit,
+        }),
+      ),
     },
   };
 }

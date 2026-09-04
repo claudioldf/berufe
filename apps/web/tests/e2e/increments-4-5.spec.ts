@@ -171,6 +171,42 @@ test("published professional creates, previews, securely shares, and live-edits 
         scroll: item.scrollWidth,
       }));
     expect(itemListWidths.scroll).toBeLessThanOrEqual(itemListWidths.client);
+
+    const savebarButtons = page.locator(".quote-builder__savebar > div button");
+    await expect(savebarButtons).toHaveCount(3);
+    const savebarActions = await Promise.all(
+      [0, 1, 2].map((index) => savebarButtons.nth(index).boundingBox()),
+    );
+    expect(savebarActions.every(Boolean)).toBe(true);
+    const savebarActionColumn = await page
+      .locator(".quote-builder__savebar-actions")
+      .boundingBox();
+    expect(savebarActionColumn).not.toBeNull();
+    for (const action of savebarActions) {
+      expect(action!.height).toBe(48);
+    }
+    expect(
+      Math.abs(savebarActions[1]!.y - savebarActions[0]!.y),
+    ).toBeLessThanOrEqual(1);
+    expect(
+      Math.abs(savebarActions[2]!.y - savebarActions[0]!.y),
+    ).toBeLessThanOrEqual(1);
+    expect(savebarActions[1]!.x).toBeGreaterThanOrEqual(
+      savebarActions[0]!.x + savebarActions[0]!.width,
+    );
+    expect(savebarActions[2]!.x).toBeGreaterThanOrEqual(
+      savebarActions[1]!.x + savebarActions[1]!.width,
+    );
+    expect(savebarActions[0]!.x).toBeGreaterThanOrEqual(
+      savebarActionColumn!.x - 1,
+    );
+    expect(savebarActions[2]!.x + savebarActions[2]!.width).toBeLessThanOrEqual(
+      savebarActionColumn!.x + savebarActionColumn!.width + 1,
+    );
+    const savebarLabelsFit = await savebarButtons.evaluateAll((buttons) =>
+      buttons.every((button) => button.scrollWidth <= button.clientWidth),
+    );
+    expect(savebarLabelsFit).toBe(true);
   }
 
   const projectLabel = testInfo.project.name.startsWith("mobile")
@@ -180,6 +216,36 @@ test("published professional creates, previews, securely shares, and live-edits 
   const customerPhone = testInfo.project.name.startsWith("mobile")
     ? "47999995555"
     : "47999994444";
+  await page.getByRole("radio", { name: /Preço fechado/ }).check();
+  const privateCalculationNote = page.locator(".pricing-editor__private-note");
+  await expect(privateCalculationNote).toContainText(
+    "Os itens abaixo servem apenas para ajudar você a calcular o custo total do serviço.",
+  );
+  await expect(privateCalculationNote).toHaveCSS(
+    "background-color",
+    "rgb(255, 247, 222)",
+  );
+  await expect(privateCalculationNote).toHaveCSS("box-shadow", "none");
+  await expect(
+    privateCalculationNote.getByText("Preço fechado", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Preço final ao cliente")).toBeVisible();
+  await expect(page.getByText("Acréscimo", { exact: true })).toHaveCount(0);
+  const itemActions = page.locator(".quote-items__actions");
+  await expect(itemActions).toHaveCSS("justify-content", "flex-end");
+  await expect(
+    itemActions.getByRole("button", { name: "Adicionar item" }),
+  ).toBeVisible();
+  await expect(
+    itemActions.getByRole("button", { name: "Adicionar item" }),
+  ).toHaveCSS("white-space", "nowrap");
+  const materialsEmptyState = page.locator(".materials-editor__empty");
+  const addMaterialButton = materialsEmptyState.getByRole("button", {
+    name: "Adicionar material",
+  });
+  await expect(addMaterialButton).toBeVisible();
+  await expect(addMaterialButton).toHaveCSS("white-space", "nowrap");
+  await page.getByRole("radio", { name: /Detalhado/ }).check();
   await page.getByLabel("Nome do cliente").fill(customerName);
   await page.getByLabel("WhatsApp").fill(customerPhone);
   await page
@@ -187,7 +253,33 @@ test("published professional creates, previews, securely shares, and live-edits 
     .fill("Adequação elétrica da cozinha");
   await page.getByLabel("Descrição do item 1").fill("Instalação elétrica");
   await page.getByLabel("Quantidade do item 1").fill("2");
-  await page.getByLabel("Valor unitário do item 1").fill("125.50");
+  const unitPriceInput = page.getByLabel("Valor unitário do item 1");
+  await unitPriceInput.fill("125,50");
+  await expect(unitPriceInput).toHaveValue(/R\$\s125,50/);
+  await expect(unitPriceInput).toHaveCSS("text-align", "right");
+  await expect(page.locator(".quote-item__money-head").first()).toHaveCSS(
+    "text-align",
+    "right",
+  );
+  await expect(page.locator(".quote-item__total").first()).toHaveCSS(
+    "text-align",
+    "right",
+  );
+  await addMaterialButton.click();
+  await expect(materialsEmptyState).toHaveCount(0);
+  const materialActions = page.locator(".materials-editor__actions");
+  await expect(materialActions).toHaveCSS("justify-content", "flex-end");
+  await expect(
+    materialActions.getByRole("button", { name: "Adicionar material" }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Unidade do material 1")).toHaveCount(0);
+  await page
+    .getByLabel("Descrição do material 1")
+    .fill("Metro de cabo elétrico 2,5 mm²");
+  const materialQuantityInput = page.getByLabel("Quantidade do material 1");
+  await expect(materialQuantityInput).toHaveAttribute("inputmode", "numeric");
+  await expect(materialQuantityInput).toHaveAttribute("step", "1");
+  await materialQuantityInput.fill("20");
 
   await clickQuoteAction(page, "Pré-visualizar");
   const preview = page.getByRole("dialog", { name: "Prévia do orçamento" });
@@ -199,7 +291,7 @@ test("published professional creates, previews, securely shares, and live-edits 
       response.url().endsWith("/api/v1/professional/quotes") &&
       response.request().method() === "POST",
   );
-  await clickQuoteAction(page, "Salvar");
+  await clickQuoteAction(page, "Gerar");
   expect((await createResponse).status()).toBe(201);
   await expect(page).toHaveURL(/\/quotes\/new\?quote=[a-f0-9-]+$/);
   const shareDialog = page.getByRole("dialog", {
@@ -229,6 +321,7 @@ test("published professional creates, previews, securely shares, and live-edits 
     page.getByRole("heading", { name: "Aqui está seu orçamento." }),
   ).toBeVisible();
   await expect(page.getByText(customerName, { exact: true })).toBeVisible();
+  await expect(page.getByText("Cabo elétrico 2,5 mm²")).toBeVisible();
   await page.evaluate(() => {
     window.print = () =>
       document.body.setAttribute("data-print-called", "true");
@@ -242,7 +335,7 @@ test("published professional creates, previews, securely shares, and live-edits 
   const invalidResponse = await page.goto("/orcamento/malformed");
   expect(invalidResponse?.status()).toBe(404);
   await expect(
-    page.getByRole("heading", { name: "Orçamento não encontrado" }),
+    page.getByRole("heading", { name: "Este endereço não mora mais aqui." }),
   ).toBeVisible();
 
   await page.goto(editorUrl);

@@ -40,6 +40,7 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
           "recent_quotes" => [],
           "recent_service_jobs" => []
         },
+        "quote_defaults" => {"pricing_mode" => "fixed_price"},
         "pending_relationships" => [],
         "relationships" => [],
         "profile" => {

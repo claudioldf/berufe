@@ -333,6 +333,9 @@ export interface ProfessionalActionItem {
 }
 
 export interface ProfessionalWorkspace {
+  quoteDefaults: {
+    pricingMode: "fixed_price" | "itemized";
+  };
   dashboard: {
     localDate: string;
     readiness: {

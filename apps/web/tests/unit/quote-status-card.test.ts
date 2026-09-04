@@ -15,11 +15,13 @@ const quote: Quote = {
   customerName: "Marina Oliveira",
   customerPhone: "(47) 99999-1111",
   customerEmail: "",
+  pricingMode: "fixed_price",
   serviceDescription: "Instalação de luminárias",
   serviceAddress: "",
   scheduledOn: "",
   validUntil: "2026-09-30",
   discount: 0,
+  fixedPrice: 0,
   notes: "",
   status: "draft",
   subtotal: 300,
@@ -31,6 +33,7 @@ const quote: Quote = {
   changeRequests: [],
   serviceJob: null,
   items: [],
+  customerSuppliedMaterials: [],
 };
 
 function mountStatus(status: Quote["status"], overrides: Partial<Quote> = {}) {

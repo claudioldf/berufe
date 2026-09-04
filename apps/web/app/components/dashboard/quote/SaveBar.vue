@@ -73,7 +73,7 @@ const statusText = computed(() => {
 const shareLabel = computed(() => {
   if (props.savingIntent === "share") return "Salvando…";
   if (props.readyToShare) return "Enviar ao cliente";
-  return props.editing ? "Atualizar" : "Criar";
+  return props.editing ? "Atualizar" : "Gerar";
 });
 </script>
 
@@ -92,9 +92,10 @@ const shareLabel = computed(() => {
       />
       {{ statusText }}
     </span>
-    <div>
+    <div class="quote-builder__savebar-actions">
       <DesignSystemDisabledTooltip :reason="previewBlockedReason">
         <UButton
+          class="quote-builder__savebar-action"
           color="neutral"
           variant="outline"
           icon="i-lucide-eye"
@@ -109,8 +110,10 @@ const shareLabel = computed(() => {
         :loading="savingIntent === 'draft'"
       >
         <UButton
+          class="quote-builder__savebar-action"
           color="neutral"
           variant="outline"
+          icon="i-lucide-file-text"
           :loading="savingIntent === 'draft'"
           :disabled="saved || pending"
           @click="$emit('save')"
@@ -123,6 +126,7 @@ const shareLabel = computed(() => {
         :loading="savingIntent === 'share'"
       >
         <UButton
+          class="quote-builder__savebar-action"
           color="primary"
           :icon="readyToShare ? 'i-lucide-share' : 'i-lucide-check'"
           :loading="savingIntent === 'share'"
@@ -135,3 +139,38 @@ const shareLabel = computed(() => {
     </div>
   </div>
 </template>
+
+<style scoped lang="scss">
+@media (width <= 720px) {
+  .quote-builder {
+    &__savebar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      row-gap: 8px;
+      padding-inline: 8px;
+    }
+
+    &__savebar-actions {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 4px;
+      width: 100%;
+      min-width: 0;
+    }
+
+    &__savebar-action {
+      justify-content: center;
+      width: 100%;
+      min-width: 0;
+      min-height: 48px;
+      padding-inline: 4px;
+      gap: 4px;
+      font-size: clamp(0.625rem, 3vw, 0.75rem);
+    }
+
+    &__savebar-actions :deep(.disabled-tooltip--boxed) {
+      width: 100%;
+    }
+  }
+}
+</style>

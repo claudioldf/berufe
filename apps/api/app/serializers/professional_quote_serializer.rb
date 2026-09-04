@@ -19,6 +19,7 @@ class ProfessionalQuoteSerializer
       customer_name: quote.customer_name,
       customer_phone_e164: quote.customer_phone_e164,
       customer_email: quote.customer_email,
+      pricing_mode: quote.pricing_mode,
       service_description: quote.service_description,
       service_address: quote.service_address,
       scheduled_on: quote.scheduled_on&.iso8601,
@@ -26,6 +27,7 @@ class ProfessionalQuoteSerializer
       notes: quote.notes,
       status: quote.status,
       subtotal_amount: money(quote.subtotal_amount),
+      fixed_price_amount: money(quote.fixed_price_amount),
       discount_amount: money(quote.discount_amount),
       total_amount: money(quote.total_amount),
       shared_at: quote.shared_at&.iso8601,
@@ -51,6 +53,15 @@ class ProfessionalQuoteSerializer
           unit_price: money(item.unit_price),
           line_total: money(item.line_total),
           sort_order: item.sort_order
+        }
+      end,
+      customer_supplied_materials: quote.quote_materials.map do |material|
+        {
+          id: material.id,
+          description: material.description,
+          quantity: decimal(material.quantity),
+          unit: material.unit,
+          sort_order: material.sort_order
         }
       end
     }

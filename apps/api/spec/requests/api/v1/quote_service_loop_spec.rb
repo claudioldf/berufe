@@ -185,13 +185,16 @@ RSpec.describe "Quote service loop", type: :request, openapi: true do
             whatsapp_e164: quote.customer_phone_e164,
             email: quote.customer_email
           },
+          pricing_mode: quote.pricing_mode,
+          fixed_price_amount: quote.fixed_price_amount.to_f,
           service_description: quote.service_description,
           service_address: quote.service_address,
           scheduled_on: quote.scheduled_on,
           discount_amount: 0,
           valid_until: quote.valid_until,
           notes: nil,
-          items: [{description: "Instalação", quantity: 2, unit: "ponto", unit_price: 120}]
+          items: [{description: "Instalação", quantity: 2, unit: "ponto", unit_price: 120}],
+          customer_supplied_materials: []
         }
       },
       headers: session_headers("approved-quote-update"),

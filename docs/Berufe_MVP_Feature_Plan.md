@@ -652,7 +652,9 @@ Unique key: `initiator_professional_id + recipient_professional_id + relationshi
 
 #### 1. Summary
 
-Lets a professional create a clear itemized service quote and share a customer-facing link through WhatsApp.
+Lets a professional create either a fixed-price or itemized service quote, list
+materials the customer must provide, and share a customer-facing link through
+WhatsApp.
 
 #### 2. Why we need it
 
@@ -661,12 +663,24 @@ The profile helps professionals get discovered; the quote helps them perform a f
 #### 3. How it works and implementation overview
 
 1. The professional starts a quote from the dashboard.
-2. They enter the customer name, a short service description, ordered line items, optional discount, validity date, and notes.
-3. Rails calculates and persists every line total, subtotal, discount, and final total; browser calculations are previews only.
-4. The professional previews the mobile customer page.
-5. First share atomically marks the quote shared, creates a long random bearer token, records the aggregate share action, and opens WhatsApp with the link. Only a keyed hash of the token is indexed, plus an encrypted copy so the owner can re-share the same link; the raw token is never stored in the clear and is never derivable from the quote.
-6. The customer can view or print the quote without an account.
-7. The owner can revoke the link at any time. Revocation clears the token, hash, and `shared_at` together and returns the quote to `draft`, so the copy the customer holds stops resolving. Sharing again issues a different link.
+2. They choose `Preço fechado` or `Detalhado`, then enter the customer, service
+   scope, pricing inputs, an optional customer-supplied materials list, validity,
+   and notes. A new quote defaults to the mode used in the professional's last
+   successfully saved quote, falling back to fixed price for a new account.
+3. In fixed-price mode, ordered private calculator rows produce a cost subtotal
+   that helps the professional choose an independent final customer price. In
+   itemized mode, the customer sees the ordered rows and discount breakdown.
+   Changing modes clears monetary inputs after confirmation when any value would
+   be lost, while preserving materials and the rest of the draft.
+4. Rails calculates and persists every line total, cost subtotal, applicable
+   discount, and final total; browser calculations are previews only.
+5. The professional previews the mobile customer page.
+6. First share atomically marks the quote shared, creates a long random bearer token, records the aggregate share action, and opens WhatsApp with the link. Only a keyed hash of the token is indexed, plus an encrypted copy so the owner can re-share the same link; the raw token is never stored in the clear and is never derivable from the quote.
+7. The customer can view or print the quote without an account. Fixed-price
+   responses never expose calculator rows, cost subtotal, fixed-price input, or
+   discount; both
+   modes may show the price-free list of materials the customer must buy.
+8. The owner can revoke the link at any time. Revocation clears the token, hash, and `shared_at` together and returns the quote to `draft`, so the copy the customer holds stops resolving. Sharing again issues a different link.
 
 The owner may continue editing a shared quote. Its `shared` status, original `shared_at`, and active token remain unchanged, and the customer link resolves the latest saved content. A quote can be shared or resolved only while its owner remains an active, currently published professional. The shared page shows only the quote and the professional's approved public identity and labels, and an identity-verification label appears only when identity approval actually exists. Token-authorized responses are `no-store` and `noindex`, are excluded from shared caches, and reveal nothing for invalid tokens. MVP statuses are `draft`, `shared`, `change_requested`, `approved`, and `declined`; the commercial validity date is not token expiry, and Berufe does not represent acceptance as a legal signature or payment.
 
@@ -687,9 +701,11 @@ and are explicitly labeled as quote values rather than payments received.
 | `quote_number`           | integer       | Sequential per professional and concurrency-safe                                                                  |
 | `customer_name`          | text          | Required; no customer account                                                                                     |
 | `service_description`    | text          | Required and length-limited                                                                                       |
+| `pricing_mode`           | enum          | `fixed_price` or `itemized`; defaults from the owner's last successfully saved mode                               |
 | `subtotal_amount`        | decimal(14,2) | Server-calculated sum of the line totals; persisted so PostgreSQL can enforce the totals rule                     |
-| `discount_amount`        | decimal(14,2) | Defaults to zero; cannot exceed subtotal                                                                          |
-| `total_amount`           | decimal(14,2) | Server-calculated as `subtotal_amount - discount_amount`                                                          |
+| `fixed_price_amount`     | decimal(14,2) | Independent non-negative final customer price for fixed-price quotes; zero for itemized quotes                    |
+| `discount_amount`        | decimal(14,2) | Itemized-only; defaults to zero and cannot exceed subtotal                                                        |
+| `total_amount`           | decimal(14,2) | Server-selected fixed customer price or itemized subtotal minus discount                                          |
 | `valid_until`            | date          | Nullable                                                                                                          |
 | `notes`                  | text          | Nullable and length-limited                                                                                       |
 | `status`                 | enum          | `draft`, `shared`, `change_requested`, `approved`, or `declined`; revocation returns a shared quote to `draft`    |
@@ -711,11 +727,25 @@ and are explicitly labeled as quote values rather than payments received.
 | `line_total`  | decimal(14,2) | Server-calculated                                                                                 |
 | `sort_order`  | smallint      | Required and deterministic                                                                        |
 
+Fixed-price `quote_item` records are private calculator inputs and are omitted
+from anonymous quote responses.
+
+**`quote_material`**
+
+| Field         | Type          | Rules                                            |
+| ------------- | ------------- | ------------------------------------------------ |
+| `id`          | UUID          | Primary key                                      |
+| `quote_id`    | UUID          | Required quote reference; deleted with the quote |
+| `description` | text          | Required for non-draft quotes and length-limited |
+| `quantity`    | decimal(12,3) | Greater than zero for non-draft quotes           |
+| `unit`        | text          | Required for non-draft quotes and length-limited |
+| `sort_order`  | smallint      | Required and deterministic                       |
+
 #### 5. Explicitly not in MVP
 
 - Electronic signature or contract execution.
 - Payment, installments, escrow, invoice, or tax document.
-- Expense, margin, or profit calculation.
+- Full expense, margin, or profit reporting beyond the fixed-price draft calculator.
 - Generic customer CRM features such as notes, tags, merging, reminders, or
   campaigns; the MVP only reuses canonical contact details and quote history.
 - Contract generation, work orders, scheduling, or financial control.

@@ -65,8 +65,11 @@ draft -> shared -> approved
 - Approval is idempotent, locks commercial quote content, and creates exactly
   one `service_job` through a unique database constraint.
 - The quote now also carries optional service address and scheduled date. The
-  existing free-text description, line items, validity, discount, and notes
-  remain the commercial scope for this MVP.
+  free-text description, selected pricing mode, customer-visible price,
+  validity, customer-supplied materials, and notes remain the commercial scope
+  for this MVP. Fixed-price calculator rows and their cost subtotal remain
+  private while the professional sets an independent final customer price;
+  itemized quotes expose their pricing breakdown.
 
 ## 4. Service lifecycle
 
@@ -148,7 +151,9 @@ loop:
 - Payment collection, receivables, installments, or payment-method tracking.
 - Calendar booking and scheduling automation.
 - Server-generated PDFs; browser printing remains available.
-- Quote templates, typed labor/material reporting, and catalog attribution.
+- Quote templates, reusable labor/material catalogs, priced material reporting,
+  and catalog attribution. The MVP customer-supplied material list is freeform
+  and price-free.
 - Quote or service attachments and before/after job-photo authorization.
 - Scope-change ledgers after approval; the MVP keeps the approved quote immutable.
 - Customer merging, notes, tags, campaigns, reminders, or other generic CRM

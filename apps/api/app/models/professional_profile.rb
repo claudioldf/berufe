@@ -3,6 +3,7 @@
 class ProfessionalProfile < ApplicationRecord
   STATUSES = %w[draft published suspended].freeze
   CREATION_SOURCES = %w[self_service external].freeze
+  QUOTE_PRICING_MODES = %w[fixed_price itemized].freeze
   INITIAL_REVISION_FIELDS = %i[
     display_name headline bio years_experience whatsapp_e164 instagram_url youtube_url
   ].freeze
@@ -59,6 +60,7 @@ class ProfessionalProfile < ApplicationRecord
   validates :whatsapp_e164, format: {with: UserAccount::BRAZILIAN_MOBILE_PATTERN}, allow_nil: true, on: :create
   validates :profile_status, inclusion: {in: STATUSES}
   validates :creation_source, inclusion: {in: CREATION_SOURCES}
+  validates :last_quote_pricing_mode, inclusion: {in: QUOTE_PRICING_MODES}
   validate :birthdate_is_plausible
   validates :public_slug, format: {with: /\A[a-z0-9]+(?:-[a-z0-9]+)*\z/}, uniqueness: true
   validate :initial_social_urls_are_canonical, on: :create
