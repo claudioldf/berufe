@@ -24,6 +24,19 @@ export default defineNuxtPlugin((nuxtApp) => {
     window.dataLayer.push(args);
   }
   window.gtag = gtag;
+  // Required: without an explicit default, gtag.js treats consent as
+  // "not configured" and withholds every hit rather than assuming
+  // granted — confirmed via Tag Assistant showing zero hits sent despite
+  // the config call firing correctly. This site loads GA4 unconditionally
+  // (no cookie banner, see privacidade.vue §7), so analytics_storage is
+  // granted by default; the ad_* signals stay denied since Google Signals
+  // and ad personalization are off and never used.
+  gtag("consent", "default", {
+    ad_storage: "denied",
+    ad_user_data: "denied",
+    ad_personalization: "denied",
+    analytics_storage: "granted",
+  });
   gtag("js", new Date());
   // Enhanced measurement's automatic, history-based page views fire before
   // Nuxt updates the title and would send the raw, unredacted URL — page
