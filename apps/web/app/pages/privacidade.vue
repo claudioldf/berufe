@@ -36,9 +36,9 @@ useHead(() => ({ link: [{ rel: "canonical", href: canonicalUrl.value }] }));
     eyebrow="Privacidade desde o primeiro dado"
     title="Política de Privacidade"
     description="Este aviso explica quais dados pessoais a Berufe trata, para quais finalidades, com quem compartilha e como exercer seus direitos."
-    version="1.0"
+    version="1.1"
     effective-at="1º de agosto de 2026"
-    updated-at="29 de agosto de 2026"
+    updated-at="4 de setembro de 2026"
     :sections="sections"
   >
     <div class="legal-lead">
@@ -290,6 +290,12 @@ useHead(() => ({ link: [{ rel: "canonical", href: canonicalUrl.value }] }));
           país e definir a localização inicial da busca;
         </li>
         <li>
+          <strong>Google Analytics:</strong> identificador pseudônimo em cookie,
+          páginas visitadas, origem do acesso, tipo de dispositivo e localização
+          aproximada estimada a partir do IP, para medir audiência e uso
+          agregado do site;
+        </li>
+        <li>
           <strong>autoridades e assessores:</strong> somente quando houver base
           jurídica e necessidade.
         </li>
@@ -311,8 +317,18 @@ useHead(() => ({ link: [{ rel: "canonical", href: canonicalUrl.value }] }));
       <h2>7. Cookies, armazenamento e medição</h2>
       <p>
         A sessão usa um cookie próprio, seguro, HttpOnly e SameSite, necessário
-        para autenticação. A Berufe não usa cookies publicitários nem cria
-        perfil persistente de navegação.
+        para autenticação. A Berufe não usa cookies publicitários nem vende ou
+        compartilha dados de navegação com finalidade de publicidade.
+      </p>
+      <p>
+        O site usa o Google Analytics para medir audiência e uso agregado. O
+        serviço grava os cookies <code>_ga</code> e <code>_ga_*</code>, que
+        contêm um identificador pseudônimo do navegador, sem nome, telefone,
+        e-mail ou outro dado que identifique diretamente o visitante, e podem
+        permanecer por até dois anos. Esses cookies não são usados para
+        publicidade nem para venda de dados. O visitante pode bloqueá-los ou
+        removê-los nas configurações do navegador ou pelo complemento de
+        desativação do Google Analytics, sem prejuízo ao uso do site.
       </p>
       <p>
         O navegador pode guardar somente preferências não pessoais, como a
@@ -359,6 +375,7 @@ useHead(() => ({ link: [{ rel: "canonical", href: canonicalUrl.value }] }));
           24 horas; falha de consulta: até cinco minutos;
         </li>
         <li>métricas diárias agregadas: 730 dias;</li>
+        <li>cookies de medição do Google Analytics: até 2 anos;</li>
         <li>
           imagem de identidade: 30 dias após aprovação, rejeição ou expiração;
         </li>
