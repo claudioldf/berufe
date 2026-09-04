@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CurrencyInput from "~/components/design-system/CurrencyInput.vue";
 import type { Quote, QuotePricingMode, QuoteValidationErrors } from "~/types";
 import { formatCurrency } from "~/utils/formatters";
 import { quoteItemTotal } from "~/utils/quotes";
@@ -24,20 +25,10 @@ const fixedPrice = computed(() => quote.value.pricingMode === "fixed_price");
       <div>
         <span>03</span>
         <div>
-          <h2>Forma de cobrança e valores</h2>
+          <h2>Composição do valor cobrado</h2>
           <p>Escolha como o preço será apresentado ao cliente.</p>
         </div>
       </div>
-      <UButton
-        size="sm"
-        color="neutral"
-        variant="outline"
-        icon="i-lucide-plus"
-        :disabled="quote.items.length >= 20"
-        @click="emit('add')"
-      >
-        Adicionar item
-      </UButton>
     </header>
 
     <fieldset class="pricing-mode">
@@ -60,10 +51,10 @@ const fixedPrice = computed(() => quote.value.pricingMode === "fixed_price");
         /></span>
         <span>
           <strong>Preço fechado</strong>
-          <small
-            >O cliente vê somente o valor final. Os cálculos abaixo ficam
-            privados.</small
-          >
+          <small>
+            O cliente vê somente o valor final. Ocultaremos todos os itens no
+            orçamento enviado para o cliente.
+          </small>
         </span>
       </label>
       <label
@@ -94,18 +85,23 @@ const fixedPrice = computed(() => quote.value.pricingMode === "fixed_price");
     <div v-if="fixedPrice" class="pricing-editor__private-note">
       <UIcon name="i-lucide-eye-off" aria-hidden="true" />
       <span>
-        <strong>Cálculo particular</strong> Os itens abaixo servem apenas para
-        ajudar você a calcular o custo total do serviço. Eles não definem o
-        preço do orçamento e não aparecem para o cliente. O cliente verá somente
-        o “Preço final ao cliente” e a descrição informada na seção Serviço.
+        <strong>Preço fechado</strong> Os itens abaixo servem apenas para ajudar
+        você a calcular o custo total do serviço. Eles não definem o preço do
+        orçamento e não aparecem para o cliente. No orçamento "Preço fechado", o
+        cliente verá somente o <b>"Preço final ao cliente"</b> e a descrição
+        informada na seção Serviço.
       </span>
     </div>
 
     <div class="quote-items">
       <div class="quote-item quote-item--head" aria-hidden="true">
         <span>Descrição</span><span>Qtd.</span><span>Unidade</span
-        ><span>{{ fixedPrice ? "Custo unit." : "Valor unit." }}</span
-        ><span>{{ fixedPrice ? "Custo" : "Total" }}</span
+        ><span class="quote-item__money-head">{{
+          fixedPrice ? "Custo unit." : "Valor unit."
+        }}</span
+        ><span class="quote-item__money-head">{{
+          fixedPrice ? "Custo" : "Total"
+        }}</span
         ><span />
       </div>
       <div
@@ -230,20 +226,16 @@ const fixedPrice = computed(() => quote.value.pricingMode === "fixed_price");
             >{{ fixedPrice ? "Custo" : "Valor" }} unitário do item
             {{ index + 1 }}</span
           >
-          <input
-            v-model.number="item.unitPrice"
+          <CurrencyInput
+            v-model="item.unitPrice"
+            class="quote-item__currency-input"
             :name="`item-${item.id}-unit-price`"
-            type="number"
-            inputmode="decimal"
-            autocomplete="off"
             :aria-describedby="
               props.errors?.items[item.id]?.unitPrice
                 ? `item-${item.id}-unit-price-error`
                 : undefined
             "
             :aria-invalid="Boolean(props.errors?.items[item.id]?.unitPrice)"
-            min="0"
-            step="0.01"
           />
           <small
             v-if="props.errors?.items[item.id]?.unitPrice"
@@ -268,20 +260,21 @@ const fixedPrice = computed(() => quote.value.pricingMode === "fixed_price");
     >
       {{ props.errors.itemsMessage }}
     </p>
-    <UButton
-      class="quote-items__mobile-add"
-      color="neutral"
-      variant="outline"
-      block
-      icon="i-lucide-plus"
-      :disabled="quote.items.length >= 20"
-      @click="emit('add')"
-    >
-      Adicionar item
-    </UButton>
+    <div class="quote-items__actions">
+      <UButton
+        size="sm"
+        color="neutral"
+        variant="outline"
+        icon="i-lucide-plus"
+        :disabled="quote.items.length >= 20"
+        @click="emit('add')"
+      >
+        Adicionar item
+      </UButton>
+    </div>
     <div class="builder-total">
       <div>
-        <span>{{ fixedPrice ? "Custo total (particular)" : "Subtotal" }}</span
+        <span>{{ fixedPrice ? "Seu custo total" : "Subtotal" }}</span
         ><strong>{{ formatCurrency(subtotal) }}</strong>
       </div>
       <label v-if="fixedPrice">
@@ -293,19 +286,13 @@ const fixedPrice = computed(() => quote.value.pricingMode === "fixed_price");
               'builder-total__control--invalid': props.errors?.fixedPrice,
             }"
           >
-            <em>R$</em>
-            <input
-              v-model.number="quote.fixedPrice"
+            <CurrencyInput
+              v-model="quote.fixedPrice"
               name="fixed-price"
-              type="number"
-              inputmode="decimal"
-              autocomplete="off"
               :aria-describedby="
                 props.errors?.fixedPrice ? 'quote-fixed-price-error' : undefined
               "
               :aria-invalid="Boolean(props.errors?.fixedPrice)"
-              min="0"
-              step="0.01"
               @input="emit('dirty')"
             />
           </span>
@@ -327,20 +314,13 @@ const fixedPrice = computed(() => quote.value.pricingMode === "fixed_price");
               'builder-total__control--invalid': props.errors?.discount,
             }"
           >
-            <em>R$</em>
-            <input
-              v-model.number="quote.discount"
+            <CurrencyInput
+              v-model="quote.discount"
               name="discount"
-              type="number"
-              inputmode="decimal"
-              autocomplete="off"
               :aria-describedby="
                 props.errors?.discount ? 'quote-discount-error' : undefined
               "
               :aria-invalid="Boolean(props.errors?.discount)"
-              min="0"
-              :max="subtotal"
-              step="0.01"
               @input="emit('dirty')"
             />
           </span>
@@ -364,7 +344,7 @@ const fixedPrice = computed(() => quote.value.pricingMode === "fixed_price");
 .pricing-mode {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: 20px;
   padding: 0;
   margin: 0 0 18px;
   border: 0;
@@ -438,7 +418,6 @@ const fixedPrice = computed(() => quote.value.pricingMode === "fixed_price");
   border: 1px solid color-mix(in srgb, var(--color-warning) 35%, var(--line));
   border-radius: 10px;
   background: var(--color-warning-tint);
-  box-shadow: inset 3px 0 0 var(--color-warning);
   color: var(--ink);
   font-size: 0.8rem;
   line-height: 1.5;

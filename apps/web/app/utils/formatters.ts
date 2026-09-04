@@ -7,6 +7,11 @@ export function formatCurrency(value: number) {
   return currencyFormatter.format(value);
 }
 
+export function parseBrazilianCurrencyInput(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 14);
+  return digits ? Number.parseInt(digits, 10) / 100 : 0;
+}
+
 export function formatPercent(
   value: number,
   total: number,

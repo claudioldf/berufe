@@ -474,10 +474,10 @@ function requestShare() {
   }
   .quote-item {
     display: grid;
-    grid-template-columns: minmax(150px, 1.4fr) 64px 84px 95px 90px 30px;
+    grid-template-columns: minmax(150px, 1.4fr) 64px 100px 95px 90px 30px;
     gap: 7px;
     align-items: start;
-    min-width: 660px;
+    min-width: 685px;
     padding: 8px 0;
     border-top: 1px solid var(--line);
     &--head {
@@ -532,11 +532,16 @@ function requestShare() {
     }
     &__total {
       display: grid;
+      text-align: right;
     }
     &__total strong {
       margin-top: 9px;
       text-align: right;
       font-size: 0.84rem;
+    }
+    &__money-head,
+    &__currency-input {
+      text-align: right;
     }
     & button {
       display: grid;
@@ -559,8 +564,10 @@ function requestShare() {
     }
   }
   .quote-items {
-    &__mobile-add {
-      display: none;
+    &__actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 12px;
     }
     &__error {
       color: var(--color-danger) !important;
@@ -568,7 +575,7 @@ function requestShare() {
     }
   }
   .builder-total {
-    width: min(280px, 100%);
+    width: min(320px, 100%);
     margin: 18px 0 0 auto;
   }
   .builder-total > div,
@@ -594,7 +601,7 @@ function requestShare() {
   }
   .builder-total__control {
     display: grid;
-    grid-template-columns: auto 80px;
+    grid-template-columns: 112px;
     align-items: center;
     border: 1px solid var(--line);
     border-radius: 8px;
@@ -616,13 +623,8 @@ function requestShare() {
     line-height: 1.25;
     text-align: right;
   }
-  .builder-total label em {
-    padding-left: 8px;
-    font-size: 0.82rem;
-    font-style: normal;
-  }
   .builder-total input {
-    width: 80px;
+    width: 112px;
     padding: 7px;
     border: 0;
     background: transparent;

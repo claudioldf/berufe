@@ -122,6 +122,19 @@ describe("quote line item validation", () => {
     expect(wrapper.find('[aria-label="Remover item 2"]').exists()).toBe(true);
   });
 
+  it("masks the itemized discount and keeps its numeric value", async () => {
+    const quote = createQuote();
+    quote.discount = 0;
+    const wrapper = mountEditor(quote);
+    const discount = wrapper.get('input[name="discount"]');
+
+    expect(discount.element.value).toMatch(/R\$\s0,00/);
+    await discount.setValue("R$ 10,25");
+
+    expect(quote.discount).toBe(10.25);
+    expect(discount.element.value).toMatch(/R\$\s10,25/);
+  });
+
   it("explains and edits an independent customer price in fixed-price mode", async () => {
     const quote = createQuote();
     quote.pricingMode = "fixed_price";
@@ -139,12 +152,25 @@ describe("quote line item validation", () => {
     expect(wrapper.text()).toContain(
       "Eles não definem o preço do orçamento e não aparecem para o cliente.",
     );
-    expect(wrapper.text()).toContain("Custo total (particular)");
-    expect(wrapper.get('input[name="fixed-price"]').element.value).toBe("2000");
+    expect(wrapper.text()).toContain("Seu custo total");
+    expect(wrapper.get('input[name="fixed-price"]').element.value).toMatch(
+      /R\$\s2\.000,00/,
+    );
+    expect(
+      wrapper.get('input[name="item-draft-item-unit-price"]').element.value,
+    ).toMatch(/R\$\s1\.700,00/);
     expect(wrapper.text()).not.toContain("Acréscimo");
     expect(wrapper.find('input[name="discount"]').exists()).toBe(false);
 
-    await wrapper.get('input[name="fixed-price"]').setValue("2250");
-    expect(quote.fixedPrice).toBe(2250);
+    await wrapper
+      .get('input[name="item-draft-item-unit-price"]')
+      .setValue("R$ 1.875,50");
+    await wrapper.get('input[name="fixed-price"]').setValue("R$ 2.250,75");
+
+    expect(quote.items[0]!.unitPrice).toBe(1875.5);
+    expect(quote.fixedPrice).toBe(2250.75);
+    expect(wrapper.get('input[name="fixed-price"]').element.value).toMatch(
+      /R\$\s2\.250,75/,
+    );
   });
 });
