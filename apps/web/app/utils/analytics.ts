@@ -14,3 +14,15 @@ export function analyticsPagePath(fullPath: string): string {
   const match = TOKEN_ROUTE_PATTERNS.find(([pattern]) => pattern.test(path));
   return match ? path.replace(match[0], match[1]) : path;
 }
+
+// Search terms sent to analytics are built only from controlled catalog
+// values (matched service names, resolved city) — never the visitor's raw
+// free-text query, which is separately retained for up to six months under
+// restricted access per the privacy policy and must not also reach a
+// third party.
+export function analyticsSearchTerm(
+  serviceNames: readonly string[],
+  city: string | null | undefined,
+): string {
+  return [serviceNames[0], city].filter(Boolean).join(" - ");
+}

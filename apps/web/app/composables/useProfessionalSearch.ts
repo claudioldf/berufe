@@ -7,6 +7,7 @@ import type {
   SearchLocation,
   StructuredSearchPayload,
 } from "~/types";
+import { useAnalyticsEvent } from "~/composables/useAnalyticsEvent";
 import {
   searchPublicProfessionals,
   searchStructuredProfessionals,
@@ -16,6 +17,7 @@ import {
   ApiRequestError,
   type NormalizedApiError,
 } from "~/services/api/errors";
+import { analyticsSearchTerm } from "~/utils/analytics";
 import {
   decodeSearchExpression,
   encodeSearchExpression,
@@ -182,6 +184,22 @@ export async function useProfessionalSearch(options: {
     () => results.value.length < totalCount.value,
   );
   const interaction = computed(() => currentResult.value?.interaction ?? null);
+
+  // Fires once per completed search — expression or structured — since both
+  // resolve into `currentResult`. Only the matched catalog service names and
+  // resolved city are sent, never the visitor's raw free-text query.
+  const { trackEvent } = useAnalyticsEvent();
+  watch(currentResult, (result) => {
+    if (!result) return;
+    trackEvent("search", {
+      search_term: analyticsSearchTerm(
+        result.interpretation.services.map((service) => service.name),
+        result.interpretation.effectiveLocation.city,
+      ),
+      result_count: result.totalCount,
+    });
+  });
+
   const isSearching = computed(
     () =>
       isSubmittingSearch.value ||

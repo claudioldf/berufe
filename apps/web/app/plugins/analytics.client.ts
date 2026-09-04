@@ -3,6 +3,12 @@ import { analyticsPagePath } from "@app/utils/analytics";
 declare global {
   interface Window {
     dataLayer: unknown[];
+    // Exposed globally (matching Google's own gtag.js snippet convention) so
+    // `useAnalyticsEvent` can dispatch custom events from anywhere in the
+    // app without importing this plugin. Left undefined when GA is disabled
+    // (dev, or no measurement ID), which is exactly the no-op that call
+    // sites already guard for.
+    gtag?: (...args: unknown[]) => void;
   }
 }
 
@@ -17,6 +23,7 @@ export default defineNuxtPlugin((nuxtApp) => {
   function gtag(...args: unknown[]) {
     window.dataLayer.push(args);
   }
+  window.gtag = gtag;
   gtag("js", new Date());
   // Enhanced measurement's automatic, history-based page views fire before
   // Nuxt updates the title and would send the raw, unredacted URL — page

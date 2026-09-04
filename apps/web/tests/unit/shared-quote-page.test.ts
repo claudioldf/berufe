@@ -102,11 +102,27 @@ function actionButton(
 }
 
 describe("shared quote decision form", () => {
+  let gtag: ReturnType<typeof vi.fn>;
+
   beforeEach(() => {
     vi.clearAllMocks();
     clearNuxtData();
     mocks.resolveQuote.mockResolvedValue(result);
     mocks.decideQuote.mockResolvedValue(result);
+    gtag = vi.fn();
+    window.gtag = gtag;
+  });
+
+  afterEach(() => {
+    Reflect.deleteProperty(window, "gtag");
+  });
+
+  it("reports a quote_viewed event once the page mounts", async () => {
+    await mountPage();
+
+    expect(gtag).toHaveBeenCalledWith("event", "quote_viewed", {
+      service: "Eletricista",
+    });
   });
 
   it("keeps change requests available and validates their message inline", async () => {
@@ -143,6 +159,9 @@ describe("shared quote decision form", () => {
       termsAccepted: false,
       message: "Trocar as luminárias por luz quente.",
     });
+    expect(gtag).toHaveBeenCalledWith("event", "quote_change_requested", {
+      service: "Eletricista",
+    });
   });
 
   it("keeps approval available and validates acceptance inline", async () => {
@@ -176,6 +195,9 @@ describe("shared quote decision form", () => {
       revision: 2,
       termsAccepted: true,
       message: "",
+    });
+    expect(gtag).toHaveBeenCalledWith("event", "quote_approved", {
+      service: "Eletricista",
     });
   });
 

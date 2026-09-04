@@ -6,6 +6,7 @@ import type {
   SearchLocation,
   StructuredSearchCity,
 } from "~/types";
+import { useAnalyticsEvent } from "~/composables/useAnalyticsEvent";
 import { useCatalogs } from "~/composables/useCatalogs";
 import { useFinderSearchLocation } from "~/composables/useFinderSearchLocation";
 import { useProfessionalSearch } from "~/composables/useProfessionalSearch";
@@ -26,6 +27,7 @@ import { localSeoRoute } from "~/utils/seoContent";
 definePageMeta({ key: "professional-finder" });
 
 const { showToast } = useToast();
+const { trackEvent } = useAnalyticsEvent();
 const runtimeConfig = useRuntimeConfig();
 const route = useRoute();
 const router = useRouter();
@@ -225,10 +227,16 @@ async function changeLocation(location: SearchLocation) {
   });
 }
 
-function announceContact() {
+function announceContact(professional: PublicProfessionalCard) {
   showToast({
     title: "Abrindo o WhatsApp",
     description: "O contato é direto com o profissional.",
+  });
+  trackEvent("generate_lead", {
+    method: "whatsapp",
+    source: "search_result",
+    professional_id: professional.id,
+    service: professional.primaryService?.name ?? "",
   });
 }
 

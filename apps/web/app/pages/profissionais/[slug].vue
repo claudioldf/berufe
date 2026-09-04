@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, shallowRef } from "vue";
+import { useAnalyticsEvent } from "~/composables/useAnalyticsEvent";
 import { useShare } from "~/composables/useShare";
 import { useToast } from "~/composables/useToast";
 import { useApiClient } from "~/services/api/client";
@@ -27,6 +28,7 @@ const client = useApiClient();
 const runtimeConfig = useRuntimeConfig();
 const { share } = useShare();
 const { showToast } = useToast();
+const { trackEvent } = useAnalyticsEvent();
 definePageMeta({ alias: "/be/:slug" });
 const requestedSlug = computed(() =>
   String(
@@ -217,12 +219,25 @@ onMounted(() => {
     professional.value.id,
     profileResult.value!.interactionToken,
   ).catch(() => undefined);
+  // item_id/item_category are the professional's own public listing data —
+  // already visible in the page itself — never a visitor identifier.
+  trackEvent("view_item", {
+    item_id: professional.value.id,
+    item_category: professional.value.primaryService ?? "",
+    city: professional.value.coverage.city?.name ?? "",
+  });
 });
 
 function announceContact() {
   showToast({
     title: "Abrindo o WhatsApp",
     description: "A conversa acontece diretamente com o profissional.",
+  });
+  trackEvent("generate_lead", {
+    method: "whatsapp",
+    source: "public_profile",
+    professional_id: professional.value.id,
+    service: professional.value.primaryService ?? "",
   });
 }
 
@@ -232,6 +247,12 @@ function openPortfolio(index: number) {
 }
 
 async function shareProfile() {
+  trackEvent("share", {
+    method:
+      import.meta.client && "share" in navigator ? "web_share" : "clipboard",
+    content_type: "professional_profile",
+    item_id: professional.value.id,
+  });
   await share({
     title: `${professional.value.name} na Berufe`,
     text: professional.value.primaryService
