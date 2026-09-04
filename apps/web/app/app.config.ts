@@ -11,7 +11,7 @@ export default defineAppConfig({
     },
     button: {
       slots: {
-        base: "cursor-pointer disabled:cursor-not-allowed aria-disabled:cursor-not-allowed",
+        base: "cursor-pointer whitespace-nowrap disabled:cursor-not-allowed aria-disabled:cursor-not-allowed",
       },
       defaultVariants: {
         size: "lg",
