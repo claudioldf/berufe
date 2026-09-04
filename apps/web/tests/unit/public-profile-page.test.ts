@@ -82,6 +82,10 @@ describe("public profile page", () => {
     mocks.recordView.mockResolvedValue(undefined);
   });
 
+  afterEach(() => {
+    Reflect.deleteProperty(window, "gtag");
+  });
+
   it("loads the Rails projection, preserves finder context, and records after rendering", async () => {
     const encodedExpression = encodeSearchExpression("Eletricista no América");
     const requestMessage = "Eu preciso trocar a fiação da cozinha.";
@@ -117,6 +121,63 @@ describe("public profile page", () => {
     expect(contactUrl.searchParams.get("request_message")).toBe(requestMessage);
     expect(contactUrl.searchParams.has("interactionToken")).toBe(false);
     expect(wrapper.html()).not.toContain("@data/professionals");
+  });
+
+  it("reports a view_item event once the profile mounts", async () => {
+    const gtag = vi.fn();
+    window.gtag = gtag;
+
+    await mountSuspended(PublicProfilePage, {
+      shallow: true,
+      route: "/be/ana-souza",
+    });
+    await flushPromises();
+
+    expect(gtag).toHaveBeenCalledWith("event", "view_item", {
+      item_id: result.professional.id,
+      item_category: "Eletricista",
+      city: "Joinville",
+    });
+  });
+
+  it("reports a generate_lead event when the visitor opens WhatsApp", async () => {
+    const gtag = vi.fn();
+    window.gtag = gtag;
+
+    const wrapper = await mountSuspended(PublicProfilePage, {
+      shallow: true,
+      route: "/be/ana-souza",
+    });
+    await flushPromises();
+    await wrapper.getComponent({ name: "ProfileHero" }).vm.$emit("contact");
+
+    expect(gtag).toHaveBeenCalledWith("event", "generate_lead", {
+      method: "whatsapp",
+      source: "public_profile",
+      professional_id: result.professional.id,
+      service: "Eletricista",
+    });
+  });
+
+  it("reports a share event when the visitor shares the profile", async () => {
+    const gtag = vi.fn();
+    window.gtag = gtag;
+
+    const wrapper = await mountSuspended(PublicProfilePage, {
+      shallow: true,
+      route: "/be/ana-souza",
+    });
+    await flushPromises();
+    await wrapper.getComponent({ name: "ProfileHero" }).vm.$emit("share");
+
+    expect(gtag).toHaveBeenCalledWith(
+      "event",
+      "share",
+      expect.objectContaining({
+        content_type: "professional_profile",
+        item_id: result.professional.id,
+      }),
+    );
   });
 
   it("does not let a view-metric failure replace the rendered profile", async () => {

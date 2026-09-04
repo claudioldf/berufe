@@ -104,6 +104,7 @@ export default defineRailway(() => {
       NUXT_PUBLIC_API_BASE_URL: "https://api.berufe.com.br",
       NUXT_PUBLIC_SITE_URL: "https://www.berufe.com.br",
       NUXT_PUBLIC_BUGSNAG_API_KEY: preserve(),
+      NUXT_PUBLIC_GA_MEASUREMENT_ID: "G-K8GG56FD41",
       NUXT_OG_IMAGE_SECRET: preserve(),
     },
   });

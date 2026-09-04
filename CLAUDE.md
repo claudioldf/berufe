@@ -24,6 +24,8 @@ Only `NUXT_PUBLIC_*` values reach the browser bundle. `apps/web/nuxt.config.ts` 
 
 ## Commands
 
+**When Claude Code runs lint/format/style/typecheck checks while working on a change, scope them to the files actually changed** (e.g. `pnpm exec eslint <files>`, `pnpm exec stylelint <files>`, `pnpm exec prettier --check <files>`, `pnpm exec vue-tsc --noEmit <files>`, `bundle exec standardrb <files>`) instead of the whole-repo `pnpm lint` / `pnpm stylelint` / `pnpm typecheck` / `pnpm check` / `bundle exec standardrb` — and only for files under `apps/api/` or `apps/web/`, never `docs/`, `.railway/`, or other root paths. Run the full untargeted gate only when the user asks for it (e.g. before a PR).
+
 Docker Compose is the supported way to run everything (`web` :3000, `api` :3001, `worker` probe :7001, `db` PostgreSQL 18.4):
 
 ```bash
@@ -147,6 +149,7 @@ Prettier is the sole formatter (ESLint formatting rules are off); stylelint uses
 - Tokenized quote links (`/orcamento/:token`) are request-time only, `no-store`, and `noindex`, and the page renders without the site layout.
 - Professional onboarding state persists in `localStorage` under `berufe:professional-onboarding:v1` with a `version: 1` field; bump/migrate deliberately if the shape changes.
 - Retention is enforced by scheduled jobs, not by hand: raw anonymous search events are rolled up and deleted after 90 days, aggregates are kept 730 days, and identity evidence is deleted 30 days after a decision.
+- Google Analytics 4 loads from `app/plugins/analytics.client.ts`, gated on `NUXT_PUBLIC_GA_MEASUREMENT_ID` and off whenever `import.meta.dev` is true, so local development never reports to the property. Page paths carrying a bearer token (`/orcamento/:token`, `/recomendacao/:token`, `/exclusao-de-conta/:token`) are redacted by `app/utils/analytics.ts` before a page view is sent.
 
 ## Product docs
 
