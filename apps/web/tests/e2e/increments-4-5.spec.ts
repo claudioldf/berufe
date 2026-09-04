@@ -171,6 +171,42 @@ test("published professional creates, previews, securely shares, and live-edits 
         scroll: item.scrollWidth,
       }));
     expect(itemListWidths.scroll).toBeLessThanOrEqual(itemListWidths.client);
+
+    const savebarButtons = page.locator(".quote-builder__savebar > div button");
+    await expect(savebarButtons).toHaveCount(3);
+    const savebarActions = await Promise.all(
+      [0, 1, 2].map((index) => savebarButtons.nth(index).boundingBox()),
+    );
+    expect(savebarActions.every(Boolean)).toBe(true);
+    const savebarActionColumn = await page
+      .locator(".quote-builder__savebar-actions")
+      .boundingBox();
+    expect(savebarActionColumn).not.toBeNull();
+    for (const action of savebarActions) {
+      expect(action!.height).toBe(48);
+    }
+    expect(
+      Math.abs(savebarActions[1]!.y - savebarActions[0]!.y),
+    ).toBeLessThanOrEqual(1);
+    expect(
+      Math.abs(savebarActions[2]!.y - savebarActions[0]!.y),
+    ).toBeLessThanOrEqual(1);
+    expect(savebarActions[1]!.x).toBeGreaterThanOrEqual(
+      savebarActions[0]!.x + savebarActions[0]!.width,
+    );
+    expect(savebarActions[2]!.x).toBeGreaterThanOrEqual(
+      savebarActions[1]!.x + savebarActions[1]!.width,
+    );
+    expect(savebarActions[0]!.x).toBeGreaterThanOrEqual(
+      savebarActionColumn!.x - 1,
+    );
+    expect(savebarActions[2]!.x + savebarActions[2]!.width).toBeLessThanOrEqual(
+      savebarActionColumn!.x + savebarActionColumn!.width + 1,
+    );
+    const savebarLabelsFit = await savebarButtons.evaluateAll((buttons) =>
+      buttons.every((button) => button.scrollWidth <= button.clientWidth),
+    );
+    expect(savebarLabelsFit).toBe(true);
   }
 
   const projectLabel = testInfo.project.name.startsWith("mobile")
@@ -255,7 +291,7 @@ test("published professional creates, previews, securely shares, and live-edits 
       response.url().endsWith("/api/v1/professional/quotes") &&
       response.request().method() === "POST",
   );
-  await clickQuoteAction(page, "Criar");
+  await clickQuoteAction(page, "Gerar");
   expect((await createResponse).status()).toBe(201);
   await expect(page).toHaveURL(/\/quotes\/new\?quote=[a-f0-9-]+$/);
   const shareDialog = page.getByRole("dialog", {

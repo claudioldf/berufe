@@ -797,16 +797,6 @@ function requestShare() {
       &__savebar {
         display: grid;
       }
-      &__savebar > div {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-      &__savebar > div > * {
-        justify-content: center;
-      }
-      &__savebar > div > :last-child {
-        grid-column: 1 / -1;
-      }
     }
     .quote-items {
       display: grid;
