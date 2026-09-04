@@ -153,9 +153,10 @@ describe("quote customer preview", () => {
       global,
     });
 
-    expect(wrapper.text()).toContain("Preço final ao cliente");
+    expect(wrapper.text()).toContain("Total");
     expect(wrapper.text()).toContain("R$ 2.000,00");
-    expect(wrapper.text()).toContain("2 lata");
+    expect(wrapper.text()).toContain("2");
+    expect(wrapper.text()).not.toContain("2 lata");
     expect(wrapper.text()).toContain("Tinta acrílica branca 18 L");
     expect(wrapper.text()).not.toContain("Custo reservado");
     expect(wrapper.text()).not.toContain("Subtotal");

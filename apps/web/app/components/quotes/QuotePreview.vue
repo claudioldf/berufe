@@ -116,12 +116,7 @@ function itemTotal(index: number) {
         ><strong>− {{ formatCurrency(quote.discount) }}</strong>
       </div>
       <div>
-        <span>{{
-          quote.pricingMode === "fixed_price"
-            ? "Preço final ao cliente"
-            : "Total"
-        }}</span
-        ><strong>{{ formatCurrency(total) }}</strong>
+        <span>Total</span><strong>{{ formatCurrency(total) }}</strong>
       </div>
     </section>
     <section
@@ -137,7 +132,7 @@ function itemTotal(index: number) {
           v-for="material in quote.customerSuppliedMaterials"
           :key="material.id"
         >
-          <strong>{{ material.quantity }} {{ material.unit }}</strong>
+          <strong>{{ material.quantity }}</strong>
           <span>{{ material.description }}</span>
         </li>
       </ul>

@@ -169,10 +169,15 @@ describe("quote utilities", () => {
 
     expect(validateQuote(quote).materials["material-1"]).toEqual({
       description: "Descreva este material.",
-      quantity: "Informe uma quantidade maior que zero.",
-      unit: "Informe a unidade.",
+      quantity: "Informe uma quantidade inteira maior que zero.",
     });
     expect(quoteTotal(quote)).toBe(source.total);
+
+    quote.customerSuppliedMaterials[0]!.description = "Lata de tinta 18 L";
+    quote.customerSuppliedMaterials[0]!.quantity = 1.5;
+    expect(validateQuote(quote).materials["material-1"]?.quantity).toBe(
+      "Informe uma quantidade inteira maior que zero.",
+    );
   });
 });
 

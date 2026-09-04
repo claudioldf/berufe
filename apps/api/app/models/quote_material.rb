@@ -4,7 +4,7 @@ class QuoteMaterial < ApplicationRecord
   belongs_to :quote, inverse_of: :quote_materials
 
   validates :description, length: {maximum: 160}
-  validates :quantity, numericality: {greater_than_or_equal_to: 0}
+  validates :quantity, numericality: {only_integer: true, greater_than_or_equal_to: 0}
   validates :unit, length: {maximum: 20}
   validates :sort_order,
     numericality: {only_integer: true, greater_than_or_equal_to: 0},

@@ -170,13 +170,14 @@ export function validateQuote(quote: Quote): QuoteValidationErrors {
     } else if (material.description.trim().length > 160) {
       materialErrors.description = "Use no máximo 160 caracteres.";
     }
-    if (quantityIsBlank || !Number.isFinite(quantity) || quantity <= 0) {
-      materialErrors.quantity = "Informe uma quantidade maior que zero.";
-    }
-    if (!material.unit.trim()) {
-      materialErrors.unit = "Informe a unidade.";
-    } else if (material.unit.trim().length > 20) {
-      materialErrors.unit = "Use no máximo 20 caracteres.";
+    if (
+      quantityIsBlank ||
+      !Number.isFinite(quantity) ||
+      !Number.isInteger(quantity) ||
+      quantity <= 0
+    ) {
+      materialErrors.quantity =
+        "Informe uma quantidade inteira maior que zero.";
     }
 
     if (Object.keys(materialErrors).length) {

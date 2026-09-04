@@ -112,6 +112,20 @@ RSpec.describe ProfessionalQuoteWriter do
     expect(profile.reload.last_quote_pricing_mode).to eq("fixed_price")
   end
 
+  it "rejects fractional customer-supplied material quantities" do
+    expect do
+      described_class.new.call(
+        profile:,
+        attributes: valid_attributes.merge(
+          status: "saved",
+          customer_supplied_materials: [
+            {description: "Lata de tinta acrílica branca 18 L", quantity: 1.5, unit: "unidade"}
+          ]
+        )
+      )
+    end.to raise_error(described_class::Invalid)
+  end
+
   it "persists partial drafts without creating an invalid customer" do
     quote = described_class.new.call(
       profile:,

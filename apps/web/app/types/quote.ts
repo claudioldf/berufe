@@ -28,7 +28,6 @@ export interface QuoteItemValidationErrors {
 export interface QuoteMaterialValidationErrors {
   description?: string;
   quantity?: string;
-  unit?: string;
 }
 
 export interface QuoteValidationErrors {

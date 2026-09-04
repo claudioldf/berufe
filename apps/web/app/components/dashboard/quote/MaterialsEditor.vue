@@ -8,21 +8,6 @@ const emit = defineEmits<{
   remove: [id: string];
   dirty: [];
 }>();
-
-const unitSuggestions = [
-  "unidade",
-  "lata",
-  "galão",
-  "litro",
-  "kg",
-  "saco",
-  "caixa",
-  "rolo",
-  "folha",
-  "metro",
-  "m²",
-  "m³",
-];
 </script>
 
 <template>
@@ -38,16 +23,6 @@ const unitSuggestions = [
           </p>
         </div>
       </div>
-      <UButton
-        size="sm"
-        color="neutral"
-        variant="outline"
-        icon="i-lucide-plus"
-        :disabled="quote.customerSuppliedMaterials.length >= 20"
-        @click="emit('add')"
-      >
-        Adicionar material
-      </UButton>
     </header>
 
     <div
@@ -55,169 +30,161 @@ const unitSuggestions = [
       class="materials-editor__empty"
     >
       <UIcon name="i-lucide-package-open" aria-hidden="true" />
-      <p>Nenhum material informado. Esta seção não aparecerá para o cliente.</p>
+      <div class="materials-editor__empty-content">
+        <p>
+          Nenhum material informado. Esta seção não aparecerá para o cliente.
+        </p>
+        <UButton
+          class="materials-editor__add"
+          size="sm"
+          color="neutral"
+          variant="outline"
+          icon="i-lucide-plus"
+          @click="emit('add')"
+        >
+          Adicionar material
+        </UButton>
+      </div>
     </div>
 
-    <div v-else class="material-list">
-      <div class="material-row material-row--head" aria-hidden="true">
-        <span>Material</span><span>Qtd.</span><span>Unidade</span><span />
+    <template v-else>
+      <div class="material-list">
+        <div class="material-row material-row--head" aria-hidden="true">
+          <span>Material</span><span>Qtd.</span><span />
+        </div>
+        <div
+          v-for="(material, index) in quote.customerSuppliedMaterials"
+          :key="material.id"
+          class="material-row"
+          @input="emit('dirty')"
+        >
+          <span class="material-row__mobile-index"
+            >Material {{ index + 1 }}</span
+          >
+          <label
+            :class="{
+              'material-row__field--invalid':
+                props.errors?.materials[material.id]?.description,
+            }"
+          >
+            <span class="material-row__label"
+              >Descrição do material {{ index + 1 }}</span
+            >
+            <input
+              v-model="material.description"
+              :name="`material-${material.id}-description`"
+              autocomplete="off"
+              placeholder="Ex.: lata de tinta acrílica branca 18 L"
+              maxlength="160"
+              :aria-describedby="
+                props.errors?.materials[material.id]?.description
+                  ? `material-${material.id}-description-error`
+                  : undefined
+              "
+              :aria-invalid="
+                Boolean(props.errors?.materials[material.id]?.description)
+              "
+            />
+            <small
+              v-if="props.errors?.materials[material.id]?.description"
+              :id="`material-${material.id}-description-error`"
+              class="material-row__error"
+            >
+              {{ props.errors.materials[material.id]?.description }}
+            </small>
+          </label>
+          <label
+            :class="{
+              'material-row__field--invalid':
+                props.errors?.materials[material.id]?.quantity,
+            }"
+          >
+            <span class="material-row__label"
+              >Quantidade do material {{ index + 1 }}</span
+            >
+            <input
+              v-model.number="material.quantity"
+              :name="`material-${material.id}-quantity`"
+              type="number"
+              inputmode="numeric"
+              autocomplete="off"
+              min="1"
+              step="1"
+              :aria-describedby="
+                props.errors?.materials[material.id]?.quantity
+                  ? `material-${material.id}-quantity-error`
+                  : undefined
+              "
+              :aria-invalid="
+                Boolean(props.errors?.materials[material.id]?.quantity)
+              "
+            />
+            <small
+              v-if="props.errors?.materials[material.id]?.quantity"
+              :id="`material-${material.id}-quantity-error`"
+              class="material-row__error"
+            >
+              {{ props.errors.materials[material.id]?.quantity }}
+            </small>
+          </label>
+          <button
+            type="button"
+            class="material-row__remove"
+            :aria-label="`Remover material ${index + 1}`"
+            @click="emit('remove', material.id)"
+          >
+            <UIcon name="i-lucide-trash-2" aria-hidden="true" />
+          </button>
+        </div>
       </div>
-      <div
-        v-for="(material, index) in quote.customerSuppliedMaterials"
-        :key="material.id"
-        class="material-row"
-        @input="emit('dirty')"
-      >
-        <span class="material-row__mobile-index">Material {{ index + 1 }}</span>
-        <label
-          :class="{
-            'material-row__field--invalid':
-              props.errors?.materials[material.id]?.description,
-          }"
+      <div class="materials-editor__actions">
+        <UButton
+          class="materials-editor__add"
+          size="sm"
+          color="neutral"
+          variant="outline"
+          icon="i-lucide-plus"
+          :disabled="quote.customerSuppliedMaterials.length >= 20"
+          @click="emit('add')"
         >
-          <span class="material-row__label"
-            >Descrição do material {{ index + 1 }}</span
-          >
-          <input
-            v-model="material.description"
-            :name="`material-${material.id}-description`"
-            autocomplete="off"
-            placeholder="Ex.: tinta acrílica branca 18 L"
-            maxlength="160"
-            :aria-describedby="
-              props.errors?.materials[material.id]?.description
-                ? `material-${material.id}-description-error`
-                : undefined
-            "
-            :aria-invalid="
-              Boolean(props.errors?.materials[material.id]?.description)
-            "
-          />
-          <small
-            v-if="props.errors?.materials[material.id]?.description"
-            :id="`material-${material.id}-description-error`"
-            class="material-row__error"
-          >
-            {{ props.errors.materials[material.id]?.description }}
-          </small>
-        </label>
-        <label
-          :class="{
-            'material-row__field--invalid':
-              props.errors?.materials[material.id]?.quantity,
-          }"
-        >
-          <span class="material-row__label"
-            >Quantidade do material {{ index + 1 }}</span
-          >
-          <input
-            v-model.number="material.quantity"
-            :name="`material-${material.id}-quantity`"
-            type="number"
-            inputmode="decimal"
-            autocomplete="off"
-            min="0.001"
-            step="0.001"
-            :aria-describedby="
-              props.errors?.materials[material.id]?.quantity
-                ? `material-${material.id}-quantity-error`
-                : undefined
-            "
-            :aria-invalid="
-              Boolean(props.errors?.materials[material.id]?.quantity)
-            "
-          />
-          <small
-            v-if="props.errors?.materials[material.id]?.quantity"
-            :id="`material-${material.id}-quantity-error`"
-            class="material-row__error"
-          >
-            {{ props.errors.materials[material.id]?.quantity }}
-          </small>
-        </label>
-        <label
-          :class="{
-            'material-row__field--invalid':
-              props.errors?.materials[material.id]?.unit,
-          }"
-        >
-          <span class="material-row__label"
-            >Unidade do material {{ index + 1 }}</span
-          >
-          <input
-            v-model="material.unit"
-            :name="`material-${material.id}-unit`"
-            list="quote-material-unit-suggestions"
-            autocomplete="off"
-            placeholder="Ex.: lata"
-            maxlength="20"
-            :aria-describedby="
-              props.errors?.materials[material.id]?.unit
-                ? `material-${material.id}-unit-error`
-                : undefined
-            "
-            :aria-invalid="Boolean(props.errors?.materials[material.id]?.unit)"
-          />
-          <small
-            v-if="props.errors?.materials[material.id]?.unit"
-            :id="`material-${material.id}-unit-error`"
-            class="material-row__error"
-          >
-            {{ props.errors.materials[material.id]?.unit }}
-          </small>
-        </label>
-        <button
-          type="button"
-          class="material-row__remove"
-          :aria-label="`Remover material ${index + 1}`"
-          @click="emit('remove', material.id)"
-        >
-          <UIcon name="i-lucide-trash-2" aria-hidden="true" />
-        </button>
+          Adicionar material
+        </UButton>
       </div>
-      <datalist id="quote-material-unit-suggestions">
-        <option v-for="unit in unitSuggestions" :key="unit" :value="unit" />
-      </datalist>
-    </div>
-
-    <UButton
-      class="materials-editor__mobile-add"
-      color="neutral"
-      variant="outline"
-      block
-      icon="i-lucide-plus"
-      :disabled="quote.customerSuppliedMaterials.length >= 20"
-      @click="emit('add')"
-    >
-      Adicionar material
-    </UButton>
+    </template>
   </DesignSystemSurfaceCard>
 </template>
 
 <style scoped lang="scss">
 .materials-editor {
   &__empty {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    padding: 14px;
+    display: grid;
+    justify-items: center;
+    gap: 12px;
+    padding: 22px 14px;
     border: 1px dashed var(--line);
     border-radius: 11px;
     color: var(--ink-soft);
+    text-align: center;
   }
 
   &__empty svg {
-    flex: 0 0 auto;
     color: var(--color-brand);
-    font-size: 1.2rem;
+    font-size: 1.35rem;
   }
 
   &__empty p {
     margin: 0;
   }
 
-  &__mobile-add {
-    display: none;
+  &__empty-content {
+    display: grid;
+    justify-items: center;
+    gap: 12px;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
     margin-top: 12px;
   }
 }
@@ -228,10 +195,10 @@ const unitSuggestions = [
 
 .material-row {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) 90px 130px 32px;
+  grid-template-columns: minmax(220px, 1fr) 90px 32px;
   gap: 8px;
   align-items: start;
-  min-width: 560px;
+  min-width: 390px;
   padding: 8px 0;
   border-top: 1px solid var(--line);
 
@@ -301,16 +268,6 @@ const unitSuggestions = [
 }
 
 @media (width <= 720px) {
-  .materials-editor {
-    &__mobile-add {
-      display: flex;
-    }
-
-    header > :last-child {
-      display: none;
-    }
-  }
-
   .material-list {
     display: grid;
     gap: 12px;

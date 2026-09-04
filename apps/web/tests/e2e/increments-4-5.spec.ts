@@ -189,8 +189,26 @@ test("published professional creates, previews, securely shares, and live-edits 
     "background-color",
     "rgb(255, 247, 222)",
   );
+  await expect(privateCalculationNote).toHaveCSS("box-shadow", "none");
+  await expect(
+    privateCalculationNote.getByText("Preço fechado", { exact: true }),
+  ).toBeVisible();
   await expect(page.getByLabel("Preço final ao cliente")).toBeVisible();
   await expect(page.getByText("Acréscimo", { exact: true })).toHaveCount(0);
+  const itemActions = page.locator(".quote-items__actions");
+  await expect(itemActions).toHaveCSS("justify-content", "flex-end");
+  await expect(
+    itemActions.getByRole("button", { name: "Adicionar item" }),
+  ).toBeVisible();
+  await expect(
+    itemActions.getByRole("button", { name: "Adicionar item" }),
+  ).toHaveCSS("white-space", "nowrap");
+  const materialsEmptyState = page.locator(".materials-editor__empty");
+  const addMaterialButton = materialsEmptyState.getByRole("button", {
+    name: "Adicionar material",
+  });
+  await expect(addMaterialButton).toBeVisible();
+  await expect(addMaterialButton).toHaveCSS("white-space", "nowrap");
   await page.getByRole("radio", { name: /Detalhado/ }).check();
   await page.getByLabel("Nome do cliente").fill(customerName);
   await page.getByLabel("WhatsApp").fill(customerPhone);
@@ -199,13 +217,33 @@ test("published professional creates, previews, securely shares, and live-edits 
     .fill("Adequação elétrica da cozinha");
   await page.getByLabel("Descrição do item 1").fill("Instalação elétrica");
   await page.getByLabel("Quantidade do item 1").fill("2");
-  await page.getByLabel("Valor unitário do item 1").fill("125.50");
-  await page.getByRole("button", { name: "Adicionar material" }).click();
+  const unitPriceInput = page.getByLabel("Valor unitário do item 1");
+  await unitPriceInput.fill("125,50");
+  await expect(unitPriceInput).toHaveValue(/R\$\s125,50/);
+  await expect(unitPriceInput).toHaveCSS("text-align", "right");
+  await expect(page.locator(".quote-item__money-head").first()).toHaveCSS(
+    "text-align",
+    "right",
+  );
+  await expect(page.locator(".quote-item__total").first()).toHaveCSS(
+    "text-align",
+    "right",
+  );
+  await addMaterialButton.click();
+  await expect(materialsEmptyState).toHaveCount(0);
+  const materialActions = page.locator(".materials-editor__actions");
+  await expect(materialActions).toHaveCSS("justify-content", "flex-end");
+  await expect(
+    materialActions.getByRole("button", { name: "Adicionar material" }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Unidade do material 1")).toHaveCount(0);
   await page
     .getByLabel("Descrição do material 1")
-    .fill("Cabo elétrico 2,5 mm²");
-  await page.getByLabel("Quantidade do material 1").fill("20");
-  await page.getByLabel("Unidade do material 1").fill("metro");
+    .fill("Metro de cabo elétrico 2,5 mm²");
+  const materialQuantityInput = page.getByLabel("Quantidade do material 1");
+  await expect(materialQuantityInput).toHaveAttribute("inputmode", "numeric");
+  await expect(materialQuantityInput).toHaveAttribute("step", "1");
+  await materialQuantityInput.fill("20");
 
   await clickQuoteAction(page, "Pré-visualizar");
   const preview = page.getByRole("dialog", { name: "Prévia do orçamento" });

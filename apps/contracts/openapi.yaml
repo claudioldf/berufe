@@ -5549,7 +5549,7 @@ components:
       required: [description, quantity, unit]
       properties:
         description: { type: string, maxLength: 160 }
-        quantity: { type: number, minimum: 0 }
+        quantity: { type: integer, minimum: 0 }
         unit: { type: string, maxLength: 20 }
     ProfessionalQuoteListResponse:
       type: object
@@ -5771,7 +5771,7 @@ components:
       required: [description, quantity, unit, sort_order]
       properties:
         description: { type: string, minLength: 1, maxLength: 160 }
-        quantity: { type: string, pattern: "^[0-9]+(?:\\.[0-9]{1,3})?$" }
+        quantity: { type: string, pattern: "^[0-9]+$" }
         unit: { type: string, minLength: 1, maxLength: 20 }
         sort_order: { type: integer, minimum: 0 }
     SharedQuoteProfessional:
@@ -5903,7 +5903,7 @@ components:
       properties:
         id: { type: string, format: uuid }
         description: { type: string, maxLength: 160 }
-        quantity: { type: string, pattern: "^[0-9]+(?:\\.[0-9]{1,3})?$" }
+        quantity: { type: string, pattern: "^[0-9]+$" }
         unit: { type: string, maxLength: 20 }
         sort_order: { type: integer, minimum: 0 }
     ProfessionalServiceJob:
