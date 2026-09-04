@@ -8,6 +8,7 @@ class ProfessionalWorkspaceSerializer
   def as_json(*)
     {
       dashboard: serialized_dashboard,
+      quote_defaults: {pricing_mode: profile.last_quote_pricing_mode},
       pending_relationships: serialized_pending_relationships,
       relationships: serialized_relationships,
       profile: {

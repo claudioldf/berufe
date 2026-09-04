@@ -149,6 +149,7 @@ const publishedItem: AdminProfessionalItem = {
   phoneLast4: "4002",
   identityVerified: true,
   accountStatus: "active",
+  impersonationEligible: true,
   portfolioCount: 3,
   referenceCount: 1,
   customerCount: 5,
@@ -169,7 +170,12 @@ const meta: AdminProfessionalPage["meta"] = {
 describe("administrator professionals table", () => {
   it("shows a published professional with an active unpublish action", async () => {
     const wrapper = await mountSuspended(Table, {
-      props: { items: [publishedItem], meta, isMutating: false },
+      props: {
+        items: [publishedItem],
+        meta,
+        isMutating: false,
+        isManaging: false,
+      },
       global: { stubs: { UButton: UButtonStub, UIcon: true } },
     });
 
@@ -180,7 +186,10 @@ describe("administrator professionals table", () => {
     expect(wrapper.text()).toContain("Publicado");
     expect(wrapper.text()).toContain("Joinville/SC");
 
-    await wrapper.get(".professionals-list__action button").trigger("click");
+    const actions = wrapper.findAll(".professionals-list__action button");
+    await actions[0]?.trigger("click");
+    expect(wrapper.emitted("manage")).toEqual([[publishedItem]]);
+    await actions[1]?.trigger("click");
     expect(wrapper.emitted("unpublish")).toEqual([[publishedItem]]);
 
     await wrapper
@@ -199,12 +208,33 @@ describe("administrator professionals table", () => {
         items: [suspended],
         meta: { ...meta, totalPages: 1 },
         isMutating: false,
+        isManaging: false,
       },
       global: { stubs: { UButton: UButtonStub, UIcon: true } },
     });
 
-    await wrapper.get(".professionals-list__action button").trigger("click");
+    await wrapper
+      .findAll(".professionals-list__action button")[1]
+      ?.trigger("click");
     expect(wrapper.emitted("publish")).toEqual([[suspended]]);
+  });
+
+  it("locks all row actions while account management is starting", async () => {
+    const wrapper = await mountSuspended(Table, {
+      props: {
+        items: [publishedItem],
+        meta: { ...meta, totalPages: 1 },
+        isMutating: false,
+        isManaging: true,
+      },
+      global: { stubs: { UButton: UButtonStub, UIcon: true } },
+    });
+
+    for (const button of wrapper.findAll(
+      ".professionals-list__action button",
+    )) {
+      expect(button.attributes("disabled")).toBeDefined();
+    }
   });
 
   it("disables the action for a draft professional without a submitted profile", async () => {
@@ -214,18 +244,21 @@ describe("administrator professionals table", () => {
       identityVerified: false,
       phoneVerified: false,
       phoneLast4: null,
+      impersonationEligible: false,
     };
     const wrapper = await mountSuspended(Table, {
       props: {
         items: [draft],
         meta: { ...meta, totalPages: 1 },
         isMutating: false,
+        isManaging: false,
       },
       global: { stubs: { UButton: UButtonStub, UIcon: true } },
     });
 
-    const action = wrapper.get(".professionals-list__action button");
-    expect(action.attributes("disabled")).not.toBeUndefined();
+    const actions = wrapper.findAll(".professionals-list__action button");
+    expect(actions[0]?.attributes("disabled")).not.toBeUndefined();
+    expect(actions[1]?.attributes("disabled")).not.toBeUndefined();
     expect(wrapper.text()).toContain("Não verificada");
     expect(wrapper.text()).toContain("Rascunho");
   });

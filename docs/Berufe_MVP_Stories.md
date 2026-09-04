@@ -808,19 +808,41 @@ Public profiles also show a visible Berufe support/report contact that routes to
 
 **Status:** DONE
 
-**Story:** As a professional, I want to create a simple itemized quote so that I can use Berufe in a frequent customer workflow.
+**Story:** As a professional, I want to create a fixed-price or itemized quote
+and tell the customer which materials to provide so that the quote matches how I
+price real work.
 
 **Acceptance criteria:**
 
-- The owner can create and edit a draft with customer name, short service description, ordered line items, optional discount, validity date, and length-limited notes.
-- Quantities are greater than zero, unit prices are non-negative, and discount cannot exceed subtotal.
-- Rails recalculates each line total, subtotal, discount, and total with `BigDecimal`; Nuxt calculations are preview-only and persisted client totals are never trusted.
+- The owner can create and edit a draft with customer name, short service
+  description, `fixed_price|itemized` mode, ordered pricing rows, optional
+  discount, validity date, notes, and up to 20 ordered customer-supplied
+  materials with description, quantity, and unit but no price.
+- A fixed-price quote treats its rows as a private cost calculator and accepts
+  an independent final customer price. It has no markup or discount field. An
+  itemized quote exposes the row and discount breakdown to the customer.
+- New quotes use the professional's last successfully saved pricing mode and
+  fall back to fixed price before the first save.
+- Changing pricing mode clears all pricing rows, fixed price, and discount. The UI
+  confirms first only when a monetary value would be discarded; customer,
+  service, materials, dates, and notes are preserved.
+- Quantities are greater than zero for saved quotes, unit prices and fixed price
+  are non-negative, and itemized discount cannot exceed subtotal.
+- Rails recalculates each line total, subtotal, applicable discount, and total with
+  `BigDecimal`; Nuxt calculations are preview-only and persisted client totals
+  are never trusted.
 - Quote numbers are sequential per professional and assigned concurrency-safely.
 - Draft quote and customer data is private to the owner and available to admins only when operationally required.
 - A shared quote remains owner-editable without changing its `shared` status, original `shared_at`, or active token; the customer link resolves the latest saved content.
 - OpenAPI operations, generated Nuxt types, owner/admin policy tests, validation tests, and request contract tests ship with the feature.
 
-**Data shape:** `quote` contains UUID `id`, owner `professional_id`, per-professional sequential `quote_number`, required `customer_name` and `service_description`, decimal `discount_amount` and server-calculated `total_amount`, optional `valid_until` and notes, `draft|shared` status, unique nullable `share_token_hash`, timestamps, and nullable `shared_at`. `quote_item` contains UUID `id`, `quote_id`, required description, positive decimal quantity, length-limited unit label, non-negative decimal unit price, server-calculated line total, and deterministic `sort_order`.
+**Data shape:** `quote` adds `pricing_mode`, non-negative decimal
+`fixed_price_amount`, itemized-only decimal `discount_amount`, and
+server-calculated subtotal and total. `professional_profile` stores
+`last_quote_pricing_mode`.
+`quote_item` retains ordered calculator/itemized rows. `quote_material` contains
+UUID `id`, `quote_id`, required description, positive decimal quantity,
+length-limited unit, and deterministic `sort_order`.
 
 **Depends on:** S015, S047.
 **Covers:** Feature D1; Infrastructure §9.
@@ -835,7 +857,11 @@ Public profiles also show a visible Berufe support/report contact that routes to
 
 - The owner can preview the current quote in the same mobile-first presentation used by the customer page.
 - First share generates a high-entropy random token unrelated to the quote id, stores its keyed hash for lookup plus an encrypted owner copy for reuse, and atomically changes status from `draft` to `shared`.
-- A valid bearer link returns only the quote and approved professional public identity/labels; it never exposes private profile fields.
+- A valid bearer link returns only the customer-visible quote and approved
+  professional public identity/labels. Fixed-price links contain one total and
+  never expose calculator rows, subtotal, fixed-price input, or discount. Itemized links
+  contain their pricing breakdown. Both may contain the price-free list of
+  materials the customer must provide.
 - Sharing and resolving require the owner to remain active and currently published; the identity label appears only when identity verification is actually approved.
 - The owner can revoke the link. Revocation atomically clears the hash, the encrypted copy, and `shared_at`, returns the quote to `draft`, and is confirmed in the UI because it breaks a link the customer may already hold. Sharing again issues a different token.
 - Malformed, invalid, revoked, or unknown tokens reveal no quote or customer details, and all four return the identical generic not-found envelope.

@@ -31,6 +31,7 @@ RSpec.describe ProfessionalQuoteWriter do
       professional: profile,
       quotes_created: 1
     )
+    expect(profile.reload.last_quote_pricing_mode).to eq("itemized")
 
     second = described_class.new.call(profile:, attributes: valid_attributes)
     expect(second.quote_number).to eq(2)
@@ -77,6 +78,52 @@ RSpec.describe ProfessionalQuoteWriter do
       share_token_ciphertext: nil,
       shared_at: nil
     )
+  end
+
+  it "keeps the fixed customer price independent and persists customer-supplied materials" do
+    quote = described_class.new.call(
+      profile:,
+      attributes: valid_attributes.merge(
+        pricing_mode: "fixed_price",
+        fixed_price_amount: 2000,
+        discount_amount: 0,
+        items: [
+          {description: "Mão de obra", quantity: 1, unit: "serviço", unit_price: 1500},
+          {description: "Deslocamento", quantity: 1, unit: "serviço", unit_price: 200}
+        ],
+        customer_supplied_materials: [
+          {description: "  Tinta acrílica branca 18 L  ", quantity: 2, unit: "  lata  "},
+          {description: "Lixa para parede", quantity: 10, unit: "folha"}
+        ]
+      )
+    )
+
+    expect(quote).to have_attributes(
+      pricing_mode: "fixed_price",
+      subtotal_amount: BigDecimal("1700.00"),
+      fixed_price_amount: BigDecimal("2000.00"),
+      discount_amount: BigDecimal("0.00"),
+      total_amount: BigDecimal("2000.00")
+    )
+    expect(quote.quote_materials.pluck(:description, :quantity, :unit, :sort_order)).to eq([
+      ["Tinta acrílica branca 18 L", BigDecimal(2), "lata", 0],
+      ["Lixa para parede", BigDecimal(10), "folha", 1]
+    ])
+    expect(profile.reload.last_quote_pricing_mode).to eq("fixed_price")
+  end
+
+  it "rejects fractional customer-supplied material quantities" do
+    expect do
+      described_class.new.call(
+        profile:,
+        attributes: valid_attributes.merge(
+          status: "saved",
+          customer_supplied_materials: [
+            {description: "Lata de tinta acrílica branca 18 L", quantity: 1.5, unit: "unidade"}
+          ]
+        )
+      )
+    end.to raise_error(described_class::Invalid)
   end
 
   it "persists partial drafts without creating an invalid customer" do
@@ -150,6 +197,8 @@ RSpec.describe ProfessionalQuoteWriter do
         whatsapp_e164: "(47) 99991-2011",
         email: "ana.cliente@example.com"
       },
+      pricing_mode: "itemized",
+      fixed_price_amount: 0,
       service_description: "  Iluminação da cozinha  ",
       valid_until: Date.new(2026, 8, 30),
       discount_amount: "1.33",
@@ -157,7 +206,8 @@ RSpec.describe ProfessionalQuoteWriter do
       items: [
         {description: "Circuito", quantity: "0.333", unit: "serviço", unit_price: "10.01"},
         {description: "Pontos", quantity: "2", unit: "ponto", unit_price: "5.00"}
-      ]
+      ],
+      customer_supplied_materials: []
     }
   end
 end

@@ -50,6 +50,7 @@ async function authenticate() {
       },
       session: {
         authenticationMethod: "sms_otp",
+        impersonating: false,
         authenticatedAt: "2026-08-30T12:00:00Z",
         idleExpiresAt: "2026-08-30T12:30:00Z",
         absoluteExpiresAt: "2026-08-31T00:00:00Z",

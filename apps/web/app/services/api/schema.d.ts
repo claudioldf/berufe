@@ -55,6 +55,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/impersonation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Manage an active registered professional through the current administrator session */
+        post: operations["startAdminProfessionalImpersonation"];
+        /** Return the current impersonating session to its administrator account */
+        delete: operations["stopAdminProfessionalImpersonation"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/catalog": {
         parameters: {
             query?: never;
@@ -930,7 +948,7 @@ export interface paths {
         /** List the authenticated professional's private quotes */
         get: operations["listProfessionalQuotes"];
         put?: never;
-        /** Create one private itemized quote */
+        /** Create one private fixed-price or itemized quote */
         post: operations["createProfessionalQuote"];
         delete?: never;
         options?: never;
@@ -1467,6 +1485,7 @@ export interface components {
             identity_verified: boolean;
             /** @enum {string} */
             account_status: "active" | "suspended";
+            impersonation_eligible: boolean;
             portfolio_count: number;
             reference_count: number;
             customer_count: number;
@@ -1659,6 +1678,10 @@ export interface components {
             email: string;
             password: string;
         };
+        AdminImpersonationRequest: {
+            /** Format: uuid */
+            professional_account_id: string;
+        };
         AdminSessionResponse: {
             data: {
                 /** @constant */
@@ -1797,9 +1820,13 @@ export interface components {
         };
         ProfessionalWorkspaceData: {
             dashboard: components["schemas"]["ProfessionalDashboardSummary"];
+            quote_defaults: components["schemas"]["ProfessionalQuoteDefaults"];
             pending_relationships: components["schemas"]["ProfessionalRelationshipSummary"][];
             relationships: components["schemas"]["ProfessionalRelationshipSummary"][];
             profile: components["schemas"]["ProfessionalWorkspaceProfile"];
+        };
+        ProfessionalQuoteDefaults: {
+            pricing_mode: components["schemas"]["QuotePricingMode"];
         };
         ProfessionalDashboardSummary: {
             /** Format: date */
@@ -1836,6 +1863,8 @@ export interface components {
         /** @enum {string} */
         QuoteStatus: "draft" | "saved" | "shared" | "change_requested" | "approved" | "declined" | "completed" | "cancelled";
         /** @enum {string} */
+        QuotePricingMode: "fixed_price" | "itemized";
+        /** @enum {string} */
         ServiceJobStatus: "approved" | "completed" | "cancelled";
         /** @enum {string} */
         RecommendationRequestStatus: "open" | "completed" | "expired";
@@ -1860,6 +1889,8 @@ export interface components {
                 /** @enum {string} */
                 status?: "draft" | "saved";
                 customer: components["schemas"]["ProfessionalQuoteCustomerInput"];
+                pricing_mode: components["schemas"]["QuotePricingMode"];
+                fixed_price_amount: number;
                 service_description: string;
                 service_address: string | null;
                 /** Format: date */
@@ -1869,6 +1900,7 @@ export interface components {
                 valid_until: string | null;
                 notes: string | null;
                 items: components["schemas"]["ProfessionalQuoteItemInput"][];
+                customer_supplied_materials: components["schemas"]["ProfessionalQuoteMaterialInput"][];
             };
         };
         ProfessionalQuoteCustomerInput: {
@@ -1883,6 +1915,11 @@ export interface components {
             quantity: number;
             unit: string;
             unit_price: number;
+        };
+        ProfessionalQuoteMaterialInput: {
+            description: string;
+            quantity: number;
+            unit: string;
         };
         ProfessionalQuoteListResponse: {
             data: {
@@ -1959,12 +1996,11 @@ export interface components {
             /** Format: date */
             valid_until: string | null;
             notes: string | null;
-            subtotal_amount: components["schemas"]["MoneyAmount"];
-            discount_amount: components["schemas"]["MoneyAmount"];
             total_amount: components["schemas"]["MoneyAmount"];
+            pricing: components["schemas"]["SharedQuotePricing"];
             customer_decision_message: string | null;
             service_job: components["schemas"]["SharedQuoteServiceJob"] | null;
-            items: components["schemas"]["SharedQuoteItem"][];
+            customer_supplied_materials: components["schemas"]["SharedQuoteMaterial"][];
         };
         SharedQuoteServiceJob: {
             status: components["schemas"]["ServiceJobStatus"];
@@ -1977,6 +2013,30 @@ export interface components {
             unit: string;
             unit_price: components["schemas"]["MoneyAmount"];
             line_total: components["schemas"]["MoneyAmount"];
+            sort_order: number;
+        };
+        SharedQuotePricing: components["schemas"]["SharedQuoteFixedPricing"] | components["schemas"]["SharedQuoteItemizedPricing"];
+        SharedQuoteFixedPricing: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            mode: "fixed_price";
+        };
+        SharedQuoteItemizedPricing: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            mode: "itemized";
+            subtotal_amount: components["schemas"]["MoneyAmount"];
+            discount_amount: components["schemas"]["MoneyAmount"];
+            items: components["schemas"]["SharedQuoteItem"][];
+        };
+        SharedQuoteMaterial: {
+            description: string;
+            quantity: string;
+            unit: string;
             sort_order: number;
         };
         SharedQuoteProfessional: {
@@ -1995,6 +2055,7 @@ export interface components {
             customer_name: string;
             customer_phone_e164: string | null;
             customer_email: string | null;
+            pricing_mode: components["schemas"]["QuotePricingMode"];
             service_description: string;
             service_address: string | null;
             /** Format: date */
@@ -2004,6 +2065,7 @@ export interface components {
             notes: string | null;
             status: components["schemas"]["QuoteStatus"];
             subtotal_amount: components["schemas"]["MoneyAmount"];
+            fixed_price_amount: components["schemas"]["MoneyAmount"];
             discount_amount: components["schemas"]["MoneyAmount"];
             total_amount: components["schemas"]["MoneyAmount"];
             /** Format: date-time */
@@ -2018,6 +2080,7 @@ export interface components {
             /** Format: date-time */
             updated_at: string;
             items: components["schemas"]["ProfessionalQuoteItem"][];
+            customer_supplied_materials: components["schemas"]["ProfessionalQuoteMaterial"][];
         };
         ProfessionalQuoteCustomer: {
             /** Format: uuid */
@@ -2051,6 +2114,14 @@ export interface components {
             unit: string;
             unit_price: components["schemas"]["MoneyAmount"];
             line_total: components["schemas"]["MoneyAmount"];
+            sort_order: number;
+        };
+        ProfessionalQuoteMaterial: {
+            /** Format: uuid */
+            id: string;
+            description: string;
+            quantity: string;
+            unit: string;
             sort_order: number;
         };
         ProfessionalServiceJob: {
@@ -2542,6 +2613,7 @@ export interface components {
         ApplicationSessionSummary: {
             /** @enum {string} */
             authentication_method: "sms_otp" | "password";
+            impersonating: boolean;
             /** Format: date-time */
             authenticated_at: string;
             /** Format: date-time */
@@ -3006,7 +3078,7 @@ export interface components {
                 "application/json": components["schemas"]["ErrorResponse"];
             };
         };
-        /** @description The exact browser origin or professional ownership check failed. */
+        /** @description The exact browser origin or professional ownership check failed, or the session is delegated administrator access acting on an identity verification upload. */
         ProfessionalMediaForbidden: {
             headers: {
                 "X-Request-Id": components["headers"]["RequestId"];
@@ -3415,6 +3487,113 @@ export interface operations {
             };
         };
     };
+    startAdminProfessionalImpersonation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminImpersonationRequest"];
+            };
+        };
+        responses: {
+            /** @description The administrator session now exposes the selected professional as its effective account. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurrentSessionResponse"];
+                };
+            };
+            /** @description An active password-authenticated administrator session is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The exact browser origin is invalid. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The professional account does not exist. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The session is already impersonating or the professional is not eligible. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The professional account identifier is missing. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    stopAdminProfessionalImpersonation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The administrator account is again the session's effective account. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurrentSessionResponse"];
+                };
+            };
+            /** @description An active password-authenticated administrator session is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The exact browser origin is invalid. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     getAdminCatalog: {
         parameters: {
             query?: never;
@@ -3435,6 +3614,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["AdminCatalogUnauthorized"];
+            403: components["responses"]["AdminCatalogForbidden"];
             503: components["responses"]["AdminCatalogUnavailable"];
         };
     };
@@ -3559,6 +3739,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["AdminModerationUnauthorized"];
+            403: components["responses"]["AdminModerationForbidden"];
         };
     };
     getAdminGrowthReport: {
@@ -3688,6 +3869,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["AdminModerationUnauthorized"];
+            403: components["responses"]["AdminModerationForbidden"];
             /** @description The evidence is absent, deleted, unsafe, or not a retained regenerated identity image. */
             404: {
                 headers: {
@@ -3739,6 +3921,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["AdminModerationUnauthorized"];
+            403: components["responses"]["AdminModerationForbidden"];
             422: components["responses"]["AdminModerationInvalid"];
         };
     };
@@ -6799,7 +6982,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description The exact browser origin or profile owner is invalid. */
+            /** @description The exact browser origin or profile owner is invalid, or the session is delegated administrator access. */
             403: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
@@ -6884,6 +7067,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["ProfessionalMediaUnauthorized"];
+            403: components["responses"]["ProfessionalMediaForbidden"];
             404: components["responses"]["ProfessionalMediaNotFound"];
         };
     };

@@ -53,7 +53,7 @@ function mountSaveBar(
 
 describe("quote save bar", () => {
   it.each([
-    [false, "Criar"],
+    [false, "Gerar"],
     [true, "Atualizar"],
   ] as const)(
     "labels the primary action for editing=%s",
@@ -94,14 +94,20 @@ describe("quote save bar", () => {
     );
   });
 
-  it("uses a check for saving and a share icon only for sending", () => {
+  it("uses distinct icons for saving, generating, and sharing", () => {
     const save = mountSaveBar();
     const share = mountSaveBar({ saved: true, readyToShare: true });
 
     expect(
       save
         .findAll("button")
-        .find((button) => button.text() === "Criar")
+        .find((button) => button.text() === "Salvar rascunho")
+        ?.attributes("data-icon"),
+    ).toBe("i-lucide-file-text");
+    expect(
+      save
+        .findAll("button")
+        .find((button) => button.text() === "Gerar")
         ?.attributes("data-icon"),
     ).toBe("i-lucide-check");
     expect(
@@ -213,7 +219,7 @@ describe("quote save bar", () => {
       .find((button) => button.text() === "Salvar rascunho");
     const share = wrapper
       .findAll("button")
-      .find((button) => button.text() === "Criar");
+      .find((button) => button.text() === "Gerar");
 
     expect(wrapper.get('[role="status"]').text()).toContain(
       "Preencha os campos obrigatórios",

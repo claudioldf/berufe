@@ -17,6 +17,8 @@ class ProfessionalDailyActivity < ApplicationRecord
   def self.increment!(professional_id:, counter:, occurred_at: Time.current)
     counter = counter.to_sym
     raise KeyError, "unknown professional activity counter" unless counter.in?(COUNTERS)
+    # Delegated administrator support work is not professional engagement.
+    return if Current.delegated_request?
 
     activity_date = occurred_at.in_time_zone(PRODUCT_TIME_ZONE).to_date
     insert_all(

@@ -64,12 +64,20 @@ const {
   previewOpen,
   isSaved,
   isShared,
+  pricingModeConfirmationOpen,
+  pendingPricingMode,
   subtotal,
+  total,
   validation,
   isValid,
   markDirty,
   addItem,
   removeItem,
+  addMaterial,
+  removeMaterial,
+  requestPricingMode,
+  cancelPricingModeChange,
+  confirmPricingModeChange,
 } = useQuoteDraft(() => props.initialQuote);
 const displayedErrors = computed(() =>
   validationAttempted.value ? validation.value : undefined,
@@ -164,9 +172,18 @@ function requestShare() {
         <DashboardQuoteLineItemsEditor
           v-model="quote"
           :subtotal="subtotal"
+          :total="total"
           :errors="displayedErrors"
           @add="addItem"
           @remove="removeItem"
+          @change-mode="requestPricingMode"
+          @dirty="markDirty"
+        />
+        <DashboardQuoteMaterialsEditor
+          v-model="quote"
+          :errors="displayedErrors"
+          @add="addMaterial"
+          @remove="removeMaterial"
           @dirty="markDirty"
         />
         <DashboardQuoteNotesField
@@ -211,6 +228,43 @@ function requestShare() {
       </div>
       <QuotesQuotePreview :quote="quote" :professional="professional" />
     </aside>
+
+    <UModal
+      v-model:open="pricingModeConfirmationOpen"
+      title="Trocar a forma de cobrança?"
+      description="Os valores já preenchidos serão descartados para evitar misturar cálculos de modalidades diferentes."
+      :dismissible="false"
+    >
+      <template #body>
+        <div class="pricing-mode-warning">
+          <span
+            ><UIcon name="i-lucide-triangle-alert" aria-hidden="true"
+          /></span>
+          <div>
+            <strong>Esta ação não pode ser desfeita.</strong>
+            <p>
+              Itens, custos, preço final e desconto serão zerados. Os dados do
+              cliente, serviço, materiais e observações serão mantidos.
+            </p>
+          </div>
+        </div>
+      </template>
+      <template #footer>
+        <UButton
+          color="neutral"
+          variant="ghost"
+          @click="cancelPricingModeChange"
+        >
+          Continuar editando
+        </UButton>
+        <UButton color="error" @click="confirmPricingModeChange">
+          Descartar valores e trocar para
+          {{
+            pendingPricingMode === "fixed_price" ? "preço fechado" : "detalhado"
+          }}
+        </UButton>
+      </template>
+    </UModal>
 
     <UModal
       v-model:open="previewOpen"
@@ -420,10 +474,10 @@ function requestShare() {
   }
   .quote-item {
     display: grid;
-    grid-template-columns: minmax(150px, 1.4fr) 64px 84px 95px 90px 30px;
+    grid-template-columns: minmax(150px, 1.4fr) 64px 100px 95px 90px 30px;
     gap: 7px;
     align-items: start;
-    min-width: 660px;
+    min-width: 685px;
     padding: 8px 0;
     border-top: 1px solid var(--line);
     &--head {
@@ -478,11 +532,16 @@ function requestShare() {
     }
     &__total {
       display: grid;
+      text-align: right;
     }
     &__total strong {
       margin-top: 9px;
       text-align: right;
       font-size: 0.84rem;
+    }
+    &__money-head,
+    &__currency-input {
+      text-align: right;
     }
     & button {
       display: grid;
@@ -505,8 +564,10 @@ function requestShare() {
     }
   }
   .quote-items {
-    &__mobile-add {
-      display: none;
+    &__actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 12px;
     }
     &__error {
       color: var(--color-danger) !important;
@@ -514,7 +575,7 @@ function requestShare() {
     }
   }
   .builder-total {
-    width: min(280px, 100%);
+    width: min(320px, 100%);
     margin: 18px 0 0 auto;
   }
   .builder-total > div,
@@ -540,7 +601,7 @@ function requestShare() {
   }
   .builder-total__control {
     display: grid;
-    grid-template-columns: auto 80px;
+    grid-template-columns: 112px;
     align-items: center;
     border: 1px solid var(--line);
     border-radius: 8px;
@@ -562,13 +623,8 @@ function requestShare() {
     line-height: 1.25;
     text-align: right;
   }
-  .builder-total label em {
-    padding-left: 8px;
-    font-size: 0.82rem;
-    font-style: normal;
-  }
   .builder-total input {
-    width: 80px;
+    width: 112px;
     padding: 7px;
     border: 0;
     background: transparent;
@@ -671,6 +727,35 @@ function requestShare() {
     font-size: 0.86rem;
     line-height: 1.5;
   }
+  .pricing-mode-warning {
+    display: flex;
+    gap: 13px;
+    align-items: flex-start;
+    padding: 16px;
+    border: 1px solid #efc8c1;
+    border-radius: 13px;
+    background: var(--color-danger-tint);
+    & > span {
+      display: grid;
+      flex: 0 0 auto;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 11px;
+      background: white;
+      color: var(--color-danger);
+      font-size: 1.15rem;
+    }
+    & strong {
+      font-size: 0.88rem;
+    }
+    & p {
+      margin: 5px 0 0;
+      color: var(--ink-soft);
+      font-size: 0.84rem;
+      line-height: 1.5;
+    }
+  }
   .quote-builder__revoke {
     display: flex;
     flex-wrap: wrap;
@@ -711,16 +796,6 @@ function requestShare() {
     .quote-builder {
       &__savebar {
         display: grid;
-      }
-      &__savebar > div {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-      &__savebar > div > * {
-        justify-content: center;
-      }
-      &__savebar > div > :last-child {
-        grid-column: 1 / -1;
       }
     }
     .quote-items {

@@ -34,6 +34,41 @@ RSpec.describe ApplicationSession, type: :model do
     expect(session).not_to be_active(now: session.idle_expires_at)
   end
 
+  it "keeps an eligible professional as the effective account of an administrator session" do
+    admin = create_account(role: "admin")
+    professional = registered_professional
+    session, = described_class.issue!(user_account: admin)
+
+    session.update!(impersonated_user_account: professional)
+
+    expect(session).to be_impersonating
+    expect(session.effective_user_account).to eq(professional)
+    expect(session.user_account).to eq(admin)
+    expect(session.authentication_method).to eq("password")
+  end
+
+  it "rejects ineligible targets and professional-owned impersonation sessions" do
+    admin = create_account(role: "admin")
+    unregistered = create_account(role: "professional")
+    admin_session, = described_class.issue!(user_account: admin)
+    professional_session, = described_class.issue!(user_account: registered_professional)
+
+    expect(admin_session.update(impersonated_user_account: unregistered)).to be(false)
+    expect(professional_session.update(impersonated_user_account: registered_professional("+5547999991113"))).to be(false)
+  end
+
+  it "clears the target through the database foreign key when the professional is deleted" do
+    admin = create_account(role: "admin")
+    professional = create_account(role: "professional")
+    session, = described_class.issue!(user_account: admin)
+    session.update_column(:impersonated_user_account_id, professional.id)
+
+    professional.destroy!
+
+    expect(session.reload.impersonated_user_account).to be_nil
+    expect(session).not_to be_impersonating
+  end
+
   it "throttles last-activity writes and never extends beyond the absolute expiry" do
     now = Time.zone.parse("2026-08-15 12:00:00 UTC")
     account = create_account(role: "professional")
@@ -87,5 +122,22 @@ RSpec.describe ApplicationSession, type: :model do
     else
       UserAccount.create!(phone_e164: "+5547999991111", role:, status: "active")
     end
+  end
+
+  def registered_professional(phone = "+5547999991112")
+    account = UserAccount.create!(
+      phone_e164: phone,
+      phone_verified_at: Time.current,
+      role: "professional",
+      status: "active"
+    )
+    ProfessionalProfile.create!(user_account: account, display_name: "Ana Souza")
+    account.update!(
+      registered_at: Time.current,
+      terms_accepted_at: Time.current,
+      terms_version: LegalDocumentVersions::TERMS,
+      privacy_notice_version: LegalDocumentVersions::PRIVACY_NOTICE
+    )
+    account
   end
 end

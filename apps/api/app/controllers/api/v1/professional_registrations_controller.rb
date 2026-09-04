@@ -5,6 +5,7 @@ module Api
     class ProfessionalRegistrationsController < BaseController
       before_action :prevent_caching
       before_action :authenticate_application_session!
+      before_action :reject_impersonated_action!
       def update
         authorize Current.user_account, :complete_registration?
         profile = ProfessionalRegistration.new.call(

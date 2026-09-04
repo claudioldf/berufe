@@ -9,6 +9,7 @@ class AdminSessionConstraint
     )
     return false unless session&.user_account&.admin?
     return false unless session.authentication_method == "password"
+    return false if session.impersonating?
 
     request.env[SESSION_ENV_KEY] = session
     true

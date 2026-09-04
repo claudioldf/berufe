@@ -11,11 +11,13 @@ const quote: Quote = {
   customerName: "Ana Paula",
   customerPhone: "(47) 99999-1111",
   customerEmail: "ana@example.com",
+  pricingMode: "itemized",
   serviceDescription: "Iluminação da cozinha",
   serviceAddress: "Rua das Flores, 10",
   scheduledOn: "2026-08-22",
   validUntil: "2026-08-25",
   discount: 0,
+  fixedPrice: 0,
   notes: "",
   status: "draft",
   subtotal: 100,
@@ -37,6 +39,7 @@ const quote: Quote = {
       sortOrder: 0,
     },
   ],
+  customerSuppliedMaterials: [],
 };
 const professional: QuoteProfessional = {
   name: "Ana Souza",

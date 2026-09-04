@@ -183,6 +183,7 @@ export default defineNuxtConfig({
         "lucide:printer",
         "lucide:quote",
         "lucide:ruler",
+        "lucide:save",
         "lucide:scan-search",
         "lucide:search",
         "lucide:search-x",

@@ -6,10 +6,12 @@ const props = defineProps<{
   items: AdminProfessionalItem[];
   meta: AdminProfessionalPage["meta"];
   isMutating: boolean;
+  isManaging: boolean;
 }>();
 
 const emit = defineEmits<{
   changePage: [page: number];
+  manage: [item: AdminProfessionalItem];
   publish: [item: AdminProfessionalItem];
   unpublish: [item: AdminProfessionalItem];
 }>();
@@ -37,10 +39,22 @@ function formatOrDash(value: string | null) {
 }
 
 function actionDisabledReason(item: AdminProfessionalItem) {
+  if (props.isManaging || props.isMutating) {
+    return "Aguarde a ação anterior terminar.";
+  }
   if (!item.profileStatus || item.profileStatus === "draft") {
     return "Perfil ainda não foi enviado para publicação.";
   }
   return "";
+}
+
+function manageDisabledReason(item: AdminProfessionalItem) {
+  if (props.isManaging || props.isMutating)
+    return "Aguarde a ação anterior terminar.";
+  if (item.accountStatus === "suspended") return "A conta está suspensa.";
+  if (!item.impersonationEligible)
+    return "O cadastro profissional ainda não está completo.";
+  return null;
 }
 </script>
 
@@ -124,48 +138,70 @@ function actionDisabledReason(item: AdminProfessionalItem) {
               </span>
             </td>
             <td class="professionals-list__action">
-              <DesignSystemDisabledTooltip
-                v-if="item.profileStatus === 'published'"
-                :reason="
-                  props.isMutating ? 'Aguarde a ação anterior terminar' : null
-                "
-              >
-                <UButton
-                  color="error"
-                  variant="outline"
-                  size="sm"
-                  label="Despublicar"
-                  :disabled="props.isMutating"
-                  @click="emit('unpublish', item)"
-                />
-              </DesignSystemDisabledTooltip>
-              <DesignSystemDisabledTooltip
-                v-else-if="item.profileStatus === 'suspended'"
-                :reason="
-                  props.isMutating ? 'Aguarde a ação anterior terminar' : null
-                "
-              >
-                <UButton
-                  color="primary"
-                  variant="outline"
-                  size="sm"
-                  label="Restaurar"
-                  :disabled="props.isMutating"
-                  @click="emit('publish', item)"
-                />
-              </DesignSystemDisabledTooltip>
-              <DesignSystemDisabledTooltip
-                v-else
-                :reason="actionDisabledReason(item)"
-              >
-                <UButton
-                  color="neutral"
-                  variant="outline"
-                  size="sm"
-                  label="Publicar"
-                  disabled
-                />
-              </DesignSystemDisabledTooltip>
+              <div class="professionals-list__actions">
+                <DesignSystemDisabledTooltip
+                  :reason="manageDisabledReason(item)"
+                >
+                  <UButton
+                    color="neutral"
+                    variant="outline"
+                    size="sm"
+                    label="Gerenciar conta"
+                    :disabled="
+                      props.isManaging ||
+                      props.isMutating ||
+                      !item.impersonationEligible
+                    "
+                    @click="emit('manage', item)"
+                  />
+                </DesignSystemDisabledTooltip>
+                <DesignSystemDisabledTooltip
+                  v-if="item.profileStatus === 'published'"
+                  :reason="
+                    props.isManaging || props.isMutating
+                      ? 'Aguarde a ação anterior terminar'
+                      : null
+                  "
+                >
+                  <UButton
+                    color="error"
+                    variant="outline"
+                    size="sm"
+                    label="Despublicar"
+                    :disabled="props.isManaging || props.isMutating"
+                    @click="emit('unpublish', item)"
+                  />
+                </DesignSystemDisabledTooltip>
+                <DesignSystemDisabledTooltip
+                  v-else-if="item.profileStatus === 'suspended'"
+                  :reason="
+                    props.isManaging || props.isMutating
+                      ? 'Aguarde a ação anterior terminar'
+                      : null
+                  "
+                >
+                  <UButton
+                    color="primary"
+                    variant="outline"
+                    size="sm"
+                    label="Restaurar"
+                    :disabled="props.isManaging || props.isMutating"
+                    @click="emit('publish', item)"
+                  />
+                </DesignSystemDisabledTooltip>
+                <DesignSystemDisabledTooltip
+                  v-else
+                  :reason="actionDisabledReason(item)"
+                >
+                  <UButton
+                    color="neutral"
+                    variant="outline"
+                    size="sm"
+                    label="Publicar"
+                    :disabled="true"
+                  />
+                </DesignSystemDisabledTooltip>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -292,6 +328,12 @@ function actionDisabledReason(item: AdminProfessionalItem) {
 
   &__action {
     text-align: right;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
   }
 }
 

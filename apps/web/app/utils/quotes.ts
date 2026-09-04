@@ -2,6 +2,7 @@ import type {
   Quote,
   QuoteItem,
   QuoteItemValidationErrors,
+  QuoteMaterialValidationErrors,
   QuoteValidationErrors,
 } from "~/types";
 import { normalizeBrazilianMobilePhone } from "~/utils/brazilian-phone";
@@ -14,6 +15,9 @@ export function cloneQuote(quote: Quote): Quote {
     ...quote,
     changeRequests: quote.changeRequests.map((request) => ({ ...request })),
     items: quote.items.map((item) => ({ ...item })),
+    customerSuppliedMaterials: quote.customerSuppliedMaterials.map(
+      (material) => ({ ...material }),
+    ),
   };
 }
 
@@ -26,7 +30,22 @@ export function quoteSubtotal(quote: Quote) {
 }
 
 export function quoteTotal(quote: Quote) {
+  if (quote.pricingMode === "fixed_price") {
+    return Math.max(0, Number(quote.fixedPrice));
+  }
+
   return Math.max(0, quoteSubtotal(quote) - Number(quote.discount));
+}
+
+export function hasQuotePricingValues(quote: Quote) {
+  const hasValue = (value: number) =>
+    String(value).trim() !== "" && Number(value) !== 0;
+
+  return (
+    quote.items.some((item) => hasValue(item.unitPrice)) ||
+    hasValue(quote.fixedPrice) ||
+    hasValue(quote.discount)
+  );
 }
 
 export function quoteDateAfterDays(days: number, from = new Date()) {
@@ -61,8 +80,7 @@ export function isValidQuoteInputDate(value: string) {
 }
 
 export function validateQuote(quote: Quote): QuoteValidationErrors {
-  const subtotal = quoteSubtotal(quote);
-  const errors: QuoteValidationErrors = { items: {} };
+  const errors: QuoteValidationErrors = { items: {}, materials: {} };
   const customerName = quote.customerName.trim();
   const customerEmail = quote.customerEmail.trim();
   const serviceDescription = quote.serviceDescription.trim();
@@ -131,6 +149,42 @@ export function validateQuote(quote: Quote): QuoteValidationErrors {
     if (Object.keys(itemErrors).length) errors.items[item.id] = itemErrors;
   }
 
+  const fixedPrice = Number(quote.fixedPrice);
+  if (
+    String(quote.fixedPrice).trim() === "" ||
+    !Number.isFinite(fixedPrice) ||
+    fixedPrice < 0
+  ) {
+    errors.fixedPrice = "Informe um preço final válido.";
+  } else if (quote.pricingMode === "itemized" && fixedPrice !== 0) {
+    errors.fixedPrice = "O orçamento detalhado não usa preço fechado.";
+  }
+
+  for (const material of quote.customerSuppliedMaterials) {
+    const materialErrors: QuoteMaterialValidationErrors = {};
+    const quantity = Number(material.quantity);
+    const quantityIsBlank = String(material.quantity).trim() === "";
+
+    if (!material.description.trim()) {
+      materialErrors.description = "Descreva este material.";
+    } else if (material.description.trim().length > 160) {
+      materialErrors.description = "Use no máximo 160 caracteres.";
+    }
+    if (
+      quantityIsBlank ||
+      !Number.isFinite(quantity) ||
+      !Number.isInteger(quantity) ||
+      quantity <= 0
+    ) {
+      materialErrors.quantity =
+        "Informe uma quantidade inteira maior que zero.";
+    }
+
+    if (Object.keys(materialErrors).length) {
+      errors.materials[material.id] = materialErrors;
+    }
+  }
+
   const discount = Number(quote.discount);
   if (
     String(quote.discount).trim() === "" ||
@@ -138,7 +192,12 @@ export function validateQuote(quote: Quote): QuoteValidationErrors {
     discount < 0
   ) {
     errors.discount = "Informe um desconto válido.";
-  } else if (discount > subtotal) {
+  } else if (quote.pricingMode === "fixed_price" && discount !== 0) {
+    errors.discount = "O preço fechado não usa desconto.";
+  } else if (
+    quote.pricingMode === "itemized" &&
+    discount > quoteSubtotal(quote)
+  ) {
     errors.discount = "O desconto não pode ultrapassar o subtotal.";
   }
 
@@ -151,8 +210,9 @@ export function validateQuote(quote: Quote): QuoteValidationErrors {
 
 export function hasQuoteValidationErrors(errors: QuoteValidationErrors) {
   return (
-    Object.keys(errors).some((key) => key !== "items") ||
-    Object.keys(errors.items).length > 0
+    Object.keys(errors).some((key) => !["items", "materials"].includes(key)) ||
+    Object.keys(errors.items).length > 0 ||
+    Object.keys(errors.materials).length > 0
   );
 }
 

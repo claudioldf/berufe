@@ -137,10 +137,11 @@ async function submitDecision(kind: "approve" | "request_change" | "decline") {
         <div>
           <p>Olá, {{ quote.customerName }}.</p>
           <h1>Aqui está seu orçamento.</h1>
-          <span
-            >Revise os itens e converse diretamente com
-            {{ professional.name.split(" ")[0] }} se tiver alguma dúvida.</span
-          >
+          <span>
+            Revise o escopo, o valor e os materiais por sua conta. Converse
+            diretamente com {{ professional.name.split(" ")[0] }} se tiver
+            alguma dúvida.
+          </span>
         </div>
         <UButton
           color="neutral"
@@ -165,8 +166,9 @@ async function submitDecision(kind: "approve" | "request_change" | "decline") {
           <DesignSystemEyebrow>Próximo passo</DesignSystemEyebrow>
           <h2 id="quote-decision-title">Responda ao orçamento</h2>
           <p>
-            Ao aprovar, você confirma que está de acordo com o escopo e o valor
-            apresentados. Isso não substitui um contrato nem confirma pagamento.
+            Ao aprovar, você confirma que está de acordo com o escopo, o valor e
+            os materiais por sua conta apresentados. Isso não substitui um
+            contrato nem confirma pagamento.
           </p>
         </div>
         <label

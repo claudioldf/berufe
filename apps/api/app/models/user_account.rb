@@ -8,6 +8,11 @@ class UserAccount < ApplicationRecord
   ADMIN_PASSWORD_MAXIMUM_BYTES = 72
 
   has_many :application_sessions, dependent: :destroy
+  has_many :impersonating_application_sessions,
+    class_name: "ApplicationSession",
+    foreign_key: :impersonated_user_account_id,
+    dependent: :nullify,
+    inverse_of: :impersonated_user_account
   has_many :admin_access_events, foreign_key: :admin_user_id, dependent: :restrict_with_exception,
     inverse_of: :admin_user
   has_many :catalog_change_events, foreign_key: :admin_user_id, dependent: :restrict_with_exception,
@@ -50,12 +55,12 @@ class UserAccount < ApplicationRecord
     status == "active"
   end
 
-  def registration_completed?
+  def registration_completed?(professional_profile_present: professional_profile.present?)
     registered? &&
       terms_accepted_at.present? &&
       terms_version == LegalDocumentVersions::TERMS &&
       privacy_notice_version == LegalDocumentVersions::PRIVACY_NOTICE &&
-      professional_profile.present?
+      professional_profile_present
   end
 
   def registered?
@@ -64,6 +69,13 @@ class UserAccount < ApplicationRecord
 
   def phone_verified?
     professional? && phone_verified_at.present?
+  end
+
+  # The single source of truth for whether an administrator may temporarily manage this
+  # account's operational workspace (see Admin::ProfessionalImpersonation).
+  def impersonatable?(professional_profile_present: professional_profile.present?)
+    professional? && active? && phone_verified? &&
+      registration_completed?(professional_profile_present:)
   end
 
   def revoke_all_sessions!(now: Time.current)

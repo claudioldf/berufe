@@ -15,7 +15,10 @@ const mocks = vi.hoisted(() => ({
     } | null,
   },
   session: {
-    value: null as { authenticationMethod: "sms_otp" | "password" } | null,
+    value: null as {
+      authenticationMethod: "sms_otp" | "password";
+      impersonating: boolean;
+    } | null,
   },
 }));
 
@@ -77,7 +80,10 @@ describe("authenticated route middleware", () => {
       registrationCompleted: true,
       onboardingCompleted: false,
     };
-    mocks.session.value = { authenticationMethod: "sms_otp" };
+    mocks.session.value = {
+      authenticationMethod: "sms_otp",
+      impersonating: false,
+    };
 
     await authenticatedMiddleware(
       { path: "/app/professional/profile" } as never,
@@ -101,6 +107,7 @@ describe("authenticated route middleware", () => {
       };
       mocks.session.value = {
         authenticationMethod: role === "admin" ? "password" : "sms_otp",
+        impersonating: false,
       };
       mocks.navigateTo.mockResolvedValue(undefined);
 
@@ -142,7 +149,10 @@ describe("authenticated route middleware", () => {
       registrationCompleted: false,
       onboardingCompleted: false,
     };
-    mocks.session.value = { authenticationMethod: "sms_otp" };
+    mocks.session.value = {
+      authenticationMethod: "sms_otp",
+      impersonating: false,
+    };
     mocks.navigateTo.mockResolvedValue(undefined);
 
     await authenticatedMiddleware({ path: "/app/admin" } as never, {} as never);
@@ -202,7 +212,10 @@ describe("authenticated route middleware", () => {
       registrationCompleted: true,
       onboardingCompleted: true,
     };
-    mocks.session.value = { authenticationMethod: "sms_otp" };
+    mocks.session.value = {
+      authenticationMethod: "sms_otp",
+      impersonating: false,
+    };
 
     await authenticatedMiddleware(
       { path: "/app/professional/onboarding" } as never,
@@ -221,7 +234,10 @@ describe("authenticated route middleware", () => {
       registrationCompleted: true,
       onboardingCompleted: true,
     };
-    mocks.session.value = { authenticationMethod: "sms_otp" };
+    mocks.session.value = {
+      authenticationMethod: "sms_otp",
+      impersonating: false,
+    };
 
     await authenticatedMiddleware(
       { path: "/app/professional/onboarding" } as never,
@@ -229,6 +245,99 @@ describe("authenticated route middleware", () => {
     );
 
     expect(mocks.navigateTo).not.toHaveBeenCalled();
+  });
+
+  it("accepts an impersonated password session only in the professional workspace", async () => {
+    mocks.restoreSession.mockResolvedValue(true);
+    mocks.account.value = {
+      role: "professional",
+      registrationCompleted: true,
+      onboardingCompleted: true,
+    };
+    mocks.session.value = {
+      authenticationMethod: "password",
+      impersonating: true,
+    };
+
+    await authenticatedMiddleware(
+      { path: "/app/professional/profile" } as never,
+      {} as never,
+    );
+    expect(mocks.navigateTo).not.toHaveBeenCalled();
+
+    await authenticatedMiddleware(
+      { path: "/app/admin/professionals" } as never,
+      {} as never,
+    );
+    expect(mocks.navigateTo).toHaveBeenCalledWith("/app/professional", {
+      replace: true,
+    });
+  });
+
+  it("redirects an impersonated session away from administrator login", async () => {
+    mocks.restoreSession.mockResolvedValue(true);
+    mocks.account.value = {
+      role: "professional",
+      registrationCompleted: true,
+      onboardingCompleted: true,
+    };
+    mocks.session.value = {
+      authenticationMethod: "password",
+      impersonating: true,
+    };
+
+    await authenticatedMiddleware(
+      { path: "/app/admin/login" } as never,
+      {} as never,
+    );
+
+    expect(mocks.navigateTo).toHaveBeenCalledWith("/app/professional", {
+      replace: true,
+    });
+  });
+
+  it("redirects an impersonated session away from account erasure", async () => {
+    mocks.restoreSession.mockResolvedValue(true);
+    mocks.account.value = {
+      role: "professional",
+      registrationCompleted: true,
+      onboardingCompleted: true,
+    };
+    mocks.session.value = {
+      authenticationMethod: "password",
+      impersonating: true,
+    };
+
+    await authenticatedMiddleware(
+      { path: "/app/professional/account/exclusion" } as never,
+      {} as never,
+    );
+
+    expect(mocks.navigateTo).toHaveBeenCalledWith("/app/professional", {
+      replace: true,
+    });
+  });
+
+  it("rejects a professional password context that is not impersonating", async () => {
+    mocks.restoreSession.mockResolvedValue(true);
+    mocks.account.value = {
+      role: "professional",
+      registrationCompleted: true,
+      onboardingCompleted: true,
+    };
+    mocks.session.value = {
+      authenticationMethod: "password",
+      impersonating: false,
+    };
+
+    await authenticatedMiddleware(
+      { path: "/app/professional/profile" } as never,
+      {} as never,
+    );
+
+    expect(mocks.navigateTo).toHaveBeenCalledWith("/app/professional/login", {
+      replace: true,
+    });
   });
 
   it("waits for pending restoration before resolving the login route", async () => {

@@ -8,6 +8,7 @@ module Api
         before_action :authenticate_application_session!
         before_action :set_profile
         before_action :set_upload, except: :create
+        before_action :reject_impersonated_verification_upload!
 
         def create
           authorize @profile, :update?
@@ -78,6 +79,13 @@ module Api
 
         def set_upload
           @upload = @profile.media_uploads.find(params[:id])
+        end
+
+        def reject_impersonated_verification_upload!
+          identity_purpose = (action_name == "create") ? params[:purpose] : @upload&.purpose
+          return unless identity_purpose == "verification_identity"
+
+          reject_impersonated_action!
         end
 
         def serialized_response(upload, instruction: nil)

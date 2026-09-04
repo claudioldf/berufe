@@ -96,4 +96,35 @@ RSpec.describe ProfessionalQuoteSharer do
     service&.destroy!
     category&.reload&.destroy!
   end
+
+  context "when the acting session is a delegated administrator session" do
+    # Runs inside the ordinary transactional wrapper (unlike the concurrency example
+    # above) so the fixtures it creates are rolled back automatically.
+    self.use_transactional_tests = true
+
+    it "shares a quote without counting the share against the professional's metrics" do
+      account = UserAccount.create!(phone_e164: "+5547999912099", role: "professional", status: "active")
+      profile = ProfessionalProfile.create!(user_account: account, display_name: "Cris Delegada")
+      make_profile_publicly_eligible(profile)
+      quote = ProfessionalQuoteWriter.new.call(
+        profile:,
+        attributes: {
+          customer: {id: nil, name: "Cliente", whatsapp_e164: "+5547999912013", email: nil},
+          service_description: "Serviço delegado",
+          valid_until: Date.current + 30.days,
+          discount_amount: 0,
+          items: [{description: "Item", quantity: 1, unit: "serviço", unit_price: 10}]
+        }
+      )
+
+      Current.application_session = instance_double(ApplicationSession, impersonating?: true)
+      result = described_class.new.call(quote:, method: "copy")
+
+      expect(result.share_url).to be_present
+      expect(quote.reload).to be_shared
+      expect(ProfessionalDailyMetric.where(professional_id: profile.id)).to be_empty
+    ensure
+      Current.reset
+    end
+  end
 end

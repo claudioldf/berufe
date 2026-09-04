@@ -41,19 +41,36 @@ module Api
         return render_authentication_required unless application_session
 
         Current.application_session = application_session
-        Current.user_account = application_session.user_account
+        Current.actor_user_account = application_session.user_account
+        Current.user_account = application_session.effective_user_account
       end
 
       def authenticate_password_admin_session!
+        authenticate_password_admin_actor_session!
+        return if performed?
+
+        session = Current.application_session
+        if session.impersonating?
+          return render_api_error(
+            code: "authorization_denied",
+            message: "Volte ao painel administrativo para realizar esta ação.",
+            status: :forbidden
+          )
+        end
+
+        Current.user_account = Current.actor_user_account
+      end
+
+      def authenticate_password_admin_actor_session!
         authenticate_application_session!
         return if performed?
 
         session = Current.application_session
-        return render_authentication_required unless Current.user_account.admin? &&
+        return render_authentication_required unless Current.actor_user_account.admin? &&
           session.authentication_method == "password"
 
         Current.admin_action_context = AdminActionContext.new(
-          admin_user_id: Current.user_account.id,
+          admin_user_id: Current.actor_user_account.id,
           request_id: Current.request_id
         )
       end
@@ -110,6 +127,16 @@ module Api
         render_api_error(
           code: "request_not_allowed",
           message: "Não foi possível validar esta solicitação.",
+          status: :forbidden
+        )
+      end
+
+      def reject_impersonated_action!
+        return unless Current.application_session&.impersonating?
+
+        render_api_error(
+          code: "impersonation_action_denied",
+          message: "Esta ação não está disponível ao gerenciar a conta de um profissional.",
           status: :forbidden
         )
       end

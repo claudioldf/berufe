@@ -80,7 +80,10 @@ function itemTotal(index: number) {
         </div>
       </dl>
     </section>
-    <section class="quote-preview__items">
+    <section
+      v-if="quote.pricingMode === 'itemized'"
+      class="quote-preview__items"
+    >
       <div class="quote-preview__item quote-preview__item--head">
         <span>Descrição</span><span>Qtd.</span><span>Valor</span>
       </div>
@@ -99,17 +102,40 @@ function itemTotal(index: number) {
         <span>{{ formatCurrency(itemTotal(index)) }}</span>
       </div>
     </section>
-    <section class="quote-preview__totals">
-      <div>
+    <section
+      class="quote-preview__totals"
+      :class="{
+        'quote-preview__totals--fixed': quote.pricingMode === 'fixed_price',
+      }"
+    >
+      <div v-if="quote.pricingMode === 'itemized'">
         <span>Subtotal</span><strong>{{ formatCurrency(subtotal) }}</strong>
       </div>
-      <div v-if="quote.discount">
+      <div v-if="quote.pricingMode === 'itemized' && quote.discount">
         <span>Desconto</span
         ><strong>− {{ formatCurrency(quote.discount) }}</strong>
       </div>
       <div>
         <span>Total</span><strong>{{ formatCurrency(total) }}</strong>
       </div>
+    </section>
+    <section
+      v-if="quote.customerSuppliedMaterials.length"
+      class="quote-preview__materials"
+    >
+      <div class="quote-preview__materials-title">
+        <span>Materiais por conta do cliente</span>
+        <small>Não incluídos no valor do serviço</small>
+      </div>
+      <ul>
+        <li
+          v-for="material in quote.customerSuppliedMaterials"
+          :key="material.id"
+        >
+          <strong>{{ material.quantity }}</strong>
+          <span>{{ material.description }}</span>
+        </li>
+      </ul>
     </section>
     <section v-if="quote.notes" class="quote-preview__notes">
       <span>Observações</span>
@@ -307,6 +333,59 @@ function itemTotal(index: number) {
     padding-top: 10px;
     border-top: 2px solid var(--ink);
     font-size: 0.84rem;
+  }
+  &__totals--fixed {
+    width: min(260px, calc(100% - 44px));
+  }
+  &__totals--fixed > div:last-child {
+    margin-top: 0;
+    padding: 13px 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 2px solid var(--ink);
+    font-size: 0.94rem;
+  }
+  &__materials {
+    margin: 0 22px 18px;
+    padding: 15px;
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    background: var(--color-brand-tint-muted);
+  }
+  &__materials-title {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 4px 12px;
+  }
+  &__materials-title > span {
+    color: var(--color-brand);
+    font-size: 0.82rem;
+    font-weight: 850;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  &__materials-title > small {
+    color: var(--ink-soft);
+    font-size: 0.76rem;
+  }
+  &__materials ul {
+    display: grid;
+    gap: 7px;
+    padding: 0;
+    margin: 11px 0 0;
+    list-style: none;
+  }
+  &__materials li {
+    display: grid;
+    grid-template-columns: minmax(76px, auto) 1fr;
+    gap: 8px;
+    align-items: baseline;
+    padding-top: 7px;
+    border-top: 1px solid rgb(27 94 75 / 14%);
+    font-size: 0.82rem;
+  }
+  &__materials li strong {
+    color: var(--color-brand);
   }
   &__notes {
     margin: 0 22px 18px;

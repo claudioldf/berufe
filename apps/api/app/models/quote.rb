@@ -2,15 +2,22 @@
 
 class Quote < ApplicationRecord
   STATUSES = %w[draft saved shared change_requested approved declined completed cancelled].freeze
+  PRICING_MODES = %w[fixed_price itemized].freeze
   LOCKED_STATUSES = %w[approved completed cancelled].freeze
   SERVICE_OUTCOME_STATUSES = %w[completed cancelled].freeze
   MAX_ITEMS = 20
+  MAX_MATERIALS = 20
   MONEY_SCALE = 2
 
   belongs_to :professional, class_name: "ProfessionalProfile", inverse_of: :quotes
   belongs_to :customer, inverse_of: :quotes, optional: true
   has_one :service_job, dependent: :restrict_with_exception
   has_many :quote_items,
+    -> { order(:sort_order, :id) },
+    inverse_of: :quote,
+    dependent: :destroy,
+    autosave: true
+  has_many :quote_materials,
     -> { order(:sort_order, :id) },
     inverse_of: :quote,
     dependent: :destroy,
@@ -33,7 +40,8 @@ class Quote < ApplicationRecord
   validates :notes, length: {maximum: 700}, allow_nil: true
   validates :customer_decision_message, length: {in: 1..700}, allow_nil: true
   validates :status, inclusion: {in: STATUSES}
-  validates :subtotal_amount, :discount_amount, :total_amount,
+  validates :pricing_mode, inclusion: {in: PRICING_MODES}
+  validates :subtotal_amount, :fixed_price_amount, :discount_amount, :total_amount,
     numericality: {greater_than_or_equal_to: 0}
   validates :share_token_hash, format: {with: /\A[0-9a-f]{64}\z/}, uniqueness: true, allow_nil: true
   with_options unless: :draft? do
@@ -49,7 +57,10 @@ class Quote < ApplicationRecord
     validates :valid_until, presence: true
   end
   validate :has_valid_item_count
+  validate :has_valid_material_count
   validate :discount_does_not_exceed_subtotal
+  validate :itemized_quote_has_no_fixed_price
+  validate :fixed_price_quote_has_no_discount
   validate :share_state_matches_status
   validate :customer_belongs_to_professional
   validate :approved_content_is_immutable, on: :update
@@ -59,6 +70,10 @@ class Quote < ApplicationRecord
 
   STATUSES.each do |known_status|
     define_method("#{known_status}?") { status == known_status }
+  end
+
+  PRICING_MODES.each do |known_mode|
+    define_method("#{known_mode}?") { pricing_mode == known_mode }
   end
 
   def locked_for_editing?
@@ -96,7 +111,15 @@ class Quote < ApplicationRecord
       MONEY_SCALE,
       BigDecimal::ROUND_HALF_UP
     )
-    self.total_amount = [subtotal_amount - discount_amount, BigDecimal(0)].max
+    self.fixed_price_amount = BigDecimal(fixed_price_amount.to_s.presence || "0").round(
+      MONEY_SCALE,
+      BigDecimal::ROUND_HALF_UP
+    )
+    self.total_amount = if fixed_price?
+      fixed_price_amount
+    else
+      [subtotal_amount - discount_amount, BigDecimal(0)].max
+    end
   rescue ArgumentError
     # Numericality validations return the normalized field errors.
   end
@@ -108,11 +131,32 @@ class Quote < ApplicationRecord
     errors.add(:quote_items, "deve conter entre #{minimum} e #{MAX_ITEMS} itens")
   end
 
+  def has_valid_material_count
+    return if quote_materials.length.between?(0, MAX_MATERIALS)
+
+    errors.add(:quote_materials, "deve conter no máximo #{MAX_MATERIALS} itens")
+  end
+
   def discount_does_not_exceed_subtotal
     return if draft?
-    return unless discount_amount && subtotal_amount && discount_amount > subtotal_amount
+    return unless itemized?
+    return unless discount_amount && subtotal_amount
+
+    return unless discount_amount > subtotal_amount
 
     errors.add(:discount_amount, "não pode ultrapassar o subtotal")
+  end
+
+  def itemized_quote_has_no_fixed_price
+    return unless itemized? && fixed_price_amount&.positive?
+
+    errors.add(:fixed_price_amount, "deve ser zero no orçamento detalhado")
+  end
+
+  def fixed_price_quote_has_no_discount
+    return unless fixed_price? && discount_amount&.positive?
+
+    errors.add(:discount_amount, "deve ser zero no orçamento de preço fechado")
   end
 
   def share_state_matches_status
