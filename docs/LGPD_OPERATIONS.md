@@ -70,9 +70,9 @@ The product clears the browser session after acceptance and provides an opaque s
 That status exposes only a non-personal request reference, public processing state, and
 timestamps. Treat the status token as bearer material: do not copy it into tickets, logs,
 analytics, or monitoring metadata. The same rule applies to the `/orcamento/:token` and
-`/recomendacao/:token` links; `app/utils/analytics.ts` (`analyticsPagePath`) enforces it in
-code by substituting a placeholder for the token segment before any page view reaches Google
-Analytics.
+`/recomendacao/:token` links; the page-view helpers in `app/utils/analytics.ts` enforce it in
+code by substituting a placeholder for the token segment in both the path and absolute location
+before any page view reaches Google Analytics.
 
 ### Support fallback
 

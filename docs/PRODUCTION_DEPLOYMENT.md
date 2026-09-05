@@ -71,10 +71,9 @@ database addition, updates to `api` and `web`, and no destructive changes. Do no
 until the preserved variables below exist, Sections 2–3 are complete, and the intended
 release commit is already green on the protected `production` branch.
 
-Railway IaC cannot register a new custom domain or express the **Wait for CI** switch. The
-switch appears only after a GitHub source is connected, so the first IaC apply must target
-a release commit whose GitHub checks already passed. Immediately after that apply, enable
-Wait for CI for both services before any later push to `production`.
+Railway IaC cannot register a new custom domain. It does set `checkSuites: true` for both
+GitHub sources so deployments wait for CI; the first IaC apply must still target a release
+commit whose GitHub checks already passed.
 
 The IaC file manages the following `api` variable names. Values marked secret or
 account-specific use `preserve()` and must be entered directly in Railway before the first
@@ -98,7 +97,7 @@ MAXMIND_LICENSE_KEY=<secret GeoLite license key>
 LLM_ADAPTER=openai
 OPENAI_MODEL=gpt-5-mini
 OPENAI_API_KEY=<secret OpenAI API key>
-OPENAI_TIMEOUT_SECONDS=8
+OPENAI_TIMEOUT_SECONDS=<production request timeout>
 
 SMS_OTP_ADAPTER=infobip
 INFOBIP_BASE_URL=<production account base URL>
@@ -119,6 +118,7 @@ R2_PRIVATE_BUCKET=berufe-production-private
 # Resend's HTTP API. Rails refuses to boot here with any other MAIL_ADAPTER.
 MAIL_ADAPTER=resend
 RESEND_API_KEY=<secret Resend API key>
+RESEND_REQUEST_TIMEOUT_SECONDS=<production request timeout>
 MAIL_FROM=Berufe <nao-responda@berufe.com.br>
 
 GOOD_JOB_EXECUTION_MODE=async
@@ -196,9 +196,8 @@ for new unhandled production errors.
 
 Enter every `preserve()` value in the empty Railway service shells and rerun the plan.
 Apply only when it contains the intended database creation, service updates, and no
-destructive changes. Applying connects the already-green `production` sources and starts
-the first deployment. Then immediately enable Wait for CI on both services and register
-the domains:
+destructive changes. Applying connects the already-green `production` sources, preserves
+the Wait for CI setting, and starts the first deployment. Then register the domains:
 
 ```bash
 railway config plan

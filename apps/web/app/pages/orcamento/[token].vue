@@ -71,7 +71,7 @@ const DECISION_EVENT_NAMES = {
 onMounted(() => {
   // Only the professional's own public service category travels here —
   // never the customer's name, phone, quote amount, or the page's token
-  // (already redacted from page_path by app/utils/analytics.ts).
+  // (already redacted from all page-view URL fields by app/utils/analytics.ts).
   trackEvent("quote_viewed", {
     service: professional.value.primaryService,
   });

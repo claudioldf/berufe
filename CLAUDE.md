@@ -149,7 +149,7 @@ Prettier is the sole formatter (ESLint formatting rules are off); stylelint uses
 - Tokenized quote links (`/orcamento/:token`) are request-time only, `no-store`, and `noindex`, and the page renders without the site layout.
 - Professional onboarding state persists in `localStorage` under `berufe:professional-onboarding:v1` with a `version: 1` field; bump/migrate deliberately if the shape changes.
 - Retention is enforced by scheduled jobs, not by hand: raw anonymous search events are rolled up and deleted after 90 days, aggregates are kept 730 days, and identity evidence is deleted 30 days after a decision.
-- Google Analytics 4 loads from `app/plugins/analytics.client.ts`, gated on `NUXT_PUBLIC_GA_MEASUREMENT_ID` and off whenever `import.meta.dev` is true, so local development never reports to the property. Page paths carrying a bearer token (`/orcamento/:token`, `/recomendacao/:token`, `/exclusao-de-conta/:token`) are redacted by `app/utils/analytics.ts` before a page view is sent.
+- Google Analytics 4 is delivered only through GTM from `app/plugins/analytics.ts`, gated on `NUXT_PUBLIC_GTM_CONTAINER_ID` and off whenever `import.meta.dev` is true, so local development never reports to the production container. Nuxt sends one explicit page view after each finished route and redacts both the path and absolute location for bearer-token routes (`/orcamento/:token`, `/recomendacao/:token`, `/exclusao-de-conta/:token`) in `app/utils/analytics.ts`.
 
 ## Product docs
 

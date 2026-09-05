@@ -90,6 +90,7 @@ services:
       NUXT_PUBLIC_API_BASE_URL: https://api.berufe.com.br
       NUXT_PUBLIC_SITE_URL: https://www.berufe.com.br
       NUXT_PUBLIC_BUGSNAG_API_KEY: 0123456789abcdef0123456789abcdef
+      NUXT_PUBLIC_GTM_CONTAINER_ID: GTM-PBP8MFLG
       RAILWAY_GIT_COMMIT_SHA: production-smoke
     ports:
       - "3100:3000"
