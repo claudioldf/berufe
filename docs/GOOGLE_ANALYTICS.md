@@ -10,25 +10,43 @@ differs from Berufe's own (GA-free) reporting pipeline.
 
 ## Architecture
 
-- `app/plugins/analytics.client.ts` — loads gtag.js, gated on `NUXT_PUBLIC_GA_MEASUREMENT_ID`
-  and off in dev. Sends `page_view` on every route change (`send_page_view: false` at config
-  time, since GA4's own history-based auto page view fires before Nuxt updates the title and
-  would leak the raw, un-redacted URL). Exposes `window.gtag` globally, matching Google's own
-  snippet convention, so the rest of the app can send events without importing the plugin.
-  **Calls `gtag('consent', 'default', {...})` before `config` — required.** Without an
-  explicit default, gtag.js treats consent as "not configured" and silently drops every hit
-  (confirmed via Tag Assistant: `Esta tag não enviou nenhum hit` / `O estado de consentimento
-padrão ainda não foi definido`, reproduced both from a real browser and from three direct
-  Measurement Protocol hits sent via `curl` — this is not a browser/ad-blocker issue, gtag.js
-  itself withholds collection with no default set). `analytics_storage` is granted (this site
-  loads GA4 unconditionally, no cookie banner — see `privacidade.vue` §7); `ad_storage`,
-  `ad_user_data`, and `ad_personalization` stay denied, matching Google Signals being off.
+- `app/plugins/analytics.ts` — SSR-renders the `GTM-PBP8MFLG` loader in `<head>` and its
+  `<noscript>` iframe immediately after `<body>`, gated on `NUXT_PUBLIC_GTM_CONTAINER_ID` and
+  off in dev. GTM is the only GA4 delivery path; the app must not also load `gtag.js` directly.
+  The plugin exposes the standard `window.gtag` queue and sends exactly one explicit
+  `page_view` after the initial page and each completed Nuxt navigation. Both `page_path` and
+  `page_location` are sanitized before dispatch.
+- The consent bootstrap runs before the GTM loader and calls
+  `gtag('consent', 'default', {...})` with the real JavaScript `arguments` object. A rest-params
+  array looks equivalent in DevTools but Google's command parser ignores it, which previously
+  left the site with a loaded script and zero collection requests. `analytics_storage` is
+  granted because the site loads analytics unconditionally (no cookie banner; see
+  `privacidade.vue` §7). `ad_storage`, `ad_user_data`, and `ad_personalization` stay denied,
+  matching Google Signals being off.
 - `app/composables/useAnalyticsEvent.ts` — `trackEvent(name, params)`. A thin wrapper over
   `window.gtag`; a no-op wherever GA is disabled (dev, tests, SSR), so call sites never need
   their own guard.
-- `app/utils/analytics.ts` — pure, tested helpers: `analyticsPagePath` (redacts a bearer token
-  out of a page path before it becomes `page_path`) and `analyticsSearchTerm` (builds a
-  `search_term` from controlled catalog values only, never the visitor's raw query).
+- `app/utils/analytics.ts` — pure, tested helpers for GTM ID validation, snippet generation,
+  duplicate page-view suppression, bearer-token redaction, and controlled search terms.
+
+## Tag Manager configuration
+
+Container `GTM-PBP8MFLG` must have this published configuration before the Nuxt deployment can
+collect data:
+
+1. A **Google tag** with Tag ID `G-K8GG56FD41`.
+2. A configuration-settings variable on that tag with `send_page_view` set to `false`.
+3. The **Initialization – All Pages** trigger on the Google tag.
+
+Do not add a History Change trigger or a second GA4 page-view tag. Nuxt deliberately owns the
+initial and virtual page views so the document title has settled and private routes can be
+sanitized first. Custom events queued by `useAnalyticsEvent` are processed by the initialized
+Google tag.
+
+After previewing this setup in Tag Assistant, publish the container. A request to
+`https://www.googletagmanager.com/gtm.js?id=GTM-PBP8MFLG` can be inspected for `tags` and
+`rules`; an empty `tags:[]`/`rules:[]` payload means the published container still cannot send
+anything to GA4.
 
 ## Event taxonomy
 
@@ -64,9 +82,10 @@ Never sent to GA, by design:
   see `privacidade.vue` §7). Only the matched catalog service name and resolved city travel to
   analytics.
 - Any bearer token. `/orcamento/:token`, `/recomendacao/:token`, and
-  `/exclusao-de-conta/:token` are redacted to a literal placeholder in `page_path` by
-  `analyticsPagePath`, and no event on the quote page includes the token, per
-  `LGPD_OPERATIONS.md`'s rule against tokens in analytics/monitoring metadata.
+  `/exclusao-de-conta/:token` are redacted to a literal placeholder in both `page_path` and
+  `page_location`, and no event on the quote page includes the token, per
+  `LGPD_OPERATIONS.md`'s rule against tokens in analytics/monitoring metadata. Query strings
+  and fragments are removed from both fields as well.
 - Customer identity or contact info (name, phone, e-mail) and quote financial data (amounts,
   items, addresses). Quote events send only the professional's public service category.
 - A GA4 `user_id` for logged-in professionals — evaluated and deliberately not implemented;
@@ -90,8 +109,8 @@ web stream `https://www.berufe.com.br` (`15716679199`):
   `encodeSearchExpression`/`decodeSearchExpression`). Left on, GA would have auto-captured
   exactly the raw text the custom `search` event above was built to keep out. Every other
   Enhanced Measurement default (scroll, outbound clicks, form interactions, video engagement,
-  file downloads) stays on; automatic page-view tracking is off, since the plugin sends
-  `page_view` explicitly.
+  file downloads) stays on. **Page changes based on browser history events stays off** and the
+  GTM Google tag sets `send_page_view: false`, because the plugin sends `page_view` explicitly.
 - **Granular device/location data collection: off** — not needed on a web-only property;
   turned off to keep collection minimal.
 - **Custom definitions**: `service`, `city`, `method`, `source`, `search_term`,

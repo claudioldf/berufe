@@ -13,6 +13,7 @@ const web = resources.get("web");
 assert.equal(desired.name, "berufe-production");
 assert.equal(database?.type, "database");
 assert.equal(api?.build?.dockerfilePath, "apps/api/Dockerfile");
+assert.equal(api?.source?.checkSuites, true);
 assert.deepEqual(api?.deploy?.preDeployCommand, [
   "bin/rails db:prepare db:seed",
 ]);
@@ -23,7 +24,14 @@ assert.equal(
 assert.equal(api?.variables?.DATABASE_URL?.resource, "database.Postgres");
 assert.equal(api?.variables?.SECRET_KEY_BASE?.type, "preserve");
 assert.equal(api?.variables?.PORT?.value, "8080");
+assert.equal(api?.variables?.LLM_ADAPTER?.value, "openai");
+assert.equal(api?.variables?.OPENAI_API_KEY?.type, "preserve");
+assert.equal(api?.variables?.OPENAI_TIMEOUT_SECONDS?.type, "preserve");
+assert.equal(api?.variables?.MAIL_ADAPTER?.value, "resend");
+assert.equal(api?.variables?.RESEND_REQUEST_TIMEOUT_SECONDS?.type, "preserve");
+assert.equal(api?.variables?.SMTP_ADDRESS, undefined);
 assert.equal(web?.source?.rootDirectory, "apps/web");
+assert.equal(web?.source?.checkSuites, true);
 assert.equal(web?.variables?.PORT?.value, "8080");
 assert.equal(
   web?.deploy?.multiRegionConfig?.["us-east4-eqdc4a"]?.numReplicas,
@@ -35,6 +43,7 @@ assert.equal(
 );
 assert.equal(web?.variables?.NUXT_PUBLIC_BUGSNAG_API_KEY?.type, "preserve");
 assert.equal(
-  web?.variables?.NUXT_PUBLIC_GA_MEASUREMENT_ID?.value,
-  "G-K8GG56FD41",
+  web?.variables?.NUXT_PUBLIC_GTM_CONTAINER_ID?.value,
+  "GTM-PBP8MFLG",
 );
+assert.equal(web?.variables?.NUXT_PUBLIC_GA_MEASUREMENT_ID, undefined);

@@ -11,7 +11,10 @@ export default defineRailway(() => {
   const database = postgres("Postgres");
 
   const api = service("api", {
-    source: github("claudioldf/berufe", { branch: "production" }),
+    source: github("claudioldf/berufe", {
+      branch: "production",
+      checkSuites: true,
+    }),
     build: {
       builder: "DOCKERFILE",
       dockerfilePath: "apps/api/Dockerfile",
@@ -43,6 +46,10 @@ export default defineRailway(() => {
       PRODUCT_LAUNCH_DATE: preserve(),
       MAXMIND_ACCOUNT_ID: preserve(),
       MAXMIND_LICENSE_KEY: preserve(),
+      LLM_ADAPTER: "openai",
+      OPENAI_MODEL: "gpt-5-mini",
+      OPENAI_API_KEY: preserve(),
+      OPENAI_TIMEOUT_SECONDS: preserve(),
       SMS_OTP_ADAPTER: "infobip",
       INFOBIP_BASE_URL: preserve(),
       INFOBIP_API_KEY: preserve(),
@@ -56,21 +63,11 @@ export default defineRailway(() => {
       R2_SECRET_ACCESS_KEY: preserve(),
       R2_PUBLIC_BUCKET: "berufe-production-public",
       R2_PRIVATE_BUCKET: "berufe-production-private",
-      // Railway blocks outbound SMTP below its Pro plan, so smtp.resend.com:587
-      // times out (Net::OpenTimeout) instead of being refused. MAIL_ADAPTER=resend
-      // routes recommendation email through Resend's HTTP API instead; Rails
-      // refuses to boot in production with any other adapter. The SMTP_* variables
-      // stay set only so a rollback to the previous release still boots — remove
-      // them once this release has been stable for a deploy cycle.
+      // Railway blocks outbound SMTP below its Pro plan. Production sends
+      // recommendation email through Resend's HTTP API instead.
       MAIL_ADAPTER: "resend",
       RESEND_API_KEY: preserve(),
-      SMTP_ADDRESS: "smtp.resend.com",
-      SMTP_PORT: "587",
-      SMTP_DOMAIN: "berufe.com.br",
-      SMTP_USERNAME: "resend",
-      SMTP_PASSWORD: preserve(),
-      SMTP_AUTHENTICATION: "plain",
-      SMTP_STARTTLS: "true",
+      RESEND_REQUEST_TIMEOUT_SECONDS: preserve(),
       MAIL_FROM: "Berufe <nao-responda@berufe.com.br>",
       GOOD_JOB_EXECUTION_MODE: "async",
       GOOD_JOB_MAX_THREADS: "1",
@@ -83,6 +80,7 @@ export default defineRailway(() => {
     source: github("claudioldf/berufe", {
       branch: "production",
       rootDirectory: "apps/web",
+      checkSuites: true,
     }),
     build: {
       builder: "DOCKERFILE",
@@ -104,7 +102,7 @@ export default defineRailway(() => {
       NUXT_PUBLIC_API_BASE_URL: "https://api.berufe.com.br",
       NUXT_PUBLIC_SITE_URL: "https://www.berufe.com.br",
       NUXT_PUBLIC_BUGSNAG_API_KEY: preserve(),
-      NUXT_PUBLIC_GA_MEASUREMENT_ID: "G-K8GG56FD41",
+      NUXT_PUBLIC_GTM_CONTAINER_ID: "GTM-PBP8MFLG",
       NUXT_OG_IMAGE_SECRET: preserve(),
     },
   });
