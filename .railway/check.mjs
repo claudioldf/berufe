@@ -30,6 +30,10 @@ assert.equal(api?.variables?.OPENAI_TIMEOUT_SECONDS?.type, "preserve");
 assert.equal(api?.variables?.MAIL_ADAPTER?.value, "resend");
 assert.equal(api?.variables?.RESEND_REQUEST_TIMEOUT_SECONDS?.type, "preserve");
 assert.equal(api?.variables?.SMTP_ADDRESS, undefined);
+assert.equal(
+  api?.variables?.MEDIA_PUBLIC_URL?.value,
+  "https://media.berufe.com.br",
+);
 assert.equal(web?.source?.rootDirectory, "apps/web");
 assert.equal(web?.source?.checkSuites, true);
 assert.equal(web?.variables?.PORT?.value, "8080");
