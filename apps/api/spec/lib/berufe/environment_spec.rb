@@ -14,6 +14,7 @@ RSpec.describe Berufe::Environment do
       "GOOD_JOB_PROBE_PORT" => "7001",
       "WEB_ORIGIN" => "http://localhost:3000",
       "API_PUBLIC_URL" => "http://localhost:3001",
+      "MEDIA_PUBLIC_URL" => "http://localhost:3001",
       "LLM_ADAPTER" => "fake",
       "OPENAI_MODEL" => "gpt-5-mini",
       "PRODUCT_LAUNCH_DATE" => "2026-08-01"
