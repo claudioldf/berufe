@@ -4,6 +4,7 @@ class PublicProfilePhotoImageUrl
   def self.call(photo, environment: ENV)
     PublicMediaUrl.call(
       rails_path: "/api/v1/public/profile-photos/#{photo.id}/image",
+      host: :media,
       environment:
     )
   end

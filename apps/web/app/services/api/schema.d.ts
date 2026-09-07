@@ -4868,7 +4868,7 @@ export interface operations {
             200: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
-                    "Cache-Control"?: "no-store" | "max-age=0, public, must-revalidate";
+                    "Cache-Control"?: "no-store" | "max-age=0, public, must-revalidate, s-maxage=300";
                     "Content-Disposition"?: string;
                     "X-Content-Type-Options"?: "nosniff";
                     [name: string]: unknown;
@@ -4904,7 +4904,7 @@ export interface operations {
             200: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
-                    "Cache-Control"?: "no-store" | "max-age=0, public, must-revalidate";
+                    "Cache-Control"?: "no-store" | "max-age=0, public, must-revalidate, s-maxage=300";
                     "Content-Disposition"?: string;
                     "X-Content-Type-Options"?: "nosniff";
                     [name: string]: unknown;
