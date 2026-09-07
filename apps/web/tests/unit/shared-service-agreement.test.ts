@@ -82,6 +82,21 @@ describe("shared service agreement", () => {
     expect(wrapper.get(".shared-agreement__agreed-total").text()).toContain(
       "R$ 500,00",
     );
+
+    const adjustment = wrapper.get(".shared-agreement__adjustment");
+    const items = adjustment.get(".shared-agreement__items").element;
+    const adjustmentTotal = adjustment.get(
+      ".shared-agreement__adjustment-total",
+    );
+    expect(
+      items.compareDocumentPosition(adjustmentTotal.element) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(adjustmentTotal.text()).toContain("Total do ajuste");
+    expect(adjustmentTotal.text()).toContain("R$ 80,00");
+    expect(
+      adjustment.get(".shared-agreement__adjustment-heading").text(),
+    ).not.toContain("R$ 80,00");
   });
 
   it("describes numeric schedule impacts with the correct plural", async () => {

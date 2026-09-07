@@ -124,7 +124,6 @@ function decide(
             >
             <h3>{{ adjustment.title }}</h3>
           </div>
-          <strong>{{ money.format(adjustment.total) }}</strong>
         </div>
         <p v-if="adjustment.description">{{ adjustment.description }}</p>
         <p v-if="adjustment.scheduleImpact" class="shared-agreement__impact">
@@ -186,6 +185,11 @@ function decide(
         <p v-else class="shared-agreement__zero">
           Este ajuste documenta escopo ou prazo e não possui itens financeiros.
         </p>
+
+        <div class="shared-agreement__adjustment-total">
+          <span>Total do ajuste</span>
+          <strong>{{ money.format(adjustment.total) }}</strong>
+        </div>
 
         <div
           v-if="adjustment.status === 'awaiting_response'"
@@ -432,6 +436,23 @@ function decide(
 
   &__item-value {
     justify-items: end;
+  }
+
+  &__adjustment-total {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    width: min(280px, 100%);
+    margin: 12px 0 0 auto;
+    padding-top: 10px;
+    border-top: 2px solid var(--ink);
+    font-size: 0.84rem;
+  }
+
+  &__adjustment-total strong {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
   }
 
   &__item-value small,

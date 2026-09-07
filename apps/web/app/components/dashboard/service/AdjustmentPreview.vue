@@ -280,6 +280,12 @@ function lineTotal(item: ServiceAdjustmentEditorItem) {
     line-height: 1.5;
   }
 
+  &__change h2 {
+    font-size: 0.86rem;
+    font-weight: 600;
+    line-height: 1.5;
+  }
+
   &__change {
     padding-top: 16px;
     border-top: 1px solid var(--line);
