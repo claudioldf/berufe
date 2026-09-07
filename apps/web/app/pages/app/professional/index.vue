@@ -273,15 +273,25 @@ function handleDashboardAction(id: string, kind: ProfessionalActionKind) {
   completionOpen.value = true;
 }
 
-async function completeDashboardService(requestRecommendation: boolean) {
+async function completeDashboardService(
+  requestRecommendation: boolean,
+  acknowledgeOpenAdjustments = false,
+) {
   const item = completionItem.value;
   if (!item?.recommendationDeliveryChannel) return;
 
-  const completed = await actionInbox.completeService(
-    item.id,
-    requestRecommendation,
-    item.recommendationDeliveryChannel,
-  );
+  const completed = acknowledgeOpenAdjustments
+    ? await actionInbox.completeService(
+        item.id,
+        requestRecommendation,
+        item.recommendationDeliveryChannel,
+        true,
+      )
+    : await actionInbox.completeService(
+        item.id,
+        requestRecommendation,
+        item.recommendationDeliveryChannel,
+      );
   if (!completed) return;
 
   completionOpen.value = false;
@@ -445,6 +455,9 @@ function updateCompletionOpen(open: boolean) {
       :busy="actionInbox.actingId.value === completionItem?.id"
       :pending-choice="actionInbox.completionIntent.value"
       :error="actionInbox.actionError.value"
+      :has-unresolved-adjustments="
+        completionItem?.hasUnresolvedAdjustments ?? false
+      "
       @update:open="updateCompletionOpen"
       @confirm="completeDashboardService"
     />

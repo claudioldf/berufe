@@ -13,11 +13,19 @@ class Notification < ApplicationRecord
     quote_approved
     quote_declined
     service_completion_issue_reported
+    service_adjustment_change_requested
+    service_adjustment_approved
+    service_adjustment_declined
     customer_recommendation_published
   ].freeze
   STATUSES = %w[unread read].freeze
   QUOTE_TYPES = %w[quote_change_requested quote_approved quote_declined].freeze
-  SERVICE_JOB_TYPES = %w[service_completion_issue_reported].freeze
+  SERVICE_JOB_TYPES = %w[
+    service_completion_issue_reported
+    service_adjustment_change_requested
+    service_adjustment_approved
+    service_adjustment_declined
+  ].freeze
 
   belongs_to :recipient_user_account, class_name: "UserAccount", inverse_of: :notifications
 

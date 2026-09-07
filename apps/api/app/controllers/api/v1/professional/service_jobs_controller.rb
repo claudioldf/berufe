@@ -10,7 +10,14 @@ module Api
         def index
           authorize ServiceJob, :index?
           jobs = policy_scope(ServiceJob)
-            .includes(:customer_recommendation_request, quote: :customer)
+            .includes(
+              :customer_recommendation_request,
+              {service_adjustments: [
+                :service_adjustment_change_requests,
+                {service_adjustment_items: :service_adjustment_receipt}
+              ]},
+              quote: :customer
+            )
             .order(updated_at: :desc, id: :desc)
           render json: {
             data: {service_jobs: jobs.map { |job| ProfessionalServiceJobSerializer.new(job) }},
@@ -45,7 +52,8 @@ module Api
           authorize job, :update?
           result = ProfessionalServiceJobCompleter.new.call(
             service_job: job,
-            request_recommendation: completion_params.fetch(:request_recommendation)
+            request_recommendation: completion_params.fetch(:request_recommendation),
+            acknowledge_open_adjustments: completion_params.fetch(:acknowledge_open_adjustments, false)
           )
           render json: {
             data: {
@@ -71,7 +79,8 @@ module Api
           authorize job, :update?
           job = ProfessionalServiceJobCanceller.new.call(
             service_job: job,
-            reason: params.dig(:cancellation, :reason)
+            reason: cancellation_params[:reason],
+            acknowledge_open_adjustments: cancellation_params.fetch(:acknowledge_open_adjustments, false)
           )
           render json: service_job_response(job)
         rescue ProfessionalServiceJobCanceller::Invalid => error
@@ -92,7 +101,11 @@ module Api
         end
 
         def completion_params
-          params.require(:completion).permit(:request_recommendation)
+          params.require(:completion).permit(:request_recommendation, :acknowledge_open_adjustments)
+        end
+
+        def cancellation_params
+          params.require(:cancellation).permit(:reason, :acknowledge_open_adjustments)
         end
 
         def service_job_response(job)

@@ -121,6 +121,7 @@ Do not reactivate the account while erasure is pending. The maximum operational 
 | Abandoned upload authorization                             | 10 minutes                                                                         | Ten-minute cleanup                            |
 | Rejected, replaced, removed, or unattached media           | 30 days                                                                            | Daily media retention cleanup                 |
 | Identity evidence after a decision                         | 30 days                                                                            | Daily identity-file cleanup                   |
+| Receipt attached to a service adjustment                   | While required for the service relationship; erased with the professional account  | Private bearer access and erasure workflow    |
 | Recommendation invitation                                  | 14-day validity; operational row removed within 30 days after completion or expiry | Daily recommendation cleanup                  |
 | Published recommendation                                   | Until publication consent is withdrawn                                             | Timestamped withdrawal and public query scope |
 | Active account, profile, customer, quote, and service data | While required for the relationship; eligible data erased after a verified request | Shared self-service/Support erasure workflow  |

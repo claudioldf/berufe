@@ -155,8 +155,8 @@ const actingReason = computed(() =>
 
   &__kicker {
     color: var(--color-brand);
-    font-size: 0.7rem;
-    font-weight: 850;
+    font-size: 0.75rem;
+    font-weight: 750;
     letter-spacing: 0.12em;
     text-transform: uppercase;
   }
@@ -219,13 +219,13 @@ const actingReason = computed(() =>
 
   &__cancel > span {
     color: var(--color-text-subtle);
-    font-size: 0.7rem;
+    font-size: 0.75rem;
   }
 
   &__cancel :deep(button) {
     padding-right: 0;
     padding-left: 0;
-    font-size: 0.76rem;
+    font-size: var(--font-size-min);
   }
 }
 

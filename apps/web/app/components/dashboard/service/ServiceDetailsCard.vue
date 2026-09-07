@@ -98,8 +98,8 @@ const emailHref = computed(() => `mailto:${props.quote.customerEmail}`);
 
   &__kicker {
     color: var(--color-brand);
-    font-size: 0.7rem;
-    font-weight: 850;
+    font-size: 0.75rem;
+    font-weight: 750;
     letter-spacing: 0.12em;
     text-transform: uppercase;
   }
@@ -149,8 +149,8 @@ const emailHref = computed(() => `mailto:${props.quote.customerEmail}`);
   &__item dt {
     margin-bottom: 4px;
     color: var(--color-text-subtle);
-    font-size: 0.7rem;
-    font-weight: 800;
+    font-size: 0.75rem;
+    font-weight: 750;
     letter-spacing: 0.07em;
     text-transform: uppercase;
   }
@@ -193,7 +193,7 @@ const emailHref = computed(() => `mailto:${props.quote.customerEmail}`);
     border-top: 1px solid var(--line);
     background: var(--color-surface-neutral);
     color: var(--color-text-muted);
-    font-size: 0.75rem;
+    font-size: var(--font-size-min);
   }
 
   &__quote-reference,
@@ -205,7 +205,7 @@ const emailHref = computed(() => `mailto:${props.quote.customerEmail}`);
 
   &__quote-link {
     color: var(--color-brand);
-    font-weight: 850;
+    font-weight: 700;
     text-decoration: none;
   }
 

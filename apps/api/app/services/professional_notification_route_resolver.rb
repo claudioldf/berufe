@@ -13,7 +13,12 @@ class ProfessionalNotificationRouteResolver
     "relationship_request_declined" => "#{PROFILE_ROUTE}?tab=relacoes"
   }.freeze
   QUOTE_TYPES = %w[quote_change_requested quote_declined].freeze
-  SERVICE_JOB_TYPES = %w[service_completion_issue_reported].freeze
+  SERVICE_JOB_TYPES = %w[
+    service_completion_issue_reported
+    service_adjustment_change_requested
+    service_adjustment_approved
+    service_adjustment_declined
+  ].freeze
 
   def call(notification)
     type = notification.notification_type

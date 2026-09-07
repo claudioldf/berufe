@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_03_164000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_06_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -366,7 +366,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_03_164000) do
     t.check_constraint "declared_byte_size >= 1 AND declared_byte_size <= 10485760", name: "media_uploads_declared_size_range"
     t.check_constraint "declared_content_type = ANY (ARRAY['image/jpeg'::text, 'image/png'::text])", name: "media_uploads_supported_declared_type"
     t.check_constraint "processing_attempts >= 0", name: "media_uploads_nonnegative_attempts"
-    t.check_constraint "purpose = ANY (ARRAY['profile_photo'::text, 'portfolio_image'::text, 'verification_identity'::text])", name: "media_uploads_known_purpose"
+    t.check_constraint "purpose = ANY (ARRAY['profile_photo'::text, 'portfolio_image'::text, 'verification_identity'::text, 'service_adjustment_receipt'::text])", name: "media_uploads_known_purpose"
     t.check_constraint "sanitized_content_type IS NULL OR (sanitized_content_type = ANY (ARRAY['image/jpeg'::text, 'image/png'::text]))", name: "media_uploads_supported_sanitized_type"
     t.check_constraint "state = ANY (ARRAY['authorized'::text, 'uploaded'::text, 'processing'::text, 'processed'::text, 'failed'::text, 'attached'::text, 'expired'::text])", name: "media_uploads_known_state"
     t.check_constraint "width IS NULL AND height IS NULL OR width > 0 AND height > 0", name: "media_uploads_valid_dimensions"
@@ -420,12 +420,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_03_164000) do
     t.index ["idempotency_key"], name: "index_notifications_on_idempotency_key", unique: true
     t.index ["recipient_user_account_id", "status", "occurred_at", "id"], name: "idx_notifications_recipient_status_order", order: { occurred_at: :desc, id: :desc }
     t.index ["recipient_user_account_id"], name: "index_notifications_on_recipient_user_account_id"
-    t.check_constraint "\nCASE\n    WHEN notification_type::text = ANY (ARRAY['quote_change_requested'::character varying::text, 'quote_approved'::character varying::text, 'quote_declined'::character varying::text]) THEN route_params = jsonb_build_object('quote_id', route_params ->> 'quote_id'::text) AND COALESCE((route_params ->> 'quote_id'::text) ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'::text, false)\n    WHEN notification_type::text = 'service_completion_issue_reported'::text THEN route_params = jsonb_build_object('service_job_id', route_params ->> 'service_job_id'::text) AND COALESCE((route_params ->> 'service_job_id'::text) ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'::text, false)\n    ELSE route_params = '{}'::jsonb\nEND", name: "notifications_route_params_match_type"
+    t.check_constraint "\nCASE\n    WHEN notification_type::text = ANY (ARRAY['quote_change_requested'::character varying, 'quote_approved'::character varying, 'quote_declined'::character varying]::text[]) THEN route_params = jsonb_build_object('quote_id', route_params ->> 'quote_id'::text) AND COALESCE((route_params ->> 'quote_id'::text) ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'::text, false)\n    WHEN notification_type::text = ANY (ARRAY['service_completion_issue_reported'::character varying, 'service_adjustment_change_requested'::character varying, 'service_adjustment_approved'::character varying, 'service_adjustment_declined'::character varying]::text[]) THEN route_params = jsonb_build_object('service_job_id', route_params ->> 'service_job_id'::text) AND COALESCE((route_params ->> 'service_job_id'::text) ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'::text, false)\n    ELSE route_params = '{}'::jsonb\nEND", name: "notifications_route_params_match_type"
     t.check_constraint "char_length(btrim(description::text)) >= 1 AND char_length(btrim(description::text)) <= 240", name: "notifications_description_length"
     t.check_constraint "char_length(btrim(idempotency_key::text)) >= 1 AND char_length(btrim(idempotency_key::text)) <= 255", name: "notifications_idempotency_key_length"
     t.check_constraint "char_length(btrim(title::text)) >= 1 AND char_length(btrim(title::text)) <= 120", name: "notifications_title_length"
     t.check_constraint "jsonb_typeof(route_params) = 'object'::text", name: "notifications_route_params_object"
-    t.check_constraint "notification_type::text = ANY (ARRAY['profile_moderation_hidden'::character varying::text, 'profile_moderation_restored'::character varying::text, 'verification_request_moderation_approved'::character varying::text, 'verification_request_moderation_rejected'::character varying::text, 'relationship_request_received'::character varying::text, 'relationship_request_accepted'::character varying::text, 'relationship_request_declined'::character varying::text, 'quote_change_requested'::character varying::text, 'quote_approved'::character varying::text, 'quote_declined'::character varying::text, 'service_completion_issue_reported'::character varying::text, 'customer_recommendation_published'::character varying::text])", name: "notifications_known_type"
+    t.check_constraint "notification_type::text = ANY (ARRAY['profile_moderation_hidden'::character varying, 'profile_moderation_restored'::character varying, 'verification_request_moderation_approved'::character varying, 'verification_request_moderation_rejected'::character varying, 'relationship_request_received'::character varying, 'relationship_request_accepted'::character varying, 'relationship_request_declined'::character varying, 'quote_change_requested'::character varying, 'quote_approved'::character varying, 'quote_declined'::character varying, 'service_completion_issue_reported'::character varying, 'service_adjustment_change_requested'::character varying, 'service_adjustment_approved'::character varying, 'service_adjustment_declined'::character varying, 'customer_recommendation_published'::character varying]::text[])", name: "notifications_known_type"
     t.check_constraint "status::text = 'unread'::text AND read_at IS NULL OR status::text = 'read'::text AND read_at IS NOT NULL", name: "notifications_read_state"
     t.check_constraint "status::text = ANY (ARRAY['unread'::character varying::text, 'read'::character varying::text])", name: "notifications_known_status"
   end
@@ -621,7 +621,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_03_164000) do
     t.index ["working_revision_id"], name: "index_professional_profiles_on_working_revision_id", unique: true
     t.check_constraint "creation_source = 'external'::text OR external_published_at IS NULL", name: "professional_profiles_external_publication_source"
     t.check_constraint "creation_source = ANY (ARRAY['self_service'::text, 'external'::text])", name: "professional_profiles_known_creation_source"
-    t.check_constraint "last_quote_pricing_mode::text = ANY (ARRAY['fixed_price'::character varying, 'itemized'::character varying]::text[])", name: "professional_profiles_known_quote_pricing_mode"
+    t.check_constraint "last_quote_pricing_mode::text = ANY (ARRAY['fixed_price'::character varying::text, 'itemized'::character varying::text])", name: "professional_profiles_known_quote_pricing_mode"
     t.check_constraint "profile_status = ANY (ARRAY['draft'::text, 'published'::text, 'suspended'::text])", name: "professional_profiles_known_status"
     t.check_constraint "public_slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'::text", name: "professional_profiles_public_slug_format"
   end
@@ -761,7 +761,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_03_164000) do
     t.check_constraint "fixed_price_amount >= 0::numeric", name: "quotes_nonnegative_fixed_price"
     t.check_constraint "pricing_mode::text = 'fixed_price'::text OR fixed_price_amount = 0::numeric", name: "quotes_itemized_without_fixed_price"
     t.check_constraint "pricing_mode::text = 'itemized'::text OR discount_amount = 0::numeric", name: "quotes_fixed_price_without_discount"
-    t.check_constraint "pricing_mode::text = ANY (ARRAY['fixed_price'::character varying, 'itemized'::character varying]::text[])", name: "quotes_known_pricing_mode"
+    t.check_constraint "pricing_mode::text = ANY (ARRAY['fixed_price'::character varying::text, 'itemized'::character varying::text])", name: "quotes_known_pricing_mode"
     t.check_constraint "quote_number > 0", name: "quotes_positive_number"
     t.check_constraint "status::text = 'draft'::text OR customer_phone_e164::text ~ '^\\+55[1-9][0-9]9[0-9]{8}$'::text", name: "quotes_customer_brazilian_mobile"
     t.check_constraint "status::text = 'draft'::text OR pricing_mode::text = 'fixed_price'::text AND discount_amount = 0::numeric AND total_amount = fixed_price_amount OR pricing_mode::text = 'itemized'::text AND fixed_price_amount = 0::numeric AND discount_amount <= subtotal_amount AND total_amount = (subtotal_amount - discount_amount)", name: "quotes_consistent_totals"
@@ -826,6 +826,90 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_03_164000) do
     t.check_constraint "query_text_normalized IS NULL OR query_text_normalized ~ '^[a-z0-9]+( [a-z0-9]+)*$'::text AND char_length(query_text_normalized) <= 80", name: "search_events_normalized_query_format"
     t.check_constraint "response_source IS NULL OR (response_source::text = ANY (ARRAY['provider'::character varying::text, 'cache'::character varying::text]))", name: "search_events_known_response_source"
     t.check_constraint "result_count >= 0", name: "search_events_result_count_nonnegative"
+  end
+
+  create_table "service_adjustment_change_requests", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "message", null: false
+    t.datetime "requested_at", null: false
+    t.integer "requested_revision", null: false
+    t.uuid "service_adjustment_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["service_adjustment_id", "requested_at", "id"], name: "idx_adjustment_change_requests_order", order: { requested_at: :desc, id: :desc }
+    t.index ["service_adjustment_id", "requested_revision"], name: "idx_adjustment_change_requests_revision", unique: true
+    t.index ["service_adjustment_id"], name: "idx_on_service_adjustment_id_8c17fa5413"
+    t.check_constraint "char_length(btrim(message)) >= 1 AND char_length(btrim(message)) <= 700", name: "adjustment_change_requests_message_length"
+    t.check_constraint "requested_revision >= 0", name: "adjustment_change_requests_nonnegative_revision"
+  end
+
+  create_table "service_adjustment_items", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "description", limit: 160, null: false
+    t.string "kind", limit: 32, null: false
+    t.decimal "line_total", precision: 14, scale: 2, null: false
+    t.decimal "quantity", precision: 12, scale: 3, null: false
+    t.uuid "service_adjustment_id", null: false
+    t.integer "sort_order", null: false
+    t.string "unit", limit: 20, null: false
+    t.decimal "unit_price", precision: 14, scale: 2, null: false
+    t.datetime "updated_at", null: false
+    t.index ["service_adjustment_id", "sort_order"], name: "idx_service_adjustment_items_order", unique: true
+    t.index ["service_adjustment_id"], name: "index_service_adjustment_items_on_service_adjustment_id"
+    t.check_constraint "kind::text = 'credit'::text AND line_total <= 0::numeric OR kind::text <> 'credit'::text AND line_total >= 0::numeric", name: "service_adjustment_items_signed_total"
+    t.check_constraint "kind::text = ANY (ARRAY['additional_service'::character varying, 'material_charge'::character varying, 'material_reimbursement'::character varying, 'credit'::character varying]::text[])", name: "service_adjustment_items_known_kind"
+    t.check_constraint "quantity > 0::numeric", name: "service_adjustment_items_positive_quantity"
+    t.check_constraint "sort_order >= 0", name: "service_adjustment_items_nonnegative_order"
+    t.check_constraint "unit_price >= 0::numeric", name: "service_adjustment_items_nonnegative_price"
+  end
+
+  create_table "service_adjustment_receipts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "attached_at", null: false
+    t.bigint "byte_size", null: false
+    t.string "content_type", limit: 40, null: false
+    t.datetime "created_at", null: false
+    t.integer "height", null: false
+    t.uuid "media_upload_id", null: false
+    t.text "private_key", null: false
+    t.uuid "service_adjustment_item_id", null: false
+    t.datetime "updated_at", null: false
+    t.integer "width", null: false
+    t.index ["media_upload_id"], name: "index_service_adjustment_receipts_on_media_upload_id", unique: true
+    t.index ["private_key"], name: "index_service_adjustment_receipts_on_private_key", unique: true
+    t.index ["service_adjustment_item_id"], name: "idx_on_service_adjustment_item_id_4320821f0f", unique: true
+    t.check_constraint "byte_size > 0 AND width > 0 AND height > 0", name: "service_adjustment_receipts_positive_dimensions"
+    t.check_constraint "content_type::text = ANY (ARRAY['image/jpeg'::character varying, 'image/png'::character varying]::text[])", name: "service_adjustment_receipts_supported_type"
+  end
+
+  create_table "service_adjustments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "accepted_customer_email", limit: 254
+    t.string "accepted_customer_name", limit: 80
+    t.string "accepted_customer_phone_e164", limit: 20
+    t.integer "accepted_revision"
+    t.integer "adjustment_number", null: false
+    t.datetime "created_at", null: false
+    t.datetime "customer_decided_at"
+    t.text "customer_decision_message"
+    t.text "description"
+    t.date "incurred_on"
+    t.integer "lock_version", default: 0, null: false
+    t.text "schedule_impact"
+    t.uuid "service_job_id", null: false
+    t.datetime "shared_at"
+    t.string "status", limit: 24, default: "draft", null: false
+    t.datetime "terms_accepted_at"
+    t.string "title", limit: 120, null: false
+    t.decimal "total_amount", precision: 14, scale: 2, default: "0.0", null: false
+    t.datetime "updated_at", null: false
+    t.index ["service_job_id", "adjustment_number"], name: "idx_on_service_job_id_adjustment_number_65cab16466", unique: true
+    t.index ["service_job_id", "status", "updated_at"], name: "idx_service_adjustments_job_status_updated"
+    t.index ["service_job_id"], name: "index_service_adjustments_on_service_job_id"
+    t.check_constraint "accepted_revision IS NULL OR accepted_revision >= 0", name: "service_adjustments_nonnegative_accepted_revision"
+    t.check_constraint "adjustment_number > 0", name: "service_adjustments_positive_number"
+    t.check_constraint "char_length(btrim(title::text)) >= 1 AND char_length(btrim(title::text)) <= 120", name: "service_adjustments_title_length"
+    t.check_constraint "customer_decision_message IS NULL OR char_length(btrim(customer_decision_message)) >= 1 AND char_length(btrim(customer_decision_message)) <= 700", name: "service_adjustments_decision_message_length"
+    t.check_constraint "description IS NULL OR char_length(btrim(description)) >= 1 AND char_length(btrim(description)) <= 700", name: "service_adjustments_description_length"
+    t.check_constraint "schedule_impact IS NULL OR char_length(btrim(schedule_impact)) >= 1 AND char_length(btrim(schedule_impact)) <= 300", name: "service_adjustments_schedule_impact_length"
+    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying, 'awaiting_response'::character varying, 'change_requested'::character varying, 'approved'::character varying, 'declined'::character varying, 'cancelled'::character varying]::text[])", name: "service_adjustments_known_status"
   end
 
   create_table "service_categories", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -1026,6 +1110,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_03_164000) do
   add_foreign_key "search_events", "cities", column: "city_code", primary_key: "code"
   add_foreign_key "search_events", "neighborhoods", column: "neighborhood_code", primary_key: "code"
   add_foreign_key "search_events", "services"
+  add_foreign_key "service_adjustment_change_requests", "service_adjustments", on_delete: :cascade
+  add_foreign_key "service_adjustment_items", "service_adjustments", on_delete: :cascade
+  add_foreign_key "service_adjustment_receipts", "media_uploads", on_delete: :restrict
+  add_foreign_key "service_adjustment_receipts", "service_adjustment_items", on_delete: :cascade
+  add_foreign_key "service_adjustments", "service_jobs", on_delete: :cascade
   add_foreign_key "service_jobs", "quotes"
   add_foreign_key "services", "service_categories", column: "category_id"
   add_foreign_key "verification_file_access_events", "user_accounts", column: "admin_user_id"

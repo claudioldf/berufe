@@ -66,8 +66,9 @@ useHead(() => ({ link: [{ rel: "canonical", href: canonicalUrl.value }] }));
       <p>
         Ela se aplica ao cadastro e acesso, perfis, busca, portfólio,
         verificação de identidade, conexões, moderação, WhatsApp, orçamentos,
-        acompanhamento de serviços, recomendações, suporte, segurança e medição
-        agregada do produto.
+        ajustes de escopo e valor, comprovantes de compra, acompanhamento de
+        serviços, recomendações, suporte, segurança e medição agregada do
+        produto.
       </p>
     </section>
 
@@ -106,7 +107,17 @@ useHead(() => ({ link: [{ rel: "canonical", href: canonicalUrl.value }] }));
         Um profissional pode cadastrar nome, WhatsApp e e-mail do cliente. O
         orçamento pode incluir serviço, endereço, data, itens, quantidades,
         valores, desconto, validade, observações, decisão do cliente, mensagens,
-        conclusão, pendências e cancelamento.
+        conclusão, pendências e cancelamento. Durante o serviço, o profissional
+        também pode registrar ajustes de escopo, prazo, materiais, reembolsos e
+        créditos, além da data em que uma despesa ocorreu e da resposta dada a
+        cada revisão.
+      </p>
+      <p>
+        Um reembolso de material pode incluir um comprovante JPEG ou PNG. A
+        imagem fica em armazenamento privado, é regenerada para remover
+        metadados desnecessários e só pode ser aberta pelo profissional ou pelo
+        link privado do orçamento relacionado. O comprovante é opcional e sua
+        ausência fica indicada ao cliente.
       </p>
       <p>
         Para recomendações, tratamos e-mail ou sua impressão criptográfica,
@@ -388,6 +399,10 @@ useHead(() => ({ link: [{ rel: "canonical", href: canonicalUrl.value }] }));
         </li>
         <li>
           mídia rejeitada, substituída, excluída ou não anexada: até 30 dias;
+        </li>
+        <li>
+          comprovante anexado a ajuste de serviço: enquanto necessário à relação
+          do serviço ou até pedido verificado de encerramento;
         </li>
         <li>
           conta, perfil, clientes, orçamentos e serviços: enquanto necessários à
