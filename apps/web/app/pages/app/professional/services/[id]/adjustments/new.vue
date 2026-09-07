@@ -12,22 +12,12 @@ import {
 } from "~/services/api/professional-service-jobs";
 import type {
   ServiceAdjustmentDraft,
+  ServiceAdjustmentEditorItem,
   ServiceAdjustmentItemKind,
 } from "~/types";
 
 definePageMeta({ layout: "workspace" });
 useSeoMeta({ title: "Ajuste do serviço", robots: "noindex, nofollow" });
-
-interface EditorItem {
-  key: string;
-  kind: ServiceAdjustmentItemKind;
-  description: string;
-  quantity: number;
-  unit: string;
-  unitPrice: number;
-  mediaUploadId: string | null;
-  receiptFile: File | null;
-}
 
 const route = useRoute();
 const client = useApiClient();
@@ -86,28 +76,23 @@ const form = reactive({
   description: existing.value?.description ?? "",
   scheduleImpact: existing.value?.scheduleImpact ?? "",
   incurredOn: existing.value?.incurredOn ?? "",
-  items: (existing.value?.items ?? []).map<EditorItem>((item) => ({
-    key: itemKey(),
-    kind: item.kind,
-    description: item.description,
-    quantity: item.quantity,
-    unit: item.unit,
-    unitPrice: item.unitPrice,
-    mediaUploadId: item.receipt?.mediaUploadId ?? null,
-    receiptFile: null,
-  })),
+  items: (existing.value?.items ?? []).map<ServiceAdjustmentEditorItem>(
+    (item) => ({
+      key: itemKey(),
+      kind: item.kind,
+      description: item.description,
+      quantity: item.quantity,
+      unit: item.unit,
+      unitPrice: item.unitPrice,
+      mediaUploadId: item.receipt?.mediaUploadId ?? null,
+      receiptFile: null,
+    }),
+  ),
 });
 const saving = shallowRef(false);
 const saveError = shallowRef("");
 const fieldErrors = reactive<Record<string, string>>({});
 
-const kindOptions: Array<{ value: ServiceAdjustmentItemKind; label: string }> =
-  [
-    { value: "additional_service", label: "Serviço adicional" },
-    { value: "material_charge", label: "Material fornecido" },
-    { value: "material_reimbursement", label: "Reembolso de material" },
-    { value: "credit", label: "Crédito para o cliente" },
-  ];
 const money = new Intl.NumberFormat("pt-BR", {
   style: "currency",
   currency: "BRL",
@@ -151,7 +136,10 @@ function clearReceipt(index: number) {
 }
 
 function changeItemKind(index: number) {
-  if (form.items[index]?.kind !== "material_reimbursement") {
+  const item = form.items[index];
+  if (!item) return;
+  item.unit = item.kind === "material_reimbursement" ? "unidade" : "serviço";
+  if (item.kind !== "material_reimbursement") {
     clearReceipt(index);
   }
 }
@@ -161,7 +149,7 @@ function validate() {
     Reflect.deleteProperty(fieldErrors, key),
   );
   if (!form.title.trim())
-    fieldErrors.title = "Informe um título para o ajuste.";
+    fieldErrors.title = "Informe um resumo para o ajuste.";
   if (projectedTotal.value < 0)
     fieldErrors.total =
       "Os créditos não podem deixar o total combinado negativo.";
@@ -176,7 +164,7 @@ function validate() {
   return Object.keys(fieldErrors).length === 0;
 }
 
-async function receiptUploadId(item: EditorItem) {
+async function receiptUploadId(item: ServiceAdjustmentEditorItem) {
   if (!item.receiptFile) return item.mediaUploadId;
   const upload = await uploadMedia(
     client,
@@ -310,21 +298,30 @@ async function save(intent: "draft" | "copy" | "whatsapp") {
         </div>
       </header>
 
-      <form class="adjustment-editor__form" @submit.prevent="save('draft')">
+      <form
+        class="adjustment-editor__form"
+        novalidate
+        @submit.prevent="save('draft')"
+      >
         <DesignSystemSurfaceCard as="section" class="adjustment-editor__card">
           <h2>O que mudou?</h2>
-          <label>
-            Título
-            <input
-              v-model="form.title"
-              maxlength="120"
-              placeholder="Ex.: Pintura da parede adicional"
-              :aria-invalid="Boolean(fieldErrors.title)"
-            />
-            <small v-if="fieldErrors.title" role="alert">{{
-              fieldErrors.title
-            }}</small>
-          </label>
+          <DesignSystemFormField
+            label="Resumo do ajuste"
+            :error="fieldErrors.title"
+            required
+          >
+            <template #default="{ controlId, describedBy, invalid, required }">
+              <input
+                :id="controlId"
+                v-model="form.title"
+                maxlength="120"
+                placeholder="Ex.: Pintura da parede adicional"
+                :aria-describedby="describedBy"
+                :aria-invalid="invalid"
+                :required="required"
+              />
+            </template>
+          </DesignSystemFormField>
           <label>
             Detalhes (opcional)
             <textarea
@@ -349,173 +346,78 @@ async function save(intent: "draft" | "copy" | "whatsapp") {
             </label>
           </div>
           <p v-if="form.incurredOn" class="adjustment-editor__warning">
-            <UIcon name="i-lucide-triangle-alert" /> O cliente verá que esta
-            despesa ocorreu antes da aprovação. Ela continuará fora do total
-            combinado até ser aprovada.
+            <UIcon name="i-lucide-triangle-alert" aria-hidden="true" />
+            <span>
+              O cliente verá que esta despesa ocorreu antes da aprovação. Ela
+              continuará fora do total combinado até ser aprovada.
+            </span>
           </p>
         </DesignSystemSurfaceCard>
 
-        <DesignSystemSurfaceCard as="section" class="adjustment-editor__card">
-          <div class="adjustment-editor__section-heading">
-            <div>
-              <h2>Itens do ajuste</h2>
-              <p>
-                Você também pode salvar um ajuste de valor zero só para
-                documentar escopo ou prazo.
-              </p>
-            </div>
+        <DashboardServiceAdjustmentItemsEditor
+          v-model="form.items"
+          :total="total"
+          :errors="fieldErrors"
+          @add="addItem()"
+          @remove="removeItem"
+          @change-kind="changeItemKind"
+          @select-receipt="selectReceipt"
+          @clear-receipt="clearReceipt"
+        />
+
+        <footer class="adjustment-editor__savebar">
+          <span
+            :role="
+              saveError || Object.keys(fieldErrors).length ? 'alert' : 'status'
+            "
+          >
+            <UIcon
+              :name="
+                saveError ? 'i-lucide-circle-alert' : 'i-lucide-circle-dot'
+              "
+              aria-hidden="true"
+            />
+            {{
+              saveError ||
+              (Object.keys(fieldErrors).length
+                ? "Revise os campos destacados para continuar"
+                : saving
+                  ? "Salvando ajuste…"
+                  : "Alterações ainda não foram salvas")
+            }}
+          </span>
+          <div class="adjustment-editor__savebar-actions">
+            <UButton
+              type="submit"
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-file-text"
+              :loading="saving"
+              :disabled="saving"
+            >
+              Salvar rascunho
+            </UButton>
             <UButton
               type="button"
               color="neutral"
               variant="outline"
-              icon="i-lucide-plus"
-              :disabled="form.items.length >= 20"
-              @click="addItem()"
+              icon="i-lucide-copy"
+              :disabled="saving"
+              @click="save('copy')"
             >
-              Adicionar item
+              Salvar e copiar link
+            </UButton>
+            <UButton
+              type="button"
+              color="primary"
+              icon="i-lucide-message-circle"
+              :loading="saving"
+              :disabled="saving"
+              @click="save('whatsapp')"
+            >
+              Salvar e enviar no WhatsApp
             </UButton>
           </div>
-
-          <div v-if="form.items.length" class="adjustment-editor__items">
-            <fieldset
-              v-for="(item, index) in form.items"
-              :key="item.key"
-              class="adjustment-editor__item"
-            >
-              <legend>Item {{ index + 1 }}</legend>
-              <div class="adjustment-editor__item-grid">
-                <label>
-                  Tipo
-                  <select v-model="item.kind" @change="changeItemKind(index)">
-                    <option
-                      v-for="option in kindOptions"
-                      :key="option.value"
-                      :value="option.value"
-                    >
-                      {{ option.label }}
-                    </option>
-                  </select>
-                </label>
-                <label class="adjustment-editor__description">
-                  Descrição
-                  <input v-model="item.description" maxlength="160" />
-                </label>
-                <label>
-                  Quantidade
-                  <input
-                    v-model.number="item.quantity"
-                    type="number"
-                    min="0.001"
-                    step="0.001"
-                  />
-                </label>
-                <label>
-                  Unidade
-                  <input v-model="item.unit" maxlength="20" />
-                </label>
-                <label>
-                  Valor unitário
-                  <input
-                    v-model.number="item.unitPrice"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                  />
-                </label>
-                <strong class="adjustment-editor__line-total">
-                  {{
-                    money.format(
-                      (item.kind === "credit" ? -1 : 1) *
-                        item.quantity *
-                        item.unitPrice,
-                    )
-                  }}
-                </strong>
-              </div>
-              <div
-                v-if="item.kind === 'material_reimbursement'"
-                class="adjustment-editor__receipt"
-              >
-                <label>
-                  Comprovante (opcional, JPEG ou PNG)
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png"
-                    @change="selectReceipt(index, $event)"
-                  />
-                </label>
-                <span v-if="item.receiptFile">{{ item.receiptFile.name }}</span>
-                <span v-else-if="item.mediaUploadId">Comprovante anexado</span>
-                <span v-else
-                  >Sem comprovante — isso ficará claro para o cliente.</span
-                >
-                <UButton
-                  v-if="item.receiptFile || item.mediaUploadId"
-                  type="button"
-                  color="neutral"
-                  variant="link"
-                  @click="clearReceipt(index)"
-                >
-                  Remover comprovante
-                </UButton>
-              </div>
-              <small v-if="fieldErrors[`item-${index}`]" role="alert">
-                {{ fieldErrors[`item-${index}`] }}
-              </small>
-              <UButton
-                type="button"
-                color="error"
-                variant="ghost"
-                size="sm"
-                @click="removeItem(index)"
-              >
-                Remover item
-              </UButton>
-            </fieldset>
-          </div>
-          <p v-else class="adjustment-editor__empty">
-            Nenhum item financeiro. O ajuste documentará apenas o texto acima.
-          </p>
-          <p
-            v-if="fieldErrors.total"
-            class="adjustment-editor__error"
-            role="alert"
-          >
-            {{ fieldErrors.total }}
-          </p>
-        </DesignSystemSurfaceCard>
-
-        <p v-if="saveError" class="adjustment-editor__error" role="alert">
-          {{ saveError }}
-        </p>
-        <footer class="adjustment-editor__actions">
-          <UButton
-            type="submit"
-            color="neutral"
-            variant="outline"
-            :loading="saving"
-          >
-            Salvar rascunho
-          </UButton>
-          <UButton
-            type="button"
-            color="neutral"
-            variant="outline"
-            icon="i-lucide-copy"
-            :disabled="saving"
-            @click="save('copy')"
-          >
-            Salvar e copiar link
-          </UButton>
-          <UButton
-            type="button"
-            color="primary"
-            icon="i-lucide-message-circle"
-            :loading="saving"
-            @click="save('whatsapp')"
-          >
-            Salvar e enviar no WhatsApp
-          </UButton>
         </footer>
       </form>
     </DesignSystemContainer>
@@ -562,8 +464,7 @@ async function save(intent: "draft" | "copy" | "whatsapp") {
     letter-spacing: -0.04em;
   }
 
-  &__heading p,
-  &__section-heading p {
+  &__heading p {
     max-width: 610px;
     margin-top: 7px;
     color: var(--ink-soft);
@@ -590,8 +491,7 @@ async function save(intent: "draft" | "copy" | "whatsapp") {
     font-size: 1.45rem;
   }
 
-  &__form,
-  &__items {
+  &__form {
     display: grid;
     gap: 18px;
   }
@@ -637,14 +537,16 @@ async function save(intent: "draft" | "copy" | "whatsapp") {
     font-size: 0.8rem;
   }
 
-  &__two-columns,
-  &__item-grid {
+  &__two-columns {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 13px;
   }
 
   &__warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
     padding: 12px;
     border-radius: 10px;
     background: var(--color-warning-tint, #fff5dd);
@@ -652,67 +554,37 @@ async function save(intent: "draft" | "copy" | "whatsapp") {
     font-size: 0.84rem;
   }
 
-  &__section-heading,
-  &__actions {
+  &__warning :deep(svg) {
+    flex: 0 0 auto;
+    margin-top: 0.15em;
+  }
+
+  &__savebar {
+    position: sticky;
+    z-index: 10;
+    bottom: 12px;
     display: flex;
-    align-items: flex-start;
     justify-content: space-between;
+    align-items: center;
     gap: 16px;
-  }
-
-  &__item {
-    display: grid;
-    gap: 13px;
-    margin: 0;
-    padding: 16px;
+    padding: 11px 13px;
     border: 1px solid var(--line);
-    border-radius: 13px;
+    border-radius: 14px;
+    background: rgb(255 255 255 / 96%);
+    box-shadow: var(--shadow-lg);
   }
 
-  &__item legend {
-    padding: 0 4px;
-    color: var(--color-brand);
-    font-size: 0.76rem;
-    font-weight: 850;
-  }
-
-  &__description {
-    grid-column: span 1;
-  }
-
-  &__line-total {
-    align-self: end;
-    padding: 11px 0;
-    text-align: right;
-  }
-
-  &__receipt {
+  &__savebar > span {
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
-    padding: 12px;
-    border-radius: 10px;
-    background: var(--color-surface-subtle);
+    gap: 5px;
     color: var(--ink-soft);
-    font-size: 0.8rem;
+    font-size: 0.82rem;
   }
 
-  &__receipt label {
-    flex: 1 1 280px;
-  }
-
-  &__empty {
-    padding: 14px;
-    border: 1px dashed var(--line);
-    border-radius: 10px;
-    color: var(--ink-soft);
-    font-size: 0.84rem;
-  }
-
-  &__actions {
-    justify-content: flex-end;
-    flex-wrap: wrap;
+  &__savebar-actions {
+    display: flex;
+    gap: 6px;
   }
 }
 
@@ -720,9 +592,7 @@ async function save(intent: "draft" | "copy" | "whatsapp") {
   .adjustment-editor {
     padding-top: 24px;
 
-    &__heading,
-    &__section-heading,
-    &__actions {
+    &__heading {
       align-items: stretch;
       flex-direction: column;
     }
@@ -731,14 +601,33 @@ async function save(intent: "draft" | "copy" | "whatsapp") {
       min-width: 0;
     }
 
-    &__two-columns,
-    &__item-grid {
+    &__two-columns {
       grid-template-columns: 1fr;
     }
 
-    &__actions :deep(button) {
+    &__savebar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      row-gap: 8px;
+      padding-inline: 8px;
+    }
+
+    &__savebar-actions {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 4px;
+      width: 100%;
+      min-width: 0;
+    }
+
+    &__savebar-actions :deep(button) {
       justify-content: center;
       width: 100%;
+      min-width: 0;
+      min-height: 48px;
+      padding-inline: 4px;
+      gap: 4px;
+      font-size: clamp(0.625rem, 3vw, 0.75rem);
     }
   }
 }

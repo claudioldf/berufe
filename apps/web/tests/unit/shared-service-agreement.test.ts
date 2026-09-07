@@ -72,6 +72,58 @@ describe("shared service agreement", () => {
     expect(wrapper.text()).toContain(
       "só entra no total combinado se você aprovar",
     );
+    expect(wrapper.text()).not.toContain("Ajustes aprovados");
+
+    const list = wrapper.get(".shared-agreement__list").element;
+    const summary = wrapper.get(".shared-agreement__summary").element;
+    expect(
+      list.compareDocumentPosition(summary) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(wrapper.get(".shared-agreement__agreed-total").text()).toContain(
+      "R$ 500,00",
+    );
+  });
+
+  it("describes numeric schedule impacts with the correct plural", async () => {
+    const withImpact = structuredClone(serviceJob);
+    withImpact.adjustments![0]!.scheduleImpact = "1";
+    const wrapper = mount(SharedServiceAgreement, {
+      props: { serviceJob: withImpact, actingAdjustmentId: null },
+      global: {
+        stubs: {
+          UButton: ButtonStub,
+          UIcon: true,
+          DesignSystemEyebrow: true,
+        },
+      },
+    });
+
+    expect(wrapper.text()).toContain("Impacto no prazo: 1 dia a mais");
+
+    const twoDays = structuredClone(withImpact);
+    twoDays.adjustments![0]!.scheduleImpact = "2";
+    await wrapper.setProps({ serviceJob: twoDays });
+
+    expect(wrapper.text()).toContain("Impacto no prazo: 2 dias a mais");
+  });
+
+  it("shows the approved adjustment breakdown only for a positive amount", () => {
+    const approved = structuredClone(serviceJob);
+    approved.approvedAdjustmentTotal = 120;
+    approved.agreedTotal = 620;
+    const wrapper = mount(SharedServiceAgreement, {
+      props: { serviceJob: approved, actingAdjustmentId: null },
+      global: {
+        stubs: {
+          UButton: ButtonStub,
+          UIcon: true,
+          DesignSystemEyebrow: true,
+        },
+      },
+    });
+
+    expect(wrapper.text()).toContain("Ajustes aprovados");
+    expect(wrapper.text()).toContain("R$ 120,00");
   });
 
   it("validates and emits approval for the exact adjustment", async () => {

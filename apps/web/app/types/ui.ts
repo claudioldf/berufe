@@ -1,3 +1,5 @@
+import type { ServiceAdjustmentItemKind } from "./service-job";
+
 export interface ToastMessage {
   title: string;
   description: string;
@@ -9,6 +11,17 @@ export interface LegalDocumentSection {
 }
 
 export type AppRole = "visitor" | "professional" | "admin";
+
+export interface ServiceAdjustmentEditorItem {
+  key: string;
+  kind: ServiceAdjustmentItemKind;
+  description: string;
+  quantity: number;
+  unit: string;
+  unitPrice: number;
+  mediaUploadId: string | null;
+  receiptFile: File | null;
+}
 
 export interface ExpressionSearchPayload {
   expression: string;

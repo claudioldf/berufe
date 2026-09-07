@@ -36,7 +36,7 @@ const money = new Intl.NumberFormat("pt-BR", {
 const kindLabels: Record<ServiceAdjustment["items"][number]["kind"], string> = {
   additional_service: "Serviço adicional",
   material_charge: "Material fornecido pelo profissional",
-  material_reimbursement: "Reembolso de material",
+  material_reimbursement: "Compra e reembolso de material",
   credit: "Crédito para você",
 };
 const statusLabels: Record<ServiceAdjustment["status"], string> = {
@@ -47,6 +47,14 @@ const statusLabels: Record<ServiceAdjustment["status"], string> = {
   declined: "Recusado",
   cancelled: "Cancelado",
 };
+
+function formatScheduleImpact(value: string) {
+  const trimmed = value.trim();
+  if (!/^\d+(?:[.,]\d+)?$/.test(trimmed)) return trimmed;
+
+  const amount = Number(trimmed.replace(",", "."));
+  return `${trimmed} ${amount === 1 ? "dia a mais" : "dias a mais"}`;
+}
 
 function responseFor(id: string) {
   return (responses[id] ??= {
@@ -95,22 +103,7 @@ function decide(
           total combinado abaixo.
         </p>
       </div>
-      <strong>{{ money.format(serviceJob.agreedTotal ?? 0) }}</strong>
     </header>
-    <dl class="shared-agreement__totals">
-      <div>
-        <dt>Orçamento original</dt>
-        <dd>{{ money.format(serviceJob.originalTotal ?? 0) }}</dd>
-      </div>
-      <div>
-        <dt>Ajustes aprovados</dt>
-        <dd>{{ money.format(serviceJob.approvedAdjustmentTotal ?? 0) }}</dd>
-      </div>
-      <div v-if="serviceJob.awaitingDecisionTotal">
-        <dt>Aguardando sua resposta</dt>
-        <dd>{{ money.format(serviceJob.awaitingDecisionTotal) }}</dd>
-      </div>
-    </dl>
 
     <div v-if="serviceJob.adjustments?.length" class="shared-agreement__list">
       <article
@@ -135,17 +128,31 @@ function decide(
         </div>
         <p v-if="adjustment.description">{{ adjustment.description }}</p>
         <p v-if="adjustment.scheduleImpact" class="shared-agreement__impact">
-          <UIcon name="i-lucide-calendar-clock" /> Impacto no prazo:
-          {{ adjustment.scheduleImpact }}
+          <UIcon
+            class="shared-agreement__message-icon"
+            name="i-lucide-calendar-clock"
+            aria-hidden="true"
+          />
+          <span>
+            Impacto no prazo:
+            {{ formatScheduleImpact(adjustment.scheduleImpact) }}
+          </span>
         </p>
         <p v-if="adjustment.incurredOn" class="shared-agreement__incurred">
-          <UIcon name="i-lucide-triangle-alert" /> Este gasto ou trabalho foi
-          informado como já realizado em
-          {{
-            new Date(`${adjustment.incurredOn}T12:00:00`).toLocaleDateString(
-              "pt-BR",
-            )
-          }}. Mesmo assim, o valor só entra no total combinado se você aprovar.
+          <UIcon
+            class="shared-agreement__message-icon"
+            name="i-lucide-triangle-alert"
+            aria-hidden="true"
+          />
+          <span>
+            Este gasto ou trabalho foi informado como já realizado em
+            {{
+              new Date(`${adjustment.incurredOn}T12:00:00`).toLocaleDateString(
+                "pt-BR",
+              )
+            }}. Mesmo assim, o valor só entra no total combinado se você
+            aprovar.
+          </span>
         </p>
 
         <ul v-if="adjustment.items.length" class="shared-agreement__items">
@@ -201,8 +208,10 @@ function decide(
               v-model="responseFor(adjustment.id).termsAccepted"
               type="checkbox"
             />
-            Revisei o escopo, os itens, o valor e eventual impacto no prazo
-            deste ajuste.
+            <span>
+              Revisei o escopo, os itens, o valor e eventual impacto no prazo
+              deste ajuste.
+            </span>
           </label>
           <small v-if="responseFor(adjustment.id).termsError" role="alert">
             {{ responseFor(adjustment.id).termsError }}
@@ -266,6 +275,27 @@ function decide(
         </p>
       </article>
     </div>
+
+    <footer class="shared-agreement__summary">
+      <dl class="shared-agreement__totals">
+        <div>
+          <dt>Orçamento original</dt>
+          <dd>{{ money.format(serviceJob.originalTotal ?? 0) }}</dd>
+        </div>
+        <div v-if="(serviceJob.approvedAdjustmentTotal ?? 0) > 0">
+          <dt>Ajustes aprovados</dt>
+          <dd>{{ money.format(serviceJob.approvedAdjustmentTotal ?? 0) }}</dd>
+        </div>
+        <div v-if="serviceJob.awaitingDecisionTotal">
+          <dt>Aguardando sua resposta</dt>
+          <dd>{{ money.format(serviceJob.awaitingDecisionTotal) }}</dd>
+        </div>
+      </dl>
+      <div class="shared-agreement__agreed-total">
+        <span>Total combinado</span>
+        <strong>{{ money.format(serviceJob.agreedTotal ?? 0) }}</strong>
+      </div>
+    </footer>
   </section>
 </template>
 
@@ -306,17 +336,10 @@ function decide(
     font-size: 0.85rem;
   }
 
-  &__header > strong {
-    color: var(--color-brand-strong);
-    font-size: 1.45rem;
-    white-space: nowrap;
-  }
-
   &__totals {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 8px;
-    margin-top: 16px;
   }
 
   &__totals div {
@@ -369,6 +392,9 @@ function decide(
 
   &__impact,
   &__incurred {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
     padding: 9px 10px;
     border-radius: 9px;
     background: var(--color-surface-subtle);
@@ -377,6 +403,11 @@ function decide(
   &__incurred {
     background: var(--color-warning-tint, #fff5dd) !important;
     color: #7a4307 !important;
+  }
+
+  &__message-icon {
+    flex: 0 0 auto;
+    margin-top: 0.15em;
   }
 
   &__items {
@@ -436,11 +467,18 @@ function decide(
   }
 
   &__check {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr);
+    align-items: start;
+    column-gap: 10px;
     font-size: 0.82rem;
     line-height: 1.4;
+  }
+
+  &__check input {
+    width: 18px;
+    height: 18px;
+    margin: 0.05em 0 0;
   }
 
   small[role="alert"],
@@ -461,6 +499,32 @@ function decide(
 
   &__resolved--approved {
     color: var(--color-brand) !important;
+  }
+
+  &__summary {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+  }
+
+  &__agreed-total {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 12px;
+    padding-top: 14px;
+    border-top: 2px solid var(--ink);
+  }
+
+  &__agreed-total span {
+    font-weight: 750;
+  }
+
+  &__agreed-total strong {
+    color: var(--color-brand-strong);
+    font-size: 1.45rem;
+    white-space: nowrap;
   }
 }
 
