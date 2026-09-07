@@ -109,8 +109,8 @@ const statusText = computed(() => {
 
     &__actions {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 4px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
       width: 100%;
       min-width: 0;
     }
@@ -120,10 +120,17 @@ const statusText = computed(() => {
       width: 100%;
       min-width: 0;
       min-height: 48px;
-      padding-inline: 4px;
-      gap: 4px;
-      font-size: clamp(0.6rem, 2.8vw, 0.75rem);
+      padding-inline: 8px;
+      gap: 5px;
+      font-size: 0.8125rem;
+      font-weight: 600;
       white-space: nowrap;
+    }
+
+    &__action:last-child {
+      grid-column: 1 / -1;
+      grid-row: 1;
+      font-size: 0.875rem;
     }
   }
 }

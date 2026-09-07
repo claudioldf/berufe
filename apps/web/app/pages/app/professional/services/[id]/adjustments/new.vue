@@ -417,6 +417,7 @@ if (!form.items.length) addItem();
     font-size: 2.5rem;
     font-weight: 500;
     letter-spacing: -0.04em;
+    line-height: 1.1;
     text-wrap: balance;
   }
 
@@ -429,7 +430,8 @@ if (!form.items.length) addItem();
   &__heading p {
     margin: 7px 0 0;
     color: rgb(255 255 255 / 58%);
-    font-size: 0.82rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
   }
 
   &__content {

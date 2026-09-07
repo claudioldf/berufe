@@ -278,6 +278,11 @@ function lineTotal(item: ServiceAdjustmentEditorItem) {
     margin-top: 12px;
   }
 
+  &__actions :deep(button) {
+    font-size: var(--font-size-min);
+    font-weight: 600;
+  }
+
   &__error {
     color: var(--color-danger);
     font-size: 0.8rem;
@@ -295,7 +300,13 @@ function lineTotal(item: ServiceAdjustmentEditorItem) {
     font-size: 0.86rem;
   }
 
+  &__summary > span {
+    font-weight: 600;
+  }
+
   &__summary strong {
+    font-size: 1rem;
+    font-weight: 750;
     font-variant-numeric: tabular-nums;
   }
 }
@@ -322,7 +333,7 @@ function lineTotal(item: ServiceAdjustmentEditorItem) {
     border: 0;
     color: var(--ink-soft);
     font-size: 0.82rem;
-    font-weight: 850;
+    font-weight: 700;
     text-transform: uppercase;
   }
 
@@ -389,7 +400,7 @@ function lineTotal(item: ServiceAdjustmentEditorItem) {
 
   &__error {
     color: var(--color-danger);
-    font-size: 0.72rem;
+    font-size: var(--font-size-min);
     font-weight: 650;
     line-height: 1.25;
   }
@@ -464,13 +475,13 @@ function lineTotal(item: ServiceAdjustmentEditorItem) {
       align-self: center;
       color: var(--ink);
       font-size: 0.82rem;
-      font-weight: 850;
+      font-weight: 750;
     }
 
     &__label {
       color: var(--ink-soft);
-      font-size: 0.76rem;
-      font-weight: 800;
+      font-size: var(--font-size-min);
+      font-weight: 700;
     }
 
     &__kind,

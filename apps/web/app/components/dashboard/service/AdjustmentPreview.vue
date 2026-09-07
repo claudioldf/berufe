@@ -243,7 +243,7 @@ function lineTotal(item: ServiceAdjustmentEditorItem) {
   &__change > span {
     color: var(--ink-soft);
     font-size: 0.82rem;
-    font-weight: 850;
+    font-weight: 750;
     letter-spacing: 0.06em;
     text-transform: uppercase;
   }
@@ -275,15 +275,15 @@ function lineTotal(item: ServiceAdjustmentEditorItem) {
 
   &__service h1 {
     font-family: inherit;
-    font-size: 0.86rem;
+    font-size: 0.9375rem;
     font-weight: 700;
-    line-height: 1.5;
+    line-height: 1.4;
   }
 
   &__change h2 {
-    font-size: 0.86rem;
+    font-size: 1.0625rem;
     font-weight: 600;
-    line-height: 1.5;
+    line-height: 1.35;
   }
 
   &__change {
@@ -295,7 +295,7 @@ function lineTotal(item: ServiceAdjustmentEditorItem) {
     margin: 7px 0 0;
     overflow-wrap: anywhere;
     color: var(--ink-soft);
-    font-size: 0.82rem;
+    font-size: 0.875rem;
     line-height: 1.5;
     white-space: pre-line;
   }
@@ -340,11 +340,12 @@ function lineTotal(item: ServiceAdjustmentEditorItem) {
   &__item--head {
     color: var(--ink-soft);
     font-size: 0.82rem;
-    font-weight: 850;
+    font-weight: 700;
     text-transform: uppercase;
   }
 
   &__item > span:nth-child(n + 2) {
+    font-variant-numeric: tabular-nums;
     text-align: right;
   }
 
@@ -355,7 +356,7 @@ function lineTotal(item: ServiceAdjustmentEditorItem) {
 
   &__item strong {
     overflow-wrap: anywhere;
-    font-size: 0.84rem;
+    font-size: 0.875rem;
   }
 
   &__item small {
@@ -384,7 +385,8 @@ function lineTotal(item: ServiceAdjustmentEditorItem) {
     padding-top: 10px;
     border-top: 2px solid var(--ink);
     color: var(--ink);
-    font-size: 0.84rem;
+    font-size: 1rem;
+    font-weight: 600;
   }
 
   &__totals strong {

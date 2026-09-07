@@ -443,7 +443,7 @@ async function viewReceipt(receiptId: string) {
     margin: 0 0 6px;
     color: var(--color-brand);
     font-size: 0.86rem;
-    font-weight: 850;
+    font-weight: 750;
   }
   &__heading h1 {
     margin: 0;
@@ -451,13 +451,15 @@ async function viewReceipt(receiptId: string) {
     font-size: 2.5rem;
     font-weight: 500;
     letter-spacing: -0.04em;
+    line-height: 1.1;
+    text-wrap: balance;
   }
   &__heading span {
     display: block;
     max-width: 500px;
     margin-top: 7px;
     color: var(--ink-soft);
-    font-size: 0.86rem;
+    font-size: 0.875rem;
     line-height: 1.5;
   }
   &__notice {
@@ -488,12 +490,15 @@ async function viewReceipt(receiptId: string) {
     margin: 4px 0 0;
     font-family: var(--font-display);
     font-size: 1.45rem;
+    font-weight: 600;
+    line-height: 1.2;
+    text-wrap: balance;
   }
   &__action-card p,
   &__state-card p {
     margin: 6px 0 0;
     color: var(--ink-soft);
-    font-size: 0.86rem;
+    font-size: 0.875rem;
     line-height: 1.5;
   }
   &__action-card label:not(&__check) {
@@ -501,7 +506,7 @@ async function viewReceipt(receiptId: string) {
     gap: 7px;
     color: var(--ink-soft);
     font-size: 0.82rem;
-    font-weight: 800;
+    font-weight: 700;
   }
   &__action-card textarea {
     width: 100%;

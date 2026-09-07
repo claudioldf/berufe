@@ -204,6 +204,10 @@ defineExpose({ focusFirstError });
     box-shadow: none;
   }
 
+  &__form :deep(.form-field) {
+    font-weight: 700;
+  }
+
   &__preview {
     position: sticky;
     top: 20px;
@@ -215,8 +219,8 @@ defineExpose({ focusFirstError });
     justify-content: space-between;
     margin-bottom: 8px;
     color: var(--ink-soft);
-    font-size: 0.82rem;
-    font-weight: 800;
+    font-size: var(--font-size-min);
+    font-weight: 700;
     text-transform: uppercase;
   }
 
@@ -272,7 +276,7 @@ defineExpose({ focusFirstError });
 :deep(.adjustment-builder-card header p) {
   margin-top: 3px;
   color: var(--ink-soft);
-  font-size: 0.84rem;
+  font-size: 0.875rem;
 }
 
 .adjustment-share {

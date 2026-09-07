@@ -161,8 +161,8 @@ const props = withDefaults(
 
   &__kicker {
     color: var(--color-text-muted);
-    font-size: 0.7rem;
-    font-weight: 850;
+    font-size: 0.75rem;
+    font-weight: 750;
     letter-spacing: 0.11em;
     text-transform: uppercase;
   }
@@ -264,12 +264,13 @@ const props = withDefaults(
   }
 
   &__step-copy strong {
-    font-size: 0.76rem;
+    font-size: var(--font-size-min);
+    font-weight: 700;
   }
 
   &__step-copy small {
     color: var(--color-text-muted);
-    font-size: 0.68rem;
+    font-size: 0.75rem;
     line-height: 1.35;
   }
 
@@ -300,8 +301,8 @@ const props = withDefaults(
   }
 
   & blockquote span {
-    font-size: 0.7rem;
-    font-weight: 850;
+    font-size: 0.75rem;
+    font-weight: 750;
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }

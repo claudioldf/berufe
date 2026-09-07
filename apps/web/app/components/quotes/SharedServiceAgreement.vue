@@ -253,10 +253,6 @@ function decide(
               Aprovar ajuste
             </UButton>
           </div>
-          <small>
-            Sua resposta registra esta revisão do ajuste. Não confirma
-            pagamento.
-          </small>
         </div>
 
         <p
@@ -332,6 +328,9 @@ function decide(
     margin-top: 4px;
     font-family: var(--font-display);
     font-size: 1.55rem;
+    font-weight: 600;
+    line-height: 1.2;
+    text-wrap: balance;
   }
 
   &__header p {
@@ -353,15 +352,21 @@ function decide(
   }
 
   dt,
-  &__adjustment-heading span,
   &__items span {
     color: var(--ink-soft);
-    font-size: 0.72rem;
+    font-size: 0.75rem;
+  }
+
+  &__adjustment-heading span {
+    color: var(--ink-soft);
+    font-size: 0.78rem;
+    font-weight: 700;
   }
 
   dd {
     margin: 3px 0 0;
-    font-weight: 850;
+    font-weight: 750;
+    font-variant-numeric: tabular-nums;
   }
 
   &__list {
@@ -386,13 +391,16 @@ function decide(
 
   &__adjustment h3 {
     margin-top: 3px;
-    font-size: 1.02rem;
+    font-size: 1.08rem;
+    font-weight: 600;
+    line-height: 1.35;
+    text-wrap: balance;
   }
 
   &__adjustment > p {
     margin-top: 9px;
     color: var(--ink-soft);
-    font-size: 0.84rem;
+    font-size: 0.875rem;
     line-height: 1.5;
   }
 
@@ -440,6 +448,18 @@ function decide(
     justify-items: end;
   }
 
+  &__items li > div:first-child > strong {
+    font-size: 0.9375rem;
+    font-weight: 650;
+    line-height: 1.4;
+  }
+
+  &__item-value > strong {
+    font-size: 0.9375rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
   &__adjustment-total {
     display: flex;
     align-items: center;
@@ -449,10 +469,13 @@ function decide(
     margin: 12px 0 0 auto;
     padding-top: 10px;
     border-top: 2px solid var(--ink);
-    font-size: 0.84rem;
+    font-size: 0.875rem;
+    font-weight: 600;
   }
 
   &__adjustment-total strong {
+    font-size: 1rem;
+    font-weight: 750;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
@@ -460,7 +483,7 @@ function decide(
   &__item-value small,
   &__zero {
     color: var(--ink-soft);
-    font-size: 0.74rem;
+    font-size: 0.75rem;
   }
 
   &__decision {
@@ -475,8 +498,8 @@ function decide(
     display: grid;
     gap: 6px;
     color: var(--ink-soft);
-    font-size: 0.8rem;
-    font-weight: 750;
+    font-size: var(--font-size-min);
+    font-weight: 700;
   }
 
   textarea {
@@ -494,7 +517,7 @@ function decide(
     grid-template-columns: 18px minmax(0, 1fr);
     align-items: start;
     column-gap: 10px;
-    font-size: 0.82rem;
+    font-size: 0.875rem;
     line-height: 1.4;
   }
 
@@ -507,8 +530,8 @@ function decide(
   small[role="alert"],
   &__decision p {
     color: var(--color-danger);
-    font-size: 0.78rem;
-    font-weight: 750;
+    font-size: var(--font-size-min);
+    font-weight: 700;
   }
 
   &__actions {
@@ -547,6 +570,7 @@ function decide(
   &__agreed-total strong {
     color: var(--color-brand-strong);
     font-size: 1.45rem;
+    font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
 }

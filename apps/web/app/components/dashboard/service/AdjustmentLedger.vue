@@ -199,13 +199,18 @@ function editable(adjustment: ServiceAdjustment) {
   h2 {
     margin-top: 4px;
     font-family: var(--font-display);
-    font-size: 1.6rem;
+    font-size: 1.72rem;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    text-wrap: balance;
   }
 
   &__header p {
     max-width: 610px;
     margin-top: 7px;
     color: var(--ink-soft);
+    font-size: 0.875rem;
     line-height: 1.5;
   }
 
@@ -224,13 +229,14 @@ function editable(adjustment: ServiceAdjustment) {
 
   dt {
     color: var(--ink-soft);
-    font-size: 0.76rem;
+    font-size: 0.75rem;
   }
 
   dd {
     margin: 5px 0 0;
     font-size: 1.05rem;
-    font-weight: 850;
+    font-weight: 750;
+    font-variant-numeric: tabular-nums;
   }
 
   &__agreed {
@@ -260,26 +266,29 @@ function editable(adjustment: ServiceAdjustment) {
 
   &__item-heading span {
     color: var(--color-brand);
-    font-size: 0.72rem;
-    font-weight: 850;
+    font-size: 0.75rem;
+    font-weight: 750;
     text-transform: uppercase;
   }
 
   &__item h3 {
     margin-top: 3px;
     font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.4;
   }
 
   &__item > p:not(.adjustment-ledger__warning, .adjustment-ledger__request) {
     margin-top: 8px;
     color: var(--ink-soft);
-    font-size: 0.86rem;
+    font-size: 0.875rem;
   }
 
   &__item-meta {
     display: flex;
     align-items: center;
     gap: 10px;
+    font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
 
