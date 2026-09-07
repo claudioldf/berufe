@@ -26,11 +26,14 @@ const item: ServiceAdjustmentEditorItem = {
   receiptFile: null,
 };
 
-function mountEditor() {
+function mountEditor(itemCount = 1) {
   return mount(AdjustmentItemsEditor, {
     props: {
-      modelValue: [structuredClone(item)],
-      total: 150,
+      modelValue: Array.from({ length: itemCount }, (_, index) => ({
+        ...structuredClone(item),
+        key: `item-${index + 1}`,
+      })),
+      total: 150 * itemCount,
       errors: {},
     },
     global: {
@@ -61,7 +64,7 @@ describe("adjustment items editor", () => {
 
   it("keeps quantity, the currency control, and item total together", () => {
     const wrapper = mountEditor();
-    const values = wrapper.get(".adjustment-item__values");
+    const values = wrapper.get(".adjustment-item:not(.adjustment-item--head)");
 
     expect(values.text()).toContain("Quantidade");
     expect(values.text()).toContain("Valor unitário");
@@ -71,15 +74,15 @@ describe("adjustment items editor", () => {
   });
 
   it("places add below the cards, shows the sum, and emits compact actions", async () => {
-    const wrapper = mountEditor();
-    const items = wrapper.get(".adjustment-items-editor__items").element;
+    const wrapper = mountEditor(2);
+    const items = wrapper.get(".adjustment-items").element;
     const add = wrapper.get(".adjustment-items-editor__actions").element;
 
     expect(
       items.compareDocumentPosition(add) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(wrapper.get(".adjustment-items-editor__summary").text()).toContain(
-      "R$ 150,00",
+      "R$ 300,00",
     );
 
     await wrapper.get('[aria-label="Remover item 1"]').trigger("click");
@@ -90,5 +93,11 @@ describe("adjustment items editor", () => {
       .find((button) => button.text() === "Adicionar item")!
       .trigger("click");
     expect(wrapper.emitted("add")).toHaveLength(1);
+  });
+
+  it("protects the only remaining item from accidental removal", () => {
+    const wrapper = mountEditor();
+
+    expect(wrapper.find('[aria-label="Remover item 1"]').exists()).toBe(false);
   });
 });

@@ -261,10 +261,10 @@ function itemTotal(index: number) {
   }
   &__service h1 {
     margin: 5px 0 0;
-    font-family: var(--font-display);
-    font-size: 1.3rem;
-    font-weight: 500;
-    line-height: 1.25;
+    font-family: inherit;
+    font-size: 0.86rem;
+    font-weight: 700;
+    line-height: 1.5;
   }
   &__service dl {
     display: grid;
@@ -417,9 +417,6 @@ function itemTotal(index: number) {
   }
   & > footer small {
     color: var(--ink-soft);
-  }
-  &--customer &__service h1 {
-    font-size: 1.65rem;
   }
 }
 @media print {

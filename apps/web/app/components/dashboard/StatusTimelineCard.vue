@@ -160,7 +160,7 @@ const props = withDefaults(
   }
 
   &__kicker {
-    color: var(--color-text-subtle);
+    color: var(--color-text-muted);
     font-size: 0.7rem;
     font-weight: 850;
     letter-spacing: 0.11em;
@@ -268,13 +268,13 @@ const props = withDefaults(
   }
 
   &__step-copy small {
-    color: var(--color-text-subtle);
+    color: var(--color-text-muted);
     font-size: 0.68rem;
     line-height: 1.35;
   }
 
   &__step--upcoming &__step-copy strong {
-    color: var(--color-text-subtle);
+    color: var(--color-text-muted);
     font-weight: 650;
   }
 

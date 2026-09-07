@@ -41,23 +41,41 @@ function lineTotal(item: ServiceAdjustmentEditorItem) {
 </script>
 
 <template>
-  <DesignSystemSurfaceCard as="section" class="adjustment-items-editor">
-    <header class="adjustment-items-editor__heading">
-      <h2>Itens do ajuste</h2>
-      <p>
-        Detalhe os serviços ou compras que serão submetidos à aprovação do
-        cliente.
-      </p>
+  <DesignSystemSurfaceCard
+    as="section"
+    class="adjustment-builder-card adjustment-items-editor"
+  >
+    <header>
+      <div>
+        <span>02</span>
+        <div>
+          <h2>Itens do ajuste</h2>
+          <p>
+            Detalhe os serviços ou compras que serão submetidos à aprovação.
+          </p>
+        </div>
+      </div>
     </header>
 
-    <div v-if="items.length" class="adjustment-items-editor__items">
+    <div v-if="items.length" class="adjustment-items">
+      <div class="adjustment-item adjustment-item--head" aria-hidden="true">
+        <span>Tipo</span>
+        <span>Descrição</span>
+        <span>Qtd.</span>
+        <span>Valor unit.</span>
+        <span>Total</span>
+        <span />
+      </div>
       <fieldset
         v-for="(item, index) in items"
         :key="item.key"
         class="adjustment-item"
       >
-        <legend>Item {{ index + 1 }}</legend>
+        <legend class="adjustment-item__mobile-index">
+          Item {{ index + 1 }}
+        </legend>
         <button
+          v-if="items.length > 1"
           class="adjustment-item__remove"
           type="button"
           :aria-label="`Remover item ${index + 1}`"
@@ -66,61 +84,125 @@ function lineTotal(item: ServiceAdjustmentEditorItem) {
           <UIcon name="i-lucide-trash-2" aria-hidden="true" />
         </button>
 
-        <div class="adjustment-item__details">
-          <label>
-            <span>Tipo</span>
-            <select
-              v-model="item.kind"
-              :name="`adjustment-item-${index}-kind`"
-              @change="emit('changeKind', index)"
+        <label class="adjustment-item__kind">
+          <span class="adjustment-item__label"
+            >Tipo do item {{ index + 1 }}</span
+          >
+          <select
+            v-model="item.kind"
+            :name="`adjustment-item-${index}-kind`"
+            autocomplete="off"
+            required
+            @change="emit('changeKind', index)"
+          >
+            <option
+              v-for="option in kindOptions"
+              :key="option.value"
+              :value="option.value"
             >
-              <option
-                v-for="option in kindOptions"
-                :key="option.value"
-                :value="option.value"
-              >
-                {{ option.label }}
-              </option>
-            </select>
-          </label>
-          <label>
-            <span>Descrição</span>
-            <input
-              v-model="item.description"
-              :name="`adjustment-item-${index}-description`"
-              maxlength="160"
-              autocomplete="off"
-              placeholder="Ex.: Pintura da parede adicional"
-              :aria-invalid="Boolean(errors[`item-${index}`])"
-            />
-          </label>
-        </div>
-
-        <div class="adjustment-item__values">
-          <label>
-            <span>Quantidade</span>
-            <input
-              v-model.number="item.quantity"
-              :name="`adjustment-item-${index}-quantity`"
-              type="number"
-              inputmode="decimal"
-              autocomplete="off"
-              min="0.001"
-              step="0.001"
-            />
-          </label>
-          <label>
-            <span>Valor unitário</span>
-            <CurrencyInput
-              v-model="item.unitPrice"
-              :name="`adjustment-item-${index}-unit-price`"
-            />
-          </label>
-          <span class="adjustment-item__total">
-            <span>Total do item</span>
-            <strong>{{ money.format(lineTotal(item)) }}</strong>
+              {{ option.label }}
+            </option>
+          </select>
+        </label>
+        <label
+          class="adjustment-item__description"
+          :class="{
+            'adjustment-item__field--invalid':
+              errors[`item-${index}-description`],
+          }"
+        >
+          <span class="adjustment-item__label">
+            Descrição do item {{ index + 1 }}
           </span>
-        </div>
+          <input
+            v-model="item.description"
+            :name="`adjustment-item-${index}-description`"
+            maxlength="160"
+            autocomplete="off"
+            placeholder="Ex.: Pintura adicional…"
+            required
+            :aria-describedby="
+              errors[`item-${index}-description`]
+                ? `adjustment-item-${index}-description-error`
+                : undefined
+            "
+            :aria-invalid="Boolean(errors[`item-${index}-description`])"
+          />
+          <small
+            v-if="errors[`item-${index}-description`]"
+            :id="`adjustment-item-${index}-description-error`"
+            class="adjustment-item__error"
+          >
+            {{ errors[`item-${index}-description`] }}
+          </small>
+        </label>
+        <label
+          :class="{
+            'adjustment-item__field--invalid': errors[`item-${index}-quantity`],
+          }"
+        >
+          <span class="adjustment-item__label">
+            Quantidade do item {{ index + 1 }}
+          </span>
+          <input
+            v-model.number="item.quantity"
+            :name="`adjustment-item-${index}-quantity`"
+            type="number"
+            inputmode="decimal"
+            autocomplete="off"
+            min="0.001"
+            step="0.001"
+            required
+            :aria-describedby="
+              errors[`item-${index}-quantity`]
+                ? `adjustment-item-${index}-quantity-error`
+                : undefined
+            "
+            :aria-invalid="Boolean(errors[`item-${index}-quantity`])"
+          />
+          <small
+            v-if="errors[`item-${index}-quantity`]"
+            :id="`adjustment-item-${index}-quantity-error`"
+            class="adjustment-item__error"
+          >
+            {{ errors[`item-${index}-quantity`] }}
+          </small>
+        </label>
+        <label
+          :class="{
+            'adjustment-item__field--invalid':
+              errors[`item-${index}-unit-price`],
+          }"
+        >
+          <span class="adjustment-item__label">
+            Valor unitário do item {{ index + 1 }}
+          </span>
+          <CurrencyInput
+            v-model="item.unitPrice"
+            class="adjustment-item__currency-input"
+            :name="`adjustment-item-${index}-unit-price`"
+            required
+            :aria-describedby="
+              errors[`item-${index}-unit-price`]
+                ? `adjustment-item-${index}-unit-price-error`
+                : undefined
+            "
+            :aria-invalid="Boolean(errors[`item-${index}-unit-price`])"
+          />
+          <small
+            v-if="errors[`item-${index}-unit-price`]"
+            :id="`adjustment-item-${index}-unit-price-error`"
+            class="adjustment-item__error"
+          >
+            {{ errors[`item-${index}-unit-price`] }}
+          </small>
+        </label>
+        <span class="adjustment-item__total">
+          <span class="adjustment-item__label">
+            Total do item {{ index + 1 }}
+          </span>
+          <strong>{{ money.format(lineTotal(item)) }}</strong>
+        </span>
 
         <div
           v-if="item.kind === 'material_reimbursement'"
@@ -129,6 +211,7 @@ function lineTotal(item: ServiceAdjustmentEditorItem) {
           <label>
             <span>Comprovante (opcional, JPEG ou PNG)</span>
             <input
+              :name="`adjustment-item-${index}-receipt`"
               type="file"
               accept="image/jpeg,image/png"
               @change="emit('selectReceipt', index, $event)"
@@ -149,10 +232,6 @@ function lineTotal(item: ServiceAdjustmentEditorItem) {
             Remover comprovante
           </UButton>
         </div>
-
-        <small v-if="errors[`item-${index}`]" role="alert">
-          {{ errors[`item-${index}`] }}
-        </small>
       </fieldset>
     </div>
     <p v-else class="adjustment-items-editor__empty">
@@ -185,32 +264,6 @@ function lineTotal(item: ServiceAdjustmentEditorItem) {
 
 <style scoped lang="scss">
 .adjustment-items-editor {
-  display: grid;
-  gap: 16px;
-  padding: 24px;
-
-  h2,
-  p {
-    margin: 0;
-  }
-
-  h2 {
-    font-family: var(--font-display);
-    font-size: 1.45rem;
-  }
-
-  &__heading p {
-    max-width: 610px;
-    margin-top: 7px;
-    color: var(--ink-soft);
-    line-height: 1.5;
-  }
-
-  &__items {
-    display: grid;
-    gap: 18px;
-  }
-
   &__empty {
     padding: 14px;
     border: 1px dashed var(--line);
@@ -222,6 +275,7 @@ function lineTotal(item: ServiceAdjustmentEditorItem) {
   &__actions {
     display: flex;
     justify-content: flex-end;
+    margin-top: 12px;
   }
 
   &__error {
@@ -234,54 +288,69 @@ function lineTotal(item: ServiceAdjustmentEditorItem) {
     align-items: center;
     justify-content: space-between;
     width: min(320px, 100%);
-    margin-left: auto;
+    margin: 18px 0 0 auto;
     padding-top: 12px;
     border-top: 2px solid var(--ink);
     color: var(--ink);
     font-size: 0.86rem;
   }
+
+  &__summary strong {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.adjustment-items {
+  overflow-x: auto;
 }
 
 .adjustment-item {
-  position: relative;
   display: grid;
-  gap: 14px;
+  grid-template-columns:
+    minmax(138px, 0.85fr) minmax(150px, 1.25fr) 62px 100px 86px
+    30px;
+  gap: 7px;
+  align-items: start;
+  min-width: 685px;
   margin: 0;
-  padding: 16px;
-  border: 1px solid var(--line);
-  border-radius: 13px;
+  padding: 8px 0;
+  border: 0;
+  border-top: 1px solid var(--line);
 
-  legend {
-    padding: 0 4px;
-    color: var(--color-brand);
-    font-size: 0.76rem;
+  &--head {
+    align-items: center;
+    border: 0;
+    color: var(--ink-soft);
+    font-size: 0.82rem;
     font-weight: 850;
+    text-transform: uppercase;
   }
 
-  label,
-  &__total {
+  &--head > span:nth-child(n + 3) {
+    text-align: right;
+  }
+
+  & > label {
     display: grid;
-    gap: 6px;
-    color: var(--ink);
-    font-size: 0.83rem;
-    font-weight: 750;
+    gap: 4px;
   }
 
   input,
   select {
     width: 100%;
-    padding: 11px 12px;
+    min-height: 38px;
+    padding: 8px;
     border: 1px solid var(--line);
-    border-radius: 10px;
-    background: var(--color-surface-control);
+    border-radius: 8px;
+    background-color: var(--color-surface-control);
     color: var(--ink);
-    font: inherit;
+    font-size: 0.84rem;
+    transition: border-color var(--motion-fast) ease;
   }
 
   &__remove {
-    position: absolute;
-    top: 9px;
-    right: 10px;
+    grid-column: 6;
+    grid-row: 1;
     display: grid;
     place-items: center;
     width: 27px;
@@ -292,6 +361,7 @@ function lineTotal(item: ServiceAdjustmentEditorItem) {
     background: transparent;
     color: #a45245;
     cursor: pointer;
+    margin-top: 5px;
   }
 
   &__remove:focus-visible {
@@ -299,42 +369,50 @@ function lineTotal(item: ServiceAdjustmentEditorItem) {
     box-shadow: var(--focus-ring);
   }
 
-  &__details {
-    display: grid;
-    grid-template-columns: minmax(180px, 0.7fr) minmax(0, 1.3fr);
-    gap: 13px;
+  &__mobile-index,
+  &__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
   }
 
-  &__values {
-    display: grid;
-    grid-template-columns: minmax(110px, 0.55fr) minmax(180px, 1fr) minmax(
-        140px,
-        0.75fr
-      );
-    gap: 13px;
-    align-items: end;
+  &__field--invalid input,
+  &__field--invalid select {
+    border-color: var(--color-danger);
+    background-color: var(--color-danger-tint);
   }
 
-  &__values :deep(.currency-input),
-  &__values :deep(input) {
-    min-height: 43px;
+  &__error {
+    color: var(--color-danger);
+    font-size: 0.72rem;
+    font-weight: 650;
+    line-height: 1.25;
   }
 
   &__total {
-    min-height: 66px;
-    justify-content: end;
+    display: grid;
     text-align: right;
   }
 
-  &__total > span {
-    color: var(--ink-soft);
+  &__total strong {
+    margin-top: 9px;
+    font-size: 0.84rem;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    white-space: nowrap;
   }
 
-  &__total strong {
-    font-size: 1rem;
+  &__currency-input {
+    text-align: right;
   }
 
   &__receipt {
+    grid-column: 1 / -1;
     display: flex;
     align-items: center;
     flex-wrap: wrap;
@@ -349,24 +427,88 @@ function lineTotal(item: ServiceAdjustmentEditorItem) {
   &__receipt label {
     flex: 1 1 280px;
   }
-
-  small[role="alert"] {
-    color: var(--color-danger);
-    font-size: 0.8rem;
-  }
 }
 
-@media (width <= 700px) {
+@media (width <= 720px) {
+  .adjustment-items {
+    display: grid;
+    gap: 12px;
+    overflow-x: visible;
+  }
+
   .adjustment-item {
-    &__details,
-    &__values {
-      grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    min-width: 0;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--color-surface);
+
+    &--head {
+      display: none;
+    }
+
+    &__mobile-index,
+    &__label {
+      position: static;
+      width: auto;
+      height: auto;
+      padding: 0;
+      overflow: visible;
+      clip-path: none;
+      white-space: normal;
+    }
+
+    &__mobile-index {
+      align-self: center;
+      color: var(--ink);
+      font-size: 0.82rem;
+      font-weight: 850;
+    }
+
+    &__label {
+      color: var(--ink-soft);
+      font-size: 0.76rem;
+      font-weight: 800;
+    }
+
+    &__kind,
+    &__description,
+    &__receipt {
+      grid-column: 1 / -1;
+    }
+
+    &__remove {
+      grid-column: 2;
+      grid-row: 1;
+      justify-self: end;
+      margin-top: 0;
+    }
+
+    input,
+    select {
+      min-height: 42px;
+      font-size: 1rem;
     }
 
     &__total {
-      min-height: auto;
-      padding-top: 12px;
-      border-top: 1px solid var(--line);
+      align-content: start;
+      gap: 4px;
+    }
+
+    &__total strong {
+      min-height: 42px;
+      margin: 0;
+      padding: 10px 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--color-surface-control);
+      font-size: 1rem;
+    }
+
+    &__receipt {
+      align-items: flex-start;
     }
   }
 }

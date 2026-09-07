@@ -23,6 +23,16 @@ export interface ServiceAdjustmentEditorItem {
   receiptFile: File | null;
 }
 
+export interface ServiceAdjustmentEditorForm {
+  title: string;
+  description: string;
+  scheduleImpact: string;
+  incurredOn: string;
+  items: ServiceAdjustmentEditorItem[];
+}
+
+export type ServiceAdjustmentEditorSaveIntent = "draft" | "copy" | "whatsapp";
+
 export interface ExpressionSearchPayload {
   expression: string;
 }
