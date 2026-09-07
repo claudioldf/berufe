@@ -92,6 +92,17 @@ Use supported stable releases of Ruby, Rails, Node, Nuxt, and PostgreSQL. Pin Ru
 
 Launch with fresh SSR and no Redis or separate cache for 30–50 profiles. Before launch, measure the complete Railway path from the target Brazilian region. If the latency budgets in §15 fail, block launch until a separate change adds a 60-second Nuxt/CDN stale-while-revalidate cache with explicit invalidation for approval, hiding, restoration, and suspension. Private dashboard, admin, restricted-file, and token-authorized quote responses must never use a shared cache.
 
+This paragraph is about the rendered public HTML page and remains unimplemented as described.
+A narrower, separate CDN cache exists for the two public _image_ responses only
+(`PublicProfilePhotosController`, `PublicPortfolioImagesController`, served from
+`media.berufe.com.br`): a 5-minute `s-maxage` rather than the 60-second window above, and a
+bounded TTL rather than explicit purge-on-transition. The same "cannot be bypassed" concern
+applies — `PublicMediaUrl`'s comment records that the eligibility recheck this trades away is
+bounded to the TTL rather than instant — but public professional images (already served to
+anonymous visitors with no auth) are lower-sensitivity than the admin/restricted-file/quote
+responses this paragraph forbids from any shared cache; see `docs/PRODUCTION_DEPLOYMENT.md`
+§4 for the Cloudflare configuration.
+
 ### Shared quote page
 
 1. The professional explicitly shares a high-entropy quote bearer link through WhatsApp or copies it.

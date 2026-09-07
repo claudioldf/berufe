@@ -24,7 +24,7 @@ RSpec.describe "Public profile photos", type: :request, openapi: true do
     expect(response).to have_http_status(:ok)
     expect(response.body).to eq("jpeg-photo")
     expect(response.media_type).to eq("image/jpeg")
-    expect(response.headers.fetch("Cache-Control")).to eq("max-age=0, public, must-revalidate")
+    expect(response.headers.fetch("Cache-Control")).to eq("max-age=0, public, must-revalidate, s-maxage=300")
     expect(response.headers.fetch("X-Content-Type-Options")).to eq("nosniff")
     expect(response.headers.fetch("Content-Disposition")).to start_with(
       "inline; filename=\"berufe-profile-photo-#{photo.id}.jpg\""
@@ -41,7 +41,7 @@ RSpec.describe "Public profile photos", type: :request, openapi: true do
 
     expect(response).to have_http_status(:ok)
     expect(response.body).to eq("pending-photo")
-    expect(response.headers.fetch("Cache-Control")).to eq("max-age=0, public, must-revalidate")
+    expect(response.headers.fetch("Cache-Control")).to eq("max-age=0, public, must-revalidate, s-maxage=300")
     assert_api_conform(status: 200)
   end
 

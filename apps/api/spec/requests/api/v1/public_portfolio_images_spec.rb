@@ -26,7 +26,7 @@ RSpec.describe "Public portfolio images", type: :request, openapi: true do
     expect(response).to have_http_status(:ok)
     expect(response.body).to eq("jpeg-image")
     expect(response.media_type).to eq("image/jpeg")
-    expect(response.headers.fetch("Cache-Control")).to eq("max-age=0, public, must-revalidate")
+    expect(response.headers.fetch("Cache-Control")).to eq("max-age=0, public, must-revalidate, s-maxage=300")
     expect(response.headers.fetch("X-Content-Type-Options")).to eq("nosniff")
     expect(response.headers.fetch("Content-Disposition")).to start_with("inline; filename=\"berufe-portfolio-#{jpeg.id}.jpg\"")
     assert_api_conform(status: 200)
@@ -46,7 +46,7 @@ RSpec.describe "Public portfolio images", type: :request, openapi: true do
 
     expect(response).to have_http_status(:ok)
     expect(response.body).to eq("image")
-    expect(response.headers.fetch("Cache-Control")).to eq("max-age=0, public, must-revalidate")
+    expect(response.headers.fetch("Cache-Control")).to eq("max-age=0, public, must-revalidate, s-maxage=300")
     assert_api_conform(status: 200)
   end
 

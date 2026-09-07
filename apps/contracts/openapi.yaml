@@ -1363,7 +1363,7 @@ paths:
                 type: string
                 enum:
                   - no-store
-                  - max-age=0, public, must-revalidate
+                  - max-age=0, public, must-revalidate, s-maxage=300
             Content-Disposition:
               schema:
                 type: string
@@ -1411,7 +1411,7 @@ paths:
                 type: string
                 enum:
                   - no-store
-                  - max-age=0, public, must-revalidate
+                  - max-age=0, public, must-revalidate, s-maxage=300
             Content-Disposition:
               schema:
                 type: string
