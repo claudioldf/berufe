@@ -379,7 +379,9 @@ function decide(
 
   &__adjustment--pending {
     border-color: rgb(18 98 93 / 35%);
-    box-shadow: 0 0 0 3px rgb(18 98 93 / 6%);
+    box-shadow:
+      0 18px 44px rgb(23 53 47 / 18%),
+      0 0 0 4px rgb(18 98 93 / 10%);
   }
 
   &__adjustment h3 {
