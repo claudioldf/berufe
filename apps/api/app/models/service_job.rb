@@ -4,6 +4,9 @@ class ServiceJob < ApplicationRecord
   STATUSES = %w[approved completed cancelled].freeze
 
   belongs_to :quote
+  has_many :service_adjustments,
+    -> { order(:adjustment_number, :id) },
+    dependent: :destroy
   has_one :customer_recommendation_request, dependent: :restrict_with_exception
   has_one :customer_recommendation, dependent: :restrict_with_exception
 
@@ -17,6 +20,22 @@ class ServiceJob < ApplicationRecord
 
   STATUSES.each do |known_status|
     define_method("#{known_status}?") { status == known_status }
+  end
+
+  def approved_adjustment_amount
+    service_adjustments.select(&:approved?).sum(&:total_amount).to_d
+  end
+
+  def awaiting_decision_amount
+    service_adjustments.select(&:awaiting_response?).sum(&:total_amount).to_d
+  end
+
+  def agreed_total_amount
+    quote.total_amount + approved_adjustment_amount
+  end
+
+  def unresolved_adjustments?
+    service_adjustments.any?(&:unresolved?)
   end
 
   private

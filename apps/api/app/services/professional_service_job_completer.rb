@@ -6,9 +6,9 @@ class ProfessionalServiceJobCompleter
   class Invalid < StandardError
     attr_reader :field_errors
 
-    def initialize
-      @field_errors = {request_recommendation: ["deve ser verdadeiro ou falso"]}
-      super("request_recommendation must be a boolean")
+    def initialize(field_errors = {request_recommendation: ["deve ser verdadeiro ou falso"]})
+      @field_errors = field_errors
+      super("invalid service completion")
     end
   end
 
@@ -24,7 +24,7 @@ class ProfessionalServiceJobCompleter
     @delivery_job = delivery_job
   end
 
-  def call(service_job:, request_recommendation:, now: Time.current)
+  def call(service_job:, request_recommendation:, acknowledge_open_adjustments: false, now: Time.current)
     unless request_recommendation == true || request_recommendation == false
       raise Invalid
     end
@@ -32,6 +32,12 @@ class ProfessionalServiceJobCompleter
     recommendation_request = nil
     service_job.with_lock do
       raise Unavailable if service_job.completed? || service_job.cancelled?
+
+      if service_job.unresolved_adjustments? && acknowledge_open_adjustments != true
+        raise Invalid.new(
+          acknowledge_open_adjustments: ["confirme que os ajustes pendentes continuarão separados do total combinado"]
+        )
+      end
 
       quote = service_job.quote
       quote.lock!

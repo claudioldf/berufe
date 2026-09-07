@@ -62,7 +62,8 @@ class ProfessionalWorkspaceSerializer
           title: item.title,
           subtitle: item.subtitle,
           sort_at: item.sort_at.iso8601,
-          recommendation_delivery_channel: item.recommendation_delivery_channel
+          recommendation_delivery_channel: item.recommendation_delivery_channel,
+          has_unresolved_adjustments: item.has_unresolved_adjustments
         }
       end,
       recent_quotes: profile.quotes.newest_first.limit(5).map do |quote|

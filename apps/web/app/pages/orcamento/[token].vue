@@ -3,9 +3,12 @@ import { useAnalyticsEvent } from "~/composables/useAnalyticsEvent";
 import { useApiClient } from "~/services/api/client";
 import { ApiRequestError } from "~/services/api/errors";
 import {
+  decideSharedServiceAdjustment,
   decideSharedQuote,
+  fetchSharedServiceAdjustmentReceipt,
   resolveSharedQuote,
 } from "~/services/api/shared-quotes";
+import type { ServiceAdjustment } from "~/types";
 
 definePageMeta({ layout: false });
 
@@ -56,6 +59,8 @@ const submittingDecision = shallowRef<
 const actionError = shallowRef("");
 const decisionMessageError = shallowRef("");
 const termsAcceptedError = shallowRef("");
+const actingAdjustmentId = shallowRef<string | null>(null);
+const adjustmentActionError = shallowRef("");
 
 useSeoMeta({
   title: `Orçamento #${quote.value.number}`,
@@ -135,6 +140,66 @@ async function submitDecision(kind: "approve" | "request_change" | "decline") {
   } finally {
     submitting.value = false;
     submittingDecision.value = null;
+  }
+}
+
+async function submitAdjustmentDecision(
+  adjustment: ServiceAdjustment,
+  kind: "approve" | "request_change" | "decline",
+  message: string,
+  accepted: boolean,
+) {
+  if (actingAdjustmentId.value) return;
+  actingAdjustmentId.value = adjustment.id;
+  adjustmentActionError.value = "";
+  try {
+    current.value = await decideSharedServiceAdjustment(
+      client,
+      token.value,
+      adjustment.id,
+      {
+        kind,
+        revision: adjustment.revision,
+        termsAccepted: accepted,
+        message,
+      },
+    );
+    trackEvent(`service_adjustment_${kind}`, {
+      service: professional.value.primaryService,
+    });
+  } catch (error) {
+    adjustmentActionError.value =
+      error instanceof ApiRequestError
+        ? error.message
+        : "Não foi possível registrar sua resposta ao ajuste.";
+  } finally {
+    actingAdjustmentId.value = null;
+  }
+}
+
+async function viewReceipt(receiptId: string) {
+  const receiptWindow = import.meta.client
+    ? window.open("about:blank", "_blank")
+    : null;
+  if (receiptWindow) receiptWindow.opener = null;
+  adjustmentActionError.value = "";
+  try {
+    const blob = await fetchSharedServiceAdjustmentReceipt(
+      client,
+      token.value,
+      receiptId,
+    );
+    if (!import.meta.client) return;
+    const url = URL.createObjectURL(blob);
+    if (receiptWindow) receiptWindow.location.replace(url);
+    else window.open(url, "_blank", "noopener,noreferrer");
+    window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  } catch (error) {
+    receiptWindow?.close();
+    adjustmentActionError.value =
+      error instanceof ApiRequestError
+        ? error.message
+        : "Não foi possível abrir o comprovante.";
   }
 }
 </script>
@@ -327,9 +392,19 @@ async function submitDecision(kind: "approve" | "request_change" | "decline") {
           <p v-else>O profissional dará andamento ao serviço combinado.</p>
         </div>
       </section>
+      <QuotesSharedServiceAgreement
+        v-if="quote.serviceJob"
+        :service-job="quote.serviceJob"
+        :acting-adjustment-id="actingAdjustmentId"
+        :action-error="adjustmentActionError"
+        @decide="submitAdjustmentDecision"
+        @view-receipt="viewReceipt"
+      />
       <p class="shared-quote-page__notice">
         <UIcon name="i-lucide-info" /> Este link é privado. A aprovação registra
-        sua decisão, mas não substitui um contrato nem confirma pagamento.
+        sua decisão. Trabalhos ou custos fora do orçamento só entram no total
+        combinado por meio de um ajuste aprovado separadamente. Isso não
+        substitui um contrato nem confirma pagamento.
       </p>
     </DesignSystemContainer>
   </div>

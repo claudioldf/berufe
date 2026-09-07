@@ -38,6 +38,16 @@ const ACTION_ITEM_PRESENTATION: Record<
     status: "Alteração solicitada",
     actionLabel: "Revisar orçamento",
   },
+  adjustment_awaiting_response: {
+    type: "service",
+    status: "Ajuste sem resposta",
+    actionLabel: "Ver ajuste",
+  },
+  adjustment_change_requested: {
+    type: "service",
+    status: "Alteração no ajuste",
+    actionLabel: "Revisar ajuste",
+  },
   service_open: {
     type: "service",
     status: "Aprovado",
@@ -98,11 +108,17 @@ const sections = computed<ActivitySection[]>(() => {
               label: presentation.actionLabel,
               to: `/app/professional/quotes/new?quote=${item.id}`,
             }
-          : {
-              kind: "act",
-              label: presentation.actionLabel,
-              intent: item.kind,
-            },
+          : item.kind.startsWith("adjustment_")
+            ? {
+                kind: "link",
+                label: presentation.actionLabel,
+                to: `/app/professional/services/${item.id}`,
+              }
+            : {
+                kind: "act",
+                label: presentation.actionLabel,
+                intent: item.kind,
+              },
     });
   }
 

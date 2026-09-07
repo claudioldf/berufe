@@ -12,7 +12,7 @@ class ProfessionalServiceJobCanceller
     end
   end
 
-  def call(service_job:, reason:, now: Time.current)
+  def call(service_job:, reason:, acknowledge_open_adjustments: false, now: Time.current)
     normalized_reason = reason.to_s.squish.presence
     if normalized_reason&.length.to_i > 700
       raise Invalid.new(reason: ["deve ter no máximo 700 caracteres"])
@@ -20,6 +20,12 @@ class ProfessionalServiceJobCanceller
 
     service_job.with_lock do
       raise Unavailable if service_job.completed? || service_job.cancelled?
+
+      if service_job.unresolved_adjustments? && acknowledge_open_adjustments != true
+        raise Invalid.new(
+          acknowledge_open_adjustments: ["confirme que os ajustes pendentes continuarão separados do total combinado"]
+        )
+      end
 
       quote = service_job.quote
       quote.lock!

@@ -160,6 +160,20 @@ class ProfessionalDataErasureJob < ApplicationJob
       )
     end
 
+    ServiceAdjustment.where(service_job_id: ids.fetch(:service_job_ids))
+      .where.not(terms_accepted_at: nil)
+      .find_each do |adjustment|
+        LegalRetentionRecord.create!(
+          **common,
+          record_type: "quote_acceptance",
+          occurred_at: adjustment.terms_accepted_at,
+          metadata: {
+            quote_status: "service_adjustment_#{adjustment.status}",
+            accepted_revision: adjustment.accepted_revision
+          }
+        )
+      end
+
     ProfessionalRelationship.where(initiator_professional_id: profile.id)
       .where.not(contact_publication_attested_at: nil)
       .find_each do |relationship|

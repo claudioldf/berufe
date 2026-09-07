@@ -13,6 +13,9 @@ class ProfessionalNotificationCreator
     "quote_approved" => ["Orçamento aprovado", "Um cliente aprovou um orçamento."],
     "quote_declined" => ["Orçamento recusado", "Um cliente recusou um orçamento."],
     "service_completion_issue_reported" => ["Problema informado no serviço", "O cliente informou uma pendência na conclusão de um serviço."],
+    "service_adjustment_change_requested" => ["Alteração solicitada no ajuste", "Um cliente pediu uma alteração em um ajuste do serviço."],
+    "service_adjustment_approved" => ["Ajuste aprovado", "Um cliente aprovou um ajuste do serviço."],
+    "service_adjustment_declined" => ["Ajuste recusado", "Um cliente recusou um ajuste do serviço."],
     "customer_recommendation_published" => ["Nova recomendação publicada", "Uma recomendação de cliente foi publicada no seu perfil."]
   }.freeze
 

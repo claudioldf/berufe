@@ -21,6 +21,14 @@ class ProfessionalServiceJobSerializer
         scheduled_on: quote.scheduled_on&.iso8601,
         total_amount: format("%.2f", quote.total_amount)
       },
+      original_total_amount: money(quote.total_amount),
+      approved_adjustment_amount: money(service_job.approved_adjustment_amount),
+      awaiting_decision_amount: money(service_job.awaiting_decision_amount),
+      agreed_total_amount: money(service_job.agreed_total_amount),
+      has_unresolved_adjustments: service_job.unresolved_adjustments?,
+      adjustments: service_job.service_adjustments.map do |adjustment|
+        ServiceAdjustmentSerializer.new(adjustment).as_json
+      end,
       customer_feedback_message: service_job.customer_feedback_message,
       completed_at: service_job.completed_at&.iso8601,
       cancelled_at: service_job.cancelled_at&.iso8601,
@@ -34,6 +42,10 @@ class ProfessionalServiceJobSerializer
   private
 
   attr_reader :service_job
+
+  def money(value)
+    format("%.2f", value)
+  end
 
   def serialized_recommendation
     request = service_job.customer_recommendation_request
