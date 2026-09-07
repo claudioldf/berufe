@@ -320,6 +320,8 @@ export type ProfessionalActionKind =
   | "quote_unshared"
   | "quote_awaiting_response"
   | "quote_change_requested"
+  | "adjustment_awaiting_response"
+  | "adjustment_change_requested"
   | "service_open"
   | "recommendation_unsent";
 
@@ -330,6 +332,7 @@ export interface ProfessionalActionItem {
   subtitle: string;
   sortAt: string;
   recommendationDeliveryChannel: RecommendationDeliveryChannel | null;
+  hasUnresolvedAdjustments: boolean;
 }
 
 export interface ProfessionalWorkspace {

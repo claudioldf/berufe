@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import ServiceActionsCard from "~/components/dashboard/service/ServiceActionsCard.vue";
+import ServiceAdjustmentLedger from "~/components/dashboard/service/AdjustmentLedger.vue";
 import ServiceCompletionDialog from "~/components/dashboard/service/CompletionDialog.vue";
 import ServiceDetailsCard from "~/components/dashboard/service/ServiceDetailsCard.vue";
 import ServiceHero from "~/components/dashboard/service/ServiceHero.vue";
@@ -9,10 +10,13 @@ import { useApiClient } from "~/services/api/client";
 import { ApiRequestError } from "~/services/api/errors";
 import {
   cancelProfessionalServiceJob,
+  cancelProfessionalServiceAdjustment,
   completeProfessionalServiceJob,
   fetchProfessionalServiceJob,
   requestProfessionalServiceRecommendation,
+  shareProfessionalServiceAdjustment,
 } from "~/services/api/professional-service-jobs";
+import type { ServiceAdjustment } from "~/types";
 
 definePageMeta({ layout: "workspace" });
 useSeoMeta({ title: "Detalhes do serviço", robots: "noindex, nofollow" });
@@ -35,6 +39,8 @@ const cancelOpen = shallowRef(false);
 const completeOpen = shallowRef(false);
 const completionIntent = shallowRef<boolean | null>(null);
 const cancellationReason = shallowRef("");
+const cancellationAcknowledged = shallowRef(false);
+const actingAdjustmentId = shallowRef<string | null>(null);
 
 function invalidateServiceData() {
   clearNuxtData("professional-service-jobs");
@@ -130,11 +136,18 @@ async function cancelService() {
   acting.value = true;
   actionError.value = "";
   try {
-    service.value = await cancelProfessionalServiceJob(
-      client,
-      service.value.id,
-      cancellationReason.value,
-    );
+    service.value = cancellationAcknowledged.value
+      ? await cancelProfessionalServiceJob(
+          client,
+          service.value.id,
+          cancellationReason.value,
+          true,
+        )
+      : await cancelProfessionalServiceJob(
+          client,
+          service.value.id,
+          cancellationReason.value,
+        );
     cancelOpen.value = false;
     invalidateServiceData();
     showToast({
@@ -151,7 +164,10 @@ async function cancelService() {
   }
 }
 
-async function completeService(requestRecommendation: boolean) {
+async function completeService(
+  requestRecommendation: boolean,
+  acknowledgeOpenAdjustments = false,
+) {
   if (!service.value || acting.value) return;
   const deliveryChannel = completionDeliveryChannel.value;
   const handoff =
@@ -165,11 +181,18 @@ async function completeService(requestRecommendation: boolean) {
   acting.value = true;
   actionError.value = "";
   try {
-    const result = await completeProfessionalServiceJob(
-      client,
-      service.value.id,
-      requestRecommendation,
-    );
+    const result = acknowledgeOpenAdjustments
+      ? await completeProfessionalServiceJob(
+          client,
+          service.value.id,
+          requestRecommendation,
+          true,
+        )
+      : await completeProfessionalServiceJob(
+          client,
+          service.value.id,
+          requestRecommendation,
+        );
     service.value = result.serviceJob;
     completeOpen.value = false;
     invalidateServiceData();
@@ -198,6 +221,79 @@ async function completeService(requestRecommendation: boolean) {
   } finally {
     acting.value = false;
     completionIntent.value = null;
+  }
+}
+
+async function shareAdjustment(
+  adjustment: ServiceAdjustment,
+  method: "copy" | "whatsapp",
+) {
+  if (!service.value || actingAdjustmentId.value) return;
+  const handoff =
+    method === "whatsapp" && import.meta.client
+      ? window.open("about:blank", "_blank")
+      : null;
+  if (handoff) handoff.opener = null;
+  actingAdjustmentId.value = adjustment.id;
+  actionError.value = "";
+  try {
+    const result = await shareProfessionalServiceAdjustment(
+      client,
+      service.value.id,
+      adjustment.id,
+      method,
+    );
+    service.value = result.serviceJob;
+    invalidateServiceData();
+    if (method === "whatsapp") {
+      if (handoff) handoff.location.replace(result.whatsappUrl);
+      else if (import.meta.client) window.location.assign(result.whatsappUrl);
+    } else if (import.meta.client) {
+      await navigator.clipboard.writeText(result.shareUrl);
+    }
+    showToast({
+      title: method === "whatsapp" ? "Abrindo o WhatsApp" : "Link copiado",
+      description: "O cliente verá o ajuste neste mesmo link privado.",
+    });
+  } catch (error) {
+    handoff?.close();
+    actionError.value =
+      error instanceof ApiRequestError
+        ? error.message
+        : "Não foi possível compartilhar o ajuste.";
+  } finally {
+    actingAdjustmentId.value = null;
+  }
+}
+
+async function cancelAdjustment(adjustment: ServiceAdjustment) {
+  if (!service.value || actingAdjustmentId.value) return;
+  if (
+    import.meta.client &&
+    !window.confirm(`Cancelar o ajuste #${adjustment.number}?`)
+  )
+    return;
+
+  actingAdjustmentId.value = adjustment.id;
+  actionError.value = "";
+  try {
+    service.value = await cancelProfessionalServiceAdjustment(
+      client,
+      service.value.id,
+      adjustment.id,
+    );
+    invalidateServiceData();
+    showToast({
+      title: "Ajuste cancelado",
+      description: "Ele continua no histórico e não entra no total combinado.",
+    });
+  } catch (error) {
+    actionError.value =
+      error instanceof ApiRequestError
+        ? error.message
+        : "Não foi possível cancelar o ajuste.";
+  } finally {
+    actingAdjustmentId.value = null;
   }
 }
 </script>
@@ -247,6 +343,14 @@ async function completeService(requestRecommendation: boolean) {
         <span>{{ actionError }}</span>
       </div>
 
+      <ServiceAdjustmentLedger
+        class="service-page__adjustments"
+        :service="service"
+        :acting-adjustment-id="actingAdjustmentId"
+        @share="shareAdjustment"
+        @cancel="cancelAdjustment"
+      />
+
       <div class="service-page__grid">
         <ServiceDetailsCard :quote="service.quote" />
         <ServiceActionsCard
@@ -274,12 +378,26 @@ async function completeService(requestRecommendation: boolean) {
           Motivo (opcional)
           <textarea v-model="cancellationReason" rows="3" maxlength="700" />
         </label>
+        <label
+          v-if="service?.hasUnresolvedAdjustments"
+          class="service-page__cancel-acknowledgement"
+        >
+          <input v-model="cancellationAcknowledged" type="checkbox" />
+          Entendo que os ajustes pendentes continuarão registrados e fora do
+          total combinado até o cliente responder.
+        </label>
       </template>
       <template #footer>
         <UButton color="neutral" variant="ghost" @click="cancelOpen = false"
           >Voltar</UButton
         >
-        <UButton color="error" :loading="acting" @click="cancelService"
+        <UButton
+          color="error"
+          :loading="acting"
+          :disabled="
+            service?.hasUnresolvedAdjustments && !cancellationAcknowledged
+          "
+          @click="cancelService"
           >Cancelar serviço</UButton
         >
       </template>
@@ -292,6 +410,7 @@ async function completeService(requestRecommendation: boolean) {
       :busy="acting"
       :pending-choice="completionIntent"
       :error="actionError"
+      :has-unresolved-adjustments="service?.hasUnresolvedAdjustments ?? false"
       @confirm="completeService"
     />
   </div>
@@ -354,6 +473,10 @@ async function completeService(requestRecommendation: boolean) {
     margin-top: 20px;
   }
 
+  &__adjustments {
+    margin-top: 20px;
+  }
+
   &__actions {
     position: sticky;
     top: 92px;
@@ -389,6 +512,18 @@ async function completeService(requestRecommendation: boolean) {
     background: var(--color-surface-control);
     font: inherit;
     resize: vertical;
+  }
+
+  &__cancel-acknowledgement {
+    display: flex;
+    gap: 9px;
+    margin-top: 14px;
+    padding: 12px;
+    border-radius: 10px;
+    background: var(--color-warning-tint, #fff5dd);
+    color: var(--ink);
+    font-size: 0.84rem;
+    line-height: 1.45;
   }
 }
 

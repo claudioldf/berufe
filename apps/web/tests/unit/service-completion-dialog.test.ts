@@ -121,4 +121,17 @@ describe("service completion dialog", () => {
       ),
     ).toBe(true);
   });
+
+  it("requires an explicit acknowledgement when adjustments are unresolved", async () => {
+    const wrapper = mountDialog({ hasUnresolvedAdjustments: true });
+    const completeButton = wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("Concluir sem solicitar"))!;
+
+    expect(completeButton.attributes("disabled")).toBeDefined();
+    await wrapper.get('input[type="checkbox"]').setValue(true);
+    expect(completeButton.attributes("disabled")).toBeUndefined();
+    await completeButton.trigger("click");
+    expect(wrapper.emitted("confirm")).toEqual([[false, true]]);
+  });
 });

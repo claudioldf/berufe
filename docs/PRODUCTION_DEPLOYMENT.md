@@ -10,7 +10,14 @@ Berufe runs in Railway's Virginia region (`us-east4-eqdc4a`) as three services:
 | `api`      | Rails plus one in-process GoodJob thread | `api.berufe.com.br` |
 | `Postgres` | Railway managed PostgreSQL               | private only        |
 
-Cloudflare provides authoritative DNS and two R2 buckets. Resend provides recommendation
+`api` also answers on a second custom domain, `media.berufe.com.br`, used only for the two
+public image routes (`PublicProfilePhotosController`, `PublicPortfolioImagesController`).
+Unlike `api.berufe.com.br`, that domain is Cloudflare-proxied, so repeat image loads are
+answered from the edge rather than Rails. `api.berufe.com.br` stays un-proxied on purpose:
+`VisitorIpResolver`, the public-search rate limiter, and MaxMind geolocation all depend on
+seeing the real client IP, which a Cloudflare-proxied domain would replace with Cloudflare's.
+
+Cloudflare provides authoritative DNS, an edge cache for `media.berufe.com.br`, and two R2 buckets. Resend provides recommendation
 email over its HTTP API (Railway blocks outbound SMTP below its Pro plan, so `MAIL_ADAPTER`
 must be `resend`, not `smtp`, here), Infobip provides production SMS OTP, and separate
 Bugsnag projects receive privacy-scrubbed Rails and browser exceptions.
@@ -204,6 +211,7 @@ railway config plan
 railway config apply
 railway domain api.berufe.com.br --service api --port 8080
 railway domain www.berufe.com.br --service web --port 8080
+railway domain media.berufe.com.br --service api --port 8080
 ```
 
 ## 4. DNS cutover
@@ -214,11 +222,33 @@ verification targets for:
 
 - `www.berufe.com.br` on the `web` service
 - `api.berufe.com.br` on the `api` service
+- `media.berufe.com.br` on the `api` service — `railway domain media.berufe.com.br --service
+api --port 8080` prints **two** records to add: a `CNAME media → <target>.up.railway.app`
+  and a `TXT _railway-verify.media → railway-verify=<token>` (both per-invocation; use the
+  exact values that command prints, not the ones from a prior run). Add both **DNS-only
+  (grey cloud)** at first — Railway's certificate challenge cannot complete through the
+  proxy. Flip the CNAME to **Proxied (orange cloud)** only after `railway domain status
+<id>` shows the domain Verified with a valid certificate; leave the TXT record grey
+  (TXT records aren't proxyable). `www.berufe.com.br` and `api.berufe.com.br` are
+  unaffected either way.
 
 Configure a permanent redirect from `https://berufe.com.br/*` to
 `https://www.berufe.com.br/$1`. Then replace the Registro.br nameservers with the two
 Cloudflare nameservers assigned to the zone. Wait until Cloudflare reports the zone active
-and both Railway domains show valid certificates.
+and all three Railway domains show valid certificates.
+
+Add one Cache Rule scoped to `hostname eq "media.berufe.com.br"` and the two image paths
+(`/api/v1/public/profile-photos/*/image`, `/api/v1/public/portfolio-items/*/image`):
+cache eligibility on, Edge TTL set to **"Use cache-control header if present"** (not an
+override — the Free plan's minimum override is 2 hours, well past the 5-minute window these
+routes need), Browser TTL respecting origin. Rails sends `s-maxage=300` on those two routes
+specifically so the edge — not Cloudflare's plan minimum — governs the window; see
+`SHARED_CACHE_CONTROL` in `PublicProfilePhotosController` and `PublicPortfolioImagesController`.
+
+Before relying on this in production, confirm Cloudflare is actually honoring the 5-minute
+`s-maxage` and not silently clamping to a plan minimum: request an image twice through
+`media.berufe.com.br`, then poll it once a minute and watch the `Age` response header — it
+should reset (a `cf-cache-status: MISS`) at or before 300 seconds, not climb toward 7200.
 
 ## 5. First release and verification
 

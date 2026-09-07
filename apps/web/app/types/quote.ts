@@ -97,6 +97,11 @@ export interface QuoteServiceJob {
   status: "approved" | "completed" | "cancelled";
   completedAt: string | null;
   cancelledAt: string | null;
+  originalTotal?: number;
+  approvedAdjustmentTotal?: number;
+  awaitingDecisionTotal?: number;
+  agreedTotal?: number;
+  adjustments?: import("./service-job").ServiceAdjustment[];
 }
 
 export interface QuoteProfessional {

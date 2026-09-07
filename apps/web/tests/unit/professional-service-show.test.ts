@@ -1,7 +1,7 @@
 import { mountSuspended } from "@nuxt/test-utils/runtime";
 import { flushPromises } from "@vue/test-utils";
 import { defineComponent } from "vue";
-import ProfessionalServicePage from "@app/pages/app/professional/services/[id].vue";
+import ProfessionalServicePage from "@app/pages/app/professional/services/[id]/index.vue";
 import type { ProfessionalServiceJob } from "@app/types";
 
 const mocks = vi.hoisted(() => ({

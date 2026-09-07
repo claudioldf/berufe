@@ -82,7 +82,7 @@ const phoneHref = computed(
     max-width: 700px;
     margin: 0;
     font-family: var(--font-display);
-    font-size: clamp(2.5rem, 5vw, 4.5rem);
+    font-size: clamp(2.5rem, 4.4vw, 4rem);
     font-weight: 500;
     letter-spacing: -0.052em;
     line-height: 0.98;
@@ -120,8 +120,8 @@ const phoneHref = computed(
   &__customer-copy small {
     grid-column: 1 / -1;
     color: rgb(255 255 255 / 55%);
-    font-size: 0.72rem;
-    font-weight: 800;
+    font-size: 0.75rem;
+    font-weight: 750;
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }
@@ -164,8 +164,8 @@ const phoneHref = computed(
     border-radius: var(--radius-pill);
     background: rgb(255 255 255 / 9%);
     color: #d9f1e8;
-    font-size: 0.7rem;
-    font-weight: 850;
+    font-size: 0.75rem;
+    font-weight: 750;
     letter-spacing: 0.05em;
     text-transform: uppercase;
   }
@@ -205,12 +205,14 @@ const phoneHref = computed(
     font-family: var(--font-display);
     font-size: 2rem;
     font-weight: 600;
+    font-variant-numeric: tabular-nums;
     letter-spacing: -0.035em;
   }
 
   &__summary > small {
     margin-top: 4px;
     color: rgb(255 255 255 / 48%);
+    font-size: var(--font-size-min);
   }
 }
 
@@ -220,7 +222,7 @@ const phoneHref = computed(
     gap: 28px;
 
     &__main h1 {
-      font-size: clamp(2.4rem, 12vw, 3.5rem);
+      font-size: clamp(2.4rem, 10.5vw, 2.75rem);
     }
 
     &__summary {

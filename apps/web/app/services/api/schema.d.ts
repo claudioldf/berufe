@@ -883,6 +883,85 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/professional/service-jobs/{service_job_id}/adjustments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                service_job_id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create a draft scope or price adjustment for an open service */
+        post: operations["createProfessionalServiceAdjustment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/professional/service-jobs/{service_job_id}/adjustments/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                service_job_id: string;
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update one editable service adjustment */
+        patch: operations["updateProfessionalServiceAdjustment"];
+        trace?: never;
+    };
+    "/api/v1/professional/service-jobs/{service_job_id}/adjustments/{id}/share": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                service_job_id: string;
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Share or resend one editable adjustment through the quote's private link */
+        post: operations["shareProfessionalServiceAdjustment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/professional/service-jobs/{service_job_id}/adjustments/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                service_job_id: string;
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel one non-terminal service adjustment */
+        post: operations["cancelProfessionalServiceAdjustment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/professional/recommendations": {
         parameters: {
             query?: never;
@@ -1026,6 +1105,40 @@ export interface paths {
         put?: never;
         /** Approve, decline, or request a change through the quote bearer */
         post: operations["decideSharedQuote"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/shared-service-adjustments/decisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve, decline, or request a change to one service adjustment */
+        post: operations["decideSharedServiceAdjustment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/shared-service-adjustment-receipts/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Read one private adjustment receipt through the quote bearer */
+        post: operations["resolveSharedServiceAdjustmentReceipt"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1837,11 +1950,11 @@ export interface components {
             recent_service_jobs: components["schemas"]["ProfessionalServiceJob"][];
         };
         /** @enum {string} */
-        ProfessionalActionKind: "quote_unshared" | "quote_awaiting_response" | "quote_change_requested" | "service_open" | "recommendation_unsent";
+        ProfessionalActionKind: "quote_unshared" | "quote_awaiting_response" | "quote_change_requested" | "adjustment_awaiting_response" | "adjustment_change_requested" | "service_open" | "recommendation_unsent";
         ProfessionalActionItem: {
             /**
              * Format: uuid
-             * @description The quote id for quote_* kinds, the service job id for service_open and recommendation_unsent.
+             * @description The quote id for quote_* kinds and the service job id for adjustment_* kinds, service_open, and recommendation_unsent.
              */
             id: string;
             kind: components["schemas"]["ProfessionalActionKind"];
@@ -1850,6 +1963,7 @@ export interface components {
             /** Format: date-time */
             sort_at: string;
             recommendation_delivery_channel: components["schemas"]["RecommendationDeliveryChannel"] | null;
+            has_unresolved_adjustments: boolean;
         };
         ProfessionalDashboardReadiness: {
             percentage: number;
@@ -1866,6 +1980,10 @@ export interface components {
         QuotePricingMode: "fixed_price" | "itemized";
         /** @enum {string} */
         ServiceJobStatus: "approved" | "completed" | "cancelled";
+        /** @enum {string} */
+        ServiceAdjustmentStatus: "draft" | "awaiting_response" | "change_requested" | "approved" | "declined" | "cancelled";
+        /** @enum {string} */
+        ServiceAdjustmentItemKind: "additional_service" | "material_charge" | "material_reimbursement" | "credit";
         /** @enum {string} */
         RecommendationRequestStatus: "open" | "completed" | "expired";
         /** @enum {string} */
@@ -1977,6 +2095,23 @@ export interface components {
                 message: string | null;
             };
         };
+        SharedServiceAdjustmentDecisionRequest: {
+            token: string;
+            /** Format: uuid */
+            adjustment_id: string;
+            decision: {
+                /** @enum {string} */
+                kind: "approve" | "request_change" | "decline";
+                revision: number;
+                terms_accepted: boolean;
+                message: string | null;
+            };
+        };
+        SharedServiceAdjustmentReceiptResolveRequest: {
+            token: string;
+            /** Format: uuid */
+            receipt_id: string;
+        };
         SharedQuoteResponse: {
             data: {
                 quote: components["schemas"]["SharedQuote"];
@@ -2006,6 +2141,52 @@ export interface components {
             status: components["schemas"]["ServiceJobStatus"];
             /** Format: date-time */
             completed_at: string | null;
+            original_total_amount: components["schemas"]["MoneyAmount"];
+            approved_adjustment_amount: components["schemas"]["SignedMoneyAmount"];
+            awaiting_decision_amount: components["schemas"]["SignedMoneyAmount"];
+            agreed_total_amount: components["schemas"]["MoneyAmount"];
+            adjustments: components["schemas"]["SharedServiceAdjustment"][];
+        };
+        SharedServiceAdjustment: {
+            /** Format: uuid */
+            id: string;
+            adjustment_number: number;
+            revision: number;
+            status: components["schemas"]["ServiceAdjustmentStatus"];
+            title: string;
+            description: string | null;
+            schedule_impact: string | null;
+            /** Format: date */
+            incurred_on: string | null;
+            total_amount: components["schemas"]["SignedMoneyAmount"];
+            /** Format: date-time */
+            shared_at: string | null;
+            /** Format: date-time */
+            customer_decided_at: string | null;
+            customer_decision_message: string | null;
+            /** Format: date-time */
+            terms_accepted_at: string | null;
+            accepted_revision: number | null;
+            items: components["schemas"]["SharedServiceAdjustmentItem"][];
+            change_requests: components["schemas"]["ServiceAdjustmentChangeRequest"][];
+        };
+        SharedServiceAdjustmentItem: {
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["ServiceAdjustmentItemKind"];
+            description: string;
+            quantity: string;
+            unit: string;
+            unit_price: components["schemas"]["MoneyAmount"];
+            line_total: components["schemas"]["SignedMoneyAmount"];
+            sort_order: number;
+            receipt: components["schemas"]["SharedServiceAdjustmentReceipt"] | null;
+        };
+        SharedServiceAdjustmentReceipt: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            content_type: "image/jpeg" | "image/png";
         };
         SharedQuoteItem: {
             description: string;
@@ -2129,6 +2310,12 @@ export interface components {
             id: string;
             status: components["schemas"]["ServiceJobStatus"];
             quote: components["schemas"]["ProfessionalServiceJobQuote"];
+            original_total_amount: components["schemas"]["MoneyAmount"];
+            approved_adjustment_amount: components["schemas"]["SignedMoneyAmount"];
+            awaiting_decision_amount: components["schemas"]["SignedMoneyAmount"];
+            agreed_total_amount: components["schemas"]["MoneyAmount"];
+            has_unresolved_adjustments: boolean;
+            adjustments: components["schemas"]["ProfessionalServiceAdjustment"][];
             customer_feedback_message: string | null;
             /** Format: date-time */
             completed_at: string | null;
@@ -2140,6 +2327,98 @@ export interface components {
             created_at: string;
             /** Format: date-time */
             updated_at: string;
+        };
+        ProfessionalServiceAdjustment: {
+            /** Format: uuid */
+            id: string;
+            adjustment_number: number;
+            revision: number;
+            status: components["schemas"]["ServiceAdjustmentStatus"];
+            title: string;
+            description: string | null;
+            schedule_impact: string | null;
+            /** Format: date */
+            incurred_on: string | null;
+            total_amount: components["schemas"]["SignedMoneyAmount"];
+            /** Format: date-time */
+            shared_at: string | null;
+            /** Format: date-time */
+            customer_decided_at: string | null;
+            customer_decision_message: string | null;
+            /** Format: date-time */
+            terms_accepted_at: string | null;
+            accepted_revision: number | null;
+            accepted_customer: components["schemas"]["ServiceAdjustmentAcceptedCustomer"] | null;
+            items: components["schemas"]["ProfessionalServiceAdjustmentItem"][];
+            change_requests: components["schemas"]["ServiceAdjustmentChangeRequest"][];
+        };
+        ServiceAdjustmentAcceptedCustomer: {
+            name: string;
+            phone_e164: string;
+            /** Format: email */
+            email: string | null;
+        };
+        ProfessionalServiceAdjustmentItem: {
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["ServiceAdjustmentItemKind"];
+            description: string;
+            quantity: string;
+            unit: string;
+            unit_price: components["schemas"]["MoneyAmount"];
+            line_total: components["schemas"]["SignedMoneyAmount"];
+            sort_order: number;
+            receipt: components["schemas"]["ProfessionalServiceAdjustmentReceipt"] | null;
+        };
+        ProfessionalServiceAdjustmentReceipt: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            content_type: "image/jpeg" | "image/png";
+            /** Format: uuid */
+            media_upload_id: string;
+        };
+        ServiceAdjustmentChangeRequest: {
+            requested_revision: number;
+            message: string;
+            /** Format: date-time */
+            requested_at: string;
+        };
+        ProfessionalServiceAdjustmentWriteRequest: {
+            adjustment: {
+                revision?: number;
+                title: string;
+                description: string | null;
+                schedule_impact: string | null;
+                /** Format: date */
+                incurred_on: string | null;
+                items: components["schemas"]["ProfessionalServiceAdjustmentItemInput"][];
+            };
+        };
+        ProfessionalServiceAdjustmentItemInput: {
+            kind: components["schemas"]["ServiceAdjustmentItemKind"];
+            description: string;
+            quantity: number;
+            unit: string;
+            unit_price: number;
+            /** Format: uuid */
+            media_upload_id: string | null;
+        };
+        ProfessionalServiceAdjustmentShareRequest: {
+            share: {
+                /** @enum {string} */
+                method: "copy" | "whatsapp";
+            };
+        };
+        ProfessionalServiceAdjustmentShareResponse: {
+            data: {
+                service_job: components["schemas"]["ProfessionalServiceJob"];
+                /** Format: uri */
+                share_url: string;
+                /** Format: uri */
+                whatsapp_url: string;
+            };
+            request_id: components["schemas"]["RequestId"];
         };
         ProfessionalServiceJobRecommendation: {
             status: components["schemas"]["RecommendationRequestStatus"];
@@ -2316,6 +2595,7 @@ export interface components {
             request_id: components["schemas"]["RequestId"];
         };
         MoneyAmount: string;
+        SignedMoneyAmount: string;
         ProfessionalWorkspaceProfile: {
             /** Format: uuid */
             id: string;
@@ -2536,7 +2816,7 @@ export interface components {
         };
         MediaUploadAuthorizationRequest: {
             /** @enum {string} */
-            purpose: "profile_photo" | "portfolio_image" | "verification_identity";
+            purpose: "profile_photo" | "portfolio_image" | "verification_identity" | "service_adjustment_receipt";
             /** @enum {string} */
             content_type: "image/jpeg" | "image/png";
             byte_size: number;
@@ -4588,7 +4868,7 @@ export interface operations {
             200: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
-                    "Cache-Control"?: "no-store" | "max-age=0, public, must-revalidate";
+                    "Cache-Control"?: "no-store" | "max-age=0, public, must-revalidate, s-maxage=300";
                     "Content-Disposition"?: string;
                     "X-Content-Type-Options"?: "nosniff";
                     [name: string]: unknown;
@@ -4624,7 +4904,7 @@ export interface operations {
             200: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
-                    "Cache-Control"?: "no-store" | "max-age=0, public, must-revalidate";
+                    "Cache-Control"?: "no-store" | "max-age=0, public, must-revalidate, s-maxage=300";
                     "Content-Disposition"?: string;
                     "X-Content-Type-Options"?: "nosniff";
                     [name: string]: unknown;
@@ -5489,6 +5769,8 @@ export interface operations {
                 "application/json": {
                     completion: {
                         request_recommendation: boolean;
+                        /** @default false */
+                        acknowledge_open_adjustments?: boolean;
                     };
                 };
             };
@@ -5564,6 +5846,8 @@ export interface operations {
                 "application/json": {
                     cancellation: {
                         reason: string | null;
+                        /** @default false */
+                        acknowledge_open_adjustments?: boolean;
                     };
                 };
             };
@@ -5616,6 +5900,280 @@ export interface operations {
             };
             /** @description The cancellation reason is invalid. */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    createProfessionalServiceAdjustment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                service_job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfessionalServiceAdjustmentWriteRequest"];
+            };
+        };
+        responses: {
+            /** @description The service with its new draft adjustment. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalServiceJobResponse"];
+                };
+            };
+            /** @description An active session is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The exact browser origin or professional ownership is invalid. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The service or receipt upload does not exist for this professional. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description New adjustments are unavailable after service closure. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description One or more adjustment fields are invalid. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    updateProfessionalServiceAdjustment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                service_job_id: string;
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfessionalServiceAdjustmentWriteRequest"];
+            };
+        };
+        responses: {
+            /** @description The service with its updated draft adjustment. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalServiceJobResponse"];
+                };
+            };
+            /** @description An active session is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The exact browser origin or professional ownership is invalid. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The service, adjustment, or receipt upload is unavailable. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The revision is stale or the adjustment is terminal. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description One or more adjustment fields are invalid. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    shareProfessionalServiceAdjustment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                service_job_id: string;
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfessionalServiceAdjustmentShareRequest"];
+            };
+        };
+        responses: {
+            /** @description The service and customer handoff URLs. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalServiceAdjustmentShareResponse"];
+                };
+            };
+            /** @description An active session is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The exact browser origin or professional ownership is invalid. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The service or adjustment is unavailable. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The adjustment or public profile is unavailable for sharing. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The sharing method is invalid. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    cancelProfessionalServiceAdjustment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                service_job_id: string;
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The service with its cancelled adjustment. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalServiceJobResponse"];
+                };
+            };
+            /** @description An active session is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The exact browser origin or professional ownership is invalid. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The service or adjustment is unavailable. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The adjustment is already terminal. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6272,6 +6830,112 @@ export interface operations {
             };
             /** @description Terms or decision fields are invalid. */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    decideSharedServiceAdjustment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SharedServiceAdjustmentDecisionRequest"];
+            };
+        };
+        responses: {
+            /** @description The adjustment decision and current agreement were recorded idempotently. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SharedQuoteResponse"];
+                };
+            };
+            /** @description The exact configured Nuxt origin is required. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The bearer or adjustment is not available. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The adjustment changed or cannot receive this transition. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Terms or decision fields are invalid. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    resolveSharedServiceAdjustmentReceipt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SharedServiceAdjustmentReceiptResolveRequest"];
+            };
+        };
+        responses: {
+            /** @description The sanitized receipt image. */
+            200: {
+                headers: {
+                    "Cache-Control"?: "private, no-store";
+                    "Referrer-Policy"?: "no-referrer";
+                    "X-Content-Type-Options"?: "nosniff";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                    "image/png": string;
+                };
+            };
+            /** @description The exact configured Nuxt origin is required. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Generic response for every invalid bearer or receipt relationship. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

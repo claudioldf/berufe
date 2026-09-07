@@ -2,19 +2,27 @@
 import { computed } from "vue";
 import type { RecommendationDeliveryChannel } from "~/types";
 
-const props = defineProps<{
-  customerName: string;
-  deliveryChannel: RecommendationDeliveryChannel;
-  busy: boolean;
-  pendingChoice: boolean | null;
-  error?: string;
-}>();
+const props = withDefaults(
+  defineProps<{
+    customerName: string;
+    deliveryChannel: RecommendationDeliveryChannel;
+    busy: boolean;
+    pendingChoice: boolean | null;
+    error?: string;
+    hasUnresolvedAdjustments?: boolean;
+  }>(),
+  { error: "", hasUnresolvedAdjustments: false },
+);
 
 const emit = defineEmits<{
-  confirm: [requestRecommendation: boolean];
+  confirm: [
+    requestRecommendation: boolean,
+    acknowledgeOpenAdjustments?: boolean,
+  ];
 }>();
 
 const open = defineModel<boolean>("open", { required: true });
+const acknowledgeOpenAdjustments = shallowRef(false);
 
 const deliveryCopy = computed(() =>
   props.deliveryChannel === "email"
@@ -30,6 +38,14 @@ function close() {
   if (props.busy) return;
   open.value = false;
 }
+
+function confirm(requestRecommendation: boolean) {
+  if (props.hasUnresolvedAdjustments) {
+    emit("confirm", requestRecommendation, acknowledgeOpenAdjustments.value);
+  } else {
+    emit("confirm", requestRecommendation);
+  }
+}
 </script>
 
 <template>
@@ -44,6 +60,14 @@ function close() {
       <div class="completion-dialog__body">
         <p>Confirme apenas se o trabalho já terminou.</p>
         <p>{{ deliveryCopy }}</p>
+        <label
+          v-if="hasUnresolvedAdjustments"
+          class="completion-dialog__acknowledgement"
+        >
+          <input v-model="acknowledgeOpenAdjustments" type="checkbox" />
+          Entendo que os ajustes pendentes continuarão separados do total
+          combinado e poderão ser respondidos depois da conclusão.
+        </label>
         <p v-if="error" class="completion-dialog__error" role="alert">
           {{ error }}
         </p>
@@ -70,8 +94,10 @@ function close() {
             color="neutral"
             variant="outline"
             :loading="busy && pendingChoice === false"
-            :disabled="busy"
-            @click="emit('confirm', false)"
+            :disabled="
+              busy || (hasUnresolvedAdjustments && !acknowledgeOpenAdjustments)
+            "
+            @click="confirm(false)"
           >
             Concluir sem solicitar avaliação
           </UButton>
@@ -84,8 +110,10 @@ function close() {
             color="primary"
             icon="i-lucide-check"
             :loading="busy && pendingChoice === true"
-            :disabled="busy"
-            @click="emit('confirm', true)"
+            :disabled="
+              busy || (hasUnresolvedAdjustments && !acknowledgeOpenAdjustments)
+            "
+            @click="confirm(true)"
           >
             Concluir e solicitar avaliação
           </UButton>
@@ -113,6 +141,17 @@ function close() {
     border-radius: 10px;
     background: var(--color-error-tint);
     color: var(--color-error) !important;
+  }
+
+  &__acknowledgement {
+    display: flex;
+    gap: 9px;
+    padding: 12px;
+    border-radius: 10px;
+    background: var(--color-warning-tint, #fff5dd);
+    color: var(--ink);
+    font-size: 0.84rem;
+    line-height: 1.45;
   }
 
   &__actions {

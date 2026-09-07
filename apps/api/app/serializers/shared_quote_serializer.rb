@@ -70,7 +70,14 @@ class SharedQuoteSerializer
 
     {
       status: job.status,
-      completed_at: job.completed_at&.iso8601
+      completed_at: job.completed_at&.iso8601,
+      original_total_amount: money(quote.total_amount),
+      approved_adjustment_amount: money(job.approved_adjustment_amount),
+      awaiting_decision_amount: money(job.awaiting_decision_amount),
+      agreed_total_amount: money(job.agreed_total_amount),
+      adjustments: job.service_adjustments.reject(&:draft?).map do |adjustment|
+        ServiceAdjustmentSerializer.new(adjustment, customer_facing: true).as_json
+      end
     }
   end
 

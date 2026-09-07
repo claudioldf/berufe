@@ -51,6 +51,7 @@ module Berufe
       GOOD_JOB_QUEUES
       WEB_ORIGIN
       API_PUBLIC_URL
+      MEDIA_PUBLIC_URL
     ].freeze
     EXTERNAL_JOB_REQUIRED = %w[GOOD_JOB_PROBE_PORT].freeze
     FAKE_OTP_REQUIRED = %w[FAKE_SMS_OTP_CODE].freeze

@@ -1363,7 +1363,7 @@ paths:
                 type: string
                 enum:
                   - no-store
-                  - max-age=0, public, must-revalidate
+                  - max-age=0, public, must-revalidate, s-maxage=300
             Content-Disposition:
               schema:
                 type: string
@@ -1411,7 +1411,7 @@ paths:
                 type: string
                 enum:
                   - no-store
-                  - max-age=0, public, must-revalidate
+                  - max-age=0, public, must-revalidate, s-maxage=300
             Content-Disposition:
               schema:
                 type: string
@@ -2216,6 +2216,7 @@ paths:
                   required: [request_recommendation]
                   properties:
                     request_recommendation: { type: boolean }
+                    acknowledge_open_adjustments: { type: boolean, default: false }
       responses:
         "200":
           description: The completed service and any immediate recommendation handoff.
@@ -2277,6 +2278,7 @@ paths:
                   required: [reason]
                   properties:
                     reason: { type: [string, "null"], maxLength: 2000 }
+                    acknowledge_open_adjustments: { type: boolean, default: false }
       responses:
         "200":
           description: The cancelled service.
@@ -2306,6 +2308,200 @@ paths:
               schema: { $ref: "#/components/schemas/ErrorResponse" }
         "422":
           description: The cancellation reason is invalid.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+  /api/v1/professional/service-jobs/{service_job_id}/adjustments:
+    parameters:
+      - name: service_job_id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      operationId: createProfessionalServiceAdjustment
+      summary: Create a draft scope or price adjustment for an open service
+      tags: [Professional services]
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProfessionalServiceAdjustmentWriteRequest" }
+      responses:
+        "201":
+          description: The service with its new draft adjustment.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProfessionalServiceJobResponse" }
+        "401":
+          description: An active session is required.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403":
+          description: The exact browser origin or professional ownership is invalid.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: The service or receipt upload does not exist for this professional.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "409":
+          description: New adjustments are unavailable after service closure.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "422":
+          description: One or more adjustment fields are invalid.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+  /api/v1/professional/service-jobs/{service_job_id}/adjustments/{id}:
+    parameters:
+      - name: service_job_id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    patch:
+      operationId: updateProfessionalServiceAdjustment
+      summary: Update one editable service adjustment
+      tags: [Professional services]
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProfessionalServiceAdjustmentWriteRequest" }
+      responses:
+        "200":
+          description: The service with its updated draft adjustment.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProfessionalServiceJobResponse" }
+        "401":
+          description: An active session is required.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403":
+          description: The exact browser origin or professional ownership is invalid.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: The service, adjustment, or receipt upload is unavailable.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "409":
+          description: The revision is stale or the adjustment is terminal.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "422":
+          description: One or more adjustment fields are invalid.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+  /api/v1/professional/service-jobs/{service_job_id}/adjustments/{id}/share:
+    parameters:
+      - name: service_job_id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      operationId: shareProfessionalServiceAdjustment
+      summary: Share or resend one editable adjustment through the quote's private link
+      tags: [Professional services]
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProfessionalServiceAdjustmentShareRequest" }
+      responses:
+        "200":
+          description: The service and customer handoff URLs.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProfessionalServiceAdjustmentShareResponse" }
+        "401":
+          description: An active session is required.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403":
+          description: The exact browser origin or professional ownership is invalid.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: The service or adjustment is unavailable.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "409":
+          description: The adjustment or public profile is unavailable for sharing.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "422":
+          description: The sharing method is invalid.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+  /api/v1/professional/service-jobs/{service_job_id}/adjustments/{id}/cancel:
+    parameters:
+      - name: service_job_id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+      - name: id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      operationId: cancelProfessionalServiceAdjustment
+      summary: Cancel one non-terminal service adjustment
+      tags: [Professional services]
+      security:
+        - applicationSession: []
+      responses:
+        "200":
+          description: The service with its cancelled adjustment.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProfessionalServiceJobResponse" }
+        "401":
+          description: An active session is required.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403":
+          description: The exact browser origin or professional ownership is invalid.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: The service or adjustment is unavailable.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "409":
+          description: The adjustment is already terminal.
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorResponse" }
@@ -2887,6 +3083,79 @@ paths:
               schema: { $ref: "#/components/schemas/ErrorResponse" }
         "422":
           description: Terms or decision fields are invalid.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+  /api/v1/shared-service-adjustments/decisions:
+    post:
+      operationId: decideSharedServiceAdjustment
+      summary: Approve, decline, or request a change to one service adjustment
+      tags: [Shared quotes]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SharedServiceAdjustmentDecisionRequest" }
+      responses:
+        "200":
+          description: The adjustment decision and current agreement were recorded idempotently.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SharedQuoteResponse" }
+        "403":
+          description: The exact configured Nuxt origin is required.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: The bearer or adjustment is not available.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "409":
+          description: The adjustment changed or cannot receive this transition.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "422":
+          description: Terms or decision fields are invalid.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+  /api/v1/shared-service-adjustment-receipts/resolve:
+    post:
+      operationId: resolveSharedServiceAdjustmentReceipt
+      summary: Read one private adjustment receipt through the quote bearer
+      tags: [Shared quotes]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SharedServiceAdjustmentReceiptResolveRequest" }
+      responses:
+        "200":
+          description: The sanitized receipt image.
+          headers:
+            Cache-Control:
+              schema: { type: string, const: "private, no-store" }
+            Referrer-Policy:
+              schema: { type: string, const: no-referrer }
+            X-Content-Type-Options:
+              schema: { type: string, const: nosniff }
+          content:
+            image/jpeg:
+              schema: { type: string, format: binary }
+            image/png:
+              schema: { type: string, format: binary }
+        "403":
+          description: The exact configured Nuxt origin is required.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Generic response for every invalid bearer or receipt relationship.
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorResponse" }
@@ -5374,6 +5643,8 @@ components:
           quote_unshared,
           quote_awaiting_response,
           quote_change_requested,
+          adjustment_awaiting_response,
+          adjustment_change_requested,
           service_open,
           recommendation_unsent,
         ]
@@ -5381,14 +5652,22 @@ components:
       type: object
       additionalProperties: false
       required:
-        [id, kind, title, subtitle, sort_at, recommendation_delivery_channel]
+        [
+          id,
+          kind,
+          title,
+          subtitle,
+          sort_at,
+          recommendation_delivery_channel,
+          has_unresolved_adjustments,
+        ]
       properties:
         id:
           type: string
           format: uuid
           description: >-
-            The quote id for quote_* kinds, the service job id for
-            service_open and recommendation_unsent.
+            The quote id for quote_* kinds and the service job id for
+            adjustment_* kinds, service_open, and recommendation_unsent.
         kind: { $ref: "#/components/schemas/ProfessionalActionKind" }
         title: { type: string, minLength: 1, maxLength: 160 }
         subtitle: { type: string, minLength: 1, maxLength: 200 }
@@ -5397,6 +5676,7 @@ components:
           oneOf:
             - $ref: "#/components/schemas/RecommendationDeliveryChannel"
             - type: "null"
+        has_unresolved_adjustments: { type: boolean }
     ProfessionalDashboardReadiness:
       type: object
       additionalProperties: false
@@ -5437,6 +5717,12 @@ components:
     ServiceJobStatus:
       type: string
       enum: [approved, completed, cancelled]
+    ServiceAdjustmentStatus:
+      type: string
+      enum: [draft, awaiting_response, change_requested, approved, declined, cancelled]
+    ServiceAdjustmentItemKind:
+      type: string
+      enum: [additional_service, material_charge, material_reimbursement, credit]
     RecommendationRequestStatus:
       type: string
       enum: [open, completed, expired]
@@ -5663,6 +5949,29 @@ components:
             revision: { type: integer, minimum: 0 }
             terms_accepted: { type: boolean }
             message: { type: [string, "null"], maxLength: 700 }
+    SharedServiceAdjustmentDecisionRequest:
+      type: object
+      additionalProperties: false
+      required: [token, adjustment_id, decision]
+      properties:
+        token: { type: string, maxLength: 200 }
+        adjustment_id: { type: string, format: uuid }
+        decision:
+          type: object
+          additionalProperties: false
+          required: [kind, revision, terms_accepted, message]
+          properties:
+            kind: { type: string, enum: [approve, request_change, decline] }
+            revision: { type: integer, minimum: 0 }
+            terms_accepted: { type: boolean }
+            message: { type: [string, "null"], maxLength: 700 }
+    SharedServiceAdjustmentReceiptResolveRequest:
+      type: object
+      additionalProperties: false
+      required: [token, receipt_id]
+      properties:
+        token: { type: string, maxLength: 200 }
+        receipt_id: { type: string, format: uuid }
     SharedQuoteResponse:
       type: object
       additionalProperties: false
@@ -5721,10 +6030,94 @@ components:
     SharedQuoteServiceJob:
       type: object
       additionalProperties: false
-      required: [status, completed_at]
+      required:
+        [
+          status,
+          completed_at,
+          original_total_amount,
+          approved_adjustment_amount,
+          awaiting_decision_amount,
+          agreed_total_amount,
+          adjustments,
+        ]
       properties:
         status: { $ref: "#/components/schemas/ServiceJobStatus" }
         completed_at: { type: [string, "null"], format: date-time }
+        original_total_amount: { $ref: "#/components/schemas/MoneyAmount" }
+        approved_adjustment_amount: { $ref: "#/components/schemas/SignedMoneyAmount" }
+        awaiting_decision_amount: { $ref: "#/components/schemas/SignedMoneyAmount" }
+        agreed_total_amount: { $ref: "#/components/schemas/MoneyAmount" }
+        adjustments:
+          type: array
+          items: { $ref: "#/components/schemas/SharedServiceAdjustment" }
+    SharedServiceAdjustment:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          id,
+          adjustment_number,
+          revision,
+          status,
+          title,
+          description,
+          schedule_impact,
+          incurred_on,
+          total_amount,
+          shared_at,
+          customer_decided_at,
+          customer_decision_message,
+          terms_accepted_at,
+          accepted_revision,
+          items,
+          change_requests,
+        ]
+      properties:
+        id: { type: string, format: uuid }
+        adjustment_number: { type: integer, minimum: 1 }
+        revision: { type: integer, minimum: 0 }
+        status: { $ref: "#/components/schemas/ServiceAdjustmentStatus" }
+        title: { type: string, minLength: 1, maxLength: 120 }
+        description: { type: [string, "null"], maxLength: 700 }
+        schedule_impact: { type: [string, "null"], maxLength: 300 }
+        incurred_on: { type: [string, "null"], format: date }
+        total_amount: { $ref: "#/components/schemas/SignedMoneyAmount" }
+        shared_at: { type: [string, "null"], format: date-time }
+        customer_decided_at: { type: [string, "null"], format: date-time }
+        customer_decision_message: { type: [string, "null"], maxLength: 700 }
+        terms_accepted_at: { type: [string, "null"], format: date-time }
+        accepted_revision: { type: [integer, "null"], minimum: 0 }
+        items:
+          type: array
+          maxItems: 20
+          items: { $ref: "#/components/schemas/SharedServiceAdjustmentItem" }
+        change_requests:
+          type: array
+          items: { $ref: "#/components/schemas/ServiceAdjustmentChangeRequest" }
+    SharedServiceAdjustmentItem:
+      type: object
+      additionalProperties: false
+      required: [id, kind, description, quantity, unit, unit_price, line_total, sort_order, receipt]
+      properties:
+        id: { type: string, format: uuid }
+        kind: { $ref: "#/components/schemas/ServiceAdjustmentItemKind" }
+        description: { type: string, minLength: 1, maxLength: 160 }
+        quantity: { type: string, pattern: "^[0-9]+(?:\\.[0-9]{1,3})?$" }
+        unit: { type: string, minLength: 1, maxLength: 20 }
+        unit_price: { $ref: "#/components/schemas/MoneyAmount" }
+        line_total: { $ref: "#/components/schemas/SignedMoneyAmount" }
+        sort_order: { type: integer, minimum: 0 }
+        receipt:
+          oneOf:
+            - $ref: "#/components/schemas/SharedServiceAdjustmentReceipt"
+            - type: "null"
+    SharedServiceAdjustmentReceipt:
+      type: object
+      additionalProperties: false
+      required: [id, content_type]
+      properties:
+        id: { type: string, format: uuid }
+        content_type: { type: string, enum: [image/jpeg, image/png] }
     SharedQuoteItem:
       type: object
       additionalProperties: false
@@ -5914,6 +6307,12 @@ components:
           id,
           status,
           quote,
+          original_total_amount,
+          approved_adjustment_amount,
+          awaiting_decision_amount,
+          agreed_total_amount,
+          has_unresolved_adjustments,
+          adjustments,
           customer_feedback_message,
           completed_at,
           cancelled_at,
@@ -5926,6 +6325,14 @@ components:
         id: { type: string, format: uuid }
         status: { $ref: "#/components/schemas/ServiceJobStatus" }
         quote: { $ref: "#/components/schemas/ProfessionalServiceJobQuote" }
+        original_total_amount: { $ref: "#/components/schemas/MoneyAmount" }
+        approved_adjustment_amount: { $ref: "#/components/schemas/SignedMoneyAmount" }
+        awaiting_decision_amount: { $ref: "#/components/schemas/SignedMoneyAmount" }
+        agreed_total_amount: { $ref: "#/components/schemas/MoneyAmount" }
+        has_unresolved_adjustments: { type: boolean }
+        adjustments:
+          type: array
+          items: { $ref: "#/components/schemas/ProfessionalServiceAdjustment" }
         customer_feedback_message: { type: [string, "null"], maxLength: 700 }
         completed_at: { type: [string, "null"], format: date-time }
         cancelled_at: { type: [string, "null"], format: date-time }
@@ -5936,6 +6343,151 @@ components:
             - type: "null"
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
+    ProfessionalServiceAdjustment:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          id,
+          adjustment_number,
+          revision,
+          status,
+          title,
+          description,
+          schedule_impact,
+          incurred_on,
+          total_amount,
+          shared_at,
+          customer_decided_at,
+          customer_decision_message,
+          terms_accepted_at,
+          accepted_revision,
+          accepted_customer,
+          items,
+          change_requests,
+        ]
+      properties:
+        id: { type: string, format: uuid }
+        adjustment_number: { type: integer, minimum: 1 }
+        revision: { type: integer, minimum: 0 }
+        status: { $ref: "#/components/schemas/ServiceAdjustmentStatus" }
+        title: { type: string, minLength: 1, maxLength: 120 }
+        description: { type: [string, "null"], maxLength: 700 }
+        schedule_impact: { type: [string, "null"], maxLength: 300 }
+        incurred_on: { type: [string, "null"], format: date }
+        total_amount: { $ref: "#/components/schemas/SignedMoneyAmount" }
+        shared_at: { type: [string, "null"], format: date-time }
+        customer_decided_at: { type: [string, "null"], format: date-time }
+        customer_decision_message: { type: [string, "null"], maxLength: 700 }
+        terms_accepted_at: { type: [string, "null"], format: date-time }
+        accepted_revision: { type: [integer, "null"], minimum: 0 }
+        accepted_customer:
+          oneOf:
+            - $ref: "#/components/schemas/ServiceAdjustmentAcceptedCustomer"
+            - type: "null"
+        items:
+          type: array
+          maxItems: 20
+          items: { $ref: "#/components/schemas/ProfessionalServiceAdjustmentItem" }
+        change_requests:
+          type: array
+          items: { $ref: "#/components/schemas/ServiceAdjustmentChangeRequest" }
+    ServiceAdjustmentAcceptedCustomer:
+      type: object
+      additionalProperties: false
+      required: [name, phone_e164, email]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 80 }
+        phone_e164: { type: string, pattern: "^\\+55[1-9][0-9]9[0-9]{8}$" }
+        email: { type: [string, "null"], format: email, maxLength: 254 }
+    ProfessionalServiceAdjustmentItem:
+      type: object
+      additionalProperties: false
+      required: [id, kind, description, quantity, unit, unit_price, line_total, sort_order, receipt]
+      properties:
+        id: { type: string, format: uuid }
+        kind: { $ref: "#/components/schemas/ServiceAdjustmentItemKind" }
+        description: { type: string, minLength: 1, maxLength: 160 }
+        quantity: { type: string, pattern: "^[0-9]+(?:\\.[0-9]{1,3})?$" }
+        unit: { type: string, minLength: 1, maxLength: 20 }
+        unit_price: { $ref: "#/components/schemas/MoneyAmount" }
+        line_total: { $ref: "#/components/schemas/SignedMoneyAmount" }
+        sort_order: { type: integer, minimum: 0 }
+        receipt:
+          oneOf:
+            - $ref: "#/components/schemas/ProfessionalServiceAdjustmentReceipt"
+            - type: "null"
+    ProfessionalServiceAdjustmentReceipt:
+      type: object
+      additionalProperties: false
+      required: [id, content_type, media_upload_id]
+      properties:
+        id: { type: string, format: uuid }
+        content_type: { type: string, enum: [image/jpeg, image/png] }
+        media_upload_id: { type: string, format: uuid }
+    ServiceAdjustmentChangeRequest:
+      type: object
+      additionalProperties: false
+      required: [requested_revision, message, requested_at]
+      properties:
+        requested_revision: { type: integer, minimum: 0 }
+        message: { type: string, minLength: 1, maxLength: 700 }
+        requested_at: { type: string, format: date-time }
+    ProfessionalServiceAdjustmentWriteRequest:
+      type: object
+      additionalProperties: false
+      required: [adjustment]
+      properties:
+        adjustment:
+          type: object
+          additionalProperties: false
+          required: [title, description, schedule_impact, incurred_on, items]
+          properties:
+            revision: { type: integer, minimum: 0 }
+            title: { type: string, minLength: 1, maxLength: 120 }
+            description: { type: [string, "null"], maxLength: 700 }
+            schedule_impact: { type: [string, "null"], maxLength: 300 }
+            incurred_on: { type: [string, "null"], format: date }
+            items:
+              type: array
+              maxItems: 20
+              items: { $ref: "#/components/schemas/ProfessionalServiceAdjustmentItemInput" }
+    ProfessionalServiceAdjustmentItemInput:
+      type: object
+      additionalProperties: false
+      required: [kind, description, quantity, unit, unit_price, media_upload_id]
+      properties:
+        kind: { $ref: "#/components/schemas/ServiceAdjustmentItemKind" }
+        description: { type: string, minLength: 1, maxLength: 160 }
+        quantity: { type: number, exclusiveMinimum: 0 }
+        unit: { type: string, minLength: 1, maxLength: 20 }
+        unit_price: { type: number, minimum: 0 }
+        media_upload_id: { type: [string, "null"], format: uuid }
+    ProfessionalServiceAdjustmentShareRequest:
+      type: object
+      additionalProperties: false
+      required: [share]
+      properties:
+        share:
+          type: object
+          additionalProperties: false
+          required: [method]
+          properties:
+            method: { type: string, enum: [copy, whatsapp] }
+    ProfessionalServiceAdjustmentShareResponse:
+      type: object
+      additionalProperties: false
+      required: [data, request_id]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [service_job, share_url, whatsapp_url]
+          properties:
+            service_job: { $ref: "#/components/schemas/ProfessionalServiceJob" }
+            share_url: { type: string, format: uri }
+            whatsapp_url: { type: string, format: uri }
+        request_id: { $ref: "#/components/schemas/RequestId" }
     ProfessionalServiceJobRecommendation:
       type: object
       additionalProperties: false
@@ -6260,6 +6812,9 @@ components:
     MoneyAmount:
       type: string
       pattern: "^[0-9]+\\.[0-9]{2}$"
+    SignedMoneyAmount:
+      type: string
+      pattern: "^-?[0-9]+\\.[0-9]{2}$"
     ProfessionalWorkspaceProfile:
       type: object
       additionalProperties: false
@@ -6964,6 +7519,7 @@ components:
             - profile_photo
             - portfolio_image
             - verification_identity
+            - service_adjustment_receipt
         content_type:
           type: string
           enum:

@@ -43,6 +43,10 @@ export default defineRailway(() => {
       DB_POOL: "7",
       WEB_ORIGIN: "https://www.berufe.com.br",
       API_PUBLIC_URL: "https://api.berufe.com.br",
+      // Cloudflare-proxied custom domain on this same service, scoped to the
+      // two public image routes only — api.berufe.com.br stays unproxied so
+      // request.remote_ip keeps working for rate limiting and geolocation.
+      MEDIA_PUBLIC_URL: "https://media.berufe.com.br",
       PRODUCT_LAUNCH_DATE: preserve(),
       MAXMIND_ACCOUNT_ID: preserve(),
       MAXMIND_LICENSE_KEY: preserve(),

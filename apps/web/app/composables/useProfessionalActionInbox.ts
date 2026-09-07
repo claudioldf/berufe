@@ -79,6 +79,7 @@ export function useProfessionalActionInbox() {
     id: string,
     requestRecommendation: boolean,
     deliveryChannel: RecommendationDeliveryChannel,
+    acknowledgeOpenAdjustments = false,
   ): Promise<ProfessionalServiceJob | null> {
     if (actingId.value) return null;
     const handoff =
@@ -93,11 +94,18 @@ export function useProfessionalActionInbox() {
     completionIntent.value = requestRecommendation;
     actionError.value = "";
     try {
-      const result = await completeProfessionalServiceJob(
-        client,
-        id,
-        requestRecommendation,
-      );
+      const result = acknowledgeOpenAdjustments
+        ? await completeProfessionalServiceJob(
+            client,
+            id,
+            requestRecommendation,
+            true,
+          )
+        : await completeProfessionalServiceJob(
+            client,
+            id,
+            requestRecommendation,
+          );
       if (result.whatsappUrl) {
         if (handoff) handoff.location.replace(result.whatsappUrl);
         else if (import.meta.client) window.location.assign(result.whatsappUrl);

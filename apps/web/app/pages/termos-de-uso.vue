@@ -200,16 +200,18 @@ useHead(() => ({ link: [{ rel: "canonical", href: canonicalUrl.value }] }));
       <p>
         O rascunho é privado. Quem recebe o link pode visualizar e imprimir,
         aprovar, recusar ou solicitar alterações. A aprovação cria um registro
-        de serviço, e o mesmo link pode registrar pedido de conclusão,
-        pendência, confirmação ou cancelamento.
+        de serviço. Durante a execução, o profissional pode propor pelo mesmo
+        link ajustes separados para trabalho adicional, materiais, reembolsos,
+        créditos ou impacto no prazo. Cada ajuste exige uma resposta própria do
+        cliente e só entra no total combinado depois de aprovado.
       </p>
       <div class="legal-note">
         <UIcon name="i-lucide-info" />
         <p>
           <strong>Limite do recurso:</strong> essas ações registram a
           manifestação realizada na plataforma, mas não substituem contrato,
-          nota fiscal, cobrança, pagamento ou garantias exigidas entre as
-          partes.
+          nota fiscal, cobrança, pagamento, comprovam quitação ou eliminam as
+          garantias e obrigações exigidas entre as partes.
         </p>
       </div>
     </section>

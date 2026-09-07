@@ -43,6 +43,7 @@ export function mapProfessionalWorkspace(
         subtitle: item.subtitle,
         sortAt: item.sort_at,
         recommendationDeliveryChannel: item.recommendation_delivery_channel,
+        hasUnresolvedAdjustments: item.has_unresolved_adjustments,
       })),
       recentQuotes: data.dashboard.recent_quotes.map((quote) => ({
         id: quote.id,

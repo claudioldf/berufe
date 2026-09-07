@@ -52,6 +52,15 @@ Rails.application.routes.draw do
           end
         end
         resources :service_jobs, only: %i[index show], path: "service-jobs" do
+          resources :service_adjustments,
+            only: %i[create update],
+            path: "adjustments",
+            controller: :service_adjustments do
+              member do
+                post :share
+                post :cancel
+              end
+            end
           member do
             post :request_recommendation, path: "recommendation-request"
             post :complete
@@ -76,6 +85,8 @@ Rails.application.routes.draw do
       resource :session, only: %i[show destroy]
       post "shared-quotes/resolve", to: "shared_quotes#resolve"
       post "shared-quotes/decisions", to: "shared_quotes#decide"
+      post "shared-service-adjustments/decisions", to: "shared_service_adjustments#decide"
+      post "shared-service-adjustment-receipts/resolve", to: "shared_service_adjustment_receipts#resolve"
       post "customer-recommendations/resolve", to: "customer_recommendations#resolve"
       post "customer-recommendations", to: "customer_recommendations#create"
       post "customer-recommendations/issues", to: "customer_recommendations#create_issue"

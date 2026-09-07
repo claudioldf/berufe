@@ -64,6 +64,7 @@ class MediaRetentionCleanupJob < ApplicationJob
     return if PortfolioItem.exists?(media_upload_id: upload.id)
     return if ProfessionalProfilePhoto.exists?(media_upload_id: upload.id)
     return if VerificationFile.exists?(media_upload_id: upload.id)
+    return if ServiceAdjustmentReceipt.exists?(media_upload_id: upload.id)
 
     storage.delete(scope: :private, key: upload.quarantine_key)
     storage.delete(scope: :private, key: upload.sanitized_key) if upload.sanitized_key.present?

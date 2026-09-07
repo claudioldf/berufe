@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
 class MediaUpload < ApplicationRecord
-  PURPOSES = %w[profile_photo portfolio_image verification_identity].freeze
+  PURPOSES = %w[
+    profile_photo portfolio_image verification_identity service_adjustment_receipt
+  ].freeze
   STATES = %w[authorized uploaded processing processed failed attached expired].freeze
   SUPPORTED_CONTENT_TYPES = %w[image/jpeg image/png].freeze
   MAX_BYTE_SIZE = 10.megabytes
@@ -10,6 +12,7 @@ class MediaUpload < ApplicationRecord
   RETRYABLE_FAILURE_CODES = %w[storage_unavailable processing_unavailable].freeze
 
   belongs_to :professional_profile
+  has_one :service_adjustment_receipt, dependent: :restrict_with_exception
 
   validates :purpose, inclusion: {in: PURPOSES}
   validates :state, inclusion: {in: STATES}

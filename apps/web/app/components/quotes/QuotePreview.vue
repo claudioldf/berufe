@@ -245,7 +245,7 @@ function itemTotal(index: number) {
   &__notes > span {
     color: var(--ink-soft);
     font-size: 0.82rem;
-    font-weight: 850;
+    font-weight: 750;
     letter-spacing: 0.06em;
     text-transform: uppercase;
   }
@@ -261,10 +261,11 @@ function itemTotal(index: number) {
   }
   &__service h1 {
     margin: 5px 0 0;
-    font-family: var(--font-display);
-    font-size: 1.3rem;
-    font-weight: 500;
-    line-height: 1.25;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.4;
+    text-wrap: balance;
   }
   &__service dl {
     display: grid;
@@ -299,7 +300,7 @@ function itemTotal(index: number) {
   &__item--head {
     color: var(--ink-soft);
     font-size: 0.82rem;
-    font-weight: 850;
+    font-weight: 700;
     text-transform: uppercase;
   }
   &__item > span:nth-child(n + 2) {
@@ -310,7 +311,7 @@ function itemTotal(index: number) {
     display: block;
   }
   &__item strong {
-    font-size: 0.84rem;
+    font-size: 0.875rem;
   }
   &__item small {
     margin-top: 3px;
@@ -334,6 +335,11 @@ function itemTotal(index: number) {
     border-top: 2px solid var(--ink);
     font-size: 0.84rem;
   }
+
+  &__totals strong,
+  &__item > span:nth-child(n + 2) {
+    font-variant-numeric: tabular-nums;
+  }
   &__totals--fixed {
     width: min(260px, calc(100% - 44px));
   }
@@ -342,7 +348,8 @@ function itemTotal(index: number) {
     padding: 13px 0;
     border-top: 1px solid var(--line);
     border-bottom: 2px solid var(--ink);
-    font-size: 0.94rem;
+    font-size: 1.125rem;
+    font-weight: 600;
   }
   &__materials {
     margin: 0 22px 18px;
@@ -360,7 +367,7 @@ function itemTotal(index: number) {
   &__materials-title > span {
     color: var(--color-brand);
     font-size: 0.82rem;
-    font-weight: 850;
+    font-weight: 750;
     letter-spacing: 0.04em;
     text-transform: uppercase;
   }
@@ -417,9 +424,6 @@ function itemTotal(index: number) {
   }
   & > footer small {
     color: var(--ink-soft);
-  }
-  &--customer &__service h1 {
-    font-size: 1.65rem;
   }
 }
 @media print {
