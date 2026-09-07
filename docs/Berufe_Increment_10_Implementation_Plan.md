@@ -107,6 +107,9 @@ credits do not overwrite the approved quote or become an informal dispute.
 - The existing quote token remains the single customer bearer credential. An
   adjustment share URL adds only an in-page fragment, which is never sent to
   Rails.
+- The service detail lives at `services/[id]/index.vue`, rather than
+  `services/[id].vue`, so Nuxt treats `services/[id]/adjustments/new` as a
+  separate page instead of an unrendered nested child route.
 - No settlement state, balance-due calculation, automatic reminder, tax
   document, invoice, or payment collection is introduced by this increment.
 
