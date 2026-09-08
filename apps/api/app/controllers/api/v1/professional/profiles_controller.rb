@@ -6,6 +6,7 @@ module Api
       class ProfilesController < BaseController
         before_action :prevent_caching
         before_action :authenticate_application_session!
+        before_action :reject_impersonated_action!, only: :visibility
 
         def update
           profile = Current.user_account.professional_profile
@@ -74,6 +75,34 @@ module Api
           )
         end
 
+        def visibility
+          profile = Current.user_account.professional_profile
+          raise ActiveRecord::RecordNotFound unless profile
+
+          authorize profile, :update?
+          ProfessionalProfileVisibilityUpdater.new.call(
+            profile:,
+            visibility: visibility_params.require(:visibility)
+          )
+          render json: {
+            data: ProfessionalWorkspaceSerializer.new(profile.reload),
+            request_id: Current.request_id
+          }
+        rescue ProfessionalProfileVisibilityUpdater::Invalid => error
+          render_api_error(
+            code: "validation_failed",
+            message: "Revise a visibilidade informada.",
+            status: :unprocessable_entity,
+            field_errors: error.field_errors
+          )
+        rescue ProfessionalProfileVisibilityUpdater::Unavailable
+          render_api_error(
+            code: "profile_not_published",
+            message: "A visibilidade só pode ser alterada em um perfil publicado.",
+            status: :conflict
+          )
+        end
+
         private
 
         def identity_params
@@ -94,6 +123,10 @@ module Api
             services: %i[service_id is_primary note],
             coverage: [:city_code, :whole_city, {neighborhood_codes: []}]
           )
+        end
+
+        def visibility_params
+          params.require(:profile_visibility).permit(:visibility)
         end
       end
     end

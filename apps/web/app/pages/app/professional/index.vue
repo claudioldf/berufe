@@ -115,6 +115,37 @@ const dashboardStatus = computed(() => {
       publicAvailable: false,
     };
   }
+  if (profile.status === "suspended") {
+    return {
+      title: "Seu perfil está temporariamente oculto",
+      description:
+        profile.suspensionReason ??
+        "Seu perfil foi ocultado pela equipe. Entre em contato com o suporte para mais informações.",
+      icon: "i-lucide-circle-alert",
+      tone: "attention",
+      publicAvailable: false,
+    };
+  }
+  if (profile.visibility === "unpublished") {
+    return {
+      title: "Seu perfil está despublicado",
+      description:
+        "Ele não aparece nas buscas e o link público está indisponível. Você pode publicá-lo novamente nas configurações.",
+      icon: "i-lucide-eye-off",
+      tone: "pending",
+      publicAvailable: false,
+    };
+  }
+  if (profile.visibility === "direct_link" && profile.isPublic) {
+    return {
+      title: "Seu perfil está acessível somente por link",
+      description:
+        "Ele não aparece nas buscas, mas quem tiver seu link ainda pode ver o perfil e entrar em contato.",
+      icon: "i-lucide-link",
+      tone: "pending",
+      publicAvailable: true,
+    };
+  }
   if (profile.isPublic) {
     if (profile.presentationType === "external") {
       return {
@@ -132,17 +163,6 @@ const dashboardStatus = computed(() => {
       icon: "i-lucide-badge-check",
       tone: "published",
       publicAvailable: true,
-    };
-  }
-  if (profile.status === "suspended") {
-    return {
-      title: "Seu perfil está temporariamente oculto",
-      description:
-        profile.suspensionReason ??
-        "Seu perfil foi ocultado pela equipe. Entre em contato com o suporte para mais informações.",
-      icon: "i-lucide-circle-alert",
-      tone: "attention",
-      publicAvailable: false,
     };
   }
   if (profile.status === "published") {
@@ -422,7 +442,9 @@ function updateCompletionOpen(open: boolean) {
           />
           <DesignSystemSurfaceCard
             v-if="
-              workspace?.profile.isPublic && !workspace?.profile.isIndexable
+              workspace?.profile.visibility === 'discoverable' &&
+              workspace?.profile.isPublic &&
+              !workspace?.profile.isIndexable
             "
             class="seo-nudge"
           >

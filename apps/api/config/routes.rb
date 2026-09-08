@@ -33,6 +33,7 @@ Rails.application.routes.draw do
         end
         resource :data_erasure_request, only: :create, path: "data-erasure-request"
         resource :profile, only: :update, controller: :profiles
+        patch "profile/visibility", to: "profiles#visibility"
         post "profile/submission", to: "profiles#submission"
         put "profile/photo", to: "profile_photos#update"
         delete "profile/photo", to: "profile_photos#destroy"

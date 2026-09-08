@@ -44,6 +44,15 @@ RSpec.describe PublicProfessionalRelationshipQuery do
     expect([declined, pending]).to all(be_persisted)
   end
 
+  it "does not reveal a direct-link profile from another public profile" do
+    relationship = create_relationship
+    recipient.update!(public_visibility: "direct_link")
+
+    expect(described_class.call).to be_empty
+    expect(described_class.for_professional(initiator.id)).to be_empty
+    expect(described_class.for_professional(recipient.id)).to contain_exactly(relationship)
+  end
+
   it "excludes removed relationships while preserving their history" do
     relationship = create_relationship
     relationship.update!(deleted_at: Time.current)

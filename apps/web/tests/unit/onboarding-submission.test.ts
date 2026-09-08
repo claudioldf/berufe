@@ -27,6 +27,7 @@ function completeWorkspace(): ProfessionalWorkspace {
       publicSlug: "ana-souza",
       status: "draft",
       presentationType: "self_service",
+      visibility: "discoverable",
       isPublic: false,
       isSearchEligible: false,
       isIndexable: false,

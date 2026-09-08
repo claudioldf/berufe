@@ -66,7 +66,7 @@ RSpec.describe "Public professional listings", type: :request, openapi: true do
     expect(SearchEvent.count).to eq(0)
   end
 
-  it "returns an empty, non-indexable result for a supported city with no supply yet" do
+  it "returns an empty, indexable result for a supported city when the threshold permits zero supply" do
     get "/api/v1/public/professional-listings",
       params: {service_slug: electrician.slug, state_slug: "pr", city_slug: curitiba_city.slug},
       headers: {"X-Request-Id" => "listing-empty-supply"}
@@ -75,7 +75,7 @@ RSpec.describe "Public professional listings", type: :request, openapi: true do
     data = response.parsed_body.fetch("data")
     expect(data.fetch("professionals")).to eq([])
     expect(data.dig("meta", "total_count")).to eq(0)
-    expect(data.fetch("indexable")).to eq(false)
+    expect(data.fetch("indexable")).to eq(true)
     assert_api_conform(status: 200)
   end
 

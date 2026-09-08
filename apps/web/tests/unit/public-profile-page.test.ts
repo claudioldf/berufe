@@ -1,4 +1,4 @@
-import { mountSuspended } from "@nuxt/test-utils/runtime";
+import { mockNuxtImport, mountSuspended } from "@nuxt/test-utils/runtime";
 import { flushPromises } from "@vue/test-utils";
 import { useState } from "#app";
 import type { PublicProfessionalProfileResult } from "@app/types";
@@ -10,7 +10,10 @@ const mocks = vi.hoisted(() => ({
   client: {},
   fetchProfile: vi.fn(),
   recordView: vi.fn(),
+  showError: vi.fn(),
 }));
+
+mockNuxtImport("showError", () => mocks.showError);
 
 vi.mock("@app/services/api/client", () => ({
   useApiClient: () => mocks.client,
@@ -73,6 +76,9 @@ const result: PublicProfessionalProfileResult = {
 describe("public profile page", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
+    mocks.fetchProfile.mockReset();
+    mocks.recordView.mockReset();
+    mocks.showError.mockReset();
     useState("application-session-status", () => "unknown").value = "unknown";
     useState<CurrentAccount | null>(
       "application-session-account",
@@ -225,6 +231,27 @@ describe("public profile page", () => {
       wrapper.getComponent({ name: "ProfileHero" }).props("professional"),
     ).toEqual(refreshedResult.professional);
     expect(mocks.fetchProfile).toHaveBeenCalledTimes(2);
+  });
+
+  it("replaces stale profile content with the not-found page after unpublication", async () => {
+    mocks.fetchProfile.mockResolvedValueOnce(result).mockRejectedValueOnce({
+      name: "ApiRequestError",
+      code: "not_found",
+      message: "Recurso não encontrado.",
+      fieldErrors: {},
+      requestId: "request-id",
+    });
+
+    await mountSuspended(PublicProfilePage, {
+      shallow: true,
+      route: "/be/just-unpublished",
+    });
+    await flushPromises();
+
+    expect(mocks.showError).toHaveBeenCalledWith({
+      statusCode: 404,
+      statusMessage: "Profissional não encontrado",
+    });
   });
 
   it("selects the simplified public layout for an external profile", async () => {

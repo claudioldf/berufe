@@ -72,6 +72,7 @@ function workspace(): ProfessionalWorkspace {
       publicSlug: owner.publicSlug,
       status: "published",
       presentationType: "self_service",
+      visibility: "discoverable",
       isPublic: true,
       isSearchEligible: true,
       isIndexable: true,

@@ -2,6 +2,7 @@
 
 class ProfessionalProfile < ApplicationRecord
   STATUSES = %w[draft published suspended].freeze
+  PUBLIC_VISIBILITIES = %w[discoverable direct_link unpublished].freeze
   CREATION_SOURCES = %w[self_service external].freeze
   QUOTE_PRICING_MODES = %w[fixed_price itemized].freeze
   INITIAL_REVISION_FIELDS = %i[
@@ -59,6 +60,7 @@ class ProfessionalProfile < ApplicationRecord
   validates :years_experience, numericality: {only_integer: true, in: 0..70}, allow_nil: true, on: :create
   validates :whatsapp_e164, format: {with: UserAccount::BRAZILIAN_MOBILE_PATTERN}, allow_nil: true, on: :create
   validates :profile_status, inclusion: {in: STATUSES}
+  validates :public_visibility, inclusion: {in: PUBLIC_VISIBILITIES}
   validates :creation_source, inclusion: {in: CREATION_SOURCES}
   validates :last_quote_pricing_mode, inclusion: {in: QUOTE_PRICING_MODES}
   validate :birthdate_is_plausible
@@ -76,6 +78,7 @@ class ProfessionalProfile < ApplicationRecord
   scope :publicly_eligible, -> {
     joins(:user_account, :published_revision, :profile_photo)
       .where(profile_status: "published", user_accounts: {status: "active"})
+      .where.not(public_visibility: "unpublished")
       .where(professional_profile_revisions: {profile_type: "self_service"})
       .where.not(birthdate: nil)
       .where(professional_profile_photos: {deleted_at: nil})
@@ -114,6 +117,7 @@ class ProfessionalProfile < ApplicationRecord
       .where(
         profile_status: "published",
         creation_source: "external",
+        public_visibility: %w[discoverable direct_link],
         user_accounts: {status: "active"},
         professional_profile_revisions: {profile_type: "external"}
       )
@@ -137,6 +141,7 @@ class ProfessionalProfile < ApplicationRecord
 
   scope :publicly_searchable, -> {
     publicly_viewable
+      .where(public_visibility: "discoverable")
       .joins(:published_revision)
       .where(<<~SQL.squish)
         EXISTS (
@@ -167,7 +172,13 @@ class ProfessionalProfile < ApplicationRecord
   end
 
   def publicly_available?
+    return false if public_visibility == "unpublished"
+
     external_presentation? ? externally_available? : self_service_publicly_available?
+  end
+
+  def publicly_discoverable?
+    public_visibility == "discoverable" && publicly_available?
   end
 
   def self_service_publicly_available?
@@ -180,7 +191,7 @@ class ProfessionalProfile < ApplicationRecord
   end
 
   def search_eligible?
-    publicly_available? && published_revision.professional_profile_services.exists?
+    publicly_discoverable? && published_revision.professional_profile_services.exists?
   end
 
   def external_presentation?

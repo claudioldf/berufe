@@ -10,6 +10,7 @@ import {
   submitProfessionalProfile,
   updateProfessionalIdentity,
   updateProfessionalProfile,
+  updateProfessionalProfileVisibility,
   updateProfessionalSupply,
 } from "~/services/api/professional-workspace";
 import {
@@ -22,6 +23,7 @@ import type {
   PortfolioItemDraft,
   PortfolioItemUpdateDraft,
   ProfessionalProfileDraft,
+  ProfessionalProfileVisibility,
   ProfessionalRelationship,
   Service,
 } from "~/types";
@@ -48,6 +50,8 @@ export async function useProfessionalWorkspace() {
   const verificationError = shallowRef("");
   const submissionSaving = shallowRef(false);
   const submissionError = shallowRef("");
+  const visibilitySaving = shallowRef(false);
+  const visibilityError = shallowRef("");
   const relationshipRespondingId = shallowRef<string | null>(null);
   const relationshipRemovingId = shallowRef<string | null>(null);
   const relationshipError = shallowRef("");
@@ -60,6 +64,18 @@ export async function useProfessionalWorkspace() {
     );
     clearNuxtData(
       `public-professional-profile-${relationship.recipient.publicSlug}`,
+    );
+  }
+
+  function invalidatePublicDiscovery() {
+    clearNuxtData(
+      (key) =>
+        key === "featured-public-professionals" ||
+        key.startsWith("public-professional-profile-") ||
+        key.startsWith("public-professional-search:") ||
+        key.startsWith("listing-") ||
+        key.startsWith("service-hub-coverage-") ||
+        key.startsWith("city-hub-coverage-"),
     );
   }
 
@@ -338,6 +354,32 @@ export async function useProfessionalWorkspace() {
     }
   }
 
+  async function saveProfileVisibility(
+    visibility: ProfessionalProfileVisibility,
+  ) {
+    if (visibilitySaving.value) return workspace.data.value;
+
+    visibilitySaving.value = true;
+    visibilityError.value = "";
+    try {
+      const updated = await updateProfessionalProfileVisibility(
+        client,
+        visibility,
+      );
+      workspace.data.value = updated;
+      invalidatePublicDiscovery();
+      return updated;
+    } catch (error) {
+      visibilityError.value =
+        error instanceof ApiRequestError
+          ? error.message
+          : "Não foi possível alterar a visibilidade agora. Tente novamente.";
+      throw error;
+    } finally {
+      visibilitySaving.value = false;
+    }
+  }
+
   async function respondToRelationship(
     id: string,
     response: ProfessionalRelationshipResponse,
@@ -427,6 +469,9 @@ export async function useProfessionalWorkspace() {
     submissionSaving,
     submissionError,
     submitProfile,
+    visibilitySaving,
+    visibilityError,
+    saveProfileVisibility,
     relationshipRespondingId,
     relationshipRemovingId,
     relationshipError,

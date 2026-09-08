@@ -31,7 +31,7 @@ Increment 8 promotes V2-006 ("Publish dedicated SEO category landing pages") out
 
 - `PublicIndexability` (`apps/api/app/services/public_indexability.rb`) is the only place that decides indexability.
 - A professional profile is indexable only when self-service (never an external, unclaimed, referral-created profile — indexing those is both a quality risk and a privacy question the referral legitimate-interest assessment does not cover), published, with a photo, and with at least one piece of evidence (portfolio item, recommendation, or verification label). `GET /public/professionals/{slug}` and the professional workspace (`is_indexable`) both expose this via the same computation.
-- A service×city listing is supply-eligible at ≥1 published professional (`PublicIndexability::MINIMUM_LISTING_PROFESSIONALS`). Nuxt additionally requires reviewed, published editorial content for that exact service×city combination before emitting `index, follow` or adding it to the sitemap; all other valid routes remain accessible with `noindex, follow`.
+- A supported service×city listing is supply-eligible at ≥0 published professionals (`PublicIndexability::MINIMUM_LISTING_PROFESSIONALS`). Nuxt additionally requires reviewed, published editorial content for that exact service×city combination before emitting `index, follow` or adding it to the sitemap; all other valid routes remain accessible with `noindex, follow`.
 - Nuxt never re-derives this decision; it renders whatever Rails reports.
 
 ### S061 — Publish gated service×city listing pages
@@ -42,7 +42,7 @@ Increment 8 promotes V2-006 ("Publish dedicated SEO category landing pages") out
 
 - `GET /api/v1/public/professional-listings` (service_slug, state_slug, city_slug) is a cacheable GET, backed by the existing `PublicProfessionalSearch#call_with_filters`, that records no search event and consumes no interactive-search rate limit.
 - `/encontrar/:state_code/:city/:service` server-renders real professional cards, `indexable`-gated `noindex`/`index`, canonical, `BreadcrumbList`, and `ItemList` JSON-LD.
-- A supported city with zero current supply for that service renders an empty, `noindex` page with a "be the first" call to action rather than a 404 or 422.
+- A supported city with zero current supply for that service renders an empty page with a "be the first" call to action rather than a 404 or 422; its final robots directive still depends on whether reviewed editorial content exists for that exact route.
 - `GET /api/v1/public/service-coverage` (the service×city professional-count matrix) powers `/servicos` (hub), `/servicos/:service` (cities with supply), and the city page's own service list, all sharing the identical supply criterion so counts never disagree with the linked page.
 - `/encontrar/:state_code/:city` (moved to `[city]/index.vue` to coexist with the sibling `[service].vue` route — see delivery notes) server-renders a real city hub: canonical, `BreadcrumbList`, and the city's indexable services, in addition to its existing interactive search.
 
