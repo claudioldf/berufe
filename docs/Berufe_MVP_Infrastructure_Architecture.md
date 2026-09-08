@@ -322,13 +322,13 @@ PostgreSQL is the single application database. Rails/Active Record is the only a
 
 ### Data visibility
 
-| Visibility | Examples | Rule |
-| --- | --- | --- |
-| Public | Discoverable eligible profile, current photo, active portfolio, services, social links, and approved identity label | Returned by public serializers and discovery queries only while the whole profile remains eligible. |
-| Unlisted public | A `direct_link` professional profile and its current public media/contact flow | Anonymous direct-slug access only; excluded from listings, cross-profile evidence, sitemaps, and indexing. |
-| Private | Unpublished profile, phone, moderation notes, professional notifications, draft quotes/customer details, and six-month LLM search prompts/output | Owner/admin access only as required; search audit and notification copy are never logged. |
-| Bearer-private | One shared quote and its customer-facing details | Returned only to the owner/admin or for the exact valid token; never indexed, logged, or shared-cached. |
-| Restricted | Verification documents, Infobip credentials/challenge secrets, raw quote/session tokens, password digests, and stored session material | Server-only access and never logged; persist token/password digests rather than raw secrets. |
+| Visibility      | Examples                                                                                                                                         | Rule                                                                                                       |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| Public          | Discoverable eligible profile, current photo, active portfolio, services, social links, and approved identity label                              | Returned by public serializers and discovery queries only while the whole profile remains eligible.        |
+| Unlisted public | A `direct_link` professional profile and its current public media/contact flow                                                                   | Anonymous direct-slug access only; excluded from listings, cross-profile evidence, sitemaps, and indexing. |
+| Private         | Unpublished profile, phone, moderation notes, professional notifications, draft quotes/customer details, and six-month LLM search prompts/output | Owner/admin access only as required; search audit and notification copy are never logged.                  |
+| Bearer-private  | One shared quote and its customer-facing details                                                                                                 | Returned only to the owner/admin or for the exact valid token; never indexed, logged, or shared-cached.    |
+| Restricted      | Verification documents, Infobip credentials/challenge secrets, raw quote/session tokens, password digests, and stored session material           | Server-only access and never logged; persist token/password digests rather than raw secrets.               |
 
 Collect only data required by the MVP. Define retention/deletion rules for private and restricted fields before launch. Support correction, suspension, and deletion requests. Obtain qualified Brazilian privacy/legal review before accepting real users.
 
