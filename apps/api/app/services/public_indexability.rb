@@ -11,13 +11,15 @@
 #   both a content-quality risk and a privacy question the referral
 #   legitimate-interest assessment does not cover) and carries at least one
 #   piece of real evidence beyond a bare name and photo.
-# - A service x city listing is supply-eligible once it has at least one real
-#   professional. Nuxt combines this API-owned supply decision with its
-#   published editorial-content decision before emitting `index, follow`.
+# - A supported service x city listing is supply-eligible even before its first
+#   professional is published. Nuxt still combines this API-owned decision with
+#   its published editorial-content decision before emitting `index, follow`.
 class PublicIndexability
   MINIMUM_LISTING_PROFESSIONALS = 0
 
   def self.listing_indexable?(professional_count)
+    return false if professional_count.nil?
+
     professional_count.to_i >= MINIMUM_LISTING_PROFESSIONALS
   end
 

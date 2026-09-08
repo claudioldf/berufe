@@ -4,7 +4,7 @@ require "rails_helper"
 
 RSpec.describe PublicIndexability do
   describe ".listing_indexable?" do
-    it "requires at least the minimum published professionals" do
+    it "requires a known count at or above the configured minimum" do
       expect(described_class.listing_indexable?(described_class::MINIMUM_LISTING_PROFESSIONALS - 1)).to eq(false)
       expect(described_class.listing_indexable?(described_class::MINIMUM_LISTING_PROFESSIONALS)).to eq(true)
       expect(described_class.listing_indexable?(nil)).to eq(false)
