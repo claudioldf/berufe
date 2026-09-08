@@ -45,6 +45,10 @@ RSpec.describe "Featured public professionals", type: :request, openapi: true do
     newest = create_published_profile("+5547999997204", "Dora Nova", reviewed_at: 1.hour.ago)
     suspended = create_published_profile("+5547999997205", "Eva Suspensa", reviewed_at: Time.current)
     suspended.user_account.update!(status: "suspended")
+    direct_link = create_published_profile("+5547999997206", "Fábio Link", reviewed_at: Time.current)
+    direct_link.update!(public_visibility: "direct_link")
+    unpublished = create_published_profile("+5547999997207", "Gabi Oculta", reviewed_at: Time.current)
+    unpublished.update!(public_visibility: "unpublished")
 
     get "/api/v1/public/professionals/featured", headers: {"X-Request-Id" => "featured-200"}
 
@@ -52,7 +56,12 @@ RSpec.describe "Featured public professionals", type: :request, openapi: true do
     body = response.parsed_body
     professionals = body.dig("data", "professionals")
     expect(professionals.pluck("id")).to eq([newest.id, first.id, second.id])
-    expect(professionals.pluck("id")).not_to include(oldest.id, suspended.id)
+    expect(professionals.pluck("id")).not_to include(
+      oldest.id,
+      suspended.id,
+      direct_link.id,
+      unpublished.id
+    )
     expect(professionals.first).to include(
       "public_slug" => "dora-nova",
       "display_name" => "Dora Nova",

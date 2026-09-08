@@ -7,6 +7,7 @@ import {
   updateProfessionalPortfolioItem,
   deleteProfessionalPortfolioItem,
   deleteProfessionalRelationship,
+  updateProfessionalProfileVisibility,
   attachProfessionalVerificationRequest,
   mapProfessionalWorkspace,
   submitProfessionalProfile,
@@ -51,6 +52,7 @@ const workspaceData: WorkspaceData = {
     id: "23a94f5e-1429-4ec7-bbc4-a6f805d5182d",
     public_slug: "ana-souza",
     profile_status: "draft",
+    public_visibility: "discoverable",
     presentation_type: "self_service",
     is_public: false,
     is_search_eligible: false,
@@ -143,6 +145,7 @@ describe("professional workspace API", () => {
         id: workspaceData.profile.id,
         publicSlug: "ana-souza",
         status: "draft",
+        visibility: "discoverable",
         presentationType: "self_service",
         isPublic: false,
         isSearchEligible: false,
@@ -203,6 +206,26 @@ describe("professional workspace API", () => {
       mapProfessionalWorkspace(workspaceData),
     );
     expect(client.GET).toHaveBeenCalledWith("/api/v1/professional/workspace");
+  });
+
+  it("updates profile visibility and maps the refreshed workspace", async () => {
+    const client = apiClientReturning("PATCH", {
+      data: { data: workspaceData, request_id: "profile-visibility" },
+      error: undefined,
+      response: new Response(null),
+    });
+
+    await expect(
+      updateProfessionalProfileVisibility(client, "direct_link"),
+    ).resolves.toEqual(mapProfessionalWorkspace(workspaceData));
+    expect(client.PATCH).toHaveBeenCalledWith(
+      "/api/v1/professional/profile/visibility",
+      {
+        body: {
+          profile_visibility: { visibility: "direct_link" },
+        },
+      },
+    );
   });
 
   it("maps inbound pending relationships without exposing account contact data", () => {

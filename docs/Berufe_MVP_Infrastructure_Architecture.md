@@ -322,12 +322,13 @@ PostgreSQL is the single application database. Rails/Active Record is the only a
 
 ### Data visibility
 
-| Visibility     | Examples                                                                                                                               | Rule                                                                                                    |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| Public         | Eligible published profile, current photo, active portfolio, services, social links, and approved identity label                       | Returned by public serializers only while the whole profile remains eligible.                           |
-| Private        | Phone, moderation notes, professional notifications, draft quotes/customer details, and six-month LLM search prompts/output            | Owner/admin access only as required; search audit and notification copy are never logged.               |
-| Bearer-private | One shared quote and its customer-facing details                                                                                       | Returned only to the owner/admin or for the exact valid token; never indexed, logged, or shared-cached. |
-| Restricted     | Verification documents, Infobip credentials/challenge secrets, raw quote/session tokens, password digests, and stored session material | Server-only access and never logged; persist token/password digests rather than raw secrets.            |
+| Visibility | Examples | Rule |
+| --- | --- | --- |
+| Public | Discoverable eligible profile, current photo, active portfolio, services, social links, and approved identity label | Returned by public serializers and discovery queries only while the whole profile remains eligible. |
+| Unlisted public | A `direct_link` professional profile and its current public media/contact flow | Anonymous direct-slug access only; excluded from listings, cross-profile evidence, sitemaps, and indexing. |
+| Private | Unpublished profile, phone, moderation notes, professional notifications, draft quotes/customer details, and six-month LLM search prompts/output | Owner/admin access only as required; search audit and notification copy are never logged. |
+| Bearer-private | One shared quote and its customer-facing details | Returned only to the owner/admin or for the exact valid token; never indexed, logged, or shared-cached. |
+| Restricted | Verification documents, Infobip credentials/challenge secrets, raw quote/session tokens, password digests, and stored session material | Server-only access and never logged; persist token/password digests rather than raw secrets. |
 
 Collect only data required by the MVP. Define retention/deletion rules for private and restricted fields before launch. Support correction, suspension, and deletion requests. Obtain qualified Brazilian privacy/legal review before accepting real users.
 
@@ -335,7 +336,7 @@ Collect only data required by the MVP. Define retention/deletion rules for priva
 
 An active, password-authenticated administrator may temporarily manage the operational workspace of an active, fully registered professional. The application session remains owned by the administrator and keeps the administrator's 30-minute idle and 12-hour absolute expiry; Rails exposes the selected professional only as the request-scoped effective account. This does not create a professional session, increment that professional's login metrics, or count toward that professional's daily activity/quote-share counters.
 
-The browser shows a persistent delegated-access banner, hides the ordinary sign-out control, and offers a direct return to the administrator directory. Delegated access may use the ordinary professional profile, portfolio, customer, quote, service, relationship, recommendation, and notification operations. It cannot accept terms, complete professional registration, request account erasure, submit identity verification evidence, enter administrator surfaces, or open the GoodJob dashboard — identity verification is excluded so one administrator can never both submit and approve the same evidence. Only active accounts with complete current legal acceptance and an existing professional profile are eligible, and Rails clears the target when it becomes ineligible.
+The browser shows a persistent delegated-access banner, hides the ordinary sign-out control, and offers a direct return to the administrator directory. Delegated access may use the ordinary professional profile, portfolio, customer, quote, service, relationship, recommendation, and notification operations. It cannot change the owner's profile-visibility preference, accept terms, complete professional registration, request account erasure, submit identity verification evidence, enter administrator surfaces, or open the GoodJob dashboard — identity verification is excluded so one administrator can never both submit and approve the same evidence. Only active accounts with complete current legal acceptance and an existing professional profile are eligible, and Rails clears the target when it becomes ineligible.
 
 The approved product decision does not create dedicated impersonation start/stop events or per-request impersonation audit records. Ordinary request and infrastructure logs remain unchanged. This deliberately reduces incident-attribution capability and must be reconsidered if administrator roles expand beyond the small trusted operating team.
 

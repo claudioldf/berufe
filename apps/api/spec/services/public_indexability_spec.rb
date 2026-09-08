@@ -68,5 +68,11 @@ RSpec.describe PublicIndexability do
         described_class.profile_indexable?(base_profile.merge(verification_labels: [{type: "phone"}]))
       ).to eq(true)
     end
+
+    it "is false when the owner removed the profile from discovery" do
+      profile = base_profile.merge(verification_labels: [{type: "phone"}])
+
+      expect(described_class.profile_indexable?(profile, discoverable: false)).to eq(false)
+    end
   end
 end

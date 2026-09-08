@@ -10,7 +10,10 @@ RSpec.describe ProfessionalProfile, type: :model do
 
     expect(profile.id).to match(/\A[0-9a-f-]{36}\z/)
     expect(profile.display_name).to eq("Ana Souza")
-    expect(profile.profile_status).to eq("draft")
+    expect(profile).to have_attributes(
+      profile_status: "draft",
+      public_visibility: "discoverable"
+    )
     expect(account.reload.professional_profile).to eq(profile)
   end
 
@@ -26,6 +29,10 @@ RSpec.describe ProfessionalProfile, type: :model do
     expect(invalid).not_to be_valid
     expect(invalid.errors[:display_name]).to be_present
     expect(invalid.errors[:profile_status]).to be_present
+
+    invalid.public_visibility = "private"
+    expect(invalid).not_to be_valid
+    expect(invalid.errors[:public_visibility]).to be_present
   end
 
   it "enforces identity limits and canonical social URLs in Rails" do

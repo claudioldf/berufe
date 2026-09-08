@@ -281,6 +281,8 @@ export interface ProfessionalProfileDraft {
 }
 
 export type ProfessionalProfileStatus = "draft" | "published" | "suspended";
+export type ProfessionalProfileVisibility =
+  "discoverable" | "direct_link" | "unpublished";
 
 export interface ProfessionalMediaUploadState {
   id: string;
@@ -378,6 +380,7 @@ export interface ProfessionalWorkspace {
     id: string;
     publicSlug: string;
     status: ProfessionalProfileStatus;
+    visibility: ProfessionalProfileVisibility;
     presentationType: "self_service" | "external";
     isPublic: boolean;
     isSearchEligible: boolean;

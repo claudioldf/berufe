@@ -55,6 +55,20 @@ RSpec.describe PublicProfessionalSearch do
       all_city: true
     )
     suspended.user_account.update!(status: "suspended")
+    direct_link = create_published_profile(
+      "+5547999997414",
+      "Eli Link Direto",
+      services: [electrician],
+      all_city: true
+    )
+    direct_link.update!(public_visibility: "direct_link")
+    unpublished = create_published_profile(
+      "+5547999997415",
+      "Fê Despublicada",
+      services: [electrician],
+      all_city: true
+    )
+    unpublished.update!(public_visibility: "unpublished")
     create_draft_profile("+5547999997405", "Eva Rascunho", electrician)
 
     result = described_class.new(parser:).call(expression: "Trocar a fiação no América")

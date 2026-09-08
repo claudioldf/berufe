@@ -5,7 +5,7 @@ class FeaturedPublicProfessionalsQuery
 
   def call(city_code: nil)
     relation = ProfessionalProfile
-      .publicly_eligible
+      .publicly_searchable
       .includes(
         :profile_photo,
         :verification_requests,

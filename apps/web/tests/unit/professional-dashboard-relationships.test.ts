@@ -145,6 +145,7 @@ function workspace(options: { pending?: boolean; failed?: boolean } = {}) {
         publicSlug: "beto-lima",
         status: "published",
         presentationType: "self_service" as const,
+        visibility: "discoverable" as const,
         isPublic: true,
         isSearchEligible: true,
         isIndexable: true,
@@ -532,6 +533,44 @@ describe("professional dashboard", () => {
 
     expect(wrapper.text()).not.toContain(
       "Seu perfil ainda não aparece no Google.",
+    );
+  });
+
+  it("describes owner-selected private visibility without an SEO nudge", async () => {
+    const currentWorkspace = workspace();
+    Object.assign(currentWorkspace.data.value.profile, {
+      visibility: "direct_link" as const,
+      isPublic: true,
+      isSearchEligible: false,
+      isIndexable: false,
+    });
+    mocks.useWorkspace.mockResolvedValue(currentWorkspace);
+
+    const directWrapper = await mountSuspended(
+      ProfessionalDashboardPage,
+      mountOptions,
+    );
+    expect(directWrapper.text()).toContain(
+      "Seu perfil está acessível somente por link",
+    );
+    expect(directWrapper.text()).not.toContain(
+      "Seu perfil ainda não aparece no Google.",
+    );
+    directWrapper.unmount();
+
+    Object.assign(currentWorkspace.data.value.profile, {
+      visibility: "unpublished" as const,
+      isPublic: false,
+    });
+    mocks.useWorkspace.mockResolvedValue(currentWorkspace);
+
+    const unpublishedWrapper = await mountSuspended(
+      ProfessionalDashboardPage,
+      mountOptions,
+    );
+    expect(unpublishedWrapper.text()).toContain("Seu perfil está despublicado");
+    expect(unpublishedWrapper.text()).toContain(
+      "o link público está indisponível",
     );
   });
 

@@ -1230,6 +1230,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/professional/profile/visibility": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Choose whether the published profile is discoverable, direct-link only, or unpublished */
+        patch: operations["updateProfessionalProfileVisibility"];
+        trace?: never;
+    };
     "/api/v1/professional/profile/photo": {
         parameters: {
             query?: never;
@@ -1877,6 +1894,13 @@ export interface components {
             identity?: components["schemas"]["ProfessionalIdentityUpdate"];
             services?: components["schemas"]["ProfessionalServiceUpdate"][];
             coverage?: components["schemas"]["ProfessionalCoverageUpdate"];
+        };
+        /** @enum {string} */
+        ProfessionalProfileVisibility: "discoverable" | "direct_link" | "unpublished";
+        ProfessionalProfileVisibilityUpdateRequest: {
+            profile_visibility: {
+                visibility: components["schemas"]["ProfessionalProfileVisibility"];
+            };
         };
         ProfessionalIdentityUpdate: {
             display_name: string;
@@ -2602,6 +2626,7 @@ export interface components {
             public_slug: string;
             /** @enum {string} */
             profile_status: "draft" | "published" | "suspended";
+            public_visibility: components["schemas"]["ProfessionalProfileVisibility"];
             /** @enum {string} */
             presentation_type: "self_service" | "external";
             is_public: boolean;
@@ -7207,6 +7232,76 @@ export interface operations {
             422: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    updateProfessionalProfileVisibility: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfessionalProfileVisibilityUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Visibility was updated and the refreshed workspace was returned. */
+            200: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfessionalWorkspaceResponse"];
+                };
+            };
+            /** @description An active Rails application session is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The exact browser origin or profile owner is invalid. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Professional registration has not created a profile yet. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The profile has not been published or is suspended by moderation. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The requested visibility is invalid. */
+            422: {
+                headers: {
                     [name: string]: unknown;
                 };
                 content: {

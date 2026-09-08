@@ -68,6 +68,7 @@ function workspace() {
         publicSlug: "beto-lima",
         status: "published" as const,
         presentationType: "self_service" as const,
+        visibility: "discoverable" as const,
         isPublic: true,
         isSearchEligible: true,
         isIndexable: true,
@@ -116,6 +117,9 @@ function workspace() {
     }),
     error: shallowRef(null),
     saveProfile: vi.fn(),
+    visibilitySaving: shallowRef(false),
+    visibilityError: shallowRef(""),
+    saveProfileVisibility: vi.fn(),
     photoUploading: shallowRef(false),
     photoRemoving: shallowRef(false),
     photoError: shallowRef(""),
@@ -207,6 +211,43 @@ describe("professional profile editor page", () => {
     ).toBe(true);
     expect(wrapper.text()).not.toContain("Seu perfil está oculto");
     expect(wrapper.text()).not.toContain("Motivo visível somente no painel.");
+  });
+
+  it("shows direct-link visibility and delegates changes with user feedback", async () => {
+    const currentWorkspace = workspace();
+    Object.assign(currentWorkspace.data.value.profile, {
+      visibility: "direct_link" as const,
+      isSearchEligible: false,
+      isIndexable: false,
+    });
+    mocks.useWorkspace.mockResolvedValue(currentWorkspace);
+
+    const wrapper = await mountSuspended(ProfessionalProfilePage, {
+      shallow: true,
+      global: { renderStubDefaultSlot: true },
+    });
+
+    expect(wrapper.text()).toContain("Publicado · somente por link");
+    const visibility = wrapper.getComponent({
+      name: "DashboardProfileVisibilitySection",
+    });
+    expect(visibility.props()).toMatchObject({
+      visibility: "direct_link",
+      publicProfilePath: "/profissionais/beto-lima",
+      disabledReason: null,
+    });
+
+    visibility.vm.$emit("save", "unpublished");
+    await flushPromises();
+
+    expect(currentWorkspace.saveProfileVisibility).toHaveBeenCalledWith(
+      "unpublished",
+    );
+    expect(mocks.showToast).toHaveBeenCalledWith({
+      title: "Visibilidade atualizada",
+      description:
+        "Seu perfil foi despublicado e o link público deixou de funcionar.",
+    });
   });
 
   it("opens the URL-backed relationships tab and delegates relationship mutations", async () => {
