@@ -24,6 +24,23 @@ export class ApiRequestError extends Error {
   }
 }
 
+export function hasApiErrorCode(error: unknown, code: string): boolean {
+  const pending: unknown[] = [error];
+  const visited = new Set<unknown>();
+
+  while (pending.length > 0) {
+    const candidate = pending.shift();
+    if (!isRecord(candidate) || visited.has(candidate)) continue;
+
+    visited.add(candidate);
+    if (candidate.code === code) return true;
+
+    pending.push(candidate.cause, candidate.data, candidate.error);
+  }
+
+  return false;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }

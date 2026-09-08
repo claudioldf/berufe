@@ -4,7 +4,7 @@ import { useAnalyticsEvent } from "~/composables/useAnalyticsEvent";
 import { useShare } from "~/composables/useShare";
 import { useToast } from "~/composables/useToast";
 import { useApiClient } from "~/services/api/client";
-import { ApiRequestError } from "~/services/api/errors";
+import { hasApiErrorCode } from "~/services/api/errors";
 import {
   fetchPublicProfessionalProfile,
   recordPublicProfessionalProfileView,
@@ -58,16 +58,19 @@ const { data: profileResult, error: profileError } = await useAsyncData(
     getCachedData: hydrationOnlyCachedData,
   },
 );
-if (profileError.value || !profileResult.value) {
-  const failure = profileError.value;
-  const notFound =
-    failure instanceof ApiRequestError && failure.code === "not_found";
-  throw createError({
+
+function profileLoadError(failure: unknown) {
+  const notFound = hasApiErrorCode(failure, "not_found");
+  return {
     statusCode: notFound ? 404 : 503,
     statusMessage: notFound
       ? "Profissional não encontrado"
       : "Perfil temporariamente indisponível.",
-  });
+  };
+}
+
+if (profileError.value || !profileResult.value) {
+  throw createError(profileLoadError(profileError.value));
 }
 
 const professional = computed(() => profileResult.value!.professional);
@@ -213,7 +216,11 @@ onMounted(() => {
     .then((currentProfile) => {
       profileResult.value = currentProfile;
     })
-    .catch(() => undefined);
+    .catch((failure) => {
+      if (hasApiErrorCode(failure, "not_found")) {
+        showError(profileLoadError(failure));
+      }
+    });
   void recordPublicProfessionalProfileView(
     client,
     professional.value.id,
