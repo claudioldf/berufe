@@ -15,7 +15,7 @@
 #   professional. Nuxt combines this API-owned supply decision with its
 #   published editorial-content decision before emitting `index, follow`.
 class PublicIndexability
-  MINIMUM_LISTING_PROFESSIONALS = 1
+  MINIMUM_LISTING_PROFESSIONALS = 0
 
   def self.listing_indexable?(professional_count)
     professional_count.to_i >= MINIMUM_LISTING_PROFESSIONALS
