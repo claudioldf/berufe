@@ -29,6 +29,9 @@ const {
   data: workspace,
   error: workspaceError,
   saveProfile: saveWorkspaceProfile,
+  visibilitySaving,
+  visibilityError,
+  saveProfileVisibility,
   photoUploading,
   photoRemoving,
   photoError,
@@ -60,6 +63,18 @@ const relationshipEligible = computed(
   () => account.value?.relationshipEligible ?? false,
 );
 const isImpersonating = computed(() => session.value?.impersonating ?? false);
+const publicProfilePath = computed(
+  () => `/profissionais/${workspace.value!.profile.publicSlug}`,
+);
+const visibilityDisabledReason = computed(() => {
+  if (isImpersonating.value) {
+    return "A visibilidade só pode ser alterada pelo titular da conta.";
+  }
+  if (workspace.value!.profile.status !== "published") {
+    return "Publique o perfil para escolher sua visibilidade.";
+  }
+  return null;
+});
 // Every field is derived from the authenticated workspace. Nothing is borrowed
 // from a fixture: the editor must only ever show this professional's own data.
 const professional = computed<Professional>(() => {
@@ -104,14 +119,27 @@ const statusLabels = {
 } as const;
 const statusLabel = computed(() => {
   const profile = workspace.value!.profile;
-  if (profile.isPublic) return "Publicado";
-  if (
-    profile.status === "published" &&
-    profile.publicationBlockers.includes("photo")
-  ) {
+  if (profile.status === "suspended") return "Suspenso";
+  if (profile.status === "draft") return "Rascunho";
+  if (profile.visibility === "unpublished") return "Despublicado";
+  if (profile.publicationBlockers.includes("photo")) {
     return "Indisponível · adicione uma foto";
   }
-  return statusLabels[profile.status];
+  if (profile.visibility === "direct_link") {
+    return "Publicado · somente por link";
+  }
+  return profile.isPublic ? "Publicado" : statusLabels[profile.status];
+});
+const statusTone = computed(() => {
+  const profile = workspace.value!.profile;
+  if (profile.status === "suspended") return "danger" as const;
+  if (profile.status === "draft" || profile.visibility === "unpublished") {
+    return "neutral" as const;
+  }
+  if (!profile.isPublic || profile.visibility === "direct_link") {
+    return "warning" as const;
+  }
+  return "success" as const;
 });
 const profileTabIds = ["dados", "portfolio", "relacoes", "verificacoes"];
 const activeTab = computed(() =>
@@ -157,6 +185,25 @@ async function saveProfile(
     });
   } finally {
     saving.value = false;
+  }
+}
+
+async function handleVisibilitySave(
+  visibility: Parameters<typeof saveProfileVisibility>[0],
+) {
+  try {
+    await saveProfileVisibility(visibility);
+    showToast({
+      title: "Visibilidade atualizada",
+      description:
+        visibility === "discoverable"
+          ? "Seu perfil pode aparecer novamente nas buscas e páginas públicas."
+          : visibility === "direct_link"
+            ? "Agora seu perfil só pode ser acessado pelo link direto."
+            : "Seu perfil foi despublicado e o link público deixou de funcionar.",
+    });
+  } catch {
+    // The visibility section keeps the normalized API error visible.
   }
 }
 
@@ -360,7 +407,7 @@ async function handleRelationshipRemove(id: string) {
         </div>
         <div class="workspace-heading__status">
           <span>
-            <DesignSystemStatusDot tone="success" />
+            <DesignSystemStatusDot :tone="statusTone" />
             <span>
               {{ statusLabel }}
             </span>
@@ -387,6 +434,15 @@ async function handleRelationshipRemove(id: string) {
           @photo-select="handlePhoto"
           @photo-retry="handlePhotoRetry"
           @photo-remove="handlePhotoRemove"
+        />
+        <DashboardProfileVisibilitySection
+          v-if="activeTab === 'dados' && workspace"
+          :visibility="workspace.profile.visibility"
+          :saving="visibilitySaving"
+          :disabled-reason="visibilityDisabledReason"
+          :error="visibilityError"
+          :public-profile-path="publicProfilePath"
+          @save="handleVisibilitySave"
         />
         <DashboardPortfolioManager
           v-else-if="activeTab === 'portfolio'"

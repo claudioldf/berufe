@@ -443,6 +443,9 @@ Apply these rules whenever they are relevant to the story:
 - A professional can publish their own profile once name, birthdate, phone, photo, service, and coverage requirements are met.
 - Publication validates the already-persisted onboarding state; portfolio and identity verification are not publication gates, and the final action does not resend an accumulated browser payload.
 - Edits to a published self-service profile update its working and public revision immediately without a moderation state.
+- A published profile has an owner-controlled visibility preference that defaults to `discoverable` and does not replace the moderation-owned `profile_status`.
+- `direct_link` keeps the public profile and its media/contact flow available at the stable slug while excluding it from public search, featured professionals, service/city pages, relationship evidence on other profiles, sitemaps, and search-engine indexing.
+- `unpublished` removes the profile and its media/contact flow from all anonymous access until the owner selects `discoverable` or `direct_link` again. An administrator's `suspended` state overrides every owner preference.
 
 **Depends on:** S021.
 **Covers:** Features A2 and A6.
@@ -546,7 +549,7 @@ Apply these rules whenever they are relevant to the story:
 
 - Portfolio records have no moderation status, rejection reason, review timestamps, or public-copy key.
 - Create and update operations make active items immediately visible when the parent profile is public.
-- The professional can soft-delete an item. Administrators control public visibility only by unpublishing the complete professional profile under S024.
+- The professional can soft-delete an item and control complete-profile visibility under S022. Administrators can still unpublish the complete profile for moderation under S024.
 
 **Depends on:** S027.
 **Covers:** Feature A3.

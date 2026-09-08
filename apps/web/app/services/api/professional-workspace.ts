@@ -1,5 +1,6 @@
 import type {
   ProfessionalProfileDraft,
+  ProfessionalProfileVisibility,
   ProfessionalWorkspace,
   Service,
 } from "~/types";
@@ -68,6 +69,7 @@ export function mapProfessionalWorkspace(
       id: data.profile.id,
       publicSlug: data.profile.public_slug,
       status: data.profile.profile_status,
+      visibility: data.profile.public_visibility,
       presentationType: data.profile.presentation_type,
       isPublic: data.profile.is_public,
       isSearchEligible: data.profile.is_search_eligible,
@@ -187,6 +189,23 @@ export async function fetchProfessionalWorkspace(
 ): Promise<ProfessionalWorkspace> {
   const { data, error, response } = await client.GET(
     "/api/v1/professional/workspace",
+  );
+  if (error || !data) throw requestError(error, response);
+
+  return mapProfessionalWorkspace(data.data);
+}
+
+export async function updateProfessionalProfileVisibility(
+  client: BerufeApiClient,
+  visibility: ProfessionalProfileVisibility,
+): Promise<ProfessionalWorkspace> {
+  const { data, error, response } = await client.PATCH(
+    "/api/v1/professional/profile/visibility",
+    {
+      body: {
+        profile_visibility: { visibility },
+      },
+    },
   );
   if (error || !data) throw requestError(error, response);
 

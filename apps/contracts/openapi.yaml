@@ -3380,6 +3380,60 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/professional/profile/visibility:
+    patch:
+      operationId: updateProfessionalProfileVisibility
+      summary: Choose whether the published profile is discoverable, direct-link only, or unpublished
+      tags:
+        - Professional supply
+      security:
+        - applicationSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfessionalProfileVisibilityUpdateRequest"
+      responses:
+        "200":
+          description: Visibility was updated and the refreshed workspace was returned.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfessionalWorkspaceResponse"
+        "401":
+          description: An active Rails application session is required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: The exact browser origin or profile owner is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Professional registration has not created a profile yet.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: The profile has not been published or is suspended by moderation.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: The requested visibility is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/professional/profile/photo:
     put:
       operationId: updateProfessionalProfilePhoto
@@ -5398,6 +5452,26 @@ components:
             $ref: "#/components/schemas/ProfessionalServiceUpdate"
         coverage:
           $ref: "#/components/schemas/ProfessionalCoverageUpdate"
+    ProfessionalProfileVisibility:
+      type: string
+      enum:
+        - discoverable
+        - direct_link
+        - unpublished
+    ProfessionalProfileVisibilityUpdateRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - profile_visibility
+      properties:
+        profile_visibility:
+          type: object
+          additionalProperties: false
+          required:
+            - visibility
+          properties:
+            visibility:
+              $ref: "#/components/schemas/ProfessionalProfileVisibility"
     ProfessionalIdentityUpdate:
       type: object
       additionalProperties: false
@@ -6822,6 +6896,7 @@ components:
         - id
         - public_slug
         - profile_status
+        - public_visibility
         - presentation_type
         - is_public
         - is_search_eligible
@@ -6849,6 +6924,8 @@ components:
             - draft
             - published
             - suspended
+        public_visibility:
+          $ref: "#/components/schemas/ProfessionalProfileVisibility"
         presentation_type:
           type: string
           enum:

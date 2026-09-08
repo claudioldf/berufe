@@ -200,6 +200,31 @@ RSpec.describe "Public professional profiles", type: :request, openapi: true do
     assert_api_conform(status: 200)
   end
 
+  it "keeps a direct-link profile available but noindex, then denies it when unpublished" do
+    profile = create_published_profile(
+      phone: "+5547999997713",
+      name: "Perfil por Link",
+      slug: "perfil-por-link",
+      services: [primary_service]
+    )
+    profile.update!(public_visibility: "direct_link")
+
+    get "/api/v1/public/professionals/#{profile.public_slug}",
+      headers: {"X-Request-Id" => "public-profile-direct-link"}
+
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body.dig("data", "professional", "indexable")).to be(false)
+    assert_api_conform(status: 200)
+
+    profile.update!(public_visibility: "unpublished")
+    get "/api/v1/public/professionals/#{profile.public_slug}",
+      headers: {"X-Request-Id" => "public-profile-user-unpublished"}
+
+    expect(response).to have_http_status(:not_found)
+    expect(response.parsed_body.dig("error", "code")).to eq("not_found")
+    assert_api_conform(status: 404)
+  end
+
   it "returns the same generic not-found envelope for unknown, draft, and suspended profiles" do
     draft = ProfessionalProfile.create!(
       user_account: UserAccount.create!(phone_e164: "+5547999997704", role: "professional", status: "active"),

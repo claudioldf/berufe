@@ -130,6 +130,14 @@ RSpec.describe "Administrator professional impersonation", type: :request, opena
     expect(response).to have_http_status(:forbidden)
     expect(response.parsed_body.dig("error", "code")).to eq("impersonation_action_denied")
 
+    patch "/api/v1/professional/profile/visibility",
+      params: {profile_visibility: {visibility: "unpublished"}},
+      headers: session_headers(admin_token, "impersonation-visibility-denied", origin: true),
+      as: :json
+    expect(response).to have_http_status(:forbidden)
+    expect(response.parsed_body.dig("error", "code")).to eq("impersonation_action_denied")
+    assert_api_conform(status: 403)
+
     post "/api/v1/professional/media-uploads",
       params: {purpose: "verification_identity", content_type: "image/jpeg", byte_size: 1024},
       headers: session_headers(admin_token, "impersonation-verification-upload-denied", origin: true),

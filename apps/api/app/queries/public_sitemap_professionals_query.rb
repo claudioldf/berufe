@@ -8,7 +8,7 @@ class PublicSitemapProfessionalsQuery
 
   def call
     ProfessionalProfile
-      .publicly_eligible
+      .publicly_searchable
       .includes(
         :profile_photo,
         :verification_requests,

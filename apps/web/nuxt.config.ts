@@ -140,6 +140,7 @@ export default defineNuxtConfig({
         "lucide:ellipsis",
         "lucide:expand",
         "lucide:eye",
+        "lucide:eye-off",
         "lucide:file-check-2",
         "lucide:file-lock-2",
         "lucide:file-text",

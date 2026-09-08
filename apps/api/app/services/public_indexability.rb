@@ -24,7 +24,8 @@ class PublicIndexability
   # Takes the already-serialized public profile hash (the same one sent to
   # the client) rather than re-querying, so the indexability decision can
   # never drift from what is actually shown on the page.
-  def self.profile_indexable?(serialized_profile)
+  def self.profile_indexable?(serialized_profile, discoverable: true)
+    return false unless discoverable
     return false if serialized_profile.nil?
     return false unless serialized_profile[:profile_type] == "self_service"
     return false if serialized_profile[:photo_url].blank?

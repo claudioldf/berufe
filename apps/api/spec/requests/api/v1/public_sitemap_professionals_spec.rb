@@ -31,6 +31,10 @@ RSpec.describe "Public sitemap professionals", type: :request, openapi: true do
     thin.user_account.update_columns(phone_verified_at: nil, registered_at: nil)
     suspended = create_published_profile("+5547999996503", "Caio Suspenso")
     suspended.user_account.update!(status: "suspended")
+    direct_link = create_published_profile("+5547999996505", "Davi Link Direto")
+    direct_link.update!(public_visibility: "direct_link")
+    unpublished = create_published_profile("+5547999996506", "Eva Despublicada")
+    unpublished.update!(public_visibility: "unpublished")
     account = UserAccount.create!(phone_e164: "+5547999996504", role: "professional", status: "active")
     ProfessionalProfile.create!(user_account: account, display_name: "Dora Rascunho")
 

@@ -47,6 +47,7 @@ RSpec.describe "Professional workspace identity", type: :request, openapi: true 
           "id" => profile.id,
           "public_slug" => "ana-souza",
           "profile_status" => "draft",
+          "public_visibility" => "discoverable",
           "presentation_type" => "self_service",
           "suspension_reason" => nil,
           "has_published_revision" => false,

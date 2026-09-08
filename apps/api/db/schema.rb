@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_06_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_07_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -605,6 +605,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_06_100000) do
     t.uuid "profile_photo_id"
     t.text "profile_status", default: "draft", null: false
     t.text "public_slug", null: false
+    t.text "public_visibility", default: "discoverable", null: false
     t.datetime "published_at"
     t.uuid "published_revision_id"
     t.datetime "updated_at", null: false
@@ -615,6 +616,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_06_100000) do
     t.index ["profile_photo_id"], name: "index_professional_profiles_on_profile_photo_id", unique: true
     t.index ["profile_status"], name: "index_professional_profiles_on_profile_status"
     t.index ["public_slug"], name: "index_professional_profiles_on_public_slug", unique: true
+    t.index ["public_visibility"], name: "index_professional_profiles_on_public_visibility"
     t.index ["published_at"], name: "index_professional_profiles_on_published_at"
     t.index ["published_revision_id"], name: "index_professional_profiles_on_published_revision_id", unique: true
     t.index ["user_account_id"], name: "index_professional_profiles_on_user_account_id", unique: true
@@ -624,6 +626,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_06_100000) do
     t.check_constraint "last_quote_pricing_mode::text = ANY (ARRAY['fixed_price'::character varying::text, 'itemized'::character varying::text])", name: "professional_profiles_known_quote_pricing_mode"
     t.check_constraint "profile_status = ANY (ARRAY['draft'::text, 'published'::text, 'suspended'::text])", name: "professional_profiles_known_status"
     t.check_constraint "public_slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'::text", name: "professional_profiles_public_slug_format"
+    t.check_constraint "public_visibility = ANY (ARRAY['discoverable'::text, 'direct_link'::text, 'unpublished'::text])", name: "professional_profiles_known_public_visibility"
   end
 
   create_table "professional_relationships", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
