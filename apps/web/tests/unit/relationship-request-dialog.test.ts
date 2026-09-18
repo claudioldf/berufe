@@ -47,10 +47,12 @@ const FieldStub = defineComponent({
     label: { type: String, default: "" },
     hint: { type: String, default: "" },
     error: { type: String, default: "" },
+    required: { type: Boolean, default: false },
   },
   template: `
-    <label>
+    <label :data-field-id="id">
       {{ label }}
+      <span v-if="required">Obrigatório</span>
       <slot
         :control-id="id"
         :described-by="error ? id + '-error' : undefined"
@@ -358,6 +360,12 @@ describe("relationship create dialog", () => {
     expect(wrapper.text()).not.toContain("Conectar");
     const detailsText = wrapper.get("form").text();
     expect(detailsText).toContain("Comentário");
+    const relationshipTypeField = wrapper.get(
+      '[data-field-id="relationship-type"]',
+    );
+    expect(relationshipTypeField.text()).toContain("Como vocês se conhecem?");
+    expect(relationshipTypeField.text()).not.toContain("Obrigatório");
+    expect(relationshipTypeField.get("select").attributes("required")).toBe("");
     expect(detailsText).toContain(
       "Este comentário será exibido publicamente quando o profissional se cadastrar na Berufe.",
     );

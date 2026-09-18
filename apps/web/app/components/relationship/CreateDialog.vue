@@ -361,7 +361,6 @@ async function submit() {
             <DesignSystemFormField
               id="relationship-type"
               label="Como vocês se conhecem?"
-              required
             >
               <select
                 id="relationship-type"
