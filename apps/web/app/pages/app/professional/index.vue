@@ -366,7 +366,6 @@ function updateCompletionOpen(open: boolean) {
         <DashboardQuickActions
           v-if="dashboardReady"
           class="dashboard-welcome__quick-actions"
-          :public-slug="publicSlug"
           @recommend="relationshipOpen = true"
         />
       </DesignSystemContainer>

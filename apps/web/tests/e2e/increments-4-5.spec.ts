@@ -94,7 +94,7 @@ test("professional dashboard prioritizes operational work responsively", async (
       actions.map((action) => action.getAttribute("aria-label")),
     ),
   ).toEqual([
-    "Ver meu perfil público",
+    "Editar meus dados",
     "Novo orçamento",
     "Acompanhar serviços",
     "Recomendar um profissional",

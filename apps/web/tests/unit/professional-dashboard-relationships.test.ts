@@ -418,7 +418,7 @@ describe("professional dashboard", () => {
 
     const visibleText = wrapper.text();
     const statusIndex = visibleText.indexOf("Seu perfil está publicado");
-    const quickActionsIndex = visibleText.indexOf("Perfil público");
+    const quickActionsIndex = visibleText.indexOf("Editar meus dados");
     const activityIndex = visibleText.indexOf("Para resolver.");
     const quoteEmptyIndex = visibleText.indexOf(
       "Transforme pedidos em trabalhos fechados.",
@@ -695,9 +695,6 @@ describe("professional dashboard", () => {
 
   it("renders the ordered quick actions and emits the recommendation action", async () => {
     const wrapper = mount(DashboardQuickActions, {
-      props: {
-        publicSlug: "beto-lima",
-      },
       global: {
         stubs: {
           DesignSystemSurfaceCard: { template: "<section><slot /></section>" },
@@ -712,7 +709,7 @@ describe("professional dashboard", () => {
 
     expect(wrapper.findAll("a").map((link) => link.attributes("href"))).toEqual(
       [
-        "/be/beto-lima",
+        "/app/professional/profile",
         "/app/professional/quotes/new",
         "/app/professional/services",
       ],
@@ -725,7 +722,7 @@ describe("professional dashboard", () => {
     const actions = wrapper.findAll(".actions-card__list > *");
     expect(actions).toHaveLength(4);
     expect(actions.map((action) => action.attributes("aria-label"))).toEqual([
-      "Ver meu perfil público",
+      "Editar meus dados",
       "Novo orçamento",
       "Acompanhar serviços",
       "Recomendar um profissional",
@@ -733,18 +730,17 @@ describe("professional dashboard", () => {
     expect(
       wrapper.findAll(".actions-card__label-full").map((label) => label.text()),
     ).toEqual([
-      "Perfil público",
+      "Editar meus dados",
       "Novo orçamento",
       "Acompanhar serviços",
       "Recomendar profissional",
     ]);
+    const editProfile = wrapper.get('a[aria-label="Editar meus dados"]');
+    expect(editProfile.attributes("href")).toBe("/app/professional/profile");
+    expect(editProfile.attributes("target")).toBeUndefined();
     expect(
-      wrapper.get('a[aria-label="Ver meu perfil público"]').attributes(),
-    ).toMatchObject({
-      href: "/be/beto-lima",
-      target: "_blank",
-      rel: "noopener noreferrer",
-    });
+      editProfile.findComponent({ name: "UIcon" }).attributes("name"),
+    ).toBe("i-lucide-pencil");
     expect(wrapper.text()).not.toContain("Fortaleça seu perfil");
 
     await wrapper.get("button").trigger("click");

@@ -1,10 +1,4 @@
 <script setup lang="ts">
-interface Props {
-  publicSlug: string;
-}
-
-defineProps<Props>();
-
 defineEmits<{
   recommend: [];
 }>();
@@ -17,18 +11,13 @@ defineEmits<{
     aria-label="Ações rápidas"
   >
     <div class="actions-card__list">
-      <NuxtLink
-        :to="buildPublicProfilePath(publicSlug)"
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="Ver meu perfil público"
-      >
+      <NuxtLink to="/app/professional/profile" aria-label="Editar meus dados">
         <span class="actions-card__icon">
-          <UIcon name="i-lucide-eye" aria-hidden="true" />
+          <UIcon name="i-lucide-pencil" aria-hidden="true" />
         </span>
         <strong>
-          <span class="actions-card__label-full">Perfil público</span>
-          <span class="actions-card__label-compact">Perfil</span>
+          <span class="actions-card__label-full">Editar meus dados</span>
+          <span class="actions-card__label-compact">Meus dados</span>
         </strong>
       </NuxtLink>
       <NuxtLink to="/app/professional/quotes/new" aria-label="Novo orçamento">
