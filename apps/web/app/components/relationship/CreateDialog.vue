@@ -72,9 +72,9 @@ const externalTarget = computed(
   () => step.value === "details" && !selectedProfessionalId.value,
 );
 const modalDescription = computed(() =>
-  step.value === "lookup"
-    ? "Encontre o profissional pelo nome. Se ele ainda não estiver na Berufe, você poderá informar o telefone na próxima etapa."
-    : "Revise o profissional e conte como vocês se conhecem.",
+  step.value === "details"
+    ? "Revise o profissional e conte como vocês se conhecem."
+    : undefined,
 );
 const lookupValidationError = computed(() => {
   if (canContinue.value) return "";

@@ -43,14 +43,14 @@ defineEmits<{
       </NuxtLink>
       <button
         type="button"
-        aria-label="Recomendar um profissional"
+        aria-label="Indicar profissional"
         @click="$emit('recommend')"
       >
         <span class="actions-card__icon">
           <UIcon name="i-lucide-handshake" aria-hidden="true" />
         </span>
         <strong>
-          <span class="actions-card__label-full">Recomendar profissional</span>
+          <span class="actions-card__label-full">Indicar profissional</span>
           <span class="actions-card__label-compact">Indicar</span>
         </strong>
       </button>

@@ -160,20 +160,6 @@ function clearSelection() {
       Continue digitando o nome completo.
     </p>
     <div
-      v-else-if="searchSettled && query.trim().length >= 3"
-      class="professional-lookup__empty"
-    >
-      <span>
-        <UIcon name="i-lucide-user-round-plus" aria-hidden="true" />
-      </span>
-      <div>
-        <strong>Essa pessoa ainda não aparece na busca.</strong>
-        <p>
-          Continue para informar o telefone profissional e enviar a indicação.
-        </p>
-      </div>
-    </div>
-    <div
       v-else-if="query.trim().length === 0"
       class="professional-lookup__empty"
     >

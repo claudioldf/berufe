@@ -233,7 +233,7 @@ describe("professional dashboard", () => {
     );
 
     const add = wrapper.get(
-      '.actions-card button[aria-label="Recomendar um profissional"]',
+      '.actions-card button[aria-label="Indicar profissional"]',
     );
     await add.trigger("click");
 
@@ -725,7 +725,7 @@ describe("professional dashboard", () => {
       "Editar meus dados",
       "Novo orçamento",
       "Acompanhar serviços",
-      "Recomendar um profissional",
+      "Indicar profissional",
     ]);
     expect(
       wrapper.findAll(".actions-card__label-full").map((label) => label.text()),
@@ -733,7 +733,7 @@ describe("professional dashboard", () => {
       "Editar meus dados",
       "Novo orçamento",
       "Acompanhar serviços",
-      "Recomendar profissional",
+      "Indicar profissional",
     ]);
     const editProfile = wrapper.get('a[aria-label="Editar meus dados"]');
     expect(editProfile.attributes("href")).toBe("/app/professional/profile");

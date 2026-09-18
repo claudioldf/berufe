@@ -97,7 +97,7 @@ test("professional dashboard prioritizes operational work responsively", async (
     "Editar meus dados",
     "Novo orçamento",
     "Acompanhar serviços",
-    "Recomendar um profissional",
+    "Indicar profissional",
   ]);
   await expect(
     page.locator(".dashboard-welcome__actions").getByText("Novo orçamento"),
@@ -363,7 +363,7 @@ test("existing members publish a relationship by confirming it together", async 
   await page.goto("/app/professional");
   await page
     .locator(".actions-card")
-    .getByRole("button", { name: "Recomendar um profissional" })
+    .getByRole("button", { name: "Indicar profissional" })
     .click();
   const requestDialog = page.getByRole("dialog", {
     name: "Indicar um profissional",

@@ -186,6 +186,9 @@ describe("relationship create dialog", () => {
     expect(wrapper.get('[role="dialog"]').attributes("aria-label")).toBe(
       "Indicar um profissional",
     );
+    expect(wrapper.text()).not.toContain(
+      "Encontre o profissional pelo nome. Se ele ainda não estiver na Berufe, você poderá informar o telefone na próxima etapa.",
+    );
     await wrapper
       .findAll("footer button")
       .find((button) => button.text().includes("Continuar"))!
@@ -298,6 +301,9 @@ describe("relationship create dialog", () => {
     mocks.state.searchedQuery.value = "Beto Lima";
     const wrapper = await mountDialog();
     await enterProfessionalNameAndFinishSearch(wrapper, "Beto Lima");
+    expect(wrapper.text()).not.toContain(
+      "Essa pessoa ainda não aparece na busca.",
+    );
     await wrapper
       .findAll("footer button")
       .find((button) => button.text().includes("Continuar"))!
