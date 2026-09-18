@@ -325,7 +325,6 @@ async function submit() {
           v-model:external-selected="externalProfessionalSelected"
           :candidates="relationships.candidates.value"
           :searching="candidateSearchLoading"
-          :search-settled="searchSettled"
           :search-error="relationships.searchError.value"
           :validation-error="displayedLookupError"
         />

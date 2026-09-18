@@ -275,6 +275,9 @@ describe("relationship create dialog", () => {
     expect(continueButton.attributes("disabled")).toBeUndefined();
     expect(wrapper.text()).toContain("Não encontrei a pessoa na lista");
     expect(wrapper.text()).toContain("Continuar informando o telefone");
+    expect(wrapper.text()).not.toContain(
+      "Boas indicações tornam seu perfil mais forte.",
+    );
 
     await continueButton.trigger("click");
     expect(wrapper.text()).toContain("Selecione um profissional");
@@ -303,6 +306,9 @@ describe("relationship create dialog", () => {
     await enterProfessionalNameAndFinishSearch(wrapper, "Beto Lima");
     expect(wrapper.text()).not.toContain(
       "Essa pessoa ainda não aparece na busca.",
+    );
+    expect(wrapper.text()).toContain(
+      "Boas indicações tornam seu perfil mais forte.",
     );
     await wrapper
       .findAll("footer button")
