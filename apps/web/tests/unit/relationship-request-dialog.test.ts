@@ -346,6 +346,9 @@ describe("relationship create dialog", () => {
     );
     expect(wrapper.text()).toContain("Qual região esse profissional atende?");
     expect(wrapper.text()).toContain("Não sei");
+    expect(wrapper.text()).not.toContain(
+      "O número não será exibido publicamente",
+    );
     expect(
       wrapper
         .get(".relationship-create-dialog__actions")
@@ -358,7 +361,13 @@ describe("relationship create dialog", () => {
     expect(detailsText).toContain(
       "Este comentário será exibido publicamente quando o profissional se cadastrar na Berufe.",
     );
+    expect(detailsText).not.toContain("Opcional");
     expect(detailsText.indexOf("Comentário")).toBeLessThan(
+      detailsText.indexOf("Qual região esse profissional atende?"),
+    );
+    expect(
+      detailsText.indexOf("Qual região esse profissional atende?"),
+    ).toBeLessThan(
       detailsText.indexOf("Qual o serviço esse profissional oferece?"),
     );
     await wrapper.get('input[name="external-phone"]').setValue("47999991234");

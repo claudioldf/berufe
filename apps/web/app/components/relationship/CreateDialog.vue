@@ -9,7 +9,7 @@ import type {
   Service,
 } from "~/types";
 import { normalizeBrazilianMobilePhone } from "~/utils/brazilian-phone";
-import type { ExternalCoverageMode } from "./ExternalProfessionalDetails.vue";
+import type { ExternalCoverageMode } from "./ExternalProfessionalCoverage.vue";
 import type { ProfessionalRelationshipType } from "~/services/api/professional-relationships";
 
 const CANDIDATE_SEARCH_DEBOUNCE_MS = 500;
@@ -351,13 +351,10 @@ async function submit() {
             </span>
           </div>
 
-          <RelationshipExternalProfessionalDetails
+          <RelationshipExternalProfessionalPhone
             v-if="externalTarget"
-            v-model:phone="externalPhone"
-            v-model:coverage-mode="externalCoverageMode"
-            v-model:coverage="externalCoverage"
-            :phone-error="displayedPhoneError"
-            :coverage-error="displayedCoverageError"
+            v-model="externalPhone"
+            :error="displayedPhoneError"
           />
 
           <div class="relationship-create-dialog__context">
@@ -381,7 +378,7 @@ async function submit() {
             <DesignSystemFormField
               id="relationship-context"
               label="Comentário"
-              hint="Opcional. Este comentário será exibido publicamente quando o profissional se cadastrar na Berufe."
+              hint="Este comentário será exibido publicamente quando o profissional se cadastrar na Berufe."
             >
               <template #label>
                 Comentário <em>{{ noteLength }}/300</em>
@@ -399,6 +396,13 @@ async function submit() {
               </template>
             </DesignSystemFormField>
           </div>
+
+          <RelationshipExternalProfessionalCoverage
+            v-if="externalTarget"
+            v-model="externalCoverage"
+            v-model:coverage-mode="externalCoverageMode"
+            :error="displayedCoverageError"
+          />
 
           <RelationshipExternalProfessionalServices
             v-if="externalTarget"
