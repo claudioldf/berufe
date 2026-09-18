@@ -284,11 +284,10 @@ function respondBlockedReason(itemId: string) {
           >
             <UButton
               v-if="item.action?.kind === 'link'"
-              class="activity-list__primary-action"
               :to="item.action.to"
               size="sm"
               color="primary"
-              variant="solid"
+              variant="soft"
               trailing-icon="i-lucide-arrow-right"
             >
               {{ item.action.label }}
@@ -299,10 +298,9 @@ function respondBlockedReason(itemId: string) {
               :loading="actingId === item.id"
             >
               <UButton
-                class="activity-list__primary-action"
                 size="sm"
                 color="primary"
-                variant="solid"
+                variant="soft"
                 :loading="actingId === item.id"
                 :disabled="Boolean(actingId)"
                 @click="emit('act', item.id, item.action.intent)"
@@ -332,10 +330,8 @@ function respondBlockedReason(itemId: string) {
               :loading="respondingId === item.id"
             >
               <UButton
-                class="activity-list__primary-action"
                 size="sm"
                 color="primary"
-                variant="solid"
                 :loading="respondingId === item.id"
                 :disabled="Boolean(respondingId)"
                 @click="emit('respond', item.id, 'accepted')"
@@ -453,11 +449,6 @@ function respondBlockedReason(itemId: string) {
     grid-row: 1;
     grid-column: 3;
     place-self: center end;
-  }
-
-  &__primary-action {
-    font-weight: 800;
-    box-shadow: 0 6px 14px rgb(23 53 47 / 18%);
   }
 
   &__feedback {
