@@ -119,10 +119,11 @@ const ButtonStub = defineComponent({
     disabled: { type: Boolean, default: false },
     loading: { type: Boolean, default: false },
     to: { type: String, default: "" },
+    variant: { type: String, default: "solid" },
   },
   emits: ["click"],
   template:
-    '<a v-if="to" :href="to"><slot /></a><button v-else type="button" :disabled="disabled" :data-loading="loading" @click="$emit(\'click\')"><slot /></button>',
+    '<a v-if="to" :href="to" :data-variant="variant"><slot /></a><button v-else type="button" :disabled="disabled" :data-loading="loading" :data-variant="variant" @click="$emit(\'click\')"><slot /></button>',
 });
 const TooltipStub = defineComponent({
   props: { reason: { type: String, default: null } },
@@ -180,6 +181,8 @@ describe("dashboard activity sections", () => {
     const connect = attention
       .findAll("button")
       .find((button) => button.text().includes("Conectar"));
+    expect(connect!.classes()).toContain("activity-list__primary-action");
+    expect(connect!.attributes("data-variant")).toBe("solid");
     await connect!.trigger("click");
     expect(wrapper.emitted("respond")?.[0]).toEqual([
       "incoming-id",
@@ -301,6 +304,15 @@ describe("dashboard activity sections", () => {
         .findAll("a")
         .every((link) => link.text() === "Revisar orçamento"),
     ).toBe(true);
+    expect(
+      attention
+        .findAll("a")
+        .every(
+          (link) =>
+            link.classes().includes("activity-list__primary-action") &&
+            link.attributes("data-variant") === "solid",
+        ),
+    ).toBe(true);
   });
 
   it("dispatches an inline action instead of navigating for act-kind items", async () => {
@@ -329,6 +341,8 @@ describe("dashboard activity sections", () => {
       .findAll("button")
       .find((button) => button.text() === "Concluído");
     expect(actButton).toBeTruthy();
+    expect(actButton!.classes()).toContain("activity-list__primary-action");
+    expect(actButton!.attributes("data-variant")).toBe("solid");
     await actButton!.trigger("click");
     expect(wrapper.emitted("act")?.[0]).toEqual(["service-id", "service_open"]);
 
