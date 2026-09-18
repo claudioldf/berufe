@@ -366,7 +366,7 @@ test("existing members publish a relationship by confirming it together", async 
     .getByRole("button", { name: "Recomendar um profissional" })
     .click();
   const requestDialog = page.getByRole("dialog", {
-    name: "Conectar com um profissional",
+    name: "Indicar um profissional",
   });
   await requestDialog.getByLabel("Nome do profissional").fill(recipient.name);
   const continueButton = requestDialog.getByRole("button", {
@@ -391,7 +391,7 @@ test("existing members publish a relationship by confirming it together", async 
       response.request().method() === "POST",
   );
   await requestDialog
-    .getByRole("button", { name: "Conectar", exact: true })
+    .getByRole("button", { name: "Indicar", exact: true })
     .click();
   expect((await requestResponse).status()).toBe(201);
   await page.goto("/app/professional/profile?tab=relacoes");
@@ -465,7 +465,7 @@ test("existing members publish a relationship by confirming it together", async 
     .first()
     .click();
   const replacementDialog = page.getByRole("dialog", {
-    name: "Conectar com um profissional",
+    name: "Indicar um profissional",
   });
   await replacementDialog
     .getByLabel("Nome do profissional")
@@ -483,7 +483,7 @@ test("existing members publish a relationship by confirming it together", async 
       response.request().method() === "POST",
   );
   await replacementDialog
-    .getByRole("button", { name: "Conectar", exact: true })
+    .getByRole("button", { name: "Indicar", exact: true })
     .click();
   expect((await replacementResponse).status()).toBe(201);
 
@@ -538,7 +538,7 @@ test("an indicated professional claims the external profile and publishes the co
     .first()
     .click();
   const dialog = page.getByRole("dialog", {
-    name: "Conectar com um profissional",
+    name: "Indicar um profissional",
   });
   await dialog.getByLabel("Nome do profissional").fill(externalName);
   await dialog.getByRole("button", { name: "Continuar", exact: true }).click();
@@ -550,7 +550,7 @@ test("an indicated professional claims the external profile and publishes the co
       response.url().endsWith("/api/v1/professional/relationships") &&
       response.request().method() === "POST",
   );
-  await dialog.getByRole("button", { name: "Conectar", exact: true }).click();
+  await dialog.getByRole("button", { name: "Indicar", exact: true }).click();
   const createResponse = await createResponsePromise;
   expect(createResponse.status()).toBe(201);
   const createPayload = await createResponse.json();

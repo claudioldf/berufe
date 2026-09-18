@@ -32,10 +32,14 @@ vi.mock("@app/composables/useToast", () => ({
 }));
 
 const ModalStub = defineComponent({
-  props: { open: { type: Boolean, default: false } },
+  props: {
+    open: { type: Boolean, default: false },
+    title: { type: String, default: "" },
+    description: { type: String, default: "" },
+  },
   emits: ["update:open"],
   template:
-    '<section v-if="open"><slot name="body" /><footer><slot name="footer" /></footer></section>',
+    '<section v-if="open" role="dialog" :aria-label="title"><p>{{ description }}</p><slot name="body" /><footer><slot name="footer" /></footer></section>',
 });
 const FieldStub = defineComponent({
   props: {
@@ -179,6 +183,9 @@ describe("relationship create dialog", () => {
   it("renders the professional name danger state after an empty Continue", async () => {
     const wrapper = await mountDialog();
 
+    expect(wrapper.get('[role="dialog"]').attributes("aria-label")).toBe(
+      "Indicar um profissional",
+    );
     await wrapper
       .findAll("footer button")
       .find((button) => button.text().includes("Continuar"))!
@@ -287,7 +294,7 @@ describe("relationship create dialog", () => {
     expect(wrapper.find('input[name="external-phone"]').exists()).toBe(true);
   });
 
-  it("shows the external phone error only after Connect is clicked", async () => {
+  it("shows the external phone error only after Indicate is clicked", async () => {
     mocks.state.searchedQuery.value = "Beto Lima";
     const wrapper = await mountDialog();
     await enterProfessionalNameAndFinishSearch(wrapper, "Beto Lima");
@@ -299,7 +306,7 @@ describe("relationship create dialog", () => {
     expect(wrapper.find('[role="alert"]').exists()).toBe(false);
     await wrapper
       .findAll("footer button")
-      .find((button) => button.text().includes("Conectar"))!
+      .find((button) => button.text().includes("Indicar"))!
       .trigger("click");
 
     const phone = wrapper.get('input[name="external-phone"]');
@@ -314,7 +321,7 @@ describe("relationship create dialog", () => {
     expect(wrapper.text()).not.toContain("Já está na Berufe");
     expect(wrapper.text()).not.toContain("Adicionar pelo telefone");
     expect(wrapper.text()).toContain(
-      "Boas conexões tornam seu perfil mais forte.",
+      "Boas indicações tornam seu perfil mais forte.",
     );
 
     await enterProfessionalNameAndFinishSearch(wrapper, "Beto Lima");
@@ -327,6 +334,13 @@ describe("relationship create dialog", () => {
     );
     expect(wrapper.text()).toContain("Qual região esse profissional atende?");
     expect(wrapper.text()).toContain("Não sei");
+    expect(
+      wrapper
+        .get(".relationship-create-dialog__actions")
+        .findAll("button")
+        .map((button) => button.text().trim()),
+    ).toEqual(["Voltar", "Indicar"]);
+    expect(wrapper.text()).not.toContain("Conectar");
     const detailsText = wrapper.get("form").text();
     expect(detailsText).toContain("Comentário");
     expect(detailsText).toContain(
@@ -364,7 +378,7 @@ describe("relationship create dialog", () => {
     await wrapper.get("textarea").setValue("Executamos uma reforma juntos.");
     await wrapper
       .findAll("footer button")
-      .find((button) => button.text().includes("Conectar"))!
+      .find((button) => button.text().includes("Indicar"))!
       .trigger("click");
 
     expect(mocks.requestRelationship).toHaveBeenCalledWith({
@@ -385,7 +399,7 @@ describe("relationship create dialog", () => {
     });
     expect(wrapper.emitted("created")?.at(-1)).toEqual([createdRelationship]);
     expect(mocks.showToast).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "Solicitação de conexão enviada" }),
+      expect.objectContaining({ title: "Indicação enviada" }),
     );
   });
 
@@ -411,7 +425,7 @@ describe("relationship create dialog", () => {
       .trigger("click");
     await wrapper
       .findAll("footer button")
-      .find((button) => button.text().includes("Conectar"))!
+      .find((button) => button.text().includes("Indicar"))!
       .trigger("click");
 
     expect(wrapper.find('input[name="external-phone"]').exists()).toBe(false);
@@ -432,11 +446,9 @@ describe("relationship create dialog", () => {
     expect(alert.text()).toContain(
       "conclua seu cadastro, confirme o telefone e tenha a identidade aprovada",
     );
+    expect(alert.text()).toContain("Prepare seu perfil para fazer indicações.");
     expect(alert.text()).toContain(
-      "Prepare seu perfil para criar conexões reais.",
-    );
-    expect(alert.text()).toContain(
-      "Recomendações confirmadas fortalecem os dois perfis",
+      "Indicações confirmadas fortalecem os dois perfis",
     );
     expect(
       alert.find(".relationship-create-dialog__eligibility-icon").exists(),
@@ -455,7 +467,7 @@ describe("relationship create dialog", () => {
     expect(
       wrapper
         .findAll("footer button")
-        .some((button) => button.text().trim() === "Conectar"),
+        .some((button) => button.text().trim() === "Indicar"),
     ).toBe(false);
     expect(mocks.requestRelationship).not.toHaveBeenCalled();
   });

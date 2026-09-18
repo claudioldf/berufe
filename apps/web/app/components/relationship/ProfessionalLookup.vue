@@ -169,7 +169,7 @@ function clearSelection() {
       <div>
         <strong>Essa pessoa ainda não aparece na busca.</strong>
         <p>
-          Continue para informar o telefone profissional e enviar a conexão.
+          Continue para informar o telefone profissional e enviar a indicação.
         </p>
       </div>
     </div>
@@ -179,7 +179,7 @@ function clearSelection() {
     >
       <span><UIcon name="i-lucide-handshake" aria-hidden="true" /></span>
       <div>
-        <strong>Boas conexões tornam seu perfil mais forte.</strong>
+        <strong>Boas indicações tornam seu perfil mais forte.</strong>
         <p>
           Busque alguém com quem você já trabalhou para criar uma recomendação
           baseada em uma parceria real.
