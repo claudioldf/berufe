@@ -102,20 +102,21 @@ function submit() {
     >
       {{ error }}
     </p>
-    <DesignSystemDisabledTooltip
-      v-if="props.showSubmit"
-      :reason="submittingReason"
-      :loading="props.submitting"
-    >
-      <UButton
-        type="submit"
-        color="primary"
+    <div v-if="props.showSubmit" class="identity-upload-form__actions">
+      <DesignSystemDisabledTooltip
+        :reason="submittingReason"
         :loading="props.submitting"
-        :disabled="props.submitting"
       >
-        {{ submitLabel }}
-      </UButton>
-    </DesignSystemDisabledTooltip>
+        <UButton
+          type="submit"
+          color="primary"
+          :loading="props.submitting"
+          :disabled="props.submitting"
+        >
+          {{ submitLabel }}
+        </UButton>
+      </DesignSystemDisabledTooltip>
+    </div>
   </form>
 </template>
 
@@ -157,8 +158,9 @@ function submit() {
     font-size: 0.84rem;
     font-weight: 700;
   }
-  & > button {
-    justify-self: end;
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
   }
 }
 

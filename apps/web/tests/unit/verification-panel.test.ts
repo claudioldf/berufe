@@ -8,6 +8,9 @@ describe("professional verification panel", () => {
     const wrapper = mount(IdentityUploadForm, { attachTo: document.body });
     const submit = wrapper.get('button[type="submit"]');
 
+    expect(
+      wrapper.get(".identity-upload-form__actions").get("button").element,
+    ).toBe(submit.element);
     expect(submit.attributes("disabled")).toBeUndefined();
     await wrapper.get("form").trigger("submit");
     await nextTick();
