@@ -58,7 +58,6 @@ const professional: QuoteProfessional = {
 const global = {
   stubs: {
     DesignSystemAvatar: { template: "<span />" },
-    UIcon: { template: "<span />" },
   },
 };
 
@@ -81,7 +80,7 @@ describe("quote customer preview", () => {
     );
   });
 
-  it("shows identity claims only for an actually approved identity", () => {
+  it("does not show identity claims in the quote preview", () => {
     const unverified = mount(QuotePreview, {
       props: { quote, professional },
       global,
@@ -95,7 +94,8 @@ describe("quote customer preview", () => {
     });
 
     expect(unverified.text()).not.toContain("Identidade verificada");
-    expect(verified.text().match(/Identidade verificada/g)).toHaveLength(2);
+    expect(verified.text()).not.toContain("Identidade verificada");
+    expect(verified.find(".quote-preview__verification").exists()).toBe(false);
   });
 
   it("uses clear customer, schedule, and legal copy", () => {

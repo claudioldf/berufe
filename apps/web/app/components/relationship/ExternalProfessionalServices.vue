@@ -7,9 +7,7 @@ defineProps<{ services: Service[] }>();
 
 <template>
   <fieldset class="external-professional-services">
-    <legend>
-      Qual o serviço esse profissional oferece? <small>Opcional</small>
-    </legend>
+    <legend>Qual o serviço esse profissional oferece?</legend>
     <div class="external-professional-services__options">
       <label v-for="service in services" :key="service.id">
         <input v-model="serviceIds" type="checkbox" :value="service.id" />
@@ -31,11 +29,6 @@ defineProps<{ services: Service[] }>();
     margin-bottom: 8px;
     font-size: 0.84rem;
     font-weight: 800;
-  }
-
-  & legend small {
-    color: var(--ink-soft);
-    font-weight: 500;
   }
 
   &__options {
