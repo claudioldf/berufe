@@ -233,7 +233,7 @@ describe("professional dashboard", () => {
     );
 
     const add = wrapper.get(
-      '.actions-card button[aria-label="Recomendar um profissional"]',
+      '.actions-card button[aria-label="Indicar profissional"]',
     );
     await add.trigger("click");
 
@@ -418,12 +418,11 @@ describe("professional dashboard", () => {
 
     const visibleText = wrapper.text();
     const statusIndex = visibleText.indexOf("Seu perfil está publicado");
-    const quickActionsIndex = visibleText.indexOf("Perfil público");
+    const quickActionsIndex = visibleText.indexOf("Editar meus dados");
     const activityIndex = visibleText.indexOf("Para resolver.");
     const quoteEmptyIndex = visibleText.indexOf(
       "Transforme pedidos em trabalhos fechados.",
     );
-    const progressIndex = visibleText.indexOf("100% completo");
 
     expect(quickActionsIndex).toBeGreaterThanOrEqual(0);
     expect(statusIndex).toBeGreaterThan(quickActionsIndex);
@@ -436,7 +435,7 @@ describe("professional dashboard", () => {
     expect(wrapper.find(".dashboard-welcome__actions").text()).not.toContain(
       "Novo orçamento",
     );
-    expect(progressIndex).toBeGreaterThan(quoteEmptyIndex);
+    expect(visibleText).not.toContain("100% completo");
     expect(wrapper.findAll(".actions-card")).toHaveLength(1);
     expect(wrapper.find(".dashboard-welcome .actions-card").exists()).toBe(
       true,
@@ -444,7 +443,7 @@ describe("professional dashboard", () => {
     expect(wrapper.find(".dashboard-content .actions-card").exists()).toBe(
       false,
     );
-    expect(wrapper.find(".dashboard-sidebar .actions-card").exists()).toBe(
+    expect(wrapper.find('[aria-label="Ferramentas do perfil"]').exists()).toBe(
       false,
     );
   });
@@ -504,6 +503,9 @@ describe("professional dashboard", () => {
     expect(wrapper.findComponent(DashboardChecklist).props("readiness")).toBe(
       25,
     );
+    expect(wrapper.find('[aria-label="Ferramentas do perfil"]').exists()).toBe(
+      true,
+    );
   });
 
   it("nudges toward search visibility for a published profile that is not yet indexable", async () => {
@@ -518,6 +520,10 @@ describe("professional dashboard", () => {
     );
 
     expect(wrapper.text()).toContain("Seu perfil ainda não aparece no Google.");
+    expect(wrapper.text()).not.toContain("100% completo");
+    expect(wrapper.find('[aria-label="Ferramentas do perfil"]').exists()).toBe(
+      true,
+    );
   });
 
   it("does not show the search-visibility nudge once the profile is indexable", async () => {
@@ -533,6 +539,9 @@ describe("professional dashboard", () => {
 
     expect(wrapper.text()).not.toContain(
       "Seu perfil ainda não aparece no Google.",
+    );
+    expect(wrapper.find('[aria-label="Ferramentas do perfil"]').exists()).toBe(
+      false,
     );
   });
 
@@ -686,9 +695,6 @@ describe("professional dashboard", () => {
 
   it("renders the ordered quick actions and emits the recommendation action", async () => {
     const wrapper = mount(DashboardQuickActions, {
-      props: {
-        publicSlug: "beto-lima",
-      },
       global: {
         stubs: {
           DesignSystemSurfaceCard: { template: "<section><slot /></section>" },
@@ -703,7 +709,7 @@ describe("professional dashboard", () => {
 
     expect(wrapper.findAll("a").map((link) => link.attributes("href"))).toEqual(
       [
-        "/be/beto-lima",
+        "/app/professional/profile",
         "/app/professional/quotes/new",
         "/app/professional/services",
       ],
@@ -716,26 +722,25 @@ describe("professional dashboard", () => {
     const actions = wrapper.findAll(".actions-card__list > *");
     expect(actions).toHaveLength(4);
     expect(actions.map((action) => action.attributes("aria-label"))).toEqual([
-      "Ver meu perfil público",
+      "Editar meus dados",
       "Novo orçamento",
       "Acompanhar serviços",
-      "Recomendar um profissional",
+      "Indicar profissional",
     ]);
     expect(
       wrapper.findAll(".actions-card__label-full").map((label) => label.text()),
     ).toEqual([
-      "Perfil público",
+      "Editar meus dados",
       "Novo orçamento",
       "Acompanhar serviços",
-      "Recomendar profissional",
+      "Indicar profissional",
     ]);
+    const editProfile = wrapper.get('a[aria-label="Editar meus dados"]');
+    expect(editProfile.attributes("href")).toBe("/app/professional/profile");
+    expect(editProfile.attributes("target")).toBeUndefined();
     expect(
-      wrapper.get('a[aria-label="Ver meu perfil público"]').attributes(),
-    ).toMatchObject({
-      href: "/be/beto-lima",
-      target: "_blank",
-      rel: "noopener noreferrer",
-    });
+      editProfile.findComponent({ name: "UIcon" }).attributes("name"),
+    ).toBe("i-lucide-pencil");
     expect(wrapper.text()).not.toContain("Fortaleça seu perfil");
 
     await wrapper.get("button").trigger("click");

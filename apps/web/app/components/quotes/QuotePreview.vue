@@ -47,13 +47,7 @@ function itemTotal(index: number) {
       />
       <div>
         <strong>{{ professional.name }}</strong
-        ><span>{{ professional.primaryService }}</span
-        ><small
-          v-if="professional.identityVerified"
-          class="quote-preview__verification"
-          ><UIcon name="i-lucide-badge-check" size="1rem" /> Identidade
-          verificada</small
-        >
+        ><span>{{ professional.primaryService }}</span>
       </div>
     </section>
     <section class="quote-preview__intro">
@@ -142,9 +136,7 @@ function itemTotal(index: number) {
       <p>{{ quote.notes }}</p>
     </section>
     <footer>
-      <span v-if="professional.identityVerified"
-        ><UIcon name="i-lucide-shield-check" /> Identidade verificada</span
-      ><small
+      <small
         >Este orçamento não é um contrato nem um comprovante de
         pagamento.</small
       >
@@ -205,8 +197,7 @@ function itemTotal(index: number) {
     height: 44px;
   }
   &__professional strong,
-  &__professional span,
-  &__professional small {
+  &__professional span {
     display: block;
   }
   &__professional strong {
@@ -217,18 +208,6 @@ function itemTotal(index: number) {
     margin-top: 2px;
     color: var(--ink-soft);
     font-size: 0.82rem;
-  }
-  &__professional small {
-    margin-top: 3px;
-    color: var(--color-brand);
-    font-size: 0.82rem;
-    font-weight: 850;
-  }
-  &__professional &__verification {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    white-space: nowrap;
   }
   &__intro {
     display: grid;
@@ -409,21 +388,14 @@ function itemTotal(index: number) {
   }
   & > footer {
     display: flex;
-    justify-content: space-between;
-    gap: 12px;
+    justify-content: flex-start;
     padding: 12px 22px;
     background: var(--color-brand-tint-muted);
-    color: var(--color-brand);
     font-size: 0.82rem;
-  }
-  & > footer span {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-weight: 850;
   }
   & > footer small {
     color: var(--ink-soft);
+    text-align: left;
   }
 }
 @media print {

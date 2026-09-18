@@ -11,7 +11,6 @@ const props = withDefaults(
   defineProps<{
     candidates: readonly ProfessionalRelationshipCandidate[];
     searching: boolean;
-    searchSettled: boolean;
     searchError: string;
     validationError?: string;
   }>(),
@@ -153,33 +152,10 @@ function clearSelection() {
         <UIcon name="i-lucide-circle" aria-hidden="true" />
       </button>
     </div>
-    <p
-      v-else-if="searchSettled && query.trim().length === 2"
-      class="professional-lookup__feedback"
-    >
-      Continue digitando o nome completo.
-    </p>
-    <div
-      v-else-if="searchSettled && query.trim().length >= 3"
-      class="professional-lookup__empty"
-    >
-      <span>
-        <UIcon name="i-lucide-user-round-plus" aria-hidden="true" />
-      </span>
-      <div>
-        <strong>Essa pessoa ainda não aparece na busca.</strong>
-        <p>
-          Continue para informar o telefone profissional e enviar a conexão.
-        </p>
-      </div>
-    </div>
-    <div
-      v-else-if="query.trim().length === 0"
-      class="professional-lookup__empty"
-    >
+    <div v-else class="professional-lookup__empty">
       <span><UIcon name="i-lucide-handshake" aria-hidden="true" /></span>
       <div>
-        <strong>Boas conexões tornam seu perfil mais forte.</strong>
+        <strong>Boas indicações tornam seu perfil mais forte.</strong>
         <p>
           Busque alguém com quem você já trabalhou para criar uma recomendação
           baseada em uma parceria real.
@@ -248,7 +224,6 @@ function clearSelection() {
     border: 0;
   }
 
-  &__feedback,
   &__warning {
     margin: 0;
     color: var(--ink-soft);

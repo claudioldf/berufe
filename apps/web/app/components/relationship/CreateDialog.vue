@@ -9,7 +9,7 @@ import type {
   Service,
 } from "~/types";
 import { normalizeBrazilianMobilePhone } from "~/utils/brazilian-phone";
-import type { ExternalCoverageMode } from "./ExternalProfessionalDetails.vue";
+import type { ExternalCoverageMode } from "./ExternalProfessionalCoverage.vue";
 import type { ProfessionalRelationshipType } from "~/services/api/professional-relationships";
 
 const CANDIDATE_SEARCH_DEBOUNCE_MS = 500;
@@ -72,9 +72,9 @@ const externalTarget = computed(
   () => step.value === "details" && !selectedProfessionalId.value,
 );
 const modalDescription = computed(() =>
-  step.value === "lookup"
-    ? "Encontre o profissional pelo nome. Se ele ainda não estiver na Berufe, você poderá informar o telefone na próxima etapa."
-    : "Revise o profissional e conte como vocês se conhecem.",
+  step.value === "details"
+    ? "Revise o profissional e conte como vocês se conhecem."
+    : undefined,
 );
 const lookupValidationError = computed(() => {
   if (canContinue.value) return "";
@@ -109,7 +109,7 @@ const externalDetailsValid = computed(
 const error = computed(() => relationships.error.value);
 const submittingReason = computed(() =>
   relationships.isSubmitting.value
-    ? "Aguarde o envio da solicitação de conexão terminar."
+    ? "Aguarde o envio da indicação terminar."
     : null,
 );
 const candidateSearchBlockedReason = computed(() =>
@@ -256,9 +256,9 @@ async function submit() {
     emit("created", relationship);
     open.value = false;
     showToast({
-      title: "Solicitação de conexão enviada",
+      title: "Indicação enviada",
       description:
-        "A conexão aparecerá nos perfis quando o outro profissional confirmar.",
+        "A indicação aparecerá nos perfis quando o outro profissional confirmar.",
     });
   } catch {
     // The normalized API error remains visible in the dialog.
@@ -269,7 +269,7 @@ async function submit() {
 <template>
   <UModal
     v-model:open="open"
-    title="Conectar com um profissional"
+    title="Indicar um profissional"
     :description="modalDescription"
     :ui="{ content: 'sm:max-w-2xl' }"
   >
@@ -286,15 +286,15 @@ async function submit() {
         />
         <div>
           <span>Ative sua rede profissional</span>
-          <h3>Prepare seu perfil para criar conexões reais.</h3>
+          <h3>Prepare seu perfil para fazer indicações.</h3>
           <p>
-            Para se conectar com outros profissionais, conclua seu cadastro,
-            confirme o telefone e tenha a identidade aprovada.
+            Para indicar outros profissionais, conclua seu cadastro, confirme o
+            telefone e tenha a identidade aprovada.
           </p>
           <ul>
             <li>
               <UIcon name="i-lucide-circle-check" aria-hidden="true" />
-              Recomendações confirmadas fortalecem os dois perfis
+              Indicações confirmadas fortalecem os dois perfis
             </li>
             <li>
               <UIcon name="i-lucide-circle-check" aria-hidden="true" />
@@ -325,7 +325,6 @@ async function submit() {
           v-model:external-selected="externalProfessionalSelected"
           :candidates="relationships.candidates.value"
           :searching="candidateSearchLoading"
-          :search-settled="searchSettled"
           :search-error="relationships.searchError.value"
           :validation-error="displayedLookupError"
         />
@@ -352,20 +351,16 @@ async function submit() {
             </span>
           </div>
 
-          <RelationshipExternalProfessionalDetails
+          <RelationshipExternalProfessionalPhone
             v-if="externalTarget"
-            v-model:phone="externalPhone"
-            v-model:coverage-mode="externalCoverageMode"
-            v-model:coverage="externalCoverage"
-            :phone-error="displayedPhoneError"
-            :coverage-error="displayedCoverageError"
+            v-model="externalPhone"
+            :error="displayedPhoneError"
           />
 
           <div class="relationship-create-dialog__context">
             <DesignSystemFormField
               id="relationship-type"
               label="Como vocês se conhecem?"
-              required
             >
               <select
                 id="relationship-type"
@@ -382,7 +377,7 @@ async function submit() {
             <DesignSystemFormField
               id="relationship-context"
               label="Comentário"
-              hint="Opcional. Este comentário será exibido publicamente quando o profissional se cadastrar na Berufe."
+              hint="Este comentário será exibido publicamente quando o profissional se cadastrar na Berufe."
             >
               <template #label>
                 Comentário <em>{{ noteLength }}/300</em>
@@ -401,6 +396,13 @@ async function submit() {
             </DesignSystemFormField>
           </div>
 
+          <RelationshipExternalProfessionalCoverage
+            v-if="externalTarget"
+            v-model="externalCoverage"
+            v-model:coverage-mode="externalCoverageMode"
+            :error="displayedCoverageError"
+          />
+
           <RelationshipExternalProfessionalServices
             v-if="externalTarget"
             v-model="externalServiceIds"
@@ -414,50 +416,55 @@ async function submit() {
       </form>
     </template>
     <template #footer>
-      <DesignSystemDisabledTooltip
-        v-if="step === 'lookup'"
-        :reason="submittingReason"
-      >
-        <UButton
-          color="neutral"
-          variant="ghost"
-          :disabled="relationships.isSubmitting.value"
-          @click="open = false"
+      <div class="relationship-create-dialog__actions">
+        <DesignSystemDisabledTooltip
+          v-if="step === 'lookup'"
+          :reason="submittingReason"
         >
-          Cancelar
-        </UButton>
-      </DesignSystemDisabledTooltip>
-      <DesignSystemDisabledTooltip v-else :reason="submittingReason">
-        <UButton
-          color="neutral"
-          variant="ghost"
-          :disabled="relationships.isSubmitting.value"
-          @click="returnToLookup"
+          <UButton
+            color="neutral"
+            variant="ghost"
+            :disabled="relationships.isSubmitting.value"
+            @click="open = false"
+          >
+            Cancelar
+          </UButton>
+        </DesignSystemDisabledTooltip>
+        <DesignSystemDisabledTooltip v-else :reason="submittingReason">
+          <UButton
+            color="neutral"
+            variant="ghost"
+            :disabled="relationships.isSubmitting.value"
+            @click="returnToLookup"
+          >
+            Voltar
+          </UButton>
+        </DesignSystemDisabledTooltip>
+        <DesignSystemDisabledTooltip
+          v-if="eligible && step === 'lookup'"
+          :reason="candidateSearchBlockedReason"
         >
-          Voltar
-        </UButton>
-      </DesignSystemDisabledTooltip>
-      <DesignSystemDisabledTooltip
-        v-if="eligible && step === 'lookup'"
-        :reason="candidateSearchBlockedReason"
-      >
-        <UButton :disabled="candidateSearchLoading" @click="continueToDetails">
-          Continuar
-        </UButton>
-      </DesignSystemDisabledTooltip>
-      <DesignSystemDisabledTooltip
-        v-else-if="eligible"
-        :reason="submittingReason"
-        :loading="relationships.isSubmitting.value"
-      >
-        <UButton
+          <UButton
+            :disabled="candidateSearchLoading"
+            @click="continueToDetails"
+          >
+            Continuar
+          </UButton>
+        </DesignSystemDisabledTooltip>
+        <DesignSystemDisabledTooltip
+          v-else-if="eligible"
+          :reason="submittingReason"
           :loading="relationships.isSubmitting.value"
-          :disabled="relationships.isSubmitting.value"
-          @click="submit"
         >
-          Conectar
-        </UButton>
-      </DesignSystemDisabledTooltip>
+          <UButton
+            :loading="relationships.isSubmitting.value"
+            :disabled="relationships.isSubmitting.value"
+            @click="submit"
+          >
+            Indicar
+          </UButton>
+        </DesignSystemDisabledTooltip>
+      </div>
     </template>
   </UModal>
 </template>
@@ -466,6 +473,14 @@ async function submit() {
 .relationship-create-dialog {
   display: grid;
   gap: 20px;
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+    width: 100%;
+  }
 
   &__target {
     display: grid;

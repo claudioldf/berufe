@@ -96,6 +96,20 @@ const checklist = computed<OnboardingChecklistItem[]>(() => {
 const progress = computed(
   () => workspace.value?.dashboard.readiness.percentage ?? 0,
 );
+const showProfileChecklist = computed(() => progress.value < 100);
+const showSeoNudge = computed(() => {
+  const profile = workspace.value?.profile;
+  if (!profile) return false;
+
+  return (
+    profile.visibility === "discoverable" &&
+    profile.isPublic &&
+    !profile.isIndexable
+  );
+});
+const showDashboardSidebar = computed(
+  () => showProfileChecklist.value || showSeoNudge.value,
+);
 const canPublish = computed(() => {
   const profile = workspace.value?.profile;
   if (!profile) return false;
@@ -352,7 +366,6 @@ function updateCompletionOpen(open: boolean) {
         <DashboardQuickActions
           v-if="dashboardReady"
           class="dashboard-welcome__quick-actions"
-          :public-slug="publicSlug"
           @recommend="relationshipOpen = true"
         />
       </DesignSystemContainer>
@@ -413,7 +426,10 @@ function updateCompletionOpen(open: boolean) {
         </NuxtLink>
       </section>
 
-      <div class="dashboard-layout">
+      <div
+        class="dashboard-layout"
+        :class="{ 'dashboard-layout--full': !showDashboardSidebar }"
+      >
         <div class="dashboard-operational">
           <DashboardActivitySections
             :workspace="workspace"
@@ -432,22 +448,20 @@ function updateCompletionOpen(open: boolean) {
           />
         </div>
 
-        <aside class="dashboard-sidebar" aria-label="Ferramentas do perfil">
+        <aside
+          v-if="showDashboardSidebar"
+          class="dashboard-sidebar"
+          aria-label="Ferramentas do perfil"
+        >
           <DashboardChecklist
+            v-if="showProfileChecklist"
             :readiness="progress"
             :items="checklist"
             :can-publish="canPublish"
             :publishing="professionalWorkspace.submissionSaving.value"
             @publish="publishProfile"
           />
-          <DesignSystemSurfaceCard
-            v-if="
-              workspace?.profile.visibility === 'discoverable' &&
-              workspace?.profile.isPublic &&
-              !workspace?.profile.isIndexable
-            "
-            class="seo-nudge"
-          >
+          <DesignSystemSurfaceCard v-if="showSeoNudge" class="seo-nudge">
             <UIcon name="i-lucide-scan-search" aria-hidden="true" />
             <div>
               <strong>Seu perfil ainda não aparece no Google.</strong>
@@ -554,6 +568,14 @@ function updateCompletionOpen(open: boolean) {
   grid-template-columns: minmax(260px, 1fr) minmax(0, 2fr);
   gap: 28px;
   align-items: start;
+
+  &--full {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  &--full .dashboard-operational {
+    grid-column: 1;
+  }
 }
 .dashboard-operational {
   grid-row: 1;
