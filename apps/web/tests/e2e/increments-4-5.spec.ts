@@ -72,7 +72,7 @@ test("professional dashboard prioritizes operational work responsively", async (
   const quickActions = page.locator(".actions-card");
   const status = page.locator(".status-banner");
   const operational = page.locator(".dashboard-operational");
-  const sidebar = page.locator(".dashboard-sidebar");
+  const sidebar = page.locator('aside[aria-label="Ferramentas do perfil"]');
   await expect(layout).toBeVisible();
   await expect(
     operational.getByText("Transforme pedidos em trabalhos fechados."),
@@ -102,16 +102,15 @@ test("professional dashboard prioritizes operational work responsively", async (
   await expect(
     page.locator(".dashboard-welcome__actions").getByText("Novo orçamento"),
   ).toHaveCount(0);
-  await expect(sidebar.getByText("Ações rápidas")).toHaveCount(0);
+  await expect(page.getByText("100% completo")).toHaveCount(0);
+  await expect(sidebar).toHaveCount(0);
 
   const quickActionsBox = await quickActions.boundingBox();
   const statusBox = await status.boundingBox();
   const operationalBox = await operational.boundingBox();
-  const sidebarBox = await sidebar.boundingBox();
   expect(quickActionsBox).not.toBeNull();
   expect(statusBox).not.toBeNull();
   expect(operationalBox).not.toBeNull();
-  expect(sidebarBox).not.toBeNull();
   expect(statusBox!.y).toBeGreaterThan(
     quickActionsBox!.y + quickActionsBox!.height,
   );
@@ -119,24 +118,11 @@ test("professional dashboard prioritizes operational work responsively", async (
   expect(
     Math.abs(quickActionsBox!.width - statusBox!.width),
   ).toBeLessThanOrEqual(1);
-
-  if (testInfo.project.name.startsWith("mobile")) {
-    expect(operationalBox!.y).toBeGreaterThan(statusBox!.y + statusBox!.height);
-    expect(sidebarBox!.y).toBeGreaterThan(
-      operationalBox!.y + operationalBox!.height,
-    );
-    expect(Math.abs(statusBox!.x - operationalBox!.x)).toBeLessThanOrEqual(1);
-    expect(
-      Math.abs(statusBox!.width - operationalBox!.width),
-    ).toBeLessThanOrEqual(1);
-    return;
-  }
-
   expect(operationalBox!.y).toBeGreaterThan(statusBox!.y + statusBox!.height);
-  expect(operationalBox!.x).toBeGreaterThan(sidebarBox!.x + sidebarBox!.width);
-  expect(Math.abs(operationalBox!.y - sidebarBox!.y)).toBeLessThanOrEqual(1);
-  expect(operationalBox!.width / sidebarBox!.width).toBeGreaterThan(1.9);
-  expect(operationalBox!.width / sidebarBox!.width).toBeLessThan(2.1);
+  expect(Math.abs(statusBox!.x - operationalBox!.x)).toBeLessThanOrEqual(1);
+  expect(
+    Math.abs(statusBox!.width - operationalBox!.width),
+  ).toBeLessThanOrEqual(1);
 });
 
 test("published professional creates, previews, securely shares, and live-edits a quote", async ({

@@ -423,7 +423,6 @@ describe("professional dashboard", () => {
     const quoteEmptyIndex = visibleText.indexOf(
       "Transforme pedidos em trabalhos fechados.",
     );
-    const progressIndex = visibleText.indexOf("100% completo");
 
     expect(quickActionsIndex).toBeGreaterThanOrEqual(0);
     expect(statusIndex).toBeGreaterThan(quickActionsIndex);
@@ -436,7 +435,7 @@ describe("professional dashboard", () => {
     expect(wrapper.find(".dashboard-welcome__actions").text()).not.toContain(
       "Novo orçamento",
     );
-    expect(progressIndex).toBeGreaterThan(quoteEmptyIndex);
+    expect(visibleText).not.toContain("100% completo");
     expect(wrapper.findAll(".actions-card")).toHaveLength(1);
     expect(wrapper.find(".dashboard-welcome .actions-card").exists()).toBe(
       true,
@@ -444,7 +443,7 @@ describe("professional dashboard", () => {
     expect(wrapper.find(".dashboard-content .actions-card").exists()).toBe(
       false,
     );
-    expect(wrapper.find(".dashboard-sidebar .actions-card").exists()).toBe(
+    expect(wrapper.find('[aria-label="Ferramentas do perfil"]').exists()).toBe(
       false,
     );
   });
@@ -504,6 +503,9 @@ describe("professional dashboard", () => {
     expect(wrapper.findComponent(DashboardChecklist).props("readiness")).toBe(
       25,
     );
+    expect(wrapper.find('[aria-label="Ferramentas do perfil"]').exists()).toBe(
+      true,
+    );
   });
 
   it("nudges toward search visibility for a published profile that is not yet indexable", async () => {
@@ -518,6 +520,10 @@ describe("professional dashboard", () => {
     );
 
     expect(wrapper.text()).toContain("Seu perfil ainda não aparece no Google.");
+    expect(wrapper.text()).not.toContain("100% completo");
+    expect(wrapper.find('[aria-label="Ferramentas do perfil"]').exists()).toBe(
+      true,
+    );
   });
 
   it("does not show the search-visibility nudge once the profile is indexable", async () => {
@@ -533,6 +539,9 @@ describe("professional dashboard", () => {
 
     expect(wrapper.text()).not.toContain(
       "Seu perfil ainda não aparece no Google.",
+    );
+    expect(wrapper.find('[aria-label="Ferramentas do perfil"]').exists()).toBe(
+      false,
     );
   });
 
