@@ -388,14 +388,14 @@ function itemTotal(index: number) {
   }
   & > footer {
     display: flex;
-    justify-content: flex-end;
+    justify-content: flex-start;
     padding: 12px 22px;
     background: var(--color-brand-tint-muted);
     font-size: 0.82rem;
   }
   & > footer small {
     color: var(--ink-soft);
-    text-align: right;
+    text-align: left;
   }
 }
 @media print {
