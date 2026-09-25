@@ -131,10 +131,10 @@ describe("quote utilities", () => {
     };
 
     expect(validateQuote(fixed)).toMatchObject({
-      fixedPrice: "Obrigatório",
+      fixedPrice: "Valor obrigatório",
       items: {
         [source.items[0]!.id]: {
-          unitPrice: "Obrigatório",
+          unitPrice: "Valor obrigatório",
         },
       },
     });
