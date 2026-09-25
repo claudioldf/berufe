@@ -113,7 +113,7 @@ describe("quote utilities", () => {
       items: {
         [source.items[0]!.id]: {
           description: "Descreva este item.",
-          quantity: "Informe uma quantidade maior que zero.",
+          quantity: "Valor obrigatório",
           unit: "Selecione a unidade.",
           unitPrice: "Informe um valor igual ou maior que zero.",
         },

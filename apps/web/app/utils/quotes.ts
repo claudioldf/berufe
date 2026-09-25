@@ -139,7 +139,7 @@ export function validateQuote(quote: Quote): QuoteValidationErrors {
       itemErrors.description = "Use no máximo 160 caracteres.";
     }
     if (quantityIsBlank || !Number.isFinite(quantity) || quantity <= 0) {
-      itemErrors.quantity = "Informe uma quantidade maior que zero.";
+      itemErrors.quantity = "Valor obrigatório";
     }
     if (!item.unit.trim()) itemErrors.unit = "Selecione a unidade.";
     if (unitPriceIsBlank || !Number.isFinite(unitPrice) || unitPrice < 0) {
