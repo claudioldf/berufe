@@ -145,7 +145,7 @@ export function validateQuote(quote: Quote): QuoteValidationErrors {
     if (unitPriceIsBlank || !Number.isFinite(unitPrice) || unitPrice < 0) {
       itemErrors.unitPrice = "Informe um valor igual ou maior que zero.";
     } else if (unitPrice === 0) {
-      itemErrors.unitPrice = "Informe um valor maior que zero.";
+      itemErrors.unitPrice = "Obrigatório";
     }
 
     if (Object.keys(itemErrors).length) errors.items[item.id] = itemErrors;
@@ -159,7 +159,7 @@ export function validateQuote(quote: Quote): QuoteValidationErrors {
   ) {
     errors.fixedPrice = "Informe um preço final válido.";
   } else if (quote.pricingMode === "fixed_price" && fixedPrice === 0) {
-    errors.fixedPrice = "Informe um preço final maior que zero.";
+    errors.fixedPrice = "Obrigatório";
   } else if (quote.pricingMode === "itemized" && fixedPrice !== 0) {
     errors.fixedPrice = "O orçamento detalhado não usa preço fechado.";
   }

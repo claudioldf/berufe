@@ -391,12 +391,8 @@ describe("quote share controls", () => {
     await wrapper.get(".request-share").trigger("click");
 
     expect(wrapper.emitted("prepareShare")).toBeUndefined();
-    expect(wrapper.get(".fixed-price-error").text()).toBe(
-      "Informe um preço final maior que zero.",
-    );
-    expect(wrapper.get(".item-price-error").text()).toBe(
-      "Informe um valor maior que zero.",
-    );
+    expect(wrapper.get(".fixed-price-error").text()).toBe("Obrigatório");
+    expect(wrapper.get(".item-price-error").text()).toBe("Obrigatório");
   });
 
   it("validates incomplete shared quote edits before saving", async () => {
@@ -434,9 +430,7 @@ describe("quote share controls", () => {
     await wrapper.get(".save-draft").trigger("click");
 
     expect(wrapper.emitted("save")).toBeUndefined();
-    expect(wrapper.get(".item-price-error").text()).toBe(
-      "Informe um valor maior que zero.",
-    );
+    expect(wrapper.get(".item-price-error").text()).toBe("Obrigatório");
   });
 
   it("allows an incomplete quote to be saved as a draft", async () => {

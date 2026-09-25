@@ -131,10 +131,10 @@ describe("quote utilities", () => {
     };
 
     expect(validateQuote(fixed)).toMatchObject({
-      fixedPrice: "Informe um preço final maior que zero.",
+      fixedPrice: "Obrigatório",
       items: {
         [source.items[0]!.id]: {
-          unitPrice: "Informe um valor maior que zero.",
+          unitPrice: "Obrigatório",
         },
       },
     });
