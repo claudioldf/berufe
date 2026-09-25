@@ -79,6 +79,17 @@ const CustomerFieldsStub = defineComponent({
   props: { errors: { type: Object, default: undefined } },
   template: '<p class="customer-name-error">{{ errors?.customerName }}</p>',
 });
+const LineItemsValidationStub = defineComponent({
+  props: { errors: { type: Object, default: undefined } },
+  template: `
+    <div>
+      <p class="fixed-price-error">{{ errors?.fixedPrice }}</p>
+      <p class="item-price-error">
+        {{ Object.values(errors?.items ?? {})[0]?.unitPrice }}
+      </p>
+    </div>
+  `,
+});
 
 describe("quote share controls", () => {
   it("keeps copy and WhatsApp as explicit user-selected actions", async () => {
@@ -342,6 +353,92 @@ describe("quote share controls", () => {
     );
   });
 
+  it("blocks non-draft submission until item costs and fixed price are positive", async () => {
+    const wrapper = mount(QuoteBuilder, {
+      props: {
+        initialQuote: {
+          ...quote,
+          id: null,
+          number: null,
+          pricingMode: "fixed_price",
+          fixedPrice: 0,
+          discount: 0,
+          items: [{ ...quote.items[0]!, unitPrice: 0, lineTotal: 0 }],
+        },
+        professional,
+        savingIntent: null,
+        saveError: "",
+        sharingMethod: null,
+        shareError: "",
+        shareEnabled: true,
+      },
+      global: {
+        stubs: {
+          DashboardQuoteCustomerFields: true,
+          DashboardQuoteServiceFields: true,
+          DashboardQuoteChangeRequests: true,
+          DashboardQuoteLineItemsEditor: LineItemsValidationStub,
+          DashboardQuoteNotesField: true,
+          DashboardQuoteSaveBar: SaveBarStub,
+          QuotesQuotePreview: true,
+          UModal: ModalStub,
+          UButton: ButtonStub,
+          UIcon: true,
+        },
+      },
+    });
+
+    await wrapper.get(".request-share").trigger("click");
+
+    expect(wrapper.emitted("prepareShare")).toBeUndefined();
+    expect(wrapper.get(".fixed-price-error").text()).toBe(
+      "Informe um preço final maior que zero.",
+    );
+    expect(wrapper.get(".item-price-error").text()).toBe(
+      "Informe um valor maior que zero.",
+    );
+  });
+
+  it("validates incomplete shared quote edits before saving", async () => {
+    const wrapper = mount(QuoteBuilder, {
+      props: {
+        initialQuote: {
+          ...quote,
+          status: "shared",
+          sharedAt: "2026-08-18T13:00:00Z",
+          items: [{ ...quote.items[0]!, unitPrice: 0, lineTotal: 0 }],
+        },
+        professional,
+        savingIntent: null,
+        saveError: "",
+        sharingMethod: null,
+        shareError: "",
+        shareEnabled: true,
+      },
+      global: {
+        stubs: {
+          DashboardQuoteCustomerFields: true,
+          DashboardQuoteServiceFields: true,
+          DashboardQuoteChangeRequests: true,
+          DashboardQuoteLineItemsEditor: LineItemsValidationStub,
+          DashboardQuoteNotesField: true,
+          DashboardQuoteSaveBar: SaveBarStub,
+          QuotesQuotePreview: true,
+          UModal: ModalStub,
+          UButton: ButtonStub,
+          UIcon: true,
+        },
+      },
+    });
+
+    await wrapper.get(".save-draft").trigger("click");
+
+    expect(wrapper.emitted("save")).toBeUndefined();
+    expect(wrapper.get(".item-price-error").text()).toBe(
+      "Informe um valor maior que zero.",
+    );
+  });
+
   it("allows an incomplete quote to be saved as a draft", async () => {
     const wrapper = mount(QuoteBuilder, {
       props: {
@@ -353,7 +450,16 @@ describe("quote share controls", () => {
           customerPhone: "",
           serviceDescription: "",
           validUntil: "",
-          items: [{ ...quote.items[0]!, description: "" }],
+          pricingMode: "fixed_price",
+          fixedPrice: 0,
+          items: [
+            {
+              ...quote.items[0]!,
+              description: "",
+              unitPrice: 0,
+              lineTotal: 0,
+            },
+          ],
         },
         professional,
         savingIntent: null,

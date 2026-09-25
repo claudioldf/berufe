@@ -15,6 +15,8 @@ const emit = defineEmits<{
   remove: [id: string];
   dirty: [];
   changeMode: [mode: QuotePricingMode];
+  fixedPriceEdited: [];
+  syncFixedPrice: [];
 }>();
 const fixedPrice = computed(() => quote.value.pricingMode === "fixed_price");
 </script>
@@ -277,8 +279,8 @@ const fixedPrice = computed(() => quote.value.pricingMode === "fixed_price");
         <span>{{ fixedPrice ? "Seu custo total" : "Subtotal" }}</span
         ><strong>{{ formatCurrency(subtotal) }}</strong>
       </div>
-      <label v-if="fixedPrice">
-        <span>Preço final ao cliente</span>
+      <div v-if="fixedPrice" class="builder-total__price-row">
+        <label for="fixed-price">Preço final ao cliente</label>
         <span class="builder-total__field">
           <span
             class="builder-total__control"
@@ -287,13 +289,14 @@ const fixedPrice = computed(() => quote.value.pricingMode === "fixed_price");
             }"
           >
             <CurrencyInput
+              id="fixed-price"
               v-model="quote.fixedPrice"
               name="fixed-price"
               :aria-describedby="
                 props.errors?.fixedPrice ? 'quote-fixed-price-error' : undefined
               "
               :aria-invalid="Boolean(props.errors?.fixedPrice)"
-              @input="emit('dirty')"
+              @input="emit('fixedPriceEdited')"
             />
           </span>
           <small
@@ -303,8 +306,15 @@ const fixedPrice = computed(() => quote.value.pricingMode === "fixed_price");
           >
             {{ props.errors.fixedPrice }}
           </small>
+          <button
+            type="button"
+            class="builder-total__sync"
+            @click="emit('syncFixedPrice')"
+          >
+            Repetir o valor do total
+          </button>
         </span>
-      </label>
+      </div>
       <label v-else>
         <span>Desconto</span>
         <span class="builder-total__field">
@@ -333,7 +343,7 @@ const fixedPrice = computed(() => quote.value.pricingMode === "fixed_price");
           </small>
         </span>
       </label>
-      <div v-if="!fixedPrice">
+      <div v-if="!fixedPrice" class="builder-total__summary">
         <span>Total</span><strong>{{ formatCurrency(total) }}</strong>
       </div>
     </div>
@@ -434,6 +444,18 @@ const fixedPrice = computed(() => quote.value.pricingMode === "fixed_price");
     margin-bottom: 2px;
     color: var(--ink);
   }
+}
+
+.builder-total__sync {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-brand);
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 750;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 @media (width <= 720px) {

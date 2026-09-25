@@ -80,6 +80,39 @@ RSpec.describe ProfessionalQuoteWriter do
     )
   end
 
+  it "requires positive item and fixed prices outside drafts" do
+    expect do
+      described_class.new.call(
+        profile:,
+        attributes: valid_attributes.merge(
+          status: "saved",
+          pricing_mode: "itemized",
+          fixed_price_amount: 0,
+          discount_amount: 0,
+          items: [
+            {description: "Diagnóstico", quantity: 1, unit: "serviço", unit_price: 0}
+          ]
+        )
+      )
+    end.to raise_error(described_class::Invalid) { |error|
+      expect(error.field_errors).to include(:"quote_items.unit_price")
+    }
+
+    expect do
+      described_class.new.call(
+        profile:,
+        attributes: valid_attributes.merge(
+          status: "saved",
+          pricing_mode: "fixed_price",
+          fixed_price_amount: 0,
+          discount_amount: 0
+        )
+      )
+    end.to raise_error(described_class::Invalid) { |error|
+      expect(error.field_errors).to include(:fixed_price_amount)
+    }
+  end
+
   it "keeps the fixed customer price independent and persists customer-supplied materials" do
     quote = described_class.new.call(
       profile:,

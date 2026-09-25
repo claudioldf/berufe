@@ -829,8 +829,9 @@ price real work.
 - Changing pricing mode clears all pricing rows, fixed price, and discount. The UI
   confirms first only when a monetary value would be discarded; customer,
   service, materials, dates, and notes are preserved.
-- Quantities are greater than zero for saved quotes, unit prices and fixed price
-  are non-negative, and itemized discount cannot exceed subtotal.
+- Quantities, unit prices, and the fixed customer price are greater than zero
+  for non-draft quotes. Drafts may keep zero values, and an itemized discount
+  cannot exceed the subtotal.
 - Rails recalculates each line total, subtotal, applicable discount, and total with
   `BigDecimal`; Nuxt calculations are preview-only and persisted client totals
   are never trusted.

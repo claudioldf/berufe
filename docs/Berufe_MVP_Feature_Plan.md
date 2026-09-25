@@ -703,7 +703,7 @@ and are explicitly labeled as quote values rather than payments received.
 | `service_description`    | text          | Required and length-limited                                                                                       |
 | `pricing_mode`           | enum          | `fixed_price` or `itemized`; defaults from the owner's last successfully saved mode                               |
 | `subtotal_amount`        | decimal(14,2) | Server-calculated sum of the line totals; persisted so PostgreSQL can enforce the totals rule                     |
-| `fixed_price_amount`     | decimal(14,2) | Independent non-negative final customer price for fixed-price quotes; zero for itemized quotes                    |
+| `fixed_price_amount`     | decimal(14,2) | Independent positive final customer price outside drafts for fixed-price quotes; zero for itemized quotes         |
 | `discount_amount`        | decimal(14,2) | Itemized-only; defaults to zero and cannot exceed subtotal                                                        |
 | `total_amount`           | decimal(14,2) | Server-selected fixed customer price or itemized subtotal minus discount                                          |
 | `valid_until`            | date          | Nullable                                                                                                          |
@@ -723,7 +723,7 @@ and are explicitly labeled as quote values rather than payments received.
 | `description` | text          | Required and length-limited                                                                       |
 | `quantity`    | decimal(12,3) | Greater than zero; three decimals so measured units such as `1.5 m²` or `0.125 t` are not rounded |
 | `unit`        | text          | Controlled length; examples: service, hour, m²                                                    |
-| `unit_price`  | decimal(14,2) | Zero or greater                                                                                   |
+| `unit_price`  | decimal(14,2) | Greater than zero outside drafts; drafts may keep zero                                             |
 | `line_total`  | decimal(14,2) | Server-calculated                                                                                 |
 | `sort_order`  | smallint      | Required and deterministic                                                                        |
 

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { nextTick } from "vue";
 import type { Quote } from "~/types";
 import { useQuoteDraft } from "~/composables/useQuoteDraft";
 import {
@@ -115,6 +116,25 @@ describe("quote utilities", () => {
           quantity: "Informe uma quantidade maior que zero.",
           unit: "Selecione a unidade.",
           unitPrice: "Informe um valor igual ou maior que zero.",
+        },
+      },
+    });
+  });
+
+  it("requires positive item and fixed prices before a quote leaves draft", () => {
+    const fixed = {
+      ...cloneQuote(source),
+      pricingMode: "fixed_price" as const,
+      fixedPrice: 0,
+      discount: 0,
+      items: [{ ...source.items[0]!, unitPrice: 0, lineTotal: 0 }],
+    };
+
+    expect(validateQuote(fixed)).toMatchObject({
+      fixedPrice: "Informe um preço final maior que zero.",
+      items: {
+        [source.items[0]!.id]: {
+          unitPrice: "Informe um valor maior que zero.",
         },
       },
     });
@@ -257,5 +277,34 @@ describe("quote draft state", () => {
     expect(draft.pricingModeConfirmationOpen.value).toBe(false);
     expect(draft.quote.value.pricingMode).toBe("fixed_price");
     expect(draft.quote.value.customerSuppliedMaterials).toHaveLength(1);
+  });
+
+  it("syncs a new fixed price until it is manually changed or reset", async () => {
+    const draft = useQuoteDraft({
+      ...cloneQuote(source),
+      id: null,
+      number: null,
+      pricingMode: "fixed_price",
+      fixedPrice: 0,
+      discount: 0,
+      items: [{ ...source.items[0]!, quantity: 2, unitPrice: 100 }],
+    });
+
+    expect(draft.quote.value.fixedPrice).toBe(200);
+    draft.quote.value.items[0]!.unitPrice = 125;
+    await nextTick();
+    expect(draft.quote.value.fixedPrice).toBe(250);
+
+    draft.quote.value.fixedPrice = 300;
+    draft.markFixedPriceEdited();
+    draft.quote.value.items[0]!.unitPrice = 150;
+    await nextTick();
+    expect(draft.quote.value.fixedPrice).toBe(300);
+
+    draft.syncFixedPriceToSubtotal();
+    expect(draft.quote.value.fixedPrice).toBe(300);
+    draft.quote.value.items[0]!.unitPrice = 175;
+    await nextTick();
+    expect(draft.quote.value.fixedPrice).toBe(350);
   });
 });
