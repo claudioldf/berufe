@@ -54,9 +54,9 @@ describe("quote service fields", () => {
       props: {
         modelValue: quote,
         errors: {
-          validUntil: "Informe até quando o orçamento é válido.",
+          validUntil: "Campo obrigatório",
           scheduledOn: "Informe uma data válida.",
-          serviceDescription: "Descreva o serviço.",
+          serviceDescription: "Campo obrigatório",
           items: {},
         },
       },

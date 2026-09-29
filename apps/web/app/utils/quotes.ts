@@ -85,13 +85,13 @@ export function validateQuote(quote: Quote): QuoteValidationErrors {
   const customerEmail = quote.customerEmail.trim();
   const serviceDescription = quote.serviceDescription.trim();
 
-  if (!customerName) errors.customerName = "Informe o nome do cliente.";
+  if (!customerName) errors.customerName = "Campo obrigatório";
   else if (customerName.length > 80) {
     errors.customerName = "Use no máximo 80 caracteres.";
   }
 
   if (!quote.customerPhone.trim()) {
-    errors.customerPhone = "Informe o WhatsApp do cliente.";
+    errors.customerPhone = "Campo obrigatório";
   } else if (!normalizeBrazilianMobilePhone(quote.customerPhone)) {
     errors.customerPhone = "Informe um celular brasileiro válido com DDD.";
   }
@@ -103,7 +103,7 @@ export function validateQuote(quote: Quote): QuoteValidationErrors {
   }
 
   if (!quote.validUntil.trim()) {
-    errors.validUntil = "Informe até quando o orçamento é válido.";
+    errors.validUntil = "Campo obrigatório";
   } else if (!isValidQuoteInputDate(quote.validUntil)) {
     errors.validUntil = "Informe uma data válida.";
   }
@@ -113,7 +113,7 @@ export function validateQuote(quote: Quote): QuoteValidationErrors {
   }
 
   if (!serviceDescription) {
-    errors.serviceDescription = "Descreva o serviço.";
+    errors.serviceDescription = "Campo obrigatório";
   } else if (serviceDescription.length > 160) {
     errors.serviceDescription = "Use no máximo 160 caracteres.";
   }
@@ -134,14 +134,14 @@ export function validateQuote(quote: Quote): QuoteValidationErrors {
     const unitPriceIsBlank = String(item.unitPrice).trim() === "";
 
     if (!item.description.trim()) {
-      itemErrors.description = "Descreva este item.";
+      itemErrors.description = "Campo obrigatório";
     } else if (item.description.trim().length > 160) {
       itemErrors.description = "Use no máximo 160 caracteres.";
     }
     if (quantityIsBlank || !Number.isFinite(quantity) || quantity <= 0) {
       itemErrors.quantity = "Valor obrigatório";
     }
-    if (!item.unit.trim()) itemErrors.unit = "Selecione a unidade.";
+    if (!item.unit.trim()) itemErrors.unit = "Campo obrigatório";
     if (unitPriceIsBlank || !Number.isFinite(unitPrice) || unitPrice < 0) {
       itemErrors.unitPrice = "Informe um valor igual ou maior que zero.";
     } else if (unitPrice === 0) {
@@ -170,7 +170,7 @@ export function validateQuote(quote: Quote): QuoteValidationErrors {
     const quantityIsBlank = String(material.quantity).trim() === "";
 
     if (!material.description.trim()) {
-      materialErrors.description = "Descreva este material.";
+      materialErrors.description = "Campo obrigatório";
     } else if (material.description.trim().length > 160) {
       materialErrors.description = "Use no máximo 160 caracteres.";
     }

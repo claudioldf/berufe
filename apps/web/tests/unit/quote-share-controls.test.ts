@@ -346,7 +346,7 @@ describe("quote share controls", () => {
     expect(wrapper.emitted("prepareShare")).toBeUndefined();
     expect(wrapper.emitted("update:shareOpen")).toBeUndefined();
     expect(wrapper.get(".customer-name-error").text()).toBe(
-      "Informe o nome do cliente.",
+      "Campo obrigatório",
     );
     expect(wrapper.get(".save-bar-error").text()).toBe(
       "Revise os campos destacados para continuar.",

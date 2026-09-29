@@ -101,7 +101,7 @@ describe("quote line item validation", () => {
     expect(wrapper.text()).toContain("Item 1");
     expect(wrapper.text()).toContain("Descrição do item 1");
     expect(wrapper.text()).toContain("Total do item 1");
-    expect(wrapper.text()).toContain("Descreva este item.");
+    expect(wrapper.text()).toContain("Campo obrigatório");
     expect(wrapper.text()).toContain("Informe um desconto válido.");
   });
 

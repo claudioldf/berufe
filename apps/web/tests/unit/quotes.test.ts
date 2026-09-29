@@ -83,6 +83,9 @@ describe("quote utilities", () => {
   it("validates customer, service, items, and discount constraints", () => {
     expect(isQuoteValid(source)).toBe(true);
     expect(isQuoteValid({ ...source, customerName: "" })).toBe(false);
+    expect(validateQuote({ ...source, customerPhone: "" }).customerPhone).toBe(
+      "Campo obrigatório",
+    );
     expect(
       isQuoteValid({ ...source, discount: quoteSubtotal(source) + 1 }),
     ).toBe(false);
@@ -103,18 +106,18 @@ describe("quote utilities", () => {
     invalid.discount = quoteSubtotal(invalid) + 1;
 
     expect(validateQuote(invalid)).toMatchObject({
-      customerName: "Informe o nome do cliente.",
+      customerName: "Campo obrigatório",
       customerPhone: "Informe um celular brasileiro válido com DDD.",
       customerEmail: "Informe um e-mail válido.",
       validUntil: "Informe uma data válida.",
       scheduledOn: "Informe uma data válida.",
-      serviceDescription: "Descreva o serviço.",
+      serviceDescription: "Campo obrigatório",
       discount: "O desconto não pode ultrapassar o subtotal.",
       items: {
         [source.items[0]!.id]: {
-          description: "Descreva este item.",
+          description: "Campo obrigatório",
           quantity: "Valor obrigatório",
-          unit: "Selecione a unidade.",
+          unit: "Campo obrigatório",
           unitPrice: "Informe um valor igual ou maior que zero.",
         },
       },
@@ -142,7 +145,7 @@ describe("quote utilities", () => {
 
   it("requires validity and strictly validates calendar dates", () => {
     expect(validateQuote({ ...source, validUntil: "" }).validUntil).toBe(
-      "Informe até quando o orçamento é válido.",
+      "Campo obrigatório",
     );
     expect(isValidQuoteInputDate("2028-02-29")).toBe(true);
     expect(isValidQuoteInputDate("2027-02-29")).toBe(false);
@@ -188,7 +191,7 @@ describe("quote utilities", () => {
     ];
 
     expect(validateQuote(quote).materials["material-1"]).toEqual({
-      description: "Descreva este material.",
+      description: "Campo obrigatório",
       quantity: "Informe uma quantidade inteira maior que zero.",
     });
     expect(quoteTotal(quote)).toBe(source.total);
