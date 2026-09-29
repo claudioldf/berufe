@@ -35,7 +35,7 @@ class Quote < ApplicationRecord
   validates :customer_name, length: {maximum: 80}
   validates :customer_phone_e164, length: {maximum: 20}, allow_nil: true
   validates :customer_email, length: {maximum: 254}, allow_nil: true
-  validates :service_description, length: {maximum: 160}
+  validates :service_description, length: {maximum: 1000}
   validates :service_address, length: {maximum: 240}, allow_nil: true
   validates :notes, length: {maximum: 700}, allow_nil: true
   validates :customer_decision_message, length: {in: 1..700}, allow_nil: true
@@ -61,6 +61,7 @@ class Quote < ApplicationRecord
   validate :discount_does_not_exceed_subtotal
   validate :itemized_quote_has_no_fixed_price
   validate :fixed_price_quote_has_no_discount
+  validate :fixed_price_is_positive_outside_drafts
   validate :share_state_matches_status
   validate :customer_belongs_to_professional
   validate :approved_content_is_immutable, on: :update
@@ -157,6 +158,12 @@ class Quote < ApplicationRecord
     return unless fixed_price? && discount_amount&.positive?
 
     errors.add(:discount_amount, "deve ser zero no orçamento de preço fechado")
+  end
+
+  def fixed_price_is_positive_outside_drafts
+    return if draft? || !fixed_price? || fixed_price_amount&.positive?
+
+    errors.add(:fixed_price_amount, "deve ser maior que zero")
   end
 
   def share_state_matches_status

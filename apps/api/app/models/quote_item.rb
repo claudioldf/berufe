@@ -6,7 +6,8 @@ class QuoteItem < ApplicationRecord
   validates :description, length: {maximum: 160}
   validates :quantity, numericality: {greater_than_or_equal_to: 0}
   validates :unit, length: {maximum: 20}
-  validates :unit_price, :line_total, numericality: {greater_than_or_equal_to: 0}
+  validates :line_total, numericality: {greater_than_or_equal_to: 0}
+  validates :unit_price, numericality: {greater_than_or_equal_to: 0}, if: :draft?
   validates :sort_order,
     numericality: {only_integer: true, greater_than_or_equal_to: 0},
     uniqueness: {scope: :quote_id}
@@ -14,6 +15,7 @@ class QuoteItem < ApplicationRecord
     validates :description, presence: true
     validates :quantity, numericality: {greater_than: 0}
     validates :unit, presence: true
+    validates :unit_price, numericality: {greater_than: 0}
   end
 
   before_validation :normalize_text

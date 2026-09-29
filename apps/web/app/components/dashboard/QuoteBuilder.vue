@@ -71,6 +71,8 @@ const {
   validation,
   isValid,
   markDirty,
+  markFixedPriceEdited,
+  syncFixedPriceToSubtotal,
   addItem,
   removeItem,
   addMaterial,
@@ -123,6 +125,7 @@ function canSubmit() {
 function save() {
   const draft = cloneQuote(quote.value);
   if (draft.status === "saved") draft.status = "draft";
+  if (draft.status !== "draft" && !canSubmit()) return;
   emit("save", draft);
 }
 
@@ -178,6 +181,8 @@ function requestShare() {
           @remove="removeItem"
           @change-mode="requestPricingMode"
           @dirty="markDirty"
+          @fixed-price-edited="markFixedPriceEdited"
+          @sync-fixed-price="syncFixedPriceToSubtotal"
         />
         <DashboardQuoteMaterialsEditor
           v-model="quote"
@@ -587,7 +592,7 @@ function requestShare() {
     color: var(--ink-soft);
     font-size: 0.84rem;
   }
-  .builder-total > div:last-child {
+  .builder-total > .builder-total__summary {
     margin-top: 6px;
     padding-top: 12px;
     border-top: 2px solid var(--ink);

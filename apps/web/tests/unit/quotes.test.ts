@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { nextTick } from "vue";
 import type { Quote } from "~/types";
 import { useQuoteDraft } from "~/composables/useQuoteDraft";
 import {
@@ -82,6 +83,9 @@ describe("quote utilities", () => {
   it("validates customer, service, items, and discount constraints", () => {
     expect(isQuoteValid(source)).toBe(true);
     expect(isQuoteValid({ ...source, customerName: "" })).toBe(false);
+    expect(validateQuote({ ...source, customerPhone: "" }).customerPhone).toBe(
+      "Campo obrigatório",
+    );
     expect(
       isQuoteValid({ ...source, discount: quoteSubtotal(source) + 1 }),
     ).toBe(false);
@@ -102,19 +106,38 @@ describe("quote utilities", () => {
     invalid.discount = quoteSubtotal(invalid) + 1;
 
     expect(validateQuote(invalid)).toMatchObject({
-      customerName: "Informe o nome do cliente.",
+      customerName: "Campo obrigatório",
       customerPhone: "Informe um celular brasileiro válido com DDD.",
       customerEmail: "Informe um e-mail válido.",
       validUntil: "Informe uma data válida.",
       scheduledOn: "Informe uma data válida.",
-      serviceDescription: "Descreva o serviço.",
+      serviceDescription: "Campo obrigatório",
       discount: "O desconto não pode ultrapassar o subtotal.",
       items: {
         [source.items[0]!.id]: {
-          description: "Descreva este item.",
-          quantity: "Informe uma quantidade maior que zero.",
-          unit: "Selecione a unidade.",
+          description: "Campo obrigatório",
+          quantity: "Valor obrigatório",
+          unit: "Campo obrigatório",
           unitPrice: "Informe um valor igual ou maior que zero.",
+        },
+      },
+    });
+  });
+
+  it("requires positive item and fixed prices before a quote leaves draft", () => {
+    const fixed = {
+      ...cloneQuote(source),
+      pricingMode: "fixed_price" as const,
+      fixedPrice: 0,
+      discount: 0,
+      items: [{ ...source.items[0]!, unitPrice: 0, lineTotal: 0 }],
+    };
+
+    expect(validateQuote(fixed)).toMatchObject({
+      fixedPrice: "Valor obrigatório",
+      items: {
+        [source.items[0]!.id]: {
+          unitPrice: "Valor obrigatório",
         },
       },
     });
@@ -122,11 +145,20 @@ describe("quote utilities", () => {
 
   it("requires validity and strictly validates calendar dates", () => {
     expect(validateQuote({ ...source, validUntil: "" }).validUntil).toBe(
-      "Informe até quando o orçamento é válido.",
+      "Campo obrigatório",
     );
     expect(isValidQuoteInputDate("2028-02-29")).toBe(true);
     expect(isValidQuoteInputDate("2027-02-29")).toBe(false);
     expect(isValidQuoteInputDate("29/02/2028")).toBe(false);
+  });
+
+  it("limits the service description to 1000 characters", () => {
+    expect(
+      validateQuote({
+        ...source,
+        serviceDescription: "a".repeat(1001),
+      }).serviceDescription,
+    ).toBe("Use no máximo 1000 caracteres.");
   });
 
   it("defaults an empty validity to D+30 without replacing a saved date", () => {
@@ -168,7 +200,7 @@ describe("quote utilities", () => {
     ];
 
     expect(validateQuote(quote).materials["material-1"]).toEqual({
-      description: "Descreva este material.",
+      description: "Campo obrigatório",
       quantity: "Informe uma quantidade inteira maior que zero.",
     });
     expect(quoteTotal(quote)).toBe(source.total);
@@ -257,5 +289,34 @@ describe("quote draft state", () => {
     expect(draft.pricingModeConfirmationOpen.value).toBe(false);
     expect(draft.quote.value.pricingMode).toBe("fixed_price");
     expect(draft.quote.value.customerSuppliedMaterials).toHaveLength(1);
+  });
+
+  it("syncs a new fixed price until it is manually changed or reset", async () => {
+    const draft = useQuoteDraft({
+      ...cloneQuote(source),
+      id: null,
+      number: null,
+      pricingMode: "fixed_price",
+      fixedPrice: 0,
+      discount: 0,
+      items: [{ ...source.items[0]!, quantity: 2, unitPrice: 100 }],
+    });
+
+    expect(draft.quote.value.fixedPrice).toBe(200);
+    draft.quote.value.items[0]!.unitPrice = 125;
+    await nextTick();
+    expect(draft.quote.value.fixedPrice).toBe(250);
+
+    draft.quote.value.fixedPrice = 300;
+    draft.markFixedPriceEdited();
+    draft.quote.value.items[0]!.unitPrice = 150;
+    await nextTick();
+    expect(draft.quote.value.fixedPrice).toBe(300);
+
+    draft.syncFixedPriceToSubtotal();
+    expect(draft.quote.value.fixedPrice).toBe(300);
+    draft.quote.value.items[0]!.unitPrice = 175;
+    await nextTick();
+    expect(draft.quote.value.fixedPrice).toBe(350);
   });
 });
