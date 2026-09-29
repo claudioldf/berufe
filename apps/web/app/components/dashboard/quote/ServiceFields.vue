@@ -59,7 +59,7 @@ const emit = defineEmits<{ dirty: [] }>();
         :error="props.errors?.serviceDescription"
         required
       >
-        <input
+        <textarea
           :id="field.controlId"
           v-model="quote.serviceDescription"
           name="serviceDescription"
@@ -67,7 +67,8 @@ const emit = defineEmits<{ dirty: [] }>();
           :aria-describedby="field.describedBy"
           :aria-invalid="field.invalid"
           required
-          maxlength="160"
+          maxlength="1000"
+          rows="5"
         />
       </DesignSystemFormField>
       <DesignSystemFormField

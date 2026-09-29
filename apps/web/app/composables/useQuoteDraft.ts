@@ -19,6 +19,11 @@ export function useQuoteDraft(initialQuote: MaybeRefOrGetter<Quote>) {
   );
   const pricingModeConfirmationOpen = shallowRef(false);
   const pendingPricingMode = shallowRef<QuotePricingMode | null>(null);
+  const fixedPriceAutoSync = shallowRef(
+    !toValue(initialQuote).id &&
+      toValue(initialQuote).pricingMode === "fixed_price" &&
+      Number(toValue(initialQuote).fixedPrice) === 0,
+  );
 
   const subtotal = computed(() => quoteSubtotal(quote.value));
   const total = computed(() => quoteTotal(quote.value));
@@ -28,6 +33,20 @@ export function useQuoteDraft(initialQuote: MaybeRefOrGetter<Quote>) {
   watch(
     () => [toValue(initialQuote).id, toValue(initialQuote).updatedAt],
     () => reset(),
+  );
+  watch(
+    subtotal,
+    (value) => {
+      if (
+        quote.value.pricingMode !== "fixed_price" ||
+        !fixedPriceAutoSync.value
+      ) {
+        return;
+      }
+
+      quote.value.fixedPrice = value;
+    },
+    { immediate: true },
   );
 
   function reset() {
@@ -41,6 +60,17 @@ export function useQuoteDraft(initialQuote: MaybeRefOrGetter<Quote>) {
 
   function markDirty() {
     isSaved.value = false;
+  }
+
+  function markFixedPriceEdited() {
+    fixedPriceAutoSync.value = false;
+    markDirty();
+  }
+
+  function syncFixedPriceToSubtotal() {
+    quote.value.fixedPrice = subtotal.value;
+    fixedPriceAutoSync.value = true;
+    markDirty();
   }
 
   function addItem() {
@@ -99,6 +129,7 @@ export function useQuoteDraft(initialQuote: MaybeRefOrGetter<Quote>) {
 
   function applyPricingMode(mode: QuotePricingMode) {
     quote.value.pricingMode = mode;
+    fixedPriceAutoSync.value = mode === "fixed_price";
     quote.value.fixedPrice = 0;
     quote.value.discount = 0;
     quote.value.items = [
@@ -143,6 +174,8 @@ export function useQuoteDraft(initialQuote: MaybeRefOrGetter<Quote>) {
     isValid,
     reset,
     markDirty,
+    markFixedPriceEdited,
+    syncFixedPriceToSubtotal,
     addItem,
     removeItem,
     addMaterial,

@@ -108,8 +108,8 @@ describe("quote customer fields", () => {
 
   it("connects contact errors to their corresponding controls", async () => {
     const { wrapper } = await mountCustomerFields({
-      customerName: "Informe o nome do cliente.",
-      customerPhone: "Informe o WhatsApp do cliente.",
+      customerName: "Campo obrigatório",
+      customerPhone: "Campo obrigatório",
       customerEmail: "Informe um e-mail válido.",
       items: {},
     });
