@@ -101,7 +101,7 @@ describe("quote line item validation", () => {
     expect(wrapper.text()).toContain("Item 1");
     expect(wrapper.text()).toContain("Descrição do item 1");
     expect(wrapper.text()).toContain("Total do item 1");
-    expect(wrapper.text()).toContain("Descreva este item.");
+    expect(wrapper.text()).toContain("Campo obrigatório");
     expect(wrapper.text()).toContain("Informe um desconto válido.");
   });
 
@@ -161,11 +161,16 @@ describe("quote line item validation", () => {
     ).toMatch(/R\$\s1\.700,00/);
     expect(wrapper.text()).not.toContain("Acréscimo");
     expect(wrapper.find('input[name="discount"]').exists()).toBe(false);
+    expect(wrapper.text()).toContain("Repetir o valor do total");
 
     await wrapper
       .get('input[name="item-draft-item-unit-price"]')
       .setValue("R$ 1.875,50");
     await wrapper.get('input[name="fixed-price"]').setValue("R$ 2.250,75");
+
+    expect(wrapper.emitted("fixedPriceEdited")).toHaveLength(1);
+    await wrapper.get(".builder-total__sync").trigger("click");
+    expect(wrapper.emitted("syncFixedPrice")).toHaveLength(1);
 
     expect(quote.items[0]!.unitPrice).toBe(1875.5);
     expect(quote.fixedPrice).toBe(2250.75);

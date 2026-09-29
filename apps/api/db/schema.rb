@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_07_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_28_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -743,7 +743,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_120000) do
     t.integer "quote_number", null: false
     t.date "scheduled_on"
     t.string "service_address", limit: 240
-    t.string "service_description", limit: 160, null: false
+    t.text "service_description", null: false
     t.text "share_token_ciphertext"
     t.string "share_token_hash", limit: 64
     t.datetime "shared_at"
@@ -760,6 +760,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_120000) do
     t.index ["professional_id"], name: "index_quotes_on_professional_id"
     t.index ["share_token_hash"], name: "index_quotes_on_share_token_hash", unique: true
     t.check_constraint "(status::text = ANY (ARRAY['draft'::character varying::text, 'saved'::character varying::text])) AND share_token_hash IS NULL AND share_token_ciphertext IS NULL AND shared_at IS NULL OR (status::text <> ALL (ARRAY['draft'::character varying::text, 'saved'::character varying::text])) AND share_token_hash IS NOT NULL AND share_token_ciphertext IS NOT NULL AND shared_at IS NOT NULL", name: "quotes_consistent_share_state"
+    t.check_constraint "char_length(service_description) <= 1000", name: "quotes_service_description_length"
     t.check_constraint "customer_decision_message IS NULL OR char_length(btrim(customer_decision_message)) >= 1 AND char_length(btrim(customer_decision_message)) <= 700", name: "quotes_customer_decision_message_length"
     t.check_constraint "fixed_price_amount >= 0::numeric", name: "quotes_nonnegative_fixed_price"
     t.check_constraint "pricing_mode::text = 'fixed_price'::text OR fixed_price_amount = 0::numeric", name: "quotes_itemized_without_fixed_price"
