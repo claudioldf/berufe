@@ -700,7 +700,7 @@ and are explicitly labeled as quote values rather than payments received.
 | `professional_id`        | UUID          | Required owner reference                                                                                          |
 | `quote_number`           | integer       | Sequential per professional and concurrency-safe                                                                  |
 | `customer_name`          | text          | Required; no customer account                                                                                     |
-| `service_description`    | text          | Required and length-limited                                                                                       |
+| `service_description`    | text          | Required and limited to 1,000 characters                                                                          |
 | `pricing_mode`           | enum          | `fixed_price` or `itemized`; defaults from the owner's last successfully saved mode                               |
 | `subtotal_amount`        | decimal(14,2) | Server-calculated sum of the line totals; persisted so PostgreSQL can enforce the totals rule                     |
 | `fixed_price_amount`     | decimal(14,2) | Independent positive final customer price outside drafts for fixed-price quotes; zero for itemized quotes         |

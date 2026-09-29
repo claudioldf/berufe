@@ -39,7 +39,10 @@ describe("quote service fields", () => {
     expect(wrapper.find('input[name="customerName"]').exists()).toBe(false);
     expect(wrapper.get('input[name="validUntil"]')).toBeDefined();
     expect(wrapper.get('input[name="scheduledOn"]')).toBeDefined();
-    expect(wrapper.get('input[name="serviceDescription"]')).toBeDefined();
+    const serviceDescription = wrapper.get(
+      'textarea[name="serviceDescription"]',
+    );
+    expect(serviceDescription.attributes("maxlength")).toBe("1000");
     expect(wrapper.get('input[name="serviceAddress"]')).toBeDefined();
   });
 
@@ -76,7 +79,7 @@ describe("quote service fields", () => {
     ).toBe("true");
     expect(
       wrapper
-        .get('input[name="serviceDescription"]')
+        .get('textarea[name="serviceDescription"]')
         .attributes("aria-invalid"),
     ).toBe("true");
     expect(wrapper.text()).toContain("Válido até");

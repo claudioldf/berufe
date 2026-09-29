@@ -35,7 +35,7 @@ class Quote < ApplicationRecord
   validates :customer_name, length: {maximum: 80}
   validates :customer_phone_e164, length: {maximum: 20}, allow_nil: true
   validates :customer_email, length: {maximum: 254}, allow_nil: true
-  validates :service_description, length: {maximum: 160}
+  validates :service_description, length: {maximum: 1000}
   validates :service_address, length: {maximum: 240}, allow_nil: true
   validates :notes, length: {maximum: 700}, allow_nil: true
   validates :customer_decision_message, length: {in: 1..700}, allow_nil: true

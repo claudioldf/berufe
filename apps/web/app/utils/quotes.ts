@@ -114,8 +114,8 @@ export function validateQuote(quote: Quote): QuoteValidationErrors {
 
   if (!serviceDescription) {
     errors.serviceDescription = "Campo obrigatório";
-  } else if (serviceDescription.length > 160) {
-    errors.serviceDescription = "Use no máximo 160 caracteres.";
+  } else if (serviceDescription.length > 1000) {
+    errors.serviceDescription = "Use no máximo 1000 caracteres.";
   }
 
   if (quote.serviceAddress.length > 240) {

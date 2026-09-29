@@ -5823,7 +5823,7 @@ components:
         quote_number: { type: integer, minimum: 1 }
         revision: { type: integer, minimum: 0 }
         customer_name: { type: string, maxLength: 80 }
-        service_description: { type: string, maxLength: 160 }
+        service_description: { type: string, maxLength: 1000 }
         total_amount: { $ref: "#/components/schemas/MoneyAmount" }
         status: { $ref: "#/components/schemas/QuoteStatus" }
         service_job_status:
@@ -5862,7 +5862,7 @@ components:
               { $ref: "#/components/schemas/ProfessionalQuoteCustomerInput" }
             pricing_mode: { $ref: "#/components/schemas/QuotePricingMode" }
             fixed_price_amount: { type: number, minimum: 0 }
-            service_description: { type: string, maxLength: 160 }
+            service_description: { type: string, maxLength: 1000 }
             service_address:
               type: [string, "null"]
               maxLength: 240
@@ -6085,7 +6085,7 @@ components:
         revision: { type: integer, minimum: 0 }
         status: { $ref: "#/components/schemas/QuoteStatus" }
         customer_name: { type: string, minLength: 1, maxLength: 80 }
-        service_description: { type: string, minLength: 1, maxLength: 160 }
+        service_description: { type: string, minLength: 1, maxLength: 1000 }
         service_address: { type: [string, "null"], maxLength: 240 }
         scheduled_on: { type: [string, "null"], format: date }
         valid_until: { type: [string, "null"], format: date }
@@ -6292,7 +6292,7 @@ components:
         customer_phone_e164: { type: [string, "null"], maxLength: 20 }
         customer_email: { type: [string, "null"], maxLength: 254 }
         pricing_mode: { $ref: "#/components/schemas/QuotePricingMode" }
-        service_description: { type: string, maxLength: 160 }
+        service_description: { type: string, maxLength: 1000 }
         service_address: { type: [string, "null"], maxLength: 240 }
         scheduled_on: { type: [string, "null"], format: date }
         valid_until: { type: [string, "null"], format: date }
@@ -6594,7 +6594,7 @@ components:
           { type: string, pattern: "^\\+55[1-9][0-9]9[0-9]{8}$" }
         customer_email:
           { type: [string, "null"], format: email, maxLength: 254 }
-        service_description: { type: string, minLength: 1, maxLength: 160 }
+        service_description: { type: string, minLength: 1, maxLength: 1000 }
         service_address: { type: [string, "null"], maxLength: 240 }
         scheduled_on: { type: [string, "null"], format: date }
         total_amount: { $ref: "#/components/schemas/MoneyAmount" }
@@ -6675,7 +6675,7 @@ components:
           { $ref: "#/components/schemas/RecommendationDeliveryChannel" }
         submitted_at: { type: string, format: date-time }
         customer_name: { type: string, minLength: 1, maxLength: 80 }
-        service_description: { type: string, minLength: 1, maxLength: 160 }
+        service_description: { type: string, minLength: 1, maxLength: 1000 }
         hidden_at: { type: [string, "null"], format: date-time }
         hidden_reason: { type: [string, "null"], maxLength: 700 }
     ProfessionalRecommendationResponse:
@@ -6830,7 +6830,7 @@ components:
       required: [customer_name, service_description, professional, expires_at]
       properties:
         customer_name: { type: string, minLength: 1, maxLength: 80 }
-        service_description: { type: string, minLength: 1, maxLength: 160 }
+        service_description: { type: string, minLength: 1, maxLength: 1000 }
         professional:
           type: object
           additionalProperties: false

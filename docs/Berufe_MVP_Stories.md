@@ -817,10 +817,10 @@ price real work.
 
 **Acceptance criteria:**
 
-- The owner can create and edit a draft with customer name, short service
-  description, `fixed_price|itemized` mode, ordered pricing rows, optional
-  discount, validity date, notes, and up to 20 ordered customer-supplied
-  materials with description, quantity, and unit but no price.
+- The owner can create and edit a draft with customer name, a service
+  description of up to 1,000 characters, `fixed_price|itemized` mode, ordered
+  pricing rows, optional discount, validity date, notes, and up to 20 ordered
+  customer-supplied materials with description, quantity, and unit but no price.
 - A fixed-price quote treats its rows as a private cost calculator and accepts
   an independent final customer price. It has no markup or discount field. An
   itemized quote exposes the row and discount breakdown to the customer.

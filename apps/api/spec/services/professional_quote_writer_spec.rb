@@ -80,6 +80,24 @@ RSpec.describe ProfessionalQuoteWriter do
     )
   end
 
+  it "accepts service descriptions up to 1000 characters" do
+    quote = described_class.new.call(
+      profile:,
+      attributes: valid_attributes.merge(service_description: "a" * 1000)
+    )
+
+    expect(quote.service_description.length).to eq(1000)
+
+    expect do
+      described_class.new.call(
+        profile:,
+        attributes: valid_attributes.merge(service_description: "a" * 1001)
+      )
+    end.to raise_error(described_class::Invalid) { |error|
+      expect(error.field_errors).to include(:service_description)
+    }
+  end
+
   it "requires positive item and fixed prices outside drafts" do
     expect do
       described_class.new.call(

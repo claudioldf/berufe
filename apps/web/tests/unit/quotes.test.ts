@@ -152,6 +152,15 @@ describe("quote utilities", () => {
     expect(isValidQuoteInputDate("29/02/2028")).toBe(false);
   });
 
+  it("limits the service description to 1000 characters", () => {
+    expect(
+      validateQuote({
+        ...source,
+        serviceDescription: "a".repeat(1001),
+      }).serviceDescription,
+    ).toBe("Use no máximo 1000 caracteres.");
+  });
+
   it("defaults an empty validity to D+30 without replacing a saved date", () => {
     const from = new Date(2026, 7, 29, 12);
     expect(quoteDateAfterDays(30, from)).toBe("2026-09-28");
