@@ -74,13 +74,13 @@ Every trust signal must belong to a real account. Phone confirmation also gives 
 
 #### 3. How it works and implementation overview
 
-1. The professional enters their phone number.
-2. Rails synchronously asks Infobip to start a one-time-code challenge and gives the professional an immediate accepted, rate-limited, invalid, rejected, or unavailable result.
+1. The professional chooses cellphone (the default) or email and enters that contact.
+2. Rails synchronously asks Infobip to start an SMS challenge or sends an HMAC-protected, attempt-limited email code through the configured mail provider, then gives the professional an immediate accepted, rate-limited, invalid, rejected, or unavailable result.
 3. After confirmation, the professional enters their name and accepts the terms/privacy notice.
 4. Berufe creates a draft profile and opens a short setup checklist.
 5. Only professionals and admins have accounts in the MVP. Customers do not create general-purpose accounts.
 
-Use Infobip's 2FA API only to start and verify professional SMS OTP challenges. Keep one-time codes outside the business database. After Infobip confirms the challenge, Rails finds or creates its own professional account by the unique verified phone and creates an opaque application session. The browser never receives an Infobip credential. Rails owns the user UUID, roles, suspension, logout, session revocation, and separately provisioned administrator credentials.
+Use Infobip's 2FA API only to start and verify professional SMS OTP challenges. Email OTP uses the existing mail provider and persists only a keyed digest, never the plaintext code. After verification, Rails finds or creates its own professional account by the unique verified phone or normalized email and creates an opaque application session. The browser never receives provider credentials. Rails owns the user UUID, roles, suspension, logout, session revocation, and separately provisioned administrator credentials.
 
 #### 4. Suggested feature-scoped data schema
 
@@ -89,8 +89,10 @@ Use Infobip's 2FA API only to start and verify professional SMS OTP challenges. 
 | Field               | Type      | Rules                                                      |
 | ------------------- | --------- | ---------------------------------------------------------- |
 | `id`                | UUID      | Primary key                                                |
-| `phone_e164`        | text      | Unique and required for professionals; nullable for admins |
-| `email`             | text      | Unique normalized email required only for admins           |
+| `phone_e164`        | text      | Unique; one phone or email identity is required for professionals; nullable for admins |
+| `email`             | text      | Unique normalized identity for email professionals; required for admins                |
+| `phone_verified_at` | timestamp | Set after successful SMS verification; nullable                                      |
+| `email_verified_at` | timestamp | Set after successful email verification; nullable                                    |
 | `password_digest`   | text      | BCrypt digest required only for admins; never serialized   |
 | `role`              | enum      | `professional` or `admin`                                  |
 | `status`            | enum      | `active`, `suspended`                                      |
@@ -104,7 +106,7 @@ Use Infobip's 2FA API only to start and verify professional SMS OTP challenges. 
 | ----------------------- | --------- | ----------------------------------------------------------------- |
 | `id`                    | UUID      | Primary key                                                       |
 | `user_account_id`       | UUID      | Required foreign reference                                        |
-| `authentication_method` | enum      | `sms_otp` for professionals or `password` for admins              |
+| `authentication_method` | enum      | `sms_otp`/`email_otp` for professionals or `password` for admins  |
 | `token_digest`          | text      | Unique; raw token is never stored                                 |
 | `authenticated_at`      | timestamp | Required                                                          |
 | `last_active_at`        | timestamp | Required; writes may be throttled                                 |
@@ -118,8 +120,12 @@ Use Infobip's 2FA API only to start and verify professional SMS OTP challenges. 
 | --------------------------------- | --------- | ------------------------------------------------------------------ |
 | `id`                              | UUID      | Primary key; not the browser credential                            |
 | `public_token_digest`             | text      | Unique; only the high-entropy raw token is returned to the browser |
-| `infobip_challenge_id_ciphertext` | text      | Encrypted reference required for verification                      |
-| `phone_e164_ciphertext`           | text      | Encrypted phone bound to this challenge                            |
+| `channel`                         | enum      | `sms` or `email`                                                    |
+| `infobip_challenge_id_ciphertext` | text      | Encrypted reference required only for SMS verification              |
+| `phone_e164_ciphertext`           | text      | Encrypted phone bound to an SMS challenge                           |
+| `email_ciphertext`                | text      | Encrypted normalized email bound to an email challenge              |
+| `email_code_digest`               | text      | HMAC digest required only for email challenges                      |
+| `attempt_count`                   | integer   | Failed verification count; email challenge is consumed at five      |
 | `expires_at`                      | timestamp | Short required lifetime                                            |
 | `consumed_at`                     | timestamp | Nullable; prevents reuse after success                             |
 | `created_at`                      | timestamp | Required                                                           |

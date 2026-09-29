@@ -40,7 +40,7 @@ function submit() {
 <template>
   <section aria-labelledby="registration-step-title">
     <div class="auth-card__success"><UIcon name="i-lucide-check" /></div>
-    <DesignSystemEyebrow>Telefone confirmado</DesignSystemEyebrow>
+    <DesignSystemEyebrow>Contato confirmado</DesignSystemEyebrow>
     <h1 id="registration-step-title">Como você quer<br />ser encontrado?</h1>
     <p class="auth-card__lead">
       Este será o nome principal do seu perfil. Você poderá completar as outras

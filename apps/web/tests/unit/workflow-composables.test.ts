@@ -1,13 +1,13 @@
-import { effectScope } from "vue";
+import { effectScope, nextTick } from "vue";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import professionalsData from "@data/professionals.json";
 import type { Professional } from "~/types";
-import { usePhoneAuthFlow } from "~/composables/usePhoneAuthFlow";
+import { useProfessionalAuthFlow } from "~/composables/useProfessionalAuthFlow";
 import {
   useProfessionalProfileDraft,
   validateProfessionalProfileDraft,
 } from "~/composables/useProfessionalProfileDraft";
-import { PhoneOtpRequestError } from "~/services/api/phone-auth";
+import { ProfessionalOtpRequestError } from "~/services/api/phone-auth";
 import { ApiRequestError } from "~/services/api/errors";
 
 afterEach(() => {
@@ -71,7 +71,7 @@ describe("profile drafts", () => {
   });
 });
 
-describe("phone authentication", () => {
+describe("professional authentication", () => {
   it("requests a normalized OTP, owns progression, and clears timers", async () => {
     vi.useFakeTimers();
     const scope = effectScope();
@@ -95,7 +95,7 @@ describe("phone authentication", () => {
         }),
     );
     const workflow = scope.run(() =>
-      usePhoneAuthFlow({ requestOtp, verifyOtp, completeRegistration }),
+      useProfessionalAuthFlow({ requestOtp, verifyOtp, completeRegistration }),
     )!;
 
     expect(workflow.phone.value).toBe("");
@@ -103,7 +103,10 @@ describe("phone authentication", () => {
     workflow.phone.value = "(47) 99999-1111";
     await workflow.requestCode();
 
-    expect(requestOtp).toHaveBeenCalledWith("+5547999991111");
+    expect(requestOtp).toHaveBeenCalledWith({
+      method: "phone",
+      identifier: "+5547999991111",
+    });
     expect(workflow.phone.value).toBe("(47) 9 9999-1111");
     expect(workflow.step.value).toBe(2);
     expect(workflow.cooldown.value).toBe(30);
@@ -132,7 +135,7 @@ describe("phone authentication", () => {
     vi.advanceTimersByTime(30_000);
     expect(workflow.cooldown.value).toBe(0);
 
-    workflow.changePhone();
+    workflow.changeDestination();
     expect(workflow.step.value).toBe(1);
     expect(workflow.code.value).toBe("");
     expect(workflow.challengeToken.value).toBe("");
@@ -170,7 +173,7 @@ describe("phone authentication", () => {
     const requestOtp = vi
       .fn()
       .mockRejectedValueOnce(
-        new PhoneOtpRequestError(
+        new ProfessionalOtpRequestError(
           {
             code: "otp_rate_limited",
             message: "Aguarde antes de pedir outro código.",
@@ -181,7 +184,7 @@ describe("phone authentication", () => {
         ),
       )
       .mockRejectedValueOnce(
-        new PhoneOtpRequestError(
+        new ProfessionalOtpRequestError(
           {
             code: "otp_rate_limited",
             message: "Aguarde novamente.",
@@ -193,7 +196,7 @@ describe("phone authentication", () => {
       )
       .mockRejectedValueOnce(new Error("network details"));
     const scope = effectScope();
-    const workflow = scope.run(() => usePhoneAuthFlow({ requestOtp }))!;
+    const workflow = scope.run(() => useProfessionalAuthFlow({ requestOtp }))!;
 
     workflow.phone.value = "47 3333-1111";
     await workflow.requestCode();
@@ -220,6 +223,38 @@ describe("phone authentication", () => {
     scope.stop();
   });
 
+  it("uses email as an alternate OTP destination while keeping phone default", async () => {
+    vi.useFakeTimers();
+    const requestOtp = vi.fn().mockResolvedValue({
+      challengeToken: "email-browser-challenge-token",
+      expiresIn: 600,
+      resendAvailableIn: 30,
+    });
+    const scope = effectScope();
+    const workflow = scope.run(() => useProfessionalAuthFlow({ requestOtp }))!;
+
+    expect(workflow.method.value).toBe("phone");
+    workflow.method.value = "email";
+    await nextTick();
+    workflow.email.value = "email-invalido";
+    await workflow.requestCode();
+    expect(workflow.error.value).toBe("Digite um e-mail válido.");
+    expect(requestOtp).not.toHaveBeenCalled();
+
+    workflow.email.value = " ANA@Example.COM ";
+    await workflow.requestCode();
+
+    expect(requestOtp).toHaveBeenCalledWith({
+      method: "email",
+      identifier: "ana@example.com",
+    });
+    expect(workflow.email.value).toBe("ana@example.com");
+    expect(workflow.destination.value).toBe("ana@example.com");
+    expect(workflow.step.value).toBe(2);
+
+    scope.stop();
+  });
+
   it("ignores duplicate submissions while a request is pending", async () => {
     vi.useFakeTimers();
     let resolveRequest:
@@ -240,7 +275,7 @@ describe("phone authentication", () => {
         }),
     );
     const scope = effectScope();
-    const workflow = scope.run(() => usePhoneAuthFlow({ requestOtp }))!;
+    const workflow = scope.run(() => useProfessionalAuthFlow({ requestOtp }))!;
     workflow.phone.value = "47999991111";
 
     const firstRequest = workflow.requestCode();
@@ -260,7 +295,7 @@ describe("phone authentication", () => {
 
   it("uses the production API dependency by default and keeps transport details safe", async () => {
     const scope = effectScope();
-    const workflow = scope.run(() => usePhoneAuthFlow())!;
+    const workflow = scope.run(() => useProfessionalAuthFlow())!;
     workflow.phone.value = "47999991111";
 
     await workflow.requestCode();
@@ -300,7 +335,7 @@ describe("phone authentication", () => {
       .mockRejectedValueOnce(new Error("private transport details"));
     const scope = effectScope();
     const workflow = scope.run(() =>
-      usePhoneAuthFlow({ completeRegistration }),
+      useProfessionalAuthFlow({ completeRegistration }),
     )!;
     workflow.resumeRegistration();
     workflow.name.value = "Ana Reparos";
@@ -335,7 +370,7 @@ describe("phone authentication", () => {
       .mockRejectedValueOnce(new Error("private transport details"));
     const scope = effectScope();
     const workflow = scope.run(() =>
-      usePhoneAuthFlow({ requestOtp, verifyOtp }),
+      useProfessionalAuthFlow({ requestOtp, verifyOtp }),
     )!;
     workflow.phone.value = "47999991111";
     await workflow.requestCode();
@@ -350,7 +385,7 @@ describe("phone authentication", () => {
       "Não foi possível confirmar o código agora. Tente novamente em instantes.",
     );
 
-    workflow.changePhone();
+    workflow.changeDestination();
     workflow.code.value = "123456";
     await workflow.verifyCode();
     expect(workflow.error.value).toBe("Código inválido ou expirado.");

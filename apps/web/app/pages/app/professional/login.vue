@@ -2,11 +2,11 @@
 import { computed, onMounted, shallowRef } from "vue";
 import { useApplicationSession } from "~/composables/useApplicationSession";
 import { useAppRole } from "~/composables/useAppRole";
-import { usePhoneAuthFlow } from "~/composables/usePhoneAuthFlow";
+import { useProfessionalAuthFlow } from "~/composables/useProfessionalAuthFlow";
 import { useProfessionalOnboarding } from "~/composables/useProfessionalOnboarding";
 import { useToast } from "~/composables/useToast";
 import {
-  professionalPhoneStepContent,
+  professionalContactStepContent,
   resolveProfessionalEntryPath,
   resolveProfessionalAuthIntent,
 } from "~/utils/professional-auth";
@@ -19,7 +19,10 @@ const { initializeFromAuth } = useProfessionalOnboarding();
 const { account, restoreSession, refreshSession } = useApplicationSession();
 const {
   step,
+  method,
   phone,
+  email,
+  destination,
   code,
   name,
   accepted,
@@ -28,23 +31,23 @@ const {
   cooldown,
   requestCode,
   verifyCode,
-  changePhone,
+  changeDestination,
   resumeRegistration,
   registerProfessional,
-} = usePhoneAuthFlow();
+} = useProfessionalAuthFlow();
 
 const authIntent = computed(() =>
   resolveProfessionalAuthIntent(route.query.intent),
 );
-const phoneStepContent = computed(
-  () => professionalPhoneStepContent[authIntent.value],
+const contactStepContent = computed(
+  () => professionalContactStepContent[authIntent.value],
 );
 const sessionResolving = shallowRef(false);
 const otpVerified = shallowRef(false);
 const authLoading = computed(() => isLoading.value || sessionResolving.value);
 
 useSeoMeta({
-  title: () => phoneStepContent.value.pageTitle,
+  title: () => contactStepContent.value.pageTitle,
   robots: "noindex, nofollow",
 });
 
@@ -93,10 +96,10 @@ async function confirmCode() {
   }
 }
 
-function restartPhoneEntry() {
+function restartContactEntry() {
   if (sessionResolving.value) return;
   otpVerified.value = false;
-  changePhone();
+  changeDestination();
 }
 
 async function register() {
@@ -114,7 +117,10 @@ async function register() {
     return;
   }
 
-  initializeFromAuth({ name: name.value, phone: phone.value });
+  initializeFromAuth({
+    name: name.value,
+    phone: method.value === "phone" ? phone.value : "",
+  });
   setRole("professional");
   const onboardingCompleted = account.value?.onboardingCompleted ?? false;
   showToast({
@@ -183,22 +189,25 @@ onMounted(async () => {
           />
         </div>
 
-        <AuthPhoneStep
+        <AuthContactStep
           v-if="step === 1"
-          v-model="phone"
+          v-model:method="method"
+          v-model:phone="phone"
+          v-model:email="email"
           :loading="authLoading"
           :error="error"
-          :content="phoneStepContent"
+          :content="contactStepContent"
           @submit="requestCode"
         />
         <AuthCodeStep
           v-else-if="step === 2"
           v-model="code"
-          :phone="phone"
+          :method="method"
+          :destination="destination"
           :loading="authLoading"
           :error="error"
           :cooldown="cooldown"
-          @change-phone="restartPhoneEntry"
+          @change-destination="restartContactEntry"
           @resend="requestCode"
           @submit="confirmCode"
         />

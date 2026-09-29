@@ -7,7 +7,7 @@ class OtpRequestRateLimiter
     def initialize(reason:, retry_after:)
       @reason = reason
       @retry_after = retry_after
-      super("Phone OTP request rate limited")
+      super("OTP request rate limited")
     end
   end
 
@@ -15,19 +15,21 @@ class OtpRequestRateLimiter
     @settings = settings
   end
 
-  def record!(phone_e164:, ip_address:, now: Time.current)
+  def record!(identifier:, identifier_type:, ip_address:, now: Time.current)
+    raise ArgumentError, "unsupported OTP identifier" unless %w[email phone].include?(identifier_type)
+
     window_started_at = now.utc.beginning_of_day
     expires_at = window_started_at + 1.day
     digests = {
       "ip" => OtpSecurityDigest.call(purpose: "request_ip", value: ip_address),
-      "phone" => OtpSecurityDigest.call(purpose: "request_phone", value: phone_e164)
+      identifier_type => OtpSecurityDigest.call(purpose: "request_#{identifier_type}", value: identifier)
     }
 
     OtpRequestCounter.transaction do
       create_missing_counters!(digests:, window_started_at:, expires_at:, now:)
       counters = locked_counters(digests:, window_started_at:)
       enforce_daily_limits!(counters:, expires_at:, now:)
-      enforce_cooldown!(counters.fetch("phone"), now:)
+      enforce_cooldown!(counters.fetch(identifier_type), now:)
       counters.each_value do |counter|
         counter.update!(request_count: counter.request_count + 1, last_requested_at: now)
       end
@@ -65,8 +67,9 @@ class OtpRequestRateLimiter
   def enforce_daily_limits!(counters:, expires_at:, now:)
     limits = {
       "phone" => @settings.daily_phone_limit,
+      "email" => @settings.daily_email_limit,
       "ip" => @settings.daily_ip_limit
-    }
+    }.slice(*counters.keys)
     limited_scope = limits.find { |scope_kind, limit| counters.fetch(scope_kind).request_count >= limit }&.first
     return unless limited_scope
 
@@ -76,10 +79,10 @@ class OtpRequestRateLimiter
     )
   end
 
-  def enforce_cooldown!(phone_counter, now:)
-    return unless phone_counter.last_requested_at
+  def enforce_cooldown!(identifier_counter, now:)
+    return unless identifier_counter.last_requested_at
 
-    available_at = phone_counter.last_requested_at + @settings.resend_cooldown_seconds.seconds
+    available_at = identifier_counter.last_requested_at + @settings.resend_cooldown_seconds.seconds
     return if available_at <= now
 
     raise RateLimited.new(reason: "cooldown", retry_after: seconds_until(available_at, now:))

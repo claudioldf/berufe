@@ -30,18 +30,19 @@ class UserAccount < ApplicationRecord
 
   before_validation :normalize_email
 
-  validates :phone_e164, format: {with: BRAZILIAN_MOBILE_PATTERN}, uniqueness: true, if: :professional?
+  validates :phone_e164, format: {with: BRAZILIAN_MOBILE_PATTERN}, uniqueness: true, allow_nil: true
   validates :phone_e164, absence: true, if: :admin?
-  validates :email, absence: true, if: :professional?
-  validates :email, presence: true, uniqueness: true,
-    format: {with: URI::MailTo::EMAIL_REGEXP}, if: :admin?
+  validates :email, uniqueness: true, format: {with: URI::MailTo::EMAIL_REGEXP}, allow_nil: true
+  validates :email, presence: true, if: :admin?
+  validates :password_digest, absence: true, if: :professional?
   validates :password_digest, presence: true, if: :admin?
   validates :password, confirmation: true, if: -> { admin? && password.present? }
   validates :role, inclusion: {in: ROLES}
   validates :status, inclusion: {in: STATUSES}
   validate :admin_password_is_strong, if: -> { admin? && password.present? }
+  validate :professional_identity_is_present
   validate :legal_acceptance_is_complete
-  validate :registration_requires_phone_verification
+  validate :registration_requires_verified_identity
 
   def admin?
     role == "admin"
@@ -71,10 +72,18 @@ class UserAccount < ApplicationRecord
     professional? && phone_verified_at.present?
   end
 
+  def email_verified?
+    professional? && email_verified_at.present?
+  end
+
+  def verified?
+    phone_verified? || email_verified?
+  end
+
   # The single source of truth for whether an administrator may temporarily manage this
   # account's operational workspace (see Admin::ProfessionalImpersonation).
   def impersonatable?(professional_profile_present: professional_profile.present?)
-    professional? && active? && phone_verified? &&
+    professional? && active? && verified? &&
       registration_completed?(professional_profile_present:)
   end
 
@@ -104,6 +113,13 @@ class UserAccount < ApplicationRecord
     end
   end
 
+  def professional_identity_is_present
+    return unless professional?
+    return if phone_e164.present? || email.present?
+
+    errors.add(:base, :invalid)
+  end
+
   def legal_acceptance_is_complete
     acceptance_values = [terms_accepted_at, terms_version, privacy_notice_version]
     return if acceptance_values.all?(&:nil?) || acceptance_values.all?(&:present?)
@@ -111,8 +127,8 @@ class UserAccount < ApplicationRecord
     errors.add(:terms_accepted_at, :invalid)
   end
 
-  def registration_requires_phone_verification
-    return if registered_at.blank? || phone_verified_at.present?
+  def registration_requires_verified_identity
+    return if registered_at.blank? || verified?
 
     errors.add(:registered_at, :invalid)
   end

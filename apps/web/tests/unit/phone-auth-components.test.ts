@@ -1,10 +1,10 @@
 import { mount } from "@vue/test-utils";
 import { defineComponent, nextTick } from "vue";
 import CodeStep from "~/components/auth/CodeStep.vue";
-import PhoneStep from "~/components/auth/PhoneStep.vue";
+import ContactStep from "~/components/auth/ContactStep.vue";
 import RegistrationStep from "~/components/auth/RegistrationStep.vue";
 import {
-  professionalPhoneStepContent,
+  professionalContactStepContent,
   resolveProfessionalEntryPath,
   resolveProfessionalAuthIntent,
 } from "~/utils/professional-auth";
@@ -14,7 +14,7 @@ const TooltipStub = defineComponent({
   template: `<div :data-tooltip-reason="reason ?? ''"><slot /></div>`,
 });
 
-describe("phone authentication components", () => {
+describe("professional authentication components", () => {
   it.each([
     [false, false, "/app/professional/login"],
     [true, false, "/app/professional/onboarding"],
@@ -33,12 +33,14 @@ describe("phone authentication components", () => {
   );
 
   it("presents distinct login and signup intent without changing the form", async () => {
-    const wrapper = mount(PhoneStep, {
+    const wrapper = mount(ContactStep, {
       props: {
-        modelValue: "",
+        method: "phone",
+        phone: "",
+        email: "",
         loading: false,
         error: "",
-        content: professionalPhoneStepContent.login,
+        content: professionalContactStepContent.login,
       },
       global: {
         stubs: {
@@ -55,15 +57,15 @@ describe("phone authentication components", () => {
 
     expect(wrapper.get("h1").text()).toBe("Acesse seu perfil.");
     expect(wrapper.get("button").text()).toBe("Receber código para entrar");
-    expect(wrapper.get(".phone-step__alternate a").attributes("href")).toBe(
+    expect(wrapper.get(".contact-step__alternate a").attributes("href")).toBe(
       "/app/professional/login?intent=signup",
     );
 
-    await wrapper.setProps({ content: professionalPhoneStepContent.signup });
+    await wrapper.setProps({ content: professionalContactStepContent.signup });
 
     expect(wrapper.get("h1").text()).toBe("Crie seu perfil profissional.");
     expect(wrapper.get("button").text()).toBe("Receber código e começar");
-    expect(wrapper.get(".phone-step__alternate a").attributes("href")).toBe(
+    expect(wrapper.get(".contact-step__alternate a").attributes("href")).toBe(
       "/app/professional/login",
     );
     expect(resolveProfessionalAuthIntent("signup")).toBe("signup");
@@ -71,13 +73,15 @@ describe("phone authentication components", () => {
   });
 
   it("reveals, focuses, and scrolls to an invalid login field", async () => {
-    const wrapper = mount(PhoneStep, {
+    const wrapper = mount(ContactStep, {
       attachTo: document.body,
       props: {
-        modelValue: "",
+        method: "phone",
+        phone: "",
+        email: "",
         loading: false,
         error: "",
-        content: professionalPhoneStepContent.login,
+        content: professionalContactStepContent.login,
       },
       global: {
         stubs: {
@@ -107,12 +111,14 @@ describe("phone authentication components", () => {
   });
 
   it("masks the mobile number while it is entered", async () => {
-    const wrapper = mount(PhoneStep, {
+    const wrapper = mount(ContactStep, {
       props: {
-        modelValue: "",
+        method: "phone",
+        phone: "",
+        email: "",
         loading: false,
         error: "",
-        content: professionalPhoneStepContent.login,
+        content: professionalContactStepContent.login,
       },
       global: {
         stubs: {
@@ -126,18 +132,53 @@ describe("phone authentication components", () => {
     const input = wrapper.get<HTMLInputElement>("#auth-phone");
 
     await input.setValue("47999991111");
-    const masked = wrapper.emitted("update:modelValue")?.at(-1)?.[0];
+    const masked = wrapper.emitted("update:phone")?.at(-1)?.[0];
     expect(masked).toBe("(47) 9 9999-1111");
-    await wrapper.setProps({ modelValue: String(masked) });
+    await wrapper.setProps({ phone: String(masked) });
     expect(input.element.value).toBe("(47) 9 9999-1111");
     expect(input.attributes("maxlength")).toBe("16");
+  });
+
+  it("switches to email and validates it before requesting a code", async () => {
+    const wrapper = mount(ContactStep, {
+      props: {
+        method: "phone",
+        phone: "",
+        email: "",
+        loading: false,
+        error: "",
+        content: professionalContactStepContent.login,
+      },
+      global: {
+        stubs: {
+          DesignSystemEyebrow: { template: "<span><slot /></span>" },
+          NuxtLink: { template: "<a><slot /></a>" },
+          UButton: { template: "<button><slot /></button>" },
+          UIcon: true,
+        },
+      },
+    });
+
+    await wrapper.get('input[value="email"]').setValue();
+    expect(wrapper.emitted("update:method")?.at(-1)).toEqual(["email"]);
+    await wrapper.setProps({ method: "email" });
+    expect(wrapper.get("#auth-email").attributes("autocomplete")).toBe("email");
+
+    await wrapper.get("form").trigger("submit");
+    expect(wrapper.get('[role="alert"]').text()).toContain("e-mail válido");
+    expect(wrapper.emitted("submit")).toBeUndefined();
+
+    await wrapper.setProps({ email: "ana@example.com" });
+    await wrapper.get("form").trigger("submit");
+    expect(wrapper.emitted("submit")).toHaveLength(1);
   });
 
   it("keeps short and daily resend timing in the existing control", async () => {
     const wrapper = mount(CodeStep, {
       props: {
         modelValue: "",
-        phone: "(47) 99999-1111",
+        method: "phone",
+        destination: "(47) 99999-1111",
         loading: false,
         error: "",
         cooldown: 0,
@@ -158,7 +199,7 @@ describe("phone authentication components", () => {
     expect(wrapper.emitted("resend")).toHaveLength(1);
 
     await wrapper.get(".auth-card__step-back").trigger("click");
-    expect(wrapper.emitted("changePhone")).toHaveLength(1);
+    expect(wrapper.emitted("changeDestination")).toHaveLength(1);
 
     await wrapper.get("#auth-code").setValue("123456");
     expect(wrapper.emitted("update:modelValue")?.[0]).toEqual(["123456"]);
@@ -191,7 +232,8 @@ describe("phone authentication components", () => {
     const wrapper = mount(CodeStep, {
       props: {
         modelValue: "12",
-        phone: "(47) 99999-1111",
+        method: "email",
+        destination: "ana@example.com",
         loading: false,
         error: "",
         cooldown: 0,

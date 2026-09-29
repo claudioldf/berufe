@@ -8,16 +8,16 @@ class ProfessionalDataErasureRequester
   AUDIT_RETENTION = 5.years
 
   def call(
-    phone_e164:,
     ticket_reference:,
+    phone_e164: nil,
+    user_account: nil,
     now: Time.current,
     require_recent_verification: true,
     request_source: "support",
     confirmation_version: nil,
     issue_status_token: false
   )
-    phone = BrazilianPhoneNumber.normalize(phone_e164)
-    account = UserAccount.includes(:professional_profile).find_by(phone_e164: phone, role: "professional")
+    account, subject = resolve_account(phone_e164:, user_account:)
     raise NotFound unless account&.professional_profile
     raise VerificationRequired if require_recent_verification && !recently_verified?(account, now:)
 
@@ -41,7 +41,7 @@ class ProfessionalDataErasureRequester
       status_token = DataErasureStatusToken.issue if issue_status_token
       request_record = DataErasureRequest.create!(
         target_user_account_id: account.id,
-        subject_digest: PrivacySubjectDigest.call(phone),
+        subject_digest: PrivacySubjectDigest.call(subject),
         ticket_reference:,
         status: "requested",
         verification_method: require_recent_verification ? "recent_sms_otp" : "authenticated_session",
@@ -65,6 +65,19 @@ class ProfessionalDataErasureRequester
 
   private
 
+  def resolve_account(phone_e164:, user_account:)
+    if user_account
+      account = UserAccount.includes(:professional_profile).find_by(id: user_account.id, role: "professional")
+      return [account, account&.email || account&.phone_e164]
+    end
+
+    phone = BrazilianPhoneNumber.normalize(phone_e164)
+    [
+      UserAccount.includes(:professional_profile).find_by(phone_e164: phone, role: "professional"),
+      phone
+    ]
+  end
+
   def enqueue_erasure(request_record, now:)
     ProfessionalDataErasureJob.perform_later(request_record.id)
   rescue => error
@@ -73,7 +86,7 @@ class ProfessionalDataErasureRequester
   end
 
   def recently_verified?(account, now:)
-    account.application_sessions.where(authentication_method: "sms_otp")
+    account.application_sessions.where(authentication_method: %w[email_otp sms_otp])
       .where(authenticated_at: (now - RECENT_VERIFICATION_WINDOW)..now)
       .exists?
   end

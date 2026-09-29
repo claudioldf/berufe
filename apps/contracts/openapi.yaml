@@ -8,8 +8,8 @@ servers:
 paths:
   /api/v1/auth/otp/challenges:
     post:
-      operationId: requestPhoneOtp
-      summary: Request a Brazilian phone OTP challenge
+      operationId: requestProfessionalOtp
+      summary: Request a professional phone or email OTP challenge
       tags:
         - Authentication
       security: []
@@ -18,17 +18,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PhoneOtpRequest"
+              $ref: "#/components/schemas/ProfessionalOtpRequest"
       responses:
         "201":
-          description: The SMS provider accepted the challenge synchronously.
+          description: The selected delivery channel accepted the challenge synchronously.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PhoneOtpChallengeResponse"
+                $ref: "#/components/schemas/ProfessionalOtpChallengeResponse"
         "403":
           description: The exact browser origin is invalid.
           headers:
@@ -39,7 +39,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "422":
-          description: The phone is invalid or SMS delivery was rejected.
+          description: The phone or email is invalid, or delivery was rejected.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
@@ -59,7 +59,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "503":
-          description: The SMS provider or challenge persistence is unavailable.
+          description: The delivery provider or challenge persistence is unavailable.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
@@ -69,8 +69,8 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
   /api/v1/auth/otp/verifications:
     post:
-      operationId: verifyPhoneOtp
-      summary: Verify a phone OTP and create an application session
+      operationId: verifyProfessionalOtp
+      summary: Verify a professional OTP and create an application session
       tags:
         - Authentication
       security: []
@@ -79,7 +79,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PhoneOtpVerificationRequest"
+              $ref: "#/components/schemas/ProfessionalOtpVerificationRequest"
       responses:
         "200":
           description: The provider verified the code and Rails created an application session.
@@ -91,7 +91,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PhoneOtpVerificationResponse"
+                $ref: "#/components/schemas/ProfessionalOtpVerificationResponse"
         "403":
           description: The exact browser origin is invalid.
           headers:
@@ -5235,18 +5235,25 @@ components:
               const: authenticated
         request_id:
           $ref: "#/components/schemas/RequestId"
-    PhoneOtpRequest:
+    ProfessionalOtpRequest:
       type: object
       additionalProperties: false
-      required:
-        - phone
+      maxProperties: 1
+      oneOf:
+        - required: [phone]
+        - required: [email]
       properties:
         phone:
           type: string
           minLength: 1
           maxLength: 40
           description: Brazilian mobile number in national, formatted, or E.164 form.
-    PhoneOtpChallengeResponse:
+        email:
+          type: string
+          minLength: 3
+          maxLength: 254
+          description: Email address used as the professional account identity.
+    ProfessionalOtpChallengeResponse:
       type: object
       additionalProperties: false
       required:
@@ -5254,10 +5261,10 @@ components:
         - request_id
       properties:
         data:
-          $ref: "#/components/schemas/PhoneOtpChallenge"
+          $ref: "#/components/schemas/ProfessionalOtpChallenge"
         request_id:
           $ref: "#/components/schemas/RequestId"
-    PhoneOtpChallenge:
+    ProfessionalOtpChallenge:
       type: object
       additionalProperties: false
       required:
@@ -5279,7 +5286,7 @@ components:
         resend_available_in:
           type: integer
           minimum: 1
-    PhoneOtpVerificationRequest:
+    ProfessionalOtpVerificationRequest:
       type: object
       additionalProperties: false
       required:
@@ -5293,7 +5300,7 @@ components:
         code:
           type: string
           pattern: "^[0-9]{6}$"
-    PhoneOtpVerificationResponse:
+    ProfessionalOtpVerificationResponse:
       type: object
       additionalProperties: false
       required:
@@ -7840,6 +7847,7 @@ components:
           type: string
           enum:
             - sms_otp
+            - email_otp
             - password
         impersonating:
           type: boolean

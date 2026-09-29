@@ -215,27 +215,28 @@ Apply these rules whenever they are relevant to the story:
 **Depends on:** S004, S006.
 **Covers:** Feature E2.
 
-### S011 — Request a phone OTP
+### S011 — Request a professional OTP
 
 **Status:** DONE
 
-**Story:** As a professional, I want to request a code using my Brazilian phone number so that I can access Berufe without a password.
+**Story:** As a professional, I want to request a code using my Brazilian phone number or email so that I can access Berufe without a password.
 
 **Acceptance criteria:**
 
-- The login page accepts and normalizes Brazilian numbers to E.164.
-- Rails applies a resend cooldown and conservative daily allowances by phone and IP using short-lived PostgreSQL digests/counters.
+- The login page defaults to cellphone and lets the professional choose email; it normalizes Brazilian numbers to E.164 and email addresses to lowercase.
+- Rails applies a resend cooldown and conservative daily allowances by phone/email and IP using short-lived PostgreSQL digests/counters.
 - Rails synchronously starts the challenge through a small SMS-OTP adapter. Production uses Infobip; a temporary integration environment uses restricted Infobip with an explicit allowlist; local development selects fake or restricted Infobip through `.env`; automated tests and CI use fake delivery. No OTP-delivery job is enqueued.
 - Infobip owns the OTP value and delivery result. Rails stores a short-lived `otp_challenge` that binds an encrypted normalized phone and encrypted Infobip challenge ID to a separate high-entropy browser token stored only as a digest; it also stores short-lived abuse-control digests/counters.
-- The API contract defines accepted, invalid-phone, rate-limited, provider-unavailable, and delivery-rejected outcomes. Rate-limit responses include `Retry-After` and every failure uses the shared safe error envelope.
+- Email challenges are delivered synchronously through the configured mail provider. Rails binds an encrypted normalized email and an HMAC-protected, attempt-limited code to the same kind of short-lived browser challenge token; plaintext email codes are never persisted.
+- The API contract defines accepted, invalid-phone/email, rate-limited, provider-unavailable, and delivery-rejected outcomes. Rate-limit responses include `Retry-After` and every failure uses the shared safe error envelope.
 - Responses do not reveal whether an account exists and do not log phone numbers, OTPs, or request bodies.
 - The UI immediately explains cooldown, delivery rejection, and provider-unavailable states without polling or bypassing verification.
-- Request/contract tests cover accepted, malformed phone, cooldown/daily rate limit with `Retry-After`, delivery rejection, provider timeout/unavailability, and the invariant that no OTP-delivery job is enqueued.
+- Request/contract tests cover accepted and malformed phone/email requests, cooldown/daily rate limits with `Retry-After`, delivery rejection, provider timeout/unavailability, and the invariant that no OTP-delivery job is enqueued.
 
 **Depends on:** S005, S006, S008.
 **Covers:** Feature A1; Infrastructure §§8 and 12.
 
-### S012 — Verify the Infobip OTP and create a Rails application session
+### S012 — Verify a professional OTP and create a Rails application session
 
 **Status:** DONE
 
@@ -243,16 +244,16 @@ Apply these rules whenever they are relevant to the story:
 
 **Acceptance criteria:**
 
-- Rails verifies the code through the Infobip adapter and never stores the OTP.
-- Verification requires the unexpired, unconsumed Rails challenge token, decrypts the bound Infobip reference/phone only server-side, and consumes the challenge atomically on success.
-- A successful check validates the challenge result and creates or finds the Rails-owned professional account by its unique verified E.164 phone. SMS verification never creates or authenticates an admin account. The Rails UUID is the stable Berufe identity; an Infobip challenge ID is not an account identifier.
-- Rails creates an `application_session` containing a unique token digest, account ID, `sms_otp` authentication method, authentication time, last activity, idle/absolute expiries, and nullable revocation time.
+- Rails verifies SMS codes through the Infobip adapter and email codes against the keyed digest stored with the challenge; it never stores a plaintext OTP.
+- Verification requires the unexpired, unconsumed Rails challenge token, decrypts channel-bound identity/provider data only server-side, and consumes the challenge atomically on success or after the email attempt limit.
+- A successful check creates or finds the Rails-owned professional account by its unique verified E.164 phone or normalized email. Professional OTP verification never creates or authenticates an admin account. The Rails UUID is the stable Berufe identity; delivery-provider references are not account identifiers.
+- Rails creates an `application_session` containing a unique token digest, account ID, `sms_otp` or `email_otp` authentication method, authentication time, last activity, idle/absolute expiries, and nullable revocation time.
 - The browser receives only the random application-session token in the host-only `__Host-berufe_session` cookie with `Secure`, `HttpOnly`, `SameSite=Lax`, and `Path=/`; no `Domain` is set.
 - Infobip credentials and raw Rails challenge/session tokens never enter browser storage or application logs; no authentication material is stored in `localStorage`.
 - Professional sessions use 7-day idle and 30-day absolute expiry; admin sessions use 30-minute idle and 12-hour absolute expiry. Last-activity persistence is throttled.
 - Invalid, expired, and provider-unavailable results use generic safe messages.
 - The Infobip 2FA implementation remains behind the same small adapter. Production always uses it, a temporary integration environment uses a restricted allowlisted configuration, local development may explicitly select it, and automated tests and CI use the fake implementation.
-- Model/request tests cover token hashing, professional idle and absolute boundaries, throttled activity writes, refusal to authenticate admins by SMS, invalid/expired verification, and safe provider-unavailable behavior.
+- Model/request tests cover token hashing, professional idle and absolute boundaries, throttled activity writes, refusal to authenticate admins by either professional OTP channel, invalid/expired/attempt-limited verification, and safe provider-unavailable behavior.
 
 **Depends on:** S011.
 **Covers:** Feature A1; Infrastructure §8.
@@ -337,7 +338,7 @@ Apply these rules whenever they are relevant to the story:
 
 - Admin accounts are provisioned deliberately with a unique normalized email and strong password and cannot be created through professional registration or SMS login.
 - `AdminSeed` is the only application service allowed to create an admin account; non-production `db:seed` calls it idempotently, while production execution is refused with a warning. There is no administrator-creation API or separate provisioning task.
-- Admins authenticate through a dedicated email/password API endpoint and Nuxt route; professional login remains SMS-only.
+- Admins authenticate through a dedicated email/password API endpoint and Nuxt route; professional login remains OTP-only and cannot create an administrator session.
 - Rails stores only a BCrypt password digest, uses generic authentication failures and conservative database-backed throttling, and never logs or serializes credentials.
 - Seed provisioning and manual password resets are audited operations; each creates an append-only event with the target admin, operator identifier, request ID, action, and time.
 - Admin routes require the admin role, an unexpired 30-minute-idle/12-hour-absolute session, and the `password` authentication method.

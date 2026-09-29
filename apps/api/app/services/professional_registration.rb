@@ -42,7 +42,7 @@ class ProfessionalRegistration
   private
 
   def validate_account!(user_account)
-    return if user_account.active? && user_account.professional? && user_account.phone_verified?
+    return if user_account.active? && user_account.professional? && user_account.verified?
 
     raise Invalid.new(base: ["Esta conta não pode concluir o cadastro profissional."])
   end

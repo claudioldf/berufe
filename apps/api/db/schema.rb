@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_28_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_29_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -60,7 +60,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_100000) do
     t.index ["user_account_id", "created_at"], name: "index_application_sessions_on_user_account_id_and_created_at"
     t.index ["user_account_id"], name: "index_application_sessions_on_user_account_id"
     t.check_constraint "absolute_expires_at > authenticated_at", name: "application_sessions_absolute_after_authentication"
-    t.check_constraint "authentication_method = ANY (ARRAY['sms_otp'::text, 'password'::text])", name: "application_sessions_known_authentication_method"
+    t.check_constraint "authentication_method = ANY (ARRAY['sms_otp'::text, 'email_otp'::text, 'password'::text])", name: "application_sessions_known_authentication_method"
     t.check_constraint "idle_expires_at <= absolute_expires_at", name: "application_sessions_idle_within_absolute"
     t.check_constraint "idle_expires_at > last_active_at", name: "application_sessions_idle_after_activity"
     t.check_constraint "last_active_at >= authenticated_at", name: "application_sessions_activity_after_authentication"
@@ -431,18 +431,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_100000) do
   end
 
   create_table "otp_challenges", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.integer "attempt_count", limit: 2, default: 0, null: false
+    t.text "channel", default: "sms", null: false
     t.datetime "consumed_at"
     t.datetime "created_at", null: false
+    t.text "email_ciphertext"
+    t.text "email_code_digest"
     t.datetime "expires_at", null: false
-    t.text "infobip_challenge_id_ciphertext", null: false
-    t.text "phone_e164_ciphertext", null: false
+    t.text "infobip_challenge_id_ciphertext"
+    t.text "phone_e164_ciphertext"
     t.text "public_token_digest", null: false
     t.datetime "updated_at", null: false
     t.index ["expires_at"], name: "index_otp_challenges_on_expires_at"
     t.index ["public_token_digest"], name: "index_otp_challenges_on_public_token_digest", unique: true
-    t.check_constraint "btrim(infobip_challenge_id_ciphertext) <> ''::text", name: "otp_challenges_provider_ciphertext_present"
-    t.check_constraint "btrim(phone_e164_ciphertext) <> ''::text", name: "otp_challenges_phone_ciphertext_present"
+    t.check_constraint "attempt_count >= 0 AND attempt_count <= 5", name: "otp_challenges_attempt_count_range"
     t.check_constraint "btrim(public_token_digest) <> ''::text", name: "otp_challenges_public_token_digest_present"
+    t.check_constraint "channel = 'sms'::text AND phone_e164_ciphertext IS NOT NULL AND btrim(phone_e164_ciphertext) <> ''::text AND infobip_challenge_id_ciphertext IS NOT NULL AND btrim(infobip_challenge_id_ciphertext) <> ''::text AND email_ciphertext IS NULL AND email_code_digest IS NULL OR channel = 'email'::text AND phone_e164_ciphertext IS NULL AND infobip_challenge_id_ciphertext IS NULL AND email_ciphertext IS NOT NULL AND btrim(email_ciphertext) <> ''::text AND email_code_digest ~ '^[0-9a-f]{64}$'::text", name: "otp_challenges_channel_payload"
     t.check_constraint "consumed_at IS NULL OR consumed_at >= created_at", name: "otp_challenges_consumed_after_creation"
     t.check_constraint "expires_at > created_at", name: "otp_challenges_expire_after_creation"
   end
@@ -461,7 +465,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_100000) do
     t.check_constraint "expires_at > window_started_at", name: "otp_request_counters_valid_window"
     t.check_constraint "last_requested_at IS NULL OR last_requested_at >= window_started_at", name: "otp_request_counters_request_inside_window"
     t.check_constraint "request_count >= 0", name: "otp_request_counters_nonnegative_count"
-    t.check_constraint "scope_kind = ANY (ARRAY['phone'::text, 'ip'::text])", name: "otp_request_counters_known_scope"
+    t.check_constraint "scope_kind = ANY (ARRAY['phone'::text, 'email'::text, 'ip'::text])", name: "otp_request_counters_known_scope"
     t.check_constraint "subject_digest ~ '^[0-9a-f]{64}$'::text", name: "otp_request_counters_digest_format"
   end
 
@@ -987,6 +991,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_100000) do
   create_table "user_accounts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "email"
+    t.datetime "email_verified_at"
     t.datetime "last_login_at"
     t.integer "login_count", default: 0, null: false
     t.text "password_digest"
@@ -1000,15 +1005,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_100000) do
     t.text "terms_version"
     t.datetime "updated_at", null: false
     t.index ["email"], name: "index_user_accounts_on_email", unique: true
+    t.index ["email_verified_at"], name: "index_user_accounts_on_email_verified_at"
     t.index ["phone_e164"], name: "index_user_accounts_on_phone_e164", unique: true
     t.index ["phone_verified_at"], name: "index_user_accounts_on_phone_verified_at"
     t.index ["registered_at"], name: "index_user_accounts_on_registered_at"
     t.index ["role", "status"], name: "index_user_accounts_on_role_and_status"
     t.check_constraint "email IS NULL OR email = lower(email) AND email = btrim(email)", name: "user_accounts_normalized_email"
+    t.check_constraint "email_verified_at IS NULL OR email IS NOT NULL", name: "user_accounts_email_verification_has_email"
     t.check_constraint "login_count >= 0", name: "user_accounts_nonnegative_login_count"
     t.check_constraint "phone_e164 ~ '^\\+55[1-9][1-9]9[0-9]{8}$'::text", name: "user_accounts_brazilian_mobile_phone"
-    t.check_constraint "registered_at IS NULL OR phone_verified_at IS NOT NULL", name: "user_accounts_registration_requires_verified_phone"
-    t.check_constraint "role = 'professional'::text AND phone_e164 IS NOT NULL AND email IS NULL AND password_digest IS NULL OR role = 'admin'::text AND phone_e164 IS NULL AND email IS NOT NULL AND email <> ''::text AND password_digest IS NOT NULL AND password_digest <> ''::text", name: "user_accounts_role_credentials"
+    t.check_constraint "phone_verified_at IS NULL OR phone_e164 IS NOT NULL", name: "user_accounts_phone_verification_has_phone"
+    t.check_constraint "registered_at IS NULL OR phone_verified_at IS NOT NULL OR email_verified_at IS NOT NULL", name: "user_accounts_registration_requires_verified_identity"
+    t.check_constraint "role = 'professional'::text AND (phone_e164 IS NOT NULL OR email IS NOT NULL) AND password_digest IS NULL OR role = 'admin'::text AND phone_e164 IS NULL AND email IS NOT NULL AND email <> ''::text AND password_digest IS NOT NULL AND password_digest <> ''::text", name: "user_accounts_role_credentials"
     t.check_constraint "role = ANY (ARRAY['professional'::text, 'admin'::text])", name: "user_accounts_known_role"
     t.check_constraint "status = ANY (ARRAY['active'::text, 'suspended'::text])", name: "user_accounts_known_status"
     t.check_constraint "terms_accepted_at IS NULL AND terms_version IS NULL AND privacy_notice_version IS NULL OR terms_accepted_at IS NOT NULL AND terms_version IS NOT NULL AND privacy_notice_version IS NOT NULL AND btrim(terms_version) <> ''::text AND btrim(privacy_notice_version) <> ''::text", name: "user_accounts_complete_legal_acceptance"
