@@ -2,16 +2,89 @@
   Boas-vindas à Berufe, <%= @display_name %>!
 </h1>
 
-<p style="margin: 0 0 18px;">Seu perfil profissional foi criado com sucesso.</p>
-<p style="margin: 0 0 28px;">
+<p style="margin: 0 0 14px;">Seu perfil profissional foi criado com sucesso.</p>
+<p style="margin: 0 0 22px;">
   Complete seus dados, serviços e área de atendimento para começar a apresentar seu trabalho a novos clientes.
 </p>
 
-<p style="margin: 0;">
-  <a class="email-button" href="<%= @onboarding_url %>" style="display: inline-block; padding: 14px 22px; border-radius: 12px; background-color: #17352f; color: #ffffff; font-weight: 700; text-decoration: none;">
-    Completar meu perfil
-  </a>
-</p>
+<img
+  src="<%= @artwork_url %>"
+  width="504"
+  alt="Perfil profissional no celular cercado por portfólio, verificação e conversa com cliente"
+  style="display: block; width: 100%; max-width: 504px; height: auto; margin: 0 0 24px; border: 0; border-radius: 18px;"
+>
+
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#17352f" style="width: 100%; border-radius: 20px; background-color: #17352f;">
+  <tr>
+    <td style="padding: 24px;">
+      <p style="margin: 0 0 7px; color: #ff9a85; font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;">Seu perfil na Berufe</p>
+      <p style="margin: 0 0 7px; color: #ffffff; font-size: 24px; font-weight: 700; line-height: 1.25;">Seu trabalho merece ser visto.</p>
+      <p style="margin: 0 0 20px; color: #cfe4dc; font-size: 14px; line-height: 1.55;">Um perfil completo mostra seu cuidado antes mesmo da primeira conversa.</p>
+
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#ffffff" style="width: 100%; border-radius: 16px; background-color: #ffffff;">
+        <tr>
+          <td width="62" valign="middle" style="width: 62px; padding: 17px 0 17px 18px;">
+            <table role="presentation" width="42" height="42" cellspacing="0" cellpadding="0" border="0" bgcolor="#f8755d" style="width: 42px; height: 42px; border-radius: 12px; background-color: #f8755d;">
+              <tr>
+                <td align="center" valign="middle" style="color: #ffffff; font-size: 23px; font-weight: 700; line-height: 42px;">▦</td>
+              </tr>
+            </table>
+          </td>
+          <td valign="middle" style="padding: 17px 18px 17px 12px;">
+            <p style="margin: 0 0 4px; color: #17352f; font-size: 16px; font-weight: 700;">Mostre seu trabalho</p>
+            <p style="margin: 0; color: #526963; font-size: 14px; line-height: 1.5;">Publique fotos dos seus serviços e organize um portfólio que mostra o seu cuidado.</p>
+          </td>
+        </tr>
+        <tr>
+          <td colspan="2" style="padding: 0 18px;">
+            <div style="height: 1px; background-color: #e5e1d7;"></div>
+          </td>
+        </tr>
+        <tr>
+          <td width="62" valign="middle" style="width: 62px; padding: 17px 0 17px 18px;">
+            <table role="presentation" width="42" height="42" cellspacing="0" cellpadding="0" border="0" bgcolor="#dff1eb" style="width: 42px; height: 42px; border-radius: 12px; background-color: #dff1eb;">
+              <tr>
+                <td align="center" valign="middle" style="color: #12625d; font-size: 23px; font-weight: 700; line-height: 42px;">✓</td>
+              </tr>
+            </table>
+          </td>
+          <td valign="middle" style="padding: 17px 18px 17px 12px;">
+            <p style="margin: 0 0 4px; color: #17352f; font-size: 16px; font-weight: 700;">Construa confiança</p>
+            <p style="margin: 0; color: #526963; font-size: 14px; line-height: 1.5;">Confirme sua identidade e reúna recomendações de clientes e parceiros.</p>
+          </td>
+        </tr>
+        <tr>
+          <td colspan="2" style="padding: 0 18px;">
+            <div style="height: 1px; background-color: #e5e1d7;"></div>
+          </td>
+        </tr>
+        <tr>
+          <td width="62" valign="middle" style="width: 62px; padding: 17px 0 17px 18px;">
+            <table role="presentation" width="42" height="42" cellspacing="0" cellpadding="0" border="0" bgcolor="#f4c96b" style="width: 42px; height: 42px; border: 1px solid #e8b94f; border-radius: 12px; background-color: #f4c96b;">
+              <tr>
+                <td align="center" valign="middle" style="color: #17352f; font-size: 22px; font-weight: 700; line-height: 42px;">✉︎</td>
+              </tr>
+            </table>
+          </td>
+          <td valign="middle" style="padding: 17px 18px 17px 12px;">
+            <p style="margin: 0 0 4px; color: #17352f; font-size: 16px; font-weight: 700;">Receba contatos diretos</p>
+            <p style="margin: 0; color: #526963; font-size: 14px; line-height: 1.5;">Clientes falam com você pelo WhatsApp, sem cobrança por contato.</p>
+          </td>
+        </tr>
+      </table>
+
+      <table role="presentation" align="center" cellspacing="0" cellpadding="0" border="0" style="margin: 20px auto 0;">
+        <tr>
+          <td align="center" bgcolor="#ffffff" style="border-radius: 12px; background-color: #ffffff;">
+            <a class="email-button" href="<%= @onboarding_url %>" style="display: inline-block; padding: 14px 24px; color: #17352f; font-weight: 700; text-decoration: none;">
+              Completar meu perfil
+            </a>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
 
 <p style="margin: 28px 0 0; color: #61736d; font-size: 14px;">
   Se você não criou este perfil, ignore esta mensagem.

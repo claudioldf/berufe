@@ -11,14 +11,30 @@ RSpec.describe ProfessionalWelcomeMailer do
 
     expect(mail.to).to eq(["ana@example.com"])
     expect(mail.subject).to eq("Boas-vindas à Berufe")
-    expect(mail.html_part.body.decoded).to include(
+    html = mail.html_part.body.decoded
+    text = mail.text_part.body.decoded
+    expect(html).to include(
       "Boas-vindas à Berufe, Ana Reparos!",
       "#{ENV.fetch("WEB_ORIGIN")}/app/professional/onboarding",
+      "#{ENV.fetch("WEB_ORIGIN")}/images/email/welcome-features-profile-collage.jpg",
+      "Perfil profissional no celular cercado por portfólio, verificação e conversa com cliente",
+      "Seu trabalho merece ser visto.",
+      "Mostre seu trabalho",
+      "Construa confiança",
+      "Receba contatos diretos",
       "Completar meu perfil"
     )
-    expect(mail.text_part.body.decoded).to include(
+    expect(text).to include(
       "Boas-vindas à Berufe, Ana Reparos!",
+      "Seu trabalho merece ser visto.",
+      "Mostre seu trabalho",
+      "Construa confiança",
+      "Receba contatos diretos",
       "#{ENV.fetch("WEB_ORIGIN")}/app/professional/onboarding"
     )
+
+    cta = Nokogiri::HTML.fragment(html).at_css("a.email-button")
+    expect(cta.parent["align"]).to eq("center")
+    expect(cta.ancestors("table").first["align"]).to eq("center")
   end
 end
