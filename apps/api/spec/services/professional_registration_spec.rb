@@ -34,10 +34,16 @@ RSpec.describe ProfessionalRegistration do
 
   it "is retry-safe after completion and never creates or renames a second profile" do
     service = described_class.new
-    original = complete_registration(account:, service:)
+    original = nil
+    expect do
+      original = complete_registration(account:, service:)
+    end.to have_enqueued_job(ProfessionalWelcomeEmailDeliveryJob).with(account.id).once
     accepted_at = account.reload.terms_accepted_at
 
-    retried = complete_registration(account:, service:, display_name: "Nome Diferente")
+    retried = nil
+    expect do
+      retried = complete_registration(account:, service:, display_name: "Nome Diferente")
+    end.not_to have_enqueued_job(ProfessionalWelcomeEmailDeliveryJob)
 
     expect(retried).to eq(original)
     expect(account.reload.terms_accepted_at).to eq(accepted_at)

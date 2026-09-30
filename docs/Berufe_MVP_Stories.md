@@ -323,6 +323,7 @@ Apply these rules whenever they are relevant to the story:
 - A first-time authenticated professional must enter a display name, provide an email after cellphone authentication or a cellphone after email authentication, and accept the current terms/privacy notice.
 - Rails stores the normalized complementary contact on the same account without marking it verified; that channel becomes verified only after a later successful OTP authentication.
 - Rails records the accepted terms version, privacy-notice version, and acceptance time, then creates exactly one draft professional profile for the account.
+- The first successful registration queues one retry-safe welcome email with a link to complete onboarding; repeated registration requests do not send it again.
 - Returning professionals skip completed registration and enter the dashboard/setup flow.
 - Customers do not receive general-purpose accounts.
 

@@ -77,7 +77,7 @@ Every trust signal must belong to a real account. Phone confirmation also gives 
 1. The professional chooses cellphone (the default) or email and enters that contact.
 2. Rails synchronously asks Infobip to start an SMS challenge or sends an HMAC-protected, attempt-limited email code through the configured mail provider, then gives the professional an immediate accepted, rate-limited, invalid, rejected, or unavailable result.
 3. After confirmation, the professional enters their name, provides the complementary contact (email after cellphone authentication or cellphone after email authentication), and accepts the terms/privacy notice.
-4. Berufe creates a draft profile and opens a short setup checklist.
+4. Berufe creates a draft profile, queues one welcome email, and opens a short setup checklist.
 5. Only professionals and admins have accounts in the MVP. Customers do not create general-purpose accounts.
 
 Use Infobip's 2FA API only to start and verify professional SMS OTP challenges. Email OTP uses the existing mail provider and persists only a keyed digest, never the plaintext code. After verification, Rails finds or creates its own professional account by the unique verified phone or normalized email and creates an opaque application session. The browser never receives provider credentials. Rails owns the user UUID, roles, suspension, logout, session revocation, and separately provisioned administrator credentials.

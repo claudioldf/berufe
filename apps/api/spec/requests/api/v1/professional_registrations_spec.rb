@@ -13,12 +13,14 @@ RSpec.describe "Professional registration", type: :request, openapi: true do
     account = create_account(phone: "+5547999999001")
     _application_session, session_token = ApplicationSession.issue!(user_account: account, now:)
 
-    complete_registration(
-      session_token:,
-      display_name: "  Ana   Souza  ",
-      accepted: true,
-      request_id: "registration-complete"
-    )
+    expect do
+      complete_registration(
+        session_token:,
+        display_name: "  Ana   Souza  ",
+        accepted: true,
+        request_id: "registration-complete"
+      )
+    end.to have_enqueued_job(ProfessionalWelcomeEmailDeliveryJob).with(account.id).once
 
     expect(response).to have_http_status(:ok)
     profile = account.reload.professional_profile
@@ -45,12 +47,14 @@ RSpec.describe "Professional registration", type: :request, openapi: true do
 
     restore_session(session_token:, request_id: "registration-session-after")
     expect(response.parsed_body.dig("data", "account", "registration_completed")).to be(true)
-    complete_registration(
-      session_token:,
-      display_name: "Nome Diferente",
-      accepted: true,
-      request_id: "registration-retry"
-    )
+    expect do
+      complete_registration(
+        session_token:,
+        display_name: "Nome Diferente",
+        accepted: true,
+        request_id: "registration-retry"
+      )
+    end.not_to have_enqueued_job(ProfessionalWelcomeEmailDeliveryJob)
 
     expect(response).to have_http_status(:ok)
     expect(account.professional_profile.reload.display_name).to eq("Ana Souza")

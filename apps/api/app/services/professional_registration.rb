@@ -10,7 +10,8 @@ class ProfessionalRegistration
     end
   end
 
-  def call(user_account:, authentication_method:, display_name:, accepted:, phone: nil, email: nil, now: Time.current)
+  def call(user_account:, authentication_method:, display_name:, accepted:, phone: nil, email: nil,
+    welcome_email_job: ProfessionalWelcomeEmailDeliveryJob, now: Time.current)
     validate_account!(user_account)
     normalized_name = display_name.to_s.squish
     validate_input!(display_name: normalized_name, accepted:)
@@ -39,6 +40,7 @@ class ProfessionalRegistration
         privacy_notice_version: LegalDocumentVersions::PRIVACY_NOTICE,
         registered_at: user_account.registered_at || now
       )
+      welcome_email_job&.perform_later(user_account.id)
       profile
     end
   rescue ActiveRecord::RecordNotUnique

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_29_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_29_110000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -1004,6 +1004,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_100000) do
     t.datetime "terms_accepted_at"
     t.text "terms_version"
     t.datetime "updated_at", null: false
+    t.datetime "welcome_email_sent_at"
     t.index ["email"], name: "index_user_accounts_on_email", unique: true
     t.index ["email_verified_at"], name: "index_user_accounts_on_email_verified_at"
     t.index ["phone_e164"], name: "index_user_accounts_on_phone_e164", unique: true
