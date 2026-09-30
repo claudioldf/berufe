@@ -54,7 +54,7 @@ Action Mailer's test adapter instead.
 
 ## Infobip production prerequisite
 
-Infobip is used only to synchronously start and verify professional SMS OTP challenges. Rails remains the owner of accounts, sessions, roles, authorization, logout/revocation, and administrator email/password authentication.
+Infobip is used only to synchronously start and verify professional SMS OTP challenges. Professional email OTP is sent synchronously through the configured Action Mailer provider and verified by Rails from a keyed digest. Rails remains the owner of accounts, sessions, roles, authorization, logout/revocation, and administrator email/password authentication.
 
 Before enabling production delivery:
 
@@ -69,7 +69,7 @@ Every environment except automated test uses Infobip. Local, preview, stable sta
 
 ## Administrator accounts
 
-Administrators do not use professional SMS login or public registration. In non-production environments, `db:seed` idempotently creates `ADMIN_AUTH_EMAIL` / `ADMIN_AUTH_PASSWORD`, defaulting to `admin@berufe.com.br` / `@Qwer1234`. The seed service refuses production execution. Production administrators are created only through the interactive console task below; there is no administrator-creation API route.
+Administrators do not use professional SMS/email OTP login or public registration. In non-production environments, `db:seed` idempotently creates `ADMIN_AUTH_EMAIL` / `ADMIN_AUTH_PASSWORD`, defaulting to `admin@berufe.com.br` / `@Qwer1234`. The seed service refuses production execution. Production administrators are created only through the interactive console task below; there is no administrator-creation API route.
 
 Provision the first production administrator from an authenticated Railway shell. The
 password is read from the terminal without echoing and is not placed in shell history:

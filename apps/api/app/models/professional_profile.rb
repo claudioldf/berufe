@@ -164,7 +164,7 @@ class ProfessionalProfile < ApplicationRecord
     revision = working_revision
     photo = profile_photo
     blockers = []
-    blockers << "identity" unless revision&.display_name.present? && birthdate.present? && user_account.phone_e164.present?
+    blockers << "identity" unless identity_contact_present?(revision)
     blockers << "photo" unless photo && photo.deleted_at.nil?
     blockers << "services" unless revision_services_complete?(revision)
     blockers << "coverage" unless revision_coverage_complete?(revision)
@@ -307,7 +307,7 @@ class ProfessionalProfile < ApplicationRecord
     revision = published_revision
     photo = profile_photo
     blockers = []
-    blockers << "identity" unless revision&.display_name.present? && birthdate.present? && user_account.phone_e164.present?
+    blockers << "identity" unless identity_contact_present?(revision)
     blockers << "photo" unless photo && photo.deleted_at.nil?
     blockers << "services" unless revision_services_complete?(revision)
     blockers << "coverage" unless revision_coverage_complete?(revision)
@@ -322,5 +322,11 @@ class ProfessionalProfile < ApplicationRecord
     return false if areas.empty?
 
     areas.all? { |area| area.neighborhood&.city_code == revision.coverage_city_code }
+  end
+
+  def identity_contact_present?(revision)
+    revision&.display_name.present? &&
+      birthdate.present? &&
+      (revision.whatsapp_e164.presence || user_account.phone_e164).present?
   end
 end

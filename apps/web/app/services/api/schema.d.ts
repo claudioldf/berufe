@@ -13,8 +13,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Request a Brazilian phone OTP challenge */
-        post: operations["requestPhoneOtp"];
+        /** Request a professional phone or email OTP challenge */
+        post: operations["requestProfessionalOtp"];
         delete?: never;
         options?: never;
         head?: never;
@@ -30,8 +30,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Verify a phone OTP and create an application session */
-        post: operations["verifyPhoneOtp"];
+        /** Verify a professional OTP and create an application session */
+        post: operations["verifyProfessionalOtp"];
         delete?: never;
         options?: never;
         head?: never;
@@ -580,7 +580,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Accept the current legal documents and create one draft professional profile */
+        /** Add the complementary contact, accept the current legal documents, and create one draft professional profile */
         put: operations["completeProfessionalRegistration"];
         post?: never;
         delete?: never;
@@ -1819,26 +1819,28 @@ export interface components {
             };
             request_id: components["schemas"]["RequestId"];
         };
-        PhoneOtpRequest: {
+        ProfessionalOtpRequest: {
             /** @description Brazilian mobile number in national, formatted, or E.164 form. */
-            phone: string;
-        };
-        PhoneOtpChallengeResponse: {
-            data: components["schemas"]["PhoneOtpChallenge"];
+            phone?: string;
+            /** @description Email address used as the professional account identity. */
+            email?: string;
+        } & (unknown | unknown);
+        ProfessionalOtpChallengeResponse: {
+            data: components["schemas"]["ProfessionalOtpChallenge"];
             request_id: components["schemas"]["RequestId"];
         };
-        PhoneOtpChallenge: {
+        ProfessionalOtpChallenge: {
             /** @constant */
             status: "accepted";
             challenge_token: string;
             expires_in: number;
             resend_available_in: number;
         };
-        PhoneOtpVerificationRequest: {
+        ProfessionalOtpVerificationRequest: {
             challenge_token: string;
             code: string;
         };
-        PhoneOtpVerificationResponse: {
+        ProfessionalOtpVerificationResponse: {
             data: {
                 /** @constant */
                 status: "verified";
@@ -1848,7 +1850,18 @@ export interface components {
         ProfessionalRegistrationRequest: {
             display_name: string;
             accepted: boolean;
-        };
+            /** @description Required complementary Brazilian mobile number when the session was authenticated by email. */
+            phone?: string;
+            /**
+             * Format: email
+             * @description Required complementary email address when the session was authenticated by cellphone.
+             */
+            email?: string;
+        } & ({
+            email: string;
+        } | {
+            phone: string;
+        });
         DataErasureSubmissionResponse: {
             data: {
                 status_token: string;
@@ -2917,7 +2930,7 @@ export interface components {
         };
         ApplicationSessionSummary: {
             /** @enum {string} */
-            authentication_method: "sms_otp" | "password";
+            authentication_method: "sms_otp" | "email_otp" | "password";
             impersonating: boolean;
             /** Format: date-time */
             authenticated_at: string;
@@ -3603,7 +3616,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    requestPhoneOtp: {
+    requestProfessionalOtp: {
         parameters: {
             query?: never;
             header?: never;
@@ -3612,18 +3625,18 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PhoneOtpRequest"];
+                "application/json": components["schemas"]["ProfessionalOtpRequest"];
             };
         };
         responses: {
-            /** @description The SMS provider accepted the challenge synchronously. */
+            /** @description The selected delivery channel accepted the challenge synchronously. */
             201: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PhoneOtpChallengeResponse"];
+                    "application/json": components["schemas"]["ProfessionalOtpChallengeResponse"];
                 };
             };
             /** @description The exact browser origin is invalid. */
@@ -3636,7 +3649,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description The phone is invalid or SMS delivery was rejected. */
+            /** @description The phone or email is invalid, or delivery was rejected. */
             422: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
@@ -3657,7 +3670,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description The SMS provider or challenge persistence is unavailable. */
+            /** @description The delivery provider or challenge persistence is unavailable. */
             503: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
@@ -3669,7 +3682,7 @@ export interface operations {
             };
         };
     };
-    verifyPhoneOtp: {
+    verifyProfessionalOtp: {
         parameters: {
             query?: never;
             header?: never;
@@ -3678,7 +3691,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PhoneOtpVerificationRequest"];
+                "application/json": components["schemas"]["ProfessionalOtpVerificationRequest"];
             };
         };
         responses: {
@@ -3690,7 +3703,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PhoneOtpVerificationResponse"];
+                    "application/json": components["schemas"]["ProfessionalOtpVerificationResponse"];
                 };
             };
             /** @description The exact browser origin is invalid. */
@@ -4994,7 +5007,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description The display name or legal acceptance is invalid. */
+            /** @description The display name, complementary contact, or legal acceptance is invalid. */
             422: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];

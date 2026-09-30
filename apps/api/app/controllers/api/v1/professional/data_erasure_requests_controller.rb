@@ -13,7 +13,7 @@ module Api
           authorize account, :request_data_erasure?
 
           request_record = ProfessionalDataErasureRequester.new.call(
-            phone_e164: account.phone_e164,
+            user_account: account,
             ticket_reference: "SELF-#{Current.request_id}".first(100),
             require_recent_verification: false,
             request_source: "self_service",

@@ -41,6 +41,29 @@ RSpec.describe UserAccount, type: :model do
     expect(account).to be_registered
   end
 
+  it "supports a verified professional email identity without an administrator password" do
+    account = described_class.create!(
+      email: " ANA@EXAMPLE.COM ",
+      email_verified_at: Time.current,
+      role: "professional",
+      status: "active"
+    )
+
+    expect(account).to be_email_verified
+    expect(account).to be_verified
+    expect(account.email).to eq("ana@example.com")
+    expect(account.phone_e164).to be_nil
+    expect(account.password_digest).to be_nil
+
+    account.assign_attributes(
+      registered_at: Time.current,
+      terms_accepted_at: Time.current,
+      terms_version: LegalDocumentVersions::TERMS,
+      privacy_notice_version: LegalDocumentVersions::PRIVACY_NOTICE
+    )
+    expect(account).to be_valid
+  end
+
   it "requires the acceptance timestamp and both legal document versions as one complete record" do
     account = described_class.new(
       phone_e164: "+5547999993333",

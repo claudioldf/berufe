@@ -11,7 +11,7 @@ cd ../..
 cp .env.example .env
 ```
 
-Local development uses the fake SMS adapter and local storage by default. To
+Local development uses fixed fake SMS and email OTP codes plus local storage by default. To
 exercise Infobip locally, set `SMS_OTP_ADAPTER=infobip` and populate the
 server-only Infobip values plus an E.164 `INFOBIP_TEST_NUMBERS` allowlist in
 `.env`. Adapter selection is explicit and never falls back at runtime.

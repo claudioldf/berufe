@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class OtpRequestCounter < ApplicationRecord
-  SCOPE_KINDS = %w[ip phone].freeze
+  SCOPE_KINDS = %w[email ip phone].freeze
 
   validates :scope_kind, inclusion: {in: SCOPE_KINDS}
   validates :subject_digest, format: {with: /\A[0-9a-f]{64}\z/}

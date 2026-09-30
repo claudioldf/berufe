@@ -49,6 +49,30 @@ RSpec.describe "Application sessions", type: :request, openapi: true do
     assert_api_conform(status: 200)
   end
 
+  it "restores an email OTP professional session without exposing the email" do
+    now = Time.zone.parse("2026-08-15 12:00:00 UTC")
+    travel_to(now)
+    account = UserAccount.create!(
+      email: "ana@example.com",
+      email_verified_at: now,
+      role: "professional",
+      status: "active"
+    )
+    _application_session, session_token = ApplicationSession.issue!(
+      user_account: account,
+      authentication_method: "email_otp",
+      now:
+    )
+
+    get_current_session(session_token:, request_id: "email-session-current")
+
+    expect(response).to have_http_status(:ok)
+    expect(response.parsed_body.dig("data", "account", "verified")).to be(true)
+    expect(response.parsed_body.dig("data", "session", "authentication_method")).to eq("email_otp")
+    expect(response.body).not_to include(account.email, session_token)
+    assert_api_conform(status: 200)
+  end
+
   it "restores an authorized admin session without exposing private account fields" do
     now = Time.zone.parse("2026-08-15 12:00:00 UTC")
     travel_to(now)

@@ -1,6 +1,9 @@
 import type { BerufeApiClient } from "@app/services/api/client";
-import { requestPhoneOtp, verifyPhoneOtp } from "@app/services/api/phone-auth";
-import type { PhoneOtpRequestError } from "@app/services/api/phone-auth";
+import {
+  requestProfessionalOtp,
+  verifyProfessionalOtp,
+} from "@app/services/api/phone-auth";
+import type { ProfessionalOtpRequestError } from "@app/services/api/phone-auth";
 
 function apiClientReturning(result: object) {
   return {
@@ -8,7 +11,7 @@ function apiClientReturning(result: object) {
   } as unknown as BerufeApiClient;
 }
 
-describe("phone OTP API", () => {
+describe("professional OTP API", () => {
   it("requests a challenge through the generated operation and maps its safe data", async () => {
     const client = apiClientReturning({
       data: {
@@ -24,13 +27,43 @@ describe("phone OTP API", () => {
       response: new Response(null),
     });
 
-    await expect(requestPhoneOtp(client, "+5547999991111")).resolves.toEqual({
+    await expect(
+      requestProfessionalOtp(client, {
+        method: "phone",
+        identifier: "+5547999991111",
+      }),
+    ).resolves.toEqual({
       challengeToken: "browser-challenge-token",
       expiresIn: 600,
       resendAvailableIn: 30,
     });
     expect(client.POST).toHaveBeenCalledWith("/api/v1/auth/otp/challenges", {
       body: { phone: "5547999991111" },
+    });
+  });
+
+  it("normalizes an email challenge through the same endpoint", async () => {
+    const client = apiClientReturning({
+      data: {
+        data: {
+          status: "accepted",
+          challenge_token: "email-browser-challenge-token",
+          expires_in: 600,
+          resend_available_in: 30,
+        },
+        request_id: "email-otp-201",
+      },
+      error: undefined,
+      response: new Response(null),
+    });
+
+    await requestProfessionalOtp(client, {
+      method: "email",
+      identifier: " ANA@Example.COM ",
+    });
+
+    expect(client.POST).toHaveBeenCalledWith("/api/v1/auth/otp/challenges", {
+      body: { email: "ana@example.com" },
     });
   });
 
@@ -53,13 +86,16 @@ describe("phone OTP API", () => {
     });
 
     await expect(
-      requestPhoneOtp(client, "+5547999991111"),
+      requestProfessionalOtp(client, {
+        method: "phone",
+        identifier: "+5547999991111",
+      }),
     ).rejects.toMatchObject({
-      name: "PhoneOtpRequestError",
+      name: "ProfessionalOtpRequestError",
       code: "otp_rate_limited",
       retryAfter: 20,
       requestId: "otp-429",
-    } satisfies Partial<PhoneOtpRequestError>);
+    } satisfies Partial<ProfessionalOtpRequestError>);
   });
 
   it("ignores unsafe Retry-After values and handles missing success data", async () => {
@@ -72,7 +108,10 @@ describe("phone OTP API", () => {
       });
 
       await expect(
-        requestPhoneOtp(client, "+5547999991111"),
+        requestProfessionalOtp(client, {
+          method: "phone",
+          identifier: "+5547999991111",
+        }),
       ).rejects.toMatchObject({
         code: "unexpected_error",
         retryAfter: undefined,
@@ -91,7 +130,7 @@ describe("phone OTP API", () => {
     });
 
     await expect(
-      verifyPhoneOtp(client, {
+      verifyProfessionalOtp(client, {
         challengeToken: "browser-challenge-token",
         code: "123456",
       }),
@@ -120,7 +159,7 @@ describe("phone OTP API", () => {
     });
 
     await expect(
-      verifyPhoneOtp(client, {
+      verifyProfessionalOtp(client, {
         challengeToken: "browser-challenge-token",
         code: "000000",
       }),
@@ -136,7 +175,7 @@ describe("phone OTP API", () => {
       response: new Response(null),
     });
     await expect(
-      verifyPhoneOtp(missingDataClient, {
+      verifyProfessionalOtp(missingDataClient, {
         challengeToken: "browser-challenge-token",
         code: "000000",
       }),

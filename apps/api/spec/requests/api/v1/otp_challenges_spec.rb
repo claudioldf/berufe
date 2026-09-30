@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe "Phone OTP challenge requests", type: :request, openapi: true do
+RSpec.describe "Professional OTP challenge requests", type: :request, openapi: true do
   include ActiveJob::TestHelper
   include ActiveSupport::Testing::TimeHelpers
 
@@ -10,6 +10,7 @@ RSpec.describe "Phone OTP challenge requests", type: :request, openapi: true do
 
   before do
     allow(SmsOtpClient).to receive(:build).and_return(otp_client)
+    ActionMailer::Base.deliveries.clear
   end
 
   after do
@@ -79,6 +80,63 @@ RSpec.describe "Phone OTP challenge requests", type: :request, openapi: true do
     assert_api_conform(status: 422)
   end
 
+  it "normalizes an email, delivers its code synchronously, and returns the same safe challenge shape" do
+    enqueued_job_count = enqueued_jobs.size
+
+    expect do
+      post_email_json(email: " ANA@Example.COM ", request_id: "email-otp-accepted")
+    end.to change(OtpChallenge, :count).by(1)
+      .and change(OtpRequestCounter, :count).by(2)
+      .and change(ActionMailer::Base.deliveries, :count).by(1)
+    expect(enqueued_jobs.size).to eq(enqueued_job_count)
+
+    challenge = OtpChallenge.last
+    response_data = response.parsed_body.fetch("data")
+    delivered_email = ActionMailer::Base.deliveries.last
+
+    expect(response).to have_http_status(:created)
+    expect(response_data).to include(
+      "status" => "accepted",
+      "expires_in" => 600,
+      "resend_available_in" => 30
+    )
+    expect(challenge).to be_email
+    expect(challenge.email).to eq("ana@example.com")
+    expect(challenge.valid_email_code?(
+      public_token: response_data.fetch("challenge_token"),
+      code: "123456"
+    )).to be(true)
+    expect(delivered_email.to).to eq(["ana@example.com"])
+    expect(delivered_email.text_part.body.decoded).to include("123456", "10 minutos")
+    expect(response.parsed_body.to_json).not_to include("ana@example.com", "123456")
+    assert_api_conform(status: 201)
+  end
+
+  it "returns the safe invalid-email outcome without sending a message" do
+    expect do
+      post_email_json(email: "email-invalido", request_id: "email-otp-invalid")
+    end.not_to change(ActionMailer::Base.deliveries, :count)
+
+    expect(response).to have_http_status(:unprocessable_content)
+    expect(response.parsed_body.dig("error", "code")).to eq("invalid_email")
+    expect(response.parsed_body.dig("error", "field_errors")).to eq("email" => ["não é válido"])
+    expect(OtpChallenge.count).to eq(0)
+    assert_api_conform(status: 422)
+  end
+
+  it "removes an unusable email challenge when delivery is rejected" do
+    allow_any_instance_of(EmailOtpDelivery).to receive(:call).and_raise(EmailOtp::DeliveryRejected)
+
+    expect do
+      post_email_json(email: "ana@example.com", request_id: "email-otp-rejected")
+    end.not_to change(OtpChallenge, :count)
+
+    expect(response).to have_http_status(:unprocessable_content)
+    expect(response.parsed_body.dig("error", "code")).to eq("otp_delivery_rejected")
+    expect(response.parsed_body.to_json).not_to include("ana@example.com")
+    assert_api_conform(status: 422)
+  end
+
   it "enforces the 30-second resend cooldown with Retry-After" do
     allow_accepted_challenges
     travel_to(Time.zone.parse("2026-08-15 12:00:00 UTC"))
@@ -112,6 +170,24 @@ RSpec.describe "Phone OTP challenge requests", type: :request, openapi: true do
         "Limite diário de códigos atingido. Tente novamente amanhã."
       )
       expect(otp_client).to have_received(:start_challenge).twice
+    end
+  end
+
+  it "enforces the daily email allowance independently from the IP allowance" do
+    with_otp_setting(:daily_email_limit, 1) do
+      travel_to(Time.zone.parse("2026-08-15 12:00:00 UTC"))
+      post_email_json(email: "ana@example.com", request_id: "email-otp-first")
+
+      travel 31.seconds
+      post_email_json(email: "ana@example.com", request_id: "email-otp-limit")
+
+      expect(response).to have_http_status(:too_many_requests)
+      expect(response.headers.fetch("Retry-After").to_i).to be > 40_000
+      expect(response.parsed_body.dig("error", "message")).to eq(
+        "Limite diário de códigos atingido. Tente novamente amanhã."
+      )
+      expect(ActionMailer::Base.deliveries.size).to eq(1)
+      assert_api_conform(status: 429)
     end
   end
 
@@ -195,6 +271,16 @@ RSpec.describe "Phone OTP challenge requests", type: :request, openapi: true do
     }
     headers["Origin"] = origin if origin
     post "/api/v1/auth/otp/challenges", params: {phone:}.to_json, headers:
+  end
+
+  def post_email_json(email:, request_id:, remote_ip: "203.0.113.5", origin: ENV.fetch("WEB_ORIGIN"))
+    headers = {
+      "CONTENT_TYPE" => "application/json",
+      "REMOTE_ADDR" => remote_ip,
+      "X-Request-Id" => request_id
+    }
+    headers["Origin"] = origin if origin
+    post "/api/v1/auth/otp/challenges", params: {email:}.to_json, headers:
   end
 
   def allow_accepted_challenges
