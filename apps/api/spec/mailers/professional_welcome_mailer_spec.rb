@@ -16,8 +16,8 @@ RSpec.describe ProfessionalWelcomeMailer do
     expect(html).to include(
       "Boas-vindas à Berufe, Ana Reparos!",
       "#{ENV.fetch("WEB_ORIGIN")}/app/professional/onboarding",
-      "#{ENV.fetch("WEB_ORIGIN")}/images/email/welcome-features-diorama.jpg",
-      "Profissional mostrando seu portfólio, sua confiança e o contato direto com clientes",
+      "#{ENV.fetch("WEB_ORIGIN")}/images/email/welcome-features-profile-collage.jpg",
+      "Perfil profissional no celular cercado por portfólio, verificação e conversa com cliente",
       "Seu trabalho merece ser visto.",
       "Mostre seu trabalho",
       "Construa confiança",

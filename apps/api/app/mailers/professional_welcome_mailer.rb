@@ -4,7 +4,7 @@ class ProfessionalWelcomeMailer < ApplicationMailer
   def welcome
     @display_name = params.fetch(:display_name)
     @onboarding_url = "#{@web_origin}/app/professional/onboarding"
-    @artwork_url = "#{@web_origin}/images/email/welcome-features-diorama.jpg"
+    @artwork_url = "#{@web_origin}/images/email/welcome-features-profile-collage.jpg"
     @preheader = "Boas-vindas à Berufe, #{@display_name}. Seu perfil profissional já está pronto para ser completado."
 
     mail(
