@@ -18,6 +18,7 @@ RSpec.describe ProfessionalWelcomeMailer do
       "#{ENV.fetch("WEB_ORIGIN")}/app/professional/onboarding",
       "#{ENV.fetch("WEB_ORIGIN")}/images/email/welcome-features-diorama.jpg",
       "Profissional mostrando seu portfólio, sua confiança e o contato direto com clientes",
+      "Seu trabalho merece ser visto.",
       "Mostre seu trabalho",
       "Construa confiança",
       "Receba contatos diretos",
@@ -25,6 +26,7 @@ RSpec.describe ProfessionalWelcomeMailer do
     )
     expect(text).to include(
       "Boas-vindas à Berufe, Ana Reparos!",
+      "Seu trabalho merece ser visto.",
       "Mostre seu trabalho",
       "Construa confiança",
       "Receba contatos diretos",
