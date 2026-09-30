@@ -5,10 +5,7 @@ module Api
     class OtpChallengesController < BaseController
       before_action :prevent_caching
       def create
-        result = PhoneOtpChallengeStarter.new.call(
-          phone: params[:phone],
-          ip_address: request.remote_ip
-        )
+        result = start_challenge
 
         render json: {
           data: {
@@ -25,6 +22,19 @@ module Api
           message: "Digite um número de celular válido.",
           status: :unprocessable_content,
           field_errors: {phone: ["não é válido"]}
+        )
+      rescue ProfessionalEmail::Invalid
+        render_api_error(
+          code: "invalid_email",
+          message: "Digite um e-mail válido.",
+          status: :unprocessable_content,
+          field_errors: {email: ["não é válido"]}
+        )
+      rescue ActionController::ParameterMissing
+        render_api_error(
+          code: "invalid_otp_destination",
+          message: "Escolha celular ou e-mail para receber o código.",
+          status: :unprocessable_content
         )
       rescue OtpRequestRateLimiter::RateLimited => exception
         response.set_header("Retry-After", exception.retry_after.to_s)
@@ -47,7 +57,14 @@ module Api
           message: "Não foi possível enviar o código para este número. Revise-o e tente novamente.",
           status: :unprocessable_content
         )
-      rescue SmsOtp::ProviderUnavailable, ActiveRecord::ActiveRecordError => error
+      rescue EmailOtp::DeliveryRejected
+        render_api_error(
+          code: "otp_delivery_rejected",
+          message: "Não foi possível enviar o código para este e-mail. Revise-o e tente novamente.",
+          status: :unprocessable_content
+        )
+      rescue SmsOtp::ProviderUnavailable, EmailOtp::ProviderUnavailable,
+        ActiveRecord::ActiveRecordError => error
         report_service_error(error)
         render_api_error(
           code: "otp_provider_unavailable",
@@ -57,6 +74,22 @@ module Api
       end
 
       private
+
+      def start_challenge
+        if params.key?(:phone) && !params.key?(:email)
+          PhoneOtpChallengeStarter.new.call(
+            phone: params[:phone],
+            ip_address: request.remote_ip
+          )
+        elsif params.key?(:email) && !params.key?(:phone)
+          EmailOtpChallengeStarter.new.call(
+            email: params[:email],
+            ip_address: request.remote_ip
+          )
+        else
+          raise ActionController::ParameterMissing, :phone_or_email
+        end
+      end
 
       def rate_limit_message(exception)
         if exception.reason == "cooldown"

@@ -18,7 +18,7 @@ export interface CurrentAccount {
 }
 
 export interface CurrentSession {
-  authenticationMethod: "sms_otp" | "password";
+  authenticationMethod: "sms_otp" | "email_otp" | "password";
   impersonating: boolean;
   authenticatedAt: string;
   idleExpiresAt: string;

@@ -13,12 +13,14 @@ RSpec.describe "Professional registration", type: :request, openapi: true do
     account = create_account(phone: "+5547999999001")
     _application_session, session_token = ApplicationSession.issue!(user_account: account, now:)
 
-    complete_registration(
-      session_token:,
-      display_name: "  Ana   Souza  ",
-      accepted: true,
-      request_id: "registration-complete"
-    )
+    expect do
+      complete_registration(
+        session_token:,
+        display_name: "  Ana   Souza  ",
+        accepted: true,
+        request_id: "registration-complete"
+      )
+    end.to have_enqueued_job(ProfessionalWelcomeEmailDeliveryJob).with(account.id).once
 
     expect(response).to have_http_status(:ok)
     profile = account.reload.professional_profile
@@ -38,21 +40,58 @@ RSpec.describe "Professional registration", type: :request, openapi: true do
     expect(account.terms_version).to eq("1.0")
     expect(account.privacy_notice_version).to eq("1.0")
     expect(account.registered_at).to eq(now)
+    expect(account.email).to eq("secondary@example.com")
+    expect(account.email_verified_at).to be_nil
     expect(account).to be_registration_completed
     assert_api_conform(status: 200)
 
     restore_session(session_token:, request_id: "registration-session-after")
     expect(response.parsed_body.dig("data", "account", "registration_completed")).to be(true)
-    complete_registration(
-      session_token:,
-      display_name: "Nome Diferente",
-      accepted: true,
-      request_id: "registration-retry"
-    )
+    expect do
+      complete_registration(
+        session_token:,
+        display_name: "Nome Diferente",
+        accepted: true,
+        request_id: "registration-retry"
+      )
+    end.not_to have_enqueued_job(ProfessionalWelcomeEmailDeliveryJob)
 
     expect(response).to have_http_status(:ok)
     expect(account.professional_profile.reload.display_name).to eq("Ana Souza")
     expect(ProfessionalProfile.where(user_account: account).count).to eq(1)
+  end
+
+  it "completes the same registration flow for an email-verified professional" do
+    now = Time.zone.parse("2026-08-15 12:00:00 UTC")
+    travel_to(now)
+    account = UserAccount.create!(
+      email: "ana@example.com",
+      email_verified_at: now,
+      role: "professional",
+      status: "active"
+    )
+    _application_session, session_token = ApplicationSession.issue!(
+      user_account: account,
+      authentication_method: "email_otp",
+      now:
+    )
+
+    complete_registration(
+      session_token:,
+      display_name: "Ana Reparos",
+      accepted: true,
+      email: nil,
+      phone: "(47) 9 9999-9010",
+      request_id: "email-registration-complete"
+    )
+
+    expect(response).to have_http_status(:ok)
+    expect(account.reload).to be_registration_completed
+    expect(account.phone_e164).to eq("+5547999999010")
+    expect(account.phone_verified_at).to be_nil
+    expect(account.professional_profile.display_name).to eq("Ana Reparos")
+    expect(response.body).not_to include(account.email)
+    assert_api_conform(status: 200)
   end
 
   it "rejects an unaccepted legal notice with field-safe validation" do
@@ -77,6 +116,27 @@ RSpec.describe "Professional registration", type: :request, openapi: true do
     )
     expect(account.reload.professional_profile).to be_nil
     expect(account.terms_accepted_at).to be_nil
+    assert_api_conform(status: 422)
+  end
+
+  it "requires the contact complementary to the session authentication method" do
+    account = create_account(phone: "+5547999999011")
+    _application_session, session_token = ApplicationSession.issue!(user_account: account)
+
+    complete_registration(
+      session_token:,
+      display_name: "Ana Souza",
+      accepted: true,
+      email: nil,
+      phone: "(47) 9 9999-9012",
+      request_id: "registration-contact-missing"
+    )
+
+    expect(response).to have_http_status(:unprocessable_entity)
+    expect(response.parsed_body.dig("error", "field_errors")).to eq(
+      "email" => ["informe um e-mail válido"]
+    )
+    expect(account.reload).not_to be_registration_completed
     assert_api_conform(status: 422)
   end
 
@@ -187,11 +247,16 @@ RSpec.describe "Professional registration", type: :request, openapi: true do
     display_name:,
     accepted:,
     request_id:,
+    phone: nil,
+    email: "secondary@example.com",
     origin: ENV.fetch("WEB_ORIGIN")
   )
     headers = session_headers(session_token:, request_id:)
     headers["Origin"] = origin if origin
-    put "/api/v1/professional-registration", params: {display_name:, accepted:}, headers:, as: :json
+    put "/api/v1/professional-registration",
+      params: {display_name:, accepted:, phone:, email:}.compact,
+      headers:,
+      as: :json
   end
 
   def session_headers(session_token:, request_id:)

@@ -15,7 +15,12 @@ class PhoneOtpChallengeStarter
 
   def call(phone:, ip_address:, now: Time.current)
     phone_e164 = BrazilianPhoneNumber.normalize(phone)
-    @rate_limiter.record!(phone_e164:, ip_address:, now:)
+    @rate_limiter.record!(
+      identifier: phone_e164,
+      identifier_type: "phone",
+      ip_address:,
+      now:
+    )
     provider_challenge = @otp_client.start_challenge(phone: phone_e164)
     raise SmsOtp::DeliveryRejected unless provider_challenge.status == "accepted"
     raise SmsOtp::ProviderUnavailable if provider_challenge.reference.to_s.empty?

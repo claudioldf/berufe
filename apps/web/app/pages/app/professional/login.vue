@@ -2,11 +2,11 @@
 import { computed, onMounted, shallowRef } from "vue";
 import { useApplicationSession } from "~/composables/useApplicationSession";
 import { useAppRole } from "~/composables/useAppRole";
-import { usePhoneAuthFlow } from "~/composables/usePhoneAuthFlow";
+import { useProfessionalAuthFlow } from "~/composables/useProfessionalAuthFlow";
 import { useProfessionalOnboarding } from "~/composables/useProfessionalOnboarding";
 import { useToast } from "~/composables/useToast";
 import {
-  professionalPhoneStepContent,
+  professionalContactStepContent,
   resolveProfessionalEntryPath,
   resolveProfessionalAuthIntent,
 } from "~/utils/professional-auth";
@@ -16,35 +16,40 @@ const route = useRoute();
 const { setRole } = useAppRole();
 const { showToast } = useToast();
 const { initializeFromAuth } = useProfessionalOnboarding();
-const { account, restoreSession, refreshSession } = useApplicationSession();
+const { account, session, restoreSession, refreshSession } =
+  useApplicationSession();
 const {
   step,
+  method,
   phone,
+  email,
+  destination,
   code,
   name,
   accepted,
   isLoading,
   error,
+  registrationFieldErrors,
   cooldown,
   requestCode,
   verifyCode,
-  changePhone,
+  changeDestination,
   resumeRegistration,
   registerProfessional,
-} = usePhoneAuthFlow();
+} = useProfessionalAuthFlow();
 
 const authIntent = computed(() =>
   resolveProfessionalAuthIntent(route.query.intent),
 );
-const phoneStepContent = computed(
-  () => professionalPhoneStepContent[authIntent.value],
+const contactStepContent = computed(
+  () => professionalContactStepContent[authIntent.value],
 );
 const sessionResolving = shallowRef(false);
 const otpVerified = shallowRef(false);
 const authLoading = computed(() => isLoading.value || sessionResolving.value);
 
 useSeoMeta({
-  title: () => phoneStepContent.value.pageTitle,
+  title: () => contactStepContent.value.pageTitle,
   robots: "noindex, nofollow",
 });
 
@@ -63,6 +68,11 @@ async function continueAuthenticatedFlow() {
   if (currentAccount.registrationCompleted) {
     await enterProfessionalWorkspace();
   } else {
+    if (session.value?.authenticationMethod === "email_otp") {
+      method.value = "email";
+    } else if (session.value?.authenticationMethod === "sms_otp") {
+      method.value = "phone";
+    }
     if (currentAccount.registrationDisplayName) {
       name.value = currentAccount.registrationDisplayName;
     }
@@ -93,10 +103,10 @@ async function confirmCode() {
   }
 }
 
-function restartPhoneEntry() {
+function restartContactEntry() {
   if (sessionResolving.value) return;
   otpVerified.value = false;
-  changePhone();
+  changeDestination();
 }
 
 async function register() {
@@ -114,7 +124,10 @@ async function register() {
     return;
   }
 
-  initializeFromAuth({ name: name.value, phone: phone.value });
+  initializeFromAuth({
+    name: name.value,
+    phone: phone.value,
+  });
   setRole("professional");
   const onboardingCompleted = account.value?.onboardingCompleted ?? false;
   showToast({
@@ -183,30 +196,37 @@ onMounted(async () => {
           />
         </div>
 
-        <AuthPhoneStep
+        <AuthContactStep
           v-if="step === 1"
-          v-model="phone"
+          v-model:method="method"
+          v-model:phone="phone"
+          v-model:email="email"
           :loading="authLoading"
           :error="error"
-          :content="phoneStepContent"
+          :content="contactStepContent"
           @submit="requestCode"
         />
         <AuthCodeStep
           v-else-if="step === 2"
           v-model="code"
-          :phone="phone"
+          :method="method"
+          :destination="destination"
           :loading="authLoading"
           :error="error"
           :cooldown="cooldown"
-          @change-phone="restartPhoneEntry"
+          @change-destination="restartContactEntry"
           @resend="requestCode"
           @submit="confirmCode"
         />
         <AuthRegistrationStep
           v-else
           v-model:name="name"
+          v-model:phone="phone"
+          v-model:email="email"
           v-model:accepted="accepted"
+          :method="method"
           :error="error"
+          :field-errors="registrationFieldErrors"
           :loading="authLoading"
           @submit="register"
         />

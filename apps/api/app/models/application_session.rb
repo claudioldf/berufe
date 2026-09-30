@@ -3,9 +3,13 @@
 class ApplicationSession < ApplicationRecord
   COOKIE_NAME = "__Host-berufe_session"
   TOKEN_BYTES = 32
-  AUTHENTICATION_METHODS = {
+  DEFAULT_AUTHENTICATION_METHODS = {
     "professional" => "sms_otp",
     "admin" => "password"
+  }.freeze
+  AUTHENTICATION_METHODS_BY_ROLE = {
+    "professional" => %w[email_otp sms_otp],
+    "admin" => %w[password]
   }.freeze
   SESSION_DURATIONS = {
     "professional" => {idle: 7.days, absolute: 30.days},
@@ -18,7 +22,7 @@ class ApplicationSession < ApplicationRecord
     optional: true,
     inverse_of: :impersonating_application_sessions
 
-  validates :authentication_method, inclusion: {in: AUTHENTICATION_METHODS.values}
+  validates :authentication_method, inclusion: {in: AUTHENTICATION_METHODS_BY_ROLE.values.flatten}
   validates :token_digest, format: {with: /\A[0-9a-f]{64}\z/}
   validates :authenticated_at, :last_active_at, :idle_expires_at, :absolute_expires_at, presence: true
   validate :authentication_method_matches_role
@@ -36,12 +40,12 @@ class ApplicationSession < ApplicationRecord
     impersonated_user_account&.impersonatable? || false
   end
 
-  def self.issue!(user_account:, now: Time.current)
+  def self.issue!(user_account:, authentication_method: nil, now: Time.current)
     session_token = generate_token
     durations = SESSION_DURATIONS.fetch(user_account.role)
     session = create!(
       user_account:,
-      authentication_method: AUTHENTICATION_METHODS.fetch(user_account.role),
+      authentication_method: authentication_method || DEFAULT_AUTHENTICATION_METHODS.fetch(user_account.role),
       token_digest: digest_token(session_token),
       authenticated_at: now,
       last_active_at: now,
@@ -89,7 +93,7 @@ class ApplicationSession < ApplicationRecord
 
   def authentication_method_matches_role
     return unless user_account && authentication_method
-    return if authentication_method == AUTHENTICATION_METHODS[user_account.role]
+    return if AUTHENTICATION_METHODS_BY_ROLE.fetch(user_account.role, []).include?(authentication_method)
 
     errors.add(:authentication_method, :invalid)
   end

@@ -35,6 +35,11 @@ async function registerProfessional(
   await page.getByLabel("Código de 6 dígitos").fill("123456");
   await page.getByRole("button", { name: "Confirmar e continuar" }).click();
   await page.getByLabel("Nome profissional").fill(displayName);
+  await page
+    .getByLabel("Seu e-mail")
+    .fill(
+      `lgpd-${projectName}-${scenarioDigit}-${runPhoneSegment}@example.com`,
+    );
   await page.getByLabel(/li e aceito/i).check();
   await page.getByRole("button", { name: "Criar meu perfil" }).click();
   await expect(page).toHaveURL(/\/app\/professional\/onboarding$/);

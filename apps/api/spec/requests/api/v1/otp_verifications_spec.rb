@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe "Phone OTP verification", type: :request, openapi: true do
+RSpec.describe "Professional OTP verification", type: :request, openapi: true do
   include ActiveSupport::Testing::TimeHelpers
 
   let(:otp_client) { instance_double(FakeSmsOtpClient) }
@@ -95,6 +95,79 @@ RSpec.describe "Phone OTP verification", type: :request, openapi: true do
     expect(account.reload.phone_verified_at).to be_present
     expect(account.registered_at).to be_nil
     expect(account.login_count).to eq(3)
+  end
+
+  it "verifies a locally protected email code and creates an email-authenticated professional session" do
+    now = Time.zone.parse("2026-08-15 12:00:00 UTC")
+    travel_to(now)
+    challenge, challenge_token = issue_email_challenge(email: "ana@example.com")
+
+    expect do
+      verify_json(challenge_token:, code: "123456", request_id: "email-otp-verified")
+    end.to change(UserAccount, :count).by(1)
+      .and change(ApplicationSession, :count).by(1)
+
+    account = UserAccount.last
+    session = ApplicationSession.last
+
+    expect(response).to have_http_status(:ok)
+    expect(account).to have_attributes(
+      email: "ana@example.com",
+      phone_e164: nil,
+      email_verified_at: now,
+      phone_verified_at: nil,
+      role: "professional",
+      login_count: 1
+    )
+    expect(account).to be_verified
+    expect(session).to have_attributes(
+      user_account: account,
+      authentication_method: "email_otp"
+    )
+    expect(challenge.reload.consumed_at).to eq(now)
+    expect(response.parsed_body.to_json).not_to include(
+      "ana@example.com",
+      challenge_token,
+      "123456"
+    )
+    assert_api_conform(status: 200)
+  end
+
+  it "never turns a professional email challenge into an administrator session" do
+    admin = UserAccount.create!(
+      email: "admin@example.com",
+      password: "a-secure-admin-password",
+      password_confirmation: "a-secure-admin-password",
+      role: "admin",
+      status: "active"
+    )
+    challenge, challenge_token = issue_email_challenge(email: admin.email)
+
+    verify_json(challenge_token:, code: "123456", request_id: "email-otp-admin")
+
+    expect(response).to have_http_status(:unprocessable_content)
+    expect(response.parsed_body.dig("error", "code")).to eq("invalid_otp")
+    expect(ApplicationSession.count).to eq(0)
+    expect(challenge.reload.consumed_at).to be_present
+    expect(admin.reload.login_count).to eq(0)
+  end
+
+  it "consumes an email challenge after five incorrect codes" do
+    challenge, challenge_token = issue_email_challenge
+
+    5.times do |index|
+      verify_json(
+        challenge_token:,
+        code: "000000",
+        request_id: "email-otp-wrong-#{index}"
+      )
+      expect(response).to have_http_status(:unprocessable_content)
+    end
+
+    expect(challenge.reload).to have_attributes(attempt_count: 5)
+    expect(challenge.consumed_at).to be_present
+    expect(UserAccount.count).to eq(0)
+    expect(ApplicationSession.count).to eq(0)
   end
 
   it "uses one generic outcome for malformed, unknown, expired, consumed, and incorrect codes" do
@@ -195,6 +268,14 @@ RSpec.describe "Phone OTP verification", type: :request, openapi: true do
     allow(otp_client).to receive(:verify_challenge)
       .with(reference:, code: "123456")
       .and_return(SmsOtp::Verification.new(verified: true, status: "verified"))
+  end
+
+  def issue_email_challenge(
+    email: "ana@example.com",
+    code: "123456",
+    expires_at: 10.minutes.from_now
+  )
+    OtpChallenge.issue_email!(email:, code:, expires_at:)
   end
 
   def issue_expired_challenge
