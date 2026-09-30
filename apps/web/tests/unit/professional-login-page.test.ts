@@ -24,6 +24,9 @@ const mocks = vi.hoisted(() => ({
           onboardingCompleted: boolean;
           registrationDisplayName?: string | null;
         } | null>;
+        session: Ref<{
+          authenticationMethod: "sms_otp" | "email_otp" | "password";
+        } | null>;
         step: Ref<number>;
         method: Ref<"phone" | "email">;
         phone: Ref<string>;
@@ -34,6 +37,7 @@ const mocks = vi.hoisted(() => ({
         accepted: Ref<boolean>;
         isLoading: Ref<boolean>;
         error: Ref<string>;
+        registrationFieldErrors: Ref<Record<string, string[]>>;
         cooldown: Ref<number>;
       }
     | undefined,
@@ -42,6 +46,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("~/composables/useApplicationSession", () => ({
   useApplicationSession: () => ({
     account: mocks.state!.account,
+    session: mocks.state!.session,
     restoreSession: mocks.restoreSession,
     refreshSession: mocks.refreshSession,
   }),
@@ -61,6 +66,7 @@ vi.mock("~/composables/useProfessionalAuthFlow", () => ({
     accepted: mocks.state!.accepted,
     isLoading: mocks.state!.isLoading,
     error: mocks.state!.error,
+    registrationFieldErrors: mocks.state!.registrationFieldErrors,
     cooldown: mocks.state!.cooldown,
     requestCode: mocks.requestCode,
     verifyCode: mocks.verifyCode,
@@ -83,6 +89,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.state = {
     account: ref(null),
+    session: ref(null),
     step: ref(1),
     method: ref<"phone" | "email">("phone"),
     phone: ref("(47) 99999-1111"),
@@ -93,6 +100,7 @@ beforeEach(() => {
     accepted: ref(true),
     isLoading: ref(false),
     error: ref(""),
+    registrationFieldErrors: ref({}),
     cooldown: ref(0),
   };
   mocks.restoreSession.mockResolvedValue(false);
@@ -221,9 +229,10 @@ describe("professional login page", () => {
     expect(mocks.replace).toHaveBeenCalledWith("/app/professional/onboarding");
   });
 
-  it("starts email-authenticated onboarding without inventing a phone", async () => {
+  it("starts email-authenticated onboarding with the complementary phone", async () => {
     mocks.state!.method.value = "email";
     mocks.state!.email.value = "ana@example.com";
+    mocks.state!.phone.value = "(47) 9 9999-2222";
     const wrapper = await mountPage();
 
     await (
@@ -232,8 +241,23 @@ describe("professional login page", () => {
 
     expect(mocks.initializeFromAuth).toHaveBeenCalledWith({
       name: "Ana Reparos",
-      phone: "",
+      phone: "(47) 9 9999-2222",
     });
+  });
+
+  it("restores the complementary field from the session authentication method", async () => {
+    mocks.state!.account.value = {
+      role: "professional",
+      registrationCompleted: false,
+      onboardingCompleted: false,
+    };
+    mocks.state!.session.value = { authenticationMethod: "email_otp" };
+    mocks.restoreSession.mockResolvedValue(true);
+
+    await mountPage();
+
+    expect(mocks.state!.method.value).toBe("email");
+    expect(mocks.resumeRegistration).toHaveBeenCalledOnce();
   });
 
   it("keeps the OTP step visible until a returning account is resolved", async () => {

@@ -16,7 +16,8 @@ const route = useRoute();
 const { setRole } = useAppRole();
 const { showToast } = useToast();
 const { initializeFromAuth } = useProfessionalOnboarding();
-const { account, restoreSession, refreshSession } = useApplicationSession();
+const { account, session, restoreSession, refreshSession } =
+  useApplicationSession();
 const {
   step,
   method,
@@ -28,6 +29,7 @@ const {
   accepted,
   isLoading,
   error,
+  registrationFieldErrors,
   cooldown,
   requestCode,
   verifyCode,
@@ -66,6 +68,11 @@ async function continueAuthenticatedFlow() {
   if (currentAccount.registrationCompleted) {
     await enterProfessionalWorkspace();
   } else {
+    if (session.value?.authenticationMethod === "email_otp") {
+      method.value = "email";
+    } else if (session.value?.authenticationMethod === "sms_otp") {
+      method.value = "phone";
+    }
     if (currentAccount.registrationDisplayName) {
       name.value = currentAccount.registrationDisplayName;
     }
@@ -119,7 +126,7 @@ async function register() {
 
   initializeFromAuth({
     name: name.value,
-    phone: method.value === "phone" ? phone.value : "",
+    phone: phone.value,
   });
   setRole("professional");
   const onboardingCompleted = account.value?.onboardingCompleted ?? false;
@@ -214,8 +221,12 @@ onMounted(async () => {
         <AuthRegistrationStep
           v-else
           v-model:name="name"
+          v-model:phone="phone"
+          v-model:email="email"
           v-model:accepted="accepted"
+          :method="method"
           :error="error"
+          :field-errors="registrationFieldErrors"
           :loading="authLoading"
           @submit="register"
         />

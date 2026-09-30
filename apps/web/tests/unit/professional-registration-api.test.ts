@@ -29,6 +29,8 @@ describe("professional registration API", () => {
       completeProfessionalRegistration(client, {
         displayName: "Ana Reparos",
         accepted: true,
+        method: "phone",
+        email: " ANA@Example.COM ",
       }),
     ).resolves.toEqual({
       id: "23a94f5e-1429-4ec7-bbc4-a6f805d5182d",
@@ -38,7 +40,47 @@ describe("professional registration API", () => {
     expect(client.PUT).toHaveBeenCalledWith(
       "/api/v1/professional-registration",
       {
-        body: { display_name: "Ana Reparos", accepted: true },
+        body: {
+          display_name: "Ana Reparos",
+          accepted: true,
+          email: "ana@example.com",
+        },
+      },
+    );
+  });
+
+  it("normalizes the complementary cellphone after email authentication", async () => {
+    const client = apiClientReturning({
+      data: {
+        data: {
+          status: "completed",
+          profile: {
+            id: "23a94f5e-1429-4ec7-bbc4-a6f805d5182d",
+            display_name: "Ana Reparos",
+            profile_status: "draft",
+          },
+        },
+        request_id: "registration-complete",
+      },
+      error: undefined,
+      response: new Response(null),
+    });
+
+    await completeProfessionalRegistration(client, {
+      displayName: "Ana Reparos",
+      accepted: true,
+      method: "email",
+      phone: "(47) 9 9999-1111",
+    });
+
+    expect(client.PUT).toHaveBeenCalledWith(
+      "/api/v1/professional-registration",
+      {
+        body: {
+          display_name: "Ana Reparos",
+          accepted: true,
+          phone: "5547999991111",
+        },
       },
     );
   });
@@ -64,6 +106,8 @@ describe("professional registration API", () => {
       completeProfessionalRegistration(client, {
         displayName: "A",
         accepted: true,
+        method: "phone",
+        email: "ana@example.com",
       }),
     ).rejects.toMatchObject({
       name: "ApiRequestError",
@@ -86,6 +130,8 @@ describe("professional registration API", () => {
       completeProfessionalRegistration(client, {
         displayName: "Ana Reparos",
         accepted: true,
+        method: "phone",
+        email: "ana@example.com",
       }),
     ).rejects.toMatchObject({
       code: "unexpected_error",

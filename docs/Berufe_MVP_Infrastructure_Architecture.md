@@ -254,6 +254,7 @@ Use Infobip's 2FA API for the narrow purpose of starting and verifying Brazilian
 3. For cellphone, Rails synchronously asks Infobip to send the SMS and binds its encrypted challenge reference and phone to a high-entropy browser token. For email, Rails sends a locally generated code and binds its keyed digest and encrypted email to the same token shape.
 4. The user submits the Rails challenge token and code; Rails validates the unexpired/unconsumed record and verifies it through the channel-specific mechanism.
 5. If approved, Rails creates or finds the professional account by its unique verified phone or email, creates an opaque application session, and sets its token in a secure, HTTP-only cookie.
+6. During first-time registration, the professional supplies the complementary email or cellphone. Rails stores it on the same account without marking it verified; only a later successful OTP through that channel verifies it.
 
 For email, Rails normalizes the address, creates a six-digit code, stores only a keyed digest bound to the short-lived challenge token, and sends the code synchronously through the configured Action Mailer provider. Verification is attempt-limited and creates or finds only a professional account by normalized email; an administrator with the same email can never receive a professional session.
 

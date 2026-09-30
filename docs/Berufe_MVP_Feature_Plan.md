@@ -76,7 +76,7 @@ Every trust signal must belong to a real account. Phone confirmation also gives 
 
 1. The professional chooses cellphone (the default) or email and enters that contact.
 2. Rails synchronously asks Infobip to start an SMS challenge or sends an HMAC-protected, attempt-limited email code through the configured mail provider, then gives the professional an immediate accepted, rate-limited, invalid, rejected, or unavailable result.
-3. After confirmation, the professional enters their name and accepts the terms/privacy notice.
+3. After confirmation, the professional enters their name, provides the complementary contact (email after cellphone authentication or cellphone after email authentication), and accepts the terms/privacy notice.
 4. Berufe creates a draft profile and opens a short setup checklist.
 5. Only professionals and admins have accounts in the MVP. Customers do not create general-purpose accounts.
 
@@ -89,8 +89,8 @@ Use Infobip's 2FA API only to start and verify professional SMS OTP challenges. 
 | Field               | Type      | Rules                                                      |
 | ------------------- | --------- | ---------------------------------------------------------- |
 | `id`                | UUID      | Primary key                                                |
-| `phone_e164`        | text      | Unique; one phone or email identity is required for professionals; nullable for admins |
-| `email`             | text      | Unique normalized identity for email professionals; required for admins                |
+| `phone_e164`        | text      | Unique; required after professional registration; nullable before email-authenticated registration and for admins |
+| `email`             | text      | Unique normalized identity; required after professional registration and for admins; nullable before cellphone-authenticated registration |
 | `phone_verified_at` | timestamp | Set after successful SMS verification; nullable                                      |
 | `email_verified_at` | timestamp | Set after successful email verification; nullable                                    |
 | `password_digest`   | text      | BCrypt digest required only for admins; never serialized   |

@@ -1441,7 +1441,7 @@ paths:
   /api/v1/professional-registration:
     put:
       operationId: completeProfessionalRegistration
-      summary: Accept the current legal documents and create one draft professional profile
+      summary: Add the complementary contact, accept the current legal documents, and create one draft professional profile
       tags:
         - Authentication
       security:
@@ -1481,7 +1481,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "422":
-          description: The display name or legal acceptance is invalid.
+          description: The display name, complementary contact, or legal acceptance is invalid.
           headers:
             X-Request-Id:
               $ref: "#/components/headers/RequestId"
@@ -5321,6 +5321,16 @@ components:
     ProfessionalRegistrationRequest:
       type: object
       additionalProperties: false
+      maxProperties: 3
+      oneOf:
+        - required: [email]
+          properties:
+            email:
+              type: string
+        - required: [phone]
+          properties:
+            phone:
+              type: string
       required:
         - display_name
         - accepted
@@ -5331,6 +5341,17 @@ components:
           maxLength: 70
         accepted:
           type: boolean
+        phone:
+          type: string
+          minLength: 1
+          maxLength: 40
+          description: Required complementary Brazilian mobile number when the session was authenticated by email.
+        email:
+          type: string
+          format: email
+          minLength: 3
+          maxLength: 254
+          description: Required complementary email address when the session was authenticated by cellphone.
     DataErasureSubmissionResponse:
       type: object
       additionalProperties: false

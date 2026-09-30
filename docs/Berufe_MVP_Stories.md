@@ -316,11 +316,12 @@ Apply these rules whenever they are relevant to the story:
 
 **Status:** DONE
 
-**Story:** As a first-time professional, I want to provide my name and accept the terms so that I can begin building my profile.
+**Story:** As a first-time professional, I want to provide my name, complementary contact, and legal acceptance so that I can begin building my profile and later access it through either contact channel.
 
 **Acceptance criteria:**
 
-- A first-time authenticated professional must enter a display name and accept the current terms/privacy notice.
+- A first-time authenticated professional must enter a display name, provide an email after cellphone authentication or a cellphone after email authentication, and accept the current terms/privacy notice.
+- Rails stores the normalized complementary contact on the same account without marking it verified; that channel becomes verified only after a later successful OTP authentication.
 - Rails records the accepted terms version, privacy-notice version, and acceptance time, then creates exactly one draft professional profile for the account.
 - Returning professionals skip completed registration and enter the dashboard/setup flow.
 - Customers do not receive general-purpose accounts.

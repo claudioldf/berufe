@@ -144,6 +144,9 @@ describe("professional authentication", () => {
     expect(workflow.error.value).toBe("Informe seu nome profissional.");
     workflow.name.value = "Ana";
     expect(workflow.validateRegistration()).toBe(false);
+    expect(workflow.error.value).toBe("Digite um e-mail válido.");
+    workflow.email.value = " ANA@Example.COM ";
+    expect(workflow.validateRegistration()).toBe(false);
     expect(workflow.error.value).toContain("aceitar os termos");
     workflow.accepted.value = true;
     expect(workflow.validateRegistration()).toBe(true);
@@ -155,6 +158,8 @@ describe("professional authentication", () => {
     expect(completeRegistration).toHaveBeenCalledWith({
       displayName: "Ana Reparos",
       accepted: true,
+      method: "phone",
+      email: "ana@example.com",
     });
     resolveRegistration?.();
     await expect(registration).resolves.toBe(true);
@@ -230,8 +235,11 @@ describe("professional authentication", () => {
       expiresIn: 600,
       resendAvailableIn: 30,
     });
+    const completeRegistration = vi.fn().mockResolvedValue(undefined);
     const scope = effectScope();
-    const workflow = scope.run(() => useProfessionalAuthFlow({ requestOtp }))!;
+    const workflow = scope.run(() =>
+      useProfessionalAuthFlow({ requestOtp, completeRegistration }),
+    )!;
 
     expect(workflow.method.value).toBe("phone");
     workflow.method.value = "email";
@@ -251,6 +259,18 @@ describe("professional authentication", () => {
     expect(workflow.email.value).toBe("ana@example.com");
     expect(workflow.destination.value).toBe("ana@example.com");
     expect(workflow.step.value).toBe(2);
+
+    workflow.resumeRegistration();
+    workflow.name.value = "Ana Reparos";
+    workflow.phone.value = "47999992222";
+    workflow.accepted.value = true;
+    await expect(workflow.registerProfessional()).resolves.toBe(true);
+    expect(completeRegistration).toHaveBeenCalledWith({
+      displayName: "Ana Reparos",
+      accepted: true,
+      method: "email",
+      phone: "+5547999992222",
+    });
 
     scope.stop();
   });
@@ -313,6 +333,7 @@ describe("professional authentication", () => {
     );
 
     workflow.name.value = "Ana Reparos";
+    workflow.email.value = "ana@example.com";
     workflow.accepted.value = true;
     await expect(workflow.registerProfessional()).resolves.toBe(false);
     expect(workflow.error.value).toBe(
@@ -339,10 +360,14 @@ describe("professional authentication", () => {
     )!;
     workflow.resumeRegistration();
     workflow.name.value = "Ana Reparos";
+    workflow.email.value = "ana@example.com";
     workflow.accepted.value = true;
 
     await expect(workflow.registerProfessional()).resolves.toBe(false);
-    expect(workflow.error.value).toBe("Revise os campos informados.");
+    expect(workflow.error.value).toBe("");
+    expect(workflow.registrationFieldErrors.value).toEqual({
+      display_name: ["é inválido"],
+    });
 
     await expect(workflow.registerProfessional()).resolves.toBe(false);
     expect(workflow.error.value).toBe(

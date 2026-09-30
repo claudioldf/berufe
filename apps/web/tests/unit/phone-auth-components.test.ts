@@ -259,8 +259,12 @@ describe("professional authentication components", () => {
     const wrapper = mount(RegistrationStep, {
       props: {
         name: "",
+        method: "phone",
+        phone: "(47) 9 9999-1111",
+        email: "",
         accepted: false,
         error: "",
+        fieldErrors: {},
         loading: false,
       },
       global: {
@@ -276,13 +280,16 @@ describe("professional authentication components", () => {
 
     await wrapper.get("form").trigger("submit");
 
-    expect(wrapper.findAll('[role="alert"]')).toHaveLength(2);
+    expect(wrapper.findAll('[role="alert"]')).toHaveLength(3);
     expect(wrapper.get("#professional-name").attributes("aria-invalid")).toBe(
       "true",
     );
     expect(
       wrapper.get('input[name="accepted-terms"]').attributes("aria-invalid"),
     ).toBe("true");
+    expect(wrapper.get("#registration-email").attributes("aria-invalid")).toBe(
+      "true",
+    );
     expect(wrapper.emitted("submit")).toBeUndefined();
   });
 
@@ -290,8 +297,12 @@ describe("professional authentication components", () => {
     const wrapper = mount(RegistrationStep, {
       props: {
         name: "",
+        method: "phone",
+        phone: "(47) 9 9999-1111",
+        email: "",
         accepted: false,
         error: "",
+        fieldErrors: {},
         loading: false,
       },
       global: {
@@ -310,10 +321,14 @@ describe("professional authentication components", () => {
     });
 
     await wrapper.get("#professional-name").setValue("Ana Reparos");
+    await wrapper.get("#registration-email").setValue("ana@example.com");
     await wrapper.get('input[name="accepted-terms"]').setValue(true);
     await wrapper.get("form").trigger("submit");
 
     expect(wrapper.emitted("update:name")?.at(-1)).toEqual(["Ana Reparos"]);
+    expect(wrapper.emitted("update:email")?.at(-1)).toEqual([
+      "ana@example.com",
+    ]);
     expect(wrapper.emitted("update:accepted")?.at(-1)).toEqual([true]);
     expect(wrapper.emitted("submit")).toHaveLength(1);
 
@@ -327,5 +342,39 @@ describe("professional authentication components", () => {
         ?.getAttribute("data-tooltip-reason"),
     ).toBe("Aguarde a criação do perfil terminar.");
     expect(wrapper.get('[role="alert"]').text()).toContain("Revise os campos.");
+  });
+
+  it("asks for and masks a cellphone after email authentication", async () => {
+    const wrapper = mount(RegistrationStep, {
+      props: {
+        name: "Ana Reparos",
+        method: "email",
+        phone: "",
+        email: "ana@example.com",
+        accepted: true,
+        error: "",
+        fieldErrors: {},
+        loading: false,
+      },
+      global: {
+        stubs: {
+          DesignSystemEyebrow: { template: "<span><slot /></span>" },
+          DesignSystemDisabledTooltip: TooltipStub,
+          NuxtLink: { template: "<a><slot /></a>" },
+          UButton: { template: "<button><slot /></button>" },
+          UIcon: true,
+        },
+      },
+    });
+
+    const phone = wrapper.get<HTMLInputElement>("#registration-phone");
+    await phone.setValue("47999992222");
+
+    expect(wrapper.emitted("update:phone")?.at(-1)).toEqual([
+      "(47) 9 9999-2222",
+    ]);
+    await wrapper.setProps({ phone: "(47) 9 9999-2222" });
+    await wrapper.get("form").trigger("submit");
+    expect(wrapper.emitted("submit")).toHaveLength(1);
   });
 });

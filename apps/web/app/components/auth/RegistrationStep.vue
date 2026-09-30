@@ -1,37 +1,72 @@
 <script setup lang="ts">
 import { computed, useTemplateRef } from "vue";
+import { useBrazilianMobilePhoneMask } from "~/composables/useBrazilianMobilePhoneMask";
 import { useInlineFormValidation } from "~/composables/useInlineFormValidation";
+import type { ProfessionalAuthMethod } from "~/services/api/phone-auth";
+import { normalizeBrazilianMobilePhone } from "~/utils/brazilian-phone";
 
 const name = defineModel<string>("name", { required: true });
+const phone = defineModel<string>("phone", { required: true });
+const email = defineModel<string>("email", { required: true });
 const accepted = defineModel<boolean>("accepted", { required: true });
-const props = defineProps<{ error: string; loading: boolean }>();
+const props = defineProps<{
+  method: ProfessionalAuthMethod;
+  error: string;
+  fieldErrors: Record<string, string[]>;
+  loading: boolean;
+}>();
 const emit = defineEmits<{ submit: [] }>();
+const maskedPhone = useBrazilianMobilePhoneMask(phone);
 const formRoot = useTemplateRef<HTMLFormElement>("formRoot");
 const { validationAttempted, revealValidation } =
   useInlineFormValidation(formRoot);
-const nameError = computed(() => {
+const localNameError = computed(() => {
   const length = name.value.trim().length;
   if (length < 3) return "Informe seu nome profissional.";
   if (length > 70) return "Use no máximo 70 caracteres.";
   return "";
 });
-const termsError = computed(() =>
+const normalizedEmail = computed(() => email.value.trim().toLowerCase());
+const localContactError = computed(() => {
+  if (props.method === "email") {
+    return normalizeBrazilianMobilePhone(phone.value)
+      ? ""
+      : "Digite um número de celular válido.";
+  }
+
+  return normalizedEmail.value.length >= 3 &&
+    normalizedEmail.value.length <= 254 &&
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail.value)
+    ? ""
+    : "Digite um e-mail válido.";
+});
+const localTermsError = computed(() =>
   accepted.value
     ? ""
     : "Você precisa aceitar os termos e o aviso de privacidade.",
 );
-const displayedNameError = computed(() =>
-  validationAttempted.value ? nameError.value : "",
+const displayedNameError = computed(
+  () =>
+    props.fieldErrors.display_name?.[0] ||
+    (validationAttempted.value ? localNameError.value : ""),
 );
-const displayedTermsError = computed(() =>
-  validationAttempted.value ? termsError.value : "",
+const displayedContactError = computed(
+  () =>
+    props.fieldErrors[props.method === "phone" ? "email" : "phone"]?.[0] ||
+    (validationAttempted.value ? localContactError.value : ""),
+);
+const displayedTermsError = computed(
+  () =>
+    props.fieldErrors.accepted?.[0] ||
+    (validationAttempted.value ? localTermsError.value : ""),
 );
 const submitBlockedReason = computed(() =>
   props.loading ? "Aguarde a criação do perfil terminar." : null,
 );
 
 function submit() {
-  const valid = !nameError.value && !termsError.value;
+  const valid =
+    !localNameError.value && !localContactError.value && !localTermsError.value;
   if (props.loading || !revealValidation(valid)) return;
   emit("submit");
 }
@@ -43,8 +78,8 @@ function submit() {
     <DesignSystemEyebrow>Contato confirmado</DesignSystemEyebrow>
     <h1 id="registration-step-title">Como você quer<br />ser encontrado?</h1>
     <p class="auth-card__lead">
-      Este será o nome principal do seu perfil. Você poderá completar as outras
-      informações depois.
+      Informe o nome principal do seu perfil e complete seus dados de contato.
+      Você poderá preencher as outras informações depois.
     </p>
     <form ref="formRoot" novalidate @submit.prevent="submit">
       <label
@@ -74,6 +109,63 @@ function submit() {
         role="alert"
       >
         <UIcon name="i-lucide-circle-alert" /> {{ displayedNameError }}
+      </p>
+      <label
+        v-if="method === 'phone'"
+        class="auth-field"
+        :class="{ 'auth-field--invalid': displayedContactError }"
+        for="registration-email"
+      >
+        <span>Seu e-mail</span>
+        <input
+          id="registration-email"
+          v-model="email"
+          name="email"
+          type="email"
+          inputmode="email"
+          autocomplete="email"
+          placeholder="voce@exemplo.com"
+          maxlength="254"
+          required
+          :aria-describedby="
+            displayedContactError ? 'registration-contact-error' : undefined
+          "
+          :aria-invalid="displayedContactError ? 'true' : undefined"
+        />
+      </label>
+      <label
+        v-else
+        class="auth-field"
+        :class="{ 'auth-field--invalid': displayedContactError }"
+        for="registration-phone"
+      >
+        <span>Seu celular com DDD</span>
+        <div>
+          <span aria-hidden="true">🇧🇷 +55</span>
+          <input
+            id="registration-phone"
+            v-model="maskedPhone"
+            name="phone"
+            type="tel"
+            inputmode="tel"
+            autocomplete="tel"
+            placeholder="(47) 9 9999-9999"
+            maxlength="16"
+            required
+            :aria-describedby="
+              displayedContactError ? 'registration-contact-error' : undefined
+            "
+            :aria-invalid="displayedContactError ? 'true' : undefined"
+          />
+        </div>
+      </label>
+      <p
+        v-if="displayedContactError"
+        id="registration-contact-error"
+        class="auth-error"
+        role="alert"
+      >
+        <UIcon name="i-lucide-circle-alert" /> {{ displayedContactError }}
       </p>
       <label
         class="auth-check"
@@ -136,21 +228,33 @@ function submit() {
   </section>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .registration-step__submit {
   justify-self: end;
   min-height: 2.5rem;
 }
 
-.auth-field--invalid input,
+.auth-field--invalid {
+  & > div,
+  & > input {
+    border-color: var(--color-danger);
+    background: var(--color-danger-tint);
+  }
+
+  & > div:focus-within,
+  & > input:focus {
+    border-color: var(--color-danger);
+    box-shadow: 0 0 0 3px rgb(180 35 24 / 16%);
+  }
+}
+
 .auth-check--invalid {
   border-color: var(--color-danger);
   background: var(--color-danger-tint);
-}
 
-.auth-field--invalid input:focus,
-.auth-check--invalid:focus-within {
-  border-color: var(--color-danger);
-  box-shadow: 0 0 0 3px rgb(180 35 24 / 16%);
+  &:focus-within {
+    border-color: var(--color-danger);
+    box-shadow: 0 0 0 3px rgb(180 35 24 / 16%);
+  }
 }
 </style>

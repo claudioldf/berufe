@@ -15,10 +15,9 @@ RSpec.describe ProfessionalRegistration do
   it "records current legal versions and creates exactly one normalized draft profile atomically" do
     now = Time.zone.parse("2026-08-15 12:00:00 UTC")
 
-    profile = described_class.new.call(
-      user_account: account,
+    profile = complete_registration(
+      account:,
       display_name: "  Ana   Souza  ",
-      accepted: true,
       now:
     )
 
@@ -29,14 +28,16 @@ RSpec.describe ProfessionalRegistration do
     expect(account.terms_accepted_at).to eq(now)
     expect(account.terms_version).to eq(LegalDocumentVersions::TERMS)
     expect(account.privacy_notice_version).to eq(LegalDocumentVersions::PRIVACY_NOTICE)
+    expect(account.email).to eq("secondary@example.com")
+    expect(account.email_verified_at).to be_nil
   end
 
   it "is retry-safe after completion and never creates or renames a second profile" do
     service = described_class.new
-    original = service.call(user_account: account, display_name: "Ana Souza", accepted: true)
+    original = complete_registration(account:, service:)
     accepted_at = account.reload.terms_accepted_at
 
-    retried = service.call(user_account: account, display_name: "Nome Diferente", accepted: true)
+    retried = complete_registration(account:, service:, display_name: "Nome Diferente")
 
     expect(retried).to eq(original)
     expect(account.reload.terms_accepted_at).to eq(accepted_at)
@@ -46,7 +47,7 @@ RSpec.describe ProfessionalRegistration do
 
   it "returns field-specific validation without persisting partial acceptance" do
     expect do
-      described_class.new.call(user_account: account, display_name: "A", accepted: false)
+      complete_registration(account:, display_name: "A", accepted: false)
     end.to raise_error(described_class::Invalid) { |error|
       expect(error.field_errors).to eq(
         display_name: ["deve ter entre 3 e 70 caracteres"],
@@ -70,7 +71,7 @@ RSpec.describe ProfessionalRegistration do
 
     [admin, suspended].each do |invalid_account|
       expect do
-        described_class.new.call(user_account: invalid_account, display_name: "Ana Souza", accepted: true)
+        complete_registration(account: invalid_account)
       end.to raise_error(described_class::Invalid)
     end
   end
@@ -79,7 +80,7 @@ RSpec.describe ProfessionalRegistration do
     allow(account).to receive(:update!).and_raise(ActiveRecord::RecordInvalid.new(account))
 
     expect do
-      described_class.new.call(user_account: account, display_name: "Ana Souza", accepted: true)
+      complete_registration(account:)
     end.to raise_error(ActiveRecord::RecordInvalid)
 
     expect(ProfessionalProfile.where(user_account_id: account.id)).to be_empty
@@ -105,10 +106,9 @@ RSpec.describe ProfessionalRegistration do
     )
     now = Time.zone.parse("2026-08-20 16:00:00 UTC")
 
-    claimed_profile = described_class.new.call(
-      user_account: account,
+    claimed_profile = complete_registration(
+      account:,
       display_name: "Ana Souza",
-      accepted: true,
       now:
     )
 
@@ -155,7 +155,64 @@ RSpec.describe ProfessionalRegistration do
     )
   end
 
+  it "stores an unverified cellphone after email authentication" do
+    email_account = UserAccount.create!(
+      email: "ana@example.com",
+      email_verified_at: Time.current,
+      role: "professional",
+      status: "active"
+    )
+
+    complete_registration(
+      account: email_account,
+      authentication_method: "email_otp",
+      email: nil,
+      phone: "(47) 9 9999-6020"
+    )
+
+    expect(email_account.reload).to have_attributes(
+      phone_e164: "+5547999996020",
+      phone_verified_at: nil
+    )
+  end
+
+  it "rejects an invalid or already used complementary contact" do
+    expect do
+      complete_registration(account:, email: "email-invalido")
+    end.to raise_error(described_class::Invalid) { |error|
+      expect(error.field_errors).to eq(email: ["informe um e-mail válido"])
+    }
+
+    UserAccount.create!(email: "used@example.com", role: "professional", status: "active")
+    expect do
+      complete_registration(account:, email: "used@example.com")
+    end.to raise_error(described_class::Invalid) { |error|
+      expect(error.field_errors).to eq(email: ["não pode ser usado neste cadastro"])
+    }
+  end
+
   private
+
+  def complete_registration(
+    account:,
+    service: described_class.new,
+    authentication_method: "sms_otp",
+    display_name: "Ana Souza",
+    accepted: true,
+    phone: nil,
+    email: "secondary@example.com",
+    now: Time.current
+  )
+    service.call(
+      user_account: account,
+      authentication_method:,
+      display_name:,
+      accepted:,
+      phone:,
+      email:,
+      now:
+    )
+  end
 
   def create_external_service
     category = ServiceCategory.create!(

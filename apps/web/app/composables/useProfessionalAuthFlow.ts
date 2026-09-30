@@ -43,6 +43,7 @@ export function useProfessionalAuthFlow(
   const accepted = shallowRef(false);
   const isLoading = shallowRef(false);
   const error = shallowRef("");
+  const registrationFieldErrors = shallowRef<Record<string, string[]>>({});
   const cooldown = shallowRef(0);
   const challengeToken = shallowRef("");
   let cooldownTimer: ReturnType<typeof setInterval> | undefined;
@@ -177,8 +178,17 @@ export function useProfessionalAuthFlow(
 
   function validateRegistration() {
     error.value = "";
+    registrationFieldErrors.value = {};
     if (name.value.trim().length < 3) {
       error.value = "Informe seu nome profissional.";
+      return false;
+    }
+    if (method.value === "phone" && !validEmail(cleanEmail.value)) {
+      error.value = "Digite um e-mail válido.";
+      return false;
+    }
+    if (method.value === "email" && !cleanPhone.value) {
+      error.value = "Digite um número de celular válido.";
       return false;
     }
     if (!accepted.value) {
@@ -193,16 +203,27 @@ export function useProfessionalAuthFlow(
 
     isLoading.value = true;
     try {
-      await submitRegistration({
+      const baseInput = {
         displayName: name.value.trim(),
         accepted: accepted.value,
-      });
+      };
+      await submitRegistration(
+        method.value === "phone"
+          ? { ...baseInput, method: "phone", email: cleanEmail.value }
+          : { ...baseInput, method: "email", phone: cleanPhone.value ?? "" },
+      );
       return true;
     } catch (registrationError) {
-      error.value =
-        registrationError instanceof ApiRequestError
-          ? registrationError.message
-          : "Não foi possível criar seu perfil agora. Tente novamente em instantes.";
+      if (registrationError instanceof ApiRequestError) {
+        registrationFieldErrors.value = registrationError.fieldErrors;
+        error.value = Object.keys(registrationError.fieldErrors).length
+          ? ""
+          : registrationError.message;
+      } else {
+        registrationFieldErrors.value = {};
+        error.value =
+          "Não foi possível criar seu perfil agora. Tente novamente em instantes.";
+      }
       return false;
     } finally {
       isLoading.value = false;
@@ -215,6 +236,11 @@ export function useProfessionalAuthFlow(
     code.value = "";
     cooldown.value = 0;
     challengeToken.value = "";
+    registrationFieldErrors.value = {};
+  });
+
+  watch([name, phone, email, accepted], () => {
+    registrationFieldErrors.value = {};
   });
 
   onScopeDispose(clearTimers);
@@ -230,6 +256,7 @@ export function useProfessionalAuthFlow(
     accepted,
     isLoading,
     error,
+    registrationFieldErrors,
     cooldown,
     challengeToken,
     requestCode,

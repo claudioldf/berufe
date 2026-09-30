@@ -10,15 +10,18 @@ class ProfessionalRegistration
     end
   end
 
-  def call(user_account:, display_name:, accepted:, now: Time.current)
+  def call(user_account:, authentication_method:, display_name:, accepted:, phone: nil, email: nil, now: Time.current)
     validate_account!(user_account)
     normalized_name = display_name.to_s.squish
     validate_input!(display_name: normalized_name, accepted:)
+    contact = normalize_complementary_contact(authentication_method:, phone:, email:)
 
     user_account.with_lock do
       if user_account.registration_completed?
         next user_account.professional_profile
       end
+
+      validate_contact_change!(user_account:, contact:)
 
       profile = user_account.professional_profile
       if profile&.creation_source == "external"
@@ -29,6 +32,7 @@ class ProfessionalRegistration
         profile.profile_status = "draft"
         profile.save!
       end
+      user_account.assign_attributes(contact[:account_attribute] => contact[:value])
       user_account.update!(
         terms_accepted_at: now,
         terms_version: LegalDocumentVersions::TERMS,
@@ -37,6 +41,8 @@ class ProfessionalRegistration
       )
       profile
     end
+  rescue ActiveRecord::RecordNotUnique
+    raise Invalid.new(contact[:request_field] => ["não pode ser usado neste cadastro"])
   end
 
   private
@@ -45,6 +51,48 @@ class ProfessionalRegistration
     return if user_account.active? && user_account.professional? && user_account.verified?
 
     raise Invalid.new(base: ["Esta conta não pode concluir o cadastro profissional."])
+  end
+
+  def normalize_complementary_contact(authentication_method:, phone:, email:)
+    case authentication_method
+    when "sms_otp"
+      raise Invalid.new(email: ["informe um e-mail válido"]) if phone.present?
+
+      {
+        account_attribute: :email,
+        request_field: :email,
+        value: ProfessionalEmail.normalize(email)
+      }
+    when "email_otp"
+      raise Invalid.new(phone: ["informe um celular brasileiro com DDD"]) if email.present?
+
+      {
+        account_attribute: :phone_e164,
+        request_field: :phone,
+        value: BrazilianPhoneNumber.normalize(phone)
+      }
+    else
+      raise Invalid.new(base: ["Esta sessão não pode concluir o cadastro profissional."])
+    end
+  rescue ProfessionalEmail::Invalid
+    raise Invalid.new(email: ["informe um e-mail válido"])
+  rescue BrazilianPhoneNumber::Invalid
+    raise Invalid.new(phone: ["informe um celular brasileiro com DDD"])
+  end
+
+  def validate_contact_change!(user_account:, contact:)
+    account_attribute = contact[:account_attribute]
+    request_field = contact[:request_field]
+    value = contact[:value]
+    verification_attribute = (account_attribute == :email) ? :email_verified_at : :phone_verified_at
+
+    if user_account.public_send(verification_attribute).present? && user_account.public_send(account_attribute) != value
+      raise Invalid.new(request_field => ["não pode substituir um contato já confirmado"])
+    end
+
+    return unless UserAccount.where(account_attribute => value).where.not(id: user_account.id).exists?
+
+    raise Invalid.new(request_field => ["não pode ser usado neste cadastro"])
   end
 
   def prepare_claimed_profile!(profile, display_name:)

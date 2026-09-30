@@ -580,7 +580,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Accept the current legal documents and create one draft professional profile */
+        /** Add the complementary contact, accept the current legal documents, and create one draft professional profile */
         put: operations["completeProfessionalRegistration"];
         post?: never;
         delete?: never;
@@ -1850,7 +1850,18 @@ export interface components {
         ProfessionalRegistrationRequest: {
             display_name: string;
             accepted: boolean;
-        };
+            /** @description Required complementary Brazilian mobile number when the session was authenticated by email. */
+            phone?: string;
+            /**
+             * Format: email
+             * @description Required complementary email address when the session was authenticated by cellphone.
+             */
+            email?: string;
+        } & ({
+            email: string;
+        } | {
+            phone: string;
+        });
         DataErasureSubmissionResponse: {
             data: {
                 status_token: string;
@@ -4996,7 +5007,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description The display name or legal acceptance is invalid. */
+            /** @description The display name, complementary contact, or legal acceptance is invalid. */
             422: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];
