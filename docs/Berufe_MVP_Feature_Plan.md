@@ -86,19 +86,19 @@ Use Infobip's 2FA API only to start and verify professional SMS OTP challenges. 
 
 **`user_account`**
 
-| Field               | Type      | Rules                                                      |
-| ------------------- | --------- | ---------------------------------------------------------- |
-| `id`                | UUID      | Primary key                                                |
-| `phone_e164`        | text      | Unique; required after professional registration; nullable before email-authenticated registration and for admins |
+| Field               | Type      | Rules                                                                                                                                     |
+| ------------------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                | UUID      | Primary key                                                                                                                               |
+| `phone_e164`        | text      | Unique; required after professional registration; nullable before email-authenticated registration and for admins                         |
 | `email`             | text      | Unique normalized identity; required after professional registration and for admins; nullable before cellphone-authenticated registration |
-| `phone_verified_at` | timestamp | Set after successful SMS verification; nullable                                      |
-| `email_verified_at` | timestamp | Set after successful email verification; nullable                                    |
-| `password_digest`   | text      | BCrypt digest required only for admins; never serialized   |
-| `role`              | enum      | `professional` or `admin`                                  |
-| `status`            | enum      | `active`, `suspended`                                      |
-| `terms_accepted_at` | timestamp | Required before professional profile setup                 |
-| `created_at`        | timestamp | Required                                                   |
-| `last_login_at`     | timestamp | Nullable                                                   |
+| `phone_verified_at` | timestamp | Set after successful SMS verification; nullable                                                                                           |
+| `email_verified_at` | timestamp | Set after successful email verification; nullable                                                                                         |
+| `password_digest`   | text      | BCrypt digest required only for admins; never serialized                                                                                  |
+| `role`              | enum      | `professional` or `admin`                                                                                                                 |
+| `status`            | enum      | `active`, `suspended`                                                                                                                     |
+| `terms_accepted_at` | timestamp | Required before professional profile setup                                                                                                |
+| `created_at`        | timestamp | Required                                                                                                                                  |
+| `last_login_at`     | timestamp | Nullable                                                                                                                                  |
 
 **`application_session`**
 
@@ -120,12 +120,12 @@ Use Infobip's 2FA API only to start and verify professional SMS OTP challenges. 
 | --------------------------------- | --------- | ------------------------------------------------------------------ |
 | `id`                              | UUID      | Primary key; not the browser credential                            |
 | `public_token_digest`             | text      | Unique; only the high-entropy raw token is returned to the browser |
-| `channel`                         | enum      | `sms` or `email`                                                    |
-| `infobip_challenge_id_ciphertext` | text      | Encrypted reference required only for SMS verification              |
-| `phone_e164_ciphertext`           | text      | Encrypted phone bound to an SMS challenge                           |
-| `email_ciphertext`                | text      | Encrypted normalized email bound to an email challenge              |
-| `email_code_digest`               | text      | HMAC digest required only for email challenges                      |
-| `attempt_count`                   | integer   | Failed verification count; email challenge is consumed at five      |
+| `channel`                         | enum      | `sms` or `email`                                                   |
+| `infobip_challenge_id_ciphertext` | text      | Encrypted reference required only for SMS verification             |
+| `phone_e164_ciphertext`           | text      | Encrypted phone bound to an SMS challenge                          |
+| `email_ciphertext`                | text      | Encrypted normalized email bound to an email challenge             |
+| `email_code_digest`               | text      | HMAC digest required only for email challenges                     |
+| `attempt_count`                   | integer   | Failed verification count; email challenge is consumed at five     |
 | `expires_at`                      | timestamp | Short required lifetime                                            |
 | `consumed_at`                     | timestamp | Nullable; prevents reuse after success                             |
 | `created_at`                      | timestamp | Required                                                           |
@@ -729,7 +729,7 @@ and are explicitly labeled as quote values rather than payments received.
 | `description` | text          | Required and length-limited                                                                       |
 | `quantity`    | decimal(12,3) | Greater than zero; three decimals so measured units such as `1.5 m²` or `0.125 t` are not rounded |
 | `unit`        | text          | Controlled length; examples: service, hour, m²                                                    |
-| `unit_price`  | decimal(14,2) | Greater than zero outside drafts; drafts may keep zero                                             |
+| `unit_price`  | decimal(14,2) | Greater than zero outside drafts; drafts may keep zero                                            |
 | `line_total`  | decimal(14,2) | Server-calculated                                                                                 |
 | `sort_order`  | smallint      | Required and deterministic                                                                        |
 
