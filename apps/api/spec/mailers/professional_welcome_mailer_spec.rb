@@ -11,13 +11,23 @@ RSpec.describe ProfessionalWelcomeMailer do
 
     expect(mail.to).to eq(["ana@example.com"])
     expect(mail.subject).to eq("Boas-vindas à Berufe")
-    expect(mail.html_part.body.decoded).to include(
+    html = mail.html_part.body.decoded
+    text = mail.text_part.body.decoded
+    expect(html).to include(
       "Boas-vindas à Berufe, Ana Reparos!",
       "#{ENV.fetch("WEB_ORIGIN")}/app/professional/onboarding",
+      "#{ENV.fetch("WEB_ORIGIN")}/images/email/welcome-features-diorama.jpg",
+      "Profissional mostrando seu portfólio, sua confiança e o contato direto com clientes",
+      "Mostre seu trabalho",
+      "Construa confiança",
+      "Receba contatos diretos",
       "Completar meu perfil"
     )
-    expect(mail.text_part.body.decoded).to include(
+    expect(text).to include(
       "Boas-vindas à Berufe, Ana Reparos!",
+      "Mostre seu trabalho",
+      "Construa confiança",
+      "Receba contatos diretos",
       "#{ENV.fetch("WEB_ORIGIN")}/app/professional/onboarding"
     )
   end

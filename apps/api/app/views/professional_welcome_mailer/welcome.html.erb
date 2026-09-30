@@ -2,10 +2,40 @@
   Boas-vindas à Berufe, <%= @display_name %>!
 </h1>
 
-<p style="margin: 0 0 18px;">Seu perfil profissional foi criado com sucesso.</p>
-<p style="margin: 0 0 28px;">
+<p style="margin: 0 0 14px;">Seu perfil profissional foi criado com sucesso.</p>
+<p style="margin: 0 0 22px;">
   Complete seus dados, serviços e área de atendimento para começar a apresentar seu trabalho a novos clientes.
 </p>
+
+<img
+  src="<%= @artwork_url %>"
+  width="504"
+  alt="Profissional mostrando seu portfólio, sua confiança e o contato direto com clientes"
+  style="display: block; width: 100%; max-width: 504px; height: auto; margin: 0 0 24px; border: 0; border-radius: 18px;"
+>
+
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width: 100%; margin: 0 0 26px; border-radius: 16px; background-color: #edf7f3;">
+  <tr>
+    <td style="padding: 20px 20px 10px;">
+      <p style="margin: 0 0 4px; color: #17352f; font-weight: 700;">Mostre seu trabalho</p>
+      <p style="margin: 0; color: #526963; font-size: 14px;">Publique fotos dos seus serviços e organize um portfólio que mostra o seu cuidado.</p>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 10px 20px;">
+      <div style="height: 1px; margin: 0 0 16px; background-color: #cfe4dc;"></div>
+      <p style="margin: 0 0 4px; color: #17352f; font-weight: 700;">Construa confiança</p>
+      <p style="margin: 0; color: #526963; font-size: 14px;">Confirme sua identidade e reúna recomendações de clientes e parceiros.</p>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 10px 20px 20px;">
+      <div style="height: 1px; margin: 0 0 16px; background-color: #cfe4dc;"></div>
+      <p style="margin: 0 0 4px; color: #17352f; font-weight: 700;">Receba contatos diretos</p>
+      <p style="margin: 0; color: #526963; font-size: 14px;">Clientes falam com você pelo WhatsApp, sem cobrança por contato.</p>
+    </td>
+  </tr>
+</table>
 
 <p style="margin: 0;">
   <a class="email-button" href="<%= @onboarding_url %>" style="display: inline-block; padding: 14px 22px; border-radius: 12px; background-color: #17352f; color: #ffffff; font-weight: 700; text-decoration: none;">
