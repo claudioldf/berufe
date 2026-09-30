@@ -30,5 +30,9 @@ RSpec.describe ProfessionalWelcomeMailer do
       "Receba contatos diretos",
       "#{ENV.fetch("WEB_ORIGIN")}/app/professional/onboarding"
     )
+
+    cta = Nokogiri::HTML.fragment(html).at_css("a.email-button")
+    expect(cta.parent["align"]).to eq("center")
+    expect(cta.ancestors("table").first["align"]).to eq("center")
   end
 end
