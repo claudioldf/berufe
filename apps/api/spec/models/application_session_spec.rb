@@ -34,6 +34,25 @@ RSpec.describe ApplicationSession, type: :model do
     expect(session).not_to be_active(now: session.idle_expires_at)
   end
 
+  it "records email OTP authentication for a professional with the professional boundaries" do
+    now = Time.zone.parse("2026-08-15 12:00:00 UTC")
+    account = UserAccount.create!(
+      email: "ana@example.com",
+      email_verified_at: now,
+      role: "professional",
+      status: "active"
+    )
+    session, = described_class.issue!(
+      user_account: account,
+      authentication_method: "email_otp",
+      now:
+    )
+
+    expect(session.authentication_method).to eq("email_otp")
+    expect(session.idle_expires_at).to eq(now + 7.days)
+    expect(session.absolute_expires_at).to eq(now + 30.days)
+  end
+
   it "keeps an eligible professional as the effective account of an administrator session" do
     admin = create_account(role: "admin")
     professional = registered_professional

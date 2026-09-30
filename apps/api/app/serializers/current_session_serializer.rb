@@ -13,7 +13,7 @@ class CurrentSessionSerializer
         role: @account.role,
         status: @account.status,
         registered: @account.registered?,
-        verified: @account.phone_verified?,
+        verified: @account.verified?,
         registration_completed: @account.registration_completed?,
         onboarding_completed: onboarding_completed?,
         registration_display_name: professional_profile&.working_revision&.display_name,
@@ -41,7 +41,7 @@ class CurrentSessionSerializer
   end
 
   def relationship_eligible?
-    return false unless @account.registered? && @account.phone_verified? && professional_profile
+    return false unless @account.registered? && @account.verified? && professional_profile
 
     professional_profile.verification_requests.identity.exists?(status: "approved")
   end

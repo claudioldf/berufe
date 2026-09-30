@@ -10,8 +10,11 @@ module Api
         authorize Current.user_account, :complete_registration?
         profile = ProfessionalRegistration.new.call(
           user_account: Current.user_account,
+          authentication_method: Current.application_session.authentication_method,
           display_name: params[:display_name],
-          accepted: params[:accepted]
+          accepted: params[:accepted],
+          phone: params[:phone],
+          email: params[:email]
         )
 
         render json: {

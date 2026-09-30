@@ -58,6 +58,7 @@ module Admin
       states.abbreviation AS state_abbreviation,
       user_accounts.phone_e164,
       user_accounts.phone_verified_at,
+      user_accounts.email_verified_at,
       user_accounts.registered_at,
       user_accounts.terms_accepted_at,
       user_accounts.terms_version,

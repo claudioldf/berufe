@@ -5,7 +5,7 @@ module Api
     class OtpVerificationsController < BaseController
       before_action :prevent_caching
       def create
-        result = PhoneOtpVerifier.new.call(
+        result = ProfessionalOtpVerifier.new.call(
           challenge_token: params[:challenge_token],
           code: params[:code]
         )
@@ -15,7 +15,7 @@ module Api
           data: {status: "verified"},
           request_id: Current.request_id
         }
-      rescue PhoneOtpVerifier::Invalid
+      rescue ProfessionalOtpVerifier::Invalid
         render_invalid_verification
       rescue SmsOtp::ProviderUnavailable, SmsOtp::RateLimited, SmsOtp::DeliveryRejected,
         ActiveSupport::MessageEncryptor::InvalidMessage, ActiveRecord::ActiveRecordError => error

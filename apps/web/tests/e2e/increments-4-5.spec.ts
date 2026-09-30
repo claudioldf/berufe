@@ -611,6 +611,9 @@ test("an indicated professional claims the external profile and publishes the co
   await expect(recipientPage.getByLabel("Nome profissional")).toHaveValue(
     externalName,
   );
+  await recipientPage
+    .getByLabel("Seu e-mail")
+    .fill(`claim-${externalPhone}@example.com`);
   await recipientPage.getByLabel(/li e aceito/i).check();
   await recipientPage.getByRole("button", { name: "Criar meu perfil" }).click();
   await expect(recipientPage).toHaveURL(/\/app\/professional\/onboarding$/);

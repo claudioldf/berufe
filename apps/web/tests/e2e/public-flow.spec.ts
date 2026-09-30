@@ -60,6 +60,7 @@ async function completeProfessionalSignIn(
   if (nextStep === "workspace") return;
 
   await registrationName.fill("Marcos Alves");
+  await page.getByLabel("Seu e-mail").fill(`professional-${phone}@example.com`);
   await page.getByLabel(/li e aceito/i).check();
   await page.getByRole("button", { name: "Criar meu perfil" }).click();
 }

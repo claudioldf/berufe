@@ -6,37 +6,48 @@ import {
 } from "~/services/api/errors";
 import { sanitizeBrazilianMobilePhone } from "~/utils/brazilian-phone";
 
-export interface RequestedPhoneOtp {
+export type ProfessionalAuthMethod = "phone" | "email";
+
+export interface RequestedProfessionalOtp {
   challengeToken: string;
   expiresIn: number;
   resendAvailableIn: number;
 }
 
-export interface VerifyPhoneOtpInput {
+export interface RequestProfessionalOtpInput {
+  method: ProfessionalAuthMethod;
+  identifier: string;
+}
+
+export interface VerifyProfessionalOtpInput {
   challengeToken: string;
   code: string;
 }
 
-export class PhoneOtpRequestError extends ApiRequestError {
+export class ProfessionalOtpRequestError extends ApiRequestError {
   readonly retryAfter?: number;
 
   constructor(error: NormalizedApiError, retryAfter?: number) {
     super(error);
-    this.name = "PhoneOtpRequestError";
+    this.name = "ProfessionalOtpRequestError";
     this.retryAfter = retryAfter;
   }
 }
 
-export async function requestPhoneOtp(
+export async function requestProfessionalOtp(
   client: BerufeApiClient,
-  phone: string,
-): Promise<RequestedPhoneOtp> {
+  input: RequestProfessionalOtpInput,
+): Promise<RequestedProfessionalOtp> {
+  const body =
+    input.method === "phone"
+      ? { phone: sanitizeBrazilianMobilePhone(input.identifier) }
+      : { email: input.identifier.trim().toLocaleLowerCase("pt-BR") };
   const { data, error, response } = await client.POST(
     "/api/v1/auth/otp/challenges",
-    { body: { phone: sanitizeBrazilianMobilePhone(phone) } },
+    { body },
   );
   if (error || !data) {
-    throw new PhoneOtpRequestError(
+    throw new ProfessionalOtpRequestError(
       normalizeApiError(
         error,
         response.headers.get("X-Request-Id") ?? "client",
@@ -52,9 +63,9 @@ export async function requestPhoneOtp(
   };
 }
 
-export async function verifyPhoneOtp(
+export async function verifyProfessionalOtp(
   client: BerufeApiClient,
-  input: VerifyPhoneOtpInput,
+  input: VerifyProfessionalOtpInput,
 ): Promise<void> {
   const { data, error, response } = await client.POST(
     "/api/v1/auth/otp/verifications",

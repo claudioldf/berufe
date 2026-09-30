@@ -1,15 +1,21 @@
 <script setup lang="ts">
 import { computed, useTemplateRef } from "vue";
 import { useInlineFormValidation } from "~/composables/useInlineFormValidation";
+import type { ProfessionalAuthMethod } from "~/services/api/phone-auth";
 
 const code = defineModel<string>({ required: true });
 const props = defineProps<{
-  phone: string;
+  method: ProfessionalAuthMethod;
+  destination: string;
   loading: boolean;
   error: string;
   cooldown: number;
 }>();
-const emit = defineEmits<{ submit: []; resend: []; changePhone: [] }>();
+const emit = defineEmits<{
+  submit: [];
+  resend: [];
+  changeDestination: [];
+}>();
 const formRoot = useTemplateRef<HTMLFormElement>("formRoot");
 const { validationAttempted, revealValidation } =
   useInlineFormValidation(formRoot);
@@ -18,6 +24,12 @@ const localError = computed(() =>
 );
 const displayedError = computed(
   () => props.error || (validationAttempted.value ? localError.value : ""),
+);
+const channelLabel = computed(() =>
+  props.method === "phone" ? "telefone" : "e-mail",
+);
+const destinationLabel = computed(() =>
+  props.method === "phone" ? `+55 ${props.destination}` : props.destination,
 );
 
 const resendLabel = computed(() => {
@@ -46,15 +58,15 @@ function submit() {
     <button
       class="auth-card__step-back"
       type="button"
-      @click="$emit('changePhone')"
+      @click="$emit('changeDestination')"
     >
-      <UIcon name="i-lucide-arrow-left" /> Alterar número
+      <UIcon name="i-lucide-arrow-left" /> Alterar {{ channelLabel }}
     </button>
-    <DesignSystemEyebrow>Confirme seu telefone</DesignSystemEyebrow>
+    <DesignSystemEyebrow>Confirme seu {{ channelLabel }}</DesignSystemEyebrow>
     <h1 id="code-step-title">Digite o código<br />que enviamos.</h1>
     <p class="auth-card__lead">
-      SMS enviado para
-      <strong>+55 {{ phone }}</strong
+      Código enviado por {{ method === "phone" ? "SMS" : "e-mail" }} para
+      <strong class="code-step__destination">{{ destinationLabel }}</strong
       >.
     </p>
     <form ref="formRoot" novalidate @submit.prevent="submit">
@@ -111,6 +123,10 @@ function submit() {
 </template>
 
 <style scoped>
+.code-step__destination {
+  overflow-wrap: anywhere;
+}
+
 .code-step__submit {
   justify-self: end;
   min-height: 44px;

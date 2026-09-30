@@ -74,8 +74,11 @@ class PublicDiscoveryDemoSeed
     end
     profile = ProfessionalRegistration.new.call(
       user_account: account,
+      authentication_method: "sms_otp",
       display_name: attributes.fetch("name"),
-      accepted: true
+      accepted: true,
+      email: "#{attributes.fetch("slug")}@example.com",
+      welcome_email_job: nil
     )
     profile.update!(public_slug: attributes.fetch("slug"))
     update_identity(profile, attributes)

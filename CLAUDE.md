@@ -144,7 +144,7 @@ Prettier is the sole formatter (ESLint formatting rules are off); stylelint uses
 
 ## Behavior worth knowing
 
-- Non-production SMS OTP uses the fake adapter and the fixed code in `FAKE_SMS_OTP_CODE` (`123456` in `.env.example`). E2E tests depend on this. Every environment except `test` otherwise uses Infobip, with a recipient allowlist outside production.
+- Non-production SMS OTP uses the fake adapter and `FAKE_SMS_OTP_CODE`; email OTP uses `FAKE_EMAIL_OTP_CODE` in development/test (both are `123456` in `.env.example`). E2E tests depend on the fixed codes. Every environment except `test` otherwise uses Infobip for SMS, with a recipient allowlist outside production; email uses the configured Action Mailer delivery provider.
 - The administrator seed (`ADMIN_AUTH_EMAIL` / `ADMIN_AUTH_PASSWORD`) refuses to run in production.
 - Tokenized quote links (`/orcamento/:token`) are request-time only, `no-store`, and `noindex`, and the page renders without the site layout.
 - Professional onboarding state persists in `localStorage` under `berufe:professional-onboarding:v1` with a `version: 1` field; bump/migrate deliberately if the shape changes.

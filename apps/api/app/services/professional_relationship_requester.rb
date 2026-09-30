@@ -171,7 +171,7 @@ class ProfessionalRelationshipRequester
 
   def ensure_eligible_initiator!(initiator)
     account = initiator.user_account
-    return if account.active? && account.registered? && account.phone_verified? &&
+    return if account.active? && account.registered? && account.verified? &&
       initiator.verification_requests.identity.exists?(status: "approved")
 
     raise Ineligible

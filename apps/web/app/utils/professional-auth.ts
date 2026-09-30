@@ -2,7 +2,7 @@ import type { CurrentAccount } from "~/services/api/application-session";
 
 export type ProfessionalAuthIntent = "login" | "signup";
 
-export interface ProfessionalPhoneStepContent {
+export interface ProfessionalContactStepContent {
   eyebrow: string;
   title: string;
   description: string;
@@ -37,14 +37,14 @@ export function resolveProfessionalEntryPath(
     : professionalOnboardingPath;
 }
 
-export const professionalPhoneStepContent: Record<
+export const professionalContactStepContent: Record<
   ProfessionalAuthIntent,
-  ProfessionalPhoneStepContent
+  ProfessionalContactStepContent
 > = {
   login: {
     eyebrow: "Acesso profissional",
     title: "Acesse seu perfil.",
-    description: "Use o celular confirmado no seu cadastro.",
+    description: "Escolha como receber seu código de acesso.",
     submitLabel: "Receber código para entrar",
     alternatePrompt: "Ainda não tem perfil?",
     alternateLabel: "Criar meu perfil",
@@ -55,7 +55,7 @@ export const professionalPhoneStepContent: Record<
     eyebrow: "Cadastro profissional",
     title: "Crie seu perfil profissional.",
     description:
-      "Informe seu celular para confirmar o telefone e começar. É gratuito.",
+      "Informe seu celular ou e-mail para confirmar seu acesso e começar. É gratuito.",
     submitLabel: "Receber código e começar",
     alternatePrompt: "Já tem perfil?",
     alternateLabel: "Entrar",

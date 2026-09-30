@@ -1,10 +1,12 @@
-import { computed, onScopeDispose, shallowRef } from "vue";
+import { computed, onScopeDispose, shallowRef, watch } from "vue";
 import {
-  PhoneOtpRequestError,
-  requestPhoneOtp,
-  verifyPhoneOtp,
-  type RequestedPhoneOtp,
-  type VerifyPhoneOtpInput,
+  ProfessionalOtpRequestError,
+  requestProfessionalOtp,
+  verifyProfessionalOtp,
+  type ProfessionalAuthMethod,
+  type RequestedProfessionalOtp,
+  type RequestProfessionalOtpInput,
+  type VerifyProfessionalOtpInput,
 } from "~/services/api/phone-auth";
 import { useApiClient } from "~/services/api/client";
 import { ApiRequestError } from "~/services/api/errors";
@@ -17,35 +19,48 @@ import {
   normalizeBrazilianMobilePhone,
 } from "~/utils/brazilian-phone";
 
-export type PhoneAuthStep = 1 | 2 | 3;
+export type ProfessionalAuthStep = 1 | 2 | 3;
 
-interface PhoneAuthFlowDependencies {
-  requestOtp?: (phone: string) => Promise<RequestedPhoneOtp>;
-  verifyOtp?: (input: VerifyPhoneOtpInput) => Promise<void>;
+interface ProfessionalAuthFlowDependencies {
+  requestOtp?: (
+    input: RequestProfessionalOtpInput,
+  ) => Promise<RequestedProfessionalOtp>;
+  verifyOtp?: (input: VerifyProfessionalOtpInput) => Promise<void>;
   completeRegistration?: (
     input: CompleteProfessionalRegistrationInput,
   ) => Promise<unknown>;
 }
 
-export function usePhoneAuthFlow(dependencies: PhoneAuthFlowDependencies = {}) {
-  const step = shallowRef<PhoneAuthStep>(1);
+export function useProfessionalAuthFlow(
+  dependencies: ProfessionalAuthFlowDependencies = {},
+) {
+  const step = shallowRef<ProfessionalAuthStep>(1);
+  const method = shallowRef<ProfessionalAuthMethod>("phone");
   const phone = shallowRef("");
+  const email = shallowRef("");
   const code = shallowRef("");
   const name = shallowRef("");
   const accepted = shallowRef(false);
   const isLoading = shallowRef(false);
   const error = shallowRef("");
+  const registrationFieldErrors = shallowRef<Record<string, string[]>>({});
   const cooldown = shallowRef(0);
   const challengeToken = shallowRef("");
   let cooldownTimer: ReturnType<typeof setInterval> | undefined;
 
   const cleanPhone = computed(() => normalizeBrazilianMobilePhone(phone.value));
+  const cleanEmail = computed(() => email.value.trim().toLowerCase());
+  const destination = computed(() =>
+    method.value === "phone" ? phone.value : email.value,
+  );
   const sendOtp =
     dependencies.requestOtp ??
-    ((phoneE164: string) => requestPhoneOtp(useApiClient(), phoneE164));
+    ((input: RequestProfessionalOtpInput) =>
+      requestProfessionalOtp(useApiClient(), input));
   const confirmOtp =
     dependencies.verifyOtp ??
-    ((input: VerifyPhoneOtpInput) => verifyPhoneOtp(useApiClient(), input));
+    ((input: VerifyProfessionalOtpInput) =>
+      verifyProfessionalOtp(useApiClient(), input));
   const submitRegistration =
     dependencies.completeRegistration ??
     ((input: CompleteProfessionalRegistrationInput) =>
@@ -68,25 +83,43 @@ export function usePhoneAuthFlow(dependencies: PhoneAuthFlowDependencies = {}) {
     }, 1000);
   }
 
+  function validEmail(value: string) {
+    return (
+      value.length >= 3 &&
+      value.length <= 254 &&
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+    );
+  }
+
   async function requestCode() {
     if (isLoading.value || (step.value === 2 && cooldown.value > 0)) return;
 
     error.value = "";
-    if (!cleanPhone.value) {
+    const identifier =
+      method.value === "phone" ? (cleanPhone.value ?? "") : cleanEmail.value;
+    if (method.value === "phone" && !cleanPhone.value) {
       error.value = "Digite um número de celular válido.";
+      return;
+    }
+    if (method.value === "email" && !validEmail(cleanEmail.value)) {
+      error.value = "Digite um e-mail válido.";
       return;
     }
 
     isLoading.value = true;
     try {
-      const requestedOtp = await sendOtp(cleanPhone.value);
+      const requestedOtp = await sendOtp({ method: method.value, identifier });
       challengeToken.value = requestedOtp.challengeToken;
-      phone.value = formatBrazilianMobilePhone(cleanPhone.value);
+      if (method.value === "phone") {
+        phone.value = formatBrazilianMobilePhone(cleanPhone.value ?? "");
+      } else {
+        email.value = cleanEmail.value;
+      }
       step.value = 2;
       startCooldown(requestedOtp.resendAvailableIn);
     } catch (requestError) {
       if (
-        requestError instanceof PhoneOtpRequestError &&
+        requestError instanceof ProfessionalOtpRequestError &&
         requestError.retryAfter
       ) {
         startCooldown(requestError.retryAfter);
@@ -128,7 +161,7 @@ export function usePhoneAuthFlow(dependencies: PhoneAuthFlowDependencies = {}) {
     }
   }
 
-  function changePhone() {
+  function changeDestination() {
     error.value = "";
     code.value = "";
     challengeToken.value = "";
@@ -145,8 +178,17 @@ export function usePhoneAuthFlow(dependencies: PhoneAuthFlowDependencies = {}) {
 
   function validateRegistration() {
     error.value = "";
+    registrationFieldErrors.value = {};
     if (name.value.trim().length < 3) {
       error.value = "Informe seu nome profissional.";
+      return false;
+    }
+    if (method.value === "phone" && !validEmail(cleanEmail.value)) {
+      error.value = "Digite um e-mail válido.";
+      return false;
+    }
+    if (method.value === "email" && !cleanPhone.value) {
+      error.value = "Digite um número de celular válido.";
       return false;
     }
     if (!accepted.value) {
@@ -161,37 +203,65 @@ export function usePhoneAuthFlow(dependencies: PhoneAuthFlowDependencies = {}) {
 
     isLoading.value = true;
     try {
-      await submitRegistration({
+      const baseInput = {
         displayName: name.value.trim(),
         accepted: accepted.value,
-      });
+      };
+      await submitRegistration(
+        method.value === "phone"
+          ? { ...baseInput, method: "phone", email: cleanEmail.value }
+          : { ...baseInput, method: "email", phone: cleanPhone.value ?? "" },
+      );
       return true;
     } catch (registrationError) {
-      error.value =
-        registrationError instanceof ApiRequestError
-          ? registrationError.message
-          : "Não foi possível criar seu perfil agora. Tente novamente em instantes.";
+      if (registrationError instanceof ApiRequestError) {
+        registrationFieldErrors.value = registrationError.fieldErrors;
+        error.value = Object.keys(registrationError.fieldErrors).length
+          ? ""
+          : registrationError.message;
+      } else {
+        registrationFieldErrors.value = {};
+        error.value =
+          "Não foi possível criar seu perfil agora. Tente novamente em instantes.";
+      }
       return false;
     } finally {
       isLoading.value = false;
     }
   }
 
+  watch(method, () => {
+    clearTimers();
+    error.value = "";
+    code.value = "";
+    cooldown.value = 0;
+    challengeToken.value = "";
+    registrationFieldErrors.value = {};
+  });
+
+  watch([name, phone, email, accepted], () => {
+    registrationFieldErrors.value = {};
+  });
+
   onScopeDispose(clearTimers);
 
   return {
     step,
+    method,
     phone,
+    email,
+    destination,
     code,
     name,
     accepted,
     isLoading,
     error,
+    registrationFieldErrors,
     cooldown,
     challengeToken,
     requestCode,
     verifyCode,
-    changePhone,
+    changeDestination,
     resumeRegistration,
     validateRegistration,
     registerProfessional,

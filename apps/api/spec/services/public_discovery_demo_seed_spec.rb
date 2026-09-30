@@ -16,9 +16,13 @@ RSpec.describe PublicDiscoveryDemoSeed do
       environment_name: "test"
     )
 
-    seed.call
+    expect do
+      seed.call
+    end.not_to have_enqueued_job(ProfessionalWelcomeEmailDeliveryJob)
     counts = demo_counts
-    seed.call
+    expect do
+      seed.call
+    end.not_to have_enqueued_job(ProfessionalWelcomeEmailDeliveryJob)
 
     expect(demo_counts).to eq(counts)
     expect(counts).to include(
