@@ -235,7 +235,9 @@ module SearchResolvers
         open_timeout: timeout_seconds,
         read_timeout: timeout_seconds
       ) { |connection| connection.request(request) }
-      parse(response)
+      body = parse(response)
+      questions.each { |id, question| answer(body, id, question.fetch("type")) }
+      body
     rescue IOError, SocketError, SystemCallError, Timeout::Error => error
       Rails.error.report(error)
       raise ::Llm::Client::Unavailable, "JEV request failed"
