@@ -29,6 +29,6 @@ class ProfessionalIdentityApprovedSmsJob < ApplicationJob
   # ASCII only: an accented letter forces UCS-2 encoding, which cuts a
   # segment from 160 to 70 characters and splits this message in two.
   def sms_text(profile)
-    "Berufe: sua identidade foi verificada pela nossa equipe. Seu perfil: #{IdentityApprovalLink.profile_url(profile)}"
+    "Berufe: Sua identidade foi aprovada. Seu perfil: #{IdentityApprovalLink.profile_url(profile)}"
   end
 end
