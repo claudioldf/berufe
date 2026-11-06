@@ -331,8 +331,10 @@ useHead(() => ({ link: [{ rel: "canonical", href: canonicalUrl.value }] }));
       <h2>7. Cookies, armazenamento e medição</h2>
       <p>
         A sessão usa um cookie próprio, seguro, HttpOnly e SameSite, necessário
-        para autenticação. A Berufe não usa cookies publicitários nem vende ou
-        compartilha dados de navegação com finalidade de publicidade.
+        para autenticação. A Berufe não vende dados de navegação. A Berufe não
+        veicula campanhas publicitárias e não grava cookies de publicidade; se
+        isso mudar, esta política será atualizada antes, e o aviso descreverá
+        quais dados passam a ser usados e com qual finalidade.
       </p>
       <p>
         O site usa o Google Analytics para medir audiência e uso agregado. O
