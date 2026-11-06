@@ -16,6 +16,9 @@ module SearchResolvers
     DEFAULT_RETRY_AFTER = 60
     MAXIMUM_RETRY_AFTER = 1.hour.to_i
     MAXIMUM_SERVICES = 5
+    # JEV rejects a choice question with more than 255 options (HTTP 422).
+    MAXIMUM_CHOICE_OPTIONS = 255
+    MAXIMUM_CITY_CANDIDATES = 20
     OTHER_CITY = "outra_cidade"
     NO_NEIGHBORHOOD = "nenhum"
     # City name that can never match a supported city, so the parser rejects
@@ -45,7 +48,7 @@ module SearchResolvers
 
     def call(expression:, services:, neighborhoods:, default_location:)
       started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      questions = questions_for(services:, neighborhoods:, default_location:)
+      questions = questions_for(expression:, services:, neighborhoods:, default_location:)
       bodies = [post(state: expression, questions:)]
       body = bodies.first
       selected_location = selected_location(body, default_location:)
@@ -60,11 +63,9 @@ module SearchResolvers
       else
         city = selected_location
         city_neighborhoods = Neighborhood.where(city_code: city.city_code).ordered.to_a
-        if city_neighborhoods.any?
-          follow_up = post(
-            state: expression,
-            questions: {"neighborhood" => neighborhood_question(city_neighborhoods, city_name: city.city)}
-          )
+        question = neighborhood_question(city_neighborhoods, city_name: city.city, expression:)
+        if question
+          follow_up = post(state: expression, questions: {"neighborhood" => question})
           bodies << follow_up
           neighborhood = neighborhood_from(follow_up, neighborhoods: city_neighborhoods)
         end
@@ -95,9 +96,16 @@ module SearchResolvers
     end
 
     def prompt_digest(services:, neighborhoods:, default_location:)
+      # The questions depend on the expression (city and neighborhood
+      # shortlists), which the cache key already includes, so the digest
+      # fingerprints the catalogs the questions are built from instead.
       Digest::SHA256.hexdigest(
         JSON.generate(
-          questions: questions_for(services:, neighborhoods:, default_location:),
+          services: service_criteria(services),
+          neighborhoods: neighborhoods.map { |neighborhood| [neighborhood.code, neighborhood.name] },
+          cities: supported_locations.map { |location| [location.city_code, location.city, location.state_code] },
+          default_city_code: default_location.city_code,
+          limits: [MAXIMUM_CHOICE_OPTIONS, MAXIMUM_CITY_CANDIDATES],
           min_confidence:,
           secondary_probability:
         )
@@ -108,7 +116,7 @@ module SearchResolvers
 
     attr_reader :api_key, :timeout_seconds, :min_confidence, :secondary_probability, :endpoint, :http
 
-    def questions_for(services:, neighborhoods:, default_location:)
+    def questions_for(expression:, services:, neighborhoods:, default_location:)
       questions = {}
       if services.any?
         questions["wants_service"] = {
@@ -118,9 +126,7 @@ module SearchResolvers
         questions["service"] = {
           "type" => "choice",
           "instructions" => "Qual serviço do catálogo melhor atende ao pedido?",
-          "criteria" => services.to_h do |service|
-            [service.slug, {"nome" => service.name, "aliases" => service.aliases, "descricao" => service.description}]
-          end
+          "criteria" => service_criteria(services)
         }
       end
       questions["mentions_city"] = {
@@ -130,23 +136,66 @@ module SearchResolvers
       questions["city"] = {
         "type" => "choice",
         "instructions" => "Qual cidade o texto cita?",
-        "criteria" => supported_locations.to_h { |location|
-          [location.city_code, "#{location.city}/#{location.state_code}"]
-        }.merge(OTHER_CITY => "Uma cidade que não está na lista")
+        "criteria" => city_options(expression, default_location)
       }
-      if neighborhoods.any?
-        questions["neighborhood"] = neighborhood_question(neighborhoods, city_name: default_location.city)
-      end
+      neighborhood = neighborhood_question(neighborhoods, city_name: default_location.city, expression:)
+      questions["neighborhood"] = neighborhood if neighborhood
       questions
     end
 
-    def neighborhood_question(neighborhoods, city_name:)
+    def service_criteria(services)
+      services.to_h do |service|
+        [service.slug, {"nome" => service.name, "aliases" => service.aliases, "descricao" => service.description}]
+      end
+    end
+
+    # Every supported city would exceed JEV's option limit, so only the default
+    # city and the cities whose name appears in the text are offered. A city
+    # the text names that is not among them can only be "outra_cidade".
+    def city_options(expression, default_location)
+      options = {default_location.city_code => "#{default_location.city}/#{default_location.state_code}"}
+      city_candidates(expression).each do |location|
+        options[location.city_code] ||= "#{location.city}/#{location.state_code}"
+      end
+      options.merge(OTHER_CITY => "Uma cidade que não está na lista")
+    end
+
+    def city_candidates(expression)
+      haystack = " #{PublicSearchText.normalize(expression)} "
+      matches = supported_locations.filter_map do |location|
+        name = PublicSearchText.normalize(location.city)
+        [location, name] if name.present? && haystack.include?(" #{name} ")
+      end
+      # "Rio de Janeiro" in the text must not also offer a city named "Rio".
+      matches
+        .reject { |_, name| matches.any? { |_, other| other != name && " #{other} ".include?(" #{name} ") } }
+        .sort_by { |location, name| [-name.length, location.state_code, location.city] }
+        .first(MAXIMUM_CITY_CANDIDATES)
+        .map(&:first)
+    end
+
+    # nil when there is nothing to ask: no neighborhoods, or a list too long
+    # for JEV where no neighborhood name appears in the text.
+    def neighborhood_question(neighborhoods, city_name:, expression:)
+      options = neighborhood_options(neighborhoods, expression)
+      return if options.empty?
+
       {
         "type" => "choice",
         "instructions" => "Qual bairro de #{city_name} o texto cita?",
-        "criteria" => neighborhoods.to_h { |neighborhood| [neighborhood.code, neighborhood.name] }
+        "criteria" => options.to_h { |neighborhood| [neighborhood.code, neighborhood.name] }
           .merge(NO_NEIGHBORHOOD => "Nenhum bairro é citado")
       }
+    end
+
+    def neighborhood_options(neighborhoods, expression)
+      return neighborhoods if neighborhoods.size < MAXIMUM_CHOICE_OPTIONS
+
+      haystack = " #{PublicSearchText.normalize(expression)} "
+      neighborhoods
+        .select { |neighborhood| haystack.include?(" #{PublicSearchText.normalize(neighborhood.name)} ") }
+        .sort_by { |neighborhood| -neighborhood.name.length }
+        .first(MAXIMUM_CHOICE_OPTIONS - 1)
     end
 
     def supported_locations
