@@ -44,6 +44,22 @@ RSpec.describe VerificationRequestCreator do
     expect(upload.reload).to be_attached
   end
 
+  it "notifies administrators once, and not on the idempotent repeat or a rejected request" do
+    upload = processed_upload
+    request_record = nil
+
+    expect do
+      request_record = described_class.new.call(profile:, media_upload_id: upload.id, verification_type: "identity")
+    end.to have_enqueued_job(AdminNotificationJob).with("verification_submitted", kind_of(String)).once
+
+    expect do
+      described_class.new.call(profile:, media_upload_id: upload.id, verification_type: "identity")
+      expect { described_class.new.call(profile:, media_upload_id: upload.id, verification_type: "company") }
+        .to raise_error(described_class::Invalid)
+    end.not_to have_enqueued_job(AdminNotificationJob)
+    expect(request_record).to be_persisted
+  end
+
   it "rejects a second pending identity request without duplicating records" do
     described_class.new.call(
       profile:,

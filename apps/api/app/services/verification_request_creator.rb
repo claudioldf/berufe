@@ -10,7 +10,8 @@ class VerificationRequestCreator
     end
   end
 
-  def call(profile:, media_upload_id:, verification_type:, now: Time.current)
+  def call(profile:, media_upload_id:, verification_type:, admin_notification_job: AdminNotificationJob,
+    now: Time.current)
     profile.with_lock do
       validate_type!(verification_type)
       raise Invalid.new(birthdate: ["informe sua data de nascimento antes da verificação"]) if profile.birthdate.blank?
@@ -36,6 +37,7 @@ class VerificationRequestCreator
         uploaded_at: now
       )
       upload.update!(state: "attached", attached_at: now)
+      admin_notification_job&.perform_later("verification_submitted", request.id)
       request
     end
   rescue ActiveRecord::RecordInvalid => error
