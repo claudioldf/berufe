@@ -54,10 +54,10 @@ export default defineRailway(() => {
       OPENAI_MODEL: "gpt-5-mini",
       OPENAI_API_KEY: preserve(),
       OPENAI_TIMEOUT_SECONDS: preserve(),
-      // Search interpretation: "llm" (above) or "jev". Switching to "jev" also
-      // needs a TYPESAFE_API_KEY secret on this service (set it in Railway,
-      // then declare it here as preserve()).
-      SEARCH_RESOLVER: "llm",
+      // Search interpretation: "jev" (TypeSafe) or "llm" (the LLM_ADAPTER above).
+      // Rails refuses to boot with "jev" unless TYPESAFE_API_KEY is set.
+      SEARCH_RESOLVER: "jev",
+      TYPESAFE_API_KEY: preserve(),
       JEV_MODEL: "jev-latest",
       JEV_TIMEOUT_SECONDS: "8",
       JEV_MIN_CONFIDENCE: "0.5",
