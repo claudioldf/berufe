@@ -49,6 +49,24 @@ class InfobipOtpClient
     SmsOtp::Challenge.new(reference:, status: "accepted")
   end
 
+  def send_text(phone:, text:)
+    enforce_allowed_phone!(phone)
+    response = post_json(
+      "/sms/2/text/advanced",
+      operation: "send_text",
+      messages: [{destinations: [{to: phone}], from: @sender, text:}]
+    )
+    payload = successful_payload(response, operation: "send_text")
+    group_id = payload.dig("messages", 0, "status", "groupId")
+    if [2, 5].include?(group_id)
+      log_outcome(event: "infobip_otp_request_failed", operation: "send_text", http_status: response.code.to_i)
+      raise SmsOtp::DeliveryRejected, "SMS provider rejected the message"
+    end
+
+    log_outcome(event: "infobip_otp_request_accepted", operation: "send_text", http_status: response.code.to_i)
+    nil
+  end
+
   def verify_challenge(reference:, code:)
     encoded_reference = URI.encode_www_form_component(reference.to_s)
     response = post_json("/2fa/2/pin/#{encoded_reference}/verify", operation: "verify_challenge", pin: code)

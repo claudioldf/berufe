@@ -63,6 +63,24 @@ RSpec.describe "Identity-verification moderation" do
     )
   end
 
+  it "notifies the professional on approval by default" do
+    expect do
+      decide(request_record, "approved", identity_match_confirmed: true)
+    end.to have_enqueued_job(ProfessionalIdentityApprovedSmsJob).with(request_record.id)
+  end
+
+  it "does not notify when the admin turns the flag off" do
+    expect do
+      decide(request_record, "approved", identity_match_confirmed: true, notify_professional: false)
+    end.not_to have_enqueued_job(ProfessionalIdentityApprovedSmsJob)
+  end
+
+  it "does not notify on rejection" do
+    expect do
+      decide(request_record, "rejected", reason: "A imagem enviada não permite conferir a identidade.")
+    end.not_to have_enqueued_job(ProfessionalIdentityApprovedSmsJob)
+  end
+
   it "keeps rejection reasons owner-only and publishes no identity claim" do
     decide(request_record, "rejected", reason: "A imagem enviada não permite conferir a identidade.")
 
@@ -106,14 +124,15 @@ RSpec.describe "Identity-verification moderation" do
 
   private
 
-  def decide(target, action, reason: nil, note: nil, identity_match_confirmed: nil)
+  def decide(target, action, reason: nil, note: nil, identity_match_confirmed: nil, notify_professional: nil)
     ModerationDecision.new(context:).call(
       target_type: "verification_request",
       target_id: target.id,
       action:,
       reason:,
       note:,
-      identity_match_confirmed:
+      identity_match_confirmed:,
+      notify_professional:
     )
   end
 

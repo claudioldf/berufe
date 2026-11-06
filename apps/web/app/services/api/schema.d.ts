@@ -3054,6 +3054,11 @@ export interface components {
             /** @description Optional private administrator note. */
             note?: string | null;
             identity_match_confirmed?: boolean;
+            /**
+             * @description When approving, tell the professional by e-mail (or SMS when they have no e-mail). Ignored for rejections.
+             * @default true
+             */
+            notify_professional: boolean;
         };
         /** @constant */
         ModerationTargetType: "verification_request";
