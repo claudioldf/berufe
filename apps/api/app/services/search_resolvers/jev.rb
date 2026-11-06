@@ -313,13 +313,19 @@ module SearchResolvers
     def validation_detail(response, status)
       return "" unless status == 422
 
-      issues = Array(JSON.parse(response.body)["detail"]).filter_map do |issue|
+      body = JSON.parse(response.body)
+      return "" unless body.is_a?(Hash)
+
+      issues = Array(body["detail"]).filter_map do |issue|
         next unless issue.is_a?(Hash)
 
-        "#{Array(issue["loc"]).join(".")} #{issue["type"]}".strip
+        # Anything but plain strings and numbers could carry the user's text.
+        location = Array(issue["loc"]).select { |part| part.is_a?(String) || part.is_a?(Integer) }.join(".")
+        type = issue["type"] if issue["type"].is_a?(String)
+        "#{location} #{type}".strip.presence
       end
       issues.any? ? " (#{issues.first(3).join("; ")})" : ""
-    rescue JSON::ParserError, TypeError
+    rescue JSON::ParserError
       ""
     end
 

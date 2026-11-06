@@ -368,5 +368,20 @@ RSpec.describe SearchResolvers::Jev do
         ::Llm::Client::Unavailable, "JEV returned HTTP 422 (body.questions.city.criteria too_long)"
       )
     end
+
+    it "falls back to the plain status error when the 422 body is not a JSON object" do
+      ["null", "false", "42", '"detail"', '["detail"]', "{}", '{"detail":null}', '{"detail":"text"}'].each do |body|
+        response = JevResolverSpecSupport::Response.new("422", body, {})
+
+        expect { resolve(resolver(response)) }.to raise_error(::Llm::Client::Unavailable, "JEV returned HTTP 422"), body
+      end
+    end
+
+    it "ignores diagnostics that are not plain strings or numbers" do
+      body = JSON.generate("detail" => [{"loc" => [{"input" => "meu cpf 123"}], "type" => {"input" => "meu cpf 123"}}])
+      response = JevResolverSpecSupport::Response.new("422", body, {})
+
+      expect { resolve(resolver(response)) }.to raise_error(::Llm::Client::Unavailable, "JEV returned HTTP 422")
+    end
   end
 end
