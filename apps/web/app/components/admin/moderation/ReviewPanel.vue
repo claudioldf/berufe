@@ -7,6 +7,7 @@ defineProps<{
   evidenceLoading?: boolean;
   mutating?: boolean;
   identityMatchConfirmed?: boolean;
+  notifyProfessional?: boolean;
 }>();
 defineEmits<{
   approve: [];
@@ -14,6 +15,7 @@ defineEmits<{
   openEvidence: [];
   note: [value: string];
   identityMatch: [value: boolean];
+  notifyProfessional: [value: boolean];
 }>();
 </script>
 
@@ -80,6 +82,26 @@ defineEmits<{
         Confirmo que a identidade e a data de nascimento
         <strong>{{ item.claimedBirthdate ?? "não informada" }}</strong>
         correspondem ao perfil.
+      </span>
+    </label>
+    <label
+      v-if="item.status === 'pending_review'"
+      class="moderation__identity-match"
+    >
+      <input
+        type="checkbox"
+        name="notify-professional"
+        :checked="notifyProfessional"
+        @change="
+          $emit(
+            'notifyProfessional',
+            ($event.target as HTMLInputElement).checked,
+          )
+        "
+      />
+      <span>
+        Avisar o profissional por e-mail (ou SMS, se não tiver e-mail) quando a
+        identidade for aprovada.
       </span>
     </label>
     <DesignSystemFormField

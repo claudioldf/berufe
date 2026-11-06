@@ -46,6 +46,13 @@ describe("administrator moderation components", () => {
     await wrapper.setProps({ identityMatchConfirmed: true });
     await approveButton().trigger("click");
     expect(wrapper.emitted("approve")).toHaveLength(1);
+
+    const notify = wrapper.get('input[name="notify-professional"]');
+    expect((notify.element as HTMLInputElement).checked).toBe(false);
+    await wrapper.setProps({ notifyProfessional: true });
+    expect((notify.element as HTMLInputElement).checked).toBe(true);
+    await notify.setValue(false);
+    expect(wrapper.emitted("notifyProfessional")?.at(-1)).toEqual([false]);
   });
 
   it("keeps status and search as explicit server-filter events", async () => {

@@ -46,6 +46,7 @@ interface ModerationQueueDependencies {
       reason?: string;
       note?: string;
       identityMatchConfirmed?: boolean;
+      notifyProfessional?: boolean;
     },
   ) => Promise<ModerationQueue>;
   route?: Pick<RouteLocationNormalizedLoaded, "query">;
@@ -164,7 +165,11 @@ export function useModerationQueue(
 
   async function decide(
     action: ModerationDecision,
-    attributes: { reason?: string; identityMatchConfirmed?: boolean } = {},
+    attributes: {
+      reason?: string;
+      identityMatchConfirmed?: boolean;
+      notifyProfessional?: boolean;
+    } = {},
   ) {
     const item = selected.value;
     if (!item || isMutating.value) return null;
@@ -175,6 +180,7 @@ export function useModerationQueue(
         reason: attributes.reason?.trim(),
         note: note.value.trim(),
         identityMatchConfirmed: attributes.identityMatchConfirmed,
+        notifyProfessional: attributes.notifyProfessional,
       });
       adopt(result);
       note.value = "";

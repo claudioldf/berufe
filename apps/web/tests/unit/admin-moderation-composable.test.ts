@@ -112,6 +112,7 @@ describe("administrator moderation composable", () => {
         reason: "A imagem precisa ser substituída.",
         note: "Conferida.",
         identityMatchConfirmed: undefined,
+        notifyProfessional: undefined,
       },
     );
     expect(workflow.queue.value.items).toEqual([]);
