@@ -30,6 +30,12 @@ least this probability, 0-1). `LLM_ADAPTER` still drives bio generation whatever
 `SEARCH_RESOLVER` is. The audit trail and cache record which resolver answered in their
 adapter and model columns, and cache entries never cross resolvers.
 
+To compare both resolvers on the same text without restarting, run
+`docker compose exec api bin/rails "search:compare[preciso de um eletricista]"` (or pass a file
+with one expression per line). It prints the mapped services and locations, the latency, and
+JEV's per-question probabilities, and it neither reads nor writes the analysis cache or the
+search audit trail. Note that it calls the real providers configured in `.env`.
+
 ## Approximate search location
 
 Rails resolves the visitor's approximate city and state through MaxMind GeoLite web

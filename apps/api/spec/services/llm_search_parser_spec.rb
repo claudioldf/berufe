@@ -119,6 +119,16 @@ RSpec.describe LlmSearchParser do
     expect(analysis.attributes.to_json).not_to include(expression, "Ana")
   end
 
+  it "skips reading and writing the analysis cache when asked not to use it" do
+    parser = described_class.new(resolver:)
+    expression = "Preciso trocar a fiação"
+
+    2.times { parser.call(expression:, use_cache: false) }
+
+    expect(client).to have_received(:parse).twice
+    expect(LlmSearchAnalysis.count).to eq(0)
+  end
+
   it "uses the selected city only as fallback and resolves an explicit city and its neighborhoods" do
     parser = described_class.new(resolver:)
     allow(client).to receive(:parse).and_return(

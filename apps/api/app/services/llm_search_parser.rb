@@ -43,7 +43,7 @@ class LlmSearchParser
     @audit_recorder = audit_recorder
   end
 
-  def call(expression:, default_location: nil, audit_event: nil)
+  def call(expression:, default_location: nil, audit_event: nil, use_cache: true)
     normalized_expression = validate_expression!(expression)
     supported_locations = SupportedSearchLocations.new
     default_location = normalize_default_location(default_location, supported_locations:)
@@ -57,7 +57,7 @@ class LlmSearchParser
       "#{normalized_expression}\0#{default_location.to_h.to_json}\0#{prompt_digest}\0#{resolver.adapter}\0#{resolver.model}"
     )
 
-    if (cached = cached_analysis(cache_key_digest))
+    if use_cache && (cached = cached_analysis(cache_key_digest))
       audit_raw_response = cached.raw_response
       audit_response_source = "cache"
       audit_provider_request_id = cached.provider_request_id
@@ -105,13 +105,15 @@ class LlmSearchParser
       provider_request_id: response.provider_request_id,
       prompt_digest:
     )
-    persist_analysis(
-      cache_key_digest:,
-      expression_digest: digest(normalized_expression),
-      prompt_digest:,
-      criteria:,
-      response:
-    )
+    if use_cache
+      persist_analysis(
+        cache_key_digest:,
+        expression_digest: digest(normalized_expression),
+        prompt_digest:,
+        criteria:,
+        response:
+      )
+    end
     criteria
   rescue LocationUnsupported, LocationUnrecognized
     audit_recorder.record_failure(
