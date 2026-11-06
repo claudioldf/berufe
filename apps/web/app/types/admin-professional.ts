@@ -51,6 +51,7 @@ export interface AdminProfessionalPage {
 
 export interface AdminProfessionalFilters {
   page: number;
+  id?: string;
   q: string;
   phone: string;
   city: string | null;

@@ -10,6 +10,7 @@ const {
   phone,
   city,
   state,
+  id,
   identityVerified,
   onboardingFinished,
   sort,
@@ -86,6 +87,11 @@ async function publish(item: AdminProfessionalItem) {
       @sort="setSort"
       @clear="clearFilters"
     />
+
+    <p v-if="id" class="professionals__focus">
+      Mostrando um profissional pelo link recebido.
+      <button type="button" @click="clearFilters">Ver todos</button>
+    </p>
 
     <p v-if="mutationError" class="professionals__notice" role="alert">
       {{ mutationError }}
@@ -178,6 +184,29 @@ async function publish(item: AdminProfessionalItem) {
 
     .professionals__retry {
       margin-left: auto;
+    }
+  }
+
+  &__focus {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+    padding: 10px 13px;
+    border-radius: var(--radius-md);
+    background: var(--color-surface-muted);
+    color: var(--color-brand);
+    font-size: 0.8rem;
+    font-weight: 700;
+
+    & button {
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      text-decoration: underline;
+      cursor: pointer;
     }
   }
 

@@ -89,6 +89,7 @@ export function useAdminProfessionals(
   const client = useApiClient();
   const professionals = shallowRef<AdminProfessionalPage>(emptyPage());
   const page = shallowRef(positivePage(route.query.page));
+  const id = shallowRef(routeString(route.query.id).trim());
   const q = shallowRef(routeString(route.query.q).trim());
   const phone = shallowRef(routeString(route.query.phone).trim());
   const city = shallowRef(routeCity(route.query.city));
@@ -123,6 +124,7 @@ export function useAdminProfessionals(
   function filters(): AdminProfessionalFilters {
     return {
       page: page.value,
+      id: id.value,
       q: q.value,
       phone: phone.value,
       city: city.value,
@@ -162,6 +164,7 @@ export function useAdminProfessionals(
   function replaceRoute(next: AdminProfessionalFilters) {
     const query: LocationQueryRaw = { ...route.query };
     delete query.page;
+    delete query.id;
     delete query.q;
     delete query.phone;
     delete query.city;
@@ -170,6 +173,7 @@ export function useAdminProfessionals(
     delete query.onboarding_finished;
     delete query.sort;
     if (next.page > 1) query.page = String(next.page);
+    if (next.id) query.id = next.id;
     if (next.q) query.q = next.q;
     if (next.phone) query.phone = next.phone;
     if (next.city) query.city = next.city;
@@ -222,6 +226,7 @@ export function useAdminProfessionals(
   function clearFilters() {
     return replaceRoute({
       page: 1,
+      id: "",
       q: "",
       phone: "",
       city: null,
@@ -265,6 +270,7 @@ export function useAdminProfessionals(
   watch(
     () => [
       route.query.page,
+      route.query.id,
       route.query.q,
       route.query.phone,
       route.query.city,
@@ -275,6 +281,7 @@ export function useAdminProfessionals(
     ],
     () => {
       page.value = positivePage(route.query.page);
+      id.value = routeString(route.query.id).trim();
       q.value = routeString(route.query.q).trim();
       phone.value = routeString(route.query.phone).trim();
       city.value = routeCity(route.query.city);
@@ -286,7 +293,17 @@ export function useAdminProfessionals(
     { immediate: true },
   );
   watch(
-    [page, q, phone, city, state, identityVerified, onboardingFinished, sort],
+    [
+      page,
+      id,
+      q,
+      phone,
+      city,
+      state,
+      identityVerified,
+      onboardingFinished,
+      sort,
+    ],
     () => void load(),
     { immediate: true },
   );
@@ -295,6 +312,7 @@ export function useAdminProfessionals(
   return {
     professionals: shallowReadonly(professionals),
     page: shallowReadonly(page),
+    id: shallowReadonly(id),
     q: shallowReadonly(q),
     phone: shallowReadonly(phone),
     city: shallowReadonly(city),

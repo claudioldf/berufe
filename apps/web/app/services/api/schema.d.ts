@@ -3588,6 +3588,8 @@ export interface components {
         SortDirection: "asc" | "desc";
         ModerationTargetType: components["schemas"]["ModerationTargetType"];
         ModerationTargetId: string;
+        /** @description Professional account identifier; narrows the directory to that single account. */
+        AdminProfessionalId: string;
         /** @description Case-insensitive, accent-insensitive professional name search. */
         AdminProfessionalQuery: string;
         /** @description Digits-matched search across the account and coverage WhatsApp numbers. */
@@ -4207,6 +4209,8 @@ export interface operations {
                 page?: components["parameters"]["Page"];
                 /** @description Result count per page. */
                 per_page?: components["parameters"]["PageSize"];
+                /** @description Professional account identifier; narrows the directory to that single account. */
+                id?: components["parameters"]["AdminProfessionalId"];
                 /** @description Case-insensitive, accent-insensitive professional name search. */
                 q?: components["parameters"]["AdminProfessionalQuery"];
                 /** @description Digits-matched search across the account and coverage WhatsApp numbers. */

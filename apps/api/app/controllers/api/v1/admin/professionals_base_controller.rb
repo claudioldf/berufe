@@ -18,6 +18,7 @@ module Api
           {
             page: params[:page],
             per_page: params[:per_page],
+            id: params[:id],
             q: params[:q],
             phone: params[:phone],
             city: params[:city],
