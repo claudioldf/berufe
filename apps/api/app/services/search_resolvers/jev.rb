@@ -98,12 +98,13 @@ module SearchResolvers
     def prompt_digest(services:, neighborhoods:, default_location:)
       # The questions depend on the expression (city and neighborhood
       # shortlists), which the cache key already includes, so the digest
-      # fingerprints the catalogs the questions are built from instead.
+      # fingerprints the catalogs the questions are built from instead. The
+      # city catalog is fingerprinted once, when its index is built.
       Digest::SHA256.hexdigest(
         JSON.generate(
           services: service_criteria(services),
           neighborhoods: neighborhoods.map { |neighborhood| [neighborhood.code, neighborhood.name] },
-          cities: supported_locations.map { |location| [location.city_code, location.city, location.state_code] },
+          cities: supported_locations.fingerprint,
           default_city_code: default_location.city_code,
           limits: [MAXIMUM_CHOICE_OPTIONS, MAXIMUM_CITY_CANDIDATES],
           min_confidence:,
@@ -161,11 +162,7 @@ module SearchResolvers
     end
 
     def city_candidates(expression)
-      haystack = " #{PublicSearchText.normalize(expression)} "
-      matches = supported_locations.filter_map do |location|
-        name = PublicSearchText.normalize(location.city)
-        [location, name] if name.present? && haystack.include?(" #{name} ")
-      end
+      matches = supported_locations.named_in(expression)
       # "Rio de Janeiro" in the text must not also offer a city named "Rio".
       matches
         .reject { |_, name| matches.any? { |_, other| other != name && " #{other} ".include?(" #{name} ") } }
@@ -199,7 +196,7 @@ module SearchResolvers
     end
 
     def supported_locations
-      @supported_locations ||= SupportedSearchLocations.new.all
+      @supported_locations ||= SupportedSearchLocations.new
     end
 
     def matched_services(body, services:)
@@ -224,7 +221,7 @@ module SearchResolvers
       return default_location if choice.fetch("confidence") < min_confidence
       return :unsupported if choice["choice"] == OTHER_CITY
 
-      supported_locations.find { |location| location.city_code == choice["choice"] } || default_location
+      supported_locations.find_by_code(city_code: choice["choice"]) || default_location
     end
 
     def mentions_city?(body)

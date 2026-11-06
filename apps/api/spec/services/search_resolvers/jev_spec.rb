@@ -262,8 +262,8 @@ RSpec.describe SearchResolvers::Jev do
     def stub_supported_cities(extra)
       fillers = Array.new(300) { |index| location(code: format("90%05d", index), city: "Cidade Filler #{index}") }
       joinville = location(code: joinville_city.code, city: "Joinville", state: "SC")
-      allow(SupportedSearchLocations).to receive(:new)
-        .and_return(instance_double(SupportedSearchLocations, all: [joinville, *extra, *fillers]))
+      allow(SupportedSearchLocations).to receive(:index)
+        .and_return(SupportedSearchLocations::Index.build([joinville, *extra, *fillers]))
     end
 
     def sent_questions
@@ -346,11 +346,12 @@ RSpec.describe SearchResolvers::Jev do
       stub_supported_cities([])
       jev = resolver(json_response(answers))
       first = jev.prompt_digest(services:, neighborhoods:, default_location:)
+      repeated = jev.prompt_digest(services:, neighborhoods:, default_location:)
       stub_supported_cities([location(code: "3550308", city: "São Paulo")])
       changed = resolver(json_response(answers)).prompt_digest(services:, neighborhoods:, default_location:)
 
       expect(changed).not_to eq(first)
-      expect(jev.prompt_digest(services:, neighborhoods:, default_location:)).to eq(first)
+      expect(repeated).to eq(first)
     end
   end
 
