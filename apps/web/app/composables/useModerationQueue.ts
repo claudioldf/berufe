@@ -1,4 +1,5 @@
 import { computed, onScopeDispose, readonly, shallowRef, watch } from "vue";
+import type { RouteLocationNormalizedLoaded } from "vue-router";
 import type {
   ModerationDecision,
   ModerationFilters,
@@ -12,6 +13,17 @@ import {
   fetchAdminVerificationFile,
 } from "~/services/api/admin-moderation";
 import { useApiClient } from "~/services/api/client";
+
+const statusFilters: ModerationStatusFilter[] = [
+  "pending_review",
+  "approved",
+  "rejected",
+  "all",
+];
+
+function routeString(value: unknown) {
+  return String(Array.isArray(value) ? (value[0] ?? "") : (value ?? ""));
+}
 
 const emptyQueue = (): ModerationQueue => ({
   items: [],
@@ -36,6 +48,7 @@ interface ModerationQueueDependencies {
       identityMatchConfirmed?: boolean;
     },
   ) => Promise<ModerationQueue>;
+  route?: Pick<RouteLocationNormalizedLoaded, "query">;
   loadEvidence?: (item: ModerationQueueItem) => Promise<Blob>;
   createObjectUrl?: (blob: Blob) => string;
   revokeObjectUrl?: (url: string) => void;
@@ -49,10 +62,14 @@ export function useModerationQueue(
   dependencies: ModerationQueueDependencies = {},
 ) {
   const client = useApiClient();
+  const route = dependencies.route ?? useRoute();
+  const routeStatus = routeString(route.query.status) as ModerationStatusFilter;
   const queue = shallowRef<ModerationQueue>(emptyQueue());
   const selectedId = shallowRef("");
-  const statusFilter = shallowRef<ModerationStatusFilter>("pending_review");
-  const searchQuery = shallowRef("");
+  const statusFilter = shallowRef<ModerationStatusFilter>(
+    statusFilters.includes(routeStatus) ? routeStatus : "pending_review",
+  );
+  const searchQuery = shallowRef(routeString(route.query.busca).slice(0, 100));
   const page = shallowRef(1);
   const note = shallowRef("");
   const isLoading = shallowRef(false);
