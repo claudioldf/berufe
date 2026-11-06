@@ -18,7 +18,7 @@ RSpec.describe ProfessionalIdentityApprovedEmailJob do
     expect(mail.to).to eq(["ana@example.com"])
     expect(mail.subject).to eq("Sua identidade foi verificada na Berufe")
     expect(mail.message_id).to eq("professional-identity-approved-#{request.id}@berufe.com.br")
-    link = "#{ENV.fetch("WEB_ORIGIN").delete_suffix("/")}/profissionais/#{profile.public_slug}"
+    link = "#{ENV.fetch("WEB_ORIGIN").delete_suffix("/")}/be/#{profile.public_slug}"
     expect(mail.html_part.body.decoded).to include(
       link, "Ana Reparos", "Ver meu perfil público", "Selo no seu perfil", "Destaque seu trabalho",
       "Receba contatos diretos", "#{ENV.fetch("WEB_ORIGIN")}/images/email/welcome-features-profile-collage.jpg"

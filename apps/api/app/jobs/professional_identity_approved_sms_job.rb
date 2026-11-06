@@ -17,10 +17,18 @@ class ProfessionalIdentityApprovedSmsJob < ApplicationJob
 
     client.send_text(
       phone: account.phone_e164,
-      text: "Berufe: a equipe confirmou sua identidade. Veja seu perfil público: #{IdentityApprovalLink.profile_url(profile)}"
+      text: sms_text(profile)
     )
   rescue SmsOtp::Error => error
     Rails.error.report(error, context: {verification_request_id:})
     raise
+  end
+
+  private
+
+  # ASCII only: an accented letter forces UCS-2 encoding, which cuts a
+  # segment from 160 to 70 characters and splits this message in two.
+  def sms_text(profile)
+    "Berufe: sua identidade foi verificada pela nossa equipe. Seu perfil: #{IdentityApprovalLink.profile_url(profile)}"
   end
 end

@@ -2,6 +2,6 @@
 
 module IdentityApprovalLink
   def self.profile_url(profile)
-    "#{ENV.fetch("WEB_ORIGIN").delete_suffix("/")}/profissionais/#{profile.public_slug}"
+    "#{ENV.fetch("WEB_ORIGIN").delete_suffix("/")}/be/#{profile.public_slug}"
   end
 end
