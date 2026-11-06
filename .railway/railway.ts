@@ -54,6 +54,14 @@ export default defineRailway(() => {
       OPENAI_MODEL: "gpt-5-mini",
       OPENAI_API_KEY: preserve(),
       OPENAI_TIMEOUT_SECONDS: preserve(),
+      // Search interpretation: "llm" (above) or "jev". Switching to "jev" also
+      // needs a TYPESAFE_API_KEY secret on this service (set it in Railway,
+      // then declare it here as preserve()).
+      SEARCH_RESOLVER: "llm",
+      JEV_MODEL: "jev-latest",
+      JEV_TIMEOUT_SECONDS: "8",
+      JEV_MIN_CONFIDENCE: "0.5",
+      JEV_SECONDARY_PROBABILITY: "0.25",
       SMS_OTP_ADAPTER: "infobip",
       INFOBIP_BASE_URL: preserve(),
       INFOBIP_API_KEY: preserve(),

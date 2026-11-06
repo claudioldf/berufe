@@ -27,6 +27,8 @@ assert.equal(api?.variables?.PORT?.value, "8080");
 assert.equal(api?.variables?.LLM_ADAPTER?.value, "openai");
 assert.equal(api?.variables?.OPENAI_API_KEY?.type, "preserve");
 assert.equal(api?.variables?.OPENAI_TIMEOUT_SECONDS?.type, "preserve");
+assert.equal(api?.variables?.SEARCH_RESOLVER?.value, "llm");
+assert.equal(api?.variables?.JEV_MODEL?.value, "jev-latest");
 assert.equal(api?.variables?.MAIL_ADAPTER?.value, "resend");
 assert.equal(api?.variables?.RESEND_REQUEST_TIMEOUT_SECONDS?.type, "preserve");
 assert.equal(api?.variables?.SMTP_ADDRESS, undefined);
