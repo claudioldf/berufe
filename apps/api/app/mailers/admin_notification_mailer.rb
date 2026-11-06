@@ -8,8 +8,8 @@ class AdminNotificationMailer < ApplicationMailer
     @claimed = params.fetch(:claimed, false)
     @occurred_at = format_time(params.fetch(:registered_at))
     @event_title = @claimed ? "Perfil reivindicado" : "Perfil criado"
-    @cta_label = "Ver profissionais"
-    @cta_url = "#{@web_origin}/app/admin/professionals"
+    @cta_label = "Abrir este profissional"
+    @cta_url = "#{@web_origin}/app/admin/professionals?#{{id: params.fetch(:professional_id)}.to_query}"
     @eyebrow = "Novo cadastro"
     @heading = "Novo cadastro profissional"
     @preheader = "#{@display_name} concluiu o cadastro profissional na Berufe."
@@ -21,8 +21,8 @@ class AdminNotificationMailer < ApplicationMailer
     @display_name = params.fetch(:display_name)
     @occurred_at = format_time(params.fetch(:submitted_at))
     @event_title = "Documento de identidade enviado"
-    @cta_label = "Abrir fila de moderação"
-    @cta_url = "#{@web_origin}/app/admin"
+    @cta_label = "Analisar esta identidade"
+    @cta_url = "#{@web_origin}/app/admin?#{{status: "all", busca: params.fetch(:request_id)}.to_query}"
     @eyebrow = "Fila de moderação"
     @heading = "Nova identidade aguardando análise"
     @preheader = "#{@display_name} enviou um documento de identidade para análise."

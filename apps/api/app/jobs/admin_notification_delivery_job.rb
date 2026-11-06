@@ -41,6 +41,7 @@ class AdminNotificationDeliveryJob < ApplicationJob
 
     profile = account.professional_profile
     {
+      professional_id: account.id,
       display_name: profile.display_name,
       registered_at: account.registered_at,
       claimed: profile.creation_source == "external"
@@ -51,6 +52,10 @@ class AdminNotificationDeliveryJob < ApplicationJob
     request = VerificationRequest.includes(:professional_profile).find_by(id: request_id)
     return unless request
 
-    {display_name: request.professional_profile.display_name, submitted_at: request.submitted_at}
+    {
+      request_id: request.id,
+      display_name: request.professional_profile.display_name,
+      submitted_at: request.submitted_at
+    }
   end
 end

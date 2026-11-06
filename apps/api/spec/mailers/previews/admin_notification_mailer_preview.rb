@@ -4,6 +4,7 @@ class AdminNotificationMailerPreview < ActionMailer::Preview
   def professional_registered
     AdminNotificationMailer.with(
       email: "admin@berufe.com.br",
+      professional_id: SecureRandom.uuid,
       display_name: "Claudio Dias",
       registered_at: Time.current,
       claimed: false
@@ -13,6 +14,7 @@ class AdminNotificationMailerPreview < ActionMailer::Preview
   def verification_submitted
     AdminNotificationMailer.with(
       email: "admin@berufe.com.br",
+      request_id: SecureRandom.uuid,
       display_name: "Claudio Dias",
       submitted_at: Time.current
     ).verification_submitted
