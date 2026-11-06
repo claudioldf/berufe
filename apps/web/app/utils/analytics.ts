@@ -11,6 +11,74 @@ const TOKEN_ROUTE_PATTERNS: ReadonlyArray<readonly [RegExp, string]> = [
 
 const GOOGLE_TAG_MANAGER_CONTAINER_ID = /^GTM-[A-Z0-9]+$/;
 
+// Consent Mode declares its defaults twice: a permissive baseline, then a
+// restrictive override scoped to the jurisdictions that require prior consent.
+// Google applies the region-scoped command to matching traffic and the
+// unscoped one to everyone else, independently of the order they arrive in.
+// Berufe runs no advertising campaigns today (no Google Ads tag in
+// GTM-PBP8MFLG, Google Signals off on the GA4 property), so the granted
+// baseline writes no advertising cookie in practice; it exists so Tag
+// Manager's consent diagnostics reflect the real posture for Brazilian
+// traffic instead of reporting a blanket denial. Granting here is a
+// permission, not a behavior: adding an Ads tag or enabling Signals is what
+// would start writing those cookies, and `privacidade.vue` section 7 has to
+// be updated in the same change if that ever happens.
+const CONSENT_RESTRICTED_REGIONS = [
+  // EU-27
+  "AT",
+  "BE",
+  "BG",
+  "CY",
+  "CZ",
+  "DE",
+  "DK",
+  "EE",
+  "ES",
+  "FI",
+  "FR",
+  "GR",
+  "HR",
+  "HU",
+  "IE",
+  "IT",
+  "LT",
+  "LU",
+  "LV",
+  "MT",
+  "NL",
+  "PL",
+  "PT",
+  "RO",
+  "SE",
+  "SI",
+  "SK",
+  // Remaining EEA members
+  "IS",
+  "LI",
+  "NO",
+  // Equivalent prior-consent regimes outside the EEA
+  "CH",
+  "GB",
+] as const;
+
+const BASELINE_CONSENT_DEFAULT = {
+  ad_storage: "granted",
+  ad_user_data: "granted",
+  ad_personalization: "granted",
+  analytics_storage: "granted",
+} as const;
+
+// No cookie banner exists, so a visitor from a prior-consent jurisdiction has
+// no way to grant anything: every signal stays denied for the whole visit,
+// analytics included.
+const RESTRICTED_CONSENT_DEFAULT = {
+  ad_storage: "denied",
+  ad_user_data: "denied",
+  ad_personalization: "denied",
+  analytics_storage: "denied",
+  region: CONSENT_RESTRICTED_REGIONS,
+} as const;
+
 interface AnalyticsPageViewTrackerOptions {
   dispatch: (...args: unknown[]) => void;
   getFullPath: () => string;
@@ -36,7 +104,7 @@ export function googleTagManagerHead(containerId: string) {
     script: [
       {
         key: "google-consent-mode",
-        innerHTML: `window.dataLayer=window.dataLayer||[];window.gtag=window.gtag||function(){window.dataLayer.push(arguments);};window.gtag("consent","default",{ad_storage:"denied",ad_user_data:"denied",ad_personalization:"denied",analytics_storage:"granted"});`,
+        innerHTML: `window.dataLayer=window.dataLayer||[];window.gtag=window.gtag||function(){window.dataLayer.push(arguments);};window.gtag("consent","default",${JSON.stringify(BASELINE_CONSENT_DEFAULT)});window.gtag("consent","default",${JSON.stringify(RESTRICTED_CONSENT_DEFAULT)});`,
       },
       {
         key: "google-tag-manager",
