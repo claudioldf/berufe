@@ -16,7 +16,7 @@ RSpec.describe ProfessionalIdentityApprovedSmsJob do
     link = "#{ENV.fetch("WEB_ORIGIN").delete_suffix("/")}/be/#{profile.public_slug}"
     expect(client).to have_received(:send_text).with(
       phone: "+5547999998303",
-      text: a_string_including("Berufe", "identidade", link)
+      text: "Berufe: Sua identidade foi aprovada. Seu perfil: #{link}"
     )
   end
 
