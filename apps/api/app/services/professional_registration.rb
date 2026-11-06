@@ -11,7 +11,8 @@ class ProfessionalRegistration
   end
 
   def call(user_account:, authentication_method:, display_name:, accepted:, phone: nil, email: nil,
-    welcome_email_job: ProfessionalWelcomeEmailDeliveryJob, now: Time.current)
+    welcome_email_job: ProfessionalWelcomeEmailDeliveryJob, admin_notification_job: AdminNotificationJob,
+    now: Time.current)
     validate_account!(user_account)
     normalized_name = display_name.to_s.squish
     validate_input!(display_name: normalized_name, accepted:)
@@ -41,6 +42,7 @@ class ProfessionalRegistration
         registered_at: user_account.registered_at || now
       )
       welcome_email_job&.perform_later(user_account.id)
+      admin_notification_job&.perform_later("professional_registered", user_account.id)
       profile
     end
   rescue ActiveRecord::RecordNotUnique
