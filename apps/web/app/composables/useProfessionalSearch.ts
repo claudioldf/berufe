@@ -17,7 +17,9 @@ import {
   ApiRequestError,
   type NormalizedApiError,
 } from "~/services/api/errors";
+import { useSearchActionNavigation } from "~/composables/useSearchActionNavigation";
 import { analyticsSearchTerm } from "~/utils/analytics";
+import { matchSearchAction } from "~/utils/search-actions";
 import {
   decodeSearchExpression,
   encodeSearchExpression,
@@ -59,6 +61,7 @@ export async function useProfessionalSearch(options: {
   location: MaybeRefOrGetter<SearchLocation>;
   onLocationResolved?: (location: SearchLocation) => void;
 }) {
+  const nuxtApp = useNuxtApp();
   const route = useRoute();
   const router = useRouter();
   const client = useApiClient();
@@ -77,7 +80,15 @@ export async function useProfessionalSearch(options: {
   const expressionQuery = computed(() =>
     decodeSearchExpression(encodedExpression.value),
   );
-  const hasSearchTerm = computed(() => expressionQuery.value.length > 0);
+  const { resolveSearchAction } = useSearchActionNavigation();
+  // Account actions ("excluir conta", "cadastro") are not service searches:
+  // they never reach the API and are redirected to the workspace or help page.
+  const isAccountAction = computed(
+    () => matchSearchAction(expressionQuery.value) !== undefined,
+  );
+  const hasSearchTerm = computed(
+    () => expressionQuery.value.length > 0 && !isAccountAction.value,
+  );
   const locationKey = computed(() => {
     const location = toValue(options.location);
     return `${location.stateSlug}/${location.citySlug}`;
@@ -128,7 +139,21 @@ export async function useProfessionalSearch(options: {
     loadingMore.value = false;
   }
 
+  async function redirectAccountAction() {
+    const destination = await resolveSearchAction(expressionQuery.value);
+    if (destination) {
+      // Runs after an await, so the Nuxt context has to be restored.
+      await nuxtApp.runWithContext(() =>
+        navigateTo(destination, { replace: true }),
+      );
+    }
+  }
+
   watch([encodedExpression, locationKey], () => {
+    if (isAccountAction.value) {
+      void redirectAccountAction();
+      return;
+    }
     const currentRouteState = routeState(
       expressionQuery.value,
       toValue(options.location),
@@ -271,6 +296,15 @@ export async function useProfessionalSearch(options: {
 
     isSubmittingSearch.value = true;
     try {
+      // Only account actions pay for the session lookup; service searches
+      // navigate immediately.
+      if (matchSearchAction(expression)) {
+        const destination = await resolveSearchAction(expression);
+        if (destination) {
+          await nuxtApp.runWithContext(() => navigateTo(destination));
+          return;
+        }
+      }
       await router.push({
         path: searchLocationPath(toValue(options.location)),
         query: searchExpressionQuery(encodeSearchExpression(expression)),
@@ -325,6 +359,9 @@ export async function useProfessionalSearch(options: {
     structuredResponse.value = null;
     await refresh();
   }
+
+  // A deep link such as /encontrar/sc/joinville?q=<excluir conta>.
+  if (isAccountAction.value) await redirectAccountAction();
 
   return {
     expressionInput,
