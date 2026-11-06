@@ -16,6 +16,9 @@
 **/pnpm-lock.yaml
 **/yarn.lock
 
+# Interview script kept in its original hand-written layout
+docs/Entrevista.md
+
 # Ruby and Rails-owned formats
 apps/api/**/*.rb
 apps/api/**/*.erb
