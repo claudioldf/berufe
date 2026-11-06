@@ -214,7 +214,10 @@ module SearchResolvers
       if type == "noul"
         value["noul"].is_a?(Numeric)
       else
-        value["choice"].is_a?(String) && value["confidence"].is_a?(Numeric) && value["probabilities"].is_a?(Hash)
+        value["choice"].is_a?(String) &&
+          value["confidence"].is_a?(Numeric) &&
+          value["probabilities"].is_a?(Hash) &&
+          value["probabilities"].values.all? { |probability| probability.is_a?(Numeric) && probability.between?(0, 1) }
       end
     end
 
