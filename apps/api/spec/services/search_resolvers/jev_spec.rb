@@ -353,4 +353,20 @@ RSpec.describe SearchResolvers::Jev do
       expect(jev.prompt_digest(services:, neighborhoods:, default_location:)).to eq(first)
     end
   end
+
+  describe "validation errors" do
+    it "names the rejected field without echoing the user's text" do
+      body = JSON.generate(
+        "detail" => [{
+          "loc" => %w[body questions city criteria], "type" => "too_long",
+          "msg" => "contains meu cpf 123", "input" => "meu cpf 123"
+        }]
+      )
+      response = JevResolverSpecSupport::Response.new("422", body, {})
+
+      expect { resolve(resolver(response)) }.to raise_error(
+        ::Llm::Client::Unavailable, "JEV returned HTTP 422 (body.questions.city.criteria too_long)"
+      )
+    end
+  end
 end

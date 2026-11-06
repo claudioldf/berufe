@@ -295,7 +295,7 @@ module SearchResolvers
     def parse(response)
       status = response.code.to_i
       raise ::Llm::Client::RateLimited.new(retry_after: retry_after(response)) if [429, 529].include?(status)
-      raise ::Llm::Client::Unavailable, "JEV returned HTTP #{status}" unless status.between?(200, 299)
+      raise ::Llm::Client::Unavailable, "JEV returned HTTP #{status}#{validation_detail(response, status)}" unless status.between?(200, 299)
 
       body = JSON.parse(response.body)
       unless body.is_a?(Hash) && body["answers"].is_a?(Hash)
@@ -305,6 +305,22 @@ module SearchResolvers
       body
     rescue JSON::ParserError
       raise ::Llm::Client::InvalidResponse.new(raw_response: response.body.to_s)
+    end
+
+    # Names which request field JEV rejected (e.g. "questions.city.criteria,
+    # too_long"). Only `loc` and `type` are used: `input` and `msg` can echo
+    # the user's text, which must not reach error reports.
+    def validation_detail(response, status)
+      return "" unless status == 422
+
+      issues = Array(JSON.parse(response.body)["detail"]).filter_map do |issue|
+        next unless issue.is_a?(Hash)
+
+        "#{Array(issue["loc"]).join(".")} #{issue["type"]}".strip
+      end
+      issues.any? ? " (#{issues.first(3).join("; ")})" : ""
+    rescue JSON::ParserError, TypeError
+      ""
     end
 
     def retry_after(response)
