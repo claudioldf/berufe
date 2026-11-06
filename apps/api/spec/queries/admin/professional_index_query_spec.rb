@@ -119,6 +119,9 @@ RSpec.describe Admin::ProfessionalIndexQuery do
     by_accentless_name = query.call(q: "SOUZA")
     expect(by_accentless_name.professionals.pluck(:id)).to eq([published_profile.user_account_id])
 
+    by_id = query.call(id: published_profile.user_account_id.upcase)
+    expect(by_id.professionals.pluck(:id)).to eq([published_profile.user_account_id])
+
     by_phone = query.call(phone: "47999996003")
     expect(by_phone.professionals.pluck(:id)).to eq([published_profile.user_account_id])
 
@@ -171,9 +174,9 @@ RSpec.describe Admin::ProfessionalIndexQuery do
   end
 
   it "raises Invalid for out-of-range pagination and bad filter values" do
-    expect { query.call(page: 0, per_page: 101, city: "abc", state: "brasil", identity_verified: "maybe") }
+    expect { query.call(page: 0, per_page: 101, city: "abc", state: "brasil", identity_verified: "maybe", id: "x") }
       .to raise_error(described_class::Invalid) do |error|
-        expect(error.field_errors.keys).to contain_exactly(:page, :per_page, :city, :state, :identity_verified)
+        expect(error.field_errors.keys).to contain_exactly(:page, :per_page, :city, :state, :identity_verified, :id)
       end
   end
 

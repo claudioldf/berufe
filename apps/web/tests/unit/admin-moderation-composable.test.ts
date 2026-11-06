@@ -43,6 +43,40 @@ afterEach(() => {
 });
 
 describe("administrator moderation composable", () => {
+  it("starts from the status and search carried in the link", async () => {
+    const load = vi.fn().mockResolvedValue(queue());
+    const scope = effectScope();
+    const workflow = scope.run(() =>
+      useModerationQueue({
+        load,
+        route: { query: { status: "all", busca: "verification-id" } },
+      }),
+    )!;
+
+    await workflow.load();
+
+    expect(load).toHaveBeenCalledWith({
+      status: "all",
+      search: "verification-id",
+      page: 1,
+      perPage: 20,
+    });
+    scope.stop();
+  });
+
+  it("ignores an unknown status in the link", () => {
+    const scope = effectScope();
+    const workflow = scope.run(() =>
+      useModerationQueue({
+        load: vi.fn(),
+        route: { query: { status: "bogus" } },
+      }),
+    )!;
+
+    expect(workflow.statusFilter.value).toBe("pending_review");
+    scope.stop();
+  });
+
   it("loads server-owned filters, selects queue work, and commits a decision", async () => {
     const load = vi.fn().mockResolvedValue(queue());
     const decide = vi.fn().mockResolvedValue(queue([]));
@@ -78,6 +112,7 @@ describe("administrator moderation composable", () => {
         reason: "A imagem precisa ser substituída.",
         note: "Conferida.",
         identityMatchConfirmed: undefined,
+        notifyProfessional: undefined,
       },
     );
     expect(workflow.queue.value.items).toEqual([]);

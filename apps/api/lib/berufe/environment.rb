@@ -16,7 +16,8 @@ module Berufe
       :jev_timeout_seconds,
       :jev_min_confidence,
       :jev_secondary_probability,
-      :product_launch_date
+      :product_launch_date,
+      :admin_notification_emails
     )
 
     ENVIRONMENTS = %w[local preview staging integration production test].freeze
@@ -140,6 +141,7 @@ module Berufe
       jev_min_confidence = parse_number(values, "JEV_MIN_CONFIDENCE", errors) { |number| number.between?(0, 1) }
       jev_secondary_probability = parse_number(values, "JEV_SECONDARY_PROBABILITY", errors) { |number| number.between?(0, 1) }
       product_launch_date = parse_product_launch_date(values["PRODUCT_LAUNCH_DATE"], errors)
+      admin_notification_emails = parse_admin_notification_emails(values["ADMIN_NOTIFICATION_EMAILS"], errors)
 
       errors << "BERUFE_ENV must be one of: #{ENVIRONMENTS.join(", ")}" unless ENVIRONMENTS.include?(name)
       unless mail_adapter.to_s.strip.empty? || MAIL_ADAPTERS.include?(mail_adapter)
@@ -184,7 +186,8 @@ module Berufe
         jev_timeout_seconds:,
         jev_min_confidence:,
         jev_secondary_probability:,
-        product_launch_date:
+        product_launch_date:,
+        admin_notification_emails:
       )
     end
 
@@ -212,6 +215,19 @@ module Berufe
       nil
     end
     private_class_method :parse_product_launch_date
+
+    # Optional, comma-separated. Empty means administrators are not e-mailed.
+    def self.parse_admin_notification_emails(value, errors)
+      emails = value.to_s.split(",").map { |email| email.strip.downcase }.reject(&:empty?).uniq
+      invalid = emails.reject { |email| email.length <= 254 && URI::MailTo::EMAIL_REGEXP.match?(email) }
+      if invalid.any?
+        errors << "ADMIN_NOTIFICATION_EMAILS must contain comma-separated e-mail addresses"
+        return []
+      end
+
+      emails.freeze
+    end
+    private_class_method :parse_admin_notification_emails
 
     def self.required_variables(name, sms_otp_adapter, media_storage_adapter, llm_adapter, mail_adapter, values)
       required = (name == "test") ? %w[TEST_DATABASE_URL DB_POOL] : COMMON_REQUIRED.dup

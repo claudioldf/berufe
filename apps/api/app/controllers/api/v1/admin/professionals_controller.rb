@@ -5,7 +5,7 @@ module Api
     module Admin
       class ProfessionalsController < ProfessionalsBaseController
         def index
-          result = ::Admin::ProfessionalIndexQuery.new.call(**directory_query_params)
+          result = ::Admin::ProfessionalIndexQuery.new.call(**directory_query_params, id: params[:id])
           Rails.logger.info(
             "admin_professional_directory_access admin_user_id=#{Current.user_account.id} " \
               "request_id=#{Current.request_id} page=#{result.page} occurred_at=#{Time.current.iso8601}"

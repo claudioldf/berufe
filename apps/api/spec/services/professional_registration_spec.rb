@@ -38,12 +38,16 @@ RSpec.describe ProfessionalRegistration do
     expect do
       original = complete_registration(account:, service:)
     end.to have_enqueued_job(ProfessionalWelcomeEmailDeliveryJob).with(account.id).once
+      .and have_enqueued_job(AdminNotificationJob).with("professional_registered", account.id).once
     accepted_at = account.reload.terms_accepted_at
 
     retried = nil
     expect do
       retried = complete_registration(account:, service:, display_name: "Nome Diferente")
     end.not_to have_enqueued_job(ProfessionalWelcomeEmailDeliveryJob)
+    expect do
+      complete_registration(account:, service:)
+    end.not_to have_enqueued_job(AdminNotificationJob)
 
     expect(retried).to eq(original)
     expect(account.reload.terms_accepted_at).to eq(accepted_at)

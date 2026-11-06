@@ -36,3 +36,12 @@ Rails resolves the response's existing `route` field when the notification is re
 ## Privacy and erasure
 
 Notification titles and descriptions are static server copy and are filtered from parameter logs defensively. Routing parameters contain only internal resource UUIDs and never customer-entered content. Records are private to the recipient and are deleted with the professional account by the LGPD erasure job and the database cascade. No notification record is retained in the pseudonymous legal/audit set.
+
+## Administrator e-mail notifications
+
+Separate from the professional inbox above, every address listed in `ADMIN_NOTIFICATION_EMAILS` (comma-separated, optional; empty disables the notices) receives a message when:
+
+- a professional completes registration (including claiming an external profile), once per account; and
+- a professional submits identity evidence, which enters the moderation queue as `pending_review`.
+
+Rails fans each event out into one delivery job per address, so a provider failure retries only that recipient. The message carries only the professional's display name, the event, its time (America/Sao_Paulo), and a link to the administrator surface. Phone numbers, e-mail addresses, birthdates, and the identity document are never included; administrators see details after signing in with a password.

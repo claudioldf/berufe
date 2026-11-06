@@ -70,6 +70,28 @@ RSpec.describe InfobipOtpClient do
     )
   end
 
+  it "sends a text message through the SMS endpoint" do
+    response = InfobipOtpClientSpecSupport::Response.new("200", '{"messages":[{"status":{"groupId":1}}]}', {})
+    client, http = build_client(response)
+
+    client.send_text(phone: "+5547999999999", text: "Olá")
+    body = JSON.parse(http.connection.last_request.body)
+
+    expect(http.connection.last_request.path).to eq("/sms/2/text/advanced")
+    expect(body.fetch("messages")).to eq([
+      {"destinations" => [{"to" => "+5547999999999"}], "from" => "Berufe", "text" => "Olá"}
+    ])
+  end
+
+  it "rejects texts to unlisted recipients and provider-rejected messages" do
+    client, = build_client(InfobipOtpClientSpecSupport::Response.new("200", "{}", {}), allowed_phone_numbers: ["+5547999990000"])
+    expect { client.send_text(phone: "+5547999999999", text: "x") }.to raise_error(SmsOtp::DeliveryRejected)
+
+    rejected = InfobipOtpClientSpecSupport::Response.new("200", '{"messages":[{"status":{"groupId":5}}]}', {})
+    client, = build_client(rejected)
+    expect { client.send_text(phone: "+5547999999999", text: "x") }.to raise_error(SmsOtp::DeliveryRejected)
+  end
+
   it "allows only configured recipients when a non-production allowlist is present" do
     response = InfobipOtpClientSpecSupport::Response.new("200", '{"pinId":"pin-reference"}', {})
     client, http = build_client(response, allowed_phone_numbers: ["+5547999999999"])

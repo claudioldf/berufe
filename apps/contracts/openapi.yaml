@@ -609,6 +609,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/Page"
         - $ref: "#/components/parameters/PageSize"
+        - $ref: "#/components/parameters/AdminProfessionalId"
         - $ref: "#/components/parameters/AdminProfessionalQuery"
         - $ref: "#/components/parameters/AdminProfessionalPhone"
         - $ref: "#/components/parameters/AdminProfessionalCity"
@@ -4421,6 +4422,13 @@ components:
       name: target_id
       in: path
       required: true
+      schema:
+        type: string
+        format: uuid
+    AdminProfessionalId:
+      name: id
+      in: query
+      description: Professional account identifier; narrows the directory to that single account.
       schema:
         type: string
         format: uuid
@@ -8256,6 +8264,10 @@ components:
           maxLength: 500
         identity_match_confirmed:
           type: boolean
+        notify_professional:
+          type: boolean
+          default: true
+          description: When approving, tell the professional by e-mail (or SMS when they have no e-mail). Ignored for rejections.
     ModerationTargetType:
       type: string
       const: verification_request

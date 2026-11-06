@@ -5,6 +5,7 @@ module Admin
     DEFAULT_PER_PAGE = 20
     MAX_PER_PAGE = 100
     MAX_QUERY_LENGTH = 100
+    UUID_PATTERN = /\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/
     TRISTATES = %w[all yes no].freeze
     DEFAULT_SORT = "recent"
     SORTS = %w[recent last_login_desc name_asc].freeze
@@ -96,13 +97,14 @@ module Admin
       end
     end
 
-    def call(page: 1, per_page: DEFAULT_PER_PAGE, q: nil, phone: nil, city: nil, state: nil,
+    def call(page: 1, per_page: DEFAULT_PER_PAGE, id: nil, q: nil, phone: nil, city: nil, state: nil,
       identity_verified: "all", onboarding_finished: "all", sort: DEFAULT_SORT)
       normalized = normalize(
-        page:, per_page:, q:, phone:, city:, state:, identity_verified:, onboarding_finished:, sort:
+        page:, per_page:, id:, q:, phone:, city:, state:, identity_verified:, onboarding_finished:, sort:
       )
 
       scope = base_scope
+      scope = apply_id(scope, normalized[:id])
       scope = apply_query(scope, normalized[:q])
       scope = apply_phone(scope, normalized[:phone])
       scope = apply_city(scope, normalized[:city])
@@ -127,13 +129,18 @@ module Admin
       UserAccount.where(role: "professional").joins(BASE_JOIN_SQL)
     end
 
-    def normalize(page:, per_page:, q:, phone:, city:, state:, identity_verified:, onboarding_finished:, sort:)
+    def normalize(page:, per_page:, id:, q:, phone:, city:, state:, identity_verified:, onboarding_finished:, sort:)
       errors = {}
       normalized_page = Integer(page.to_s.presence || 1, exception: false)
       normalized_per_page = Integer(per_page.to_s.presence || DEFAULT_PER_PAGE, exception: false)
       errors[:page] = ["deve ser maior que zero"] unless normalized_page&.positive?
       unless normalized_per_page&.between?(1, MAX_PER_PAGE)
         errors[:per_page] = ["deve estar entre 1 e #{MAX_PER_PAGE}"]
+      end
+
+      normalized_id = id.to_s.strip.downcase
+      if normalized_id.present? && !UUID_PATTERN.match?(normalized_id)
+        errors[:id] = ["use um identificador válido"]
       end
 
       normalized_q = q.to_s.strip
@@ -172,6 +179,7 @@ module Admin
       {
         page: normalized_page,
         per_page: normalized_per_page,
+        id: normalized_id.presence,
         q: normalized_q.presence && ActiveSupport::Inflector.transliterate(normalized_q).downcase,
         phone: normalized_phone_digits.presence,
         city: normalized_city,
@@ -180,6 +188,12 @@ module Admin
         onboarding_finished: normalized_onboarding,
         sort: normalized_sort
       }
+    end
+
+    def apply_id(scope, normalized_id)
+      return scope unless normalized_id
+
+      scope.where(id: normalized_id)
     end
 
     def apply_query(scope, normalized_q)

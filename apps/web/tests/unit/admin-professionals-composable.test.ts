@@ -75,6 +75,7 @@ describe("administrator professional directory composable", () => {
     expect(load).toHaveBeenCalledWith(
       {
         page: 1,
+        id: "",
         q: "",
         phone: "",
         city: null,
@@ -114,6 +115,7 @@ describe("administrator professional directory composable", () => {
     expect(load).toHaveBeenLastCalledWith(
       {
         page: 1,
+        id: "",
         q: "ana souza",
         phone: "",
         city: null,
@@ -139,6 +141,28 @@ describe("administrator professional directory composable", () => {
     await workflow.clearFilters();
     await flushPromises();
     expect(routeState.query).toEqual({});
+  });
+
+  it("narrows the directory to the account carried in the link until cleared", async () => {
+    const load = vi.fn().mockResolvedValue(page(1));
+    const { route, router, routeState } = routeDependencies();
+    routeState.query = { id: "account-1" };
+    const scope = effectScope();
+    const workflow = scope.run(() =>
+      useAdminProfessionals({ load, route, router }),
+    )!;
+
+    await flushPromises();
+    expect(load).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "account-1" }),
+      expect.any(AbortSignal),
+    );
+
+    await workflow.clearFilters();
+    await flushPromises();
+    expect(routeState.query).toEqual({});
+    expect(workflow.id.value).toBe("");
+    scope.stop();
   });
 
   it("clears the city filter when a different state is selected", async () => {

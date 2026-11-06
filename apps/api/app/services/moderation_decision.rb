@@ -14,13 +14,16 @@ class ModerationDecision
 
   IDENTITY_LABEL = "Identidade verificada"
 
-  def initialize(context: Current.admin_action_context, notifier: ProfessionalNotificationCreator.new)
+  def initialize(context: Current.admin_action_context, notifier: ProfessionalNotificationCreator.new,
+    approval_notifier: IdentityApprovalNotifier.new)
     @context = context
     @notifier = notifier
+    @approval_notifier = approval_notifier
   end
 
-  def call(target_type:, target_id:, action:, reason: nil, note: nil, identity_match_confirmed: nil)
-    normalized = normalize(action:, reason:, note:, identity_match_confirmed:)
+  def call(target_type:, target_id:, action:, reason: nil, note: nil, identity_match_confirmed: nil,
+    notify_professional: nil)
+    normalized = normalize(action:, reason:, note:, identity_match_confirmed:, notify_professional:)
     request_record = ModerationTargetResolver.new.call(target_type:, target_id:)
 
     ApplicationRecord.transaction do
@@ -42,6 +45,7 @@ class ModerationDecision
         idempotency_key: "moderation-action:#{action_record.id}",
         occurred_at: action_record.created_at
       )
+      approval_notifier.call(request_record) if normalized[:action] == "approved" && normalized[:notify_professional]
     end
 
     request_record.reload
@@ -51,9 +55,9 @@ class ModerationDecision
 
   private
 
-  attr_reader :context, :notifier
+  attr_reader :context, :notifier, :approval_notifier
 
-  def normalize(action:, reason:, note:, identity_match_confirmed:)
+  def normalize(action:, reason:, note:, identity_match_confirmed:, notify_professional:)
     normalized_action = action.to_s
     normalized_reason = reason.to_s.squish.presence
     normalized_note = note.to_s.squish.presence
@@ -69,7 +73,8 @@ class ModerationDecision
       action: normalized_action,
       reason: (normalized_action == "rejected") ? normalized_reason : nil,
       note: normalized_note,
-      identity_match_confirmed: identity_match_confirmed == true || identity_match_confirmed == "true"
+      identity_match_confirmed: identity_match_confirmed == true || identity_match_confirmed == "true",
+      notify_professional: ![false, "false"].include?(notify_professional)
     }
   end
 

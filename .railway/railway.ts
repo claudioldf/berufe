@@ -48,6 +48,9 @@ export default defineRailway(() => {
       // request.remote_ip keeps working for rate limiting and geolocation.
       MEDIA_PUBLIC_URL: "https://media.berufe.com.br",
       PRODUCT_LAUNCH_DATE: preserve(),
+      // Comma-separated inboxes notified of new professionals and identity
+      // evidence awaiting review.
+      ADMIN_NOTIFICATION_EMAILS: "claudioldf@gmail.com",
       MAXMIND_ACCOUNT_ID: preserve(),
       MAXMIND_LICENSE_KEY: preserve(),
       LLM_ADAPTER: "openai",

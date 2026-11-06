@@ -29,10 +29,12 @@ const {
 const reasonOpen = shallowRef(false);
 const reason = shallowRef("");
 const identityMatchConfirmed = shallowRef(false);
+const notifyProfessional = shallowRef(true);
 
 onMounted(() => void load().catch(() => undefined));
 watch(selectedId, () => {
   identityMatchConfirmed.value = false;
+  notifyProfessional.value = true;
 });
 
 function requestReason() {
@@ -45,6 +47,7 @@ async function decide(action: ModerationDecision, rejectionReason?: string) {
     const item = await recordDecision(action, {
       reason: rejectionReason,
       identityMatchConfirmed: identityMatchConfirmed.value,
+      notifyProfessional: notifyProfessional.value,
     });
     if (!item) return;
     const titles: Record<ModerationDecision, string> = {
@@ -58,6 +61,7 @@ async function decide(action: ModerationDecision, rejectionReason?: string) {
     reasonOpen.value = false;
     reason.value = "";
     identityMatchConfirmed.value = false;
+    notifyProfessional.value = true;
   } catch (error) {
     showToast({
       title: "Não foi possível registrar a decisão",
@@ -140,8 +144,10 @@ async function openEvidence() {
         :evidence-loading="evidenceLoading"
         :mutating="isMutating"
         :identity-match-confirmed="identityMatchConfirmed"
+        :notify-professional="notifyProfessional"
         @note="setNote"
         @identity-match="identityMatchConfirmed = $event"
+        @notify-professional="notifyProfessional = $event"
         @approve="decide('approved')"
         @reject="requestReason"
         @open-evidence="openEvidence"

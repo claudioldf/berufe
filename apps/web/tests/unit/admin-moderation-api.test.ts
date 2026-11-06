@@ -122,6 +122,7 @@ describe("administrator moderation API", () => {
             reason: "A imagem precisa ser substituída.",
             note: "Conferida.",
             identity_match_confirmed: false,
+            notify_professional: true,
           },
         },
       },

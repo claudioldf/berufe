@@ -73,6 +73,7 @@ function query(filters: AdminProfessionalFilters) {
   return {
     page: filters.page,
     per_page: 20,
+    id: filters.id || undefined,
     q: filters.q || undefined,
     phone: sanitizeBrazilianMobilePhone(filters.phone) || undefined,
     city: filters.city || undefined,

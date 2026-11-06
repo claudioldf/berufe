@@ -117,6 +117,7 @@ export async function createAdminModerationDecision(
     reason?: string;
     note?: string;
     identityMatchConfirmed?: boolean;
+    notifyProfessional?: boolean;
   } = {},
 ): Promise<ModerationQueue> {
   return requireModerationQueue(
@@ -134,6 +135,7 @@ export async function createAdminModerationDecision(
             note: attributes.note || null,
             identity_match_confirmed:
               attributes.identityMatchConfirmed ?? false,
+            notify_professional: attributes.notifyProfessional ?? true,
           },
         },
       },

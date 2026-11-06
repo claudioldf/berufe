@@ -16,6 +16,13 @@ class FakeSmsOtpClient
     SmsOtp::Challenge.new(reference: "fake_#{SecureRandom.hex(16)}", status: "accepted")
   end
 
+  def send_text(phone:, text:)
+    raise ArgumentError, "phone is required" if phone.to_s.empty?
+
+    Rails.logger.info(event: "fake_sms_text_sent", length: text.to_s.length)
+    nil
+  end
+
   def verify_challenge(reference:, code:)
     valid_reference = REFERENCE_PATTERN.match?(reference.to_s)
     supplied_code = code.to_s
