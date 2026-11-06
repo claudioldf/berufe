@@ -34,13 +34,8 @@ RSpec.describe LlmSearchParser do
       city: curitiba_city
     )
   end
-  let(:settings) do
-    Data.define(:llm_adapter, :openai_model).new(
-      llm_adapter: "fake",
-      openai_model: "gpt-5-mini"
-    )
-  end
   let(:client) { instance_double(Llm::Client) }
+  let(:resolver) { SearchResolvers::Llm.new(client:, adapter: "fake", model: "gpt-5-mini") }
   let(:provider_response) do
     Llm::Client::Response.new(
       payload: {
@@ -65,7 +60,7 @@ RSpec.describe LlmSearchParser do
   end
 
   it "returns controlled criteria and records provider and cache audit details" do
-    parser = described_class.new(client:, settings:)
+    parser = described_class.new(resolver:)
     expression = "Preciso trocar a fiação da casa da Ana no América Parser"
     recorder = PublicSearchAuditRecorder.new
     first_event = recorder.start(expression:, city_code: joinville_city.code)
@@ -125,7 +120,7 @@ RSpec.describe LlmSearchParser do
   end
 
   it "uses the selected city only as fallback and resolves an explicit city and its neighborhoods" do
-    parser = described_class.new(client:, settings:)
+    parser = described_class.new(resolver:)
     allow(client).to receive(:parse).and_return(
       provider_response.with(
         payload: {
@@ -179,7 +174,7 @@ RSpec.describe LlmSearchParser do
   end
 
   it "uses only the first explicitly parsed city" do
-    parser = described_class.new(client:, settings:)
+    parser = described_class.new(resolver:)
     allow(client).to receive(:parse).and_return(
       provider_response.with(
         payload: {
@@ -213,14 +208,14 @@ RSpec.describe LlmSearchParser do
       )
     )
 
-    result = described_class.new(client:, settings:).call(expression: "Preciso de eletricista")
+    result = described_class.new(resolver:).call(expression: "Preciso de eletricista")
 
     expect(result.normalized_request).to be_nil
     expect(LlmSearchAnalysis.sole.parsed_result.fetch("normalized_request")).to be_nil
   end
 
   it "validates the expression before calling a provider" do
-    parser = described_class.new(client:, settings:)
+    parser = described_class.new(resolver:)
 
     expect { parser.call(expression: " ") }.to raise_error(described_class::InvalidExpression)
     expect { parser.call(expression: "x" * 201) }.to raise_error(described_class::InvalidExpression)
@@ -232,7 +227,7 @@ RSpec.describe LlmSearchParser do
       .and_raise(Llm::Client::RateLimited.new(retry_after: 37))
 
     expect {
-      described_class.new(client:, settings:).call(expression: "Preciso de eletricista")
+      described_class.new(resolver:).call(expression: "Preciso de eletricista")
     }.to raise_error(described_class::ProviderRateLimited) do |error|
       expect(error.retry_after).to eq(37)
     end
@@ -251,7 +246,7 @@ RSpec.describe LlmSearchParser do
     )
 
     expect {
-      described_class.new(client:, settings:).call(
+      described_class.new(resolver:).call(
         expression: "Preciso de eletricista",
         audit_event: event
       )
