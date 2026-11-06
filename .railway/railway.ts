@@ -54,6 +54,14 @@ export default defineRailway(() => {
       OPENAI_MODEL: "gpt-5-mini",
       OPENAI_API_KEY: preserve(),
       OPENAI_TIMEOUT_SECONDS: preserve(),
+      // Search interpretation: "jev" (TypeSafe) or "llm" (the LLM_ADAPTER above).
+      // Rails refuses to boot with "jev" unless TYPESAFE_API_KEY is set.
+      SEARCH_RESOLVER: "jev",
+      TYPESAFE_API_KEY: preserve(),
+      JEV_MODEL: preserve(),
+      JEV_TIMEOUT_SECONDS: preserve(),
+      JEV_MIN_CONFIDENCE: preserve(),
+      JEV_SECONDARY_PROBABILITY: preserve(),
       SMS_OTP_ADAPTER: "infobip",
       INFOBIP_BASE_URL: preserve(),
       INFOBIP_API_KEY: preserve(),

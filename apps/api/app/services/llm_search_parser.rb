@@ -2,7 +2,6 @@
 
 class LlmSearchParser
   MAXIMUM_EXPRESSION_LENGTH = 200
-  MAXIMUM_NORMALIZED_REQUEST_LENGTH = WhatsappRequestMessageBuilder::MAXIMUM_REQUEST_LENGTH
   CACHE_TTL = 24.hours
   DEFAULT_STATE_CODE = "SC"
   DEFAULT_CITY = "Joinville"
@@ -35,32 +34,30 @@ class LlmSearchParser
   end
 
   def initialize(
-    client: Llm::Client.build,
-    settings: Rails.configuration.x.berufe.environment,
+    resolver: SearchResolvers.build,
     now: -> { Time.current },
     audit_recorder: PublicSearchAuditRecorder.new
   )
-    @client = client
-    @settings = settings
+    @resolver = resolver
     @now = now
     @audit_recorder = audit_recorder
   end
 
-  def call(expression:, default_location: nil, audit_event: nil)
+  def call(expression:, default_location: nil, audit_event: nil, use_cache: true)
     normalized_expression = validate_expression!(expression)
     supported_locations = SupportedSearchLocations.new
     default_location = normalize_default_location(default_location, supported_locations:)
     services = Service.publicly_active.ordered.to_a
     neighborhoods = Neighborhood.where(city_code: default_location.city_code).ordered.to_a
-    prompt = LlmSearchPrompt.new(services:, neighborhoods:, default_location:)
+    prompt_digest = resolver.prompt_digest(services:, neighborhoods:, default_location:)
     audit_raw_response = nil
     audit_response_source = nil
     audit_provider_request_id = nil
     cache_key_digest = digest(
-      "#{normalized_expression}\0#{default_location.to_h.to_json}\0#{prompt.digest}\0#{settings.llm_adapter}\0#{settings.openai_model}"
+      "#{normalized_expression}\0#{default_location.to_h.to_json}\0#{prompt_digest}\0#{resolver.adapter}\0#{resolver.model}"
     )
 
-    if (cached = cached_analysis(cache_key_digest))
+    if use_cache && (cached = cached_analysis(cache_key_digest))
       audit_raw_response = cached.raw_response
       audit_response_source = "cache"
       audit_provider_request_id = cached.provider_request_id
@@ -83,10 +80,8 @@ class LlmSearchParser
       return criteria
     end
 
-    response = client.parse(
+    response = resolver.call(
       expression: normalized_expression,
-      prompt: prompt.render,
-      schema: response_schema(services),
       services:,
       neighborhoods:,
       default_location:
@@ -105,18 +100,20 @@ class LlmSearchParser
       criteria:,
       raw_response: response.raw_response,
       response_source: "provider",
-      adapter: settings.llm_adapter,
-      model: settings.openai_model,
+      adapter: resolver.adapter,
+      model: resolver.model,
       provider_request_id: response.provider_request_id,
-      prompt_digest: prompt.digest
+      prompt_digest:
     )
-    persist_analysis(
-      cache_key_digest:,
-      expression_digest: digest(normalized_expression),
-      prompt_digest: prompt.digest,
-      criteria:,
-      response:
-    )
+    if use_cache
+      persist_analysis(
+        cache_key_digest:,
+        expression_digest: digest(normalized_expression),
+        prompt_digest:,
+        criteria:,
+        response:
+      )
+    end
     criteria
   rescue LocationUnsupported, LocationUnrecognized
     audit_recorder.record_failure(
@@ -124,10 +121,10 @@ class LlmSearchParser
       status: "response_rejected",
       raw_response: audit_raw_response,
       response_source: audit_response_source,
-      adapter: settings.llm_adapter,
-      model: settings.openai_model,
+      adapter: resolver.adapter,
+      model: resolver.model,
       provider_request_id: audit_provider_request_id,
-      prompt_digest: prompt&.digest
+      prompt_digest:
     )
     raise
   rescue Llm::Client::InvalidResponse => error
@@ -136,35 +133,35 @@ class LlmSearchParser
       status: "response_rejected",
       raw_response: error.raw_response,
       response_source: "provider",
-      adapter: settings.llm_adapter,
-      model: settings.openai_model,
+      adapter: resolver.adapter,
+      model: resolver.model,
       provider_request_id: error.provider_request_id,
-      prompt_digest: prompt&.digest
+      prompt_digest:
     )
     raise ProviderUnavailable, error.message
   rescue Llm::Client::RateLimited => error
     audit_recorder.record_failure(
       event: audit_event,
       status: "provider_rate_limited",
-      adapter: settings.llm_adapter,
-      model: settings.openai_model,
-      prompt_digest: prompt&.digest
+      adapter: resolver.adapter,
+      model: resolver.model,
+      prompt_digest:
     )
     raise ProviderRateLimited.new(retry_after: error.retry_after)
   rescue Llm::Client::Unavailable => error
     audit_recorder.record_failure(
       event: audit_event,
       status: "provider_unavailable",
-      adapter: settings.llm_adapter,
-      model: settings.openai_model,
-      prompt_digest: prompt&.digest
+      adapter: resolver.adapter,
+      model: resolver.model,
+      prompt_digest:
     )
     raise ProviderUnavailable, error.message
   end
 
   private
 
-  attr_reader :client, :settings, :now, :audit_recorder
+  attr_reader :resolver, :now, :audit_recorder
 
   def validate_expression!(expression)
     self.class.normalize_expression!(expression)
@@ -285,46 +282,6 @@ class LlmSearchParser
     SearchEventQuerySanitizer.new.call(raw_term: keyword, normalized_term: normalized)
   end
 
-  def response_schema(services)
-    service_id_items = {type: "string"}
-    service_id_items[:enum] = services.map { |service| service.id.to_s } if services.any?
-    {
-      type: "object",
-      additionalProperties: false,
-      properties: {
-        service_ids: {
-          type: "array",
-          maxItems: 5,
-          items: service_id_items
-        },
-        locations: {
-          type: "array",
-          maxItems: 8,
-          items: {
-            type: "object",
-            additionalProperties: false,
-            properties: {
-              state_code: {type: %w[string null]},
-              city: {type: %w[string null]},
-              neighborhood: {type: %w[string null]}
-            },
-            required: %w[state_code city neighborhood]
-          }
-        },
-        keywords: {
-          type: "array",
-          maxItems: 10,
-          items: {type: "string", maxLength: 60}
-        },
-        normalized_request: {
-          type: %w[string null],
-          maxLength: MAXIMUM_NORMALIZED_REQUEST_LENGTH
-        }
-      },
-      required: %w[service_ids locations keywords normalized_request]
-    }
-  end
-
   def cached_analysis(cache_key_digest)
     analysis = LlmSearchAnalysis.available(now.call).find_by(cache_key_digest:)
     analysis&.increment!(:cache_hit_count, touch: :updated_at)
@@ -338,8 +295,8 @@ class LlmSearchParser
     LlmSearchAnalysis.create!(
       cache_key_digest:,
       expression_digest:,
-      adapter: settings.llm_adapter,
-      model: settings.openai_model,
+      adapter: resolver.adapter,
+      model: resolver.model,
       prompt_digest:,
       raw_response: response.raw_response,
       parsed_result: {
