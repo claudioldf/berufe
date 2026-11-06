@@ -96,7 +96,11 @@ module SearchResolvers
 
     def prompt_digest(services:, neighborhoods:, default_location:)
       Digest::SHA256.hexdigest(
-        JSON.generate(questions_for(services:, neighborhoods:, default_location:))
+        JSON.generate(
+          questions: questions_for(services:, neighborhoods:, default_location:),
+          min_confidence:,
+          secondary_probability:
+        )
       )
     end
 
