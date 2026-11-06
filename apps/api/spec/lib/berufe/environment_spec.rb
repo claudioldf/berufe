@@ -269,4 +269,57 @@ RSpec.describe Berufe::Environment do
         expect(error.message).not_to include("top-secret-value")
       }
   end
+
+  describe "search resolver" do
+    it "defaults to the llm resolver with documented JEV tuning values" do
+      config = described_class.load!(environment: fake_environment)
+
+      expect(config).to have_attributes(
+        search_resolver: "llm",
+        jev_model: "jev-latest",
+        jev_timeout_seconds: 8.0,
+        jev_min_confidence: 0.5,
+        jev_secondary_probability: 0.25
+      )
+    end
+
+    it "selects JEV when its API key is present and applies overrides" do
+      environment = fake_environment.merge(
+        "SEARCH_RESOLVER" => "jev",
+        "TYPESAFE_API_KEY" => "typesafe-secret",
+        "JEV_MODEL" => "jev-1.13.0",
+        "JEV_TIMEOUT_SECONDS" => "3.5",
+        "JEV_MIN_CONFIDENCE" => "0.7",
+        "JEV_SECONDARY_PROBABILITY" => "0.3"
+      )
+
+      expect(described_class.load!(environment:)).to have_attributes(
+        search_resolver: "jev",
+        jev_model: "jev-1.13.0",
+        jev_timeout_seconds: 3.5,
+        jev_min_confidence: 0.7,
+        jev_secondary_probability: 0.3
+      )
+    end
+
+    it "requires the TypeSafe API key only when JEV is selected" do
+      expect { described_class.load!(environment: fake_environment.merge("SEARCH_RESOLVER" => "jev")) }
+        .to raise_error(described_class::InvalidConfiguration, /TYPESAFE_API_KEY/)
+      expect { described_class.load!(environment: fake_environment) }.not_to raise_error
+    end
+
+    it "rejects an unknown resolver and out-of-range tuning values without falling back" do
+      expect { described_class.load!(environment: fake_environment.merge("SEARCH_RESOLVER" => "gemini")) }
+        .to raise_error(described_class::InvalidConfiguration, /SEARCH_RESOLVER must be one of: llm, jev/)
+
+      environment = fake_environment.merge(
+        "JEV_MIN_CONFIDENCE" => "1.5",
+        "JEV_SECONDARY_PROBABILITY" => "abc",
+        "JEV_TIMEOUT_SECONDS" => "0"
+      )
+      expect { described_class.load!(environment:) }.to raise_error(described_class::InvalidConfiguration) { |error|
+        expect(error.message).to include("JEV_MIN_CONFIDENCE", "JEV_SECONDARY_PROBABILITY", "JEV_TIMEOUT_SECONDS")
+      }
+    end
+  end
 end

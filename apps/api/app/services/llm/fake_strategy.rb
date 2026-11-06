@@ -30,10 +30,10 @@ module Llm
         "city" => effective_location.city,
         "neighborhood" => nil
       }]
-      normalized_request = normalized_request_for(
-        services: services.select { |service| service.id.in?(service_ids) },
-        neighborhoods: matched_neighborhoods,
-        effective_location:
+      normalized_request = SearchNormalizedRequest.call(
+        service_name: services.find { |service| service.id.in?(service_ids) }&.name,
+        location_name: matched_neighborhoods.first&.name || effective_location.city,
+        state_code: effective_location.state_code
       )
 
       payload = {
@@ -77,15 +77,6 @@ module Llm
         position = normalized_expression.match(pattern)&.begin(0)
         [location, position, normalized_city.length] if position
       end.min_by { |_location, position, length| [position, -length] }&.first
-    end
-
-    def normalized_request_for(services:, neighborhoods:, effective_location:)
-      service = services.first
-      return unless service
-
-      location = neighborhoods.first&.name || effective_location.city
-      "Eu preciso de #{service.name.downcase} em #{location}, #{effective_location.state_code}."
-        .first(WhatsappRequestMessageBuilder::MAXIMUM_REQUEST_LENGTH)
     end
   end
 end

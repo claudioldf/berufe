@@ -106,6 +106,10 @@ OPENAI_MODEL=gpt-5-mini
 OPENAI_API_KEY=<secret OpenAI API key>
 OPENAI_TIMEOUT_SECONDS=<production request timeout>
 
+# Optional: interpret searches with JEV (TypeSafe) instead of the LLM. Default is llm.
+# SEARCH_RESOLVER=jev
+# TYPESAFE_API_KEY=<secret TypeSafe API key>
+
 SMS_OTP_ADAPTER=infobip
 INFOBIP_BASE_URL=<production account base URL>
 INFOBIP_API_KEY=<secret>

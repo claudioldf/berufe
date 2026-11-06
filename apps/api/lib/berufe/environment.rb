@@ -11,6 +11,11 @@ module Berufe
       :llm_adapter,
       :mail_adapter,
       :openai_model,
+      :search_resolver,
+      :jev_model,
+      :jev_timeout_seconds,
+      :jev_min_confidence,
+      :jev_secondary_probability,
       :product_launch_date
     )
 
@@ -38,6 +43,13 @@ module Berufe
       "integration" => %w[openai],
       "production" => %w[openai],
       "test" => %w[fake]
+    }.freeze
+    SEARCH_RESOLVERS = %w[llm jev].freeze
+    JEV_DEFAULTS = {
+      "JEV_MODEL" => "jev-latest",
+      "JEV_TIMEOUT_SECONDS" => "8",
+      "JEV_MIN_CONFIDENCE" => "0.5",
+      "JEV_SECONDARY_PROBABILITY" => "0.25"
     }.freeze
     NON_PRODUCTION_INFOBIP_ENVIRONMENTS = %w[local staging integration].freeze
     INFOBIP_TEST_PHONE_PATTERN = /\A\+55\d{2}9\d{8}\z/
@@ -71,6 +83,7 @@ module Berufe
       R2_PRIVATE_BUCKET
     ].freeze
     OPENAI_REQUIRED = %w[OPENAI_API_KEY].freeze
+    JEV_REQUIRED = %w[TYPESAFE_API_KEY].freeze
     MAXMIND_REQUIRED = %w[MAXMIND_ACCOUNT_ID MAXMIND_LICENSE_KEY].freeze
     MAIL_ADAPTERS = %w[smtp resend].freeze
     SMTP_REQUIRED = %w[
@@ -117,7 +130,15 @@ module Berufe
       llm_adapter = values["LLM_ADAPTER"]
       mail_adapter = values["MAIL_ADAPTER"]
       openai_model = values["OPENAI_MODEL"].to_s.strip.presence || "gpt-5-mini"
+      search_resolver = values["SEARCH_RESOLVER"].to_s.strip.presence || "llm"
       errors = []
+      unless SEARCH_RESOLVERS.include?(search_resolver)
+        errors << "SEARCH_RESOLVER must be one of: #{SEARCH_RESOLVERS.join(", ")}"
+      end
+      jev_model = values["JEV_MODEL"].to_s.strip.presence || JEV_DEFAULTS.fetch("JEV_MODEL")
+      jev_timeout_seconds = parse_number(values, "JEV_TIMEOUT_SECONDS", errors) { |number| number.positive? }
+      jev_min_confidence = parse_number(values, "JEV_MIN_CONFIDENCE", errors) { |number| number.between?(0, 1) }
+      jev_secondary_probability = parse_number(values, "JEV_SECONDARY_PROBABILITY", errors) { |number| number.between?(0, 1) }
       product_launch_date = parse_product_launch_date(values["PRODUCT_LAUNCH_DATE"], errors)
 
       errors << "BERUFE_ENV must be one of: #{ENVIRONMENTS.join(", ")}" unless ENVIRONMENTS.include?(name)
@@ -141,6 +162,7 @@ module Berufe
       end
 
       required = required_variables(name, sms_otp_adapter, media_storage_adapter, llm_adapter, mail_adapter, values)
+      required.concat(JEV_REQUIRED) if search_resolver == "jev"
       missing = required.select { |key| values[key].to_s.strip.empty? }
       errors << "missing required variables: #{missing.sort.join(", ")}" if missing.any?
 
@@ -157,9 +179,26 @@ module Berufe
         llm_adapter:,
         mail_adapter:,
         openai_model:,
+        search_resolver:,
+        jev_model:,
+        jev_timeout_seconds:,
+        jev_min_confidence:,
+        jev_secondary_probability:,
         product_launch_date:
       )
     end
+
+    def self.parse_number(values, key, errors)
+      raw = values[key].to_s.strip.presence || JEV_DEFAULTS.fetch(key)
+      number = Float(raw, exception: false)
+      unless number&.finite? && yield(number)
+        errors << "#{key} must be #{(key == "JEV_TIMEOUT_SECONDS") ? "a positive number" : "a number between 0 and 1"}"
+        return
+      end
+
+      number
+    end
+    private_class_method :parse_number
 
     def self.parse_product_launch_date(value, errors)
       if value.to_s.strip.empty?

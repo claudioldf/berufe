@@ -13,6 +13,29 @@ The deployment environment is selected with `BERUFE_ENV`. Rails refuses to boot 
 
 Only values prefixed `NUXT_PUBLIC_` are exposed through Nuxt's public runtime configuration. Database, Infobip, R2, MaxMind, Rails, and Bugsnag credentials are server-only and belong in the relevant hosting platform's secret store.
 
+## Search expression resolver
+
+Free-text public search is interpreted by a resolver chosen with `SEARCH_RESOLVER`
+(default `llm`). Both resolvers feed the same parser, so the 24-hour analysis cache, the
+search audit trail, location validation, and the HTTP response are identical.
+
+| `SEARCH_RESOLVER` | Interprets the expression with                          | Extra required variables |
+| ----------------- | ------------------------------------------------------- | ------------------------ |
+| `llm`             | the `LLM_ADAPTER` (`fake` or OpenAI) and a JSON prompt  | per `LLM_ADAPTER`        |
+| `jev`             | TypeSafe System One (`POST https://api.typesafe.ai/v1/systemone`) | `TYPESAFE_API_KEY` |
+
+`jev` is tuned with `JEV_MODEL`, `JEV_TIMEOUT_SECONDS`, `JEV_MIN_CONFIDENCE` (the service
+answer must reach it, 0-1), and `JEV_SECONDARY_PROBABILITY` (an additional service needs at
+least this probability, 0-1). `LLM_ADAPTER` still drives bio generation whatever
+`SEARCH_RESOLVER` is. The audit trail and cache record which resolver answered in their
+adapter and model columns, and cache entries never cross resolvers.
+
+To compare both resolvers on the same text without restarting, run
+`docker compose exec api bin/rails "search:compare[preciso de um eletricista]"` (or pass a file
+with one expression per line). It prints the mapped services and locations, the latency, and
+JEV's per-question probabilities, and it neither reads nor writes the analysis cache or the
+search audit trail. Note that it calls the real providers configured in `.env`.
+
 ## Approximate search location
 
 Rails resolves the visitor's approximate city and state through MaxMind GeoLite web
