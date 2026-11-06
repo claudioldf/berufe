@@ -248,4 +248,140 @@ RSpec.describe SearchResolvers::Jev do
       expect { resolve(resolver(json_response(mistyped))) }.to raise_error(Llm::Client::InvalidResponse)
     end
   end
+
+  describe "JEV's 255-option limit per choice question" do
+    let(:city_struct) { SupportedSearchLocations::Location }
+
+    def location(code:, city:, state: "SP")
+      city_struct.new(
+        city_code: code, state_code: state, city:,
+        state_slug: state.downcase, city_slug: city.parameterize
+      )
+    end
+
+    def stub_supported_cities(extra)
+      fillers = Array.new(300) { |index| location(code: format("90%05d", index), city: "Cidade Filler #{index}") }
+      joinville = location(code: joinville_city.code, city: "Joinville", state: "SC")
+      allow(SupportedSearchLocations).to receive(:new)
+        .and_return(instance_double(SupportedSearchLocations, all: [joinville, *extra, *fillers]))
+    end
+
+    def sent_questions
+      JSON.parse(@http.connection.requests.first.body).fetch("questions")
+    end
+
+    it "offers only the default city, the cities named in the text and outra_cidade" do
+      sao_paulo = location(code: "3550308", city: "São Paulo")
+      stub_supported_cities([sao_paulo, location(code: "3304557", city: "Rio de Janeiro", state: "RJ")])
+
+      resolve(resolver(json_response(answers)), "Preciso de um pintor em Sao Paulo")
+
+      expect(sent_questions.dig("city", "criteria").keys)
+        .to eq([joinville_city.code, "3550308", "outra_cidade"])
+    end
+
+    it "offers only the default city and outra_cidade when the text names no supported city" do
+      stub_supported_cities([])
+
+      resolve(resolver(json_response(answers)), "Preciso de um pintor")
+
+      expect(sent_questions.dig("city", "criteria").keys).to eq([joinville_city.code, "outra_cidade"])
+    end
+
+    it "prefers the longest city name over a shorter one it contains" do
+      stub_supported_cities([
+        location(code: "3304557", city: "Rio de Janeiro", state: "RJ"),
+        location(code: "1200401", city: "Rio", state: "AC")
+      ])
+
+      resolve(resolver(json_response(answers)), "pintor no rio de janeiro")
+
+      expect(sent_questions.dig("city", "criteria").keys)
+        .to eq([joinville_city.code, "3304557", "outra_cidade"])
+    end
+
+    it "caps the number of candidate cities" do
+      homonyms = Array.new(40) { |index| location(code: format("80%05d", index), city: "Santa Luzia", state: "XX") }
+      stub_supported_cities(homonyms)
+
+      resolve(resolver(json_response(answers)), "pintor em Santa Luzia")
+
+      expect(sent_questions.dig("city", "criteria").size)
+        .to eq(described_class::MAXIMUM_CITY_CANDIDATES + 2)
+    end
+
+    describe "neighborhoods" do
+      let(:big_list) do
+        Array.new(300) { |index| Struct.new(:code, :name).new(format("77%05d", index), "Bairro Filler #{index}") }
+      end
+
+      it "sends only the neighborhoods named in the text when the list is too long" do
+        stub_supported_cities([])
+        target = Struct.new(:code, :name).new("7799999", "Savassi")
+
+        resolve(
+          resolver(json_response(answers(neighborhood: choice("nenhum", 0.9, "nenhum" => 0.9, "7799999" => 0.1)))),
+          "pintor na Savassi", neighborhoods: [*big_list, target]
+        )
+
+        expect(sent_questions.dig("neighborhood", "criteria").keys).to eq(["7799999", "nenhum"])
+      end
+
+      it "skips the neighborhood question when the list is too long and none is named" do
+        stub_supported_cities([])
+
+        resolve(resolver(json_response(answers)), "pintor em Joinville", neighborhoods: big_list)
+
+        expect(sent_questions).not_to have_key("neighborhood")
+      end
+
+      it "keeps sending the whole list when it fits" do
+        resolve(resolver(json_response(answers)), "pintor", neighborhoods: [america])
+
+        expect(sent_questions.dig("neighborhood", "criteria").keys).to eq([america.code, "nenhum"])
+      end
+    end
+
+    it "keeps the prompt digest independent of the expression and sensitive to the city list" do
+      stub_supported_cities([])
+      jev = resolver(json_response(answers))
+      first = jev.prompt_digest(services:, neighborhoods:, default_location:)
+      stub_supported_cities([location(code: "3550308", city: "São Paulo")])
+      changed = resolver(json_response(answers)).prompt_digest(services:, neighborhoods:, default_location:)
+
+      expect(changed).not_to eq(first)
+      expect(jev.prompt_digest(services:, neighborhoods:, default_location:)).to eq(first)
+    end
+  end
+
+  describe "validation errors" do
+    it "names the rejected field without echoing the user's text" do
+      body = JSON.generate(
+        "detail" => [{
+          "loc" => %w[body questions city criteria], "type" => "too_long",
+          "msg" => "contains meu cpf 123", "input" => "meu cpf 123"
+        }]
+      )
+      response = JevResolverSpecSupport::Response.new("422", body, {})
+
+      expect { resolve(resolver(response)) }.to raise_error(
+        ::Llm::Client::Unavailable, "JEV returned HTTP 422 (body.questions.city.criteria too_long)"
+      )
+    end
+
+    it "falls back to the plain status error when the 422 body is not a JSON object" do
+      ["null", "false", "42", '"detail"', '["detail"]', "{}", '{"detail":null}', '{"detail":"text"}'].each do |body|
+        response = JevResolverSpecSupport::Response.new("422", body, {})
+
+        expect { resolve(resolver(response)) }.to raise_error(::Llm::Client::Unavailable, "JEV returned HTTP 422"), body
+      end
+    end
+
+    it "ignores diagnostics that are not plain strings or numbers" do
+      body = JSON.generate("detail" => [{"loc" => [{"input" => "meu cpf 123"}], "type" => {"input" => "meu cpf 123"}}])
+      response = JevResolverSpecSupport::Response.new("422", body, {})
+
+      expect { resolve(resolver(response)) }.to raise_error(::Llm::Client::Unavailable, "JEV returned HTTP 422")
+    end
+  end
 end

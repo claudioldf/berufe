@@ -16,6 +16,10 @@
 **/pnpm-lock.yaml
 **/yarn.lock
 
+# Hand-written documents and binary exports keep their own layout
+*.md
+*.pdf
+
 # Ruby and Rails-owned formats
 apps/api/**/*.rb
 apps/api/**/*.erb
