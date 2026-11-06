@@ -232,6 +232,22 @@ RSpec.describe Berufe::Environment do
       .to raise_error(described_class::InvalidConfiguration, /PRODUCT_LAUNCH_DATE must be an ISO date/)
   end
 
+  it "parses ADMIN_NOTIFICATION_EMAILS as a normalized, de-duplicated list and defaults to none" do
+    config = described_class.load!(environment: local_environment.merge(
+      "ADMIN_NOTIFICATION_EMAILS" => " Ops@Example.com, owner@example.com ,ops@example.com,"
+    ))
+
+    expect(config.admin_notification_emails).to eq(%w[ops@example.com owner@example.com])
+    expect(described_class.load!(environment: local_environment).admin_notification_emails).to eq([])
+  end
+
+  it "rejects malformed ADMIN_NOTIFICATION_EMAILS entries" do
+    environment = local_environment.merge("ADMIN_NOTIFICATION_EMAILS" => "ops@example.com;owner")
+
+    expect { described_class.load!(environment:) }
+      .to raise_error(described_class::InvalidConfiguration, /ADMIN_NOTIFICATION_EMAILS must contain comma-separated e-mail addresses/)
+  end
+
   it "requires recommendation email delivery in deployed environments" do
     environment = production_environment.merge("RESEND_API_KEY" => "")
 

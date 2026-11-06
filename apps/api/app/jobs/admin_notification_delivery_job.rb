@@ -10,19 +10,17 @@ class AdminNotificationDeliveryJob < ApplicationJob
     attempts: 5
   discard_on Berufe::MailDelivery::Rejected
 
-  def perform(event, subject_id, admin_id, mailer: AdminNotificationMailer)
-    admin = UserAccount.find_by(id: admin_id)
-    return unless admin&.admin? && admin.active? && admin.email.present?
-
+  def perform(event, subject_id, email, mailer: AdminNotificationMailer)
     params = mail_params(event, subject_id)
     return unless params
 
-    mail = mailer.with(email: admin.email, **params).public_send(event)
-    mail.message_id = "<admin-#{event.tr("_", "-")}-#{subject_id}-#{admin.id}@berufe.com.br>"
+    mail = mailer.with(email:, **params).public_send(event)
+    recipient_key = Digest::SHA256.hexdigest(email)[0, 12]
+    mail.message_id = "<admin-#{event.tr("_", "-")}-#{subject_id}-#{recipient_key}@berufe.com.br>"
     begin
       mail.deliver_now
     rescue Berufe::MailDelivery::Error => error
-      Rails.error.report(error, context: {event:, subject_id:, admin_id: admin.id})
+      Rails.error.report(error, context: {event:, subject_id:})
       raise
     end
   end

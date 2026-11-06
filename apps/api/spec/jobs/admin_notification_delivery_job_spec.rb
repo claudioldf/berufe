@@ -5,12 +5,7 @@ require "rails_helper"
 RSpec.describe AdminNotificationDeliveryJob do
   before { ActionMailer::Base.deliveries.clear }
 
-  let(:admin) do
-    UserAccount.create!(
-      role: "admin", status: "active", email: "admin@example.com", email_verified_at: Time.current,
-      password: "Str0ng!Passw0rd#1", password_confirmation: "Str0ng!Passw0rd#1"
-    )
-  end
+  let(:recipient) { "ops@example.com" }
   let(:account) do
     UserAccount.create!(
       role: "professional", status: "active", phone_e164: "+5547999997001", phone_verified_at: Time.current,
@@ -22,11 +17,11 @@ RSpec.describe AdminNotificationDeliveryJob do
   let!(:profile) { ProfessionalProfile.create!(user_account: account, display_name: "Ana Reparos") }
 
   it "delivers a registration notice with a pinned Message-ID and no professional contact data" do
-    described_class.perform_now("professional_registered", account.id, admin.id)
+    described_class.perform_now("professional_registered", account.id, recipient)
 
     mail = ActionMailer::Base.deliveries.sole
-    expect(mail.to).to eq([admin.email])
-    expect(mail.message_id).to eq("admin-professional-registered-#{account.id}-#{admin.id}@berufe.com.br")
+    expect(mail.to).to eq([recipient])
+    expect(mail.message_id).to match(/\Aadmin-professional-registered-#{account.id}-\h{12}@berufe\.com\.br\z/)
     body = mail.html_part.body.decoded + mail.text_part.body.decoded
     expect(body).to include("Ana Reparos")
     expect(body).not_to include("ana@example.com", "+5547999997001")
@@ -37,18 +32,15 @@ RSpec.describe AdminNotificationDeliveryJob do
       verification_type: "identity", status: "pending_review", submitted_at: Time.current
     )
 
-    described_class.perform_now("verification_submitted", request.id, admin.id)
+    described_class.perform_now("verification_submitted", request.id, recipient)
 
     expect(ActionMailer::Base.deliveries.sole.subject).to eq("Nova identidade aguardando análise")
   end
 
-  it "skips suspended administrators, missing subjects, and incomplete registrations" do
-    admin.update_columns(status: "suspended")
-    described_class.perform_now("professional_registered", account.id, admin.id)
-    admin.update_columns(status: "active")
-    described_class.perform_now("verification_submitted", SecureRandom.uuid, admin.id)
+  it "skips missing subjects and incomplete registrations" do
+    described_class.perform_now("verification_submitted", SecureRandom.uuid, recipient)
     account.update_columns(registered_at: nil)
-    described_class.perform_now("professional_registered", account.id, admin.id)
+    described_class.perform_now("professional_registered", account.id, recipient)
 
     expect(ActionMailer::Base.deliveries).to be_empty
   end
@@ -66,7 +58,7 @@ RSpec.describe AdminNotificationDeliveryJob do
 
     expect(Rails.error).to receive(:report).with(instance_of(Berufe::MailDelivery::ProviderUnavailable), anything)
     expect do
-      described_class.new.perform("professional_registered", account.id, admin.id, mailer:)
+      described_class.new.perform("professional_registered", account.id, recipient, mailer:)
     end.to raise_error(Berufe::MailDelivery::ProviderUnavailable)
   end
 end

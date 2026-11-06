@@ -39,9 +39,9 @@ Notification titles and descriptions are static server copy and are filtered fro
 
 ## Administrator e-mail notifications
 
-Separate from the professional inbox above, every active administrator account with an e-mail receives a message when:
+Separate from the professional inbox above, every address listed in `ADMIN_NOTIFICATION_EMAILS` (comma-separated, optional; empty disables the notices) receives a message when:
 
 - a professional completes registration (including claiming an external profile), once per account; and
 - a professional submits identity evidence, which enters the moderation queue as `pending_review`.
 
-Rails fans each event out into one delivery job per administrator, so a provider failure retries only that recipient. The message carries only the professional's display name, the event, its time (America/Sao_Paulo), and a link to the administrator surface. Phone numbers, e-mail addresses, birthdates, and the identity document are never included; administrators see details after signing in with a password.
+Rails fans each event out into one delivery job per address, so a provider failure retries only that recipient. The message carries only the professional's display name, the event, its time (America/Sao_Paulo), and a link to the administrator surface. Phone numbers, e-mail addresses, birthdates, and the identity document are never included; administrators see details after signing in with a password.

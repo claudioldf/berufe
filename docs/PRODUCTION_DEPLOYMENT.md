@@ -97,6 +97,7 @@ DB_POOL=7
 WEB_ORIGIN=https://www.berufe.com.br
 API_PUBLIC_URL=https://api.berufe.com.br
 PRODUCT_LAUNCH_DATE=<actual YYYY-MM-DD launch date>
+ADMIN_NOTIFICATION_EMAILS=<comma-separated admin inboxes; optional>
 
 MAXMIND_ACCOUNT_ID=<GeoLite account ID>
 MAXMIND_LICENSE_KEY=<secret GeoLite license key>
