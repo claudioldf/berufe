@@ -16,6 +16,29 @@ export default defineContentConfig({
         updatedAt: z.string().optional(),
       }),
     }),
+    ajuda: defineCollection({
+      type: "page",
+      source: "ajuda/*.md",
+      schema: z.object({
+        title: z.string(),
+        description: z.string(),
+        action: z.enum([
+          "entrar",
+          "criar-conta",
+          "excluir-conta",
+          "editar-perfil",
+        ]),
+        publishedAt: z.string(),
+        updatedAt: z.string().optional(),
+        retention: z.boolean().default(false),
+        cta: z.object({
+          title: z.string(),
+          description: z.string(),
+          label: z.string(),
+          to: z.string(),
+        }),
+      }),
+    }),
     localPages: defineCollection({
       type: "page",
       source: "locais/**/*.md",
