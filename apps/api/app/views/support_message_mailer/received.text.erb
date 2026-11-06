@@ -1,0 +1,12 @@
+Nova mensagem para o suporte
+
+Assunto: <%= @topic_label %>
+Nome: <%= @sender_name %>
+E-mail: <%= @sender_email %>
+<% if @sender_phone.present? -%>
+Celular: <%= @sender_phone %>
+<% end -%>
+
+<%= @message_body %>
+
+Responda a este e-mail para falar diretamente com quem escreveu.

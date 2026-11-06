@@ -11,6 +11,7 @@ Rails.application.routes.draw do
       get "public/search-location", to: "public_search_locations#show"
       get "public/professionals/featured", to: "public_featured_professionals#index"
       post "public/professional-searches", to: "public_professional_searches#create"
+      post "public/support-messages", to: "public_support_messages#create"
       get "public/professional-listings", to: "public_professional_listings#index"
       get "public/service-coverage", to: "public_service_coverage#index"
       get "public/service-demand", to: "public_service_demand#show"
