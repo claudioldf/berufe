@@ -19,10 +19,19 @@ differs from Berufe's own (GA-free) reporting pipeline.
 - The consent bootstrap runs before the GTM loader and calls
   `gtag('consent', 'default', {...})` with the real JavaScript `arguments` object. A rest-params
   array looks equivalent in DevTools but Google's command parser ignores it, which previously
-  left the site with a loaded script and zero collection requests. `analytics_storage` is
-  granted because the site loads analytics unconditionally (no cookie banner; see
-  `privacidade.vue` §7). `ad_storage`, `ad_user_data`, and `ad_personalization` stay denied,
-  matching Google Signals being off.
+  left the site with a loaded script and zero collection requests. It emits **two** defaults: a
+  granted baseline, then a fully denied override carrying `region: CONSENT_RESTRICTED_REGIONS`
+  (EEA + CH + GB). There is no cookie banner, so a visitor from those regions has no way to
+  grant anything and stays denied — analytics included — for the whole visit. Everyone else,
+  Brazil included, is granted on arrival; the site loads analytics unconditionally and discloses
+  it in `privacidade.vue` §7.
+- **The granted baseline is a permission, not a behavior.** Nothing writes an advertising cookie
+  today: there is no Google Ads tag in `GTM-PBP8MFLG` and Google Signals is off. Adding either is
+  what would start writing them, and that change must update `privacidade.vue` §7 in the same
+  commit — §7 describes current practice and promises disclosure before it changes.
+- Before this split, every ad signal was denied worldwide, which made Tag Manager's container
+  diagnostics report a permanent "0% consent rate" for traffic outside the EEA. That alert is
+  resolved by the regional scoping above, not by removing the restricted override.
 - `app/composables/useAnalyticsEvent.ts` — `trackEvent(name, params)`. A thin wrapper over
   `window.gtag`; a no-op wherever GA is disabled (dev, tests, SSR), so call sites never need
   their own guard.
@@ -97,10 +106,11 @@ Never sent to GA, by design:
 Configured directly in the GA4 Admin UI (not code), account `Berufe` / property `552733988`,
 web stream `https://www.berufe.com.br` (`15716679199`):
 
-- **Google Signals: off**, and stays off. Required — it enables cross-device/ads-personalization
-  linking via signed-in Google accounts, which would contradict the privacy policy's "não usa
-  cookies publicitários" statement. "Coleta de dados fornecidos pelo usuário" (BETA, hashed
-  customer data for Ads audiences) is off for the same reason.
+- **Google Signals: off**, and stays off while the site runs no advertising. It enables
+  cross-device/ads-personalization linking via signed-in Google accounts, which would start
+  writing the advertising cookies `privacidade.vue` §7 says the site does not currently use —
+  so turning it on is a policy change, not a toggle. "Coleta de dados fornecidos pelo
+  usuário" (BETA, hashed customer data for Ads audiences) is off for the same reason.
 - **Data retention (event/user-level, for Explore reports): 14 months** — GA4's maximum,
   chosen for year-over-year comparison; unrelated to the `_ga` cookie's own 2-year lifetime.
 - **Enhanced measurement → Site search: off.** GA4's default recognized query params

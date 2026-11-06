@@ -49,18 +49,42 @@ describe("Google Tag Manager bootstrap", () => {
 
     new Function(head.script[0]?.innerHTML ?? "")();
 
-    expect(window.dataLayer).toHaveLength(1);
-    expect(Array.isArray(window.dataLayer[0])).toBe(false);
+    expect(window.dataLayer).toHaveLength(2);
+    expect(window.dataLayer.some(Array.isArray)).toBe(false);
     expect(Array.from(window.dataLayer[0] as ArrayLike<unknown>)).toEqual([
       "consent",
       "default",
       {
-        ad_storage: "denied",
-        ad_user_data: "denied",
-        ad_personalization: "denied",
+        ad_storage: "granted",
+        ad_user_data: "granted",
+        ad_personalization: "granted",
         analytics_storage: "granted",
       },
     ]);
+  });
+
+  it("denies every signal where prior consent is required", () => {
+    const head = googleTagManagerHead("GTM-PBP8MFLG");
+
+    new Function(head.script[0]?.innerHTML ?? "")();
+
+    const [command, mode, payload] = Array.from(
+      window.dataLayer[1] as ArrayLike<unknown>,
+    ) as [string, string, Record<string, unknown>];
+
+    expect([command, mode]).toEqual(["consent", "default"]);
+    expect(payload).toMatchObject({
+      ad_storage: "denied",
+      ad_user_data: "denied",
+      ad_personalization: "denied",
+      analytics_storage: "denied",
+    });
+    // No banner exists, so the override must cover the whole EEA plus the
+    // equivalent regimes, and must never reach the site's own market.
+    expect(payload.region).toEqual(
+      expect.arrayContaining(["DE", "FR", "IE", "NO", "GB", "CH"]),
+    );
+    expect(payload.region).not.toContain("BR");
   });
 
   it("rejects an invalid container ID before rendering inline HTML", () => {
