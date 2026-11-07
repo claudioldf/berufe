@@ -136,6 +136,9 @@ test("sitemap exposes only canonical indexable public URLs", async ({
   expect(sitemap).toMatch(
     /<loc>[^<]+\/guias\/como-conseguir-clientes-profissional-autonomo<\/loc>/,
   );
+  expect(sitemap).toMatch(/<loc>[^<]+\/ajuda<\/loc>/);
+  expect(sitemap).toMatch(/<loc>[^<]+\/ajuda\/excluir-conta<\/loc>/);
+  expect(sitemap).toMatch(/<loc>[^<]+\/ajuda\/visibilidade-do-perfil<\/loc>/);
   expect(sitemap).not.toMatch(/<loc>[^<]+\/profissionais\//);
   expect(sitemap).not.toMatch(/<loc>[^<]+\/encontrar<\/loc>/);
   expect(sitemap).not.toMatch(/<loc>[^<]+\/app(?:\/|<\/loc>)/);
