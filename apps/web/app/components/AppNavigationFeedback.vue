@@ -4,6 +4,9 @@ import { onBeforeUnmount, onMounted } from "vue";
 const NAVIGATION_DURATION_MS = 2_000;
 const NAVIGATION_HIDE_DELAY_MS = 150;
 const NAVIGATION_RESET_DELAY_MS = 200;
+// The progress bar starts immediately; the "Carregando página" chip only
+// appears when a page is genuinely slow, so normal navigations stay quiet.
+const NAVIGATION_STATUS_DELAY_MS = 2_000;
 
 const nuxtApp = useNuxtApp();
 const router = useRouter();
@@ -13,6 +16,7 @@ const { isLoading, start, finish } = useLoadingIndicator({
   hideDelay: NAVIGATION_HIDE_DELAY_MS,
   resetDelay: NAVIGATION_RESET_DELAY_MS,
 });
+const showStatus = useDelayedFlag(isLoading, NAVIGATION_STATUS_DELAY_MS);
 const removeNavigationHooks: Array<() => void> = [];
 let navigationSequence = 0;
 let pageLoadingStarted = false;
@@ -69,7 +73,7 @@ onBeforeUnmount(() => {
 
   <Transition name="navigation-feedback">
     <div
-      v-if="isLoading"
+      v-if="showStatus"
       class="app-navigation-status"
       role="status"
       aria-live="polite"
@@ -116,8 +120,8 @@ onBeforeUnmount(() => {
 
 .navigation-feedback-enter-active {
   transition:
-    transform var(--motion-fast) ease 0.35s,
-    opacity var(--motion-fast) ease 0.35s;
+    transform var(--motion-fast) ease,
+    opacity var(--motion-fast) ease;
 }
 
 .navigation-feedback-leave-active {
@@ -141,10 +145,6 @@ onBeforeUnmount(() => {
 @media (prefers-reduced-motion: reduce) {
   .app-navigation-status__spinner {
     animation: none;
-  }
-
-  .navigation-feedback-enter-active {
-    transition-delay: 0s;
   }
 }
 
