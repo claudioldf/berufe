@@ -247,6 +247,12 @@ export default defineNuxtConfig({
       ],
     },
   },
+  nitro: {
+    // Precompress /_nuxt and public/ at build time (br + gzip); the server
+    // picks the encoding from Accept-Encoding. HTML is handled by
+    // server/middleware/compression.ts.
+    compressPublicAssets: { brotli: true, gzip: true },
+  },
   routeRules: {
     "/**": { headers: browserSecurityHeaders },
     "/": { prerender: false },
