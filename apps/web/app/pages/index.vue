@@ -3,15 +3,19 @@ import { computed, onMounted, shallowRef } from "vue";
 import { useCatalogs } from "~/composables/useCatalogs";
 import { useFeaturedProfessionals } from "~/composables/useFeaturedProfessionals";
 import { useDetectedSearchLocation } from "~/composables/useDetectedSearchLocation";
+import { useSearchActionNavigation } from "~/composables/useSearchActionNavigation";
 import type { ExpressionSearchPayload, SearchLocation } from "~/types";
 import {
   encodeSearchExpression,
   searchExpressionQuery,
 } from "~/utils/searchExpression";
+import { matchSearchAction } from "~/utils/search-actions";
 import { searchLocationPath } from "~/utils/searchLocation";
 
 const router = useRouter();
 const isSearchPending = shallowRef(false);
+const nuxtApp = useNuxtApp();
+const { resolveSearchAction } = useSearchActionNavigation();
 const [catalogResult, featuredResult] = await Promise.all([
   useCatalogs(),
   useFeaturedProfessionals(),
@@ -65,6 +69,13 @@ async function search(payload: ExpressionSearchPayload) {
 
   isSearchPending.value = true;
   try {
+    if (matchSearchAction(payload.expression)) {
+      const destination = await resolveSearchAction(payload.expression);
+      if (destination) {
+        await nuxtApp.runWithContext(() => navigateTo(destination));
+        return;
+      }
+    }
     await router.push({
       path: searchLocationPath(location.value),
       query: searchExpressionQuery(encodeSearchExpression(payload.expression)),
@@ -170,6 +181,11 @@ function changeLocation(nextLocation: SearchLocation) {
       inset: -12px -26px -4px 0;
       display: grid;
       place-items: center;
+    }
+
+    // The <picture> wrapper must not become the box the image sizes against.
+    &__art-picture {
+      display: contents;
     }
     &__art {
       width: 100%;

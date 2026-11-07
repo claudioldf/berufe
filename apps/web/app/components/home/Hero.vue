@@ -19,6 +19,22 @@ defineEmits<{
   search: [payload: ExpressionSearchPayload];
   locationChange: [location: SearchLocation];
 }>();
+
+// The illustration fills a ~560px column on desktop and the full width on a
+// single-column layout (<= 980px); 600/900/1224 cover 1x-2x screens.
+const heroArtWidths = [600, 900, 1224];
+const heroArtSizes = "(max-width: 980px) 100vw, 560px";
+
+function heroArtSrcset(format: "avif" | "webp") {
+  return heroArtWidths
+    .map((width) =>
+      // The 1224px WebP is the original, unsuffixed file.
+      width === 1224 && format === "webp"
+        ? `/images/hero-home-care-illustration.webp ${width}w`
+        : `/images/hero-home-care-illustration-${width}.${format} ${width}w`,
+    )
+    .join(", ");
+}
 </script>
 
 <template>
@@ -50,15 +66,29 @@ defineEmits<{
 
       <div class="hero__visual">
         <div class="hero__art-wrap">
-          <img
-            class="hero__art"
-            src="/images/hero-home-care-illustration.webp"
-            alt="Ilustração de profissionais cuidando da pintura e da iluminação de uma casa"
-            width="1224"
-            height="1285"
-            fetchpriority="high"
-            decoding="async"
-          />
+          <!-- Above the fold and the LCP element: eager with high priority,
+               but sized per viewport (AVIF first, WebP fallback). -->
+          <picture class="hero__art-picture">
+            <source
+              type="image/avif"
+              :srcset="heroArtSrcset('avif')"
+              :sizes="heroArtSizes"
+            />
+            <source
+              type="image/webp"
+              :srcset="heroArtSrcset('webp')"
+              :sizes="heroArtSizes"
+            />
+            <img
+              class="hero__art"
+              src="/images/hero-home-care-illustration.webp"
+              alt="Ilustração de profissionais cuidando da pintura e da iluminação de uma casa"
+              width="1224"
+              height="1285"
+              fetchpriority="high"
+              decoding="async"
+            />
+          </picture>
         </div>
         <div class="hero__profile-chip">
           <span class="hero__chip-icon" aria-hidden="true">

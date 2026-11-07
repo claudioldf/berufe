@@ -915,6 +915,71 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/public/support-messages:
+    post:
+      operationId: createPublicSupportMessage
+      summary: Send a support message that is e-mailed to the administrators
+      description: >-
+        Nothing is stored. The message is delivered by e-mail to the configured
+        administrator addresses, with the sender as Reply-To.
+      tags:
+        - Public support
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublicSupportMessageRequest"
+      responses:
+        "202":
+          description: The message was accepted for e-mail delivery.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicSupportMessageResponse"
+        "403":
+          description: The exact browser origin is invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: One or more fields are invalid.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Too many support messages were sent from this address recently.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Retry-After:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: No administrator address is configured to receive support messages.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/v1/public/professional-listings:
     get:
       operationId: getPublicProfessionalListing
@@ -8461,6 +8526,62 @@ components:
           minimum: 1
           maximum: 50
           description: Professionals per page; defaults to 20.
+    PublicSupportMessageRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - support_message
+      properties:
+        support_message:
+          type: object
+          additionalProperties: false
+          required:
+            - name
+            - email
+            - message
+            - topic
+          properties:
+            name:
+              type: string
+              maxLength: 120
+              description: Between 2 and 120 characters; validated by the API.
+            email:
+              type: string
+              maxLength: 254
+              description: A valid e-mail address; validated by the API.
+            phone:
+              type: [string, "null"]
+              maxLength: 20
+              description: Optional Brazilian mobile number, in any common format.
+            message:
+              type: string
+              maxLength: 2000
+              description: Between 10 and 2000 characters; validated by the API.
+            topic:
+              type: string
+              enum:
+                - entrar
+                - criar-conta
+                - excluir-conta
+                - editar-perfil
+                - geral
+    PublicSupportMessageResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+        - request_id
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required:
+            - received
+          properties:
+            received:
+              type: boolean
+        request_id:
+          $ref: "#/components/schemas/RequestId"
     PublicSearchDefaultLocation:
       type: object
       additionalProperties: false

@@ -80,6 +80,7 @@ export default defineNuxtConfig({
       "/api/__sitemap__/listings",
       "/api/__sitemap__/para-profissionais",
       "/api/__sitemap__/guides",
+      "/api/__sitemap__/ajuda",
     ],
   },
   linkChecker: {
@@ -117,7 +118,9 @@ export default defineNuxtConfig({
         "lucide:arrow-right",
         "lucide:arrow-up-right",
         "lucide:badge-check",
+        "lucide:badge-dollar-sign",
         "lucide:bell",
+        "lucide:life-buoy",
         "lucide:bell-ring",
         "lucide:brush-cleaning",
         "lucide:baby",
@@ -189,6 +192,7 @@ export default defineNuxtConfig({
         "lucide:scan-search",
         "lucide:search",
         "lucide:search-x",
+        "lucide:star",
         "lucide:send",
         "lucide:share-2",
         "lucide:shield-alert",
@@ -243,9 +247,25 @@ export default defineNuxtConfig({
       ],
     },
   },
+  nitro: {
+    // Precompress /_nuxt and public/ at build time (br + gzip); the server
+    // picks the encoding from Accept-Encoding. HTML is handled by
+    // server/middleware/compression.ts.
+    compressPublicAssets: { brotli: true, gzip: true },
+  },
   routeRules: {
     "/**": { headers: browserSecurityHeaders },
-    "/": { prerender: false },
+    // The server render is identical for every visitor (the visitor's city is
+    // resolved in the browser after mount), so the home page is cached like
+    // the other public pages.
+    "/": { prerender: false, swr: 300 },
+    // Not content-hashed, so a day-scale revalidation window instead of the
+    // year-long immutable cache of /_nuxt assets.
+    "/images/**": {
+      headers: {
+        "cache-control": "public, max-age=604800, stale-while-revalidate=86400",
+      },
+    },
     "/encontrar": { prerender: false },
     "/encontrar/**": { prerender: false, swr: 300 },
     "/be/**": { prerender: false, swr: 300 },
@@ -258,6 +278,8 @@ export default defineNuxtConfig({
     "/para-profissionais/**": { prerender: false, swr: 900 },
     "/guias": { prerender: false, swr: 900 },
     "/guias/**": { prerender: false, swr: 900 },
+    "/ajuda": { prerender: false, swr: 900 },
+    "/ajuda/**": { prerender: false, swr: 900 },
     "/foundation": {
       prerender: false,
       headers: {

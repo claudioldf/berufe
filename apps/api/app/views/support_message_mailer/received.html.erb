@@ -1,0 +1,28 @@
+<h1 class="email-title" style="margin: 0 0 20px; color: #17352f; font-size: 36px; line-height: 1.15; letter-spacing: -0.03em;">
+  Nova mensagem para o suporte
+</h1>
+
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#17352f" style="width: 100%; border-radius: 20px; background-color: #17352f;">
+  <tr>
+    <td style="padding: 24px;">
+      <p style="margin: 0 0 7px; color: #ff9a85; font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;"><%= @topic_label %></p>
+      <p style="margin: 0 0 20px; color: #ffffff; font-size: 24px; font-weight: 700; line-height: 1.25;"><%= @sender_name %></p>
+
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#ffffff" style="width: 100%; border-radius: 16px; background-color: #ffffff;">
+        <tr>
+          <td style="padding: 18px;">
+            <p style="margin: 0 0 4px; color: #526963; font-size: 14px;">E-mail: <a href="mailto:<%= @sender_email %>" style="color: #12625d;"><%= @sender_email %></a></p>
+            <% if @sender_phone.present? %>
+              <p style="margin: 0 0 12px; color: #526963; font-size: 14px;">Celular: <%= @sender_phone %></p>
+            <% end %>
+            <p style="margin: 12px 0 0; color: #17352f; font-size: 16px; line-height: 1.6; white-space: pre-wrap;"><%= @message_body %></p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+<p style="margin: 28px 0 0; color: #61736d; font-size: 14px;">
+  Responda a este e-mail para falar diretamente com quem escreveu.
+</p>

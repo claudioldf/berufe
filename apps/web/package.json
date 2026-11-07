@@ -46,6 +46,7 @@
     "@takumi-rs/core": "^2.13.0",
     "@takumi-rs/helpers": "^2.13.0",
     "@vueuse/core": "14.4.0",
+    "compression": "1.8.2",
     "nuxt": "4.5.2",
     "openapi-fetch": "0.17.0",
     "vue": "3.5.41"
@@ -57,6 +58,7 @@
     "@nuxt/test-utils": "4.1.0",
     "@nuxtjs/mdc": "^0.23.1",
     "@playwright/test": "1.62.1",
+    "@types/compression": "^1.8.1",
     "@vitest/coverage-v8": "4.1.10",
     "@vue/test-utils": "2.4.11",
     "better-sqlite3": "^13.0.3",

@@ -41,7 +41,26 @@ describe("home marketing copy", () => {
     expect(wrapper.get(".hero__art").attributes()).toMatchObject({
       src: "/images/hero-home-care-illustration.webp",
       alt: "Ilustração de profissionais cuidando da pintura e da iluminação de uma casa",
+      fetchpriority: "high",
+      width: "1224",
+      height: "1285",
     });
+    // The above-the-fold image is never lazy, and is served per viewport.
+    expect(wrapper.get(".hero__art").attributes("loading")).toBeUndefined();
+    const sources = wrapper.findAll(".hero__art-picture source");
+    expect(sources.map((source) => source.attributes("type"))).toEqual([
+      "image/avif",
+      "image/webp",
+    ]);
+    expect(sources[0]!.attributes("srcset")).toBe(
+      "/images/hero-home-care-illustration-600.avif 600w, /images/hero-home-care-illustration-900.avif 900w, /images/hero-home-care-illustration-1224.avif 1224w",
+    );
+    expect(sources[1]!.attributes("srcset")).toBe(
+      "/images/hero-home-care-illustration-600.webp 600w, /images/hero-home-care-illustration-900.webp 900w, /images/hero-home-care-illustration.webp 1224w",
+    );
+    expect(sources[0]!.attributes("sizes")).toBe(
+      "(max-width: 980px) 100vw, 560px",
+    );
     expect(wrapper.text()).not.toContain("evidências");
     expect(wrapper.get(".hero__profile-chip").text()).not.toContain(
       "Marcos Alves",

@@ -15,6 +15,7 @@ import { professionalSignupPath } from "~/utils/professional-auth";
         <NuxtLink to="/para-profissionais">Para profissionais</NuxtLink>
         <NuxtLink :to="professionalSignupPath">Criar perfil grátis</NuxtLink>
         <NuxtLink to="/guias">Guias</NuxtLink>
+        <NuxtLink to="/ajuda">Ajuda</NuxtLink>
         <NuxtLink to="/privacidade">Privacidade</NuxtLink>
         <NuxtLink to="/termos-de-uso">Termos de uso</NuxtLink>
       </div>
