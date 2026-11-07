@@ -16,7 +16,9 @@ async function fillExpressionSearch(
   page: import("@playwright/test").Page,
   expression: string,
 ) {
-  const input = page.getByRole("searchbox", { name: "O que você precisa?" });
+  const input = page.getByRole("searchbox", {
+    name: "Qual o serviço que você precisa?",
+  });
   const submit = page.getByRole("button", { name: "Buscar" });
 
   await expect(async () => {
@@ -28,7 +30,9 @@ async function fillExpressionSearch(
 async function selectLaunchCityFromFields(
   page: import("@playwright/test").Page,
 ) {
-  await page.getByRole("searchbox", { name: "O que você precisa?" }).click();
+  await page
+    .getByRole("searchbox", { name: "Qual o serviço que você precisa?" })
+    .click();
 
   const city = page.getByRole("combobox", { name: /Cidade/ });
   await expect(page.getByRole("combobox", { name: /Estado/ })).toBeVisible();

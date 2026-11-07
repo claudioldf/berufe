@@ -60,7 +60,7 @@ function submit() {
       <div class="expression-search__field">
         <UIcon name="i-lucide-search" aria-hidden="true" />
         <label>
-          <span>O que você precisa?</span>
+          <span>Qual o serviço que você precisa?</span>
           <UInput
             v-model="expression"
             class="expression-search__input"
