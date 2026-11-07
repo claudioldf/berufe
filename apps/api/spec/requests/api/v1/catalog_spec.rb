@@ -121,7 +121,7 @@ RSpec.describe "Public catalog", type: :request, openapi: true do
     expect(response.parsed_body.fetch("data")).to eq(
       "categories" => [],
       "services" => [],
-      "cities" => []
+      "cities" => [{"city_code" => "4209102", "state_code" => "SC", "city" => "Joinville", "state_slug" => "sc", "city_slug" => "joinville"}]
     )
     assert_api_conform(status: 200)
   end

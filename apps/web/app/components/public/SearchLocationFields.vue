@@ -24,8 +24,8 @@ const dropdownUi = {
   itemLabel: "font-bold",
 };
 
-// The state drives which cities are listed. Picking a state alone does not
-// change the search; the city is applied when it is chosen.
+// The state drives which cities are listed. A city is always required, so
+// picking a state applies its first city straight away.
 const stateCode = shallowRef(props.location.stateCode);
 watch(
   () => props.location.stateCode,
@@ -33,6 +33,12 @@ watch(
     stateCode.value = next;
   },
 );
+
+function selectState(next: string) {
+  stateCode.value = next;
+  const first = cityItems.value[0];
+  if (first) emit("change", first);
+}
 
 const states = computed(() =>
   [...new Set(props.cities.map((city) => city.stateCode))].sort(),
@@ -59,8 +65,9 @@ const citySlug = computed<string | undefined>({
       <label class="search-location-fields__field">
         <span>Estado</span>
         <USelect
-          v-model="stateCode"
+          :model-value="stateCode"
           class="search-location-fields__control"
+          @update:model-value="selectState"
           :items="states"
           size="sm"
           :ui="dropdownUi"
@@ -76,12 +83,13 @@ const citySlug = computed<string | undefined>({
           value-key="citySlug"
           label-key="city"
           size="sm"
-          placeholder="Escolha a cidade"
           :search-input="{ placeholder: 'Buscar cidade' }"
           :disabled="!cityItems.length"
           :ui="dropdownUi"
         />
       </label>
+
+      <slot name="action" :complete="citySlug !== undefined" />
     </div>
   </div>
 </template>
@@ -97,9 +105,12 @@ const citySlug = computed<string | undefined>({
   font-size: 0.78rem;
 }
 
+// State, city and the submit button share one row; the button lines up with
+// the bottom edge of the dropdowns rather than the labels above them.
 .search-location-fields__grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr) auto;
+  align-items: end;
   gap: 8px;
 }
 
@@ -111,6 +122,7 @@ const citySlug = computed<string | undefined>({
   > span {
     padding-inline: 3px;
     font-size: 0.7rem;
+    line-height: 1rem;
     font-weight: 800;
     letter-spacing: 0.06em;
     text-transform: uppercase;

@@ -1,6 +1,14 @@
 import { mountSuspended } from "@nuxt/test-utils/runtime";
 import { defineComponent } from "vue";
 import ExpressionSearch from "@app/components/public/ExpressionSearch.vue";
+import { fallbackSearchLocation } from "@app/utils/searchLocation";
+
+// The location fields are covered by their own tests; here the action slot
+// renders with a complete location so the button's own rules are exercised.
+const FieldsStub = defineComponent({
+  name: "PublicSearchLocationFields",
+  template: '<div><slot name="action" :complete="true" /></div>',
+});
 
 const InputStub = defineComponent({
   name: "UInput",
@@ -37,11 +45,20 @@ const ButtonStub = defineComponent({
   template: '<button :type="type" :disabled="disabled"><slot /></button>',
 });
 
-const stubs = { UInput: InputStub, UButton: ButtonStub, UIcon: true };
+const stubs = {
+  UInput: InputStub,
+  UButton: ButtonStub,
+  UIcon: true,
+  PublicSearchLocationFields: FieldsStub,
+};
+const location = {
+  props: { location: fallbackSearchLocation, cities: [fallbackSearchLocation] },
+};
 
 describe("expression search", () => {
   it("requires a nonblank expression capped at 200 characters", async () => {
     const wrapper = await mountSuspended(ExpressionSearch, {
+      ...location,
       global: { stubs },
     });
 
@@ -50,7 +67,9 @@ describe("expression search", () => {
       maxlength: "200",
       placeholder: "Ex.: Preciso pintar um quarto infantil",
     });
-    expect(wrapper.find('button[type="submit"]').exists()).toBe(false);
+    expect(
+      wrapper.get('button[type="submit"]').attributes("disabled"),
+    ).toBeDefined();
     expect(wrapper.get('input[name="expression"]').classes()).toContain(
       "rounded-none",
     );
@@ -64,6 +83,7 @@ describe("expression search", () => {
 
   it("emits the trimmed free-form request after a user submits it", async () => {
     const wrapper = await mountSuspended(ExpressionSearch, {
+      ...location,
       global: { stubs },
     });
 
@@ -81,11 +101,14 @@ describe("expression search", () => {
 
   it("does not submit an expression longer than 200 characters", async () => {
     const wrapper = await mountSuspended(ExpressionSearch, {
+      ...location,
       global: { stubs },
     });
 
     await wrapper.get('input[name="expression"]').setValue("x".repeat(201));
-    expect(wrapper.find('button[type="submit"]').exists()).toBe(false);
+    expect(
+      wrapper.get('button[type="submit"]').attributes("disabled"),
+    ).toBeDefined();
     await wrapper.get("form").trigger("submit");
 
     expect(wrapper.emitted("submit")).toBeUndefined();
@@ -95,6 +118,7 @@ describe("expression search", () => {
     const wrapper = await mountSuspended(ExpressionSearch, {
       props: {
         loading: true,
+        location: fallbackSearchLocation,
         modelValue: "Preciso de um eletricista",
       },
       global: { stubs },

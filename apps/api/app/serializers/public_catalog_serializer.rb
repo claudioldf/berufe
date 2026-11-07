@@ -10,7 +10,7 @@ class PublicCatalogSerializer
     {
       categories: @categories.map { |category| serialize_category(category) },
       services: @services.map { |service| serialize_service(service) },
-      cities: AvailableSearchLocations.new.all.map(&:to_h)
+      cities: SupportedSearchLocations.new.all.map(&:to_h)
     }
   end
 
