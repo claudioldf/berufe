@@ -11,7 +11,7 @@ The deployment environment is selected with `BERUFE_ENV`. Rails refuses to boot 
 | `integration` | Infobip | R2            | restricted-provider checks                          |
 | `production`  | Infobip | R2            | live service                                        |
 
-Only values prefixed `NUXT_PUBLIC_` are exposed through Nuxt's public runtime configuration. Database, Infobip, R2, MaxMind, Rails, and Bugsnag credentials are server-only and belong in the relevant hosting platform's secret store.
+Only values prefixed `NUXT_PUBLIC_` are exposed through Nuxt's public runtime configuration. Database, Infobip, R2, ipdata, Rails, and Bugsnag credentials are server-only and belong in the relevant hosting platform's secret store.
 
 ## Search expression resolver
 
@@ -38,13 +38,12 @@ search audit trail. Note that it calls the real providers configured in `.env`.
 
 ## Approximate search location
 
-Rails resolves the visitor's approximate city and state through MaxMind GeoLite web
-services. Staging, integration, and production require `MAXMIND_ACCOUNT_ID` and
-`MAXMIND_LICENSE_KEY`; both belong only in the API service's secret store. The browser and
-Nuxt public runtime configuration must never receive either value.
+Rails resolves the visitor's approximate city and state through the ipdata.co API
+(`IpdataClient`, requesting only `city`, `region_code`, and `country_code`). Staging,
+integration, and production require `IPDATA_API_KEY`; it belongs only in the API service's
+secret store. The browser and Nuxt public runtime configuration must never receive it.
 
-The client is pinned to `geolite.info`, so it does not accidentally call MaxMind's paid
-`geoip.maxmind.com` host. Rails prefers its public request peer and accepts a server-forwarded
+Rails prefers its public request peer and accepts a server-forwarded
 `X-Real-IP` value only when that peer is private. It ignores non-public or malformed
 addresses and never places the raw address in its location cache. Supported results are
 cached for up to 24 hours by a keyed digest; provider failures are cached for five minutes.
