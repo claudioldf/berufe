@@ -31,7 +31,7 @@ class IpdataClient
       state_code: payload["region_code"].to_s.squish.presence&.upcase,
       country_code: payload["country_code"].to_s.squish.presence&.upcase
     )
-    result if result.to_a.all?
+    result if [result.city, result.state_code, result.country_code].all?
   rescue JSON::ParserError, SystemCallError, Timeout::Error, IOError, OpenSSL::SSL::SSLError => error
     raise LookupError, error.class.name
   end
