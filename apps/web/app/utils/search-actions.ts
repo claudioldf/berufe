@@ -54,6 +54,7 @@ export const searchActions: readonly SearchAction[] = [
       "deletar conta",
       "cancelar conta",
       "cancelar cadastro",
+      "remover conta",
       "remover perfil",
     ],
   },

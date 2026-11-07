@@ -5,6 +5,8 @@ describe("matchSearchAction", () => {
     ["Excluir perfil", "excluir-conta"],
     ["excluir conta", "excluir-conta"],
     ["APAGAR CONTA", "excluir-conta"],
+    ["remover conta", "excluir-conta"],
+    ["cadastrar", "criar-conta"],
     ["cancelar cadastro", "excluir-conta"],
     ["cadastro", "criar-conta"],
     ["Criar conta", "criar-conta"],
