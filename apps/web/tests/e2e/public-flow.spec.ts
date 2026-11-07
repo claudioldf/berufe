@@ -136,11 +136,27 @@ test("sitemap exposes only canonical indexable public URLs", async ({
   expect(sitemap).toMatch(
     /<loc>[^<]+\/guias\/como-conseguir-clientes-profissional-autonomo<\/loc>/,
   );
-  expect(sitemap).toMatch(/<loc>[^<]+\/ajuda<\/loc>/);
+  // Every static public page. Pages that are noindex or private by design
+  // (/encontrar, /foundation, tokenized and /app routes) are asserted absent
+  // below.
+  expect(sitemap).toMatch(/<loc>https?:\/\/[^/<]+\/?<\/loc>/);
+  for (const path of [
+    "/servicos",
+    "/para-profissionais",
+    "/guias",
+    "/ajuda",
+    "/privacidade",
+    "/termos-de-uso",
+  ]) {
+    expect(sitemap, `${path} is missing from the sitemap`).toMatch(
+      new RegExp(`<loc>[^<]+${path}</loc>`),
+    );
+  }
   expect(sitemap).toMatch(/<loc>[^<]+\/ajuda\/excluir-conta<\/loc>/);
   expect(sitemap).toMatch(/<loc>[^<]+\/ajuda\/visibilidade-do-perfil<\/loc>/);
   expect(sitemap).not.toMatch(/<loc>[^<]+\/profissionais\//);
   expect(sitemap).not.toMatch(/<loc>[^<]+\/encontrar<\/loc>/);
+  expect(sitemap).not.toMatch(/<loc>[^<]+\/foundation<\/loc>/);
   expect(sitemap).not.toMatch(/<loc>[^<]+\/app(?:\/|<\/loc>)/);
   expect(sitemap).not.toMatch(/<loc>[^<]+\/(?:orcamento|recomendacao)\//);
 });
