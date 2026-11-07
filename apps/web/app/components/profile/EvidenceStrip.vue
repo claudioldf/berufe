@@ -7,32 +7,53 @@ const props = defineProps<{
   summary: PublicProfessionalProfile["evidenceSummary"];
 }>();
 
-const visibleEvidence = computed(() =>
-  props.evidence.filter((item) => item.type !== "phone"),
+const hasIdentity = computed(() =>
+  props.evidence.some((item) => item.type === "identity"),
 );
+const hasPhone = computed(() =>
+  props.evidence.some((item) => item.type === "phone"),
+);
+const hasVerification = computed(() => hasIdentity.value || hasPhone.value);
 </script>
 
 <template>
-  <section class="evidence-strip" aria-labelledby="evidence-strip-title">
-    <DesignSystemContainer class="evidence-strip__inner">
-      <div class="evidence-strip__verification">
+  <section
+    class="evidence-strip"
+    :aria-labelledby="hasVerification ? 'evidence-strip-title' : undefined"
+    :aria-label="hasVerification ? undefined : 'Resumo do perfil'"
+  >
+    <DesignSystemContainer
+      class="evidence-strip__inner"
+      :class="{ 'evidence-strip__inner--solo': !hasVerification }"
+    >
+      <div v-if="hasVerification" class="evidence-strip__verification">
         <span class="evidence-strip__icon" aria-hidden="true">
           <UIcon name="i-lucide-shield-check" />
         </span>
         <div class="evidence-strip__verification-content">
           <div class="evidence-strip__heading">
-            <h2 id="evidence-strip-title">Perfil verificado</h2>
+            <div class="evidence-strip__title-row">
+              <h2 id="evidence-strip-title">Perfil verificado</h2>
+              <div class="evidence-strip__marks">
+                <span
+                  v-if="hasIdentity"
+                  class="evidence-strip__mark"
+                  title="Identidade verificada"
+                >
+                  <UIcon name="i-lucide-badge-check" aria-hidden="true" />
+                  <span class="sr-only">Identidade verificada</span>
+                </span>
+                <span
+                  v-if="hasPhone"
+                  class="evidence-strip__mark"
+                  title="Telefone confirmado"
+                >
+                  <UIcon name="i-lucide-smartphone" aria-hidden="true" />
+                  <span class="sr-only">Telefone confirmado</span>
+                </span>
+              </div>
+            </div>
             <p>Dados conferidos para você contratar com mais confiança.</p>
-          </div>
-          <div
-            class="evidence-strip__badges"
-            aria-label="Verificações deste perfil"
-          >
-            <PublicEvidenceBadge
-              v-for="item in visibleEvidence"
-              :key="item.id"
-              :evidence="item"
-            />
           </div>
         </div>
       </div>
@@ -86,6 +107,10 @@ const visibleEvidence = computed(() =>
     align-items: center;
     gap: 40px;
     padding-block: 22px;
+
+    &--solo {
+      grid-template-columns: minmax(0, 1fr);
+    }
   }
 
   &__verification {
@@ -110,19 +135,23 @@ const visibleEvidence = computed(() =>
   }
 
   &__verification-content {
-    display: flex;
-    align-items: center;
-    gap: 20px;
     min-width: 0;
   }
 
   &__heading {
-    flex: 0 1 230px;
+    min-width: 0;
   }
 
   &__heading h2,
   &__heading p {
     margin: 0;
+  }
+
+  &__title-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
   }
 
   &__heading h2 {
@@ -139,11 +168,22 @@ const visibleEvidence = computed(() =>
     line-height: 1.45;
   }
 
-  &__badges {
-    display: flex;
-    flex-wrap: nowrap;
-    gap: 8px;
-    min-width: 0;
+  &__marks {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  &__mark {
+    display: inline-grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--color-brand-soft-strong);
+    border-radius: 999px;
+    background: var(--color-brand-soft);
+    color: var(--color-brand);
+    font-size: 0.95rem;
   }
 
   &__summary {
@@ -212,10 +252,6 @@ const visibleEvidence = computed(() =>
       gap: 18px;
     }
 
-    &__verification-content {
-      justify-content: space-between;
-    }
-
     &__summary {
       width: 100%;
     }
@@ -242,20 +278,6 @@ const visibleEvidence = computed(() =>
       height: 42px;
       border-radius: 13px;
       font-size: 1.15rem;
-    }
-
-    &__verification-content {
-      display: grid;
-      gap: 12px;
-    }
-
-    &__heading {
-      flex-basis: auto;
-    }
-
-    &__badges {
-      grid-column: 1 / -1;
-      flex-wrap: wrap;
     }
 
     &__outcomes {
