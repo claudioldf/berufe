@@ -91,7 +91,7 @@ describe("search location fields", () => {
     );
   });
 
-  it("lists only the cities of the chosen state and applies a city only when one is picked", async () => {
+  it("lists only the cities of the chosen state and selects its first city automatically", async () => {
     const wrapper = await mountSuspended(SearchLocationFields, {
       props: { location: fallbackSearchLocation, cities, source: "manual" },
       global: { stubs },
@@ -103,10 +103,6 @@ describe("search location fields", () => {
       .findAll('select[aria-label="Cidade"] option')
       .map((option) => option.text());
     expect(options).toEqual(["Curitiba"]);
-    expect(wrapper.emitted("change")).toBeUndefined();
-
-    await wrapper.get('select[aria-label="Cidade"]').setValue("curitiba");
-
     expect(wrapper.emitted("change")?.[0]).toEqual([curitiba]);
   });
 });

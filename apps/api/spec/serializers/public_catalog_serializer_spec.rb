@@ -34,7 +34,7 @@ RSpec.describe PublicCatalogSerializer do
         description: "Instalações elétricas.",
         aliases: ["elétrica"]
       }],
-      cities: []
+      cities: [SupportedSearchLocations::FALLBACK.to_h]
     )
     expect(serialized.to_json).not_to include(
       "is_active",

@@ -53,6 +53,7 @@ function submit() {
     @focusin="expanded = true"
   >
     <form
+      id="expression-search-form"
       class="expression-search"
       :aria-busy="loading"
       @submit.prevent="submit"
@@ -76,19 +77,6 @@ function submit() {
           />
         </label>
       </div>
-
-      <UButton
-        v-if="canSubmit"
-        type="submit"
-        color="primary"
-        class="expression-search__button"
-        icon="i-lucide-arrow-right"
-        trailing
-        :loading="loading"
-        :disabled="loading"
-      >
-        <span>Buscar</span>
-      </UButton>
     </form>
 
     <div
@@ -103,7 +91,23 @@ function submit() {
           :cities="cities"
           :source="locationSource"
           @change="emit('locationChange', $event)"
-        />
+        >
+          <template #action="{ complete }">
+            <UButton
+              type="submit"
+              form="expression-search-form"
+              :color="!canSubmit || !complete ? 'neutral' : 'primary'"
+              :variant="!canSubmit || !complete ? 'soft' : 'solid'"
+              class="expression-search-shell__submit"
+              icon="i-lucide-arrow-right"
+              trailing
+              :loading="loading"
+              :disabled="loading || !canSubmit || !complete"
+            >
+              <span>Buscar</span>
+            </UButton>
+          </template>
+        </PublicSearchLocationFields>
       </div>
     </div>
   </div>
@@ -122,6 +126,26 @@ function submit() {
 
   &--compact {
     box-shadow: var(--shadow-sm);
+  }
+}
+
+// Spans the whole field column beside it: dropdown height (2.5rem) + the field
+// gap (4px) + the label line (1rem), so the button matches the stack's height.
+.expression-search-shell__submit {
+  min-height: calc(2.5rem + 4px + 1rem);
+  padding-inline: 18px;
+  border-radius: 11px;
+  font-size: 0.86rem;
+  font-weight: 800;
+  white-space: nowrap;
+
+  // Disabled reads as inactive: light gray surface, darker gray label, and a
+  // not-allowed cursor.
+  &:disabled {
+    background-color: var(--color-stone-100);
+    color: var(--color-stone-400);
+    opacity: 1;
+    cursor: not-allowed;
   }
 }
 
@@ -196,14 +220,6 @@ function submit() {
     font-weight: 500;
   }
 
-  &__button {
-    min-height: 58px;
-    justify-content: center;
-    padding-inline: 25px;
-    border-radius: 13px;
-    font-weight: 800;
-  }
-
   :deep(input[type="search"]::-webkit-search-cancel-button) {
     appearance: none;
   }
@@ -227,10 +243,6 @@ function submit() {
 
     &__field {
       padding: 10px 12px;
-    }
-
-    &__button {
-      min-height: 50px;
     }
   }
 }
