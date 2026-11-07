@@ -45,7 +45,9 @@ defineOgImageSafely("BerufeDefault", {
 
     <DesignSystemPageSection>
       <DesignSystemContainer class="help__body">
-        <ContentRenderer :value="article" />
+        <div class="help__content">
+          <ContentRenderer :value="article" />
+        </div>
         <HelpRetentionSection
           v-if="article.retention"
           @contact="supportOpen = true"
@@ -88,27 +90,27 @@ defineOgImageSafely("BerufeDefault", {
     max-width: 720px;
   }
 
-  &__body :deep(h2) {
+  &__content :deep(h2) {
     margin: 36px 0 14px;
     font-family: var(--font-display);
     font-size: 1.4rem;
   }
 
-  &__body :deep(p) {
+  &__content :deep(p) {
     margin: 0 0 16px;
     color: var(--ink-soft);
     line-height: 1.7;
   }
 
-  &__body :deep(ul),
-  &__body :deep(ol) {
+  &__content :deep(ul),
+  &__content :deep(ol) {
     margin: 0 0 16px;
     padding-left: 22px;
     color: var(--ink-soft);
     line-height: 1.7;
   }
 
-  &__body :deep(a) {
+  &__content :deep(a) {
     color: var(--color-brand);
     font-weight: 700;
   }

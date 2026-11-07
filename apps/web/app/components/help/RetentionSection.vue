@@ -39,10 +39,14 @@ const benefits = [
     </p>
     <ul class="retention__benefits">
       <li v-for="benefit in benefits" :key="benefit.title">
-        <UIcon :name="benefit.icon" aria-hidden="true" />
+        <UIcon
+          :name="benefit.icon"
+          class="retention__icon"
+          aria-hidden="true"
+        />
         <div>
-          <strong>{{ benefit.title }}</strong>
-          <span>{{ benefit.text }}</span>
+          <strong class="retention__title">{{ benefit.title }}</strong>
+          <span class="retention__text">{{ benefit.text }}</span>
         </div>
       </li>
     </ul>
@@ -92,23 +96,28 @@ const benefits = [
       gap: 12px;
       align-items: start;
     }
+  }
 
-    & :deep(svg) {
-      margin-top: 2px;
-      color: var(--color-brand);
-      font-size: 1.25rem;
-    }
+  &__icon {
+    // Same height as the title's first line so the icon sits on it.
+    width: 1.5rem;
+    height: 1.5rem;
+    color: var(--color-brand);
+  }
 
-    & strong,
-    & span {
-      display: block;
-    }
+  &__title,
+  &__text {
+    display: block;
+  }
 
-    & span {
-      color: var(--ink-soft);
-      font-size: 0.92rem;
-      line-height: 1.5;
-    }
+  &__title {
+    line-height: 1.5rem;
+  }
+
+  &__text {
+    color: var(--ink-soft);
+    font-size: 0.92rem;
+    line-height: 1.5;
   }
 
   &__support {
