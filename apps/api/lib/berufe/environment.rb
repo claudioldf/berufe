@@ -85,7 +85,7 @@ module Berufe
     ].freeze
     OPENAI_REQUIRED = %w[OPENAI_API_KEY].freeze
     JEV_REQUIRED = %w[TYPESAFE_API_KEY].freeze
-    MAXMIND_REQUIRED = %w[MAXMIND_ACCOUNT_ID MAXMIND_LICENSE_KEY].freeze
+    IPDATA_REQUIRED = %w[IPDATA_API_KEY].freeze
     MAIL_ADAPTERS = %w[smtp resend].freeze
     SMTP_REQUIRED = %w[
       SMTP_ADDRESS
@@ -236,7 +236,7 @@ module Berufe
       required.concat(LOCAL_STORAGE_REQUIRED) if media_storage_adapter == "local"
       required.concat(R2_REQUIRED) if media_storage_adapter == "r2"
       required.concat(OPENAI_REQUIRED) if llm_adapter == "openai"
-      required.concat(MAXMIND_REQUIRED) if %w[staging integration production].include?(name)
+      required.concat(IPDATA_REQUIRED) if %w[staging integration production].include?(name)
       required.concat(DEPLOYMENT_SECRET_REQUIRED) if %w[staging integration production].include?(name)
       if %w[staging integration production].include?(name)
         required.concat(RESEND_REQUIRED) if mail_adapter == "resend"

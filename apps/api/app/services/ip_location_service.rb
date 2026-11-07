@@ -37,7 +37,7 @@ class IpLocationService
   end
 
   def initialize(
-    client: Rails.application.config.x.berufe.maxmind_client,
+    client: Rails.application.config.x.berufe.ipdata_client,
     cache: Rails.application.config.x.berufe.ip_location_cache
   )
     @client = client
@@ -70,19 +70,12 @@ class IpLocationService
   attr_reader :client, :cache
 
   def lookup(ip_address)
-    record = client.city(ip_address)
-    city = record.city.name.to_s.squish.presence
-    state_code = record.most_specific_subdivision.iso_code.to_s.squish.presence&.upcase
-    country_code = record.country.iso_code.to_s.squish.presence&.upcase
-    return unless city && state_code && country_code
+    result = client.lookup(ip_address)
+    return unless result
 
-    Location.new(city:, state_code:, country_code:)
-  rescue MaxMind::GeoIP2::AddressInvalidError,
-    MaxMind::GeoIP2::AddressNotFoundError,
-    MaxMind::GeoIP2::AddressReservedError
-    nil
-  rescue => error
-    Rails.logger.warn("maxmind_lookup_failed class=#{error.class} request_id=#{Current.request_id}")
+    Location.new(city: result.city, state_code: result.state_code, country_code: result.country_code)
+  rescue IpdataClient::LookupError => error
+    Rails.logger.warn("ipdata_lookup_failed class=#{error.class} request_id=#{Current.request_id}")
     nil
   end
 
