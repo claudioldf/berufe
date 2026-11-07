@@ -182,6 +182,11 @@ function changeLocation(nextLocation: SearchLocation) {
       display: grid;
       place-items: center;
     }
+
+    // The <picture> wrapper must not become the box the image sizes against.
+    &__art-picture {
+      display: contents;
+    }
     &__art {
       width: 100%;
       height: 100%;
