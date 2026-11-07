@@ -91,13 +91,21 @@ function submit() {
       </UButton>
     </form>
 
-    <PublicSearchLocationFields
-      v-if="location && expanded"
-      :location="location"
-      :cities="cities"
-      :source="locationSource"
-      @change="emit('locationChange', $event)"
-    />
+    <div
+      v-if="location"
+      class="expression-search-shell__panel"
+      :class="{ 'expression-search-shell__panel--open': expanded }"
+      :inert="!expanded"
+    >
+      <div class="expression-search-shell__panel-inner">
+        <PublicSearchLocationFields
+          :location="location"
+          :cities="cities"
+          :source="locationSource"
+          @change="emit('locationChange', $event)"
+        />
+      </div>
+    </div>
   </div>
 </template>
 
@@ -114,6 +122,34 @@ function submit() {
 
   &--compact {
     box-shadow: var(--shadow-sm);
+  }
+}
+
+// The panel animates its height through grid rows, so the card and the centered
+// hero content glide into place instead of jumping when the fields open.
+.expression-search-shell__panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 460ms cubic-bezier(0.22, 1, 0.36, 1);
+
+  &--open {
+    grid-template-rows: 1fr;
+  }
+}
+
+.expression-search-shell__panel-inner {
+  min-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition:
+    opacity 260ms ease,
+    transform 460ms cubic-bezier(0.22, 1, 0.36, 1);
+
+  .expression-search-shell__panel--open > & {
+    opacity: 1;
+    transform: none;
+    transition-delay: 60ms;
   }
 }
 
@@ -170,6 +206,13 @@ function submit() {
 
   :deep(input[type="search"]::-webkit-search-cancel-button) {
     appearance: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .expression-search-shell__panel,
+  .expression-search-shell__panel-inner {
+    transition: none;
   }
 }
 
