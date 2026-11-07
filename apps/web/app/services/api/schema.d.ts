@@ -393,6 +393,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/support-messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send a support message that is e-mailed to the administrators
+         * @description Nothing is stored. The message is delivered by e-mail to the configured administrator addresses, with the sender as Reply-To.
+         */
+        post: operations["createPublicSupportMessage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/professional-listings": {
         parameters: {
             query?: never;
@@ -3120,6 +3140,26 @@ export interface components {
             /** @description Professionals per page; defaults to 20. */
             per_page?: number;
         };
+        PublicSupportMessageRequest: {
+            support_message: {
+                /** @description Between 2 and 120 characters; validated by the API. */
+                name: string;
+                /** @description A valid e-mail address; validated by the API. */
+                email: string;
+                /** @description Optional Brazilian mobile number, in any common format. */
+                phone?: string | null;
+                /** @description Between 10 and 2000 characters; validated by the API. */
+                message: string;
+                /** @enum {string} */
+                topic: "entrar" | "criar-conta" | "excluir-conta" | "editar-perfil" | "geral";
+            };
+        };
+        PublicSupportMessageResponse: {
+            data: {
+                received: boolean;
+            };
+            request_id: components["schemas"]["RequestId"];
+        };
         PublicSearchDefaultLocation: {
             city_code: string;
         };
@@ -4554,6 +4594,72 @@ export interface operations {
                 };
             };
             /** @description The public professional query is temporarily unavailable. */
+            503: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    createPublicSupportMessage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublicSupportMessageRequest"];
+            };
+        };
+        responses: {
+            /** @description The message was accepted for e-mail delivery. */
+            202: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicSupportMessageResponse"];
+                };
+            };
+            /** @description The exact browser origin is invalid. */
+            403: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description One or more fields are invalid. */
+            422: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too many support messages were sent from this address recently. */
+            429: {
+                headers: {
+                    "X-Request-Id": components["headers"]["RequestId"];
+                    "Retry-After"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No administrator address is configured to receive support messages. */
             503: {
                 headers: {
                     "X-Request-Id": components["headers"]["RequestId"];

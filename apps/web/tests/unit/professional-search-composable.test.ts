@@ -275,6 +275,22 @@ describe("professional search composable", () => {
     expect(useRoute().path).toBe(finderPath);
   });
 
+  it("answers an account action with its help page instead of searching", async () => {
+    apiClient.POST.mockClear();
+    const search = await useProfessionalSearch({ location });
+    const push = vi.spyOn(useRouter(), "push").mockResolvedValue(undefined);
+
+    try {
+      await search.submitSearch({ expression: "Excluir conta" });
+
+      expect(push).toHaveBeenCalledOnce();
+      expect(push).toHaveBeenCalledWith("/ajuda/excluir-conta");
+      expect(apiClient.POST).not.toHaveBeenCalled();
+    } finally {
+      push.mockRestore();
+    }
+  });
+
   it("enters the searching state before route navigation completes", async () => {
     const search = await useProfessionalSearch({ location });
     let resolveNavigation: (() => void) | undefined;

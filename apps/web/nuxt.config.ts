@@ -80,6 +80,7 @@ export default defineNuxtConfig({
       "/api/__sitemap__/listings",
       "/api/__sitemap__/para-profissionais",
       "/api/__sitemap__/guides",
+      "/api/__sitemap__/ajuda",
     ],
   },
   linkChecker: {
@@ -117,7 +118,9 @@ export default defineNuxtConfig({
         "lucide:arrow-right",
         "lucide:arrow-up-right",
         "lucide:badge-check",
+        "lucide:badge-dollar-sign",
         "lucide:bell",
+        "lucide:life-buoy",
         "lucide:bell-ring",
         "lucide:brush-cleaning",
         "lucide:baby",
@@ -189,6 +192,7 @@ export default defineNuxtConfig({
         "lucide:scan-search",
         "lucide:search",
         "lucide:search-x",
+        "lucide:star",
         "lucide:send",
         "lucide:share-2",
         "lucide:shield-alert",
@@ -258,6 +262,8 @@ export default defineNuxtConfig({
     "/para-profissionais/**": { prerender: false, swr: 900 },
     "/guias": { prerender: false, swr: 900 },
     "/guias/**": { prerender: false, swr: 900 },
+    "/ajuda": { prerender: false, swr: 900 },
+    "/ajuda/**": { prerender: false, swr: 900 },
     "/foundation": {
       prerender: false,
       headers: {
