@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, shallowRef } from "vue";
 import type {
   ExpressionSearchPayload,
   SearchLocation,
@@ -33,6 +33,10 @@ const canSubmit = computed(() => {
   return length > 0 && length <= MAXIMUM_EXPRESSION_LENGTH;
 });
 
+// The location fields appear once the visitor focuses the search and stay open
+// after that; they are a secondary control, so they never take focus on load.
+const expanded = shallowRef(false);
+
 function submit() {
   const value = expression.value.trim();
   if (props.loading || !value || value.length > MAXIMUM_EXPRESSION_LENGTH)
@@ -43,10 +47,13 @@ function submit() {
 </script>
 
 <template>
-  <div class="expression-search-shell">
+  <div
+    class="expression-search-shell"
+    :class="{ 'expression-search-shell--compact': compact }"
+    @focusin="expanded = true"
+  >
     <form
       class="expression-search"
-      :class="{ 'expression-search--compact': compact }"
       :aria-busy="loading"
       @submit.prevent="submit"
     >
@@ -84,8 +91,8 @@ function submit() {
       </UButton>
     </form>
 
-    <PublicSearchLocationHint
-      v-if="location"
+    <PublicSearchLocationFields
+      v-if="location && expanded"
       :location="location"
       :cities="cities"
       :source="locationSource"
@@ -96,22 +103,26 @@ function submit() {
 
 <style scoped lang="scss">
 .expression-search-shell {
-  width: 100%;
-}
-
-.expression-search {
   position: relative;
   z-index: 10;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: stretch;
-  gap: 10px;
   width: 100%;
   padding: 9px;
   border: 1px solid rgb(23 53 47 / 14%);
   border-radius: 18px;
   background: white;
   box-shadow: 0 20px 55px rgb(23 53 47 / 13%);
+
+  &--compact {
+    box-shadow: var(--shadow-sm);
+  }
+}
+
+.expression-search {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+  gap: 10px;
+  width: 100%;
 
   &__field {
     display: grid;
@@ -157,20 +168,19 @@ function submit() {
     font-weight: 800;
   }
 
-  &--compact {
-    box-shadow: var(--shadow-sm);
-  }
-
   :deep(input[type="search"]::-webkit-search-cancel-button) {
     appearance: none;
   }
 }
 
 @media (width <= 760px) {
+  .expression-search-shell {
+    padding: 8px;
+  }
+
   .expression-search {
     grid-template-columns: 1fr;
     gap: 4px;
-    padding: 8px;
 
     &__field {
       padding: 10px 12px;
