@@ -80,8 +80,7 @@ describe("search location fields", () => {
       global: { stubs },
     });
 
-    expect(wrapper.text()).toContain("Sua localização aproximada:");
-    expect(wrapper.text()).toContain("Joinville, SC");
+    expect(wrapper.text()).not.toContain("Joinville, SC");
     expect(wrapper.get('select[aria-label="Estado"]').element).toHaveProperty(
       "value",
       "SC",

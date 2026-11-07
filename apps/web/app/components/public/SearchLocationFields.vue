@@ -24,11 +24,6 @@ const dropdownUi = {
   itemLabel: "font-bold",
 };
 
-// The city prefix is only worth showing when the place came from IP detection.
-const caption = computed(() =>
-  props.source === "ip" ? "Sua localização aproximada:" : "",
-);
-
 // The state drives which cities are listed. Picking a state alone does not
 // change the search; the city is applied when it is chosen.
 const stateCode = shallowRef(props.location.stateCode);
@@ -60,12 +55,6 @@ const citySlug = computed<string | undefined>({
 
 <template>
   <div class="search-location-fields">
-    <p class="search-location-fields__caption">
-      <UIcon name="i-lucide-map-pin" aria-hidden="true" />
-      <span v-if="caption">{{ caption }}</span>
-      <strong>{{ location.city }}, {{ location.stateCode }}</strong>
-    </p>
-
     <div class="search-location-fields__grid">
       <label class="search-location-fields__field">
         <span>Estado</span>
@@ -106,22 +95,6 @@ const citySlug = computed<string | undefined>({
   border-top: 1px solid rgb(23 53 47 / 10%);
   color: var(--ink-soft);
   font-size: 0.78rem;
-}
-
-.search-location-fields__caption {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  margin: 0;
-  padding-inline: 3px;
-}
-
-.search-location-fields__caption > svg {
-  color: var(--color-brand);
-}
-
-.search-location-fields__caption strong {
-  color: var(--ink);
 }
 
 .search-location-fields__grid {
