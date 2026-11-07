@@ -14,7 +14,7 @@ Berufe runs in Railway's Virginia region (`us-east4-eqdc4a`) as three services:
 public image routes (`PublicProfilePhotosController`, `PublicPortfolioImagesController`).
 Unlike `api.berufe.com.br`, that domain is Cloudflare-proxied, so repeat image loads are
 answered from the edge rather than Rails. `api.berufe.com.br` stays un-proxied on purpose:
-`VisitorIpResolver`, the public-search rate limiter, and MaxMind geolocation all depend on
+`VisitorIpResolver`, the public-search rate limiter, and ipdata geolocation all depend on
 seeing the real client IP, which a Cloudflare-proxied domain would replace with Cloudflare's.
 
 Cloudflare provides authoritative DNS, an edge cache for `media.berufe.com.br`, and two R2 buckets. Resend provides recommendation
@@ -99,8 +99,7 @@ API_PUBLIC_URL=https://api.berufe.com.br
 PRODUCT_LAUNCH_DATE=<actual YYYY-MM-DD launch date>
 ADMIN_NOTIFICATION_EMAILS=<comma-separated admin inboxes; optional>
 
-MAXMIND_ACCOUNT_ID=<GeoLite account ID>
-MAXMIND_LICENSE_KEY=<secret GeoLite license key>
+IPDATA_API_KEY=<secret ipdata.co API key>
 
 LLM_ADAPTER=openai
 OPENAI_MODEL=gpt-5-mini
@@ -194,11 +193,8 @@ In Infobip, use the approved production base URL, 2FA application, template, sen
 dedicated API key. Confirm sender registration, per-message cost, monthly spend alerts,
 and the `2fa:pin:send` permission before the live smoke check.
 
-In MaxMind, create a dedicated GeoLite web-services license key for the Rails API and enter
-its account ID and license key only on the `api` service. The integration is configured for
-`geolite.info`; do not expose either variable to Nuxt, add an `NUXT_PUBLIC_` equivalent, or
-switch the host to the paid `geoip.maxmind.com` service without an explicit product and
-cost review. After deploy, verify `/api/v1/public/search-location` from a normal public
+In ipdata, create a dedicated API key for the Rails API and enter it only on the `api`
+service. Do not expose it to Nuxt or add an `NUXT_PUBLIC_` equivalent. After deploy, verify `/api/v1/public/search-location` from a normal public
 connection and confirm that local/private addresses return the Joinville fallback.
 
 Create separate Bugsnag projects named `berufe-api-production` and

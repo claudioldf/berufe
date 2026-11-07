@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, shallowRef } from "vue";
 import type {
   ExpressionSearchPayload,
   SearchLocation,
@@ -33,6 +33,10 @@ const canSubmit = computed(() => {
   return length > 0 && length <= MAXIMUM_EXPRESSION_LENGTH;
 });
 
+// The location fields appear once the visitor focuses the search and stay open
+// after that; they are a secondary control, so they never take focus on load.
+const expanded = shallowRef(false);
+
 function submit() {
   const value = expression.value.trim();
   if (props.loading || !value || value.length > MAXIMUM_EXPRESSION_LENGTH)
@@ -43,17 +47,20 @@ function submit() {
 </script>
 
 <template>
-  <div class="expression-search-shell">
+  <div
+    class="expression-search-shell"
+    :class="{ 'expression-search-shell--compact': compact }"
+    @focusin="expanded = true"
+  >
     <form
       class="expression-search"
-      :class="{ 'expression-search--compact': compact }"
       :aria-busy="loading"
       @submit.prevent="submit"
     >
       <div class="expression-search__field">
         <UIcon name="i-lucide-search" aria-hidden="true" />
         <label>
-          <span>O que você precisa?</span>
+          <span>Qual serviço?</span>
           <UInput
             v-model="expression"
             class="expression-search__input"
@@ -80,38 +87,78 @@ function submit() {
         :loading="loading"
         :disabled="loading"
       >
-        <span>Buscar profissionais</span>
+        <span>Buscar</span>
       </UButton>
     </form>
 
-    <PublicSearchLocationHint
+    <div
       v-if="location"
-      :location="location"
-      :cities="cities"
-      :source="locationSource"
-      @change="emit('locationChange', $event)"
-    />
+      class="expression-search-shell__panel"
+      :class="{ 'expression-search-shell__panel--open': expanded }"
+      :inert="!expanded"
+    >
+      <div class="expression-search-shell__panel-inner">
+        <PublicSearchLocationFields
+          :location="location"
+          :cities="cities"
+          :source="locationSource"
+          @change="emit('locationChange', $event)"
+        />
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped lang="scss">
 .expression-search-shell {
-  width: 100%;
-}
-
-.expression-search {
   position: relative;
   z-index: 10;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: stretch;
-  gap: 10px;
   width: 100%;
   padding: 9px;
   border: 1px solid rgb(23 53 47 / 14%);
   border-radius: 18px;
   background: white;
   box-shadow: 0 20px 55px rgb(23 53 47 / 13%);
+
+  &--compact {
+    box-shadow: var(--shadow-sm);
+  }
+}
+
+// The panel animates its height through grid rows, so the card and the centered
+// hero content glide into place instead of jumping when the fields open.
+.expression-search-shell__panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 460ms cubic-bezier(0.22, 1, 0.36, 1);
+
+  &--open {
+    grid-template-rows: 1fr;
+  }
+}
+
+.expression-search-shell__panel-inner {
+  min-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition:
+    opacity 260ms ease,
+    transform 460ms cubic-bezier(0.22, 1, 0.36, 1);
+
+  .expression-search-shell__panel--open > & {
+    opacity: 1;
+    transform: none;
+    transition-delay: 60ms;
+  }
+}
+
+.expression-search {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+  gap: 10px;
+  width: 100%;
 
   &__field {
     display: grid;
@@ -157,20 +204,26 @@ function submit() {
     font-weight: 800;
   }
 
-  &--compact {
-    box-shadow: var(--shadow-sm);
-  }
-
   :deep(input[type="search"]::-webkit-search-cancel-button) {
     appearance: none;
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .expression-search-shell__panel,
+  .expression-search-shell__panel-inner {
+    transition: none;
+  }
+}
+
 @media (width <= 760px) {
+  .expression-search-shell {
+    padding: 8px;
+  }
+
   .expression-search {
     grid-template-columns: 1fr;
     gap: 4px;
-    padding: 8px;
 
     &__field {
       padding: 10px 12px;

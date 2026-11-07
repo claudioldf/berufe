@@ -128,7 +128,7 @@ useHead(() => ({ link: [{ rel: "canonical", href: canonicalUrl.value }] }));
       <h3>2.5. Navegação e suporte</h3>
       <p>
         Para sugerir a cidade da busca, o endereço IP do visitante é enviado à
-        MaxMind e convertido em uma localização aproximada de cidade, estado e
+        ipdata e convertido em uma localização aproximada de cidade, estado e
         país. A cidade efetivamente usada fica visível e pode ser alterada. Se a
         localização não puder ser determinada ou ainda não for atendida, a busca
         usa Joinville/SC e informa essa escolha.
@@ -297,7 +297,7 @@ useHead(() => ({ link: [{ rel: "canonical", href: canonicalUrl.value }] }));
           ou corpo da requisição;
         </li>
         <li>
-          <strong>MaxMind:</strong> endereço IP para estimar cidade, estado e
+          <strong>ipdata:</strong> endereço IP para estimar cidade, estado e
           país e definir a localização inicial da busca;
         </li>
         <li>

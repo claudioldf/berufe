@@ -178,11 +178,6 @@ GEM
       net-pop
       net-smtp
     marcel (1.2.1)
-    maxmind-db (1.4.0)
-    maxmind-geoip2 (1.6.0)
-      connection_pool (>= 2.2, < 4.0)
-      http (>= 4.3, < 7.0)
-      maxmind-db (~> 1.4)
     mini_mime (1.1.5)
     minitest (6.0.6)
       drb (~> 2.0)
@@ -394,7 +389,6 @@ DEPENDENCIES
   dbf (~> 5.4)
   debug
   good_job (~> 4.0)
-  maxmind-geoip2 (~> 1.6)
   openai (~> 0.80.0)
   openapi_first (~> 3.4)
   pg (~> 1.1)
