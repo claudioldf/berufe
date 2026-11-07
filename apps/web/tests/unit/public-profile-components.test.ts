@@ -239,9 +239,46 @@ describe("public profile components", () => {
     expect(details.text()).not.toContain("Reportar um problema à Berufe");
     expect(evidence.text()).toContain("Perfil verificado");
     expect(evidence.text()).not.toContain("Verificações da Berufe");
-    expect(evidence.text()).not.toContain("Telefone confirmado");
     expect(evidence.text()).toContain("Identidade verificada");
+    expect(evidence.text()).toContain("Telefone confirmado");
     expect(evidence.text()).toContain("3serviços realizados");
+  });
+
+  it("shows the verified heading only when identity or phone is verified", async () => {
+    const profile = professional();
+    const identityOnly = await mountSuspended(EvidenceStrip, {
+      props: {
+        evidence: profile.evidence.filter((item) => item.type === "identity"),
+        summary: profile.evidenceSummary,
+      },
+      global: { stubs: globalStubs },
+    });
+    expect(identityOnly.text()).toContain("Perfil verificado");
+    expect(identityOnly.text()).toContain("Identidade verificada");
+    expect(identityOnly.text()).not.toContain("Telefone confirmado");
+
+    const phoneOnly = await mountSuspended(EvidenceStrip, {
+      props: {
+        evidence: profile.evidence.filter((item) => item.type === "phone"),
+        summary: profile.evidenceSummary,
+      },
+      global: { stubs: globalStubs },
+    });
+    expect(phoneOnly.text()).toContain("Perfil verificado");
+    expect(phoneOnly.text()).toContain("Telefone confirmado");
+    expect(phoneOnly.text()).not.toContain("Identidade verificada");
+
+    const unverified = await mountSuspended(EvidenceStrip, {
+      props: {
+        evidence: [],
+        summary: profile.evidenceSummary,
+      },
+      global: { stubs: globalStubs },
+    });
+    expect(unverified.text()).not.toContain("Perfil verificado");
+    expect(unverified.text()).not.toContain("Identidade verificada");
+    expect(unverified.text()).not.toContain("Telefone confirmado");
+    expect(unverified.text()).toContain("3serviços realizados");
   });
 
   it("discloses hidden recommendations without revealing which ones", async () => {
