@@ -29,4 +29,4 @@ Sentimos muito em ver você pensando em sair. A exclusão da conta é **irrevers
 
 ## Só quer uma pausa?
 
-Antes de excluir, você pode apenas esconder seu perfil das buscas ou atualizar suas informações. Veja [como editar seu perfil](/ajuda/editar-perfil).
+Antes de excluir, você pode apenas esconder seu perfil das buscas ou deixá-lo despublicado. Veja [como mudar a visibilidade do perfil](/ajuda/visibilidade-do-perfil) ou [como editar seu perfil](/ajuda/editar-perfil).

@@ -25,6 +25,10 @@ Um perfil atualizado ajuda o cliente a decidir mais rápido. Você pode mudar se
 - Serviços e bairros atendidos.
 - Sua descrição, em poucas linhas e sem exageros.
 
+## Quer controlar quem vê o seu perfil?
+
+Você pode deixá-lo público, acessível só por link ou despublicado. Veja [como mudar a visibilidade do perfil](/ajuda/visibilidade-do-perfil).
+
 ## Quer sair da Berufe?
 
 Você pode excluir sua conta quando quiser. Antes de decidir, veja [o que acontece ao excluir a conta](/ajuda/excluir-conta).

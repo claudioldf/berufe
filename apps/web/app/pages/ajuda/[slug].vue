@@ -96,6 +96,12 @@ defineOgImageSafely("BerufeDefault", {
     font-size: 1.4rem;
   }
 
+  &__content :deep(h3) {
+    margin: 24px 0 8px;
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+  }
+
   &__content :deep(p) {
     margin: 0 0 16px;
     color: var(--ink-soft);

@@ -22,12 +22,11 @@ export default defineContentConfig({
       schema: z.object({
         title: z.string(),
         description: z.string(),
-        action: z.enum([
-          "entrar",
-          "criar-conta",
-          "excluir-conta",
-          "editar-perfil",
-        ]),
+        // Set when the page answers a search action; it doubles as the
+        // support topic of that page's contact modal.
+        action: z
+          .enum(["entrar", "criar-conta", "excluir-conta", "editar-perfil"])
+          .optional(),
         publishedAt: z.string(),
         updatedAt: z.string().optional(),
         retention: z.boolean().default(false),
