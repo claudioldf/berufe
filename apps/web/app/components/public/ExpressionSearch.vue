@@ -87,7 +87,7 @@ function submit() {
         :loading="loading"
         :disabled="loading"
       >
-        <span>Buscar profissionais</span>
+        <span>Buscar</span>
       </UButton>
     </form>
 

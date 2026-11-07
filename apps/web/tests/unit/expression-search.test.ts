@@ -72,7 +72,7 @@ describe("expression search", () => {
       .setValue("  preciso de um pintor no América  ");
     expect(wrapper.find('button[type="submit"]').exists()).toBe(true);
     expect(wrapper.get('button[type="submit"]').text()).toContain(
-      "Buscar profissionais",
+      "Buscar",
     );
     await wrapper.get("form").trigger("submit");
 
