@@ -51,8 +51,7 @@ export default defineRailway(() => {
       // Comma-separated inboxes notified of new professionals and identity
       // evidence awaiting review.
       ADMIN_NOTIFICATION_EMAILS: "claudioldf@gmail.com",
-      MAXMIND_ACCOUNT_ID: preserve(),
-      MAXMIND_LICENSE_KEY: preserve(),
+      IPDATA_API_KEY: preserve(),
       LLM_ADAPTER: "openai",
       OPENAI_MODEL: "gpt-5-mini",
       OPENAI_API_KEY: preserve(),

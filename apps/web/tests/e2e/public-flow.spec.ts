@@ -16,8 +16,10 @@ async function fillExpressionSearch(
   page: import("@playwright/test").Page,
   expression: string,
 ) {
-  const input = page.getByRole("searchbox", { name: "O que você precisa?" });
-  const submit = page.getByRole("button", { name: "Buscar profissionais" });
+  const input = page.getByRole("searchbox", {
+    name: "Qual serviço?",
+  });
+  const submit = page.getByRole("button", { name: "Buscar" });
 
   await expect(async () => {
     await input.fill(expression);
@@ -25,19 +27,16 @@ async function fillExpressionSearch(
   }).toPass({ timeout: 10_000 });
 }
 
-async function selectLaunchCityFromModal(
+async function selectLaunchCityFromFields(
   page: import("@playwright/test").Page,
 ) {
-  await page.getByRole("button", { name: "Alterar cidade" }).click();
+  await page.getByRole("searchbox", { name: "Qual serviço?" }).click();
 
-  const dialog = page.getByRole("dialog", { name: "Escolha sua cidade" });
-  await expect(dialog).toBeVisible();
-  await expect(
-    dialog.getByText("Veja onde já há profissionais disponíveis na Berufe."),
-  ).toBeVisible();
-  await expect(dialog.locator("select")).toHaveCount(0);
-  await dialog.getByRole("button", { name: /Joinville\s+SC/i }).click();
-  await expect(dialog).toBeHidden();
+  const city = page.getByRole("combobox", { name: /Cidade/ });
+  await expect(page.getByRole("combobox", { name: /Estado/ })).toBeVisible();
+  await city.click();
+  await page.getByRole("option", { name: /Joinville/ }).click();
+  await expect(city).toContainText("Joinville");
 }
 
 async function completeProfessionalSignIn(
@@ -320,7 +319,7 @@ test("page navigation provides immediate global feedback", async ({ page }) => {
     };
   });
   const searchButton = page.getByRole("button", {
-    name: "Buscar profissionais",
+    name: "Buscar",
   });
   await searchButton.evaluate((element) => {
     element.addEventListener(
@@ -364,12 +363,12 @@ test("visitor can choose the launch city from the home and finder pages", async 
 }) => {
   await page.goto("/");
   await waitForNuxtHydration(page);
-  await selectLaunchCityFromModal(page);
+  await selectLaunchCityFromFields(page);
 
   await page.goto("/encontrar");
   await waitForNuxtHydration(page);
   await expect(page).toHaveURL(/\/encontrar\/sc\/joinville$/);
-  await selectLaunchCityFromModal(page);
+  await selectLaunchCityFromFields(page);
 });
 
 test("an explicit search city overrides the selected finder city", async ({
@@ -412,7 +411,7 @@ test("an explicit search city overrides the selected finder city", async ({
       response.url().includes("/api/v1/public/professional-searches") &&
       response.request().method() === "POST",
   );
-  await page.getByRole("button", { name: "Buscar profissionais" }).click();
+  await page.getByRole("button", { name: "Buscar" }).click();
   const searchResponse = await searchResponsePromise;
   expect(searchResponse.status()).toBe(200);
   const searchPayload = await searchResponse.json();
@@ -495,7 +494,7 @@ test("visitor can search, open a profile, and inspect the WhatsApp redirect", as
   ).toHaveCount(0);
 
   await fillExpressionSearch(page, "Preciso de um eletricista em Joinville");
-  await page.getByRole("button", { name: "Buscar profissionais" }).click();
+  await page.getByRole("button", { name: "Buscar" }).click();
   await expect(page).toHaveURL(/\/encontrar\/sc\/joinville\?q=[A-Za-z0-9_-]+$/);
   await expect(
     page.getByText(

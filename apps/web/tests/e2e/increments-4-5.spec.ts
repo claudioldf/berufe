@@ -587,9 +587,9 @@ test("an indicated professional claims the external profile and publishes the co
 
   await page.goto("/encontrar");
   await page
-    .getByRole("searchbox", { name: "O que você precisa?" })
+    .getByRole("searchbox", { name: "Qual serviço?" })
     .fill(externalService.name);
-  await page.getByRole("button", { name: "Buscar profissionais" }).click();
+  await page.getByRole("button", { name: "Buscar" }).click();
   const externalCard = page
     .locator(".professional-card")
     .filter({ hasText: externalName });
