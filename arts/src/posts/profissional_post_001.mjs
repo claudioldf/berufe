@@ -73,7 +73,7 @@ const cover = slide({
 <div class="copy"><div class="eyebrow">Para quem presta serviços</div></div>
 <div class="chat">
   <div class="msg msg--in">Oi! Você tem fotos de trabalhos que já fez?</div>
-  <div class="msg msg--out"><span class="lead">Claro! Dá uma olhada:</span><div class="lnk">${icon("link", 34)}<span>berufe.com.br/profissionais/seu-nome</span></div></div>
+  <div class="msg msg--out"><span class="lead">Claro! Dá uma olhada:</span><div class="lnk">${icon("link", 34)}<span>berufe.com.br/be/seu-nome</span></div></div>
 </div>
 <div class="hook">
   <div class="h">Mande <em>um link.</em></div>
@@ -129,7 +129,7 @@ const profile = slide({
   <div class="eyebrow">Seu perfil na Berufe</div>
   <div class="h">Seu trabalho <em>num link só.</em></div>
 </div>
-<div class="link">${icon("link", 36)}<span>berufe.com.br/profissionais/seu-nome</span></div>
+<div class="link">${icon("link", 36)}<span>berufe.com.br/be/seu-nome</span></div>
 <div class="grid">
   ${tile("map-pin", "Serviços e região de atendimento")}
   ${tile("images", "Portfólio com fotos dos trabalhos")}

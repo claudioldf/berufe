@@ -27,7 +27,7 @@ carousel names three everyday pains, then answers each one with something the pr
 | --- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | 1   | `slide-01-cover.png`    | Para quem presta serviços — chat: "Oi! Você tem fotos de trabalhos que já fez?" → "Claro! Dá uma olhada:" + link — **Mande um link.** — Seu perfil na Berufe reúne serviços, fotos dos trabalhos e contato direto. Selo "Perfil grátis". |
 | 2   | `slide-02-pains.png`    | Você conhece essa rotina? — Procurar fotos antigas… · Explicar tudo de novo… · Ser um desconhecido… — Existe um jeito mais simples.        |
-| 3   | `slide-03-profile.png`  | Seu trabalho num link só. — berufe.com.br/profissionais/seu-nome — Serviços e região · Portfólio · Selo de identidade verificada · Indicações — Mande pelo WhatsApp ou fixe na bio do Instagram. |
+| 3   | `slide-03-profile.png`  | Seu trabalho num link só. — berufe.com.br/be/seu-nome — Serviços e região · Portfólio · Selo de identidade verificada · Indicações — Mande pelo WhatsApp ou fixe na bio do Instagram. |
 | 4   | `slide-04-direct.png`   | Fale direto com o cliente. Sem pagar por isso. — R$ 0 por contato recebido · 0% de comissão sobre o serviço — Orçamento pelo WhatsApp      |
 | 5   | `slide-05-cta.png`      | Crie seu perfil grátis. — 1 Confirme celular ou e-mail · 2 Serviços e região · 3 Fotos e verificação quando quiser — Criar perfil grátis (link na bio) |
 
