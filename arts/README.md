@@ -8,7 +8,9 @@ node arts/src/build.mjs            # re-render every asset
 node arts/src/build.mjs banner     # only assets whose path contains "banner"
 ```
 
-It needs the Playwright install from `apps/web` (`pnpm install` there) and ImageMagick (`magick`).
+It needs the Playwright install from `apps/web` (`pnpm install` there) and ImageMagick (`magick`);
+videos also need `ffmpeg` with x264 and AAC (set `FFMPEG=/path/to/ffmpeg` if the one on your PATH is
+broken; a failed encode keeps the rendered frames so you only re-encode).
 Colours, wordmark, and fonts come from the product (`#12625d` teal, `#f8755d` coral, Georgia
 wordmark, Newsreader headlines, Manrope body). The illustration is the site's hero art
 (`apps/web/public/images/hero-home-care-illustration.webp`), which is synthetic.
@@ -23,13 +25,20 @@ wordmark, Newsreader headlines, Manrope body). The illustration is the site's he
 ### Posts (`instagram/posts/`)
 
 One folder per post, named `<audience>_post_NNN` (`profissional_…` for professionals, `cliente_…` for
-people searching for one). Each holds the slide PNGs (1080×1350, 4:5), `caption.txt` to paste as the
-caption, and `post.md` with the angle, on-slide text, alt text and a pre-publish checklist. Slide
-templates live in `src/posts/<name>.mjs`; render one with `node arts/src/build.mjs <name>`.
+people searching for one). Each holds the media, `caption.txt` to paste as the caption, and `post.md`
+with the angle, on-screen text, accessibility text and a pre-publish checklist. Templates live in
+`src/posts/<name>.mjs`; render one with `node arts/src/build.mjs <name>`.
+
+- **Carousels:** slide PNGs, 1080×1350 (4:5).
+- **Reels:** `reel.mp4` (1080×1920, 9:16, 30 fps, H.264 + silent AAC) and a `cover.png`. Videos are
+  built frame by frame (a CSS animation timeline is seeked and screenshotted, then ffmpeg encodes it),
+  so they only render when named explicitly and take a few minutes. For a quick design check, render
+  stills instead: `VIDEO_PREVIEW=0,2.7,5 VIDEO_PREVIEW_DIR=/some/dir node arts/src/build.mjs <name>`.
 
 | Post                       | Audience      | Angle                                                                                                  |
 | -------------------------- | ------------- | ------------------------------------------------------------------------------------------------------ |
 | `profissional_post_001/`   | Professionals | "Serviço bem feito tem que aparecer": everyday pains (photos lost in the phone, re-explaining, a customer who does not know you) answered by the free profile, WhatsApp contact with no fees and quotes, in the professionals' own words. Promises no customers. |
+| `profissional_post_002/`   | Professionals | Reel, "Chamou cliente novo no WhatsApp? Ele vai perguntar 3 coisas": the three questions a new customer asks (have you done this before? can I trust you? how much?) answered by photos of past services, the identity label and indications, and the phone quote. Silent: add licensed audio in the Instagram app. |
 
 ## Google Ads
 

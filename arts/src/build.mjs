@@ -9,6 +9,7 @@ import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { C, artsDir, chips, cta, heroArt, openRenderer, out, page } from "./lib.mjs";
 import { profissionalPost001Jobs } from "./posts/profissional_post_001.mjs";
+import { profissionalPost002Videos } from "./posts/profissional_post_002.mjs";
 
 // ---------------------------------------------------------------------------
 // Copy (pt-BR, taken from the live site so ads match the landing pages)
@@ -350,11 +351,20 @@ jobs.push(...profissionalPost001Jobs);
 // Render
 // ---------------------------------------------------------------------------
 const filter = process.argv[2];
-const { shot, close, tmp } = await openRenderer();
+const { shot, video, close, tmp } = await openRenderer();
 
 for (const job of jobs) {
   if (filter && !job.file.includes(filter)) continue;
   await shot(job);
+}
+
+// Videos are slow (every frame is a screenshot), so they only render when named explicitly:
+//   node arts/src/build.mjs profissional_post_002
+// VIDEO_PREVIEW=0,2.7,5 renders just those stills (seconds) into $VIDEO_PREVIEW_DIR for design review.
+for (const job of profissionalPost002Videos) {
+  if (!filter || !job.file.includes(filter)) continue;
+  const times = process.env.VIDEO_PREVIEW?.split(",").map(Number);
+  await video(job, times && { times, dir: process.env.VIDEO_PREVIEW_DIR ?? "." });
 }
 
 // Landscape logo: transparent background, wordmark trimmed to its ink and fitted into 4:1.
