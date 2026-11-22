@@ -20,6 +20,17 @@ wordmark, Newsreader headlines, Manrope body). The illustration is the site's he
 | `instagram/instagram-profile-icon-2048x2048.png` | 2048×2048 | Profile picture. Full-bleed square because Instagram applies its own circle; the mark sits well inside the circular crop. |
 | `instagram/instagram-banner-1500x500.png`        | 1500×500  | Wide 3:1 banner. Instagram profiles have no cover slot, so use it for the link-in-bio page, Facebook page cover, etc.      |
 
+### Posts (`instagram/posts/`)
+
+One folder per post, named `<audience>_post_NNN` (`profissional_…` for professionals, `cliente_…` for
+people searching for one). Each holds the slide PNGs (1080×1350, 4:5), `caption.txt` to paste as the
+caption, and `post.md` with the angle, on-slide text, alt text and a pre-publish checklist. Slide
+templates live in `src/posts/<name>.mjs`; render one with `node arts/src/build.mjs <name>`.
+
+| Post                       | Audience      | Angle                                                                                                  |
+| -------------------------- | ------------- | ------------------------------------------------------------------------------------------------------ |
+| `profissional_post_001/`   | Professionals | "Mande um link": everyday pains (old photos, re-explaining, being a stranger) answered by the free profile, direct WhatsApp contact and quotes. Promises no customers. |
+
 ## Google Ads
 
 **Logos** (`google-ads/logos/`)
