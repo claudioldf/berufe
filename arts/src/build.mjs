@@ -8,6 +8,7 @@
 import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { C, artsDir, chips, cta, heroArt, openRenderer, out, page } from "./lib.mjs";
+import { profissionalPost001Jobs } from "./posts/profissional_post_001.mjs";
 
 // ---------------------------------------------------------------------------
 // Copy (pt-BR, taken from the live site so ads match the landing pages)
@@ -343,6 +344,7 @@ for (const [name, w, h] of [
 ]) {
   jobs.push({ file: out(ads, "sem-texto", `imagem-${name}.png`), w, h, html: clean(w, h) });
 }
+jobs.push(...profissionalPost001Jobs);
 
 // ---------------------------------------------------------------------------
 // Render
