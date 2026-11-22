@@ -2,6 +2,7 @@
 //
 // Uses the Playwright + Lucide installs from apps/web (run `pnpm install` there first).
 
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -101,7 +102,8 @@ export async function openRenderer() {
   const ctx = await browser.newContext({ deviceScaleFactor: 1 });
   const tab = await ctx.newPage();
 
-  async function shot(job, opts = {}) {
+  // Loads the job's HTML at its size and waits for fonts and images.
+  async function load(job) {
     const htmlPath = path.join(tmp, `${path.basename(job.file)}.html`);
     fs.writeFileSync(htmlPath, job.html);
     await tab.setViewportSize({ width: job.w, height: job.h });
@@ -112,10 +114,91 @@ export async function openRenderer() {
         [...document.images].map((i) => (i.decode ? i.decode().catch(() => {}) : null)),
       );
     });
+  }
+
+  const logDone = (file) => {
+    const rel = path.relative(artsDir, file);
+    if (!rel.startsWith("..")) console.log("✓", rel);
+  };
+
+  async function shot(job, opts = {}) {
+    await load(job);
     fs.mkdirSync(path.dirname(job.file), { recursive: true });
     await tab.screenshot({ path: job.file, ...opts });
-    const rel = path.relative(artsDir, job.file);
-    if (!rel.startsWith("..")) console.log("✓", rel);
+    logDone(job.file);
+  }
+
+  // Moves every CSS animation on the page to `seconds` and waits for the frame to paint.
+  // Animations are paused first, so the page clock never advances on its own and each
+  // frame is deterministic.
+  const seek = async (seconds) => {
+    await tab.evaluate(
+      (ms) =>
+        new Promise((resolve) => {
+          for (const a of document.getAnimations()) {
+            a.pause();
+            a.currentTime = ms;
+          }
+          requestAnimationFrame(() => requestAnimationFrame(resolve));
+        }),
+      seconds * 1000,
+    );
+  };
+
+  // Renders an animated page to an H.264 MP4 (Instagram-ready) by screenshotting it frame by
+  // frame. `job`: { file, w, h, fps, duration, html, cover?: { time, file } }.
+  // `preview`: { times: [seconds], dir } writes only those still frames, for design review.
+  async function video(job, preview) {
+    await load(job);
+    if (preview) {
+      fs.mkdirSync(preview.dir, { recursive: true });
+      for (const t of preview.times) {
+        await seek(t);
+        await tab.screenshot({ path: path.join(preview.dir, `t${String(t).padStart(5, "0")}.png`) });
+      }
+      return;
+    }
+
+    const frames = path.join(tmp, `frames-${path.basename(job.file)}`);
+    fs.mkdirSync(frames, { recursive: true });
+    const total = Math.round(job.duration * job.fps);
+    const coverIndex = job.cover ? Math.round(job.cover.time * job.fps) : -1;
+    for (let i = 0; i < total; i++) {
+      await seek(i / job.fps);
+      const f = path.join(frames, `f${String(i).padStart(5, "0")}.png`);
+      await tab.screenshot({ path: f });
+      if (i === coverIndex) {
+        fs.mkdirSync(path.dirname(job.cover.file), { recursive: true });
+        fs.copyFileSync(f, job.cover.file);
+        logDone(job.cover.file);
+      }
+      if (i % 90 === 0) console.log(`  frame ${i}/${total}`);
+    }
+
+    fs.mkdirSync(path.dirname(job.file), { recursive: true });
+    // yuv420p + faststart keep it playable everywhere; a silent AAC track avoids "no audio"
+    // edge cases in uploaders (music is added in the Instagram app).
+    // FFMPEG=/path/to/ffmpeg overrides the binary (e.g. when the one on PATH is broken).
+    const ffmpeg = process.env.FFMPEG ?? "ffmpeg";
+    try {
+      execFileSync(ffmpeg, [
+        "-y", "-loglevel", "error",
+        "-framerate", String(job.fps), "-i", path.join(frames, "f%05d.png"),
+        "-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=44100",
+        "-c:v", "libx264", "-preset", "slow", "-crf", "18", "-pix_fmt", "yuv420p",
+        "-r", String(job.fps), "-c:a", "aac", "-b:a", "128k", "-shortest",
+        "-movflags", "+faststart", job.file,
+      ], { stdio: ["ignore", "ignore", "pipe"] });
+    } catch (error) {
+      // Keep the rendered frames: re-encoding them takes seconds, re-rendering takes minutes.
+      throw new Error(
+        `ffmpeg (${ffmpeg}) failed to encode ${job.file}. The ${total} rendered frames are kept in ${frames}.\n` +
+          `Fix ffmpeg (needs libx264 and aac) or point FFMPEG at a working binary, then re-encode.\n` +
+          String(error.stderr ?? error.message),
+      );
+    }
+    fs.rmSync(frames, { recursive: true, force: true });
+    logDone(job.file);
   }
 
   async function close() {
@@ -123,5 +206,5 @@ export async function openRenderer() {
     fs.rmSync(tmp, { recursive: true, force: true });
   }
 
-  return { shot, close, tmp };
+  return { shot, video, close, tmp };
 }
