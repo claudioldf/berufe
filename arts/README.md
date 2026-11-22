@@ -29,7 +29,7 @@ templates live in `src/posts/<name>.mjs`; render one with `node arts/src/build.m
 
 | Post                       | Audience      | Angle                                                                                                  |
 | -------------------------- | ------------- | ------------------------------------------------------------------------------------------------------ |
-| `profissional_post_001/`   | Professionals | "Mande um link": everyday pains (old photos, re-explaining, being a stranger) answered by the free profile, direct WhatsApp contact and quotes. Promises no customers. |
+| `profissional_post_001/`   | Professionals | "Serviço bem feito tem que aparecer": everyday pains (photos lost in the phone, re-explaining, a customer who does not know you) answered by the free profile, WhatsApp contact with no fees and quotes, in the professionals' own words. Promises no customers. |
 
 ## Google Ads
 
