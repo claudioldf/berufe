@@ -13,7 +13,7 @@
 // through WhatsApp that the customer opens without an account; setup in a few minutes. It does NOT
 // promise customers or leads, and it does not claim customer reviews.
 
-import { C, cta, heroArt, icon, out, page } from "../lib.mjs";
+import { C, cta, icon, out, page } from "../lib.mjs";
 
 const W = 1080;
 const H = 1350;
@@ -44,23 +44,40 @@ function slide({ theme, css = "", body, swipe = "right" }) {
   );
 }
 
-// 1 — Hook: the question every professional hears, answered in three words -----------------
+// 1 — Hook: the chat every professional has had, answered with a link ---------------------
+// A customer asks for examples; the reply is the profile link. Bubbles are generic (no names,
+// no timestamps, no WhatsApp branding) and the link is a placeholder, not a real profile.
 const cover = slide({
   theme: "teal",
   swipe: "left",
   css: `
-.halo{width:960px;height:960px;right:-330px;bottom:-150px}
+.halo{width:900px;height:900px;right:-480px;bottom:-380px}
 .halo2{width:560px;height:560px;left:-240px;top:-210px}
-.art{height:730px;right:-52px;bottom:-12px}
-.copy .h{font-size:214px;line-height:.92}
-.copy .sub{font-size:36px;margin-top:34px;max-width:540px}
+.sticker{position:absolute;right:76px;top:62px;width:214px;height:214px;border-radius:50%;background:${C.cream};color:${C.deep};display:flex;flex-direction:column;align-items:center;justify-content:center;transform:rotate(9deg);box-shadow:0 18px 30px rgb(5 30 27 / 32%)}
+.sticker small{font-size:23px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:${C.teal}}
+.sticker b{font-family:"Newsreader",Georgia,serif;font-style:italic;font-weight:500;font-size:72px;letter-spacing:-.05em;line-height:1;color:#df5e48;margin-top:6px}
+.copy .eyebrow{margin-bottom:0}
+.chat{position:absolute;left:84px;right:84px;top:300px;display:flex;flex-direction:column;gap:26px}
+.msg{border-radius:46px;padding:34px 44px;font-size:45px;line-height:1.25;font-weight:600;letter-spacing:-.012em;color:${C.deep}}
+.msg--in{align-self:flex-start;max-width:740px;background:${C.cream};border-top-left-radius:12px}
+.msg--out{align-self:flex-end;max-width:850px;background:${C.coral};border-top-right-radius:12px;box-shadow:0 18px 30px rgb(5 30 27 / 26%)}
+.msg .lead{font-weight:800}
+.msg .lnk{margin-top:22px;display:flex;align-items:center;gap:16px;background:rgb(255 255 255 / 94%);border-radius:30px;padding:22px 28px;font-size:30px;font-weight:800;letter-spacing:0;color:${C.teal}}
+.msg .lnk svg{flex:none;color:#df5e48}
+.hook{position:absolute;left:84px;right:84px;top:790px}
+.hook .h{font-size:152px;line-height:.96;white-space:nowrap}
+.hook .sub{font-size:35px;margin-top:30px;max-width:760px}
 `,
   body: `<div class="halo2"></div><div class="halo"></div>
-<img class="art" src="${heroArt}" />
-<div class="copy">
-  <div class="eyebrow">Cliente pediu exemplos do seu trabalho?</div>
-  <div class="h">Mande<br /><em>um link.</em></div>
-  <div class="sub">Seu perfil na Berufe reúne serviços, fotos dos trabalhos e contato direto. É grátis.</div>
+<div class="sticker"><small>Perfil</small><b>grátis</b></div>
+<div class="copy"><div class="eyebrow">Para quem presta serviços</div></div>
+<div class="chat">
+  <div class="msg msg--in">Oi! Você tem fotos de trabalhos que já fez?</div>
+  <div class="msg msg--out"><span class="lead">Claro! Dá uma olhada:</span><div class="lnk">${icon("link", 34)}<span>berufe.com.br/profissionais/seu-nome</span></div></div>
+</div>
+<div class="hook">
+  <div class="h">Mande <em>um link.</em></div>
+  <div class="sub">Seu perfil na Berufe reúne serviços, fotos dos trabalhos e contato direto.</div>
 </div>`,
 });
 

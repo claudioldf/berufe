@@ -8,7 +8,9 @@ re-renders the slides).
 
 ## Angle
 
-The hook is a moment every professional lives: a customer asks for examples of their work. The
+The cover shows the hook as a chat every professional has had: a customer asks for examples of their
+work and the reply is a link. (An earlier cover used the house illustration from the customer ads; it
+read as customer-facing, so it was replaced.) The
 carousel names three everyday pains, then answers each one with something the product does today.
 
 | Pain (slide 2)                                                  | What answers it                                                    |
@@ -23,7 +25,7 @@ carousel names three everyday pains, then answers each one with something the pr
 
 | #   | File                   | On-slide text                                                                                                                              |
 | --- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1   | `slide-01-cover.png`    | Cliente pediu exemplos do seu trabalho? — **Mande um link.** — Seu perfil na Berufe reúne serviços, fotos dos trabalhos e contato direto. É grátis. |
+| 1   | `slide-01-cover.png`    | Para quem presta serviços — chat: "Oi! Você tem fotos de trabalhos que já fez?" → "Claro! Dá uma olhada:" + link — **Mande um link.** — Seu perfil na Berufe reúne serviços, fotos dos trabalhos e contato direto. Selo "Perfil grátis". |
 | 2   | `slide-02-pains.png`    | Você conhece essa rotina? — Procurar fotos antigas… · Explicar tudo de novo… · Ser um desconhecido… — Existe um jeito mais simples.        |
 | 3   | `slide-03-profile.png`  | Seu trabalho num link só. — berufe.com.br/profissionais/seu-nome — Serviços e região · Portfólio · Selo de identidade verificada · Indicações — Mande pelo WhatsApp ou fixe na bio do Instagram. |
 | 4   | `slide-04-direct.png`   | Fale direto com o cliente. Sem pagar por isso. — R$ 0 por contato recebido · 0% de comissão sobre o serviço — Orçamento pelo WhatsApp      |
@@ -34,7 +36,7 @@ margins.
 
 ## Alt text (paste into "Advanced settings → Write alternative text", one per slide)
 
-1. Ilustração de uma casa em corte com dois profissionais trabalhando e o texto "Cliente pediu exemplos do seu trabalho? Mande um link. Seu perfil na Berufe reúne serviços, fotos dos trabalhos e contato direto. É grátis."
+1. Conversa de mensagens: um cliente pergunta "Oi! Você tem fotos de trabalhos que já fez?" e o profissional responde "Claro! Dá uma olhada:" com um link de perfil da Berufe. Abaixo, o título "Mande um link." e o texto "Seu perfil na Berufe reúne serviços, fotos dos trabalhos e contato direto." Um selo diz "Perfil grátis".
 2. Título "Você conhece essa rotina?" e três situações do dia a dia: procurar fotos antigas na galeria, explicar tudo de novo por mensagem e ser um desconhecido para quem vai deixar você entrar em casa. Abaixo: "Existe um jeito mais simples."
 3. Título "Seu trabalho num link só" com um endereço de perfil da Berufe e quatro cartões: serviços e região de atendimento, portfólio com fotos dos trabalhos, selo de identidade verificada e indicações de outros profissionais.
 4. Título "Fale direto com o cliente. Sem pagar por isso." com dois destaques, "R$ 0 por contato recebido" e "0% de comissão sobre o serviço", e um cartão sobre orçamento enviado pelo WhatsApp.
@@ -49,7 +51,9 @@ Everything on the slides comes from `apps/web/app/pages/para-profissionais`,
   "não vou te prometer clientes que ainda não temos". The caption only says people who search by
   service and city _can_ find the profile.
 - **No customer reviews or ratings.** References come from other professionals in the network.
-- **No fabricated profile.** Slide 3 shows a placeholder address (`seu-nome`), not a real person.
+- **No fabricated profile or conversation.** The cover chat is a generic scenario (no names, no
+  timestamps, no WhatsApp branding) and slides 1 and 3 show a placeholder address (`seu-nome`), not a
+  real person.
 - **No "Google ranking" or traffic numbers.**
 
 ## Before publishing
