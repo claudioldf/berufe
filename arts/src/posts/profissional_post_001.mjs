@@ -157,13 +157,11 @@ const closing = slide({
   css: `
 .halo2{width:640px;height:640px;right:-260px;top:-230px}
 .copy .h{font-size:132px}
-.steps{position:absolute;left:84px;right:84px;top:592px;display:flex;flex-direction:column;gap:30px}
+.steps{position:absolute;left:84px;right:84px;top:612px;display:flex;flex-direction:column;gap:42px}
 .step{display:flex;align-items:center;gap:30px;font-size:37px;font-weight:700;line-height:1.25;color:${C.cream}}
 .step b{flex:none;display:grid;place-items:center;width:78px;height:78px;border-radius:50%;background:${C.coral};color:${C.deep};font-size:38px;font-weight:800}
-.main-cta{position:absolute;left:84px;top:986px;display:flex;align-items:center;gap:30px}
-.main-cta .url{font-size:30px}
-.where{position:absolute;left:84px;bottom:84px;width:912px;font-size:29px;font-weight:600;line-height:1.4;color:var(--muted)}
-.where b{color:${C.cream};font-weight:800}
+.main-cta{position:absolute;left:84px;bottom:96px;display:flex;align-items:center;gap:30px}
+.main-cta .url{font-size:32px}
 `,
   body: `<div class="halo2"></div>
 <div class="copy">
@@ -175,8 +173,7 @@ const closing = slide({
   ${step(2, "Escolha seus serviços e a região onde você atende")}
   ${step(3, "Adicione fotos e a verificação de identidade quando quiser")}
 </div>
-<div class="main-cta">${cta("Criar perfil grátis", 36)}<span class="url">Link na bio</span></div>
-<div class="where">Disponível em<br /><b>Joinville, Curitiba, Blumenau e Balneário Camboriú.</b></div>`,
+<div class="main-cta">${cta("Criar perfil grátis", 40)}<span class="url">Link na bio</span></div>`,
 });
 
 export const profissionalPost001Jobs = [

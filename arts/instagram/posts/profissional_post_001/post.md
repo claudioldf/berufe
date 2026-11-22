@@ -27,7 +27,7 @@ carousel names three everyday pains, then answers each one with something the pr
 | 2   | `slide-02-pains.png`    | Você conhece essa rotina? — Procurar fotos antigas… · Explicar tudo de novo… · Ser um desconhecido… — Existe um jeito mais simples.        |
 | 3   | `slide-03-profile.png`  | Seu trabalho num link só. — berufe.com.br/profissionais/seu-nome — Serviços e região · Portfólio · Selo de identidade verificada · Indicações — Mande pelo WhatsApp ou fixe na bio do Instagram. |
 | 4   | `slide-04-direct.png`   | Fale direto com o cliente. Sem pagar por isso. — R$ 0 por contato recebido · 0% de comissão sobre o serviço — Orçamento pelo WhatsApp      |
-| 5   | `slide-05-cta.png`      | Crie seu perfil grátis. — 1 Confirme celular ou e-mail · 2 Serviços e região · 3 Fotos e verificação quando quiser — Criar perfil grátis (link na bio) — Disponível em Joinville, Curitiba, Blumenau e Balneário Camboriú |
+| 5   | `slide-05-cta.png`      | Crie seu perfil grátis. — 1 Confirme celular ou e-mail · 2 Serviços e região · 3 Fotos e verificação quando quiser — Criar perfil grátis (link na bio) |
 
 The profile grid crops posts to the centre 3:4, so every slide keeps its content inside 84 px side
 margins.
@@ -38,7 +38,7 @@ margins.
 2. Título "Você conhece essa rotina?" e três situações do dia a dia: procurar fotos antigas na galeria, explicar tudo de novo por mensagem e ser um desconhecido para quem vai deixar você entrar em casa. Abaixo: "Existe um jeito mais simples."
 3. Título "Seu trabalho num link só" com um endereço de perfil da Berufe e quatro cartões: serviços e região de atendimento, portfólio com fotos dos trabalhos, selo de identidade verificada e indicações de outros profissionais.
 4. Título "Fale direto com o cliente. Sem pagar por isso." com dois destaques, "R$ 0 por contato recebido" e "0% de comissão sobre o serviço", e um cartão sobre orçamento enviado pelo WhatsApp.
-5. Título "Crie seu perfil grátis" com três passos: confirmar celular ou e-mail, escolher serviços e região, adicionar fotos e verificação de identidade quando quiser. Botão "Criar perfil grátis" e a lista de cidades atendidas.
+5. Título "Crie seu perfil grátis" com três passos: confirmar celular ou e-mail, escolher serviços e região, adicionar fotos e verificação de identidade quando quiser. Botão "Criar perfil grátis" e o aviso "Link na bio".
 
 ## What the post does not claim (on purpose)
 
@@ -60,4 +60,4 @@ Everything on the slides comes from `apps/web/app/pages/para-profissionais`,
   `@` mention or a "siga @…" line if the account name is final.
 - If the product changes before the post goes out (fees, verification, quotes), re-check the slides
   against the live `/para-profissionais` page.
-- Cities are the four in the public catalog; drop any you would rather not advertise yet.
+- No city is named on the slides: location is set when building the audience on Instagram.
