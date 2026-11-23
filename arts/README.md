@@ -29,6 +29,9 @@ people searching for one). Each holds the media, `caption.txt` to paste as the c
 with the angle, on-screen text, accessibility text and a pre-publish checklist. Templates live in
 `src/posts/<name>.mjs`; render one with `node arts/src/build.mjs <name>`.
 
+To make a new post, ask Claude Code for one (`/instagram-post reel sobre orçamento`). The skill in
+`.claude/skills/instagram-post/` carries the voice, the claims policy and the workflow below.
+
 - **Carousels:** slide PNGs, 1080×1350 (4:5).
 - **Reels:** `reel.mp4` (1080×1920, 9:16, 30 fps, H.264 + silent AAC) and a `cover.png`. Videos are
   built frame by frame (a CSS animation timeline is seeked and screenshotted, then ffmpeg encodes it),
