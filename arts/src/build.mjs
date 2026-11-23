@@ -347,6 +347,9 @@ for (const [name, w, h] of [
 }
 jobs.push(...profissionalPost001Jobs);
 
+// Reels, rendered only when named (see "Render" below).
+const videos = [...profissionalPost002Videos];
+
 // ---------------------------------------------------------------------------
 // Render
 // ---------------------------------------------------------------------------
@@ -361,7 +364,7 @@ for (const job of jobs) {
 // Videos are slow (every frame is a screenshot), so they only render when named explicitly:
 //   node arts/src/build.mjs profissional_post_002
 // VIDEO_PREVIEW=0,2.7,5 renders just those stills (seconds) into $VIDEO_PREVIEW_DIR for design review.
-for (const job of profissionalPost002Videos) {
+for (const job of videos) {
   if (!filter || !job.file.includes(filter)) continue;
   const times = process.env.VIDEO_PREVIEW?.split(",").map(Number);
   await video(job, times && { times, dir: process.env.VIDEO_PREVIEW_DIR ?? "." });
